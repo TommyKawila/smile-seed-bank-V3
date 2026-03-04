@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Smile Seed Bank — Sage Green Theme */
+    --background: 0 0% 100%;
+    --foreground: 240 5% 10%;         /* zinc-900 */
+
+    --card: 240 5% 98%;               /* zinc-50 */
+    --card-foreground: 240 4% 16%;    /* zinc-800 */
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 5% 10%;
+
+    /* Primary = Sage Green / emerald-700 */
+    --primary: 142 72% 29%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 96%;          /* zinc-100 */
+    --secondary-foreground: 240 4% 16%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;   /* zinc-500 */
+
+    --accent: 138 76% 97%;            /* green-50 */
+    --accent-foreground: 142 72% 29%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 90%;             /* zinc-200 */
+    --input: 240 6% 90%;
+    --ring: 142 72% 29%;
+
+    --radius: 0.625rem;               /* rounded-lg = 10px */
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', 'Prompt', 'Noto Sans Thai', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Primary Button — Sage Green */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 rounded-lg px-6 py-3 font-medium;
+  }
+
+  /* Secondary Button — White / Gray Border */
+  .btn-secondary {
+    @apply bg-white border border-border text-foreground hover:bg-muted active:scale-[0.98] transition-all duration-200 rounded-lg px-6 py-3 font-medium;
+  }
+
+  /* Product Card */
+  .product-card {
+    @apply bg-card rounded-xl overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5;
+  }
+
+  /* Low Stock Badge */
+  .badge-low-stock {
+    @apply bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  /* Free Gift Badge */
+  .badge-free-gift {
+    @apply bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  /* Wholesale Badge */
+  .badge-wholesale {
+    @apply bg-primary/10 text-primary text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+}
+
+/* Print styles — ซ่อน UI เมื่อพิมพ์ */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    font-size: 12px;
+  }
+}

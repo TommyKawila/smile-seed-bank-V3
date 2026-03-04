@@ -1,0 +1,121 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createOrder, fetchEmailItems } from "@/lib/services/order-service";
+import { sendOrderConfirmationEmail } from "@/services/email-service";
+import { notifyAdminNewOrder } from "@/services/line-messaging";
+
+const CheckoutSchema = z.object({
+  customer: z.object({
+    full_name: z.string().min(2, "กรุณาระบุชื่อ"),
+    phone: z.string().min(9, "เบอร์โทรไม่ถูกต้อง"),
+    address: z.string().min(10, "กรุณาระบุที่อยู่"),
+    line_user_id: z.string().nullable().optional(),
+    email: z.string().email().nullable().optional(),
+  }),
+  items: z
+    .array(
+      z.object({
+        variantId: z.number().int().positive(),
+        quantity: z.number().int().positive(),
+        price: z.number().nonnegative(),
+        isFreeGift: z.boolean().optional(),
+        productName: z.string().min(1, "product name required"),
+      })
+    )
+    .min(1, "ต้องมีสินค้าอย่างน้อย 1 รายการ"),
+  summary: z.object({
+    subtotal: z.number(),
+    discount: z.number(),
+    shipping: z.number(),
+    total: z.number(),
+  }),
+  payment_method: z.string().min(1),
+  customer_id: z.string().uuid().nullable().optional(),
+  promo_code_id: z.number().int().nullable().optional(),
+  locale: z.enum(["th", "en"]).optional().default("th"),
+});
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const parsed = CheckoutSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" },
+        { status: 400 }
+      );
+    }
+
+    const { customer, items, summary, payment_method, customer_id, promo_code_id, locale } =
+      parsed.data;
+
+    const { data, error } = await createOrder({
+      customer: {
+        full_name: customer.full_name,
+        phone: customer.phone,
+        address: customer.address,
+        email: customer.email ?? null,
+        line_user_id: customer.line_user_id ?? null,
+      },
+      items: items.map((i) => ({
+        variantId: i.variantId,
+        quantity: i.quantity,
+        price: i.price,
+        productName: i.productName,
+        isFreeGift: i.isFreeGift,
+      })),
+      summary,
+      payment_method,
+      customer_id: customer_id ?? null,
+      promo_code_id: promo_code_id ?? null,
+    });
+
+    if (error || !data) {
+      return NextResponse.json({ error: error ?? "สร้างคำสั่งซื้อไม่สำเร็จ" }, { status: 500 });
+    }
+
+    // Fire-and-forget: enrich item names from DB then send email
+    const paidItems = items.filter((i) => !i.isFreeGift);
+    void (async () => {
+      const emailItems = await fetchEmailItems(
+        paidItems.map((i) => ({
+          variantId: i.variantId,
+          quantity: i.quantity,
+          price: i.price,
+        }))
+      );
+      void sendOrderConfirmationEmail({
+        toEmail: customer.email ?? "",
+        toName: customer.full_name,
+        orderNumber: data.orderNumber,
+        orderId: data.orderId,
+        paymentMethod: payment_method,
+        items: emailItems,
+        freeGiftCount: items.filter((i) => i.isFreeGift).length,
+        subtotal: summary.subtotal,
+        discount: summary.discount,
+        shipping: summary.shipping,
+        total: summary.total,
+        shippingAddress: customer.address,
+        locale,
+      });
+    })();
+    void notifyAdminNewOrder({
+      orderNumber: data.orderNumber,
+      customerName: customer.full_name,
+      total: summary.total,
+      paymentMethod: payment_method,
+      shippingAddress: customer.address,
+      itemCount: items.filter((i) => !i.isFreeGift).length,
+    });
+
+    return NextResponse.json(
+      { orderNumber: data.orderNumber, orderId: data.orderId },
+      { status: 201 }
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("POST /api/storefront/orders error:", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}

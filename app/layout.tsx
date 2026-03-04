@@ -1,0 +1,31 @@
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Smile Seed Bank — Premium Cannabis Seeds",
+    template: "%s | Smile Seed Bank",
+  },
+  description: "แหล่งรวมเมล็ดพันธุ์กัญชาคุณภาพพรีเมียม จากแบรนด์ชั้นนำทั่วโลก",
+  keywords: ["cannabis seeds", "เมล็ดพันธุ์กัญชา", "smile seed bank"],
+  openGraph: {
+    type: "website",
+    locale: "th_TH",
+    url: process.env.NEXT_PUBLIC_SITE_URL,
+    siteName: "Smile Seed Bank",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="th" suppressHydrationWarning>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        {children}
+      </body>
+    </html>
+  );
+}

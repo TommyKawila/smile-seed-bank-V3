@@ -1,0 +1,86 @@
+name: Daily Database Backup
+
+on:
+  schedule:
+    # Runs every day at 02:00 UTC (09:00 Bangkok time)
+    - cron: "0 2 * * *"
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  backup:
+    name: pg_dump → gzip → upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ── 1. Install PostgreSQL client (provides pg_dump) ───────────────────
+      - name: Install pg_dump
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+
+      # ── 2. Dump the database ──────────────────────────────────────────────
+      - name: Create backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+          FILENAME="smile-seed-bank-${TIMESTAMP}.sql.gz"
+          echo "FILENAME=${FILENAME}" >> "$GITHUB_ENV"
+
+          # pg_dump with gzip compression
+          # --no-owner and --no-acl avoid permission issues on restore
+          pg_dump \
+            --dbname="${DATABASE_URL}" \
+            --format=plain \
+            --no-owner \
+            --no-acl \
+            --verbose \
+            | gzip -9 > "${FILENAME}"
+
+          echo "Backup size: $(du -sh ${FILENAME} | cut -f1)"
+
+      # ── 3A. Upload to GitHub Artifacts (always available, free) ──────────
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_number }}
+          path: ${{ env.FILENAME }}
+          # Keep 30 days worth of backups
+          retention-days: 30
+
+      # ── 3B. Upload to Supabase Storage (optional — set USE_SUPABASE_STORAGE=true) ─
+      - name: Upload to Supabase Storage
+        if: ${{ vars.USE_SUPABASE_STORAGE == 'true' }}
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FILENAME: ${{ env.FILENAME }}
+        run: |
+          curl -sS \
+            -X POST \
+            "${SUPABASE_URL}/storage/v1/object/db-backups/${FILENAME}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            -H "Content-Type: application/gzip" \
+            --data-binary @"${FILENAME}"
+          echo "Uploaded ${FILENAME} to Supabase Storage bucket: db-backups"
+
+      # ── 3C. Upload to AWS S3 (optional — set USE_S3=true) ────────────────
+      - name: Upload to S3
+        if: ${{ vars.USE_S3 == 'true' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          FILENAME: ${{ env.FILENAME }}
+        run: |
+          pip install -q awscli
+          aws s3 cp "${FILENAME}" "s3://${S3_BUCKET}/database-backups/${FILENAME}"
+          echo "Uploaded to s3://${S3_BUCKET}/database-backups/${FILENAME}"
+
+      # ── 4. Notify on failure ──────────────────────────────────────────────
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Database backup FAILED on $(date -u). Check the logs above."
