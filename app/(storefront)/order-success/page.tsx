@@ -1,17 +1,16 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle2, MessageCircle, ShoppingBag, Home } from "lucide-react";
+import { CheckCircle2, MessageCircle, ShoppingBag, Home, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 const LINE_OA_ID = "@smileseedbank"; // ← เปลี่ยนตามร้านจริง
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const params = useSearchParams();
   const orderNumber = params.get("order") ?? "—";
 
@@ -129,5 +128,17 @@ export default function OrderSuccessPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

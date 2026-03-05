@@ -1,8 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
+import { useState, useEffect, useCallback, useMemo, Fragment, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   useReactTable,
@@ -127,7 +125,7 @@ function EditableCell({
   );
 }
 
-export default function AdminInventoryPage() {
+function AdminInventoryContent() {
   const { fetchProductFull } = useProducts({ autoFetch: false });
   const [rows, setRows] = useState<InventoryRow[]>([]);
   const [products, setProducts] = useState<{ id: number; name: string; breeder_id: number | null }[]>([]);
@@ -1010,5 +1008,17 @@ export default function AdminInventoryPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function AdminInventoryPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
+      </div>
+    }>
+      <AdminInventoryContent />
+    </Suspense>
   );
 }
