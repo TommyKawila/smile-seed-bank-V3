@@ -7,6 +7,8 @@ import type { Blog } from "@/types/supabase";
 import { formatDate } from "@/lib/utils";
 import { Calendar, Tag, ArrowLeft, Eye } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const revalidate = 600;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
