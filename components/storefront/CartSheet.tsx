@@ -23,6 +23,7 @@ import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
+import { getURL } from "@/lib/get-url";
 import { DiscountProgressBar } from "./DiscountProgressBar";
 import { LoginForPromoDialog } from "./LoginForPromoDialog";
 import { formatPrice } from "@/lib/utils";
@@ -110,7 +111,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
   const handleLoginForPromo = async () => {
     setGoogleLoginLoading(true);
     const supabase = createClient();
-    const redirectTo = `${typeof window !== "undefined" ? window.location.origin : ""}/?promo=${encodeURIComponent(loginPromoCode)}`;
+    const redirectTo = `${getURL()}?promo=${encodeURIComponent(loginPromoCode)}`;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },

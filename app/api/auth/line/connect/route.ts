@@ -5,11 +5,12 @@
  *
  * Env vars needed:
  *   LINE_LOGIN_CHANNEL_ID     — from LINE Developers > LINE Login channel
- *   NEXT_PUBLIC_SITE_URL      — e.g. https://smileseedbank.com
+ *   NEXT_PUBLIC_BASE_URL      — e.g. https://smileseedbank.com
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+import { getURL } from "@/lib/get-url";
 
 const LINE_AUTH_URL = "https://access.line.me/oauth2/v2.1/authorize";
 
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = getURL().replace(/\/$/, "");
   const redirectUri = `${siteUrl}/api/auth/line/callback`;
 
   // Random state to prevent CSRF — store in httpOnly cookie for verification

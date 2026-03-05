@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, Fragment, Suspense } from "react";
+import { InventorySkeleton } from "@/components/skeletons/InventorySkeleton";
 import { useSearchParams } from "next/navigation";
 import {
   useReactTable,
@@ -1013,11 +1014,7 @@ function AdminInventoryContent() {
 
 export default function AdminInventoryPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
-      </div>
-    }>
+    <Suspense fallback={<InventorySkeleton />}>
       <AdminInventoryContent />
     </Suspense>
   );

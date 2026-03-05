@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, Suspense } from "react";
+import { ShopSkeleton } from "@/components/skeletons/ShopSkeleton";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -555,11 +556,7 @@ function ShopContent() {
 
 export default function ShopPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    }>
+    <Suspense fallback={<ShopSkeleton />}>
       <ShopContent />
     </Suspense>
   );

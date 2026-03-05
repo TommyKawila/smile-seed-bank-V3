@@ -18,6 +18,7 @@ import { DiscountProgressBar } from "@/components/storefront/DiscountProgressBar
 import { LoginForPromoDialog } from "@/components/storefront/LoginForPromoDialog";
 import { useLanguage } from "@/context/LanguageContext";
 import { createClient } from "@/lib/supabase/client";
+import { getURL } from "@/lib/get-url";
 import { formatPrice } from "@/lib/utils";
 
 // ─── Zod Schema ───────────────────────────────────────────────────────────────
@@ -148,7 +149,7 @@ export default function CheckoutPage() {
   const handleLoginForPromo = async () => {
     setGoogleLoginLoading(true);
     const supabase = createClient();
-    const redirectTo = `${typeof window !== "undefined" ? window.location.origin : ""}/checkout?promo=${encodeURIComponent(loginPromoCode)}`;
+    const redirectTo = `${getURL()}checkout?promo=${encodeURIComponent(loginPromoCode)}`;
     await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
     setGoogleLoginLoading(false);
   };

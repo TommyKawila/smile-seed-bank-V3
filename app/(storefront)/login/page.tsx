@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/context/LanguageContext";
+import { getURL } from "@/lib/get-url";
 
 function GoogleIcon() {
   return (
@@ -70,7 +71,7 @@ export default function LoginPage() {
     setGoogleLoading(true);
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/profile` },
+      options: { redirectTo: `${getURL()}profile` },
     });
     if (err) { setError(err.message); setGoogleLoading(false); }
   };

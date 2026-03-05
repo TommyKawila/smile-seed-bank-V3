@@ -1,23 +1,40 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle2, MessageCircle, ShoppingBag, Home, Loader2 } from "lucide-react";
+import { CheckCircle2, MessageCircle, ShoppingBag, Home } from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-const LINE_OA_ID = "@smileseedbank"; // ← เปลี่ยนตามร้านจริง
+const DEFAULT_LINE_ID = "@smileseedsbank";
+
+function buildLineOaUrl(lineId: string | null, orderNumber: string): string {
+  const id = (lineId ?? DEFAULT_LINE_ID).trim() || DEFAULT_LINE_ID;
+  const normalized = id.startsWith("@") ? id : `@${id}`;
+  const message = encodeURIComponent(`แจ้งออเดอร์ #${orderNumber} ครับ/ค่ะ`);
+  return `https://line.me/R/oaMessage/${normalized}/?${message}`;
+}
 
 function OrderSuccessContent() {
   const params = useSearchParams();
   const orderNumber = params.get("order") ?? "—";
+  const [lineId, setLineId] = useState<string | null>(null);
 
-  const lineMessage = encodeURIComponent(
-    `สวัสดีครับ 🌿 ผมได้สั่งซื้อสินค้าที่ Smile Seed Bank แล้วนะครับ เลขออเดอร์: #${orderNumber}`
-  );
-  const lineDeepLink = `https://line.me/R/oaMessage/${LINE_OA_ID.replace("@", "")}/?${lineMessage}`;
+  useEffect(() => {
+    fetch("/api/storefront/payment-settings", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data: { lineId?: string | null }) => {
+        const id = data?.lineId?.trim() || null;
+        setLineId(id ?? null);
+        if (!id) console.warn("[order-success] Line ID missing in payment_settings, using default");
+      })
+      .catch(() => setLineId(null));
+  }, []);
+
+  const lineDeepLink = buildLineOaUrl(lineId, orderNumber);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 pt-16">
@@ -134,8 +151,8 @@ function OrderSuccessContent() {
 export default function OrderSuccessPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 pt-16">
+        <Skeleton className="h-64 w-full max-w-md rounded-3xl" />
       </div>
     }>
       <OrderSuccessContent />

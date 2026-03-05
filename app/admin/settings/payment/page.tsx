@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Loader2, Plus, Trash2, CreditCard, QrCode, Wallet, MessageCircle } from "lucide-react";
+import { Loader2, Plus, Trash2, CreditCard, QrCode, Wallet, MessageCircle, Upload, ImageIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,98 @@ import {
   type PromptPay,
   type CryptoWallet,
 } from "@/lib/validations/payment-settings";
+
+/** Inline QR uploader — uploads to brand-assets bucket via existing endpoint */
+function QrUpload({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const handleFile = async (file: File) => {
+    setErr(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("key", "promptpay-qr");
+      const res = await fetch("/api/admin/settings/upload", { method: "POST", body: fd });
+      const json = await res.json() as { url?: string; error?: string };
+      if (!res.ok || !json.url) throw new Error(json.error ?? "อัปโหลดล้มเหลว");
+      onChange(json.url);
+    } catch (e) {
+      setErr(String(e));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs">รูป QR Code PromptPay</Label>
+
+      {/* Preview / Drop zone */}
+      <div
+        className="relative flex h-40 w-40 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50 transition-colors hover:border-primary/60"
+        onClick={() => inputRef.current?.click()}
+      >
+        {value ? (
+          <Image src={`${value}?t=${Date.now()}`} alt="QR" fill className="object-contain p-2" unoptimized />
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-zinc-400">
+            <ImageIcon className="h-8 w-8 opacity-40" />
+            <span className="text-[11px] font-medium text-center px-2">คลิกเพื่ออัปโหลด QR</span>
+          </div>
+        )}
+        {uploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        )}
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); }}
+      />
+
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload className="h-3 w-3" />
+          {value ? "เปลี่ยนรูป" : "อัปโหลด"}
+        </Button>
+        {value && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-xs text-red-500 hover:text-red-600"
+            onClick={() => onChange("")}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+
+      {err && <p className="text-[11px] text-red-500">{err}</p>}
+    </div>
+  );
+}
 
 const emptyBank: BankAccount = { bankName: "", accountName: "", accountNo: "", isActive: true };
 const emptyPromptPay: PromptPay = { identifier: "", qrUrl: "", isActive: true };
@@ -228,26 +320,12 @@ export default function PaymentSettingsPage() {
                 className="mt-1"
               />
             </div>
-            <div>
-              <Label className="text-xs">URL รูป QR Code</Label>
-              <Input
-                placeholder="https://..."
-                value={form.promptPay?.qrUrl ?? ""}
-                onChange={(e) => updatePromptPay("qrUrl", e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            {form.promptPay?.qrUrl && (
-              <div className="relative h-24 w-24 overflow-hidden rounded-lg border bg-zinc-50">
-                <Image
-                  src={form.promptPay.qrUrl}
-                  alt="QR"
-                  fill
-                  className="object-contain"
-                  unoptimized
-                />
-              </div>
-            )}
+
+            <QrUpload
+              value={form.promptPay?.qrUrl ?? ""}
+              onChange={(url) => updatePromptPay("qrUrl", url)}
+            />
+
             <div className="flex items-center gap-2">
               <Switch
                 checked={form.promptPay?.isActive ?? true}
@@ -375,7 +453,8 @@ export default function PaymentSettingsPage() {
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
         <p className="font-semibold">📋 SQL Setup (Supabase — รันครั้งเดียว)</p>
         <pre className="mt-2 overflow-x-auto rounded bg-amber-100 p-3 text-[11px] leading-relaxed text-amber-900">
-{`CREATE TABLE IF NOT EXISTS payment_settings (
+{`-- 1. Create table
+CREATE TABLE IF NOT EXISTS payment_settings (
   id integer PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   bank_accounts jsonb DEFAULT '[]',
   prompt_pay jsonb DEFAULT '{}',
@@ -385,9 +464,13 @@ export default function PaymentSettingsPage() {
   updated_at timestamptz DEFAULT now()
 );
 
-ALTER TABLE payment_settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "admin only" ON payment_settings FOR ALL
-  USING (auth.role() = 'service_role');`}
+-- 2. Disable RLS (API uses postgres.js with DATABASE_URL — bypasses RLS entirely)
+ALTER TABLE payment_settings DISABLE ROW LEVEL SECURITY;
+
+-- 3. Create payment-assets storage bucket for QR uploads
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('brand-assets', 'brand-assets', true)
+ON CONFLICT (id) DO NOTHING;`}
         </pre>
       </div>
     </div>

@@ -13,17 +13,18 @@
  * Env vars needed:
  *   LINE_LOGIN_CHANNEL_ID
  *   LINE_LOGIN_CHANNEL_SECRET
- *   NEXT_PUBLIC_SITE_URL
+ *   NEXT_PUBLIC_BASE_URL
  */
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSql } from "@/lib/db";
+import { getURL } from "@/lib/get-url";
 
 const LINE_TOKEN_URL = "https://api.line.me/oauth2/v2.1/token";
 const LINE_PROFILE_URL = "https://api.line.me/v2/profile";
 
 export async function GET(req: NextRequest) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = getURL().replace(/\/$/, "");
   const errorRedirect = (msg: string) =>
     NextResponse.redirect(`${siteUrl}/profile?tab=profile&line_error=${encodeURIComponent(msg)}`);
 
