@@ -78,16 +78,7 @@ export async function generateMetadata({
   };
 }
 
-// ─── Static Params (optional: pre-generate at build time) ────────────────────
-
-export async function generateStaticParams() {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("blogs")
-    .select("slug")
-    .eq("is_published", true);
-  return (data ?? []).map((b: { slug: string }) => ({ slug: b.slug }));
-}
+// generateStaticParams removed — route is force-dynamic, no build-time Supabase calls needed.
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
