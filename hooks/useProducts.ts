@@ -18,9 +18,13 @@ type ProductListItem = ProductWithBreeder & { product_variants?: ProductVariant[
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type StrainDominance = "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50";
+
 interface UseProductsOptions {
   category?: string;
   breeder_id?: number;
+  categoryId?: string | number;
+  strain_dominance?: StrainDominance | null;
   limit?: number;
   autoFetch?: boolean;
   includeVariants?: boolean;
@@ -40,7 +44,7 @@ interface UseProductsReturn {
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
-  const { category, breeder_id, limit, autoFetch = true, includeVariants = false } = opts;
+  const { category, breeder_id, categoryId, strain_dominance, limit, autoFetch = true, includeVariants = false } = opts;
 
   const [products, setProducts] = useState<ProductListItem[]>([]);
   const [isLoading, setIsLoading] = useState(autoFetch);
@@ -65,6 +69,8 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
 
       if (category) query = query.eq("category", category);
       if (breeder_id) query = query.eq("breeder_id", breeder_id);
+      if (categoryId != null && categoryId !== "") query = query.eq("category_id", Number(categoryId));
+      if (strain_dominance) query = query.eq("strain_dominance", strain_dominance);
       if (limit) query = query.limit(limit);
 
       const { data, error: sbError } = await query;
@@ -75,7 +81,7 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [category, breeder_id, limit, includeVariants]);
+  }, [category, breeder_id, categoryId, strain_dominance, limit, includeVariants]);
 
   useEffect(() => {
     if (autoFetch) fetchProducts();

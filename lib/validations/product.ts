@@ -8,13 +8,15 @@ export const VariantSchema = z.object({
   price: z.number().positive("ราคาต้องมากกว่า 0"),
   cost_price: z.number().min(0, "ต้นทุนต้องไม่ติดลบ"),
   stock: z.number().int().min(0, "สต็อกต้องไม่ติดลบ"),
+  low_stock_threshold: z.number().int().min(0).default(5).optional(),
   is_active: z.boolean().default(true),
   sku: z.string().nullable().optional(),
 });
 
 export const ProductSchema = z.object({
   name: z.string().min(2, "ชื่อสินค้าต้องมีอย่างน้อย 2 ตัวอักษร"),
-  category: z.string().min(1, "กรุณาเลือกหมวดหมู่"),
+  category: z.string().nullable().optional(),
+  category_id: z.number().nullable().optional(),
   breeder_id: z.number().nullable().optional(),
   master_sku: z.string().nullable().optional(),
   description_th: z.string().nullable().optional(),
@@ -33,6 +35,7 @@ export const ProductSchema = z.object({
   genetics: z.string().nullable().optional(),
   indica_ratio: z.number().min(0).max(100).nullable().optional(),
   sativa_ratio: z.number().min(0).max(100).nullable().optional(),
+  strain_dominance: z.enum(["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"]).nullable().optional(),
   flowering_type: z.enum(["AUTO", "PHOTO"]).nullable().optional(),
   seed_type: z.enum(["FEMINIZED", "REGULAR"]).nullable().optional(),
   yield_info: z.string().nullable().optional(),

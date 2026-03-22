@@ -41,6 +41,7 @@ const AddToCartSchema = z.object({
   price: z.number().positive("ราคาต้องมากกว่า 0"),
   quantity: z.number().int().positive("จำนวนต้องมากกว่า 0"),
   masterSku: z.string().nullable().optional(),
+  breeder_id: z.number().int().positive().nullable().optional(),
 });
 
 // ─── Constants ────────────────────────────────────────────────────────────────

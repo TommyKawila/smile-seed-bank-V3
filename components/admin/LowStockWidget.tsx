@@ -7,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type LowStockItem = {
   stock: number;
-  sku: string;
-  unit_label: string;
+  sku?: string;
+  unit_label?: string;
   product_name: string;
-  master_sku: string;
-  brand: string;
+  master_sku?: string;
+  brand?: string;
+  breeder?: string;
 };
 
 export function LowStockWidget() {
@@ -19,10 +20,11 @@ export function LowStockWidget() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/dashboard/low-stock", { cache: "no-store" })
+    fetch("/api/admin/inventory/low-stock", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        setItems(Array.isArray(data) ? data : []);
+        const arr = Array.isArray(data) ? data : [];
+        setItems(arr.map((d: { breeder?: string; brand?: string }) => ({ ...d, brand: d.brand ?? d.breeder ?? "—" })));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -30,9 +32,9 @@ export function LowStockWidget() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2 text-base">
           <AlertTriangle className="h-4 w-4 text-red-500" />
-          สต็อกต่ำ (≤5)
+          สต็อกต่ำ
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -46,12 +48,12 @@ export function LowStockWidget() {
           <ul className="space-y-2">
             {items.map((item, i) => (
               <li
-                key={`${item.master_sku}-${item.unit_label}-${i}`}
+                key={`${item.master_sku ?? item.sku}-${item.unit_label ?? ""}-${i}`}
                 className="flex items-center justify-between rounded-lg border border-red-100 bg-red-50/50 px-3 py-2 text-sm"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-xs text-zinc-600">{item.master_sku !== "—" ? item.master_sku : item.sku}</p>
-                  <p className="truncate text-zinc-700">{item.brand} · {item.product_name}</p>
+                  <p className="font-mono text-xs text-zinc-600">{item.master_sku !== "—" ? item.master_sku : (item.sku ?? "—")}</p>
+                  <p className="truncate text-zinc-700">{(item.brand ?? item.breeder ?? "—")} · {item.product_name}</p>
                 </div>
                 <span className="ml-2 shrink-0 rounded bg-red-200 px-2 py-0.5 font-semibold text-red-800">
                   {item.stock}
@@ -61,8 +63,9 @@ export function LowStockWidget() {
           </ul>
         )}
         {items.length > 0 && (
-          <Link
+            <Link
             href="/admin/inventory?stock=low"
+            className="print:hidden"
             className="mt-3 flex items-center justify-center gap-1 rounded-lg border border-zinc-200 py-2 text-sm font-medium text-primary hover:bg-primary/5"
           >
             ดูทั้งหมดที่ Inventory

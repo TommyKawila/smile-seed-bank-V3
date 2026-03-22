@@ -19,6 +19,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "file and key are required" }, { status: 400 });
     }
 
+    if (key === "logo_secondary_png_url" && file.type !== "image/png") {
+      return NextResponse.json({ error: "Secondary logo must be PNG format" }, { status: 400 });
+    }
+
     const supabase = await createAdminClient();
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
     const path = `${key}-${Date.now()}.${ext}`;

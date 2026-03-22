@@ -2,7 +2,33 @@ import { NextResponse } from "next/server";
 import { getInventoryValue } from "@/services/dashboard-service";
 
 export async function GET() {
-  const { data, error } = await getInventoryValue();
-  if (error) return NextResponse.json({ error }, { status: 500 });
-  return NextResponse.json(data);
+  try {
+    const { data, error } = await getInventoryValue();
+    if (error) {
+      console.error("[Dashboard Inventory]", error);
+      return NextResponse.json({
+        totalValue: 0,
+        lowStockCount: 0,
+        totalPotentialRevenue: 0,
+        potentialProfit: 0,
+        potentialMarginPercent: 0,
+        hasZeroCostWarning: false,
+        variants: [],
+        breeders: [],
+      });
+    }
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error("[Dashboard Inventory]", err);
+    return NextResponse.json({
+      totalValue: 0,
+      lowStockCount: 0,
+      totalPotentialRevenue: 0,
+      potentialProfit: 0,
+      potentialMarginPercent: 0,
+      hasZeroCostWarning: false,
+      variants: [],
+      breeders: [],
+    });
+  }
 }

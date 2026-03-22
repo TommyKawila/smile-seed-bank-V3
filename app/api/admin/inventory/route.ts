@@ -5,10 +5,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const category = searchParams.get("category") ?? ""; // Photo | Auto
-  const typeFilter = searchParams.get("type") ?? "";   // Indica | Sativa | Hybrid
-  const brandId = searchParams.get("brand") ?? "";     // breeder_id
-  const stockLevel = searchParams.get("stock") ?? "";  // all | low | out
+  const categoryId = searchParams.get("categoryId") ?? searchParams.get("category") ?? "";
+  const typeFilter = searchParams.get("type") ?? "";
+  const brandId = searchParams.get("brand") ?? "";
+  const stockLevel = searchParams.get("stock") ?? "";
 
   const supabase = await createAdminClient();
   const { data: rows, error } = await supabase
@@ -21,12 +21,17 @@ export async function GET(req: NextRequest) {
       cost_price,
       price,
       stock,
+      low_stock_threshold,
       is_active,
       products!inner (
         id,
         name,
+        master_sku,
+        image_url,
+        image_urls,
         flowering_type,
         category,
+        category_id,
         indica_ratio,
         sativa_ratio,
         thc_percent,
@@ -46,8 +51,13 @@ export async function GET(req: NextRequest) {
   if (brandId) {
     list = list.filter((r) => String((r.products as { breeder_id?: number }).breeder_id) === brandId);
   }
-  if (category) {
-    list = list.filter((r) => (r.products as { flowering_type?: string }).flowering_type === category);
+  if (categoryId && categoryId !== "all") {
+    const cid = categoryId;
+    if (/^\d+$/.test(cid)) {
+      list = list.filter((r) => String((r.products as { category_id?: number | null }).category_id) === cid);
+    } else {
+      list = list.filter((r) => (r.products as { flowering_type?: string }).flowering_type === cid);
+    }
   }
   if (typeFilter) {
     list = list.filter((r) => {
@@ -61,7 +71,11 @@ export async function GET(req: NextRequest) {
     });
   }
   if (stockLevel === "low") {
-    list = list.filter((r) => r.stock > 0 && r.stock <= 5);
+    list = list.filter((r) => {
+      const th = (r as { low_stock_threshold?: number | null }).low_stock_threshold ?? 5;
+      const s = r.stock ?? 0;
+      return s > 0 && s <= th;
+    });
   } else if (stockLevel === "out") {
     list = list.filter((r) => r.stock === 0);
   }
@@ -69,12 +83,19 @@ export async function GET(req: NextRequest) {
   const items = list.map((r) => {
     const p = r.products as {
       name: string;
+      master_sku?: string | null;
+      image_url?: string | null;
+      image_urls?: unknown;
       flowering_type?: string;
+      category?: string | null;
       breeders: { name: string } | null;
       indica_ratio?: number;
       sativa_ratio?: number;
       thc_percent?: number | null;
     };
+    const primaryImg = Array.isArray(p.image_urls) && (p.image_urls as string[]).length > 0
+      ? (p.image_urls as string[])[0]
+      : p.image_url ?? null;
     const ind = p.indica_ratio ?? 0;
     const sat = p.sativa_ratio ?? 0;
     let typeLabel = "—";
@@ -85,16 +106,19 @@ export async function GET(req: NextRequest) {
       id: r.id,
       product_id: r.product_id,
       product_name: p.name,
+      image_url: primaryImg,
+      master_sku: p.master_sku ?? null,
       brand: p.breeders?.name ?? "",
       breeder_id: (r.products as { breeder_id?: number }).breeder_id,
       unit_label: r.unit_label,
       sku: r.sku ?? null,
       stock: r.stock,
+      low_stock_threshold: (r as { low_stock_threshold?: number | null }).low_stock_threshold ?? 5,
       cost_price: r.cost_price,
       price: r.price,
       margin: r.cost_price > 0 ? Math.round(((r.price - r.cost_price) / r.price) * 100) : 0,
       is_active: r.is_active,
-      category: p.flowering_type === "AUTO" ? "Auto" : p.flowering_type === "PHOTO" ? "Photo" : p.flowering_type ?? "—",
+      category: p.category ?? (p.flowering_type === "AUTO" ? "Auto" : p.flowering_type === "PHOTO" ? "Photo" : p.flowering_type ?? "—"),
       type: typeLabel,
       thc_level: p.thc_percent != null ? `${p.thc_percent}%` : "—",
     };

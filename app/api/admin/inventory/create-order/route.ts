@@ -60,6 +60,8 @@ export async function POST(req: NextRequest) {
         shipping_address: note ?? null,
         total_amount: totalAmount,
         total_cost: totalCost,
+        shipping_fee: 0,
+        discount_amount: 0,
         status: "PAID",
       })
       .select("id")

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ShoppingCart, Loader2, CheckCircle2, XCircle,
   ImageIcon, User, RefreshCw, FileText, Clock, BadgeCheck,
-  Truck, Package,
+  Truck, Package, Plus, Printer, RotateCcw, Receipt,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,13 +20,17 @@ import { Label } from "@/components/ui/label";
 import { useAdminOrders, type AdminOrder } from "@/hooks/useAdminOrders";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { openPackingSlipPrint } from "@/components/admin/PackingSlipPrint";
+import { generateReceiptPDF, formatPaymentMethodForPdf, isReceiptEligibleStatus } from "@/lib/receipt-pdf";
+import { fetchPdfSettings } from "@/lib/pdf-settings";
+import { ReceiptPreviewModal } from "@/components/admin/ReceiptPreviewModal";
 
 // ─── Shipping providers ────────────────────────────────────────────────────────
 const SHIPPING_PROVIDERS = [
-  { value: "THAILAND_POST", label: "Thailand Post (ไปรษณีย์ไทย)" },
-  { value: "KERRY_EXPRESS", label: "Kerry Express" },
-  { value: "FLASH_EXPRESS", label: "Flash Express" },
-  { value: "J&T_EXPRESS",   label: "J&T Express" },
+  { value: "THAILAND_POST", label: "ไปรษณีย์ไทย" },
+  { value: "KERRY_EXPRESS", label: "Kerry" },
+  { value: "FLASH_EXPRESS", label: "Flash" },
+  { value: "J&T_EXPRESS",   label: "J&T" },
 ];
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -34,8 +40,10 @@ const STATUS_TABS = [
   { value: "AWAITING_VERIFICATION", label: "รอตรวจสอบ" },
   { value: "PENDING", label: "รอดำเนินการ" },
   { value: "PAID", label: "ชำระแล้ว" },
+  { value: "COMPLETED", label: "เสร็จสิ้น" },
   { value: "SHIPPED", label: "จัดส่งแล้ว" },
   { value: "CANCELLED", label: "ยกเลิก" },
+  { value: "VOIDED", label: "ยกเลิก/คืน" },
 ];
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -49,9 +57,12 @@ const PAYMENT_LABELS: Record<string, string> = {
 function statusStyle(status: string): string {
   switch (status) {
     case "AWAITING_VERIFICATION": return "bg-amber-100 text-amber-800 border-amber-200";
-    case "PAID":                  return "bg-emerald-100 text-emerald-800 border-emerald-200";
-    case "SHIPPED":               return "bg-blue-100 text-blue-800 border-blue-200";
+    case "PAID":
+    case "COMPLETED":             return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    case "SHIPPED":
+    case "DELIVERED":             return "bg-blue-100 text-blue-800 border-blue-200";
     case "CANCELLED":             return "bg-red-100 text-red-800 border-red-200";
+    case "VOIDED":                return "bg-zinc-200 text-zinc-600 border-zinc-300";
     default:                      return "bg-zinc-100 text-zinc-700 border-zinc-200";
   }
 }
@@ -59,7 +70,8 @@ function statusStyle(status: string): string {
 function statusLabel(status: string): string {
   return (
     { AWAITING_VERIFICATION: "รอตรวจสอบ", PENDING: "รอดำเนินการ",
-      PAID: "ชำระแล้ว", SHIPPED: "จัดส่งแล้ว", CANCELLED: "ยกเลิก" }[status] ?? status
+      PAID: "ชำระแล้ว", COMPLETED: "เสร็จสิ้น", SHIPPED: "จัดส่งแล้ว", DELIVERED: "ส่งถึงแล้ว",
+      CANCELLED: "ยกเลิก", VOIDED: "ยกเลิก/คืน" }[status] ?? status
   );
 }
 
@@ -131,17 +143,22 @@ function SlipThumb({ url, onClick }: { url: string; onClick: () => void }) {
 // ─── Order Card (Mobile) ───────────────────────────────────────────────────────
 
 function OrderCard({
-  order, onApprove, onReject, onShip, onSlipClick, isUpdating,
+  order, onApprove, onReject, onShip, onVoid, onSlipClick, onDetailClick, onReceiptPdf, isUpdating,
 }: {
   order: AdminOrder;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
   onShip: (id: number) => void;
+  onVoid: (id: number) => void;
   onSlipClick: (url: string) => void;
+  onDetailClick: (id: number) => void;
+  onReceiptPdf: (id: number) => void;
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
-  const canShip = order.status === "PAID";
+  const canShip = order.status === "PAID" || order.status === "COMPLETED";
+  const canVoid = order.status === "COMPLETED";
+  const canReceipt = isReceiptEligibleStatus(order.status);
   const busy = isUpdating === order.id;
   const pmLabel = PAYMENT_LABELS[order.payment_method ?? ""] ?? order.payment_method ?? "—";
 
@@ -151,9 +168,13 @@ function OrderCard({
         {/* Header row */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-mono text-base font-bold tracking-wide text-zinc-900">
+            <button
+              type="button"
+              onClick={() => onDetailClick(order.id)}
+              className="font-mono text-base font-bold tracking-wide text-emerald-700 hover:text-emerald-800 hover:underline"
+            >
               #{order.order_number}
-            </p>
+            </button>
             <div className="mt-0.5 flex items-center gap-1 text-xs text-zinc-400">
               <Clock className="h-3 w-3" />
               {formatRelativeTime(order.created_at)}
@@ -166,12 +187,16 @@ function OrderCard({
 
         {/* Customer + Amount row */}
         <div className="mt-3 flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <User className="h-4 w-4 shrink-0 text-zinc-400" />
+          <button
+            type="button"
+            onClick={() => onDetailClick(order.id)}
+            className="flex min-w-0 items-center gap-1.5 text-left hover:opacity-80"
+          >
+            <User className="h-4 w-4 shrink-0 text-emerald-600" />
             <span className="truncate text-sm text-zinc-700">
               {order.customer_name ?? "ไม่ระบุ"}
             </span>
-          </div>
+          </button>
           <span className="shrink-0 text-base font-bold text-emerald-700">
             {formatPrice(Number(order.total_amount))}
           </span>
@@ -233,11 +258,22 @@ function OrderCard({
             </Button>
           </div>
         )}
-        {canShip && (
+        {canReceipt && (
           <div className="mt-3">
             <Button
               size="sm"
-              className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[.97]"
+              className="w-full bg-[#003366] hover:bg-[#00264d] text-white active:scale-[.97]"
+              onClick={() => onReceiptPdf(order.id)}
+            >
+              <Receipt className="mr-1.5 h-4 w-4" /> ออกใบเสร็จ
+            </Button>
+          </div>
+        )}
+        {canShip && (
+          <div className="mt-3 flex gap-2">
+            <Button
+              size="sm"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-[.97]"
               onClick={() => onShip(order.id)}
               disabled={busy}
             >
@@ -247,6 +283,17 @@ function OrderCard({
                 <><Truck className="mr-1.5 h-4 w-4" /> ยืนยันการจัดส่ง</>
               )}
             </Button>
+            {canVoid && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                onClick={() => onVoid(order.id)}
+                disabled={busy}
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
@@ -257,17 +304,22 @@ function OrderCard({
 // ─── Order Table Row (Desktop) ─────────────────────────────────────────────────
 
 function OrderTableRow({
-  order, onApprove, onReject, onShip, onSlipClick, isUpdating,
+  order, onApprove, onReject, onShip, onVoid, onSlipClick, onDetailClick, onReceiptPdf, isUpdating,
 }: {
   order: AdminOrder;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
   onShip: (id: number) => void;
+  onVoid: (id: number) => void;
   onSlipClick: (url: string) => void;
+  onDetailClick: (id: number) => void;
+  onReceiptPdf: (id: number) => void;
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
-  const canShip = order.status === "PAID";
+  const canShip = order.status === "PAID" || order.status === "COMPLETED";
+  const canVoid = order.status === "COMPLETED";
+  const canReceipt = isReceiptEligibleStatus(order.status);
   const busy = isUpdating === order.id;
   const isPdf = order.slip_url?.toLowerCase().includes(".pdf");
   const pmLabel = PAYMENT_LABELS[order.payment_method ?? ""] ?? order.payment_method ?? "—";
@@ -275,14 +327,24 @@ function OrderTableRow({
   return (
     <tr className="border-b border-zinc-100 text-sm hover:bg-zinc-50/60">
       <td className="px-4 py-3">
-        <p className="font-mono font-semibold text-zinc-900">#{order.order_number}</p>
+        <button
+          type="button"
+          onClick={() => onDetailClick(order.id)}
+          className="font-mono font-semibold text-emerald-700 hover:text-emerald-800 hover:underline"
+        >
+          #{order.order_number}
+        </button>
         <p className="mt-0.5 text-xs text-zinc-400">{formatRelativeTime(order.created_at)}</p>
       </td>
       <td className="px-4 py-3">
-        <div className="flex items-center gap-1.5">
-          <User className="h-4 w-4 text-zinc-400" />
+        <button
+          type="button"
+          onClick={() => onDetailClick(order.id)}
+          className="flex items-center gap-1.5 text-left hover:opacity-80"
+        >
+          <User className="h-4 w-4 text-emerald-600" />
           <span className="text-zinc-700">{order.customer_name ?? "—"}</span>
-        </div>
+        </button>
       </td>
       <td className="px-4 py-3 font-bold text-emerald-700">
         {formatPrice(Number(order.total_amount))}
@@ -339,25 +401,54 @@ function OrderTableRow({
               ปฏิเสธ
             </Button>
           </div>
-        ) : canShip ? (
-          <Button
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => onShip(order.id)}
-            disabled={busy}
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Truck className="mr-1 h-3.5 w-3.5" />จัดส่ง</>}
-          </Button>
-        ) : order.status === "SHIPPED" && order.tracking_number ? (
-          <div className="flex items-center gap-1 text-xs text-blue-600">
-            <Package className="h-3.5 w-3.5 shrink-0" />
-            <span className="max-w-[120px] truncate">{order.tracking_number}</span>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              {canReceipt && (
+                <Button
+                  size="sm"
+                  className="bg-[#003366] hover:bg-[#00264d] text-white"
+                  onClick={() => onReceiptPdf(order.id)}
+                >
+                  <Receipt className="mr-1 h-3.5 w-3.5" />
+                  ออกใบเสร็จ
+                </Button>
+              )}
+              {canShip && (
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => onShip(order.id)}
+                  disabled={busy}
+                >
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Truck className="mr-1 h-3.5 w-3.5" />จัดส่ง</>}
+                </Button>
+              )}
+              {canVoid && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                  onClick={() => onVoid(order.id)}
+                  disabled={busy}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" title="ยกเลิก/คืนสต็อก" />
+                </Button>
+              )}
+            </div>
+            {order.status === "SHIPPED" && order.tracking_number && (
+              <div className="flex items-center gap-1 text-xs text-blue-600">
+                <Package className="h-3.5 w-3.5 shrink-0" />
+                <span className="max-w-[140px] truncate">{order.tracking_number}</span>
+              </div>
+            )}
+            {order.status === "CANCELLED" && order.reject_note && (
+              <span className="text-xs text-zinc-400 max-w-[160px] truncate block" title={order.reject_note}>
+                {order.reject_note}
+              </span>
+            )}
           </div>
-        ) : order.status === "CANCELLED" && order.reject_note ? (
-          <span className="text-xs text-zinc-400 max-w-[160px] truncate block" title={order.reject_note}>
-            {order.reject_note}
-          </span>
-        ) : null}
+        )}
       </td>
     </tr>
   );
@@ -365,18 +456,57 @@ function OrderTableRow({
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
+type OrderDetail = {
+  id: number;
+  orderNumber: string;
+  sourceQuotationNumber?: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  shippingAddress: string | null;
+  customerNote: string | null;
+  totalAmount: number;
+  shippingFee: number;
+  discountAmount: number;
+  status: string;
+  voidReason?: string | null;
+  trackingNumber: string | null;
+  shippingProvider: string | null;
+  paymentMethod: string | null;
+  createdAt: string;
+  items: { productName: string; unitLabel: string; breederName: string | null; quantity: number; unitPrice: number; totalPrice: number }[];
+};
+
 export default function AdminOrdersPage() {
+  const router = useRouter();
+  const openedOrderFromQuery = useRef(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [slipModalUrl, setSlipModalUrl] = useState<string | null>(null);
+  const [detailModal, setDetailModal] = useState<OrderDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [rejectModal, setRejectModal] = useState<{ orderId: number } | null>(null);
   const [rejectNote, setRejectNote] = useState("");
   const [shipModal, setShipModal] = useState<{ orderId: number } | null>(null);
+  const [voidModal, setVoidModal] = useState<{ orderId: number } | null>(null);
+  const [voidReason, setVoidReason] = useState("");
   const [shipTracking, setShipTracking] = useState("");
   const [shipProvider, setShipProvider] = useState(SHIPPING_PROVIDERS[1].value);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [receiptPreviewOrderId, setReceiptPreviewOrderId] = useState<number | null>(null);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
+  const [storeSettings, setStoreSettings] = useState<{ storeName: string; contactEmail: string | null; supportPhone: string | null; address: string | null } | null>(null);
 
   const { orders, isLoading, error, refetch } = useAdminOrders(statusFilter || undefined);
+
+  const loadStoreSettings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/store-settings");
+      const data = await res.json();
+      setStoreSettings(data);
+    } catch {
+      setStoreSettings({ storeName: "Smile Seed Bank", contactEmail: null, supportPhone: null, address: null });
+    }
+  }, []);
 
   const pushToast = useCallback((msg: string, type: "success" | "error") => {
     const id = ++_toastId;
@@ -399,6 +529,12 @@ export default function AdminOrdersPage() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "เกิดข้อผิดพลาด");
+        if (data.quotationStatusSynced === true) {
+          pushToast(
+            "สถานะใบเสนอราคาถูกอัปเดตอัตโนมัติเนื่องจากมีการส่งสินค้าแล้ว",
+            "success"
+          );
+        }
         pushToast(successMsg, isError ? "error" : "success");
         await refetch();
       } catch (err) {
@@ -445,11 +581,138 @@ export default function AdminOrdersPage() {
     setShipModal(null);
   };
 
+  const handleVoidOpen = (orderId: number) => {
+    setVoidModal({ orderId });
+    setVoidReason("");
+  };
+
+  const handleVoidSubmit = async () => {
+    if (!voidModal) return;
+    setUpdatingId(voidModal.orderId);
+    try {
+      const res = await fetch(`/api/admin/orders/${voidModal.orderId}/void`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ void_reason: voidReason || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "เกิดข้อผิดพลาด");
+      pushToast("ยกเลิกออเดอร์และคืนสต็อกแล้ว ✓", "success");
+      setVoidModal(null);
+      await refetch();
+    } catch (err) {
+      pushToast(String(err), "error");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const buildOrderReceiptDoc = useCallback(async (detail: OrderDetail) => {
+    const pdfSettings = await fetchPdfSettings();
+    const orderDate = detail.createdAt ? new Date(detail.createdAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const items = detail.items.map((i) => ({
+      productName: i.productName,
+      breeder: i.breederName,
+      unitLabel: i.unitLabel ?? "—",
+      quantity: i.quantity,
+      price: i.unitPrice,
+      discount: 0,
+      subtotal: i.totalPrice,
+    }));
+    return generateReceiptPDF({
+      docType: "receipt",
+      orderNumber: detail.orderNumber,
+      orderDate,
+      customerName: detail.customerName ?? "",
+      customerEmail: detail.customerEmail ?? null,
+      customerPhone: detail.customerPhone ?? null,
+      customerNote: detail.customerNote ?? null,
+      items,
+      grandTotal: detail.totalAmount,
+      logoDataUrl: pdfSettings.logoDataUrl,
+      companyName: pdfSettings.companyName,
+      companyAddress: pdfSettings.companyAddress,
+      companyEmail: pdfSettings.companyEmail,
+      companyPhone: pdfSettings.companyPhone,
+      companyLineId: pdfSettings.companyLineId,
+      bankName: pdfSettings.bankName,
+      bankAccountName: pdfSettings.bankAccountName,
+      bankAccountNo: pdfSettings.bankAccountNo,
+      socialLinks: pdfSettings.socialLinks ?? [],
+      orderFinancials: {
+        shippingFee: detail.shippingFee ?? 0,
+        discountAmount: detail.discountAmount ?? 0,
+      },
+      paymentDate: orderDate,
+      paymentMethod: formatPaymentMethodForPdf(detail.paymentMethod),
+    });
+  }, []);
+
+  const buildReceiptFromPayload = useCallback(
+    (d: unknown) => buildOrderReceiptDoc(d as OrderDetail),
+    [buildOrderReceiptDoc]
+  );
+
+  const openReceiptPreview = useCallback((orderId: number) => {
+    setReceiptPreviewOrderId(orderId);
+  }, []);
+
+  const handleDetailClick = useCallback(async (orderId: number) => {
+    setDetailLoading(true);
+    setDetailModal(null);
+    try {
+      const [orderRes, storeRes] = await Promise.all([
+        fetch(`/api/admin/orders/${orderId}`),
+        fetch("/api/admin/store-settings"),
+      ]);
+      const data = await orderRes.json();
+      if (!orderRes.ok) throw new Error(data.error ?? "โหลดไม่สำเร็จ");
+      setDetailModal(data);
+      const storeData = await storeRes.json();
+      setStoreSettings(storeData);
+    } catch (err) {
+      pushToast(String(err), "error");
+    } finally {
+      setDetailLoading(false);
+    }
+  }, [pushToast]);
+
+  useEffect(() => {
+    if (openedOrderFromQuery.current) return;
+    if (typeof window === "undefined") return;
+    const raw = new URLSearchParams(window.location.search).get("openOrder");
+    if (!raw) return;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return;
+    openedOrderFromQuery.current = true;
+    void handleDetailClick(n);
+    router.replace("/admin/orders", { scroll: false });
+  }, [router, handleDetailClick]);
+
+  const handlePrintPackingSlip = useCallback(() => {
+    if (!detailModal) return;
+    const store = storeSettings ?? { storeName: "Smile Seed Bank", contactEmail: null, supportPhone: null, address: null };
+    openPackingSlipPrint(detailModal, store);
+  }, [detailModal, storeSettings]);
+
+  const handleReceiptPDF = useCallback(() => {
+    if (!detailModal?.id) return;
+    if (!isReceiptEligibleStatus(detailModal.status)) {
+      pushToast("ไม่สามารถออกใบเสร็จสำหรับสถานะนี้", "error");
+      return;
+    }
+    openReceiptPreview(detailModal.id);
+  }, [detailModal, openReceiptPreview, pushToast]);
+
   // Tab counts (from current full list — best-effort)
   const countByStatus = orders.reduce<Record<string, number>>((acc, o) => {
     acc[o.status] = (acc[o.status] ?? 0) + 1;
     return acc;
   }, {});
+
+  const totalRevenue = orders
+    .filter((o) => ["PAID", "SHIPPED", "COMPLETED"].includes(o.status))
+    .reduce((s, o) => s + Number(o.total_amount), 0);
 
   return (
     <div className="space-y-4 pb-20">
@@ -464,7 +727,22 @@ export default function AdminOrdersPage() {
             </span>
           )}
         </div>
-        <button
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/quotations/new"
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+          >
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Convert Quote to Order</span>
+          </Link>
+          <Link
+            href="/admin/orders/create"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">สร้างออเดอร์</span>
+          </Link>
+          <button
           type="button"
           onClick={() => void refetch()}
           disabled={isLoading}
@@ -473,7 +751,14 @@ export default function AdminOrdersPage() {
           <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
           <span className="hidden sm:inline">รีเฟรช</span>
         </button>
+        </div>
       </div>
+
+      {!isLoading && orders.length > 0 && (
+        <p className="text-sm text-zinc-500">
+          รายได้รวม (ชำระแล้ว/จัดส่งแล้ว/เสร็จสิ้น): <span className="font-semibold text-emerald-700">{formatPrice(totalRevenue)}</span>
+        </p>
+      )}
 
       {/* Filter Tabs — horizontally scrollable on mobile */}
       <div className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:rounded-lg sm:bg-zinc-100 sm:p-1">
@@ -535,7 +820,10 @@ export default function AdminOrdersPage() {
                 onApprove={handleApprove}
                 onReject={handleRejectOpen}
                 onShip={handleShipOpen}
+                onVoid={handleVoidOpen}
                 onSlipClick={setSlipModalUrl}
+                onDetailClick={handleDetailClick}
+                onReceiptPdf={openReceiptPreview}
                 isUpdating={updatingId}
               />
             ))}
@@ -563,7 +851,10 @@ export default function AdminOrdersPage() {
                     onApprove={handleApprove}
                     onReject={handleRejectOpen}
                     onShip={handleShipOpen}
+                    onVoid={handleVoidOpen}
                     onSlipClick={setSlipModalUrl}
+                    onDetailClick={handleDetailClick}
+                    onReceiptPdf={openReceiptPreview}
                     isUpdating={updatingId}
                   />
                 ))}
@@ -572,6 +863,143 @@ export default function AdminOrdersPage() {
           </div>
         </>
       )}
+
+      {/* ── Order Detail Modal ── */}
+      <Dialog open={!!detailModal || detailLoading} onOpenChange={(o) => !o && !detailLoading && setDetailModal(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader className="flex flex-row items-center justify-between gap-2 pr-10">
+            <DialogTitle className="flex items-center gap-2 text-emerald-800">
+              <ShoppingCart className="h-5 w-5" />
+              รายละเอียดออเดอร์
+            </DialogTitle>
+            {detailModal && detailModal.id != null && (
+              <div className="flex flex-wrap gap-2 shrink-0">
+                {isReceiptEligibleStatus(detailModal.status) && (
+                  <Button
+                    size="sm"
+                    className="bg-[#003366] hover:bg-[#00264d] text-white border-0"
+                    onClick={() => void handleReceiptPDF()}
+                  >
+                    <Receipt className="mr-1.5 h-4 w-4" />
+                    ออกใบเสร็จ
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  onClick={handlePrintPackingSlip}
+                >
+                  <Printer className="mr-1.5 h-4 w-4" />
+                  พิมพ์ใบปะหน้า
+                </Button>
+                {detailModal.status === "COMPLETED" && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => { setDetailModal(null); handleVoidOpen(detailModal.id); }}
+                  >
+                    <RotateCcw className="mr-1.5 h-4 w-4" />
+                    ยกเลิกออเดอร์
+                  </Button>
+                )}
+              </div>
+            )}
+          </DialogHeader>
+          {detailLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            </div>
+          ) : detailModal ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2">
+                <span className="font-mono font-bold text-emerald-800">#{detailModal.orderNumber}</span>
+                <Badge className={statusStyle(detailModal.status)}>{statusLabel(detailModal.status)}</Badge>
+              </div>
+              <div>
+                <h4 className="mb-2 text-sm font-semibold text-zinc-700">รายการสินค้า</h4>
+                <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
+                  {detailModal.items.map((item, i) => (
+                    <div key={i} className="flex justify-between gap-2 text-sm">
+                      <span className="min-w-0 text-zinc-800">
+                        {item.productName} ({item.unitLabel})
+                        {item.breederName && (
+                          <span className="ml-1 text-xs text-zinc-500">— {item.breederName}</span>
+                        )}
+                        <span className="text-zinc-600"> × {item.quantity}</span>
+                      </span>
+                      <span className="shrink-0 font-medium text-emerald-700">{formatPrice(item.totalPrice)}</span>
+                    </div>
+                  ))}
+                  <div className="space-y-1 border-t border-zinc-200 pt-2 text-right text-sm text-zinc-600">
+                    {(detailModal.discountAmount > 0 || detailModal.shippingFee > 0) && (
+                      <>
+                        <p>
+                          ยอดสินค้า:{" "}
+                          <span className="font-medium text-zinc-800">
+                            {formatPrice(
+                              detailModal.totalAmount -
+                                detailModal.shippingFee +
+                                detailModal.discountAmount
+                            )}
+                          </span>
+                        </p>
+                        {detailModal.discountAmount > 0 && (
+                          <p>
+                            ส่วนลด:{" "}
+                            <span className="font-medium text-amber-700">
+                              -{formatPrice(detailModal.discountAmount)}
+                            </span>
+                          </p>
+                        )}
+                        <p>
+                          ค่าจัดส่ง:{" "}
+                          <span className="font-medium text-zinc-800">
+                            {detailModal.shippingFee <= 0
+                              ? "ฟรี"
+                              : formatPrice(detailModal.shippingFee)}
+                          </span>
+                        </p>
+                      </>
+                    )}
+                    <p className="pt-1 text-base font-bold text-emerald-800">
+                      รวมทั้งสิ้น {formatPrice(detailModal.totalAmount)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="mb-2 text-sm font-semibold text-zinc-700">ข้อมูลลูกค้า</h4>
+                <div className="space-y-1 rounded-lg border border-zinc-200 bg-zinc-50/50 p-3 text-sm">
+                  <p><span className="text-zinc-500">ชื่อ:</span> {detailModal.customerName ?? "—"}</p>
+                  <p><span className="text-zinc-500">โทร:</span> {detailModal.customerPhone ?? "—"}</p>
+                  <p className="whitespace-pre-wrap"><span className="text-zinc-500">ที่อยู่:</span> {detailModal.shippingAddress ?? "—"}</p>
+                </div>
+              </div>
+              {detailModal.customerNote && (
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-zinc-700">หมายเหตุ</h4>
+                  <p className="rounded-lg border border-zinc-200 bg-amber-50/50 p-3 text-sm text-zinc-700">
+                    {detailModal.customerNote}
+                  </p>
+                </div>
+              )}
+              {detailModal.status === "VOIDED" && detailModal.voidReason && (
+                <div className="rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-600">
+                  เหตุผลยกเลิก: {detailModal.voidReason}
+                </div>
+              )}
+              {detailModal.trackingNumber && (
+                <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                  <Truck className="h-4 w-4 shrink-0" />
+                  <span>{detailModal.shippingProvider?.replace("_", " ")} · {detailModal.trackingNumber}</span>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Slip Lightbox ── */}
       <Dialog open={!!slipModalUrl} onOpenChange={(o) => !o && setSlipModalUrl(null)}>
@@ -632,28 +1060,69 @@ export default function AdminOrdersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Ship Dialog ── */}
-      <Dialog open={!!shipModal} onOpenChange={(o) => !o && setShipModal(null)}>
+      {/* ── Void Dialog ── */}
+      <Dialog open={!!voidModal} onOpenChange={(o) => !o && setVoidModal(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5 text-blue-600" />
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <RotateCcw className="h-5 w-5" />
+              ยกเลิกออเดอร์ (Void)
+            </DialogTitle>
+          </DialogHeader>
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            แน่ใจหรือไม่? การยกเลิกจะคืนสต็อกและปรับคะแนนลูกค้าอัตโนมัติ
+          </p>
+          <Textarea
+            placeholder="เหตุผล (ไม่บังคับ)"
+            value={voidReason}
+            onChange={(e) => setVoidReason(e.target.value)}
+            rows={2}
+            className="resize-none"
+          />
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setVoidModal(null)}>
+              ยกเลิก
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleVoidSubmit()}
+              disabled={updatingId !== null}
+            >
+              {updatingId !== null ? <Loader2 className="h-4 w-4 animate-spin" /> : "ยืนยันยกเลิก"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Ship Dialog (จัดส่ง) — Button group avoids Radix/select portal bug on mobile ── */}
+      <Dialog open={!!shipModal} onOpenChange={(o) => !o && setShipModal(null)}>
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-800">
+              <Truck className="h-5 w-5 text-emerald-600" />
               บันทึกการจัดส่ง
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="ship-provider">ผู้ให้บริการขนส่ง</Label>
-              <select
-                id="ship-provider"
-                value={shipProvider}
-                onChange={(e) => setShipProvider(e.target.value)}
-                className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
+              <Label>ผู้ให้บริการขนส่ง</Label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {SHIPPING_PROVIDERS.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setShipProvider(p.value)}
+                    className={cn(
+                      "rounded-md border px-3 py-2.5 text-sm font-medium transition-colors",
+                      shipProvider === p.value
+                        ? "border-emerald-600 bg-emerald-600 text-white"
+                        : "border-emerald-200 bg-white text-zinc-700 hover:border-emerald-400 hover:bg-emerald-50"
+                    )}
+                  >
+                    {p.label}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ship-tracking">เลขพัสดุ (Tracking Number)</Label>
@@ -671,7 +1140,7 @@ export default function AdminOrdersPage() {
               ยกเลิก
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-emerald-600 hover:bg-emerald-700"
               onClick={() => void handleShipSubmit()}
               disabled={!shipTracking.trim() || updatingId !== null}
             >
@@ -680,6 +1149,16 @@ export default function AdminOrdersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ReceiptPreviewModal
+        open={receiptPreviewOrderId != null}
+        onOpenChange={(o) => {
+          if (!o) setReceiptPreviewOrderId(null);
+        }}
+        orderId={receiptPreviewOrderId}
+        buildDoc={buildReceiptFromPayload}
+        onError={(msg) => pushToast(msg, "error")}
+      />
 
       {/* ── Toast Stack ── */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />

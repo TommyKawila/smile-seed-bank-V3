@@ -24,6 +24,8 @@ smile-seed-bank-v3/
 │   │   ├── promotions/      # จัดการ Discount, Free Gift, Promo Codes
 │   │   └── blogs/           # จัดการบทความ
 │   └── api/                 
+│       ├── admin/customers/ # CRUD ลูกค้า POS (tier, points, wholesale)
+│       ├── admin/inventory/grid/ # Manual Grid products + variants
 │       ├── webhooks/        # Line Messaging API
 │       └── emails/          # API สำหรับส่ง Email (Resend)
 ├── components/
@@ -35,9 +37,10 @@ smile-seed-bank-v3/
 ├── hooks/                   # Custom Hooks (useCart, useAuth, useProducts)
 ├── lib/                     
 │   ├── supabase/            # Supabase Client & Types
+│   ├── bigint-json.ts       # BigInt serialization for API responses (Prisma)
 │   └── utils.ts             # Tailwind merge, formatting
 ├── services/                
-│   ├── ai-extractor.ts      # Logic สำหรับยิง Prompt ไปหา AI
+│   ├── ai-extractor.ts      # AI extraction + genetic mapping (Indica/Sativa/Hybrid)
 │   ├── line-messaging.ts    # Logic สำหรับต่อ Line API
 │   └── email-service.ts     # Logic ส่งอีเมล
 └── types/                   # TypeScript Interfaces

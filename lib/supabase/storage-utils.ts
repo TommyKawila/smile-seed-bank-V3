@@ -1,7 +1,7 @@
 import imageCompression from "browser-image-compression";
 
 const COMPRESSION_OPTIONS = {
-  maxSizeMB: 0.8,
+  maxSizeMB: 0.2,
   maxWidthOrHeight: 1200,
   fileType: "image/webp" as const,
   useWebWorker: true,

@@ -88,9 +88,9 @@ export function Navbar() {
               <Image
                 src={settings.logo_main_url}
                 alt="Smile Seed Bank"
-                width={280}
-                height={96}
-                className="h-16 w-auto object-contain sm:h-24"
+                width={224}
+                height={77}
+                className="h-12 w-auto object-contain sm:h-16"
                 unoptimized
               />
             ) : (

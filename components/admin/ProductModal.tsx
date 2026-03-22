@@ -85,11 +85,12 @@ interface ProductModalProps {
   initialData?: ProductFull | null;
 }
 
-const emptyVariant = { unit_label: "", price: 0, cost_price: 0, stock: 0, is_active: true, sku: null as string | null };
+const emptyVariant = { unit_label: "", price: 0, cost_price: 0, stock: 0, low_stock_threshold: 5, is_active: true, sku: null as string | null };
 
 const emptyForm: Partial<ProductFormData> = {
   name: "",
-  category: "Seeds",
+  category: null,
+  category_id: null,
   breeder_id: null,
   master_sku: null,
   is_active: true,
@@ -102,6 +103,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
     autoFetch: false,
   });
   const { breeders } = useBreeders();
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
   const isEditMode = !!initialData;
 
@@ -126,14 +128,23 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
   // ── Populate form + slots when modal opens ──────────────────────────────────
   useEffect(() => {
+    fetch("/api/admin/categories")
+      .then((r) => r.json())
+      .then((d) => setCategories(Array.isArray(d) ? d : []))
+      .catch(() => setCategories([]));
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     const p = initialData as (typeof initialData & { image_url_4?: string | null; image_url_5?: string | null }) | null;
     if (p) {
       const firstVariantSku = p.product_variants?.[0] ? (p.product_variants[0] as { sku?: string | null }).sku : null;
       const derivedMasterSku = firstVariantSku?.replace(/-?\d+$/, "") ?? "";
+      const catId = (p as { category_id?: number | bigint | null }).category_id;
       setForm({
         name: p.name,
-        category: p.category ?? "Seeds",
+        category: p.category ?? null,
+        category_id: catId != null ? Number(catId) : null,
         breeder_id: p.breeder_id,
         master_sku: (p as { master_sku?: string | null }).master_sku ?? (derivedMasterSku || null),
         description_th: p.description_th,
@@ -150,6 +161,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         genetics: p.genetics,
         indica_ratio: p.indica_ratio,
         sativa_ratio: p.sativa_ratio,
+        strain_dominance: (p as { strain_dominance?: string | null }).strain_dominance ?? null,
         flowering_type: p.flowering_type,
         seed_type: p.seed_type,
         yield_info: p.yield_info,
@@ -166,6 +178,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           price: v.price,
           cost_price: v.cost_price,
           stock: v.stock,
+          low_stock_threshold: (v as { low_stock_threshold?: number | null }).low_stock_threshold ?? 5,
           is_active: v.is_active,
           sku: (v as { sku?: string | null }).sku ?? null,
         })) ?? [{ ...emptyVariant }],
@@ -452,16 +465,24 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               )}
             </div>
             <div className="space-y-1">
-              <Label htmlFor="category">หมวดหมู่ *</Label>
+              <Label htmlFor="category">หมวดหมู่ (Seed Type)</Label>
               <select
                 id="category"
-                value={form.category ?? "Seeds"}
-                onChange={(e) => setField("category", e.target.value)}
+                value={form.category_id ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setField("category_id", v ? Number(v) : null);
+                  const cat = categories.find((c) => c.id === v);
+                  setField("category", cat?.name ?? null);
+                }}
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="Seeds">Seeds</option>
-                <option value="Accessories">Accessories</option>
-                <option value="Nutrients">Nutrients</option>
+                <option value="">— ไม่ระบุ —</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -495,15 +516,16 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
             )}
           </div>
 
-          {/* Master SKU */}
+          {/* Master SKU — Read-only after creation to prevent broken links */}
           <div className="space-y-1">
             <Label htmlFor="master_sku">Master SKU</Label>
             <Input
               id="master_sku"
               value={form.master_sku ?? ""}
-              onChange={(e) => setField("master_sku", e.target.value.trim() || null)}
+              onChange={(e) => !isEditMode && setField("master_sku", e.target.value.trim() || null)}
               placeholder="เช่น 420FASTBUDS-RAINBOW-MELON (ตัวพิมพ์ใหญ่, variants เป็น …-1, …-3, …-5)"
               className="font-mono text-sm"
+              readOnly={isEditMode}
             />
           </div>
 
@@ -654,6 +676,21 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               />
             </div>
             <div className="space-y-1">
+              <Label className="text-xs">ประเภทพันธุกรรม (Genetics)</Label>
+              <select
+                value={form.strain_dominance ?? ""}
+                onChange={(e) =>
+                  setField("strain_dominance", (e.target.value || null) as "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50" | null)
+                }
+                className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">—</option>
+                <option value="Mostly Indica">Mostly Indica</option>
+                <option value="Hybrid 50/50">Hybrid 50/50</option>
+                <option value="Mostly Sativa">Mostly Sativa</option>
+              </select>
+            </div>
+            <div className="space-y-1">
               <Label className="text-xs">Flowering Type</Label>
               <select
                 value={form.flowering_type ?? ""}
@@ -787,13 +824,22 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
           <Separator />
 
-          {/* Variants */}
+          {/* Variants — Price/Stock editable only when creating; use Inventory for existing products */}
           <div>
             <div className="mb-3 flex items-center justify-between">
               <Label className="text-sm font-semibold">แพ็กเกจ / Variants *</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addVariant}>
-                <Plus className="mr-1 h-3.5 w-3.5" /> เพิ่มแพ็ก
-              </Button>
+              {isEditMode && (
+                <Link href={`/admin/inventory/manual${form.breeder_id ? `?breederId=${form.breeder_id}` : ""}`}>
+                  <Button type="button" variant="outline" size="sm" className="text-xs">
+                    Update Stock/Price ใน Inventory
+                  </Button>
+                </Link>
+              )}
+              {!isEditMode && (
+                <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+                  <Plus className="mr-1 h-3.5 w-3.5" /> เพิ่มแพ็ก
+                </Button>
+              )}
             </div>
             {getFieldError("variants") && (
               <p className="mb-2 text-xs text-red-500">{getFieldError("variants")}</p>
@@ -819,18 +865,20 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                       type="number"
                       min={0}
                       value={v.price}
-                      onChange={(e) => setVariant(i, "price", Number(e.target.value))}
+                      onChange={(e) => !isEditMode && setVariant(i, "price", Number(e.target.value))}
                       className="text-sm"
+                      readOnly={isEditMode}
                     />
                   </div>
                   <div className="col-span-2 space-y-1">
-                    <Label className="text-xs">ต้นทุน (฿)</Label>
+                    <Label className="text-xs">ราคาต้นทุน (฿)</Label>
                     <Input
                       type="number"
                       min={0}
                       value={v.cost_price}
-                      onChange={(e) => setVariant(i, "cost_price", Number(e.target.value))}
+                      onChange={(e) => !isEditMode && setVariant(i, "cost_price", Number(e.target.value))}
                       className="text-sm"
+                      readOnly={isEditMode}
                     />
                   </div>
                   <div className="col-span-2 space-y-1">
@@ -839,8 +887,20 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                       type="number"
                       min={0}
                       value={v.stock}
-                      onChange={(e) => setVariant(i, "stock", Number(e.target.value))}
+                      onChange={(e) => !isEditMode && setVariant(i, "stock", Number(e.target.value))}
                       className="text-sm"
+                      readOnly={isEditMode}
+                    />
+                  </div>
+                  <div className="col-span-1 space-y-1">
+                    <Label className="text-xs" title="แจ้งเตือนเมื่อสต็อก ≤">ต่ำ≤</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={(v as { low_stock_threshold?: number }).low_stock_threshold ?? 5}
+                      onChange={(e) => setVariant(i, "low_stock_threshold", Number(e.target.value) || 5)}
+                      className="text-sm w-14"
+                      placeholder="5"
                     />
                   </div>
                   <div className="col-span-2 space-y-1">
@@ -851,7 +911,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                         : (v.sku ?? "—")}
                     </div>
                   </div>
-                  <div className="col-span-2 flex items-end justify-end gap-1">
+                  <div className="col-span-1 flex items-end justify-end gap-1">
                     <button
                       type="button"
                       onClick={() =>

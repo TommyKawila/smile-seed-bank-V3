@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import type { Order, OrderItem, ProductVariant } from "@/types/supabase";
 
 type ServiceResult<T> = { data: T | null; error: string | null };
@@ -24,9 +25,25 @@ export interface ChannelBreakdown {
   revenue: number;
 }
 
+export interface InventoryVariantRow {
+  stock: number;
+  cost_price: number;
+  price: number;
+  breeder_id: number | null;
+  flowering_type: string | null;
+  category: string | null;
+  strain_dominance: string | null;
+}
+
 export interface InventoryValueResult {
-  totalValue: number;         // sum(stock * cost_price)
-  lowStockCount: number;      // variants with stock <= 5
+  totalValue: number;
+  lowStockCount: number;
+  totalPotentialRevenue: number;
+  potentialProfit: number;
+  potentialMarginPercent: number;
+  hasZeroCostWarning: boolean;
+  variants: InventoryVariantRow[];
+  breeders: { id: number; name: string }[];
 }
 
 // ─── Financial Summary ────────────────────────────────────────────────────────
@@ -36,23 +53,46 @@ export async function getFinancialSummary(opts?: {
   to?: string;
 }): Promise<ServiceResult<FinancialSummary>> {
   try {
-    const supabase = await createAdminClient();
+    const where: { status: { in: string[] }; created_at?: object } = {
+      status: { in: ["PAID", "SHIPPED"] },
+    };
+    if (opts?.from || opts?.to) {
+      where.created_at = {};
+      if (opts.from) (where.created_at as Record<string, Date>).gte = new Date(opts.from);
+      if (opts.to) (where.created_at as Record<string, Date>).lte = new Date(opts.to);
+    }
 
-    let query = supabase
-      .from("orders")
-      .select("total_amount, total_cost, status")
-      .in("status", ["PAID", "SHIPPED"]); // Only count completed revenue
+    const orders = await prisma.orders.findMany({
+      where,
+      select: { id: true, total_amount: true, total_cost: true },
+    });
 
-    if (opts?.from) query = query.gte("created_at", opts.from);
-    if (opts?.to) query = query.lte("created_at", opts.to);
+    const orderIds = orders.map((o) => o.id);
+    const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
 
-    const { data, error } = await query;
-    if (error) return { data: null, error: error.message };
+    // COGS from order_items: quantity * (unit_cost ?? variant.cost_price)
+    let totalCOGS = 0;
+    if (orderIds.length > 0) {
+      const items = await prisma.order_items.findMany({
+        where: { order_id: { in: orderIds } },
+        select: { variant_id: true, quantity: true, unit_cost: true },
+      });
+      const variantIds = [...new Set(items.map((i) => i.variant_id).filter(Boolean))] as bigint[];
+      const variantCosts = variantIds.length
+        ? await prisma.product_variants.findMany({
+            where: { id: { in: variantIds } },
+            select: { id: true, cost_price: true },
+          })
+        : [];
+      const costMap = new Map(variantCosts.map((v) => [Number(v.id), Number(v.cost_price ?? 0)]));
+      for (const item of items) {
+        const cost = item.unit_cost != null && Number(item.unit_cost) > 0
+          ? Number(item.unit_cost)
+          : (item.variant_id ? costMap.get(Number(item.variant_id)) ?? 0 : 0);
+        totalCOGS += item.quantity * cost;
+      }
+    }
 
-    const orders = data as Pick<Order, "total_amount" | "total_cost" | "status">[];
-
-    const totalRevenue = orders.reduce((s, o) => s + o.total_amount, 0);
-    const totalCOGS = orders.reduce((s, o) => s + o.total_cost, 0);
     const netProfit = totalRevenue - totalCOGS;
     const profitMarginPercent =
       totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
@@ -60,7 +100,7 @@ export async function getFinancialSummary(opts?: {
     return {
       data: {
         totalRevenue,
-        totalCOGS,
+        totalCOGS: Math.round(totalCOGS),
         netProfit,
         profitMarginPercent: Math.round(profitMarginPercent * 10) / 10,
         totalOrders: orders.length,
@@ -79,38 +119,56 @@ export async function getRevenueSeries(
   opts?: { from?: string; to?: string }
 ): Promise<ServiceResult<RevenueDataPoint[]>> {
   try {
-    const supabase = await createAdminClient();
+    const where: { status: { in: string[] }; created_at?: object } = {
+      status: { in: ["PAID", "SHIPPED"] },
+    };
+    if (opts?.from || opts?.to) {
+      where.created_at = {};
+      if (opts.from) (where.created_at as Record<string, Date>).gte = new Date(opts.from);
+      if (opts.to) (where.created_at as Record<string, Date>).lte = new Date(opts.to);
+    }
 
-    let query = supabase
-      .from("orders")
-      .select("total_amount, total_cost, created_at")
-      .in("status", ["PAID", "SHIPPED"])
-      .order("created_at", { ascending: true });
+    const orders = await prisma.orders.findMany({
+      where,
+      select: { id: true, total_amount: true, created_at: true },
+      orderBy: { created_at: "asc" },
+    });
 
-    if (opts?.from) query = query.gte("created_at", opts.from);
-    if (opts?.to) query = query.lte("created_at", opts.to);
-
-    const { data, error } = await query;
-    if (error) return { data: null, error: error.message };
-
-    // Group by date key
     const map = new Map<string, { revenue: number; cogs: number }>();
 
-    (data as Pick<Order, "total_amount" | "total_cost" | "created_at">[]).forEach(
-      (order) => {
-        const d = new Date(order.created_at);
-        const key =
-          period === "daily"
-            ? d.toISOString().slice(0, 10)          // YYYY-MM-DD
-            : d.toISOString().slice(0, 7);           // YYYY-MM
+    if (orders.length > 0) {
+      const items = await prisma.order_items.findMany({
+        where: { order_id: { in: orders.map((o) => o.id) } },
+        select: { order_id: true, variant_id: true, quantity: true, unit_cost: true },
+      });
+      const variantIds = [...new Set(items.map((i) => i.variant_id).filter(Boolean))] as bigint[];
+      const variantCosts = variantIds.length
+        ? await prisma.product_variants.findMany({
+            where: { id: { in: variantIds } },
+            select: { id: true, cost_price: true },
+          })
+        : [];
+      const costMap = new Map(variantCosts.map((v) => [Number(v.id), Number(v.cost_price ?? 0)]));
 
+      const orderCogsMap = new Map<bigint, number>();
+      for (const item of items) {
+        const cost = item.unit_cost != null && Number(item.unit_cost) > 0
+          ? Number(item.unit_cost)
+          : (item.variant_id ? costMap.get(Number(item.variant_id)) ?? 0 : 0);
+        const add = item.quantity * cost;
+        orderCogsMap.set(item.order_id!, (orderCogsMap.get(item.order_id!) ?? 0) + add);
+      }
+
+      for (const order of orders) {
+        const d = new Date(order.created_at!);
+        const key = period === "daily" ? d.toISOString().slice(0, 10) : d.toISOString().slice(0, 7);
         const prev = map.get(key) ?? { revenue: 0, cogs: 0 };
         map.set(key, {
-          revenue: prev.revenue + order.total_amount,
-          cogs: prev.cogs + order.total_cost,
+          revenue: prev.revenue + Number(order.total_amount),
+          cogs: prev.cogs + (orderCogsMap.get(order.id) ?? 0),
         });
       }
-    );
+    }
 
     const series: RevenueDataPoint[] = Array.from(map.entries()).map(
       ([date, v]) => ({
@@ -179,29 +237,75 @@ export async function getInventoryValue(): Promise<
   try {
     const supabase = await createAdminClient();
 
-    const { data, error } = await supabase
+    const selectWithDominance = "stock, cost_price, price, is_active, products(breeder_id, flowering_type, category, strain_dominance)";
+    const selectWithoutDominance = "stock, cost_price, price, is_active, products(breeder_id, flowering_type, category)";
+
+    let varData: unknown[] | null = null;
+    let varErr: { message: string } | null = null;
+
+    const res1 = await supabase
       .from("product_variants")
-      .select("stock, cost_price, is_active")
+      .select(selectWithDominance)
       .eq("is_active", true);
 
-    if (error) return { data: null, error: error.message };
+    if (res1.error) {
+      const msg = res1.error.message;
+      if (/column.*does not exist|strain_dominance/i.test(msg)) {
+        const res2 = await supabase
+          .from("product_variants")
+          .select(selectWithoutDominance)
+          .eq("is_active", true);
+        varData = res2.data;
+        varErr = res2.error;
+      } else {
+        return { data: null, error: msg };
+      }
+    } else {
+      varData = res1.data;
+    }
 
-    const variants = data as Pick<
-      ProductVariant,
-      "stock" | "cost_price" | "is_active"
-    >[];
+    if (varErr) return { data: null, error: varErr.message };
 
-    const totalValue = variants.reduce(
-      (sum, v) => sum + v.stock * v.cost_price,
-      0
+    type Row = { stock: number; cost_price: number | null; price: number; products: { breeder_id: number | null; flowering_type: string | null; category: string | null; strain_dominance?: string | null } | null };
+    const raw = (varData ?? []) as Row[];
+    const variants: InventoryVariantRow[] = raw.map((v) => ({
+      stock: v.stock ?? 0,
+      cost_price: Number(v.cost_price) ?? 0,
+      price: Number(v.price),
+      breeder_id: v.products?.breeder_id != null ? Number(v.products.breeder_id) : null,
+      flowering_type: v.products?.flowering_type ?? null,
+      category: v.products?.category ?? null,
+      strain_dominance: v.products?.strain_dominance ?? null,
+    }));
+
+    const { data: breedData, error: breedErr } = await supabase
+      .from("breeders")
+      .select("id, name")
+      .eq("is_active", true)
+      .order("name");
+
+    const breeders = (breedErr ? [] : (breedData ?? [])) as { id: number; name: string }[];
+
+    const totalValue = variants.reduce((s, v) => s + v.stock * v.cost_price, 0);
+    const totalPotentialRevenue = variants.reduce((s, v) => s + v.stock * v.price, 0);
+    const potentialProfit = totalPotentialRevenue - totalValue;
+    const potentialMarginPercent =
+      totalPotentialRevenue > 0 ? (potentialProfit / totalPotentialRevenue) * 100 : 0;
+    const hasZeroCostWarning = variants.some(
+      (v) => v.stock > 0 && v.cost_price === 0
     );
-
     const lowStockCount = variants.filter((v) => v.stock <= 5).length;
 
     return {
       data: {
         totalValue: Math.round(totalValue),
         lowStockCount,
+        totalPotentialRevenue: Math.round(totalPotentialRevenue),
+        potentialProfit: Math.round(potentialProfit),
+        potentialMarginPercent: Math.round(potentialMarginPercent * 10) / 10,
+        hasZeroCostWarning,
+        variants,
+        breeders,
       },
       error: null,
     };

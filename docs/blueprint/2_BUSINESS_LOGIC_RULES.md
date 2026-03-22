@@ -53,6 +53,22 @@
 * **Wholesale Account:** Admin สามารถตั้งค่าบัญชีลูกค้าให้เป็น `is_wholesale = true` พร้อมกำหนดเปอร์เซ็นต์ส่วนลด (เช่น 30%) เมื่อลูกค้ารายนี้ Login เข้าเว็บ ระบบจะปรับราคาสินค้าทุกชิ้นเป็นราคาขายส่งอัตโนมัติ
 * **Manual Order (POS):** Admin สามารถสร้างออเดอร์เองจากระบบหลังบ้าน (สำหรับลูกค้าที่สั่งนอกเว็บ) พร้อมสร้าง Invoice ส่งให้ลูกค้าได้
 
+## 12a. Loyalty Points (คะแนนสะสมและแลกส่วนลด)
+* **Earn:** 100 THB = 1 Point — คำนวณจากยอดสุทธิที่ชำระจริง (หลังหักส่วนลดคะแนน) ใช้ `Math.floor(amount / 100)`
+* **Redeem:** 1 Point = 1 THB — ใช้แลกส่วนลดได้ไม่เกินยอดคงเหลือและไม่เกินยอดรวมออเดอร์
+* Points เก็บใน Customer profile; Order บันทึก `points_redeemed` และ `points_discount_amount` สำหรับบัญชี
+
+## 12b. Tiered Pricing (ราคาตาม Tier)
+* **Wholesale default:** ส่วนลด 20% (ปรับได้ต่อลูกค้า via `wholesale_discount_percent`)
+* **Switch Tier:** เมื่อเปลี่ยนลูกค้า (Retail ↔ Wholesale) ต้อง clear cart หรือ re-validate ราคาในตะกร้า
+
+## 12c. Genetics Mapping (ประเภทพันธุกรรม)
+* ค่าในระบบ: `Mostly Indica`, `Mostly Sativa`, `Hybrid 50/50`
+* ใช้ใน Product, Manual Grid, POS filter, และ AI Extract
+
+## 12d. Soft Delete (ลูกค้าไม่ลบถาวร)
+* ลูกค้าไม่มีการ hard-delete — ใช้ `is_active: false` เพื่อเก็บประวัติออเดอร์
+
 ## 13. Financial Analytics Dashboard (ระบบวิเคราะห์การเงินและกราฟ)
 * ระบบ Dashboard ของ Admin จะใช้ Recharts แสดงผลกราฟภาพรวม
 * ตัวชี้วัดหลัก: ยอดขายรวม (Revenue), ต้นทุนสินค้า (COGS), กำไรสุทธิ (Net Profit), และ มูลค่าสินค้าคงคลัง (Inventory Value)

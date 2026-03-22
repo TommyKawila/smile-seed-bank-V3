@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import postgres from "postgres";
+import { prisma } from "@/lib/prisma";
 
 const FALLBACK: { min_spend: number; discount_percent: number }[] = [
   { min_spend: 2000, discount_percent: 10 },
@@ -7,27 +7,38 @@ const FALLBACK: { min_spend: number; discount_percent: number }[] = [
   { min_spend: 6000, discount_percent: 20 },
 ];
 
-let _sql: ReturnType<typeof postgres> | null = null;
-function getSql() {
-  const url = process.env.DATABASE_URL;
-  if (!url) return null;
-  if (!_sql) _sql = postgres(url, { max: 2 });
-  return _sql;
-}
-
 export async function GET() {
   try {
-    const sql = getSql();
-    if (!sql) return NextResponse.json(FALLBACK);
-    const rows = await sql`
-      SELECT min_spend, discount_percent
-      FROM public.tiered_discounts_v4
-      ORDER BY min_spend
-    `;
-    if (rows.length > 0) return NextResponse.json(rows);
+    const now = new Date();
+    const list = await prisma.promotion_rules.findMany({
+      where: {
+        type: "DISCOUNT",
+        is_active: true,
+        start_date: { lte: now },
+        end_date: { gte: now },
+      },
+      orderBy: { start_date: "desc" },
+    });
+
+    const rules = list
+      .filter((p) => {
+        const c = (p.conditions ?? {}) as Record<string, unknown>;
+        const minSpend = typeof c.min_spend === "number" ? c.min_spend : Number(c.min_spend) || 0;
+        const discountType = String(c.discount_type ?? "FIXED").toUpperCase();
+        return minSpend > 0 && discountType === "PERCENTAGE";
+      })
+      .map((p) => {
+        const c = (p.conditions ?? {}) as Record<string, unknown>;
+        const minSpend = typeof c.min_spend === "number" ? c.min_spend : Number(c.min_spend) || 0;
+        const percent = typeof p.discount_value === "number" ? p.discount_value : Number(p.discount_value ?? 0);
+        return { min_spend: minSpend, discount_percent: percent };
+      })
+      .sort((a, b) => a.min_spend - b.min_spend);
+
+    if (rules.length > 0) return NextResponse.json(rules);
     return NextResponse.json(FALLBACK);
   } catch (e) {
-    console.error("GET tiered_discounts_v4 - Postgres error:", e);
+    console.error("GET tiered-discounts (promotion_rules):", e);
     return NextResponse.json(FALLBACK);
   }
 }

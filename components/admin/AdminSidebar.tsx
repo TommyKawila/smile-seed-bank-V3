@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,7 +16,12 @@ import {
   Percent,
   X,
   Boxes,
+  FolderTree,
   CreditCard,
+  LayoutGrid,
+  BarChart2,
+  FileText,
+  Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -24,13 +30,19 @@ const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "สินค้า", icon: Package },
   { href: "/admin/inventory", label: "สต็อก / Inventory", icon: Boxes },
+  { href: "/admin/inventory/dashboard", label: "Inventory Dashboard", icon: BarChart2 },
+  { href: "/admin/inventory/manual", label: "Manual Grid", icon: LayoutGrid },
+  { href: "/admin/inventory/snapshots", label: "Stock Audit", icon: Camera },
   { href: "/admin/breeders", label: "แบรนด์ / Breeders", icon: Leaf },
+  { href: "/admin/categories", label: "หมวดหมู่ / Categories", icon: FolderTree },
   { href: "/admin/orders", label: "ออเดอร์", icon: ShoppingCart },
+  { href: "/admin/quotations", label: "ใบเสนอราคา", icon: FileText },
   { href: "/admin/orders/create", label: "สร้างออเดอร์ (POS)", icon: PlusSquare },
+  { href: "/admin/reports/daily", label: "รายงานยอดขาย", icon: FileText },
   { href: "/admin/customers", label: "ลูกค้า", icon: Users },
   { href: "/admin/promotions", label: "โปรโมชั่น", icon: Tag },
   { href: "/admin/discounts", label: "ส่วนลด / คูปอง", icon: Percent },
-  { href: "/admin/blogs", label: "บทความ", icon: BookOpen },
+  { href: "/admin/blog", label: "บทความ", icon: BookOpen },
 ];
 
 const bottomItems = [
@@ -44,6 +56,14 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ onClose }: AdminSidebarProps) {
   const pathname = usePathname();
+  const [lowStockCount, setLowStockCount] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/admin/inventory/low-stock?count=true", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setLowStockCount(d?.count ?? 0))
+      .catch(() => {});
+  }, []);
 
   return (
     <aside className="flex h-full w-64 flex-col bg-zinc-900 text-zinc-100">
@@ -72,6 +92,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isInventory = item.href === "/admin/inventory";
           return (
             <Link
               key={item.href}
@@ -86,6 +107,11 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
             >
               <Icon className="h-4 w-4 shrink-0" />
               {item.label}
+              {isInventory && lowStockCount > 0 && (
+                <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                  {lowStockCount > 99 ? "99+" : lowStockCount}
+                </span>
+              )}
             </Link>
           );
         })}

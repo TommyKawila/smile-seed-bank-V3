@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { computeStartingPrice, computeTotalStock } from "@/lib/product-utils";
 import { toMasterSku, toVariantSku } from "@/lib/sku-utils";
 import type { ProductVariant } from "@/types/supabase";
@@ -8,7 +9,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const breederId = body.breeder_id != null ? Number(body.breeder_id) : null;
-  const category = body.category === "AUTO" || body.category === "PHOTO" ? body.category : null;
+  const categoryId = body.category_id != null && body.category_id !== "" ? Number(body.category_id) : null;
   const packs = Array.isArray(body.packs)
     ? body.packs
         .filter((p: { unit_label?: string }) => p?.unit_label)
@@ -26,8 +27,19 @@ export async function POST(req: NextRequest) {
   if (breederId == null || isNaN(breederId)) {
     return NextResponse.json({ error: "กรุณาเลือกแบรนด์" }, { status: 400 });
   }
-  if (!category) {
-    return NextResponse.json({ error: "กรุณาเลือก Category (Auto/Photo)" }, { status: 400 });
+  if (categoryId == null || isNaN(categoryId)) {
+    return NextResponse.json({ error: "กรุณาเลือก Category" }, { status: 400 });
+  }
+
+  let categoryName: string | null = null;
+  try {
+    const cat = await prisma.product_categories.findUnique({
+      where: { id: BigInt(categoryId) },
+      select: { name: true },
+    });
+    categoryName = cat?.name ?? null;
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
   if (packs.length === 0) {
     return NextResponse.json({ error: "ต้องมีอย่างน้อย 1 แพ็กเกจ" }, { status: 400 });
@@ -62,8 +74,8 @@ export async function POST(req: NextRequest) {
     breeder_id: breederId,
     name,
     master_sku: masterSku,
-    category: "Seeds",
-    flowering_type: category,
+    category: categoryName,
+    category_id: categoryId,
     is_active: true,
     price: 0,
     stock: 0,

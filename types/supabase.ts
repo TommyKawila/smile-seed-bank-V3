@@ -62,6 +62,7 @@ export interface Product {
   genetics: string | null;
   indica_ratio: number | null;
   sativa_ratio: number | null;
+  strain_dominance: string | null;  // Mostly Indica | Mostly Sativa | Hybrid 50/50
   flowering_type: FloweringType | null;
   seed_type: SeedType | null;
   yield_info: string | null;
@@ -163,12 +164,15 @@ export interface Customer {
 
 export interface Order {
   id: number;
-  order_number: string;     // 6-digit
+  order_number: string;
+  source_quotation_number?: string | null;
   customer_id: string | null;
   order_origin: OrderOrigin;
   payment_method: string | null;
   shipping_address: string | null;  // Snapshot ที่อยู่จัดส่ง ณ วันที่สั่ง
   total_amount: number;
+  shipping_fee?: number;
+  discount_amount?: number;
   total_cost: number;       // COGS snapshot at time of sale
   status: OrderStatus;
   tracking_number: string | null;
@@ -234,6 +238,7 @@ export interface CartItem {
   quantity: number;
   isFreeGift?: boolean;
   masterSku?: string | null; // For tiered discount aggregation by strain
+  breeder_id?: number | null; // For promotion rules (BUY_X_GET_Y)
 }
 
 export interface CartSummary {

@@ -4,13 +4,15 @@ import { useRef, useState, useEffect } from "react";
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2, Upload, Trash2, ImageIcon, Code2, Image as ImageLucide, CreditCard, ChevronRight } from "lucide-react";
+import { Loader2, Upload, Trash2, ImageIcon, Code2, Image as ImageLucide, CreditCard, ChevronRight, MessageCircle, CheckCircle2, XCircle, Plus, Building2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useSiteSettings, type SocialLink } from "@/hooks/useSiteSettings";
+import { formatPhoneNumber } from "@/lib/utils";
 
 function LogoUploadCard({
   title,
@@ -19,6 +21,7 @@ function LogoUploadCard({
   accept,
   currentUrl,
   onSaved,
+  onClear,
 }: {
   title: string | React.ReactNode;
   description: string;
@@ -26,10 +29,14 @@ function LogoUploadCard({
   accept: string;
   currentUrl?: string;
   onSaved: (key: string, url: string) => Promise<void>;
+  onClear?: (key: string) => Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(currentUrl ?? null);
   const [isUploading, setIsUploading] = useState(false);
+  useEffect(() => {
+    setPreview(currentUrl ?? null);
+  }, [currentUrl]);
   const [error, setError] = useState<string | null>(null);
 
   const handleFile = async (file: File) => {
@@ -119,7 +126,10 @@ function LogoUploadCard({
               variant="ghost"
               size="sm"
               className="text-red-500 hover:text-red-600"
-              onClick={() => setPreview(null)}
+              onClick={async () => {
+                setPreview(null);
+                await onClear?.(settingKey);
+              }}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -144,6 +154,16 @@ export default function SettingsPage() {
   const [heroMode, setHeroMode] = useState<"static_image" | "animated_svg">("static_image");
   const [heroSvg, setHeroSvg] = useState("");
   const [savingHero, setSavingHero] = useState(false);
+  const [lineStatus, setLineStatus] = useState<{ configured: boolean; hasToken: boolean; hasAdminUserId: boolean } | null>(null);
+  const [lineTestLoading, setLineTestLoading] = useState(false);
+  const [lineTestResult, setLineTestResult] = useState<"success" | "error" | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/line-alert/status")
+      .then((r) => r.json())
+      .then(setLineStatus)
+      .catch(() => setLineStatus(null));
+  }, []);
 
   // Sync hero state when settings load
   useEffect(() => {
@@ -155,6 +175,12 @@ export default function SettingsPage() {
 
   const handleSaved = async (key: string, url: string) => {
     await updateSetting(key, url);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleClear = async (key: string) => {
+    await updateSetting(key, "");
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -195,15 +221,269 @@ export default function SettingsPage() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 max-w-3xl">
           <LogoUploadCard
-            title="Main Logo (SVG)"
-            description="ใช้สำหรับ Header, Footer, Invoice และ Email — ควรเป็น SVG หรือ PNG พื้นหลังใส"
+            title="Main Logo (Primary SVG Format)"
+            description="ใช้สำหรับ Header, Footer และ Email — ควรเป็น SVG หรือ PNG พื้นหลังใส"
             settingKey="logo_main_url"
             accept="image/svg+xml,image/png"
             currentUrl={settings.logo_main_url}
             onSaved={handleSaved}
+            onClear={handleClear}
+          />
+          <LogoUploadCard
+            title="Main Logo (Secondary PNG Format)"
+            description="ใช้สำหรับเอกสาร PDF และแอปพลิเคชันที่ไม่รองรับ SVG"
+            settingKey="logo_secondary_png_url"
+            accept="image/png"
+            currentUrl={settings.logo_secondary_png_url}
+            onSaved={handleSaved}
+            onClear={handleClear}
           />
         </div>
       )}
+
+      <Separator />
+
+      {/* ── Company & Legal Information ───────────────────────────────────────── */}
+      <div>
+        <h2 className="text-lg font-semibold text-zinc-800 flex items-center gap-2">
+          <Building2 className="h-5 w-5" />
+          Company & Legal Information
+        </h2>
+        <p className="mt-0.5 text-sm text-zinc-500">
+          ข้อมูลบริษัทและเอกสารทางกฎหมายสำหรับเอกสาร PDF
+        </p>
+      </div>
+
+      {!isLoading && (
+        <div className="space-y-6 max-w-2xl">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">ข้อมูลบริษัท</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-sm">Company Name</Label>
+                  <Input
+                    value={settings.company_name ?? ""}
+                    onChange={(e) => updateSetting("company_name", e.target.value)}
+                    onBlur={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+                    placeholder="Smile Seed Bank"
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Email</Label>
+                  <Input
+                    type="email"
+                    value={settings.company_email ?? ""}
+                    onChange={(e) => updateSetting("company_email", e.target.value)}
+                    onBlur={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+                    placeholder="contact@example.com"
+                    className="h-9"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Address</Label>
+                <Input
+                  value={settings.company_address ?? ""}
+                  onChange={(e) => updateSetting("company_address", e.target.value)}
+                  onBlur={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+                  placeholder="ที่อยู่บริษัท"
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Phone</Label>
+                <Input
+                  value={settings.company_phone ?? ""}
+                  onChange={(e) => updateSetting("company_phone", e.target.value)}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v) updateSetting("company_phone", formatPhoneNumber(v));
+                    setSaved(true);
+                    setTimeout(() => setSaved(false), 2500);
+                  }}
+                  placeholder="081-234-5678"
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <Label className="text-sm">Social Media</Label>
+                <p className="text-xs text-zinc-500">Platform และ Handle/URL</p>
+                {(settings.social_media ? (() => { try { return JSON.parse(settings.social_media) as SocialLink[]; } catch { return []; } })() : []).map((link, i) => (
+                  <div key={i} className="flex gap-2">
+                    <select
+                      value={link.platform}
+                      onChange={(e) => {
+                        const arr = (() => { try { return JSON.parse(settings.social_media || "[]") as SocialLink[]; } catch { return []; } })();
+                        arr[i] = { ...arr[i], platform: e.target.value };
+                        updateSetting("social_media", JSON.stringify(arr));
+                      }}
+                      className="h-9 w-28 rounded border border-zinc-200 bg-white text-sm"
+                    >
+                      <option value="Line">Line</option>
+                      <option value="X">X</option>
+                      <option value="IG">IG</option>
+                      <option value="Youtube">Youtube</option>
+                      <option value="Telegram">Telegram</option>
+                      <option value="WhatsApp">WhatsApp</option>
+                      <option value="Facebook">Facebook</option>
+                    </select>
+                    <Input
+                      value={link.handle}
+                      onChange={(e) => {
+                        const arr = (() => { try { return JSON.parse(settings.social_media || "[]") as SocialLink[]; } catch { return []; } })();
+                        arr[i] = { ...arr[i], handle: e.target.value };
+                        updateSetting("social_media", JSON.stringify(arr));
+                      }}
+                      placeholder="@handle หรือ URL"
+                      className="h-9 flex-1"
+                    />
+                    <Button type="button" variant="ghost" size="sm" className="text-red-500" onClick={() => {
+                      const arr = (() => { try { return JSON.parse(settings.social_media || "[]") as SocialLink[]; } catch { return []; } })();
+                      arr.splice(i, 1);
+                      updateSetting("social_media", JSON.stringify(arr));
+                    }}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => {
+                    const arr = (() => { try { return JSON.parse(settings.social_media || "[]") as SocialLink[]; } catch { return []; } })();
+                    arr.push({ platform: "Line", handle: "" });
+                    updateSetting("social_media", JSON.stringify(arr));
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <LogoUploadCard
+              title="ใบอนุญาตจำหน่ายเมล็ดพันธุ์ควบคุม"
+              description="Seed License (PDF/Image)"
+              settingKey="legal_seed_license_url"
+              accept="image/*,application/pdf"
+              currentUrl={settings.legal_seed_license_url}
+              onSaved={handleSaved}
+              onClear={handleClear}
+            />
+            <LogoUploadCard
+              title="ทะเบียนพาณิชย์/หนังสือรับรองบริษัท"
+              description="Business Registration (PDF/Image)"
+              settingKey="legal_business_registration_url"
+              accept="image/*,application/pdf"
+              currentUrl={settings.legal_business_registration_url}
+              onSaved={handleSaved}
+              onClear={handleClear}
+            />
+          </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">เลขที่ใบอนุญาต (แสดงใน PDF)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-sm">เลขที่ใบอนุญาตเมล็ดพันธุ์</Label>
+                  <Input
+                    value={settings.legal_seed_license_number ?? ""}
+                    onChange={(e) => updateSetting("legal_seed_license_number", e.target.value)}
+                    onBlur={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+                    placeholder="เลขที่"
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">เลขทะเบียนพาณิชย์</Label>
+                  <Input
+                    value={settings.legal_business_registration_number ?? ""}
+                    onChange={(e) => updateSetting("legal_business_registration_number", e.target.value)}
+                    onBlur={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+                    placeholder="เลขที่"
+                    className="h-9"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      <Separator />
+
+      {/* ── LINE Alert Settings ────────────────────────────────────────────────── */}
+      <div>
+        <h2 className="text-lg font-semibold text-zinc-800 flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-[#06C755]" />
+          LINE Alerts (แจ้งเตือน)
+        </h2>
+        <p className="mt-0.5 text-sm text-zinc-500">
+          แจ้งเตือน Low Stock, Void Order, Daily Summary ไปยัง LINE ของ Admin
+        </p>
+        <Card className="mt-3 max-w-xl">
+          <CardContent className="pt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-zinc-600">สถานะการเชื่อมต่อ</span>
+              {lineStatus ? (
+                lineStatus.configured ? (
+                  <span className="flex items-center gap-1.5 text-sm text-emerald-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    ตั้งค่าแล้ว
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-sm text-amber-600">
+                    <XCircle className="h-4 w-4" />
+                    {!lineStatus.hasToken && "LINE_CHANNEL_ACCESS_TOKEN "}
+                    {!lineStatus.hasAdminUserId && "LINE_ADMIN_USER_ID "}
+                    ยังไม่ได้ตั้งค่า
+                  </span>
+                )
+              ) : (
+                <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                setLineTestLoading(true);
+                setLineTestResult(null);
+                try {
+                  const res = await fetch("/api/admin/line-alert/test", { method: "POST" });
+                  const j = await res.json();
+                  setLineTestResult(res.ok ? "success" : "error");
+                  if (!res.ok) alert(j.error ?? "ส่งไม่สำเร็จ");
+                } catch {
+                  setLineTestResult("error");
+                  alert("เกิดข้อผิดพลาด");
+                } finally {
+                  setLineTestLoading(false);
+                }
+              }}
+              disabled={!lineStatus?.configured || lineTestLoading}>
+              {lineTestLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "ทดสอบส่งข้อความ"}
+            </Button>
+            {lineTestResult === "success" && (
+              <p className="text-sm text-emerald-600">✓ ส่งข้อความทดสอบสำเร็จ — ตรวจสอบ LINE ได้เลย</p>
+            )}
+            {lineTestResult === "error" && (
+              <p className="text-sm text-red-600">ส่งไม่สำเร็จ — ตรวจสอบ Token และ User ID ใน .env.local</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Separator />
 
@@ -374,7 +654,11 @@ CREATE TABLE IF NOT EXISTS site_settings (
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "public read" ON site_settings FOR SELECT USING (true);
 CREATE POLICY "admin write" ON site_settings FOR ALL
-  USING (auth.role() = 'service_role');`}
+  USING (auth.role() = 'service_role');
+
+-- Keys: logo_main_url, logo_secondary_png_url, company_name, company_address, company_email, company_phone,
+--       social_media (JSON), legal_seed_license_url, legal_seed_license_number,
+--       legal_business_registration_url, legal_business_registration_number, hero_bg_mode, hero_svg_code`}
         </pre>
       </div>
     </div>

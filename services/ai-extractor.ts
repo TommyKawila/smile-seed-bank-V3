@@ -5,12 +5,15 @@
 
 export type AiProvider = "gemini" | "openai";
 
+export type StrainDominanceValue = "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50";
+
 export interface ExtractedProductData {
   name?: string;
   category?: string;
   genetics?: string;
   lineage?: string | null;
   genetic_ratio?: string | null;
+  strain_dominance?: StrainDominanceValue | null;
   thc_percent?: number | null;
   cbd_percent?: number | null;
   indica_ratio?: number | null;
@@ -41,6 +44,7 @@ const JSON_SCHEMA = `{
   "genetics": "string — short strain type summary e.g. '70% Sativa / 30% Indica', or \"Unknown\"",
   "lineage": "string — parent strains with × symbol e.g. 'OG Kush × White Widow', or \"Unknown\" if not found",
   "genetic_ratio": "string — ratio like 'Sativa 70% / Indica 30%'. If Hybrid with no specific ratio use 'Sativa 50% / Indica 50%'. NEVER leave empty or just say 'Hybrid'. Use \"Unknown\" only if strain type is truly unidentifiable.",
+  "strain_dominance": "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50" | null — REQUIRED. Infer from genetics, genetic_ratio, or keywords in text/images. Keywords: "Indica Dominant", "Mostly Indica", "Indica-leaning" → "Mostly Indica"; "Sativa Dominant", "Mostly Sativa", "Sativa-leaning" → "Mostly Sativa"; "50/50", "Hybrid", "Balanced", "Indica/Sativa" → "Hybrid 50/50". Use null only if truly unidentifiable.",
   "thc_percent": number | null (0-100, numbers only. Use null if not found — do NOT use \"Unknown\" for this field),
   "cbd_percent": number | null (0-100. Use null if not found),
   "indica_ratio": number | null (0-100 integer. Use null if not found),
@@ -64,11 +68,12 @@ Read ALL visible text in the images carefully — prioritize English text.
 
 EXTRACTION RULES:
 1. FALLBACK: For any string field where data cannot be found or reasonably inferred, output the exact string "Unknown". For number fields (thc_percent, cbd_percent, indica_ratio, sativa_ratio) that cannot be found, output null.
-2. GENETIC RATIO: Always output a specific ratio like "Sativa 70% / Indica 30%". If the strain is identified as a Hybrid but no specific ratio is stated, you MUST output "Sativa 50% / Indica 50%". NEVER output just "Hybrid" alone.
-3. LINEAGE: Use the × symbol between parent strains. Identify Father × Mother if mentioned.
-4. TERPENES: Infer terpene names from flavor/aroma descriptions if not explicitly listed (e.g. citrus/lemon → Limonene, earthy/musky → Myrcene, spicy/pepper → Caryophyllene, pine → Pinene, floral → Linalool).
-5. DESCRIPTION (ENGLISH): Write a rich narrative of 5-8 sentences synthesizing: strain character, lineage heritage, THC/CBD potency, effects experience, flavor/aroma profile, growing traits, and recommended use cases. Tone: premium cannabis seed bank catalog.
-6. DESCRIPTION (THAI): Translate the English description into natural, fluent Thai. Write as if a native Thai speaker composed it — not a word-for-word translation.
+2. STRAIN_DOMINANCE: Look for keywords like "Mostly Indica", "Indica Dominant", "Indica-leaning", "Sativa Dominant", "Mostly Sativa", "50/50 Hybrid", "Balanced Hybrid". Map to exactly one of: "Mostly Indica", "Mostly Sativa", or "Hybrid 50/50". Use genetic_ratio (e.g. Indica 70%+ → Mostly Indica, Sativa 70%+ → Mostly Sativa, ~50/50 → Hybrid 50/50) if no explicit keywords.
+3. GENETIC RATIO: Always output a specific ratio like "Sativa 70% / Indica 30%". If the strain is identified as a Hybrid but no specific ratio is stated, you MUST output "Sativa 50% / Indica 50%". NEVER output just "Hybrid" alone.
+4. LINEAGE: Use the × symbol between parent strains. Identify Father × Mother if mentioned.
+5. TERPENES: Infer terpene names from flavor/aroma descriptions if not explicitly listed (e.g. citrus/lemon → Limonene, earthy/musky → Myrcene, spicy/pepper → Caryophyllene, pine → Pinene, floral → Linalool).
+6. DESCRIPTION (ENGLISH): Write a rich narrative of 5-8 sentences synthesizing: strain character, lineage heritage, THC/CBD potency, effects experience, flavor/aroma profile, growing traits, and recommended use cases. Tone: premium cannabis seed bank catalog.
+7. DESCRIPTION (THAI): Translate the English description into natural, fluent Thai. Write as if a native Thai speaker composed it — not a word-for-word translation.
 
 Return ONLY a valid JSON object (no markdown, no code fences, no explanation) matching this schema:
 ${JSON_SCHEMA}`;
@@ -180,18 +185,35 @@ async function extractWithOpenAI(
   return { data: JSON.parse(rawJson) as ExtractedProductData, error: null };
 }
 
+// ─── Map AI strain_dominance to our 3 standard values ──────────────────────────
+
+function mapStrainDominance(v: unknown): StrainDominanceValue | null {
+  if (v == null || v === "") return null;
+  const s = String(v).toLowerCase().trim();
+  if (s.includes("indica") && !s.includes("sativa")) return "Mostly Indica";
+  if (s.includes("sativa") && !s.includes("indica")) return "Mostly Sativa";
+  if (s.includes("hybrid") || s.includes("50") || s.includes("50/50") || s.includes("balanced")) return "Hybrid 50/50";
+  if (s === "mostly indica") return "Mostly Indica";
+  if (s === "mostly sativa") return "Mostly Sativa";
+  if (s === "hybrid 50/50") return "Hybrid 50/50";
+  return null;
+}
+
 // ─── Sanitize ─────────────────────────────────────────────────────────────────
 
 function sanitize(data: ExtractedProductData): ExtractedProductData {
-  // For numeric fields: "Unknown" string or out-of-range → null
   const clampNum = (v: unknown): number | null => {
     if (v == null || v === "Unknown" || v === "") return null;
     const n = Number(v);
     if (isNaN(n)) return null;
     return Math.min(100, Math.max(0, n));
   };
+  const sd = mapStrainDominance(data.strain_dominance) ?? (data.indica_ratio != null && data.sativa_ratio != null
+    ? (data.indica_ratio >= 60 ? "Mostly Indica" : data.sativa_ratio >= 60 ? "Mostly Sativa" : "Hybrid 50/50")
+    : mapStrainDominance(data.genetic_ratio) ?? mapStrainDominance(data.genetics));
   return {
     ...data,
+    strain_dominance: sd,
     thc_percent: clampNum(data.thc_percent),
     cbd_percent: clampNum(data.cbd_percent),
     indica_ratio: clampNum(data.indica_ratio),

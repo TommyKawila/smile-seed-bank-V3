@@ -49,9 +49,13 @@ export async function PATCH(
 
     if (action === "ship") {
       const { trackingNumber, shippingProvider } = parsed.data;
-      const { error } = await markShipped(orderId, trackingNumber.trim(), shippingProvider);
+      const { data, error } = await markShipped(orderId, trackingNumber.trim(), shippingProvider);
       if (error) return NextResponse.json({ error }, { status: 500 });
-      return NextResponse.json({ success: true, status: "SHIPPED" });
+      return NextResponse.json({
+        success: true,
+        status: "SHIPPED",
+        quotationStatusSynced: data?.quotationSynced ?? false,
+      });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });

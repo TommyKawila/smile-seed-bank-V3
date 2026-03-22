@@ -22,6 +22,14 @@
 * **Buttons:** Primary (พื้นเขียวอักษรขาว), Secondary (พื้นขาวขอบเทา อักษรเทา)
 * **Product Card Layout:** มีรูป Logo ของ Breeder แปะซ้อนทับ (Overlay) ที่มุมขวาล่างหรือซ้ายบนของรูปสินค้าหลัก
 * **Free Gift Badge:** สินค้าที่เป็นของแถม ต้องมีป้ายโดดเด่น เช่น "🎁 FREE"
+* **Pricing UI:** เมื่อมีส่วนลด (Wholesale, Promo, Points) ให้แสดงราคาเดิมขีดฆ่า (strikethrough) แล้วแสดงราคาหลังหักส่วนลดชัดเจน
+
+## 4a. Media & Images
+* **WebP compression:** มาตรฐานอัปโหลดรูป — บีบอัด < 200KB
+* **Thumbnails:** ขนาด 40x40px สำหรับ grid/list views
+
+## 4b. Grid System (หน้าจัดการ)
+* **Filter headers:** ใช้ Card-based layout แบบเดียวกันทุกหน้า (Products, Inventory, POS)
 
 ## 5. Hero Section & Micro-Interactions (การเคลื่อนไหวและแอนิเมชัน)
 * แนะนำให้ใช้ `framer-motion` ร่วมกับ `tailwindcss-animate`

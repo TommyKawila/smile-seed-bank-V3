@@ -11,7 +11,8 @@ import {
   createColumnHelper,
   type ColumnDef,
 } from "@tanstack/react-table";
-import { Loader2, Plus, Filter, Pencil, Wrench, ShoppingCart, Search, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Loader2, Plus, Filter, Pencil, Wrench, ShoppingCart, Search, Trash2, LayoutGrid, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { ProductModal } from "@/components/admin/ProductModal";
 import { useProducts } from "@/hooks/useProducts";
+import { processAndUploadImages } from "@/lib/supabase/storage-utils";
 import { toMasterSku } from "@/lib/sku-utils";
 import type { ProductFull } from "@/types/supabase";
 
@@ -39,11 +41,14 @@ type InventoryRow = {
   id: number;
   product_id: number;
   product_name: string;
+  image_url?: string | null;
+  master_sku?: string | null;
   brand: string;
   breeder_id: number | null;
   unit_label: string;
   sku: string | null;
   stock: number;
+  low_stock_threshold?: number;
   cost_price: number;
   price: number;
   margin: number;
@@ -56,6 +61,7 @@ type InventoryRow = {
 type ProductGroup = {
   product_id: number;
   product_name: string;
+  master_sku?: string | null;
   brand: string;
   category: string;
   type: string;
@@ -99,11 +105,13 @@ function EditableCell({
   saving,
   onSave,
   type = "number",
+  prefix,
 }: {
   value: number;
   saving: boolean;
   onSave: (v: number) => void;
   type?: "number";
+  prefix?: string;
 }) {
   const [local, setLocal] = useState(String(value));
   useEffect(() => setLocal(String(value)), [value]);
@@ -114,15 +122,18 @@ function EditableCell({
   };
 
   return (
-    <Input
-      type="number"
-      className="h-8 w-24 border-zinc-200 text-sm"
-      value={local}
-      onChange={(e) => setLocal(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => e.key === "Enter" && commit()}
-      disabled={saving}
-    />
+    <div className="flex items-center gap-0.5">
+      {prefix && <span className="text-xs text-zinc-400">{prefix}</span>}
+      <Input
+        type="number"
+        className="h-8 w-20 border-0 border-b border-transparent bg-transparent px-1 py-0 text-sm shadow-none focus:border-emerald-500 focus:ring-0"
+        value={local}
+        onChange={(e) => setLocal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => e.key === "Enter" && commit()}
+        disabled={saving}
+      />
+    </div>
   );
 }
 
@@ -133,10 +144,13 @@ function AdminInventoryContent() {
   const [breeders, setBreeders] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null);
   const [category, setCategory] = useState<string>("");
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [brandId, setBrandId] = useState<string>("");
   const [stockLevel, setStockLevel] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<ProductFull | null>(null);
@@ -144,7 +158,7 @@ function AdminInventoryContent() {
   const [addForm, setAddForm] = useState({
     name: "",
     breeder_id: "",
-    category: "" as "" | "AUTO" | "PHOTO",
+    category_id: "" as string,
     packs: [emptyPack()] as { unit_label: string; cost_price: number; price: number; stock: number }[],
   });
   const [addSaving, setAddSaving] = useState(false);
@@ -174,7 +188,7 @@ function AdminInventoryContent() {
 
   const fetchInventory = useCallback(async () => {
     const params = new URLSearchParams();
-    if (category) params.set("category", category);
+    if (category) params.set("categoryId", category);
     if (typeFilter) params.set("type", typeFilter);
     if (brandId) params.set("brand", brandId);
     if (stockLevel) params.set("stock", stockLevel);
@@ -185,10 +199,11 @@ function AdminInventoryContent() {
   }, [category, typeFilter, brandId, stockLevel]);
 
   const fetchMeta = useCallback(async () => {
-    const [invRes, prodsRes, breedRes] = await Promise.all([
+    const [invRes, prodsRes, breedRes, catRes] = await Promise.all([
       fetch("/api/admin/inventory"),
       fetch("/api/admin/products"),
       fetch("/api/admin/breeders"),
+      fetch("/api/admin/categories"),
     ]);
     const invData = await invRes.json();
     const prodsData = await prodsRes.json();
@@ -196,11 +211,13 @@ function AdminInventoryContent() {
     if (Array.isArray(invData)) setRows(invData);
     if (Array.isArray(prodsData)) setProducts(prodsData);
     if (Array.isArray(breedData)) setBreeders(breedData);
+    const catData = await catRes.json();
+    setCategories(Array.isArray(catData) ? catData : []);
   }, []);
 
   const refetchInventory = useCallback(async () => {
     const params = new URLSearchParams();
-    if (category) params.set("category", category);
+    if (category) params.set("categoryId", category);
     if (typeFilter) params.set("type", typeFilter);
     if (brandId) params.set("brand", brandId);
     if (stockLevel) params.set("stock", stockLevel);
@@ -262,7 +279,7 @@ function AdminInventoryContent() {
       setAddError("กรุณาเลือกแบรนด์");
       return;
     }
-    if (!addForm.category) {
+    if (!addForm.category_id) {
       setAddError("กรุณาเลือก Category");
       return;
     }
@@ -279,14 +296,14 @@ function AdminInventoryContent() {
         body: JSON.stringify({
           name: addForm.name.trim(),
           breeder_id: Number(addForm.breeder_id),
-          category: addForm.category,
+          category_id: addForm.category_id,
           packs: addForm.packs.filter((p) => p.unit_label),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed");
       setAddOpen(false);
-      setAddForm({ name: "", breeder_id: "", category: "", packs: [emptyPack()] });
+      setAddForm({ name: "", breeder_id: "", category_id: "", packs: [emptyPack()] });
       await refetchInventory();
     } catch (e) {
       setAddError(String(e).replace("Error: ", ""));
@@ -318,6 +335,24 @@ function AdminInventoryContent() {
     },
     [fetchProductFull]
   );
+
+  const handlePhotoUpload = useCallback(async (productId: number, files: FileList | null) => {
+    if (!files?.[0]) return;
+    setUploadingPhoto(productId);
+    try {
+      const urls = await processAndUploadImages([files[0]]);
+      if (urls[0]) {
+        const res = await fetch(`/api/admin/products/${productId}/field`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image_url: urls[0] }),
+        });
+        if (res.ok) await refetchInventory();
+      }
+    } finally {
+      setUploadingPhoto(null);
+    }
+  }, [refetchInventory]);
 
   const handleCloseProductModal = useCallback(() => {
     setProductModalOpen(false);
@@ -413,6 +448,7 @@ function AdminInventoryContent() {
       return {
         product_id,
         product_name: v0.product_name,
+        master_sku: v0.master_sku ?? null,
         brand: v0.brand,
         category: v0.category,
         type: v0.type,
@@ -422,9 +458,42 @@ function AdminInventoryContent() {
     });
   }, [rows]);
 
+  const filteredGrouped = useMemo((): ProductGroup[] => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return grouped;
+    return grouped.filter((grp) => {
+      const matchName = (grp.product_name ?? "").toLowerCase().includes(q);
+      const matchMasterSku = (grp.master_sku ?? "").toLowerCase().includes(q);
+      const matchAnySku = grp.variants.some((v) => (v.sku ?? "").toLowerCase().includes(q));
+      return matchName || matchMasterSku || matchAnySku;
+    });
+  }, [grouped, searchQuery]);
+
   const columnHelper = createColumnHelper<InventoryRow>();
   const columns = useMemo<ColumnDef<InventoryRow, unknown>[]>(
     () => [
+      columnHelper.display({
+        id: "photo",
+        header: "Photo",
+        cell: ({ row }) => (
+          <label className="flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded border border-zinc-200 bg-zinc-50 hover:bg-zinc-100">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploadingPhoto === row.original.product_id}
+              onChange={(e) => handlePhotoUpload(row.original.product_id, e.target.files)}
+            />
+            {uploadingPhoto === row.original.product_id ? (
+              <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+            ) : row.original.image_url ? (
+              <img src={row.original.image_url} alt="" className="h-10 w-10 object-cover" />
+            ) : (
+              <ImagePlus className="h-5 w-5 text-zinc-400" />
+            )}
+          </label>
+        ),
+      }),
       columnHelper.accessor("product_name", { header: "สินค้า / Strain", cell: (c) => c.getValue() }),
       columnHelper.accessor("brand", { header: "แบรนด์", cell: (c) => c.getValue() }),
       columnHelper.accessor("category", { header: "Category", cell: (c) => <CategoryBadge value={c.getValue()} /> }),
@@ -436,53 +505,60 @@ function AdminInventoryContent() {
         cell: (c) => <span className="font-mono text-xs">{c.getValue() ?? "—"}</span>,
       }),
       columnHelper.accessor("stock", {
-        header: "สต็อก",
+        header: "Stock (สต็อก)",
         cell: ({ row }) => {
-          const stock = row.original.stock;
-          const low = stock <= 5;
+          const { stock, low_stock_threshold } = row.original;
+          const th = low_stock_threshold ?? 5;
+          const low = stock > 0 && stock <= th;
           return (
-            <div className={low ? "rounded bg-red-100 px-1.5 py-0.5" : ""}>
+            <div className={low ? "inline-flex items-center gap-1 rounded bg-red-100/80 px-1.5 py-0.5" : "inline-flex items-center gap-1"}>
               <EditableCell
                 value={stock}
                 saving={savingId === row.original.id}
                 onSave={(v) => patchVariant(row.original.id, { stock: Math.max(0, Math.round(v)) })}
               />
-              {low && <span className="ml-1 text-xs font-medium text-red-700">ต่ำ</span>}
+              {low && <span className="text-[10px] font-medium text-red-700 shrink-0" title={`แจ้งต่ำ ≤ ${th}`}>ต่ำ ≤{th}</span>}
             </div>
           );
         },
       }),
       columnHelper.accessor("cost_price", {
-        header: "ต้นทุน",
+        header: "Cost (ต้นทุน)",
         cell: ({ row }) => (
           <EditableCell
             value={row.original.cost_price}
             saving={savingId === row.original.id}
             onSave={(v) => patchVariant(row.original.id, { cost_price: v })}
+            prefix="฿"
           />
         ),
       }),
       columnHelper.accessor("price", {
-        header: "ราคาขาย",
+        header: "Price (ราคาขาย)",
         cell: ({ row }) => (
           <EditableCell
             value={row.original.price}
             saving={savingId === row.original.id}
             onSave={(v) => patchVariant(row.original.id, { price: v })}
+            prefix="฿"
           />
         ),
       }),
       columnHelper.accessor("margin", {
         header: "Margin %",
-        cell: (c) => (
-          <span className={c.getValue() >= 0 ? "text-emerald-600" : "text-red-600"}>
-            {c.getValue()}%
-          </span>
-        ),
+        cell: (c) => {
+          const val = c.getValue();
+          const isNeg = val < 0;
+          return (
+            <span className={`text-xs ${isNeg ? "text-red-600" : "text-slate-500"}`}>
+              {val}%
+            </span>
+          );
+        },
       }),
-      columnHelper.accessor("unit_label", { header: "แพ็ก", cell: (c) => c.getValue() }),
+      columnHelper.accessor("unit_label", { header: "Pack (แพ็ก)", cell: (c) => c.getValue() }),
     ],
-    [savingId, patchVariant, columnHelper]
+    [savingId, uploadingPhoto, patchVariant, handlePhotoUpload, columnHelper]
   );
 
   const table = useReactTable({
@@ -518,6 +594,11 @@ function AdminInventoryContent() {
           >
             <ShoppingCart className="mr-1.5 h-4 w-4" /> สร้างออเดอร์
           </Button>
+          <Link href={brandId ? `/admin/inventory/manual?breederId=${brandId}` : "/admin/inventory/manual"}>
+            <Button variant="outline" size="sm" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+              <LayoutGrid className="mr-1.5 h-4 w-4" /> Manual Grid
+            </Button>
+          </Link>
           <Button
             onClick={() => setAddOpen(true)}
             className="bg-primary text-white hover:bg-primary/90"
@@ -536,6 +617,18 @@ function AdminInventoryContent() {
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
+            <Label className="text-xs">ค้นหา</Label>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+              <Input
+                placeholder="ค้นหาชื่อสายพันธุ์ หรือ SKU..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 w-[220px] pl-8 rounded-md border-zinc-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
             <Label className="text-xs">Category</Label>
             <Select value={category || "all"} onValueChange={(v) => setCategory(v === "all" ? "" : v)}>
               <SelectTrigger className="w-[120px]">
@@ -543,8 +636,9 @@ function AdminInventoryContent() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">ทั้งหมด</SelectItem>
-                <SelectItem value="PHOTO">Photo</SelectItem>
-                <SelectItem value="AUTO">Auto</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -584,7 +678,7 @@ function AdminInventoryContent() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">ทั้งหมด</SelectItem>
-                <SelectItem value="low">ต่ำ (≤5)</SelectItem>
+                <SelectItem value="low">ต่ำ</SelectItem>
                 <SelectItem value="out">หมด</SelectItem>
               </SelectContent>
             </Select>
@@ -599,6 +693,10 @@ function AdminInventoryContent() {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
+          ) : rows.length === 0 ? (
+            <div className="py-12 text-center text-zinc-500">ไม่มี variant ในระบบ หรือกรองแล้วไม่ตรง</div>
+          ) : filteredGrouped.length === 0 ? (
+            <div className="py-12 text-center text-zinc-500">ไม่พบผลลัพธ์ที่ตรงกับคำค้นหา</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -614,9 +712,10 @@ function AdminInventoryContent() {
                   ))}
                 </thead>
                 <tbody>
-                  {grouped.map((grp) => (
+                  {filteredGrouped.map((grp) => (
                     <Fragment key={grp.product_id}>
                       <tr className="border-b bg-zinc-100/80 font-medium">
+                        <td className="w-10 px-2 py-2.5" />
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2">
                             <span className="text-zinc-900">{grp.product_name}</span>
@@ -641,11 +740,12 @@ function AdminInventoryContent() {
                         <td className="px-4 py-2.5 text-xs">{grp.thc_level}</td>
                         <td colSpan={6} className="px-4 py-2.5 text-xs text-zinc-500">{grp.variants.length} SKU(s)</td>
                       </tr>
-                      {grp.variants.map((v) => (
+                      {grp.variants.map((v, vIdx) => (
                         <tr
                           key={v.id}
-                          className={`border-b hover:bg-zinc-50/50 ${v.stock === 0 ? "bg-red-50" : ""}`}
+                          className={`border-b transition-colors hover:bg-emerald-50/50 ${v.stock === 0 ? "bg-red-50" : ""} ${(v.stock <= ((v as InventoryRow).low_stock_threshold ?? 5)) && v.stock > 0 ? "bg-red-50/50" : ""} ${vIdx % 2 === 1 ? "bg-zinc-50/30" : ""}`}
                         >
+                          <td className="w-10 px-2 py-2" />
                           <td className="pl-8 pr-4 py-2 text-zinc-500">↳ {v.unit_label}</td>
                           <td className="px-4 py-2" />
                           <td className="px-4 py-2" />
@@ -653,20 +753,27 @@ function AdminInventoryContent() {
                           <td className="px-4 py-2" />
                           <td className="px-4 py-2 font-mono text-xs">{v.sku ?? "—"}</td>
                           <td className="px-4 py-2">
-                            <div className={v.stock <= 5 ? "inline-flex items-center gap-1.5 rounded bg-red-100 px-2 py-1" : ""}>
-                              <EditableCell
-                                value={v.stock}
-                                saving={savingId === v.id}
-                                onSave={(val) => patchVariant(v.id, { stock: Math.max(0, Math.round(val)) })}
-                              />
-                              {v.stock <= 5 && <span className="text-xs font-medium text-red-700">ต่ำ</span>}
-                            </div>
+                            {(() => {
+                              const th = (v as InventoryRow).low_stock_threshold ?? 5;
+                              const low = v.stock > 0 && v.stock <= th;
+                              return (
+                                <div className={low ? "inline-flex items-center gap-1 rounded bg-red-100/80 px-1.5 py-0.5" : "inline-flex items-center gap-1"}>
+                                  <EditableCell
+                                    value={v.stock}
+                                    saving={savingId === v.id}
+                                    onSave={(val) => patchVariant(v.id, { stock: Math.max(0, Math.round(val)) })}
+                                  />
+                                  {low && <span className="text-[10px] font-medium text-red-700 shrink-0" title={`แจ้งต่ำ ≤ ${th}`}>ต่ำ ≤{th}</span>}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="px-4 py-2">
                             <EditableCell
                               value={v.cost_price}
                               saving={savingId === v.id}
                               onSave={(val) => patchVariant(v.id, { cost_price: val })}
+                              prefix="฿"
                             />
                           </td>
                           <td className="px-4 py-2">
@@ -674,10 +781,11 @@ function AdminInventoryContent() {
                               value={v.price}
                               saving={savingId === v.id}
                               onSave={(val) => patchVariant(v.id, { price: val })}
+                              prefix="฿"
                             />
                           </td>
                           <td className="px-4 py-2">
-                            <span className={v.margin >= 0 ? "text-emerald-600" : "text-red-600"}>{v.margin}%</span>
+                            <span className={`text-xs ${v.margin < 0 ? "text-red-600" : "text-slate-500"}`}>{v.margin}%</span>
                           </td>
                           <td className="px-4 py-2">{v.unit_label}</td>
                         </tr>
@@ -687,9 +795,6 @@ function AdminInventoryContent() {
                 </tbody>
               </table>
             </div>
-          )}
-          {!loading && rows.length === 0 && (
-            <div className="py-12 text-center text-zinc-500">ไม่มี variant ในระบบ หรือกรองแล้วไม่ตรง</div>
           )}
         </CardContent>
       </Card>
@@ -729,15 +834,16 @@ function AdminInventoryContent() {
               <div className="space-y-2">
                 <Label>Category *</Label>
                 <Select
-                  value={addForm.category}
-                  onValueChange={(v) => setAddForm((f) => ({ ...f, category: v as "AUTO" | "PHOTO" }))}
+                  value={addForm.category_id}
+                  onValueChange={(v) => setAddForm((f) => ({ ...f, category_id: v }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Auto / Photo" />
+                    <SelectValue placeholder="เลือกหมวดหมู่" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="AUTO">Auto</SelectItem>
-                    <SelectItem value="PHOTO">Photo</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

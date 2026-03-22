@@ -22,6 +22,7 @@
 - `stock`: integer (Total Stock)
 - `is_active`: boolean
 - `image_url`, `image_url_2`, `image_url_3`, `video_url`: text
+- `strain_dominance`: text (Mostly Indica / Mostly Sativa / Hybrid 50/50)
 - *--- AI Extracted Specs ---*
 - `thc_percent`, `cbd_percent`: numeric
 - `genetics`: text
@@ -55,14 +56,27 @@
 - `is_wholesale`: boolean (default: false)
 - `wholesale_discount_percent`: numeric
 
+### 7b. Customer (POS/Admin — standalone, not tied to auth)
+- `id`: bigint (PK)
+- `name`, `phone`: text (unique)
+- `tier`: enum (Retail, Wholesale, VIP)
+- `wholesale_discount_percent`: int (default 20 for Wholesale)
+- `points`: int (default 0)
+- `total_spend`: decimal
+- `is_active`: boolean (default true) — Soft delete; never hard-delete
+- `address`, `notes`, `line_id`, `preference`: text
+
 ### 8. orders (ออเดอร์และการเงิน)
 - `id`: bigint (PK)
 - `order_number`: varchar(6)
-- `customer_id`: uuid (FK -> customers.id)
+- `customer_id`: uuid (FK -> customers.id, Web orders)
+- `customer_profile_id`: bigint (FK -> Customer.id, POS/Manual orders)
 - `order_origin`: text (enum: 'WEB', 'MANUAL')
 - `payment_method`: text
 - `total_amount`: numeric (ยอดขายสุทธิ)
 - `total_cost`: numeric (บันทึกต้นทุนรวม ณ วันที่ขาย)
+- `points_redeemed`: int (default 0)
+- `points_discount_amount`: decimal (default 0)
 - `status`: text (PENDING, PAID, SHIPPED, CANCELLED)
 - `tracking_number`: text
 

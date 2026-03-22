@@ -2,6 +2,7 @@
  * Admin orders service — list, approve, reject, ship.
  */
 import { getSql } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { sendShippingConfirmationEmail } from "@/services/email-service";
 import { sendCustomerShippingAlert } from "@/services/line-messaging";
 
@@ -28,9 +29,11 @@ export async function listOrders(opts?: {
     const sql = getSql();
     const rows = opts?.status
       ? await sql<AdminOrderRow[]>`
-          SELECT o.id, o.order_number, c.full_name AS customer_name, o.total_amount,
-                 o.payment_method, o.status, o.slip_url, o.reject_note,
-                 o.tracking_number, o.shipping_provider, o.created_at
+          SELECT o.id, o.order_number,
+                 COALESCE(c.full_name, o.customer_name) AS customer_name,
+                 o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
+                 o.tracking_number, o.shipping_provider, o.created_at,
+                 o.customer_phone, o.shipping_address, o.customer_note
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
           WHERE o.status = ${opts.status}
@@ -38,9 +41,11 @@ export async function listOrders(opts?: {
           LIMIT 200
         `
       : await sql<AdminOrderRow[]>`
-          SELECT o.id, o.order_number, c.full_name AS customer_name, o.total_amount,
-                 o.payment_method, o.status, o.slip_url, o.reject_note,
-                 o.tracking_number, o.shipping_provider, o.created_at
+          SELECT o.id, o.order_number,
+                 COALESCE(c.full_name, o.customer_name) AS customer_name,
+                 o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
+                 o.tracking_number, o.shipping_provider, o.created_at,
+                 o.customer_phone, o.shipping_address, o.customer_note
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
           ORDER BY o.created_at DESC
@@ -78,12 +83,14 @@ export async function rejectPayment(orderId: number, note: string): Promise<Serv
   }
 }
 
+export type MarkShippedResult = { quotationSynced: boolean };
+
 /** Mark order as SHIPPED with tracking number and carrier, then email customer. */
 export async function markShipped(
   orderId: number,
   trackingNumber: string,
   shippingProvider: string
-): Promise<ServiceResult<null>> {
+): Promise<ServiceResult<MarkShippedResult>> {
   try {
     const sql = getSql();
 
@@ -94,6 +101,32 @@ export async function markShipped(
           shipping_provider = ${shippingProvider}
       WHERE id = ${orderId}
     `;
+
+    let quotationSynced = false;
+    try {
+      const oid = BigInt(orderId);
+      const byLink = await prisma.quotations.updateMany({
+        where: { convertedOrderId: oid },
+        data: { status: "SHIPPED" },
+      });
+      if (byLink.count > 0) quotationSynced = true;
+      else {
+        const ord = await prisma.orders.findUnique({
+          where: { id: oid },
+          select: { source_quotation_number: true },
+        });
+        const qn = ord?.source_quotation_number?.trim();
+        if (qn) {
+          const byNo = await prisma.quotations.updateMany({
+            where: { quotationNumber: qn },
+            data: { status: "SHIPPED" },
+          });
+          quotationSynced = byNo.count > 0;
+        }
+      }
+    } catch (syncErr) {
+      console.error("[orders-service] markShipped quotation sync:", syncErr);
+    }
 
     // Fire-and-forget: fetch customer info then notify via email + LINE
     void (async () => {
@@ -152,7 +185,7 @@ export async function markShipped(
       }
     })();
 
-    return { data: null, error: null };
+    return { data: { quotationSynced }, error: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[orders-service] markShipped error:", msg);

@@ -131,6 +131,38 @@ export async function notifyAdminNewOrder(opts: {
   }
 }
 
+// ─── Admin Alerts (Low Stock, Void, Daily Closing) ───────────────────────────
+
+export async function sendLowStockAlert(opts: {
+  productName: string;
+  unitLabel: string;
+  stock: number;
+}): Promise<ServiceResult> {
+  const text = `🚨 [Low Stock] สินค้า ${opts.productName} (${opts.unitLabel}) เหลือเพียง ${opts.stock} ชิ้น! กรุณาเติมสต็อก`;
+  return pushTextToAdmin(text);
+}
+
+export async function sendVoidOrderAlert(opts: {
+  orderNumber: string;
+  totalAmount: number;
+  reason: string | null;
+}): Promise<ServiceResult> {
+  const totalStr = opts.totalAmount.toLocaleString("th-TH", { maximumFractionDigits: 0 });
+  const reasonStr = opts.reason?.trim() || "ไม่ระบุ";
+  const text = `⚠️ [Void Order] ออเดอร์ #${opts.orderNumber} ถูกยกเลิก!\nเหตุผล: ${reasonStr}\nยอดเงิน: ${totalStr} บาท`;
+  return pushTextToAdmin(text);
+}
+
+export async function sendDailyClosingAlert(opts: {
+  date: string;
+  totalSales: number;
+  orderCount: number;
+}): Promise<ServiceResult> {
+  const totalStr = opts.totalSales.toLocaleString("th-TH", { maximumFractionDigits: 0 });
+  const text = `📊 [Daily Summary] สรุปยอดขายวันที่ ${opts.date}: ยอดรวม ${totalStr} บาท (ออเดอร์ทั้งหมด ${opts.orderCount} รายการ)`;
+  return pushTextToAdmin(text);
+}
+
 // ─── Push Text Message to Admin only ────────────────────────────────────────
 // For quick admin alerts (e.g. low stock warning). Never used for customer data.
 

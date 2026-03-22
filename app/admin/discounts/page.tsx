@@ -1,17 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Loader2,
   Plus,
   Pencil,
   Tag,
-  Percent,
   AlertTriangle,
   Check,
   X,
-  Trash2,
-  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,21 +45,9 @@ type CouponRow = {
   first_order_only?: boolean | null;
 };
 
-type TierRow = {
-  id: number;
-  min_amount: number;
-  discount_percentage: number;
-  is_active: boolean;
-};
-
 export default function AdminDiscountsPage() {
   const [coupons, setCoupons] = useState<CouponRow[]>([]);
-  const [tiers, setTiers] = useState<TierRow[]>([]);
-  const [rules, setRules] = useState<{ min_spend: number; discount_percent: number }[]>([]);
-  const [tieredEnabled, setTieredEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [tiersSaving, setTiersSaving] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
   const [addOpen, setAddOpen] = useState(false);
   const [editCoupon, setEditCoupon] = useState<CouponRow | null>(null);
@@ -89,42 +75,16 @@ export default function AdminDiscountsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const FALLBACK_RULES = [
-    { min_spend: 2000, discount_percent: 10 },
-    { min_spend: 4000, discount_percent: 15 },
-    { min_spend: 6000, discount_percent: 20 },
-  ];
-
   const fetchAll = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     setError(null);
     try {
-      const [couponsRes, tiersRes, tieredRes] = await Promise.all([
-        fetch("/api/admin/discounts/coupons"),
-        fetch("/api/admin/discounts/tiers"),
-        fetch("/api/admin/discounts/tiered-discounts"),
-      ]);
+      const couponsRes = await fetch("/api/admin/discounts/coupons");
       const couponsData = await couponsRes.json();
-      const tiersData = await tiersRes.json();
-      let tieredData: { min_spend: number; discount_percent: number }[] = [];
-      if (tieredRes.ok) {
-        const json = await tieredRes.json();
-        tieredData = Array.isArray(json) ? json : [];
-      } else {
-        const errBody = await tieredRes.json().catch(() => ({}));
-        setError((errBody?.error ?? "โหลดข้อมูลไม่สำเร็จ") as string);
-        tieredData = FALLBACK_RULES;
-      }
       if (Array.isArray(couponsData)) setCoupons(couponsData);
       else setCoupons([]);
-      if (tiersData.tiers) setTiers(tiersData.tiers);
-      else setTiers([]);
-      if (typeof tiersData.tiered_discount_enabled === "boolean") setTieredEnabled(tiersData.tiered_discount_enabled);
-      setRules(tieredData.length > 0 ? tieredData : FALLBACK_RULES);
     } catch {
       setCoupons([]);
-      setTiers([]);
-      setRules(FALLBACK_RULES);
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -207,42 +167,6 @@ export default function AdminDiscountsPage() {
     }
   };
 
-  const handleSaveTiers = async () => {
-    setTiersSaving(true);
-    setError(null);
-    try {
-      const payload = rules.map((r) => ({ min_spend: r.min_spend, discount_percent: r.discount_percent }));
-      const [tiersRes, rulesRes] = await Promise.all([
-        fetch("/api/admin/discounts/tiers", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tiered_discount_enabled: tieredEnabled }),
-        }),
-        fetch("/api/admin/discounts/tiered-discounts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rules: payload }),
-        }),
-      ]);
-      const rulesData = await rulesRes.json().catch(() => ({}));
-      const tiersErr = await tiersRes.json().catch(() => ({}));
-      if (!tiersRes.ok) {
-        setError((tiersErr?.error ?? "Failed to save tiered enabled") as string);
-        return;
-      }
-      if (!rulesRes.ok) {
-        setError((rulesData?.error ?? "Failed to save rules") as string);
-        return;
-      }
-      setError(null);
-      await fetchAll();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "กำลังบันทึก... หากพังกรุณารีเฟรช");
-    } finally {
-      setTiersSaving(false);
-    }
-  };
-
   const openEdit = (row: CouponRow) => {
     setEditCoupon(row);
     setEditForm({
@@ -261,7 +185,12 @@ export default function AdminDiscountsPage() {
     <div className="mx-auto max-w-6xl space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-zinc-900">ส่วนลด & คูปอง</h1>
-        <p className="mt-1 text-sm text-zinc-500">จัดการโค้ดส่วนลดและส่วนลดขั้นบันได</p>
+        <p className="mt-1 text-sm text-zinc-500">
+          จัดการโค้ดส่วนลด (คูปอง) — ส่วนลดขั้นบันไดย้ายไปที่{" "}
+          <Link href="/admin/promotions" className="text-primary font-medium hover:underline">
+            โปรโมชั่น
+          </Link>
+        </p>
       </div>
 
       {loading ? (
@@ -344,114 +273,6 @@ export default function AdminDiscountsPage() {
                   )}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-
-          {/* ── Tiered Discounts ─────────────────────────────────────────────── */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Percent className="h-5 w-5 text-primary" />
-                ส่วนลดขั้นบันได (ยอดซื้อรวม)
-              </CardTitle>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    setRefreshing(true);
-                    await fetchAll(false);
-                    setRefreshing(false);
-                  }}
-                  disabled={refreshing}
-                  className="gap-1.5"
-                >
-                  <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                  โหลดใหม่
-                </Button>
-                <span className="text-sm text-zinc-500">เปิดใช้ระบบ</span>
-                <button
-                  type="button"
-                  disabled={tiersSaving}
-                  onClick={() => {
-                    const next = !tieredEnabled;
-                    setTieredEnabled(next);
-                    setTiersSaving(true);
-                    fetch("/api/admin/discounts/tiers", {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ tiered_discount_enabled: next }),
-                    })
-                      .then(() => fetchAll())
-                      .finally(() => setTiersSaving(false));
-                  }}
-                  className={`relative h-6 w-11 rounded-full transition-colors ${tieredEnabled ? "bg-primary" : "bg-zinc-200"}`}
-                >
-                  <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${tieredEnabled ? "left-6" : "left-0.5"}`}
-                  />
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                  <AlertTriangle className="h-4 w-4 shrink-0" /> {error}
-                </div>
-              )}
-              <div className="space-y-3">
-                {rules.map((r, i) => (
-                  <div key={i} className="flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-4">
-                    <div className="flex-1 min-w-[120px]">
-                      <Label className="text-xs text-zinc-500">ยอดซื้อขั้นต่ำ (฿)</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={r.min_spend}
-                        onChange={(e) =>
-                          setRules((prev) =>
-                            prev.map((x, j) => (j === i ? { ...x, min_spend: Number(e.target.value) || 0 } : x))
-                          )
-                        }
-                        className="mt-1"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-[100px]">
-                      <Label className="text-xs text-zinc-500">ส่วนลด (%)</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={r.discount_percent}
-                        onChange={(e) =>
-                          setRules((prev) =>
-                            prev.map((x, j) => (j === i ? { ...x, discount_percent: Number(e.target.value) || 0 } : x))
-                          )
-                        }
-                        className="mt-1"
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setRules((prev) => prev.filter((_, j) => j !== i))}
-                      className="h-9 w-9 p-0 text-zinc-500 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  onClick={() => setRules((prev) => [...prev, { min_spend: 0, discount_percent: 0 }])}
-                  className="gap-1.5"
-                >
-                  <Plus className="h-4 w-4" /> เพิ่มขั้นบันได
-                </Button>
-              </div>
-              <Button onClick={() => void handleSaveTiers()} disabled={tiersSaving} className="gap-2">
-                {tiersSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : "บันทึกส่วนลดขั้นบันได"}
-              </Button>
             </CardContent>
           </Card>
         </>

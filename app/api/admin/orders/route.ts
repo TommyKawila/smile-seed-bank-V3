@@ -73,6 +73,11 @@ export async function POST(req: NextRequest) {
       0
     );
 
+    const itemsSum = items.reduce((s, i) => s + i.quantity * i.price, 0);
+    const shipping_fee = Math.max(0, summary.shipping);
+    const discount_amount = Math.max(0, summary.discount);
+    const total_amount = itemsSum + shipping_fee - discount_amount;
+
     const orderNumber = generateOrderNumber();
 
     const { data: newOrder, error: orderError } = await db
@@ -83,8 +88,10 @@ export async function POST(req: NextRequest) {
         order_origin: orderOrigin,
         payment_method: customer.payment_method,
         shipping_address: customer.address,    // snapshot ที่อยู่จัดส่ง
-        total_amount: summary.total,
+        total_amount,
         total_cost: totalCost,
+        shipping_fee,
+        discount_amount,
         status: "PENDING",
       } satisfies Partial<Order>)
       .select("id")

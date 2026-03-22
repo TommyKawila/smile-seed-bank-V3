@@ -1,7 +1,13 @@
 # Project Requirements Document (PRD): Smile Seed Bank V3
 
 ## 1. Project Overview
-**Smile Seed Bank V3** คือแพลตฟอร์ม E-commerce และ B2B Wholesale ระดับพรีเมียม (Boutique) สำหรับจำหน่ายเมล็ดพันธุ์กัญชาและอุปกรณ์ โดยทำหน้าที่เป็นตัวแทนจำหน่าย (Distributor) ให้กับแบรนด์ (Breeders) ชั้นนำต่างๆ 
+**Smile Seed Bank V3** คือระบบจัดการร้านค้าปลีก/ขายส่งเมล็ดพันธุ์ระดับพรีเมียม (Premium Retail/Wholesale Management System for Seeds) โดยทำหน้าที่เป็นตัวแทนจำหน่าย (Distributor) ให้กับแบรนด์ (Breeders) ชั้นนำต่างๆ
+
+**Core Mission:** ระบบจัดการร้านค้าปลีก/ขายส่งเมล็ดพันธุ์ระดับพรีเมียม (Boutique) พร้อมโมดูลหลัก:
+- **Advanced Inventory (Genetics/Media):** จัดการสต็อก, สายพันธุ์ (Strain Dominance), และสื่อภาพ (WebP compression)
+- **CRM (Tiered Loyalty):** ระบบลูกค้าสัมพันธ์, คะแนนสะสม, ส่วนลดตาม Tier
+- **POS (Price Psychology):** สร้างออเดอร์ Manual, ราคาตาม Tier, ใช้คะแนนแลกส่วนลด
+
 เป้าหมายของ V3 คือการวางโครงสร้างที่มั่นคง (Solid Foundation) เพื่อแก้ปัญหาโค้ดซ้อนทับ (Spaghetti Code) พร้อมเพิ่มฟีเจอร์ระดับ ERP ขนาดย่อม เช่น ระบบจัดการลูกค้าขายส่ง (Wholesale), ระบบการเงิน (Financial Dashboard), และระบบ Fulfillment อัตโนมัติ
 
 ## 2. Tech Stack
