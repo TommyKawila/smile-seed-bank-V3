@@ -3,6 +3,8 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Breeder } from "@/types/supabase";
 
+export const dynamic = "force-dynamic";
+
 const BreederSchema = z.object({
   name: z.string().min(2, "ชื่อ Breeder ต้องมีอย่างน้อย 2 ตัวอักษร"),
   logo_url: z.string().nullable().optional(),

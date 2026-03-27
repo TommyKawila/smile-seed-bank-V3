@@ -3,6 +3,8 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { CheckoutPageClient } from "@/components/storefront/CheckoutPageClient";
 import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
 
+export const dynamic = "force-dynamic";
+
 /** Server-only: payment settings use Supabase server client + strict select in fetchCheckoutPaymentSettings. */
 async function CheckoutWithPaymentData() {
   const { settings, error } = await fetchCheckoutPaymentSettings();

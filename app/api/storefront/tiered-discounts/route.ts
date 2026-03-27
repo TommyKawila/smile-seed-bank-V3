@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const FALLBACK: { min_spend: number; discount_percent: number }[] = [
   { min_spend: 2000, discount_percent: 10 },
   { min_spend: 4000, discount_percent: 15 },

@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export default async function InventoryPage() {
   // 1. ดึงข้อมูลจากตาราง products
   const allProducts = await prisma.products.findMany({
