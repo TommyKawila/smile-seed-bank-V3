@@ -75,6 +75,8 @@ export interface Product {
   sex_type: string | null;        // Regular / Feminized / Autoflower
   lineage: string | null;         // e.g. "OG Kush x White Widow"
   terpenes: Json | null;          // Array of terpene names
+  /** SEO bundle from AI importer: meta_title_th, meta_description_th, meta_title_en, meta_description_en */
+  seo_meta: Json | null;
 }
 
 export interface ProductVariant {
@@ -190,6 +192,17 @@ export interface OrderItem {
   unit_cost: number;        // Cost snapshot at time of sale
 }
 
+/** Single-row table: payment methods stored as JSON (see admin payment settings). */
+export interface PaymentSettingsRow {
+  id: number;
+  bank_accounts: Json | null;
+  prompt_pay: Json | null;
+  crypto_wallets: Json | null;
+  line_id: string | null;
+  messenger_url: string | null;
+  updated_at: string | null;
+}
+
 export interface Blog {
   id: number;
   slug: string;
@@ -282,6 +295,11 @@ export interface Database {
       orders: TableDef<Order, Omit<Order, "id" | "created_at">, Partial<Omit<Order, "id">>>;
       order_items: TableDef<OrderItem, Omit<OrderItem, "id">, Partial<Omit<OrderItem, "id">>>;
       blogs: TableDef<Blog, Omit<Blog, "id" | "created_at">, Partial<Omit<Blog, "id" | "created_at">>>;
+      payment_settings: TableDef<
+        PaymentSettingsRow,
+        Omit<PaymentSettingsRow, "id"> & { id?: number },
+        Partial<PaymentSettingsRow>
+      >;
     };
     Views: { [_ in never]: never };
     Functions: { [_ in never]: never };

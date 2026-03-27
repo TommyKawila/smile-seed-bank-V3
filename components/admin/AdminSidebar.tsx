@@ -22,6 +22,7 @@ import {
   BarChart2,
   FileText,
   Camera,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -32,6 +33,7 @@ const navItems = [
   { href: "/admin/inventory", label: "สต็อก / Inventory", icon: Boxes },
   { href: "/admin/inventory/dashboard", label: "Inventory Dashboard", icon: BarChart2 },
   { href: "/admin/inventory/manual", label: "Manual Grid", icon: LayoutGrid },
+  { href: "/admin/inventory/ai-import", label: "AI Import", icon: Sparkles },
   { href: "/admin/inventory/snapshots", label: "Stock Audit", icon: Camera },
   { href: "/admin/breeders", label: "แบรนด์ / Breeders", icon: Leaf },
   { href: "/admin/categories", label: "หมวดหมู่ / Categories", icon: FolderTree },

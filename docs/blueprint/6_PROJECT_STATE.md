@@ -15,7 +15,8 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 ### Inventory 2.0
 - **AI Genetic Extractor** — Gemini 1.5 / GPT-4o mini toggle; multimodal image upload for packaging/brochure text extraction; auto-fill product specs (genetics, THC/CBD, Indica/Sativa ratio, effects, flavors)
 - **Genetic Mapping** — Strain dominance (Mostly Indica / Mostly Sativa / Hybrid 50/50); filter in Manual Grid, POS, Shop, and Dashboard
-- **Manual Grid** — Bulk editing by Breeder + Category; custom package sizes; auto-SKU generation; inline stock/price; Sync to main catalog; PNG/PDF export
+- **Manual Grid** — Bulk editing by Breeder + Category; custom package sizes; auto-SKU generation; inline stock/price; Sync to main catalog; PNG/PDF export; **PDF catalog** (`InventoryPdfDocument.tsx`) — no photo column; 535pt grid (NO 20, NAME 145, CAT 45, GEN 65, PACK 65 = Stk 25 + Price 40 × n packs), mirrored header/data, vertical rules, zebra, category bar full width; **Add Strain** prepends draft row + focus Master SKU; **Sync Selected** batch (sequential `await`, toast progress, local `gridRow` merge, no mid-batch refresh); header/row checkboxes include drafts; **types** — `InventoryRow` / `InventoryPackCell` / `InventoryVariant` in `manual/page.tsx`; toasts on failed category/breeder/grid load; **Grid API** — `breeder_id` OR null-`breeder_id` + `master_sku` prefix; optional `?debug=1`; sync sets `breeder_id` when null
+- **AI Sheet Import** — `/admin/inventory/ai-import`: Google Sheet/CSV → `lib/ai-import-sheet-parse.ts` (Thai headers, จำนวน Pack N / Pack N Price, หมด→0, section rows Photoperiod/Auto) → Master SKU `toBreederPrefix`-name-type; **Import selected → Manual Grid** (`lib/manual-grid-import-handoff.ts`); Firecrawl + Claude → breeder match → images + SEO; see **§7.1**
 - **Media Auto-Compression** — WebP compression (max 0.8MB, 1200px) for product images; 40×40 thumbnails
 - **Low Stock Alert System** — Per-variant `low_stock_threshold`; AdminSidebar badge; LowStockWidget; Manual Grid highlight; filter "สต็อกต่ำเท่านั้น"
 
@@ -45,6 +46,15 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 - **AI Outline Suggest** — POST `/api/admin/blog/ai-suggest` uses OpenAI to generate blog outlines from topic
 - **Admin Blog List** — `/admin/blog` with table (title, slug, status, published_at)
 - **Create/Edit Pages** — Tiptap rich text editor; AI outline → apply to editor; DRAFT/PUBLISHED; tags
+
+### Storefront Checkout (payment preview)
+- **Server-side payment settings** — `fetchCheckoutPaymentSettings()` in `lib/payment-settings-public.ts` uses `createClient` from `lib/supabase/server`; `.select('id, bank_accounts, prompt_pay')` only (no `line_id` / `crypto_wallets` / `messenger_url` on checkout); maps JSON to public `PaymentSetting` type; `app/(storefront)/checkout/page.tsx` async + `Suspense` / `loading.tsx`; UI in `components/storefront/CheckoutPageClient.tsx` (Card + `next/image` for QR); TH/EN via `useLanguage().t`
+- **`payment_settings` in Supabase types** — `PaymentSettingsRow` + `Tables.payment_settings` in `types/supabase.ts`
+
+### Storefront breeder logos
+- **`resolvePublicAssetUrl()`** — `lib/public-storage-url.ts` (relative storage paths → full public URL)
+- **`BreederLogoImage`** — `components/storefront/BreederLogoImage.tsx`: fixed `width`/`height`, `alt` = `{name} logo`, `onError` → letter-in-circle fallback; wired on `app/(storefront)/shop/page.tsx`, `app/(storefront)/page.tsx`, `app/(storefront)/product/[slug]/page.tsx`, `app/(storefront)/breeders/page.tsx`, `components/storefront/BreederRibbon.tsx`
+- **`next.config.mjs`** — `images.remotePatterns` from `NEXT_PUBLIC_SUPABASE_URL` + storage pathname; fallback host `jysdfxxilyjmjdmhazbu.supabase.co` (correct spelling)
 
 ### Sales & Document Module
 - **Executive Dashboard v1** — `/admin/dashboard`; `GET /api/admin/dashboard/stats?range=7|30|month`; `GET /api/admin/dashboard/orders-export` + `lib/export-utils` (`xlsx`) ส่งออก Excel ตามช่วง; toast กำลังเตรียม/สำเร็จ; `lib/dashboard-date-range` ใช้ร่วม stats/export; Top 5 strains pie: `topStrains.breederName` จาก join `products`/`breeders`; legend/tooltip `ชื่อสาย (Breeder)` ใน `app/admin/dashboard/page.tsx`; empty state เมื่อ `totalRevenue===0` และ `orderCount===0` — placeholder กราฟ, CTA `/admin/quotations/new`, ข้อความตารางออเดอร์/Top Spenders
@@ -107,6 +117,8 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 
 ## 6. Last Updated
 
+**March 26, 2026** — Manual Grid PDF: pixel grid + vertical rules + Photo alignment (`InventoryPdfDocument.tsx`); สรุป AI Sheet Importer + SEO อยู่ **§7.1**
+
 **March 7, 2026** — Quotation PDF: embedded Base64 logo, SSB-QT-YYYYMMDD-XXX numbering, read-only เลขที่, async preview with blob, Thai lineHeight 7.5
 
 ---
@@ -114,6 +126,20 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 ## 7. สรุปงาน session (มีนาคม 2026)
 
 ไฟล์อ้างอิงหลักอยู่ใน repo ตาม bullet ด้านล่าง (ไม่สร้างไฟล์สรุปแยก)
+
+### 7.1 Session 26 Mar 2026 — AI Product Importer (สมบูรณ์)
+
+| หัวข้อ | รายละเอียด / ไฟล์ |
+|--------|-------------------|
+| **Pipeline หลังบ้าน** | `services/ai-importer.service.ts` — Firecrawl scrape markdown → Claude (Sonnet, `ANTHROPIC_MODEL` optional) → Zod `AiImporterExtractedSchema` → match breeder → `localizeImage` สูงสุด 5 URL (dedupe `Array.from(new Set)`); `createProductWithVariants` หรือ Prisma `products.update` เมื่อ `master_sku` เดิม; `syncProductStats` |
+| **Validation** | `lib/validations/ai-importer.ts` — `images[]` (≤5, unique https, ตัวแรก = hero), `seo: { th, en }` แต่ละภาษา `title` (≤60) + `description` (≤160); transform → `image_url` + `additional_images`; `AiImportRowSchema` (name, breeder, url, price, stock, dryRun) |
+| **รูปภาพ** | `services/image-storage.service.ts` — `localizeImage(url, folder)` → bucket `product-images` (`SUPABASE_STORAGE_PRODUCTS_BUCKET`); fallback URL เดิมเมื่อดาวน์โหลด/อัปโหลดล้มเหลว |
+| **SEO ใน DB** | `products.seo_meta` JSON — โครงสร้าง `{ "th": { "title", "description" }, "en": { "title", "description" } }`; migration `20260326120000_products_seo_meta` (Prisma + `supabase/migrations`) |
+| **API** | `POST /api/admin/import/ai` — `bigintToJson` ใน response; `GET /api/admin/import/sheet?url=` — แปลงลิงก์ Google Sheet หลายรูปแบบ → CSV export (รวม `gid` จาก hash/query) |
+| **Admin UI** | `app/admin/inventory/ai-import/page.tsx` — วาง Sheet URL หรือ CSV; Papa Parse; ตาราง + สถานะ; **Start** วนทีละแถว; **Stop** (`AbortController` + ปลด review dialog); **Retry** แถว error (`RefreshCcw`); progress (done+failed)/total; toast จบ batch + เสียง chime; `localStorage` `ai-import-state-v1`; Review Dialog: THC, คำอธิบาย TH, **SEO แบบ Google snippet** TH/EN, กริดรูปสูงสุด 5 (`next/image` unoptimized) |
+| **Sidebar** | `components/admin/AdminSidebar.tsx` — ลิงก์ "AI Import" → `/admin/inventory/ai-import` |
+| **Manual Grid (งานก่อนหน้าใน session)** | `app/admin/inventory/manual/page.tsx` — แถว draft ใหม่ด้านบน; **Sync Selected** แบบ sequential; checkbox รวม draft; `mergeSyncedGridRow` + `POST /api/admin/inventory/sync` (`gridRow`) |
+| **Env** | `FIRECRAWL_API_KEY`, `ANTHROPIC_API_KEY`, optional `ANTHROPIC_MODEL`, optional `SUPABASE_STORAGE_PRODUCTS_BUCKET` |
 
 | หัวข้อ | รายละเอียดสั้น / ไฟล์ |
 |--------|----------------------|
@@ -124,4 +150,5 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 | **ประวัติใบเสนอราคา** | Tabs ทั้งหมด / รอจัดการ / แปลงแล้ว + `lifecycle` query; sort `updatedAt`; badge ปิดดีล / ส่งแล้ว — `app/admin/quotations/page.tsx`, `app/api/admin/quotations/route.ts` GET |
 | **Ship → ใบเสนอราคา** | `markShipped` อัปเดต `quotations.status = SHIPPED` (convertedOrderId หรือเลข QT); API ตอบ `quotationStatusSynced`; toast ใน `app/admin/orders/page.tsx`; badge "ส่งแล้ว (ปิดดีล) ✅" — `services/orders-service.ts`, `app/api/admin/orders/[id]/status/route.ts` |
 | **สคริปต์ DB** | `scripts/merge-rainbow-melon-products.sql` — merge duplicate Rainbow Melon / orphan products |
+| **Checkout payment** | `lib/payment-settings-public.ts`, `components/storefront/CheckoutPageClient.tsx`, `app/(storefront)/checkout/page.tsx` + `loading.tsx`; `types/supabase.ts` `payment_settings` |
 | **อื่น** | `types/supabase.ts` Order; zod รองรับ `SHIPPED` บน quotations POST/PATCH; `docs/blueprint/6_PROJECT_STATE.md` (section 2 bullets อัปเดตคู่กับงานด้านบน) |

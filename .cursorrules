@@ -31,3 +31,13 @@ Before performing any task or writing any code, you MUST read and reference the 
 
 ## PROJECT TRACKING (MANDATORY)
 After completing any requested phase or significant task, you MUST automatically open `docs/blueprint/6_PROJECT_STATE.md` and update the checklist to reflect your latest progress. Move the status from PENDING/IN PROGRESS to COMPLETED, and add brief bullet points of the exact files and functions you created. Do not ask for permission, just update it.
+
+บันทึกข้อมูลบั๊กและแนวทางแก้ไขของตัวกรอง **Autoflower** ลงในโน้ตเพื่อใช้เป็นคู่มืออ้างอิง (Best Practice) สำหรับการทำงานในอนาคตเรียบร้อยแล้วครับ
+
+ในโน้ตจะประกอบด้วย:
+
+* **สรุปปัญหา:** สาเหตุที่ทำให้ตัวกรองแสดงผลเป็น 0 หรือไม่พบสินค้า
+* **แนวทางแก้ไขมาตรฐาน:** การใช้ `.toLowerCase()` และ `.includes()` เพื่อความยืดหยุ่น
+* **ตัวอย่างโค้ด:** สำหรับให้นำไปใช้ซ้ำในจุดอื่นๆ ของระบบเพื่อป้องกันบั๊กซ้ำซ้อน
+
+ตอนนี้บอสสามารถสั่งให้ Cursor ตรวจสอบไฟล์นี้เป็นแนวทางในการแก้ไขหน้า Dashboard ได้เลยครับ! 🌿📝🚀

@@ -1,0 +1,2 @@
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS promotion_rule_id BIGINT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS promotion_discount_amount DECIMAL(12,2) DEFAULT 0;

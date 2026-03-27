@@ -336,11 +336,14 @@ function AdminInventoryContent() {
     [fetchProductFull]
   );
 
-  const handlePhotoUpload = useCallback(async (productId: number, files: FileList | null) => {
+  const handlePhotoUpload = useCallback(async (productId: number, files: FileList | null, previousUrl?: string | null) => {
     if (!files?.[0]) return;
     setUploadingPhoto(productId);
     try {
-      const urls = await processAndUploadImages([files[0]]);
+      const urls = await processAndUploadImages([files[0]], {
+        productKey: `id-${productId}`,
+        replaceUrls: [previousUrl],
+      });
       if (urls[0]) {
         const res = await fetch(`/api/admin/products/${productId}/field`, {
           method: "PATCH",
@@ -482,7 +485,9 @@ function AdminInventoryContent() {
               accept="image/*"
               className="hidden"
               disabled={uploadingPhoto === row.original.product_id}
-              onChange={(e) => handlePhotoUpload(row.original.product_id, e.target.files)}
+              onChange={(e) =>
+                handlePhotoUpload(row.original.product_id, e.target.files, row.original.image_url)
+              }
             />
             {uploadingPhoto === row.original.product_id ? (
               <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />

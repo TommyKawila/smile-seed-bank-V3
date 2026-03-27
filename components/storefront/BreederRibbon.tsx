@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, useMotionValue, useAnimationFrame, AnimatePresence } from "framer-motion";
 import { useBreeders } from "@/hooks/useBreeders";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Breeder } from "@/types/supabase";
+import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 
 const ITEM_W = 140;
 const ITEM_W_COMPACT = 100;
@@ -265,20 +265,24 @@ export function BreederRibbon({
                   }`}
                 >
                   <div
-                    className={`relative transition-all duration-300 ${innerSize} ${
+                    className={`relative flex items-center justify-center transition-all duration-300 ${innerSize} ${
                       isActive
                         ? "grayscale-0 opacity-100"
                         : "grayscale-0 opacity-100 lg:grayscale lg:opacity-50 lg:group-hover:grayscale-0 lg:group-hover:opacity-100 lg:group-hover:scale-110"
                     }`}
                   >
-                    <Image
-                      src={b.logo_url!}
-                      alt={b.name}
-                      fill
-                      draggable={false}
-                      className="object-contain"
-                      sizes={compact ? "(max-width: 640px) 64px, 80px" : "(max-width: 640px) 128px, 160px"}
-                      unoptimized
+                    <BreederLogoImage
+                      src={b.logo_url}
+                      breederName={b.name}
+                      width={compact ? 48 : 80}
+                      height={compact ? 48 : 80}
+                      className="rounded-xl"
+                      imgClassName="object-contain"
+                      sizes={
+                        compact
+                          ? "(max-width: 640px) 40px, 48px"
+                          : "(max-width: 640px) 64px, 80px"
+                      }
                     />
                   </div>
                 </div>

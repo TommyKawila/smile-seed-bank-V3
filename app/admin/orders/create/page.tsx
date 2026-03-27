@@ -20,6 +20,8 @@ import {
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice, cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { toastErrorMessage } from "@/lib/admin-toast";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
 import { applyWholesalePrice } from "@/lib/wholesale-utils";
 import type { ProductWithBreeder } from "@/types/supabase";
@@ -43,6 +45,7 @@ interface CustomerInfo {
 }
 
 export default function CreateOrderPage() {
+  const { toast } = useToast();
   const { products, isLoading: loadingProducts } = useProducts({ includeVariants: true });
   const {
     items,
@@ -223,7 +226,12 @@ export default function CreateOrderPage() {
       setQuickAddOpen(false);
       setQuickAddForm({ name: "", phone: "" });
     } catch (e) {
-      alert(String(e));
+      console.error(e);
+      toast({
+        title: "เกิดข้อผิดพลาด (Error)",
+        description: toastErrorMessage(e),
+        variant: "destructive",
+      });
     } finally {
       setQuickAddSaving(false);
     }

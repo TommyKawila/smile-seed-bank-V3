@@ -114,6 +114,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
   const [productSlots, setProductSlots] = useState<ImageSlot[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadPhase, setUploadPhase] = useState<"idle" | "compress" | "upload">("idle");
   const [isDragging, setIsDragging] = useState(false);
   const productFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -290,12 +291,29 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
   // ── Collect image URLs from slots (upload new files first) ──────────────────
   const resolveImageUrls = async (): Promise<string[]> => {
-    const newFiles = productSlots.filter((s) => s.file !== null).map((s) => s.file as File);
+    const newFileSlots = productSlots.filter((s) => s.file !== null);
+    const newFiles = newFileSlots.map((s) => s.file as File);
+    const replaceUrls = newFileSlots.map((s) =>
+      s.url && /^https?:\/\//.test(s.url) ? s.url : undefined
+    );
     let uploadedUrls: string[] = [];
     if (newFiles.length > 0) {
       setIsUploading(true);
-      uploadedUrls = await processAndUploadImages(newFiles);
-      setIsUploading(false);
+      setUploadPhase("compress");
+      const productKey =
+        initialData?.id != null && Number(initialData.id) > 0
+          ? String(initialData.id)
+          : (form.master_sku || form.name || `new-${Date.now()}`).toString();
+      try {
+        uploadedUrls = await processAndUploadImages(newFiles, {
+          productKey,
+          replaceUrls,
+          onPhase: (p) => setUploadPhase(p),
+        });
+      } finally {
+        setUploadPhase("idle");
+        setIsUploading(false);
+      }
     }
     let uploadIdx = 0;
     return productSlots.map((s) => {
@@ -599,7 +617,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 <div className="flex flex-col items-center justify-center gap-2 py-4 text-zinc-400">
                   <ImagePlus className="h-8 w-8 opacity-40" />
                   <p className="text-xs font-medium">ลากรูปมาวาง หรือคลิกเพื่อเลือก</p>
-                  <p className="text-[10px] opacity-70">รองรับสูงสุด 5 รูป · auto-compress เป็น WebP</p>
+                  <p className="text-[10px] opacity-70">สูงสุด 5 รูป · WebP · ความกว้างไม่เกิน 1200px · ~80% quality</p>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -642,7 +660,12 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
             </p>
             {isUploading && (
               <p className="flex items-center gap-1.5 text-xs text-primary">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> กำลัง compress &amp; อัปโหลดรูป...
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {uploadPhase === "compress"
+                  ? "กำลังบีบอัดรูป… (Compressing)"
+                  : uploadPhase === "upload"
+                    ? "กำลังอัปโหลด… (Uploading)"
+                    : "กำลังประมวลผลรูป… (Processing)"}
               </p>
             )}
           </div>

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
+import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { formatPrice } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -100,13 +101,15 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
             onClick={(e) => e.stopPropagation()}
             className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-white/30 bg-white/20 shadow-md backdrop-blur-md transition-transform duration-200 hover:scale-110"
           >
-            {product.breeders.logo_url ? (
-              <span className="relative h-full w-full">
-                <Image src={product.breeders.logo_url} alt={product.breeders.name} fill className="object-contain p-1" unoptimized />
-              </span>
-            ) : (
-              <Leaf className="h-5 w-5 text-primary/60" />
-            )}
+            <BreederLogoImage
+              src={product.breeders.logo_url}
+              breederName={product.breeders.name}
+              width={40}
+              height={40}
+              className="rounded-xl"
+              imgClassName="object-contain p-1"
+              sizes="40px"
+            />
           </Link>
         )}
         {product.stock <= 5 && product.stock > 0 && (

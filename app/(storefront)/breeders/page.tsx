@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Leaf, ChevronRight, Dna, ChevronDown, MapPin, Star, Trophy, Zap } from "lucide-react";
@@ -179,22 +180,17 @@ export default function BreedersPage() {
               >
                 {/* Logo area */}
                 <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-zinc-50">
-                  {breeder.logo_url ? (
-                    <div className="relative h-28 w-28">
-                      <Image
-                        src={breeder.logo_url}
-                        alt={breeder.name}
-                        fill
-                        className="object-contain transition-transform duration-300 group-hover:scale-110"
-                        sizes="112px"
-                        unoptimized
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10">
-                      <Leaf className="h-10 w-10 text-primary/40" />
-                    </div>
-                  )}
+                  <div className="flex h-28 w-28 items-center justify-center">
+                    <BreederLogoImage
+                      src={breeder.logo_url}
+                      breederName={breeder.name}
+                      width={112}
+                      height={112}
+                      className="rounded-2xl transition-transform duration-300 group-hover:scale-110"
+                      imgClassName="object-contain"
+                      sizes="112px"
+                    />
+                  </div>
                   {/* Glassmorphism badge */}
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/10" />
                 </div>

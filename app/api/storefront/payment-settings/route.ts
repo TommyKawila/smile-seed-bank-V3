@@ -6,6 +6,7 @@ export const revalidate = 0; // always fresh
 export async function GET() {
   const sql = getSql();
   try {
+    // Explicit columns only — no SELECT * (excludes updated_at, crypto_wallets, messenger_url, etc.)
     const rows = await sql`
       SELECT bank_accounts, prompt_pay, line_id
       FROM payment_settings

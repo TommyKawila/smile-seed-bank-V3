@@ -17,6 +17,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatPrice } from "@/lib/utils";
+import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import type { ProductFull, ProductVariant } from "@/types/supabase";
 
 // ─── Image Gallery ────────────────────────────────────────────────────────────
@@ -63,19 +64,15 @@ function ProductGallery({
         )}
         {/* Breeder Logo — glassmorphism badge */}
         <div className="absolute right-3 top-3 h-16 w-16 overflow-hidden rounded-2xl border border-white/60 bg-white/75 shadow-xl backdrop-blur-md transition-transform duration-200 hover:scale-110">
-          {product.breeders?.logo_url ? (
-            <Image
-              src={product.breeders.logo_url}
-              alt={product.breeders?.name ?? "Breeder"}
-              fill
-              className="object-contain p-1.5"
-              unoptimized
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <Leaf className="h-7 w-7 text-primary/40" />
-            </div>
-          )}
+          <BreederLogoImage
+            src={product.breeders?.logo_url}
+            breederName={product.breeders?.name ?? "Breeder"}
+            width={64}
+            height={64}
+            className="rounded-2xl"
+            imgClassName="object-contain p-1.5"
+            sizes="64px"
+          />
         </div>
         {/* Image counter */}
         {images.length > 1 && (
@@ -325,13 +322,15 @@ export default function ProductDetailPage() {
                 href={`/shop?breeder=${product.breeders.id}`}
                 className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-primary shadow-sm transition-all hover:border-primary/40 hover:bg-primary/10 hover:shadow-md"
               >
-                <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full border border-primary/20 bg-white">
-                  {product.breeders.logo_url ? (
-                    <Image src={product.breeders.logo_url} alt="" fill className="object-contain p-0.5" unoptimized />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center"><Leaf className="h-3 w-3 text-primary/60" /></span>
-                  )}
-                </span>
+                <BreederLogoImage
+                  src={product.breeders.logo_url}
+                  breederName={product.breeders.name}
+                  width={24}
+                  height={24}
+                  className="shrink-0 rounded-full border border-primary/20 bg-white"
+                  imgClassName="object-contain p-0.5"
+                  sizes="24px"
+                />
                 {product.breeders.name}
               </Link>
             )}

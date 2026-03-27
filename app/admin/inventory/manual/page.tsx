@@ -5,15 +5,32 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Loader2, Link2, ChevronLeft, Plus, X, Search, ImagePlus, Trash2, Settings2, FileText } from "lucide-react";
+import {
+  Loader2,
+  Link2,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  X,
+  Search,
+  ImagePlus,
+  Trash2,
+  Settings2,
+  FileText,
+  RefreshCw,
+  Store,
+  Sprout,
+  Pencil,
+} from "lucide-react";
 import { Fragment } from "react";
 import { toBreederPrefix, toProductPart } from "@/lib/sku-utils";
 import { processAndUploadImages } from "@/lib/supabase/storage-utils";
 import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
+import { pdf } from "@react-pdf/renderer";
 import QRCode from "qrcode";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,14 +42,153 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { saveQuotationHandoff, type QuotationHandoffItem } from "@/lib/quotation-grid-handoff";
+import { useToast } from "@/hooks/use-toast";
+import { toastErrorMessage } from "@/lib/admin-toast";
+import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
+import { consumeManualGridImport } from "@/lib/manual-grid-import-handoff";
+import { resolvePdfLogos } from "@/lib/pdf-image-data-uri";
+import { InventoryPdfDocument, ensurePdfPromptFont } from "./components/InventoryPdfDocument";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const DEFAULT_PACKS = [1, 2, 3, 5];
+const LS_SHOW_COST = "manual-inventory-show-cost";
+const LS_SHOW_FOOTER = "manual-inventory-show-footer";
 
-function normalizeByPack(
-  raw: unknown,
-  packSizes: number[]
-): Record<number, { stock: number; cost: number; price: number }> {
-  const out: Record<number, { stock: number; cost: number; price: number }> = {};
+/** One pack column: stock, cost, retail price */
+export type InventoryPackCell = { stock: number; cost: number; price: number };
+
+/** One catalog variant for a pack size (Manual Grid ↔ `product_variants`) */
+export type InventoryVariant = { packSize: number; variantId: number | null };
+
+/** Variant id per pack size (null = not linked yet) */
+export type InventoryVariantIdsByPack = Record<number, number | null>;
+
+export type InventoryLowStockThresholdByPack = Record<number, number>;
+
+/** Normalized manual grid row (API + client) */
+export type InventoryRow = {
+  productId: number;
+  masterSku: string;
+  name: string;
+  imageUrl?: string | null;
+  strainDominance?: string | null;
+  category: string;
+  productCategory?: { id: string; name: string } | null;
+  categoryId?: string;
+  thcPercent?: number | null;
+  terpenes?: string | null;
+  packs: number[];
+  byPack: Record<number, InventoryPackCell>;
+  variantIdsByPack?: InventoryVariantIdsByPack;
+  lowStockThresholdByPack?: InventoryLowStockThresholdByPack;
+  isNew?: boolean;
+};
+
+type PackFooterTotals = {
+  totalStrains: number;
+  totalStockAll: number;
+  grandCostValue: number;
+  grandPriceValue: number;
+  perPackStock: Record<number, number>;
+  perPackCostValue: Record<number, number>;
+  perPackPriceValue: Record<number, number>;
+};
+
+function computePackFooterTotals(rows: InventoryRow[], packList: number[]): PackFooterTotals {
+  const perPackStock: Record<number, number> = {};
+  const perPackCostValue: Record<number, number> = {};
+  const perPackPriceValue: Record<number, number> = {};
+  for (const p of packList) {
+    perPackStock[p] = 0;
+    perPackCostValue[p] = 0;
+    perPackPriceValue[p] = 0;
+  }
+  let totalStockAll = 0;
+  let grandCostValue = 0;
+  let grandPriceValue = 0;
+  for (const row of rows) {
+    for (const p of packList) {
+      const st = row.byPack?.[p]?.stock ?? 0;
+      const c = row.byPack?.[p]?.cost ?? 0;
+      const pr = row.byPack?.[p]?.price ?? 0;
+      totalStockAll += st;
+      perPackStock[p] += st;
+      const cv = st * c;
+      const pv = st * pr;
+      perPackCostValue[p] += cv;
+      perPackPriceValue[p] += pv;
+      grandCostValue += cv;
+      grandPriceValue += pv;
+    }
+  }
+  return {
+    totalStrains: rows.length,
+    totalStockAll,
+    grandCostValue,
+    grandPriceValue,
+    perPackStock,
+    perPackCostValue,
+    perPackPriceValue,
+  };
+}
+
+/** Raw row from GET /api/admin/inventory/grid before normalizeByPack */
+type InventoryGridApiRow = {
+  productId: number;
+  masterSku?: string;
+  name?: string;
+  imageUrl?: string | null;
+  strainDominance?: string | null;
+  category?: string;
+  productCategory?: { id: string; name: string } | null;
+  categoryId?: string;
+  thcPercent?: number | null;
+  terpenes?: string | null;
+  packs?: number[];
+  byPack?: unknown;
+  variantIdsByPack?: Record<string, number | null> | Record<number, number | null>;
+  lowStockThresholdByPack?: Record<string, number> | Record<number, number>;
+};
+
+type InventoryGridApiResponse = {
+  rows?: InventoryGridApiRow[];
+  error?: string;
+  packagesConfig?: { sizes?: number[]; active?: number[] };
+  allowedPackages?: number[];
+};
+
+type SyncInventoryRowPayload = {
+  productId?: unknown;
+  masterSku?: unknown;
+  name?: unknown;
+  imageUrl?: unknown;
+  strainDominance?: unknown;
+  category?: unknown;
+  productCategory?: unknown;
+  categoryId?: unknown;
+  packs?: unknown;
+  byPack?: unknown;
+  variantIdsByPack?: InventoryRow["variantIdsByPack"];
+  lowStockThresholdByPack?: InventoryRow["lowStockThresholdByPack"];
+};
+
+type CategoryApiItem = { id: string | number; name: string };
+type BreederApiItem = {
+  id: number | bigint | string;
+  name: string;
+  logo_url?: string | null;
+  allowed_packages?: unknown;
+};
+
+function normalizeByPack(raw: unknown, packSizes: number[]): Record<number, InventoryPackCell> {
+  const out: Record<number, InventoryPackCell> = {};
   const obj = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   for (const k of Object.keys(obj)) {
     const p = parseInt(k, 10);
@@ -55,24 +211,6 @@ type Category = { id: string; name: string };
 type Breeder = { id: number; name: string; logo_url?: string | null; allowed_packages: number[] | { sizes: number[]; active: number[] } | null };
 type PackagesConfig = { sizes: number[]; active: number[] };
 const STRAIN_DOMINANCE_OPTIONS = ["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"] as const;
-
-type GridRow = {
-  productId: number;
-  masterSku: string;
-  name: string;
-  imageUrl?: string | null;
-  strainDominance?: string | null;
-  category: string;
-  productCategory?: { id: string; name: string } | null;
-  categoryId?: string;
-  thcPercent?: number | null;
-  terpenes?: string | null;
-  packs: number[];
-  byPack: Record<number, { stock: number; cost: number; price: number }>;
-  variantIdsByPack?: Record<number, number | null>;
-  lowStockThresholdByPack?: Record<number, number>;
-  isNew?: boolean;
-};
 
 function EditableCell({
   value,
@@ -114,6 +252,7 @@ function EditableCell({
 }
 
 export default function ManualInventoryPage() {
+  const { toast } = useToast();
   const [hasMounted, setHasMounted] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -122,24 +261,68 @@ export default function ManualInventoryPage() {
   const [category, setCategory] = useState("all");
   const [dominance, setDominance] = useState("all");
   const [packagesConfig, setPackagesConfig] = useState<PackagesConfig>({ sizes: [1, 2, 3, 5], active: [1, 2, 3, 5] });
-  const [rows, setRows] = useState<GridRow[]>([]);
+  const [rows, setRows] = useState<InventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingCell, setSavingCell] = useState<string | null>(null);
   const [configSaving, setConfigSaving] = useState(false);
   const [syncing, setSyncing] = useState<number | null>(null);
+  const [batchSyncing, setBatchSyncing] = useState(false);
+  const [batchSyncLabel, setBatchSyncLabel] = useState("");
+  const [lastAddedRowId, setLastAddedRowId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [rowPendingDelete, setRowPendingDelete] = useState<InventoryRow | null>(null);
   const [customPackInput, setCustomPackInput] = useState("");
   const [exporting, setExporting] = useState<"png" | "pdf" | null>(null);
   const [editingThreshold, setEditingThreshold] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [hideOutOfStock, setHideOutOfStock] = useState(false);
+  const [showCost, setShowCost] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return localStorage.getItem(LS_SHOW_COST) !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const [showFooter, setShowFooter] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return localStorage.getItem(LS_SHOW_FOOTER) !== "0";
+    } catch {
+      return true;
+    }
+  });
   const [lowStockOnly, setLowStockOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState<20 | 50 | 100 | "all">(20);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [lineId, setLineId] = useState<string>("");
   const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(new Set());
+  const [exportMainLogoOk, setExportMainLogoOk] = useState(true);
+  const [exportBreederLogoOk, setExportBreederLogoOk] = useState(true);
   const exportRef = useRef<HTMLDivElement>(null);
   const { settings } = useSiteSettings();
+
+  useEffect(() => {
+    setExportMainLogoOk(true);
+  }, [settings.logo_main_url]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_SHOW_COST, showCost ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [showCost]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_SHOW_FOOTER, showFooter ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [showFooter]);
 
   useEffect(() => {
     QRCode.toDataURL("https://www.smileseedbank.com", { width: 256, margin: 2, color: { dark: "#047857", light: "#ffffff" } })
@@ -155,7 +338,9 @@ export default function ManualInventoryPage() {
   }, []);
 
   const packs = useMemo(() => [...packagesConfig.active].sort((a, b) => a - b), [packagesConfig.active]);
-  const totalStockForRow = useCallback((row: GridRow) => {
+  const packSpan = showCost ? 3 : 2;
+  const packGroupWidthClass = showCost ? "w-[156px]" : "w-[104px]";
+  const totalStockForRow = useCallback((row: InventoryRow) => {
     return packs.reduce((sum, pk) => sum + (row.byPack?.[pk]?.stock ?? 0), 0);
   }, [packs]);
 
@@ -169,7 +354,7 @@ export default function ManualInventoryPage() {
   }, []);
 
   const visibleRows = useMemo(() => {
-    const hasLowStock = (r: GridRow) =>
+    const hasLowStock = (r: InventoryRow) =>
       packs.some((pk) => {
         const stock = r.byPack?.[pk]?.stock ?? 0;
         const th = r.lowStockThresholdByPack?.[pk] ?? 5;
@@ -193,11 +378,90 @@ export default function ManualInventoryPage() {
     return list;
   }, [rows, hideOutOfStock, lowStockOnly, totalStockForRow, searchQuery, packs]);
 
+  const sortedRows = useMemo(() => {
+    const catKey = (r: InventoryRow) => (r.category?.trim() ? r.category.trim() : "\uFFFF");
+    return [...visibleRows].sort((a, b) => {
+      const c = catKey(a).localeCompare(catKey(b), "th", { sensitivity: "base" });
+      if (c !== 0) return c;
+      return (a.name ?? "").localeCompare(b.name ?? "", "th", { sensitivity: "base" });
+    });
+  }, [visibleRows]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [breederId, category, dominance, searchQuery, hideOutOfStock, lowStockOnly]);
+
+  const totalItems = sortedRows.length;
+  const totalPages =
+    itemsPerPage === "all" ? 1 : Math.max(1, Math.ceil(Math.max(totalItems, 1) / itemsPerPage));
+
+  useEffect(() => {
+    if (itemsPerPage === "all") {
+      setCurrentPage(1);
+      return;
+    }
+    setCurrentPage((p) => {
+      const max = Math.max(1, Math.ceil(sortedRows.length / itemsPerPage));
+      return Math.min(Math.max(1, p), max);
+    });
+  }, [sortedRows.length, itemsPerPage]);
+
+  const paginatedRows = useMemo(() => {
+    if (itemsPerPage === "all") return sortedRows;
+    const start = (currentPage - 1) * itemsPerPage;
+    return sortedRows.slice(start, start + itemsPerPage);
+  }, [sortedRows, currentPage, itemsPerPage]);
+
+  const rowOffset = itemsPerPage === "all" ? 0 : (currentPage - 1) * itemsPerPage;
+
+  const paginationLabel = useMemo(() => {
+    if (totalItems === 0) return "Showing 0 of 0 items";
+    const from = rowOffset + 1;
+    const to = rowOffset + paginatedRows.length;
+    return `Showing ${from}–${to} of ${totalItems} items`;
+  }, [totalItems, rowOffset, paginatedRows.length]);
+
+  const visiblePageNumbers = useMemo(() => {
+    if (itemsPerPage === "all" || totalPages <= 1) return [1];
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const s = new Set<number>([1, totalPages]);
+    for (let d = -2; d <= 2; d++) s.add(currentPage + d);
+    return Array.from(s)
+      .filter((p) => p >= 1 && p <= totalPages)
+      .sort((a, b) => a - b);
+  }, [totalPages, currentPage, itemsPerPage]);
+
+  const pageButtonParts = useMemo(() => {
+    const nums = visiblePageNumbers;
+    const out: (number | "ellipsis")[] = [];
+    for (let i = 0; i < nums.length; i++) {
+      const p = nums[i]!;
+      if (i > 0 && p - nums[i - 1]! > 1) out.push("ellipsis");
+      out.push(p);
+    }
+    return out;
+  }, [visiblePageNumbers]);
+
   const toggleSelectAll = useCallback(() => {
-    const selectable = visibleRows.filter((r) => !r.isNew).map((r) => r.productId);
+    const selectable = sortedRows.map((r) => r.productId);
     const allSelected = selectable.length > 0 && selectable.every((id) => selectedProductIds.has(id));
     setSelectedProductIds(allSelected ? new Set() : new Set(selectable));
-  }, [visibleRows, selectedProductIds]);
+  }, [sortedRows, selectedProductIds]);
+
+  const footerTotals = useMemo(
+    () => computePackFooterTotals(sortedRows, packs),
+    [sortedRows, packs]
+  );
+
+  const exportRows = useMemo(
+    () => sortedRows.filter((r) => !r.isNew && r.productId > 0),
+    [sortedRows]
+  );
+
+  const exportFooterTotals = useMemo(
+    () => computePackFooterTotals(exportRows, packs),
+    [exportRows, packs]
+  );
 
   const goToQuotationBuilder = useCallback(() => {
     const selectedRows = rows.filter((r) => selectedProductIds.has(r.productId) && !r.isNew);
@@ -237,6 +501,13 @@ export default function ManualInventoryPage() {
   }, [rows, selectedProductIds, breeders, breederId, router]);
 
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [editingStrainId, setEditingStrainId] = useState<number | null>(null);
+  const [strainSheetForm, setStrainSheetForm] = useState<{
+    name: string;
+    categoryId: string;
+    strainDominance: string;
+  } | null>(null);
+  const [strainSheetSaving, setStrainSheetSaving] = useState(false);
 
   const safeJson = async <T,>(res: Response): Promise<T | null> => {
     const text = await res.text();
@@ -244,7 +515,6 @@ export default function ManualInventoryPage() {
     try {
       return JSON.parse(text) as T;
     } catch {
-      console.error("[fetch] Invalid JSON response:", text.slice(0, 200));
       return null;
     }
   };
@@ -253,46 +523,64 @@ export default function ManualInventoryPage() {
     try {
       const res = await fetch("/api/admin/categories");
       if (!res.ok) {
-        console.error("[fetchCategories]", res.status, res.statusText);
-        setFetchError(`โหลดหมวดหมู่ไม่สำเร็จ (${res.status})`);
+        const msg = `โหลดหมวดหมู่ไม่สำเร็จ (${res.status})`;
+        setFetchError(msg);
+        toast({ title: "โหลดข้อมูลไม่สำเร็จ", description: msg, variant: "destructive" });
         return;
       }
-      const data = await safeJson<unknown[]>(res);
+      const data = await safeJson<CategoryApiItem[]>(res);
       if (Array.isArray(data)) {
-        setCategories(data.map((c: { id: string; name: string }) => ({ id: String(c.id), name: c.name })));
+        setCategories(data.map((c) => ({ id: String(c.id), name: c.name })));
       }
-    } catch (err) {
-      console.error("[fetchCategories]", err);
-      setFetchError("โหลดหมวดหมู่ไม่สำเร็จ");
+    } catch {
+      const msg = "โหลดหมวดหมู่ไม่สำเร็จ — ลองใหม่อีกครั้ง";
+      setFetchError(msg);
+      toast({ title: "โหลดข้อมูลไม่สำเร็จ", description: msg, variant: "destructive" });
     }
-  }, []);
+  }, [toast]);
 
   const fetchBreeders = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/breeders");
       if (!res.ok) {
-        console.error("[fetchBreeders]", res.status, res.statusText);
-        setFetchError(`โหลด Breeder ไม่สำเร็จ (${res.status})`);
+        const msg = `โหลด Breeder ไม่สำเร็จ (${res.status})`;
+        setFetchError(msg);
+        toast({ title: "โหลดข้อมูลไม่สำเร็จ", description: msg, variant: "destructive" });
         return;
       }
-      const data = await safeJson<unknown[]>(res);
+      const data = await safeJson<BreederApiItem[]>(res);
       if (Array.isArray(data)) {
-      setBreeders(
-        data
-          .filter((b: { id?: unknown; name?: string }) => b.id != null && b.name != null && b.name !== "")
-          .map((b: { id: number | bigint; name: string; logo_url?: string | null; allowed_packages?: unknown }) => {
-            let ap = b.allowed_packages;
-            if (typeof ap === "string") ap = JSON.parse(ap || "[]");
-            if (!ap) ap = [1, 2, 3, 5];
-            return { id: Number(b.id), name: String(b.name), logo_url: b.logo_url ?? null, allowed_packages: ap };
-          })
-      );
+        setBreeders(
+          data
+            .filter((b) => b.id != null && b.name != null && String(b.name).trim() !== "")
+            .map((b) => {
+              let ap: Breeder["allowed_packages"] = [1, 2, 3, 5];
+              const raw = b.allowed_packages;
+              if (typeof raw === "string") {
+                try {
+                  ap = JSON.parse(raw || "[]") as Breeder["allowed_packages"];
+                } catch {
+                  ap = [1, 2, 3, 5];
+                }
+              } else if (raw != null) {
+                ap = raw as Breeder["allowed_packages"];
+              }
+              if (!ap) ap = [1, 2, 3, 5];
+              return {
+                id: Number(b.id),
+                name: String(b.name),
+                logo_url: b.logo_url ?? null,
+                allowed_packages: ap,
+              };
+            })
+        );
+      }
+    } catch {
+      const msg = "โหลด Breeder ไม่สำเร็จ — ลองใหม่อีกครั้ง";
+      setFetchError(msg);
+      toast({ title: "โหลดข้อมูลไม่สำเร็จ", description: msg, variant: "destructive" });
     }
-    } catch (err) {
-      console.error("[fetchBreeders]", err);
-      setFetchError("โหลด Breeder ไม่สำเร็จ");
-    }
-  }, []);
+  }, [toast]);
 
   const fetchGrid = useCallback(async () => {
     if (!breederId) {
@@ -307,43 +595,80 @@ export default function ManualInventoryPage() {
       if (dominance && dominance !== "all") params.set("dominance", dominance);
       const res = await fetch(`/api/admin/inventory/grid?${params}`);
       if (!res.ok) {
-        const errText = await res.text();
-        console.error("[fetchGrid]", res.status, res.statusText, errText);
-        setFetchError(`โหลดตารางไม่สำเร็จ (${res.status})`);
+        const msg = `โหลดตารางสินค้าไม่สำเร็จ (${res.status})`;
+        setFetchError(msg);
+        toast({ title: "โหลดข้อมูลไม่สำเร็จ", description: msg, variant: "destructive" });
         return;
       }
-      const data = await safeJson<{ rows?: GridRow[]; packagesConfig?: { sizes?: number[]; active?: number[] }; allowedPackages?: number[] }>(res);
-      if (data?.rows) {
-        console.log("[fetchGrid] raw response rows (first 2):", data.rows.slice(0, 2).map((r) => ({ productId: r.productId, byPack: r.byPack })));
-        const packSizes = data.packagesConfig?.sizes ?? data.packagesConfig?.active ?? data.allowedPackages ?? DEFAULT_PACKS;
-        const arr = Array.isArray(packSizes) ? packSizes : [];
-        const normalized = data.rows.map((r) => {
-          const byPack = normalizeByPack(r.byPack, arr.length ? arr : DEFAULT_PACKS);
-          const variantIdsByPack: Record<number, number | null> = {};
-          const lowStockThresholdByPack: Record<number, number> = {};
-          const raw = (r as { variantIdsByPack?: Record<string, number | null>; lowStockThresholdByPack?: Record<string, number> }).variantIdsByPack;
-          const rawTh = (r as { lowStockThresholdByPack?: Record<string, number> }).lowStockThresholdByPack;
-          for (const p of arr.length ? arr : DEFAULT_PACKS) {
-            variantIdsByPack[p] = raw?.[String(p)] ?? raw?.[p] ?? null;
-            lowStockThresholdByPack[p] = rawTh?.[String(p)] ?? rawTh?.[p] ?? 5;
-          }
-          return { ...r, byPack, variantIdsByPack, lowStockThresholdByPack };
+      const data = await safeJson<InventoryGridApiResponse>(res);
+      if (data == null) {
+        const msg = "ไม่สามารถอ่านข้อมูลตารางได้ — ลองใหม่อีกครั้ง";
+        setFetchError(msg);
+        toast({ title: "โหลดข้อมูลไม่สำเร็จ", description: msg, variant: "destructive" });
+        setRows([]);
+        return;
+      }
+      if (data.error) {
+        const msg = `${data.error} — ลองใหม่อีกครั้ง`;
+        setFetchError(msg);
+        toast({ title: "โหลดข้อมูลไม่สำเร็จ", description: msg, variant: "destructive" });
+        setRows([]);
+        return;
+      }
+      if (!Array.isArray(data.rows)) {
+        setRows([]);
+        return;
+      }
+      const rawRows = data.rows;
+      const packSizes = data.packagesConfig?.sizes ?? data.packagesConfig?.active ?? data.allowedPackages ?? DEFAULT_PACKS;
+      const arr = Array.isArray(packSizes) ? packSizes : [];
+      const packSizesForNorm = arr.length ? arr : DEFAULT_PACKS;
+      const normalized: InventoryRow[] = rawRows.map((r) => {
+        const byPack = normalizeByPack(r.byPack, packSizesForNorm);
+        const variantIdsByPack: InventoryVariantIdsByPack = {};
+        const lowStockThresholdByPack: InventoryLowStockThresholdByPack = {};
+        const rawVid = r.variantIdsByPack as Record<string, number | null> | undefined;
+        const rawTh = r.lowStockThresholdByPack as Record<string, number> | undefined;
+        for (const p of packSizesForNorm) {
+          const key = String(p);
+          variantIdsByPack[p] = rawVid?.[key] ?? null;
+          lowStockThresholdByPack[p] = rawTh?.[key] ?? 5;
+        }
+        return {
+          productId: r.productId,
+          masterSku: r.masterSku ?? "",
+          name: r.name ?? "",
+          imageUrl: r.imageUrl,
+          strainDominance: r.strainDominance,
+          category: r.category ?? "",
+          productCategory: r.productCategory ?? null,
+          categoryId: r.categoryId,
+          thcPercent: r.thcPercent,
+          terpenes: r.terpenes ?? null,
+          packs: r.packs ?? packSizesForNorm,
+          byPack,
+          variantIdsByPack,
+          lowStockThresholdByPack,
+        };
+      });
+      setRows(normalized);
+      if (data.packagesConfig?.sizes?.length) {
+        setPackagesConfig({
+          sizes: data.packagesConfig.sizes,
+          active: data.packagesConfig.active ?? data.packagesConfig.sizes,
         });
-        setRows(normalized);
+      } else if (data.allowedPackages?.length) {
+        const ap = data.allowedPackages;
+        setPackagesConfig({ sizes: ap, active: ap });
       }
-      if (data?.packagesConfig?.sizes?.length) {
-        setPackagesConfig({ sizes: data.packagesConfig.sizes, active: data.packagesConfig.active ?? data.packagesConfig.sizes });
-      } else if (data?.allowedPackages?.length) {
-        const arr = data.allowedPackages;
-        setPackagesConfig({ sizes: arr, active: arr });
-      }
-    } catch (err) {
-      console.error("[fetchGrid]", err);
-      setFetchError("โหลดตารางไม่สำเร็จ");
+    } catch {
+      const msg = "โหลดตารางสินค้าไม่สำเร็จ — ลองใหม่อีกครั้ง";
+      setFetchError(msg);
+      toast({ title: "โหลดข้อมูลไม่สำเร็จ", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, [breederId, category, dominance]);
+  }, [breederId, category, dominance, toast]);
 
   useEffect(() => {
     setHasMounted(true);
@@ -362,6 +687,50 @@ export default function ManualInventoryPage() {
   useEffect(() => {
     fetchGrid();
   }, [fetchGrid]);
+
+  useEffect(() => {
+    if (!hasMounted || !breederId || loading) return;
+    if (categories.length === 0) return;
+    const payload = consumeManualGridImport();
+    if (!payload || payload.breederId !== breederId) return;
+    const packsToUse = packs.length ? packs : DEFAULT_PACKS;
+    setRows((prev) => {
+      const drafts: InventoryRow[] = payload.drafts.map((d, idx) => {
+        const byPack: Record<number, InventoryPackCell> = {};
+        const variantIdsByPack: InventoryVariantIdsByPack = {};
+        const lowStockThresholdByPack: InventoryLowStockThresholdByPack = {};
+        for (const p of packsToUse) {
+          const cell = d.byPack[p] ?? { stock: 0, cost: 0, price: 0 };
+          byPack[p] = { stock: cell.stock, cost: cell.cost ?? 0, price: cell.price };
+          variantIdsByPack[p] = null;
+          lowStockThresholdByPack[p] = 5;
+        }
+        const matched: Category | undefined = d.category
+          ? categories.find((c) => c.name === d.category)
+          : undefined;
+        const resolvedCat = matched ?? categories[0];
+        return {
+          productId: -(Date.now() + idx),
+          masterSku: d.masterSku,
+          name: d.name,
+          imageUrl: null,
+          strainDominance: d.strainDominance ?? null,
+          category: resolvedCat?.name ?? d.category ?? "",
+          categoryId: resolvedCat?.id ?? "",
+          packs: packsToUse,
+          byPack,
+          variantIdsByPack,
+          lowStockThresholdByPack,
+          isNew: true,
+        };
+      });
+      return [...drafts, ...prev];
+    });
+    toast({
+      title: "นำเข้าแบบร่าง",
+      description: `เพิ่ม ${payload.drafts.length} แถวจาก AI Import ที่ด้านบน`,
+    });
+  }, [hasMounted, breederId, loading, categories, packs, toast]);
 
   useEffect(() => {
     if (breederId && breeders.length) {
@@ -406,6 +775,10 @@ export default function ManualInventoryPage() {
     [breeders, breederId]
   );
 
+  useEffect(() => {
+    setExportBreederLogoOk(true);
+  }, [selectedBreeder?.logo_url]);
+
   const addNewStrain = () => {
     const packsToUse = packs.length ? packs : DEFAULT_PACKS;
     const byPack: Record<number, { stock: number; cost: number; price: number }> = {};
@@ -415,7 +788,7 @@ export default function ManualInventoryPage() {
       variantIdsByPack[p] = null;
     }
     const cat = category === "all" ? categories[0] : categories.find((c) => c.id === category);
-    const newRow: GridRow = {
+    const newRow: InventoryRow = {
       productId: -Date.now(),
       masterSku: "",
       name: "",
@@ -428,17 +801,24 @@ export default function ManualInventoryPage() {
       lowStockThresholdByPack: Object.fromEntries(packsToUse.map((p) => [p, 5])),
       isNew: true,
     };
-    setRows((prev) => [...prev, newRow]);
+    setRows((prev) => [newRow, ...prev]);
+    setLastAddedRowId(newRow.productId);
   };
 
-  const updateRow = (rowId: number, updates: Partial<GridRow>) => {
+  const syncableDraftSelectedCount = useMemo(() => {
+    return rows.filter(
+      (r) => selectedProductIds.has(r.productId) && r.isNew && r.masterSku?.trim()
+    ).length;
+  }, [rows, selectedProductIds]);
+
+  const updateRow = (rowId: number, updates: Partial<InventoryRow>) => {
     setRows((prev) =>
       prev.map((r) => (r.productId === rowId ? { ...r, ...updates } : r))
     );
   };
 
-  const handleNameChange = (row: GridRow, name: string) => {
-    const updates: Partial<GridRow> = { name };
+  const handleNameChange = (row: InventoryRow, name: string) => {
+    const updates: Partial<InventoryRow> = { name };
     if (row.isNew && selectedBreeder && name.trim()) {
       const prefix = toBreederPrefix(selectedBreeder.name);
       const part = toProductPart(name);
@@ -447,22 +827,25 @@ export default function ManualInventoryPage() {
     updateRow(row.productId, updates);
   };
 
-  const handleMasterSkuChange = (row: GridRow, masterSku: string) => {
+  const handleMasterSkuChange = (row: InventoryRow, masterSku: string) => {
     if (row.isNew) updateRow(row.productId, { masterSku });
   };
 
-  const handleCategoryChange = (row: GridRow, categoryId: string) => {
+  const handleCategoryChange = (row: InventoryRow, categoryId: string) => {
     const cat = categories.find((c) => c.id === categoryId);
     updateRow(row.productId, { categoryId: categoryId === "__none__" ? "" : categoryId, category: cat?.name ?? "" });
   };
 
   const [savingDominance, setSavingDominance] = useState<number | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null);
-  const handlePhotoUpload = async (row: GridRow, files: FileList | null) => {
+  const handlePhotoUpload = async (row: InventoryRow, files: FileList | null) => {
     if (!files?.[0] || row.isNew) return;
     setUploadingPhoto(row.productId);
     try {
-      const urls = await processAndUploadImages([files[0]]);
+      const urls = await processAndUploadImages([files[0]], {
+        productKey: `id-${row.productId}`,
+        replaceUrls: [row.imageUrl],
+      });
       if (urls[0]) {
         const res = await fetch(`/api/admin/products/${row.productId}/field`, {
           method: "PATCH",
@@ -478,7 +861,7 @@ export default function ManualInventoryPage() {
     }
   };
 
-  const handleStrainDominanceChange = async (row: GridRow, value: string) => {
+  const handleStrainDominanceChange = async (row: InventoryRow, value: string) => {
     const val = value === "__none__" ? null : (value as "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50");
     updateRow(row.productId, { strainDominance: val });
     if (row.isNew) return;
@@ -495,7 +878,7 @@ export default function ManualInventoryPage() {
     }
   };
 
-  const handleCellChange = (row: GridRow, pack: number, field: "stock" | "cost" | "price" | "low_stock_threshold", value: number) => {
+  const handleCellChange = (row: InventoryRow, pack: number, field: "stock" | "cost" | "price" | "low_stock_threshold", value: number) => {
     setRows((prev) =>
       prev.map((r) => {
         if (r.productId !== row.productId) return r;
@@ -528,7 +911,7 @@ export default function ManualInventoryPage() {
   const saveOrUpdateCell = (
     variantId: number | null,
     pack: number,
-    row: GridRow,
+    row: InventoryRow,
     field: "stock" | "cost" | "price" | "low_stock_threshold",
     value: number
   ) => {
@@ -542,7 +925,7 @@ export default function ManualInventoryPage() {
   const saveCell = async (
     variantId: number | null,
     pack: number,
-    row: GridRow,
+    row: InventoryRow,
     field: "stock" | "cost" | "price" | "low_stock_threshold",
     value: number
   ) => {
@@ -591,13 +974,9 @@ export default function ManualInventoryPage() {
     }
   };
 
-  const handleSync = async (row: GridRow) => {
-    if (!row.masterSku?.trim()) return;
-    setSyncing(row.productId);
-    try {
-      const catId = row.categoryId || (row.category && categories.find((c) => c.name === row.category)?.id);
-      const catName = row.category || (row.categoryId && categories.find((c) => c.id === row.categoryId)?.name) || null;
-      const cleanByPack: Record<number, { stock: number; cost: number; price: number }> = {};
+  const buildCleanByPack = useCallback(
+    (row: InventoryRow) => {
+      const cleanByPack: Record<number, InventoryPackCell> = {};
       for (const packSize of packs) {
         if (typeof packSize !== "number" || packSize < 1 || packSize > 99) continue;
         const cell = row.byPack?.[packSize];
@@ -607,7 +986,41 @@ export default function ManualInventoryPage() {
         const price = c != null ? Math.max(0, Number(c.price) || 0) : 0;
         cleanByPack[packSize] = { stock, cost, price };
       }
-      console.log("[handleSync] raw byPack before send:", row.byPack, "-> cleanByPack:", cleanByPack);
+      return cleanByPack;
+    },
+    [packs]
+  );
+
+  const mergeSyncedInventoryRow = useCallback((prev: InventoryRow, gr: SyncInventoryRowPayload): InventoryRow => {
+    const byPackRaw = gr.byPack;
+    const vid = gr.variantIdsByPack;
+    const lowTh = gr.lowStockThresholdByPack;
+    const packsIn = Array.isArray(gr.packs) ? gr.packs : undefined;
+    const packKeys = packsIn?.length ? packsIn : prev.packs;
+    return {
+      ...prev,
+      productId: typeof gr.productId === "number" ? gr.productId : prev.productId,
+      masterSku: typeof gr.masterSku === "string" ? gr.masterSku : prev.masterSku,
+      name: typeof gr.name === "string" ? gr.name : prev.name,
+      imageUrl: (gr.imageUrl as string | null | undefined) ?? prev.imageUrl,
+      strainDominance: (gr.strainDominance as InventoryRow["strainDominance"]) ?? prev.strainDominance,
+      category: typeof gr.category === "string" ? gr.category : prev.category,
+      productCategory: (gr.productCategory as InventoryRow["productCategory"]) ?? prev.productCategory,
+      categoryId: typeof gr.categoryId === "string" ? gr.categoryId : prev.categoryId,
+      packs: packKeys,
+      byPack: byPackRaw != null ? normalizeByPack(byPackRaw, packKeys) : prev.byPack,
+      variantIdsByPack: vid ?? prev.variantIdsByPack,
+      lowStockThresholdByPack: lowTh ?? prev.lowStockThresholdByPack,
+      isNew: undefined,
+    };
+  }, []);
+
+  const syncRowToServer = useCallback(
+    async (row: InventoryRow): Promise<InventoryRow> => {
+      if (!row.masterSku?.trim()) throw new Error("Master SKU จำเป็น");
+      const catId = row.categoryId || (row.category && categories.find((c) => c.name === row.category)?.id);
+      const catName = row.category || (row.categoryId && categories.find((c) => c.id === row.categoryId)?.name) || null;
+      const cleanByPack = buildCleanByPack(row);
       const res = await fetch("/api/admin/inventory/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -619,40 +1032,180 @@ export default function ManualInventoryPage() {
           categoryId: catId || undefined,
           strain_dominance: row.strainDominance !== undefined ? row.strainDominance : undefined,
           byPack: cleanByPack,
+          packSizes: packs,
         }),
       });
-      if (res.ok) await fetchGrid();
+      const json = (await res.json()) as { error?: string; gridRow?: SyncInventoryRowPayload };
+      if (!res.ok) throw new Error(json.error ?? "Sync ล้มเหลว");
+      if (!json.gridRow) throw new Error("ไม่ได้รับข้อมูลหลัง sync");
+      return mergeSyncedInventoryRow(row, json.gridRow);
+    },
+    [breederId, buildCleanByPack, categories, mergeSyncedInventoryRow, packs]
+  );
+
+  const handleSync = async (row: InventoryRow) => {
+    if (!row.masterSku?.trim()) return;
+    setSyncing(row.productId);
+    try {
+      const merged = await syncRowToServer(row);
+      setRows((prev) => prev.map((r) => (r.productId === row.productId ? merged : r)));
+      toast({
+        title: "สำเร็จ (Success)",
+        description: "Sync เรียบร้อย — ข้อมูลอัปเดตในกริดแล้ว",
+      });
+    } catch (e) {
+      toast({
+        title: "เกิดข้อผิดพลาด (Error)",
+        description: toastErrorMessage(e),
+        variant: "destructive",
+      });
     } finally {
       setSyncing(null);
     }
   };
 
-  const handleDelete = async (row: GridRow) => {
+  const handleEditStrain = (row: InventoryRow) => {
+    if (row.isNew) return;
+    setStrainSheetForm({
+      name: row.name,
+      categoryId: row.categoryId || row.productCategory?.id || "__none__",
+      strainDominance: row.strainDominance || "__none__",
+    });
+    setEditingStrainId(row.productId);
+  };
+
+  const handleSaveStrainSheet = async () => {
+    if (editingStrainId == null || !strainSheetForm || !breederId) return;
+    const row = rows.find((r) => r.productId === editingStrainId);
+    if (!row || row.isNew) return;
+    if (!strainSheetForm.name.trim()) {
+      toast({ title: "กรุณากรอกชื่อสายพันธุ์", variant: "destructive" });
+      return;
+    }
+    const catId = strainSheetForm.categoryId === "__none__" ? "" : strainSheetForm.categoryId;
+    const cat = categories.find((c) => c.id === catId);
+    const valDominance =
+      strainSheetForm.strainDominance === "__none__"
+        ? null
+        : (strainSheetForm.strainDominance as "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50");
+    const updated: InventoryRow = {
+      ...row,
+      name: strainSheetForm.name.trim(),
+      categoryId: catId,
+      category: cat?.name ?? row.category,
+      strainDominance: valDominance,
+    };
+    setStrainSheetSaving(true);
+    try {
+      const merged = await syncRowToServer(updated);
+      setRows((prev) => prev.map((r) => (r.productId === merged.productId ? merged : r)));
+      setEditingStrainId(null);
+      setStrainSheetForm(null);
+      toast({
+        title: "บันทึกแล้ว",
+        description: "อัปเดตสายพันธุ์และ Sync เรียบร้อย",
+      });
+    } catch (e) {
+      toast({
+        title: "บันทึกไม่สำเร็จ",
+        description: toastErrorMessage(e),
+        variant: "destructive",
+      });
+    } finally {
+      setStrainSheetSaving(false);
+    }
+  };
+
+  const handleBatchSync = async () => {
+    const targets = rows.filter(
+      (r) => selectedProductIds.has(r.productId) && r.isNew && r.masterSku?.trim()
+    );
+    if (targets.length === 0 || !breederId) return;
+    setBatchSyncing(true);
+    const progressToast = toast({
+      title: "กำลัง Sync…",
+      description: `0/${targets.length}`,
+    });
+    let ok = 0;
+    let fail = 0;
+    try {
+      for (let i = 0; i < targets.length; i++) {
+        const row = targets[i];
+        setBatchSyncLabel(`${i + 1}/${targets.length}`);
+        progressToast.update({
+          id: progressToast.id,
+          title: "กำลัง Sync…",
+          description: `Syncing ${i + 1}/${targets.length} strains…`,
+        });
+        try {
+          const merged = await syncRowToServer(row);
+          setRows((prev) => prev.map((r) => (r.productId === row.productId ? merged : r)));
+          setSelectedProductIds((prev) => {
+            const next = new Set(prev);
+            next.delete(row.productId);
+            return next;
+          });
+          ok += 1;
+        } catch {
+          fail += 1;
+        }
+      }
+      progressToast.dismiss();
+      toast({
+        title: fail === 0 ? "สำเร็จ (Success)" : "เสร็จสิ้น (Done)",
+        description:
+          fail === 0
+            ? `Sync ครบ ${ok} สายพันธุ์แล้ว`
+            : `สำเร็จ ${ok} — ล้มเหลว ${fail}`,
+        variant: fail > 0 ? "destructive" : undefined,
+      });
+    } finally {
+      setBatchSyncing(false);
+      setBatchSyncLabel("");
+    }
+  };
+
+  const handleDeleteClick = (row: InventoryRow) => {
     if (row.isNew) {
       setRows((prev) => prev.filter((r) => r.productId !== row.productId));
       return;
     }
     if (row.productId <= 0) return;
-    if (!confirm(`ลบ "${row.name || row.masterSku}" และ variants ทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้`)) return;
+    setRowPendingDelete(row);
+  };
+
+  const confirmDeleteRow = async () => {
+    const row = rowPendingDelete;
+    if (!row || row.productId <= 0) return;
     setDeleting(row.productId);
     setFetchError(null);
     try {
       const res = await fetch(`/api/admin/inventory/products/${row.productId}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "ลบไม่สำเร็จ");
+      toast({
+        title: "สำเร็จ (Success)",
+        description: `ลบ "${row.name || row.masterSku}" เรียบร้อยแล้ว / Product and variants removed.`,
+      });
+      setRowPendingDelete(null);
       await fetchGrid();
     } catch (e) {
-      setFetchError(String(e));
+      const msg = toastErrorMessage(e);
+      setFetchError(msg);
+      toast({
+        title: "เกิดข้อผิดพลาด (Error)",
+        description: msg,
+        variant: "destructive",
+      });
     } finally {
       setDeleting(null);
     }
   };
 
-  const exportRows = visibleRows.filter((r) => !r.isNew && r.productId > 0);
-
   const captureExportElement = async () => {
     const el = exportRef.current;
     if (!el) return null;
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     const origStyle = el.getAttribute("style") ?? "";
     el.style.position = "fixed";
     el.style.left = "0";
@@ -669,9 +1222,8 @@ export default function ManualInventoryPage() {
     }
     const dataUrl = await toPng(el, {
       pixelRatio: 2,
-      fontFamily: "'Prompt', 'Inter', sans-serif",
       cacheBust: true,
-      style: { transform: "none" },
+      style: { transform: "none", fontFamily: "'Prompt', 'Inter', sans-serif" },
     });
     el.setAttribute("style", origStyle);
     return dataUrl;
@@ -693,27 +1245,45 @@ export default function ManualInventoryPage() {
   };
 
   const handleExportPDF = async () => {
-    if (!exportRef.current || !selectedBreeder || exportRows.length === 0) return;
+    if (!selectedBreeder || exportRows.length === 0) return;
     setExporting("pdf");
     try {
-      const dataUrl = await captureExportElement();
-      if (!dataUrl) return;
-      const pdf = new jsPDF({ unit: "mm", format: "a4" });
-      const pageW = 210;
-      const pageH = 297;
-      const el = exportRef.current;
-      const imgW = el?.offsetWidth ?? 800;
-      const imgH = el?.offsetHeight ?? 600;
-      const ratio = imgH / imgW;
-      let pdfImgH = pageW * ratio;
-      if (pdfImgH > pageH) {
-        pdfImgH = pageH;
-        const pdfImgW = pageH / ratio;
-        pdf.addImage(dataUrl, "PNG", (pageW - pdfImgW) / 2, 0, pdfImgW, pdfImgH);
-      } else {
-        pdf.addImage(dataUrl, "PNG", 0, 0, pageW, pdfImgH);
-      }
-      pdf.save(`smile-seed-bank-${selectedBreeder.name.replace(/\s+/g, "-")}-price-list.pdf`);
+      ensurePdfPromptFont();
+      const { logoMainSrc, breederLogoSrc } = await resolvePdfLogos({
+        mainUrl: settings.logo_main_url,
+        breederUrl: selectedBreeder.logo_url,
+      });
+      const pdfRows = exportRows.map((r, i) => ({
+        productId: r.productId,
+        index: i + 1,
+        name: r.name,
+        geneticsLabel: r.strainDominance?.trim() || "—",
+        categoryLabel: (r.productCategory?.name ?? r.category) || "—",
+        byPack: r.byPack,
+      }));
+      const blob = await pdf(
+        <InventoryPdfDocument
+          rows={pdfRows}
+          breederName={selectedBreeder.name}
+          logoMainSrc={logoMainSrc ?? null}
+          breederLogoSrc={breederLogoSrc ?? null}
+          websiteLine="www.smileseedbank.com"
+          qrCodeDataUri={qrDataUrl}
+          packs={packs}
+          showCost={showCost}
+          showFooter={showFooter}
+          footerTotals={exportFooterTotals}
+        />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `smile-seed-bank-${selectedBreeder.name.replace(/\s+/g, "-")}-price-list.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      const msg = toastErrorMessage(e);
+      toast({ title: "ส่งออก PDF ไม่สำเร็จ", description: msg, variant: "destructive" });
     } finally {
       setExporting(null);
     }
@@ -729,6 +1299,118 @@ export default function ManualInventoryPage() {
 
   return (
     <div className={`space-y-4 p-4 sm:p-6 ${selectedProductIds.size > 0 ? "pb-24" : ""}`}>
+      <ConfirmDeleteDialog
+        isOpen={rowPendingDelete !== null}
+        onClose={() => setRowPendingDelete(null)}
+        onConfirm={confirmDeleteRow}
+        loading={
+          rowPendingDelete !== null && deleting === rowPendingDelete.productId
+        }
+        title="ยืนยันการลบ / Confirm Deletion"
+        description={
+          rowPendingDelete
+            ? `ลบ "${rowPendingDelete.name || rowPendingDelete.masterSku}" และ variants ทั้งหมด? การดำเนินการนี้ไม่สามารถย้อนกลับได้ / This removes the product and all variants. This cannot be undone.`
+            : "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้? การกระทำนี้ไม่สามารถย้อนกลับได้ / Are you sure you want to delete this? This action cannot be undone."
+        }
+      />
+      <Sheet
+        open={editingStrainId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingStrainId(null);
+            setStrainSheetForm(null);
+          }
+        }}
+      >
+        <SheetContent className="flex flex-col sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>แก้ไขสายพันธุ์ / Edit strain</SheetTitle>
+            <SheetDescription>
+              อัปเดตชื่อ หมวดหมู่ และประเภทพันธุกรรม จากนั้นบันทึกเพื่อ Sync ไปยัง catalog (Prisma products)
+            </SheetDescription>
+          </SheetHeader>
+          {strainSheetForm && editingStrainId != null ? (
+            <div className="flex-1 space-y-4 overflow-y-auto py-2">
+              <div className="space-y-1.5">
+                <Label>Master SKU</Label>
+                <Input
+                  readOnly
+                  value={rows.find((r) => r.productId === editingStrainId)?.masterSku ?? ""}
+                  className="h-9 font-mono text-xs bg-muted"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>ชื่อสายพันธุ์ / Name</Label>
+                <Input
+                  value={strainSheetForm.name}
+                  onChange={(e) =>
+                    setStrainSheetForm((f) => (f ? { ...f, name: e.target.value } : f))
+                  }
+                  className="h-9"
+                  placeholder="Strain name"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>หมวดหมู่ / Category</Label>
+                <Select
+                  value={strainSheetForm.categoryId === "" ? "__none__" : strainSheetForm.categoryId}
+                  onValueChange={(v) =>
+                    setStrainSheetForm((f) => (f ? { ...f, categoryId: v } : f))
+                  }
+                >
+                  <SelectTrigger className="h-9 border-emerald-200">
+                    <SelectValue placeholder="— เลือกหมวดหมู่ —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— เลือกหมวดหมู่ —</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>ประเภทพันธุกรรม / Genetic type</Label>
+                <Select
+                  value={strainSheetForm.strainDominance}
+                  onValueChange={(v) =>
+                    setStrainSheetForm((f) => (f ? { ...f, strainDominance: v } : f))
+                  }
+                >
+                  <SelectTrigger className="h-9 border-emerald-200">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— ประเภทพันธุกรรม —</SelectItem>
+                    <SelectItem value="Mostly Indica">Mostly Indica</SelectItem>
+                    <SelectItem value="Hybrid 50/50">Hybrid 50/50</SelectItem>
+                    <SelectItem value="Mostly Sativa">Mostly Sativa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : null}
+          <SheetFooter className="gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setEditingStrainId(null);
+                setStrainSheetForm(null);
+              }}
+              disabled={strainSheetSaving}
+            >
+              ยกเลิก
+            </Button>
+            <Button type="button" onClick={handleSaveStrainSheet} disabled={strainSheetSaving}>
+              {strainSheetSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              บันทึกและ Sync
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       <div className="flex items-center gap-3">
         <Link href="/admin/inventory">
           <Button variant="ghost" size="sm">
@@ -927,6 +1609,21 @@ export default function ManualInventoryPage() {
                   />
                   ซ่อนสินค้าหมด
                 </label>
+                <label className="flex cursor-pointer items-center gap-2 border-l border-zinc-200 pl-2 text-sm text-zinc-600">
+                  <Switch
+                    checked={!showCost}
+                    onCheckedChange={(checked) => setShowCost(!checked)}
+                    className="scale-90"
+                  />
+                  <span>ซ่อนราคาทุน / Hide Cost</span>
+                </label>
+                <label
+                  className="flex cursor-pointer items-center gap-2 border-l border-zinc-200 pl-2 text-sm text-zinc-600"
+                  title="ปิดก่อนส่งออก PNG/PDF ให้ลูกค้า — ซ่อนยอดรวม / Hide summary row before customer export"
+                >
+                  <Switch checked={showFooter} onCheckedChange={setShowFooter} className="scale-90" />
+                  <span>แสดงแถวสรุป / Show Summary</span>
+                </label>
                 <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600">
                   <input
                     type="checkbox"
@@ -936,7 +1633,28 @@ export default function ManualInventoryPage() {
                   />
                   สต็อกต่ำเท่านั้น
                 </label>
-                <Button size="sm" onClick={addNewStrain} className="bg-primary text-white hover:bg-primary/90">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBatchSync}
+                  disabled={syncableDraftSelectedCount === 0 || batchSyncing}
+                  className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  title="Sync เฉพาะแถว Draft ที่เลือกและมี Master SKU"
+                >
+                  {batchSyncing ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-1.5 h-4 w-4" />
+                  )}
+                  Sync Selected
+                  {batchSyncing && batchSyncLabel ? ` (${batchSyncLabel})` : ""}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={addNewStrain}
+                  disabled={batchSyncing}
+                  className="bg-primary text-white hover:bg-primary/90"
+                >
                   <Plus className="mr-1.5 h-4 w-4" /> Add New Strain
                 </Button>
               </>
@@ -952,42 +1670,60 @@ export default function ManualInventoryPage() {
             </div>
           ) : visibleRows.length === 0 ? (
             <div className="py-12 text-center text-zinc-500">
-              {searchQuery.trim() ? "ไม่พบผลลัพธ์ที่ตรงกับคำค้นหา" : "ไม่มีข้อมูล"}
+              {rows.length > 0 && visibleRows.length === 0
+                ? searchQuery.trim()
+                  ? "ไม่พบผลลัพธ์ที่ตรงกับคำค้นหา"
+                  : "รายการถูกกรองหมด — ลองปิดตัวเลือก ซ่อนสินค้าหมด / สต็อกต่ำ หรือล้างช่องค้นหา"
+                : searchQuery.trim()
+                  ? "ไม่พบผลลัพธ์ที่ตรงกับคำค้นหา"
+                  : "ยังไม่มีสินค้าในระบบสำหรับ Breeder นี้"}
             </div>
           ) : (
+            <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="sticky left-0 z-10 w-10 bg-slate-50 px-1 py-3">
+                    <th className="sticky left-0 z-10 w-[50px] bg-slate-50 px-1 py-3 text-center text-xs font-medium text-muted-foreground">
+                      ลำดับ
+                    </th>
+                    <th className="sticky left-[50px] z-10 w-10 bg-slate-50 px-1 py-3">
                       <input
                         type="checkbox"
-                        checked={visibleRows.filter((r) => !r.isNew).length > 0 && visibleRows.filter((r) => !r.isNew).every((r) => selectedProductIds.has(r.productId))}
+                        checked={sortedRows.length > 0 && sortedRows.every((r) => selectedProductIds.has(r.productId))}
                         onChange={toggleSelectAll}
                         className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                         title="เลือกทั้งหมด"
                       />
                     </th>
-                    <th className="sticky left-[40px] z-10 bg-slate-50 px-2 py-3 text-left font-medium text-slate-700">Sync</th>
-                    <th className="sticky left-[82px] z-10 w-10 bg-slate-50 px-1 py-3" />
-                    <th className="sticky left-[122px] z-10 w-12 bg-slate-50 px-2 py-3 text-left font-medium text-slate-700">Photo</th>
-                    <th className="sticky left-[174px] z-10 min-w-[90px] bg-slate-50 px-3 py-3 text-left font-medium text-slate-700">Master SKU</th>
-                    <th className="sticky left-[264px] z-10 min-w-[160px] bg-slate-50 px-3 py-3 text-left font-medium text-slate-700">ชื่อสายพันธุ์</th>
+                    <th className="sticky left-[90px] z-10 bg-slate-50 px-2 py-3 text-left font-medium text-slate-700">Sync</th>
+                    <th className="sticky left-[132px] z-10 w-10 bg-slate-50 px-1 py-3" />
+                    <th className="sticky left-[172px] z-10 w-12 bg-slate-50 px-2 py-3 text-left font-medium text-slate-700">Photo</th>
+                    <th className="sticky left-[224px] z-10 min-w-[90px] bg-slate-50 px-3 py-3 text-left font-medium text-slate-700">Master SKU</th>
+                    <th className="sticky left-[314px] z-10 min-w-[160px] bg-slate-50 px-3 py-3 text-left font-medium text-slate-700">ชื่อสายพันธุ์</th>
                     <th className="min-w-[100px] px-3 py-3 text-left font-medium text-slate-700">หมวดหมู่</th>
                     <th className="min-w-[100px] px-3 py-3 text-left font-medium text-slate-700">ประเภทพันธุกรรม</th>
                     {packs.map((p) => (
-                      <th key={p} colSpan={3} className="w-[156px] border-l border-slate-200 px-0 py-3 text-center font-medium text-emerald-800">
+                      <th
+                        key={p}
+                        colSpan={packSpan}
+                        className={`${packGroupWidthClass} border-l border-slate-200 px-0 py-3 text-center font-medium text-emerald-800 transition-[width] duration-150`}
+                      >
                         {p} {p === 1 ? "Seed" : "Seeds"}
                       </th>
                     ))}
                   </tr>
                   <tr className="border-b border-slate-200 bg-slate-100/60">
-                    <th colSpan={8} className="px-3 py-1.5" />
+                    <th colSpan={9} className="px-3 py-1.5" />
                     {packs.map((p) => (
-                      <th key={`${p}-s`} colSpan={3} className="w-[156px] border-l border-slate-200 px-0 py-1.5">
+                      <th
+                        key={`${p}-s`}
+                        colSpan={packSpan}
+                        className={`${packGroupWidthClass} border-l border-slate-200 px-0 py-1.5 transition-[width] duration-150`}
+                      >
                         <div className="flex divide-x divide-slate-300 text-[10px] font-normal text-slate-500">
                           <span className="flex-1 py-0.5">Stock</span>
-                          <span className="flex-1 py-0.5">Cost (ทุน)</span>
+                          {showCost && <span className="flex-1 py-0.5">Cost (ทุน)</span>}
                           <span className="flex-1 py-0.5">Price (ราคา)</span>
                         </div>
                       </th>
@@ -995,32 +1731,35 @@ export default function ManualInventoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRows.map((row, rowIdx) => {
+                  {paginatedRows.map((row, rowIdx) => {
                     const rowTotalStock = totalStockForRow(row);
                     const isRowDimmed = !row.isNew && rowTotalStock === 0;
-                    const zebra = rowIdx % 2 === 1 ? "bg-slate-50/50" : "";
+                    const zebra = (rowOffset + rowIdx) % 2 === 1 ? "bg-slate-50/50" : "";
                     return (
                     <tr
                       key={row.productId}
                       className={`group border-b border-slate-100 transition-colors hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra}`}
                     >
-                      <td className={`sticky left-0 z-10 w-10 px-1 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
-                        {!row.isNew && (
-                          <input
-                            type="checkbox"
-                            checked={selectedProductIds.has(row.productId)}
-                            onChange={() => toggleSelectRow(row.productId)}
-                            className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                          />
-                        )}
+                      <td
+                        className={`sticky left-0 z-10 w-[50px] px-1 py-2 text-center font-mono text-sm text-muted-foreground tabular-nums transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}
+                      >
+                        {rowOffset + rowIdx + 1}
                       </td>
-                      <td className={`sticky left-[40px] z-10 px-2 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[50px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedProductIds.has(row.productId)}
+                          onChange={() => toggleSelectRow(row.productId)}
+                          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                      </td>
+                      <td className={`sticky left-[90px] z-10 px-2 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <Button
                           variant="outline"
                           size="sm"
                           className="h-7 border-slate-200 text-slate-600 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
                           onClick={() => handleSync(row)}
-                          disabled={syncing === row.productId || (row.isNew && !row.masterSku?.trim())}
+                          disabled={batchSyncing || syncing === row.productId || (row.isNew && !row.masterSku?.trim())}
                           title={row.isNew ? "Sync: สร้าง product + variants" : "Sync/Link ไปยัง Product Detail"}
                         >
                           {syncing === row.productId ? (
@@ -1030,12 +1769,12 @@ export default function ManualInventoryPage() {
                           )}
                         </Button>
                       </td>
-                      <td className={`sticky left-[82px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[132px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-7 w-7 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                          onClick={() => handleDelete(row)}
+                          onClick={() => handleDeleteClick(row)}
                           disabled={deleting === row.productId}
                           title={row.isNew ? "ลบแถว" : "ลบสินค้าและ variants ทั้งหมด"}
                         >
@@ -1046,7 +1785,7 @@ export default function ManualInventoryPage() {
                           )}
                         </Button>
                       </td>
-                      <td className={`sticky left-[122px] z-10 w-12 px-2 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[172px] z-10 w-12 px-2 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <label className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded border border-slate-200 bg-slate-50 hover:bg-slate-100">
                           <input
                             type="file"
@@ -1080,19 +1819,23 @@ export default function ManualInventoryPage() {
                           )}
                         </label>
                       </td>
-                      <td className={`sticky left-[174px] z-10 min-w-[90px] px-3 py-2 transition-colors group-hover:bg-emerald-50/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[224px] z-10 min-w-[90px] px-3 py-2 transition-colors group-hover:bg-emerald-50/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         {row.isNew ? (
                           <Input
                             value={row.masterSku}
                             onChange={(e) => handleMasterSkuChange(row, e.target.value)}
                             placeholder="FB-ZKITTLEZ"
                             className="h-7 w-28 font-mono text-xs border-transparent focus:border-emerald-500"
+                            autoFocus={row.productId === lastAddedRowId}
+                            onFocus={() => {
+                              if (row.productId === lastAddedRowId) setLastAddedRowId(null);
+                            }}
                           />
                         ) : (
                           <span className="font-mono text-xs text-slate-600">{row.masterSku || "—"}</span>
                         )}
                       </td>
-                      <td className={`sticky left-[264px] z-10 min-w-[160px] px-3 py-2 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-emerald-50/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[314px] z-10 min-w-[160px] px-3 py-2 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-emerald-50/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         {row.isNew ? (
                           <Input
                             value={row.name}
@@ -1101,13 +1844,14 @@ export default function ManualInventoryPage() {
                             className="h-7 min-w-[120px] border-transparent focus:border-emerald-500"
                           />
                         ) : (
-                          <Link
-                            href={`/product/${row.productId}`}
-                            target="_blank"
-                            className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
+                          <button
+                            type="button"
+                            onClick={() => handleEditStrain(row)}
+                            className="inline-flex max-w-full items-center gap-1.5 text-left font-medium text-emerald-700 hover:text-emerald-800 cursor-pointer"
                           >
-                            {row.name}
-                          </Link>
+                            <span className="min-w-0 truncate">{row.name}</span>
+                            <Pencil className="h-3.5 w-3.5 shrink-0 text-emerald-600 opacity-80" aria-hidden />
+                          </button>
                         )}
                       </td>
                       <td className="min-w-[120px] px-4 py-2">
@@ -1205,14 +1949,16 @@ export default function ManualInventoryPage() {
                                 </div>
                               )}
                             </td>
-                            <td className={`${packCellClass} ${notAvailable ? "text-slate-300" : ""}`}>
-                              <EditableCell
-                                value={cost}
-                                saving={!row.isNew && savingCell === `${key}-cost`}
-                                onSave={(v) => saveOrUpdateCell(variantId, packSize, row, "cost", v)}
-                                prefix="฿"
-                              />
-                            </td>
+                            {showCost && (
+                              <td className={`${packCellClass} ${notAvailable ? "text-slate-300" : ""}`}>
+                                <EditableCell
+                                  value={cost}
+                                  saving={!row.isNew && savingCell === `${key}-cost`}
+                                  onSave={(v) => saveOrUpdateCell(variantId, packSize, row, "cost", v)}
+                                  prefix="฿"
+                                />
+                              </td>
+                            )}
                             <td className={`${packCellClass} ${notAvailable ? "text-slate-300" : ""} ${outOfStock ? "bg-red-50/80" : ""}`}>
                               <EditableCell
                                 value={price}
@@ -1228,8 +1974,129 @@ export default function ManualInventoryPage() {
                     </tr>
                   );})}
                 </tbody>
+                {showFooter && sortedRows.length > 0 ? (
+                <tfoot>
+                  <tr className="border-t-2 border-slate-300 bg-muted/50 font-bold text-sm shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
+                    <td
+                      colSpan={7}
+                      className="sticky left-0 z-10 min-w-0 bg-muted/50 px-3 py-2.5 align-top shadow-[4px_0_6px_-2px_rgba(0,0,0,0.06)]"
+                    >
+                      <div className="max-w-[min(100vw,520px)] space-y-1">
+                        <div className="text-xs font-bold leading-tight text-foreground">รวมทั้งหมด (Total)</div>
+                        <div className="text-[10px] font-semibold tabular-nums leading-snug text-muted-foreground">
+                          สายพันธุ์ {footerTotals.totalStrains} · สต็อกรวม {footerTotals.totalStockAll}
+                        </div>
+                        {showCost && (
+                          <div className="text-[10px] font-semibold tabular-nums leading-snug text-slate-800">
+                            มูลค่าทุนรวม ฿{footerTotals.grandCostValue.toLocaleString("th-TH")}
+                          </div>
+                        )}
+                        <div className="text-[10px] font-semibold tabular-nums leading-snug text-emerald-900">
+                          มูลค่าขายรวม ฿{footerTotals.grandPriceValue.toLocaleString("th-TH")}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="min-w-[120px] bg-muted/50 px-4 py-2" aria-hidden />
+                    <td className="min-w-[120px] bg-muted/50 px-4 py-2" aria-hidden />
+                    {packs.map((packSize) => {
+                      const packFooterClass =
+                        "w-[52px] border-l border-slate-200 bg-muted/50 px-1 py-2 align-top tabular-nums";
+                      return (
+                        <Fragment key={`tfoot-${packSize}`}>
+                          <td className={`${packFooterClass} text-right`}>
+                            {footerTotals.perPackStock[packSize] ?? 0}
+                          </td>
+                          {showCost && (
+                            <td className={`${packFooterClass} text-right`}>
+                              ฿{(footerTotals.perPackCostValue[packSize] ?? 0).toLocaleString("th-TH")}
+                            </td>
+                          )}
+                          <td className={`${packFooterClass} text-right text-emerald-950`}>
+                            ฿{(footerTotals.perPackPriceValue[packSize] ?? 0).toLocaleString("th-TH")}
+                          </td>
+                        </Fragment>
+                      );
+                    })}
+                  </tr>
+                </tfoot>
+                ) : null}
               </table>
             </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-muted/40 px-4 py-3">
+              <p className="text-sm tabular-nums text-muted-foreground">{paginationLabel}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="items-per-page" className="whitespace-nowrap text-xs text-zinc-600">
+                    แสดงต่อหน้า
+                  </Label>
+                  <Select
+                    value={String(itemsPerPage)}
+                    onValueChange={(v) => {
+                      if (v === "all") setItemsPerPage("all");
+                      else setItemsPerPage(Number(v) as 20 | 50 | 100);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger id="items-per-page" className="h-8 w-[100px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-1 border-l border-zinc-200 pl-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2"
+                    disabled={itemsPerPage === "all" || currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {itemsPerPage !== "all" && totalPages > 1 ? (
+                    <div className="flex items-center gap-0.5">
+                      {pageButtonParts.map((part, idx) =>
+                        part === "ellipsis" ? (
+                          <span key={`e-${idx}`} className="px-1 text-xs text-muted-foreground">
+                            …
+                          </span>
+                        ) : (
+                          <Button
+                            key={part}
+                            type="button"
+                            variant={currentPage === part ? "default" : "outline"}
+                            size="sm"
+                            className="h-8 min-w-[2rem] px-2 text-xs"
+                            onClick={() => setCurrentPage(part)}
+                          >
+                            {part}
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2"
+                    disabled={itemsPerPage === "all" || currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            </>
           )}
           {!loading && breederId && rows.length === 0 && (
             <div className="py-12 text-center text-zinc-500">ไม่มีสินค้าตามเงื่อนไขนี้</div>
@@ -1274,21 +2141,37 @@ export default function ManualInventoryPage() {
           <div className="flex items-center justify-between gap-6 border-b-2 border-emerald-700 bg-emerald-50/30 px-6 pt-8 pb-6">
             <div className="w-16 flex-shrink-0" aria-hidden />
             <div className="flex flex-1 flex-col items-center justify-center gap-y-1 text-center">
-              {settings.logo_main_url ? (
-                <img src={settings.logo_main_url} alt="Smile Seed Bank" className="h-20 w-auto object-contain" />
+              {settings.logo_main_url && exportMainLogoOk ? (
+                <img
+                  src={settings.logo_main_url}
+                  alt="Smile Seed Bank"
+                  className="h-20 w-auto max-w-[200px] object-contain"
+                  onError={() => setExportMainLogoOk(false)}
+                />
               ) : (
-                <div className="flex h-20 w-24 items-center justify-center rounded-lg bg-emerald-100 text-xl font-bold text-emerald-800">SSB</div>
+                <div className="flex h-20 w-24 flex-shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50">
+                  {settings.logo_main_url ? (
+                    <Store className="h-10 w-10 text-emerald-700" aria-hidden />
+                  ) : (
+                    <span className="text-xl font-bold text-emerald-800">SB</span>
+                  )}
+                </div>
               )}
               <p className="text-sm font-medium text-emerald-600">www.smileseedbank.com</p>
               <div className="flex items-center justify-center">
-                {selectedBreeder?.logo_url ? (
+                {selectedBreeder?.logo_url && exportBreederLogoOk ? (
                   <img
                     src={selectedBreeder.logo_url}
                     alt=""
                     crossOrigin="anonymous"
-                    className="mr-2 h-10 w-auto object-contain"
+                    className="mr-2 h-10 w-auto max-h-10 max-w-[120px] object-contain"
+                    onError={() => setExportBreederLogoOk(false)}
                   />
-                ) : null}
+                ) : (
+                  <div className="mr-2 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-emerald-100">
+                    <Sprout className="h-5 w-5 text-emerald-700" aria-hidden />
+                  </div>
+                )}
                 <span className="text-xs text-zinc-500">{selectedBreeder?.name ?? "Price List"}</span>
               </div>
             </div>
@@ -1309,7 +2192,11 @@ export default function ManualInventoryPage() {
               <th className="w-[70px] px-2 py-2 text-left font-semibold text-emerald-900">Category</th>
               <th className="w-[90px] px-2 py-2 text-left font-semibold text-emerald-900">ประเภทพันธุกรรม</th>
               {packs.map((p) => (
-                <th key={p} colSpan={3} className="w-[120px] px-1 py-2 text-center font-semibold text-emerald-900">
+                <th
+                  key={p}
+                  colSpan={packSpan}
+                  className={`${showCost ? "w-[120px]" : "w-[80px]"} px-1 py-2 text-center font-semibold text-emerald-900 transition-[width] duration-150`}
+                >
                   {p} {p === 1 ? "Seed" : "Seeds"}
                 </th>
               ))}
@@ -1317,8 +2204,8 @@ export default function ManualInventoryPage() {
             <tr className="border-b border-emerald-200 bg-emerald-50/50">
               <th colSpan={4} className="px-2 py-1" />
               {packs.map((p) => (
-                <th key={p} colSpan={3} className="px-1 py-1 text-center text-[10px] font-normal text-emerald-700">
-                  Stock | Cost | Price
+                <th key={p} colSpan={packSpan} className="px-1 py-1 text-center text-[10px] font-normal text-emerald-700">
+                  {showCost ? "Stock | Cost | Price" : "Stock | Price"}
                 </th>
               ))}
             </tr>
@@ -1351,14 +2238,18 @@ export default function ManualInventoryPage() {
                   const price = row.byPack?.[packSize]?.price ?? 0;
                   const outOfStock = stock === 0;
                   return (
-                    <td key={packSize} colSpan={3} className="px-1 py-2 text-center text-zinc-700">
+                    <td key={packSize} colSpan={packSpan} className="px-1 py-2 text-center text-zinc-700">
                       {outOfStock ? (
                         <span className="text-zinc-400">หมด</span>
                       ) : (
                         <>
                           <span className="font-medium">{stock}</span>
-                          <span className="text-zinc-400"> | </span>
-                          <span className="font-medium">{cost > 0 ? cost.toLocaleString("th-TH") : "—"}</span>
+                          {showCost && (
+                            <>
+                              <span className="text-zinc-400"> | </span>
+                              <span className="font-medium">{cost > 0 ? cost.toLocaleString("th-TH") : "—"}</span>
+                            </>
+                          )}
                           <span className="text-zinc-400"> | </span>
                           <span className="font-medium text-emerald-800">{price > 0 ? price.toLocaleString("th-TH") : "—"}</span>
                         </>
@@ -1369,6 +2260,47 @@ export default function ManualInventoryPage() {
               </tr>
             ))}
           </tbody>
+          {showFooter && exportRows.length > 0 ? (
+            <tfoot>
+              <tr className="border-t-2 border-emerald-300 bg-muted/50 font-bold text-xs">
+                <td colSpan={4} className="px-2 py-2 align-top">
+                  <div className="max-w-[360px] space-y-0.5">
+                    <div className="font-bold text-foreground">รวมทั้งหมด (Total)</div>
+                    <div className="text-[10px] font-semibold tabular-nums text-muted-foreground">
+                      สายพันธุ์ {exportFooterTotals.totalStrains} · สต็อกรวม {exportFooterTotals.totalStockAll}
+                    </div>
+                    {showCost && (
+                      <div className="text-[10px] font-semibold tabular-nums text-slate-800">
+                        มูลค่าทุนรวม ฿{exportFooterTotals.grandCostValue.toLocaleString("th-TH")}
+                      </div>
+                    )}
+                    <div className="text-[10px] font-semibold tabular-nums text-emerald-900">
+                      มูลค่าขายรวม ฿{exportFooterTotals.grandPriceValue.toLocaleString("th-TH")}
+                    </div>
+                  </div>
+                </td>
+                {packs.map((packSize) => (
+                  <td
+                    key={`export-tfoot-${packSize}`}
+                    colSpan={packSpan}
+                    className="border-l border-emerald-100 px-1 py-2 text-center tabular-nums text-zinc-800"
+                  >
+                    <span className="font-medium">{exportFooterTotals.perPackStock[packSize] ?? 0}</span>
+                    {showCost && (
+                      <>
+                        <span className="text-zinc-400"> | </span>
+                        <span>฿{(exportFooterTotals.perPackCostValue[packSize] ?? 0).toLocaleString("th-TH")}</span>
+                      </>
+                    )}
+                    <span className="text-zinc-400"> | </span>
+                    <span className="font-medium text-emerald-900">
+                      ฿{(exportFooterTotals.perPackPriceValue[packSize] ?? 0).toLocaleString("th-TH")}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
+          ) : null}
         </table>
         <div className="mt-8 flex items-center justify-between border-t border-zinc-200 pt-6">
           <p className="text-sm text-zinc-600">

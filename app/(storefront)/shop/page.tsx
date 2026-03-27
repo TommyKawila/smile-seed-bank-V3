@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { useProducts } from "@/hooks/useProducts";
 import { useBreeders } from "@/hooks/useBreeders";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
+import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { formatPrice } from "@/lib/utils";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -106,15 +107,15 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
               onClick={(e) => e.stopPropagation()}
               className="absolute bottom-2 right-2 flex h-9 w-9 overflow-hidden rounded-full border border-white/30 bg-white/20 shadow-md backdrop-blur-md transition-transform hover:scale-110"
             >
-              {product.breeders.logo_url ? (
-                <span className="relative h-full w-full">
-                  <Image src={product.breeders.logo_url} alt={product.breeders.name} fill className="object-cover" />
-                </span>
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <Leaf className="h-4 w-4 text-primary/60" />
-                </div>
-              )}
+              <BreederLogoImage
+                src={product.breeders.logo_url}
+                breederName={product.breeders.name}
+                width={36}
+                height={36}
+                className="rounded-full"
+                imgClassName="object-cover"
+                sizes="36px"
+              />
             </Link>
           )}
         </div>
@@ -286,13 +287,15 @@ function ShopContent() {
         >
           <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-start sm:gap-8">
             <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-md sm:h-28 sm:w-28">
-              {urlBreeder.logo_url ? (
-                <div className="relative h-16 w-16 sm:h-20 sm:w-20">
-                  <Image src={urlBreeder.logo_url} alt={urlBreeder.name} fill className="object-contain" unoptimized />
-                </div>
-              ) : (
-                <Leaf className="h-10 w-10 text-primary/30" />
-              )}
+              <BreederLogoImage
+                src={urlBreeder.logo_url}
+                breederName={urlBreeder.name}
+                width={80}
+                height={80}
+                className="rounded-xl"
+                imgClassName="object-contain"
+                sizes="(max-width: 640px) 64px, 80px"
+              />
             </div>
 
             <div className="min-w-0 flex-1">
@@ -493,13 +496,15 @@ function ShopContent() {
                     className="flex w-full max-w-md items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:w-auto"
                   >
                     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
-                      {b.logo_url ? (
-                        <Image src={b.logo_url} alt={b.name} fill className="object-contain p-1" sizes="56px" unoptimized />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <Leaf className="h-6 w-6 text-zinc-300" />
-                        </div>
-                      )}
+                      <BreederLogoImage
+                        src={b.logo_url}
+                        breederName={b.name}
+                        width={56}
+                        height={56}
+                        className="rounded-xl"
+                        imgClassName="object-contain p-1"
+                        sizes="56px"
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-zinc-900">{b.name}</p>

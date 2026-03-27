@@ -13,6 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useSiteSettings, type SocialLink } from "@/hooks/useSiteSettings";
 import { formatPhoneNumber } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { toastErrorMessage } from "@/lib/admin-toast";
 
 function LogoUploadCard({
   title,
@@ -149,6 +151,7 @@ function LogoUploadCard({
 }
 
 export default function SettingsPage() {
+  const { toast } = useToast();
   const { settings, isLoading, updateSetting } = useSiteSettings();
   const [saved, setSaved] = useState(false);
   const [heroMode, setHeroMode] = useState<"static_image" | "animated_svg">("static_image");
@@ -464,10 +467,21 @@ export default function SettingsPage() {
                   const res = await fetch("/api/admin/line-alert/test", { method: "POST" });
                   const j = await res.json();
                   setLineTestResult(res.ok ? "success" : "error");
-                  if (!res.ok) alert(j.error ?? "ส่งไม่สำเร็จ");
-                } catch {
+                  if (!res.ok) {
+                    toast({
+                      title: "เกิดข้อผิดพลาด (Error)",
+                      description: j.error ?? "ส่งไม่สำเร็จ",
+                      variant: "destructive",
+                    });
+                  }
+                } catch (e) {
                   setLineTestResult("error");
-                  alert("เกิดข้อผิดพลาด");
+                  console.error(e);
+                  toast({
+                    title: "เกิดข้อผิดพลาด (Error)",
+                    description: toastErrorMessage(e),
+                    variant: "destructive",
+                  });
                 } finally {
                   setLineTestLoading(false);
                 }
