@@ -17,13 +17,30 @@ const UpdateSchema = z.object({
   address: z.string().nullable().optional(),
 });
 
+const CustomerIdParamSchema = z.object({
+  id: z.coerce.bigint({ message: "ID ต้องเป็นตัวเลขเท่านั้น" }),
+});
+
+function parseCustomerIdParam(raw: string) {
+  const result = CustomerIdParamSchema.safeParse({ id: raw });
+  if (!result.success) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: result.error.format() }, { status: 400 }),
+    };
+  }
+  return { ok: true as const, customerId: result.data.id };
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const customerId = BigInt(id);
+    const idParsed = parseCustomerIdParam(id);
+    if (!idParsed.ok) return idParsed.response;
+    const { customerId } = idParsed;
     const customer = await prisma.customer.findFirst({
       where: { id: customerId, is_active: true },
     });
@@ -42,7 +59,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const customerId = BigInt(id);
+    const idParsed = parseCustomerIdParam(id);
+    if (!idParsed.ok) return idParsed.response;
+    const { customerId } = idParsed;
     const body = await req.json();
     const parsed = UpdateSchema.safeParse(body);
     if (!parsed.success) {
@@ -88,7 +107,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const customerId = BigInt(id);
+    const idParsed = parseCustomerIdParam(id);
+    if (!idParsed.ok) return idParsed.response;
+    const { customerId } = idParsed;
     const updated = await prisma.customer.update({
       where: { id: customerId },
       data: { is_active: false },

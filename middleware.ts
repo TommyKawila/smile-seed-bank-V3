@@ -38,6 +38,18 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const path = request.nextUrl.pathname;
+  const isAdminApi = path === "/api/admin" || path.startsWith("/api/admin/");
+
+  if (isAdminApi) {
+    if (!user || adminRoleFromMetadata(user) !== "ADMIN") {
+      const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      copyCookies(supabaseResponse, res);
+      return res;
+    }
+    return supabaseResponse;
+  }
+
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -48,7 +60,10 @@ export async function middleware(request: NextRequest) {
   }
 
   if (adminRoleFromMetadata(user) !== "ADMIN") {
-    const redirect = NextResponse.redirect(new URL("/", request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("reason", "admin_required");
+    const redirect = NextResponse.redirect(url);
     copyCookies(supabaseResponse, redirect);
     return redirect;
   }
@@ -57,5 +72,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*"],
+  matcher: [
+    "/admin",
+    "/admin/:path*",
+    "/api/admin",
+    "/api/admin/:path*",
+  ],
 };

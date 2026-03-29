@@ -117,6 +117,12 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 
 ## 6. Last Updated
 
+**March 28, 2026** — `app/api/admin/customers/[id]/route.ts` — parse path `id` ด้วย `z.coerce.bigint` + `error.format()` → 400 แทน 500 เมื่อ ID ไม่ใช่ตัวเลข
+
+**March 28, 2026** — `lib/auth-utils.ts` — `assertAdmin()` (รอบ 2: `getUser` + `user_metadata.role === ADMIN`) สำหรับเรียกใน API route handlers
+
+**March 28, 2026** — `middleware.ts`: ป้องกัน `/api/admin` + `/api/admin/*` (401 + คัดลอกคุกกี้รีเฟรช JWT); ไม่ใช่ ADMIN → `/login?reason=admin_required`; `app/admin/layout.tsx` `dynamic = 'force-dynamic'` + `components/admin/AdminLayoutClient.tsx`
+
 **March 28, 2026** — `components/admin/ProductModal.tsx`: sticky header (`DialogHeader` + `pr-10` เว้นปุ่มปิด), body เลื่อนเดียว `flex-1 min-h-0 overflow-y-auto` (AI + ฟอร์ม), footer ติดล่าง `border-t bg-zinc-50` (ยกเลิก/บันทึก); `DialogContent` `max-h-[90vh] min-h-0 overflow-hidden p-0`
 
 **March 29, 2026** — Google OAuth: `login/page.tsx` → `redirectTo` `${getURL()}auth/callback` (+ `?next=`); `app/auth/callback/route.ts` — `exchangeCodeForSession` + `safeNextPath` → `/profile` หรือ `next`; `lib/safe-redirect-path.ts` — ใช้ร่วม login/callback
