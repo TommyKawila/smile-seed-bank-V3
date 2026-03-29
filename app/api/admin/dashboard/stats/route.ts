@@ -6,6 +6,8 @@ import { ordersTableHasFeeColumns } from "@/lib/dashboard-order-fees";
 
 export const dynamic = "force-dynamic";
 
+const PAID_STATUSES = ["PAID", "COMPLETED", "SHIPPED", "DELIVERED"] as const;
+
 function toNum(v: unknown): number {
   if (v == null) return 0;
   if (typeof v === "number" && !Number.isNaN(v)) return v;
@@ -33,38 +35,23 @@ export async function GET(req: NextRequest) {
     const { start, end } = dashboardRangeBounds(p);
     const hasFeeCols = await ordersTableHasFeeColumns();
 
-    const [agg] = hasFeeCols
-      ? await prisma.$queryRaw<
-          { revenue: unknown; shipping: unknown; discount: unknown; cnt: bigint }[]
-        >`
-          SELECT
-            COALESCE(SUM(o.total_amount), 0)::text AS revenue,
-            COALESCE(SUM(o.shipping_fee), 0)::text AS shipping,
-            COALESCE(SUM(o.discount_amount), 0)::text AS discount,
-            COUNT(*)::bigint AS cnt
-          FROM public.orders o
-          WHERE o.status IN ('PAID', 'COMPLETED', 'SHIPPED', 'DELIVERED')
-            AND o.created_at >= ${start}
-            AND o.created_at <= ${end}
-        `
-      : await prisma.$queryRaw<
-          { revenue: unknown; shipping: unknown; discount: unknown; cnt: bigint }[]
-        >`
-          SELECT
-            COALESCE(SUM(o.total_amount), 0)::text AS revenue,
-            '0'::text AS shipping,
-            '0'::text AS discount,
-            COUNT(*)::bigint AS cnt
-          FROM public.orders o
-          WHERE o.status IN ('PAID', 'COMPLETED', 'SHIPPED', 'DELIVERED')
-            AND o.created_at >= ${start}
-            AND o.created_at <= ${end}
-        `;
+    const orderWherePaidInRange = {
+      status: { in: [...PAID_STATUSES] },
+      created_at: { gte: start, lte: end },
+    };
 
-    const totalRevenue = toNum(agg?.revenue);
-    const totalShipping = toNum(agg?.shipping);
-    const totalDiscount = toNum(agg?.discount);
-    const orderCount = Number(agg?.cnt ?? 0);
+    const aggResult = await prisma.orders.aggregate({
+      where: orderWherePaidInRange,
+      _sum: hasFeeCols
+        ? { total_amount: true, shipping_fee: true, discount_amount: true }
+        : { total_amount: true },
+      _count: { _all: true },
+    });
+
+    const totalRevenue = Number(aggResult._sum.total_amount ?? 0);
+    const totalShipping = hasFeeCols ? Number(aggResult._sum.shipping_fee ?? 0) : 0;
+    const totalDiscount = hasFeeCols ? Number(aggResult._sum.discount_amount ?? 0) : 0;
+    const orderCount = aggResult._count._all;
     const netProductRevenue = totalRevenue - totalShipping + totalDiscount;
 
     const [qTotal, qConv] = await Promise.all([
@@ -80,46 +67,32 @@ export async function GET(req: NextRequest) {
     ]);
     const conversionRate = qTotal > 0 ? (qConv / qTotal) * 100 : 0;
 
-    const dailyRows = hasFeeCols
-      ? await prisma.$queryRaw<
-          { d: Date; revenue: unknown; shipping: unknown; discount: unknown }[]
-        >`
-          SELECT
-            (o.created_at AT TIME ZONE 'UTC')::date AS d,
-            COALESCE(SUM(o.total_amount), 0)::text AS revenue,
-            COALESCE(SUM(o.shipping_fee), 0)::text AS shipping,
-            COALESCE(SUM(o.discount_amount), 0)::text AS discount
-          FROM public.orders o
-          WHERE o.status IN ('PAID', 'COMPLETED', 'SHIPPED', 'DELIVERED')
-            AND o.created_at >= ${start}
-            AND o.created_at <= ${end}
-          GROUP BY 1
-          ORDER BY 1 ASC
-        `
-      : await prisma.$queryRaw<
-          { d: Date; revenue: unknown; shipping: unknown; discount: unknown }[]
-        >`
-          SELECT
-            (o.created_at AT TIME ZONE 'UTC')::date AS d,
-            COALESCE(SUM(o.total_amount), 0)::text AS revenue,
-            '0'::text AS shipping,
-            '0'::text AS discount
-          FROM public.orders o
-          WHERE o.status IN ('PAID', 'COMPLETED', 'SHIPPED', 'DELIVERED')
-            AND o.created_at >= ${start}
-            AND o.created_at <= ${end}
-          GROUP BY 1
-          ORDER BY 1 ASC
-        `;
+    const trendOrders = await prisma.orders.findMany({
+      where: orderWherePaidInRange,
+      select: hasFeeCols
+        ? {
+            created_at: true,
+            total_amount: true,
+            shipping_fee: true,
+            discount_amount: true,
+          }
+        : {
+            created_at: true,
+            total_amount: true,
+          },
+    });
 
     const byDay = new Map<string, { revenue: number; shipping: number; discount: number }>();
-    for (const r of dailyRows) {
-      const key = new Date(r.d).toISOString().slice(0, 10);
-      byDay.set(key, {
-        revenue: toNum(r.revenue),
-        shipping: toNum(r.shipping),
-        discount: toNum(r.discount),
-      });
+    for (const o of trendOrders) {
+      if (!o.created_at) continue;
+      const key = new Date(o.created_at).toISOString().slice(0, 10);
+      const row = byDay.get(key) ?? { revenue: 0, shipping: 0, discount: 0 };
+      row.revenue += Number(o.total_amount ?? 0);
+      if (hasFeeCols && "shipping_fee" in o && "discount_amount" in o) {
+        row.shipping += Number(o.shipping_fee ?? 0);
+        row.discount += Number(o.discount_amount ?? 0);
+      }
+      byDay.set(key, row);
     }
     const days = eachDay(start, end);
     const dailyTrend = days.map((date) => {
@@ -127,7 +100,6 @@ export async function GET(req: NextRequest) {
       return { date, ...x };
     });
 
-    // Top strains: LEFT JOIN products + breeders so breeder_name is null/empty when unlinked
     const strainRows = await prisma.$queryRaw<
       { product_name: string; breeder_name: string | null; qty: bigint; rev: unknown }[]
     >`
@@ -161,51 +133,102 @@ export async function GET(req: NextRequest) {
 
     const topStrains = strainRows.map((r) => ({
       name: r.product_name,
-      breederName: (r.breeder_name ?? "").trim() || null, // always keyed; null = unknown breeder in UI
+      breederName: (r.breeder_name ?? "").trim() || null,
       quantity: Number(r.qty),
       revenue: toNum(r.rev),
     }));
 
-    const webSpenders = await prisma.$queryRaw<
-      { name: string | null; spent: unknown; orders: bigint }[]
-    >`
-      SELECT
-        COALESCE(c.full_name, o.customer_name, 'Guest') AS name,
-        SUM(o.total_amount)::text AS spent,
-        COUNT(*)::bigint AS orders
-      FROM public.orders o
-      LEFT JOIN public.customers c ON c.id = o.customer_id
-      WHERE o.customer_id IS NOT NULL
-        AND o.status IN ('PAID', 'COMPLETED', 'SHIPPED', 'DELIVERED')
-        AND o.created_at >= ${start}
-        AND o.created_at <= ${end}
-      GROUP BY o.customer_id, c.full_name, o.customer_name
-      ORDER BY SUM(o.total_amount) DESC
-      LIMIT 8
-    `;
+    const [webOrders, posOrders] = await Promise.all([
+      prisma.orders.findMany({
+        where: {
+          ...orderWherePaidInRange,
+          customer_id: { not: null },
+        },
+        include: { customers: true },
+      }),
+      prisma.orders.findMany({
+        where: {
+          ...orderWherePaidInRange,
+          customer_id: null,
+          customer_profile_id: { not: null },
+        },
+        include: { customer_profile: true },
+      }),
+    ]);
 
-    const posSpenders = await prisma.$queryRaw<
-      { name: string | null; spent: unknown; orders: bigint }[]
-    >`
-      SELECT
-        COALESCE(cp.name, o.customer_name, 'POS') AS name,
-        SUM(o.total_amount)::text AS spent,
-        COUNT(*)::bigint AS orders
-      FROM public.orders o
-      LEFT JOIN "Customer" cp ON cp.id = o.customer_profile_id
-      WHERE o.customer_id IS NULL
-        AND o.customer_profile_id IS NOT NULL
-        AND o.status IN ('PAID', 'COMPLETED', 'SHIPPED', 'DELIVERED')
-        AND o.created_at >= ${start}
-        AND o.created_at <= ${end}
-      GROUP BY o.customer_profile_id, cp.name, o.customer_name
-      ORDER BY SUM(o.total_amount) DESC
-      LIMIT 8
-    `;
+    type SpRow = { name: string | null; spent: unknown; orders: bigint };
+    const webSpenders: SpRow[] = [];
+    const webByCustomer = new Map<
+      string,
+      { name: string; spent: number; orders: number }
+    >();
+    for (const o of webOrders) {
+      const cid = o.customer_id;
+      if (!cid) continue;
+      const name =
+        (o.customers?.full_name?.trim() ||
+          o.customer_name?.trim() ||
+          "Guest") || "Guest";
+      const spent = Number(o.total_amount ?? 0);
+      const prev = webByCustomer.get(cid);
+      if (prev) {
+        webByCustomer.set(cid, {
+          name: prev.name,
+          spent: prev.spent + spent,
+          orders: prev.orders + 1,
+        });
+      } else {
+        webByCustomer.set(cid, { name, spent, orders: 1 });
+      }
+    }
+    for (const v of webByCustomer.values()) {
+      webSpenders.push({
+        name: v.name,
+        spent: v.spent,
+        orders: BigInt(v.orders),
+      });
+    }
+    webSpenders.sort((a, b) => toNum(b.spent) - toNum(a.spent));
+    const webTop = webSpenders.slice(0, 8);
+
+    const posSpenders: SpRow[] = [];
+    const posByProfile = new Map<
+      string,
+      { name: string; spent: number; orders: number }
+    >();
+    for (const o of posOrders) {
+      const pid = o.customer_profile_id;
+      if (pid == null) continue;
+      const key = String(pid);
+      const name =
+        (o.customer_profile?.name?.trim() ||
+          o.customer_name?.trim() ||
+          "POS") || "POS";
+      const spent = Number(o.total_amount ?? 0);
+      const prev = posByProfile.get(key);
+      if (prev) {
+        posByProfile.set(key, {
+          name: prev.name,
+          spent: prev.spent + spent,
+          orders: prev.orders + 1,
+        });
+      } else {
+        posByProfile.set(key, { name, spent, orders: 1 });
+      }
+    }
+    for (const v of posByProfile.values()) {
+      posSpenders.push({
+        name: v.name,
+        spent: v.spent,
+        orders: BigInt(v.orders),
+      });
+    }
+    posSpenders.sort((a, b) => toNum(b.spent) - toNum(a.spent));
+    const posTop = posSpenders.slice(0, 8);
 
     type Sp = { name: string; spent: number; orders: number };
     const mergeMap = new Map<string, Sp>();
-    for (const row of [...webSpenders, ...posSpenders]) {
+    for (const row of [...webTop, ...posTop]) {
       const name = (row.name ?? "Guest").trim() || "Guest";
       const spent = toNum(row.spent);
       const oc = Number(row.orders);
