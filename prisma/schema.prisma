@@ -1,14 +1,12 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters", "partialIndexes"]
+  previewFeatures = ["partialIndexes"]
   engineType      = "library"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // เพิ่มบรรทัดนี้ครับ
-  schemas   = ["public"]
+  provider = "postgresql"
+  schemas  = ["public"]
 }
 
 model blogs {
