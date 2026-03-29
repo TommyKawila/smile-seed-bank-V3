@@ -180,12 +180,13 @@ function ShopContent() {
   const breederParam = searchParams.get("breeder");
   const qParam = searchParams.get("q") ?? "";
 
+  /** Full catalog client-side (~90 items): no server limit — instant filter in memory */
   const { products, isLoading } = useProducts({ autoFetch: true, includeVariants: true });
   const { breeders: allBreeders } = useBreeders();
   const { locale, t } = useLanguage();
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   useEffect(() => {
-    setSearch(qParam);
+    setSearchTerm(qParam);
   }, [qParam]);
   const [activeCategory, setActiveCategory] = useState("ทั้งหมด");
   const [activeBreeder, setActiveBreeder] = useState<string>("ทั้งหมด");
@@ -208,42 +209,55 @@ function ShopContent() {
     return ["ทั้งหมด", ...Array.from(new Set(names))];
   }, [products]);
 
-  const q = search.trim().toLowerCase();
+  const qNorm = searchTerm.trim().toLowerCase();
 
   // Breeders whose name/summary/description matches the search (for profile cards)
   const matchingBreeders = useMemo(() => {
-    if (!q) return [];
+    if (!qNorm) return [];
     return allBreeders.filter((b) => {
       const name = (b.name ?? "").toLowerCase();
       const summaryTh = (b.summary_th ?? "").toLowerCase();
       const summaryEn = (b.summary_en ?? "").toLowerCase();
       const desc = (b.description ?? "").toLowerCase();
       const descEn = (b.description_en ?? "").toLowerCase();
-      return name.includes(q) || summaryTh.includes(q) || summaryEn.includes(q) || desc.includes(q) || descEn.includes(q);
+      return (
+        name.includes(qNorm) ||
+        summaryTh.includes(qNorm) ||
+        summaryEn.includes(qNorm) ||
+        desc.includes(qNorm) ||
+        descEn.includes(qNorm)
+      );
     });
-  }, [allBreeders, q]);
+  }, [allBreeders, qNorm]);
 
   const matchingBreederIds = useMemo(() => new Set(matchingBreeders.map((b) => b.id)), [matchingBreeders]);
 
-  const filtered = useMemo(() => {
+  /** Instant search: product name + breeder name (+ products under breeders matched in profile text) */
+  const searchFilteredProducts = useMemo(() => {
+    if (!qNorm) return products;
     return products.filter((p) => {
+      const nameMatch = p.name.toLowerCase().includes(qNorm);
+      const breederNameMatch = p.breeders?.name?.toLowerCase().includes(qNorm) ?? false;
+      const breederIdMatch = p.breeder_id != null && matchingBreederIds.has(p.breeder_id);
+      return nameMatch || breederNameMatch || breederIdMatch;
+    });
+  }, [products, qNorm, matchingBreederIds]);
+
+  const filteredProducts = useMemo(() => {
+    return searchFilteredProducts.filter((p) => {
       const matchCategory = activeCategory === "ทั้งหมด" || p.category === activeCategory;
       const matchBreeder = urlBreeder
         ? p.breeder_id === urlBreeder.id
         : activeBreeder === "ทั้งหมด" || p.breeders?.name === activeBreeder;
-      if (!matchCategory || !matchBreeder) return false;
-      if (!q) return true;
-      const nameMatch = p.name.toLowerCase().includes(q);
-      const breederNameMatch = p.breeders?.name?.toLowerCase().includes(q) ?? false;
-      const breederIdMatch = p.breeder_id != null && matchingBreederIds.has(p.breeder_id);
-      return nameMatch || breederNameMatch || breederIdMatch;
+      return matchCategory && matchBreeder;
     });
-  }, [products, q, activeCategory, activeBreeder, urlBreeder, matchingBreederIds]);
+  }, [searchFilteredProducts, activeCategory, activeBreeder, urlBreeder]);
 
-  const hasFilters = activeCategory !== "ทั้งหมด" || activeBreeder !== "ทั้งหมด" || search;
+  const hasFilters =
+    activeCategory !== "ทั้งหมด" || activeBreeder !== "ทั้งหมด" || searchTerm.trim().length > 0;
 
   const clearFilters = () => {
-    setSearch("");
+    setSearchTerm("");
     setActiveCategory("ทั้งหมด");
     setActiveBreeder("ทั้งหมด");
     if (breederParam) router.push("/shop");
@@ -349,7 +363,9 @@ function ShopContent() {
                 )}
               </div>
 
-              <p className="mt-3 text-xs text-zinc-400">{isLoading ? "กำลังโหลด..." : `${filtered.length} สายพันธุ์`}</p>
+              <p className="mt-3 text-xs text-zinc-400">
+                {isLoading ? "กำลังโหลด..." : `${filteredProducts.length} สายพันธุ์`}
+              </p>
             </div>
 
             <div className="shrink-0">
@@ -366,7 +382,7 @@ function ShopContent() {
           <div className="mx-auto max-w-7xl">
             <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">ร้านค้า</h1>
             <p className="mt-1 text-sm text-zinc-500">
-              {isLoading ? "กำลังโหลด..." : `${filtered.length} รายการ`}
+              {isLoading ? "กำลังโหลด..." : `${filteredProducts.length} รายการ`}
             </p>
           </div>
         </div>
@@ -379,12 +395,16 @@ function ShopContent() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <Input
               placeholder={t("ค้นหาสินค้าหรือแบรนด์...", "Search products or brands...")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full min-w-0 pl-9"
             />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+              >
                 <X className="h-4 w-4 text-zinc-400 hover:text-zinc-600" />
               </button>
             )}
@@ -479,7 +499,7 @@ function ShopContent() {
         )}
 
         {/* Breeder profile cards when search matches a brand */}
-        {q && matchingBreeders.length > 0 && (
+        {qNorm && matchingBreeders.length > 0 && (
           <div className="mb-6">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
               {t("แบรนด์ที่ตรงกับคำค้น", "Brands matching your search")}
@@ -534,12 +554,14 @@ function ShopContent() {
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+        ) : filteredProducts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-4 py-20 text-center">
             <PackageX className="h-12 w-12 text-zinc-200" />
-            <p className="text-base font-medium text-zinc-500">ไม่พบสินค้าที่ตรงกับการค้นหา</p>
+            <p className="text-base font-medium text-zinc-500">
+              {t("ไม่พบสินค้าที่ตรงกับการค้นหา", "No results found")}
+            </p>
             <Button variant="outline" size="sm" onClick={clearFilters}>
-              ล้างตัวกรอง
+              {t("ล้างตัวกรอง", "Clear filters")}
             </Button>
           </div>
         ) : (
@@ -549,7 +571,7 @@ function ShopContent() {
             variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
             className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
           >
-            {filtered.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </motion.div>

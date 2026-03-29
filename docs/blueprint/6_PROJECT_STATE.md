@@ -117,6 +117,8 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 
 ## 6. Last Updated
 
+**March 28, 2026** — `app/(storefront)/shop/page.tsx` — ค้นหาแบบ client-side: `searchTerm`, `searchFilteredProducts` + `filteredProducts` (หมวด/แบรนด์), empty state TH/EN, input `w-full min-w-0`
+
 **March 28, 2026** — `app/api/admin/customers/[id]/route.ts` — parse path `id` ด้วย `z.coerce.bigint` + `error.format()` → 400 แทน 500 เมื่อ ID ไม่ใช่ตัวเลข
 
 **March 28, 2026** — `lib/auth-utils.ts` — `assertAdmin()` (รอบ 2: `getUser` + `user_metadata.role === ADMIN`) สำหรับเรียกใน API route handlers
