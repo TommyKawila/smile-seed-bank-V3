@@ -6,6 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // url      = env("DATABASE_URL") // Prisma 7 จะใช้จาก prisma.config.ts เป็นหลัก
   schemas  = ["public"]
 }
 

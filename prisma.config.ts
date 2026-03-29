@@ -1,10 +1,13 @@
-import "dotenv/config";
+import { config } from "dotenv";
 import { defineConfig } from "@prisma/config";
+
+config();
+config({ path: ".env.local", override: true });
 
 export default defineConfig({
   schema: "./prisma/schema.prisma",
   datasource: {
-    url: process.env.DATABASE_URL, // สำหรับ Runtime (Port 6543 + pgbouncer)
-    directUrl: process.env.DIRECT_URL, // สำหรับ Migration & Admin Tasks (Port 5432)
+    url: process.env.DATABASE_URL,
+    directUrl: process.env.DIRECT_URL,
   },
 });
