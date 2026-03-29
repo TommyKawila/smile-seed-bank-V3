@@ -117,6 +117,8 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 
 ## 6. Last Updated
 
+**March 28, 2026** — `components/admin/ProductModal.tsx`: sticky header (`DialogHeader` + `pr-10` เว้นปุ่มปิด), body เลื่อนเดียว `flex-1 min-h-0 overflow-y-auto` (AI + ฟอร์ม), footer ติดล่าง `border-t bg-zinc-50` (ยกเลิก/บันทึก); `DialogContent` `max-h-[90vh] min-h-0 overflow-hidden p-0`
+
 **March 29, 2026** — Google OAuth: `login/page.tsx` → `redirectTo` `${getURL()}auth/callback` (+ `?next=`); `app/auth/callback/route.ts` — `exchangeCodeForSession` + `safeNextPath` → `/profile` หรือ `next`; `lib/safe-redirect-path.ts` — ใช้ร่วม login/callback
 
 **March 29, 2026** — `middleware.ts` (root): `@supabase/ssr` `createServerClient` + cookie refresh; ป้องกัน `/admin` — ไม่มี session → `/login?next=...`; session แต่ `user_metadata.role !== ADMIN` → `/`

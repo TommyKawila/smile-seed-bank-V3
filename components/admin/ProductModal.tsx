@@ -383,15 +383,22 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditMode ? `✏️ แก้ไข: ${initialData?.name ?? "สินค้า"}` : "เพิ่มสินค้าใหม่"}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="flex max-h-[90vh] min-h-0 w-[calc(100vw-1.25rem)] max-w-[calc(100vw-1.25rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[700px] md:max-w-[800px] lg:max-w-4xl">
+        <div className="shrink-0 border-b border-zinc-200 bg-white px-4 pb-4 pt-5 pr-12 sm:px-6 sm:pb-5 sm:pt-6 sm:pr-14">
+          <DialogHeader className="pr-10">
+            <DialogTitle>
+              {isEditMode ? `✏️ แก้ไข: ${initialData?.name ?? "สินค้า"}` : "เพิ่มสินค้าใหม่"}
+            </DialogTitle>
+          </DialogHeader>
+        </div>
 
-        {/* AI Extraction Box */}
-        <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4">
+        <form
+          onSubmit={handleSubmit}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-4 sm:p-6">
+        {/* AI Extraction Box — full width of scroll area */}
+        <div className="w-full rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4">
           <div className="mb-2 flex items-center gap-2">
             <Wand2 className="h-4 w-4 text-primary" />
             <p className="text-sm font-semibold text-primary">AI ช่วยกรอกข้อมูล</p>
@@ -466,10 +473,10 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
         <Separator />
 
-        {/* Product Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Product fields */}
+        <div className="space-y-4">
           {/* Basic Info */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="name">ชื่อสินค้า *</Label>
               <Input
@@ -503,52 +510,50 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 ))}
               </select>
             </div>
-          </div>
 
-          {/* Breeder Selection */}
-          <div className="space-y-1">
-            <Label htmlFor="breeder">Breeder (แบรนด์)</Label>
-            {breeders.length === 0 ? (
-              <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-700">
-                ⚠️ ยังไม่มี Breeder ในระบบ —{" "}
-                <Link href="/admin/breeders" className="font-semibold underline hover:text-amber-900">
-                  สร้าง Breeder ก่อน
-                </Link>
-              </div>
-            ) : (
-              <select
-                id="breeder"
-                value={form.breeder_id ?? ""}
-                onChange={(e) =>
-                  setField("breeder_id", e.target.value ? Number(e.target.value) : null)
-                }
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">— ไม่ระบุ Breeder —</option>
-                {breeders.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
+            <div className="space-y-1 md:col-span-2">
+              <Label htmlFor="breeder">Breeder (แบรนด์)</Label>
+              {breeders.length === 0 ? (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-700">
+                  ⚠️ ยังไม่มี Breeder ในระบบ —{" "}
+                  <Link href="/admin/breeders" className="font-semibold underline hover:text-amber-900">
+                    สร้าง Breeder ก่อน
+                  </Link>
+                </div>
+              ) : (
+                <select
+                  id="breeder"
+                  value={form.breeder_id ?? ""}
+                  onChange={(e) =>
+                    setField("breeder_id", e.target.value ? Number(e.target.value) : null)
+                  }
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">— ไม่ระบุ Breeder —</option>
+                  {breeders.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
 
-          {/* Master SKU — Read-only after creation to prevent broken links */}
-          <div className="space-y-1">
-            <Label htmlFor="master_sku">Master SKU</Label>
-            <Input
-              id="master_sku"
-              value={form.master_sku ?? ""}
-              onChange={(e) => !isEditMode && setField("master_sku", e.target.value.trim() || null)}
-              placeholder="เช่น 420FASTBUDS-RAINBOW-MELON (ตัวพิมพ์ใหญ่, variants เป็น …-1, …-3, …-5)"
-              className="font-mono text-sm"
-              readOnly={isEditMode}
-            />
+            <div className="space-y-1 md:col-span-2">
+              <Label htmlFor="master_sku">Master SKU</Label>
+              <Input
+                id="master_sku"
+                value={form.master_sku ?? ""}
+                onChange={(e) => !isEditMode && setField("master_sku", e.target.value.trim() || null)}
+                placeholder="เช่น 420FASTBUDS-RAINBOW-MELON (ตัวพิมพ์ใหญ่, variants เป็น …-1, …-3, …-5)"
+                className="font-mono text-sm"
+                readOnly={isEditMode}
+              />
+            </div>
           </div>
 
           {/* Description TH/EN */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="desc_th" className={isUnknown(form.description_th) ? "text-red-600" : ""}>
                 คำบรรยาย (ภาษาไทย){isUnknown(form.description_th) && " ⚠"}
@@ -557,7 +562,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 id="desc_th"
                 value={form.description_th ?? ""}
                 onChange={(e) => setField("description_th", e.target.value)}
-                rows={4}
+                rows={5}
                 placeholder="คำบรรยายสินค้าภาษาไทย..."
                 className={unknownCls(form.description_th)}
               />
@@ -570,15 +575,15 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 id="desc_en"
                 value={form.description_en ?? ""}
                 onChange={(e) => setField("description_en", e.target.value)}
-                rows={4}
+                rows={5}
                 placeholder="Product description in English..."
                 className={unknownCls(form.description_en)}
               />
             </div>
           </div>
 
-          {/* Product Image Upload Zone */}
-          <div className="space-y-2">
+          {/* Product Image Upload Zone — centered, max width on large modals */}
+          <div className="mx-auto w-full max-w-2xl space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-semibold">
                 📸 รูปภาพสินค้า ({productSlots.length}/{MAX_IMAGES})
@@ -671,7 +676,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           </div>
 
           {/* AI Specs Row */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="space-y-1">
               <Label className="text-xs">THC %</Label>
               <Input
@@ -744,7 +749,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           </div>
 
           {/* Yield & Difficulty */}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="space-y-1">
               <Label className={`text-xs ${isUnknown(form.yield_info) ? "text-red-600" : ""}`}>
                 🌿 Yield (ผลผลิต){isUnknown(form.yield_info) && " ⚠"}
@@ -779,7 +784,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           </div>
 
           {/* Extended Specs Row 2: Lineage, Genetic Ratio, Sex Type */}
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="space-y-1">
               <Label className={`text-xs ${isUnknown(form.lineage) ? "text-red-600" : ""}`}>
                 Lineage{isUnknown(form.lineage) && " ⚠"}
@@ -818,7 +823,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           </div>
 
           {/* Tag fields: Terpenes, Effects, Flavors, Medical */}
-          <div key={formKey} className="grid gap-3 sm:grid-cols-2">
+          <div key={formKey} className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <TagField
               label="🌿 Terpenes"
               value={form.terpenes}
@@ -983,9 +988,10 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               ⚠️ <strong>บันทึกไม่สำเร็จ:</strong> {submitLocalError ?? submitError}
             </div>
           )}
+        </div>
+          </div>
 
-          {/* Footer Buttons */}
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-4 py-4 sm:px-6">
             <Button type="button" variant="outline" onClick={onClose}>
               ยกเลิก
             </Button>
