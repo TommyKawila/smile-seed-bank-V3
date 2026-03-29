@@ -117,6 +117,16 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 
 ## 6. Last Updated
 
+**March 30, 2026** — Storefront product detail `app/(storefront)/product/[slug]/page.tsx`: Genetics row ใช้ `genetic_ratio` (ซ่อนเมื่อว่างหรือซ้ำกับ `lineage`), Lineage ใช้ `GitFork` + `lineage`, ลดซ้ำใต้ Indica/Sativa bar — `shouldShowGeneticsRow` / `normalizeSpecCompare`
+
+**March 30, 2026** — Cannabis attributes: `flowering_type` (`autoflower` \| `photoperiod`) + `sex_type` (`feminized` \| `regular`) — migration `supabase/migrations/20260330120000_products_flowering_sex_standardize.sql`, `lib/cannabis-attributes.ts`, `lib/validations/product.ts`, `services/ai-extractor.ts`. **ProductModal:** แถว Flowering + Sex คู่กัน; `seed_type` sync จาก Sex; AI Scanner staging สูงสุด 5 รูป (thumbnail + ลบ), สกัดเมื่อกดปุ่ม ✨ เท่านั้น, เคลียร์ staging เมื่อสำเร็จ — `components/admin/ProductModal.tsx`
+
+**March 28, 2026** — `app/api/ai/extract/route.ts` re-export `POST` จาก `admin/ai-extract`; `middleware.ts` ป้องกัน `/api/ai/*` แบบเดียวกับ admin
+
+**March 28, 2026** — `ProductModal` AI Scanner: guard รูป ≤5MB (toast destructive), ข้อความโหลดหมุนทุก 2.5s ระหว่างสแกน
+
+**March 28, 2026** — `components/admin/ProductModal.tsx` — **AI Data Scanner (Read & Discard)**: อัปโหลดรูป → base64 → `POST /api/ai/extract` → เติมฟอร์ม → ไม่เก็บ state รูป / ไม่เข้าแกลเลอรี; Wand = สกัดจากข้อความอย่างเดียว; toast สำเร็จ; แกลเลอรี = marketing เท่านั้น
+
 **March 28, 2026** — `app/(storefront)/shop/page.tsx` — ค้นหาแบบ client-side: `searchTerm`, `searchFilteredProducts` + `filteredProducts` (หมวด/แบรนด์), empty state TH/EN, input `w-full min-w-0`
 
 **March 28, 2026** — `app/api/admin/customers/[id]/route.ts` — parse path `id` ด้วย `z.coerce.bigint` + `error.format()` → 400 แทน 500 เมื่อ ID ไม่ใช่ตัวเลข

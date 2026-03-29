@@ -106,8 +106,8 @@ function ItemRow({ item }: { item: OrderDetailRow["order_items"][number] }) {
   // Format: "Lemon Paya (Photo) by Sensi Seeds"
   let titleLine = product?.name ?? "สินค้า";
   const flowerLabel =
-    pv?.flowering_type === "AUTO" ? "Auto"
-    : pv?.flowering_type === "PHOTO" ? "Photo"
+    (pv?.flowering_type ?? "").toLowerCase().includes("auto") ? "Auto"
+    : (pv?.flowering_type ?? "").toLowerCase().includes("photo") ? "Photo"
     : null;
   if (flowerLabel) titleLine += ` (${flowerLabel})`;
   if (pv?.breeder_name) titleLine += ` by ${pv.breeder_name}`;

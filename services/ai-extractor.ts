@@ -18,9 +18,11 @@ export interface ExtractedProductData {
   cbd_percent?: number | null;
   indica_ratio?: number | null;
   sativa_ratio?: number | null;
-  flowering_type?: "AUTO" | "PHOTO" | null;
+  /** Canonical: autoflower | photoperiod (lowercase) */
+  flowering_type?: "autoflower" | "photoperiod" | null;
   seed_type?: "FEMINIZED" | "REGULAR" | null;
-  sex_type?: string | null;
+  /** Canonical: feminized | regular (lowercase) — NOT used for autoflower (use flowering_type) */
+  sex_type?: "feminized" | "regular" | null;
   yield_info?: string | null;
   growing_difficulty?: string | null;
   terpenes?: string[] | null;
@@ -49,9 +51,9 @@ const JSON_SCHEMA = `{
   "cbd_percent": number | null (0-100. Use null if not found),
   "indica_ratio": number | null (0-100 integer. Use null if not found),
   "sativa_ratio": number | null (0-100 integer, typically 100-indica_ratio. Use null if not found),
-  "flowering_type": "AUTO" | "PHOTO" | null,
+  "flowering_type": "autoflower" | "photoperiod" | null — photoperiod = depends on light schedule; autoflower = ruderalis-type automatic flowering,
   "seed_type": "FEMINIZED" | "REGULAR" | null,
-  "sex_type": "Feminized" | "Regular" | "Autoflower" | "Unknown",
+  "sex_type": "feminized" | "regular" | null — NEVER put \"Autoflower\" here; autoflowering belongs in flowering_type only,
   "yield_info": "string — e.g. '400-500g/m²', or \"Unknown\"",
   "growing_difficulty": "Easy" | "Moderate" | "Difficult" | "Unknown",
   "terpenes": ["string"] — array of terpene names inferred from flavor/aroma, e.g. ["Myrcene", "Limonene"]. Use ["Unknown"] if no flavor cues at all,
@@ -74,6 +76,13 @@ EXTRACTION RULES:
 5. TERPENES: Infer terpene names from flavor/aroma descriptions if not explicitly listed (e.g. citrus/lemon → Limonene, earthy/musky → Myrcene, spicy/pepper → Caryophyllene, pine → Pinene, floral → Linalool).
 6. DESCRIPTION (ENGLISH): Write a rich narrative of 5-8 sentences synthesizing: strain character, lineage heritage, THC/CBD potency, effects experience, flavor/aroma profile, growing traits, and recommended use cases. Tone: premium cannabis seed bank catalog.
 7. DESCRIPTION (THAI): Translate the English description into natural, fluent Thai. Write as if a native Thai speaker composed it — not a word-for-word translation.
+8. FLOWERING_TYPE vs SEX_TYPE (critical):
+   - Keywords \"Auto\", \"Autoflow\", \"Autoflowering\", \"Ruderalis\", \"Fast Buds Auto\" → flowering_type MUST be \"autoflower\" (not sex_type).
+   - Keywords \"Feminized\", \"Fem\", \"Female seeds\" → sex_type \"feminized\".
+   - Keywords \"Regular\", \"Reg\", \"non-feminized\" → sex_type \"regular\".
+   - Photoperiod / Photo-period / traditional photo → flowering_type \"photoperiod\".
+   - If the product is autoflowering and sex_type is unclear, set sex_type to \"feminized\" (most autos are fem) UNLESS the text explicitly says \"Regular\" / \"regular seeds\" for that auto line.
+   - Output lowercase exactly: flowering_type in autoflower|photoperiod|null; sex_type in feminized|regular|null.
 
 Return ONLY a valid JSON object (no markdown, no code fences, no explanation) matching this schema:
 ${JSON_SCHEMA}`;
@@ -201,6 +210,35 @@ function mapStrainDominance(v: unknown): StrainDominanceValue | null {
 
 // ─── Sanitize ─────────────────────────────────────────────────────────────────
 
+function normalizeFloweringFromAi(data: ExtractedProductData): "autoflower" | "photoperiod" | null {
+  const raw = data.flowering_type as unknown;
+  if (raw != null && raw !== "" && raw !== "Unknown") {
+    const s = String(raw).toLowerCase();
+    if (s.includes("auto")) return "autoflower";
+    if (s.includes("photo")) return "photoperiod";
+  }
+  const sexRaw = String(data.sex_type ?? "");
+  if (sexRaw.toLowerCase().includes("auto") && sexRaw.toLowerCase().includes("flower")) {
+    return "autoflower";
+  }
+  return null;
+}
+
+function normalizeSexFromAi(
+  data: ExtractedProductData,
+  flowering: "autoflower" | "photoperiod" | null
+): "feminized" | "regular" | null {
+  const raw = data.sex_type as unknown;
+  const s = raw != null && raw !== "Unknown" ? String(raw).toLowerCase() : "";
+  if (s.includes("auto") && s.includes("flower")) {
+    return flowering === "autoflower" ? "feminized" : null;
+  }
+  if (s.includes("regular") && !s.includes("fem")) return "regular";
+  if (s.includes("feminized") || s === "fem" || s.includes("female")) return "feminized";
+  if (flowering === "autoflower") return "feminized";
+  return null;
+}
+
 function sanitize(data: ExtractedProductData): ExtractedProductData {
   const clampNum = (v: unknown): number | null => {
     if (v == null || v === "Unknown" || v === "") return null;
@@ -211,6 +249,8 @@ function sanitize(data: ExtractedProductData): ExtractedProductData {
   const sd = mapStrainDominance(data.strain_dominance) ?? (data.indica_ratio != null && data.sativa_ratio != null
     ? (data.indica_ratio >= 60 ? "Mostly Indica" : data.sativa_ratio >= 60 ? "Mostly Sativa" : "Hybrid 50/50")
     : mapStrainDominance(data.genetic_ratio) ?? mapStrainDominance(data.genetics));
+  const flowering_type = normalizeFloweringFromAi(data);
+  const sex_type = normalizeSexFromAi(data, flowering_type);
   return {
     ...data,
     strain_dominance: sd,
@@ -218,6 +258,8 @@ function sanitize(data: ExtractedProductData): ExtractedProductData {
     cbd_percent: clampNum(data.cbd_percent),
     indica_ratio: clampNum(data.indica_ratio),
     sativa_ratio: clampNum(data.sativa_ratio),
+    flowering_type,
+    sex_type,
   };
 }
 

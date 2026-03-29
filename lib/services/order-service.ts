@@ -306,8 +306,8 @@ export async function fetchEmailItems(
 
       // e.g. "Photo" | "Auto"
       const flowerLabel =
-        info.flowering_type === "AUTO" ? "Auto"
-        : info.flowering_type === "PHOTO" ? "Photo"
+        (info.flowering_type ?? "").toLowerCase().includes("auto") ? "Auto"
+        : (info.flowering_type ?? "").toLowerCase().includes("photo") ? "Photo"
         : null;
 
       // e.g. "Lemon Paya (Photo) by Sensi Seeds"

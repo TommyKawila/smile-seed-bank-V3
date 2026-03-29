@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronLeft, ShoppingCart, Leaf, Loader2, FlaskConical, TestTube2, Flower2, Gauge, Sprout, Clock, Dna, GitBranch, Package } from "lucide-react";
+import { ChevronLeft, ShoppingCart, Leaf, Loader2, FlaskConical, TestTube2, Flower2, Gauge, Sprout, Clock, Dna, GitFork, Package } from "lucide-react";
 import type { Product } from "@/types/supabase";
 // Extended product type with new spec fields
 type ProductWithSpecs = ProductFull & Pick<Product, "genetic_ratio" | "sex_type" | "lineage" | "terpenes">;
@@ -112,6 +112,22 @@ function toArray(data: unknown): string[] {
   if (Array.isArray(data)) return data.map(String);
   if (typeof data === "string") return data.split(",").map((s) => s.trim()).filter(Boolean);
   return [];
+}
+
+function normalizeSpecCompare(s: string | null | undefined): string {
+  return (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Genetics row: show only when genetic_ratio is set and not redundant vs lineage */
+function shouldShowGeneticsRow(
+  geneticRatio: string | null | undefined,
+  lineage: string | null | undefined
+): boolean {
+  const gr = (geneticRatio ?? "").trim();
+  if (!gr) return false;
+  const ln = (lineage ?? "").trim();
+  if (!ln) return true;
+  return normalizeSpecCompare(gr) !== normalizeSpecCompare(ln);
 }
 
 // Bold product name and technical terms (THC/CBD %) in description text
@@ -498,22 +514,23 @@ export default function ProductDetailPage() {
                         style={{ width: `${indicaRatio}%` }}
                       />
                     </div>
-                    {product.genetic_ratio && (
-                      <p className="mt-2 text-center text-xs font-semibold text-zinc-600">
-                        {product.genetic_ratio}
-                      </p>
-                    )}
                   </div>
                 )}
 
                 {/* Genetics Details Card */}
-                {(product.genetics || product.lineage || product.seed_type || product.flowering_type || product.yield_info) && (
+                {(shouldShowGeneticsRow(product.genetic_ratio, product.lineage) ||
+                  product.lineage?.trim() ||
+                  product.seed_type ||
+                  product.flowering_type ||
+                  product.yield_info) && (
                   <div className="rounded-2xl border border-white/50 bg-white/70 p-5 shadow-sm backdrop-blur-md">
                     <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500">
                       <Dna className="h-4 w-4 text-primary/60" /> {t("โปรไฟล์พันธุกรรม", "Genetic Profile")}
                     </p>
-                    <SpecRow label={t("พันธุกรรม", "Genetics")} value={product.genetics} icon={Dna} />
-                    <SpecRow label={t("สายเลือด", "Lineage")} value={product.lineage} icon={GitBranch} />
+                    {shouldShowGeneticsRow(product.genetic_ratio, product.lineage) && (
+                      <SpecRow label={t("พันธุกรรม", "Genetics")} value={product.genetic_ratio} icon={Dna} />
+                    )}
+                    <SpecRow label={t("สายเลือด", "Lineage")} value={product.lineage} icon={GitFork} />
                     <SpecRow label={t("ประเภทดอก", "Flowering")} value={product.flowering_type} icon={Clock} />
                     <SpecRow label={t("ประเภทเมล็ด", "Seed Type")} value={product.seed_type} icon={Package} />
                     <SpecRow label={t("ผลผลิต", "Yield")} value={product.yield_info} alwaysShow icon={Sprout} />
@@ -533,7 +550,10 @@ export default function ProductDetailPage() {
                 )}
 
                 {/* Empty state */}
-                {!product.genetics && !product.thc_percent && !product.lineage && toArray(product.terpenes).length === 0 && (
+                {!shouldShowGeneticsRow(product.genetic_ratio, product.lineage) &&
+                  !product.thc_percent &&
+                  !product.lineage?.trim() &&
+                  toArray(product.terpenes).length === 0 && (
                   <div className="rounded-2xl border border-dashed border-zinc-200 py-12 text-center text-sm text-zinc-400">
                     {t("ยังไม่มีข้อมูล AI Specs", "No AI specs available yet")}
                   </div>
@@ -594,12 +614,16 @@ export default function ProductDetailPage() {
                   const fallback = locale === "th" ? product.description_en : product.description_th;
                   const text = (preferred?.trim() || fallback?.trim() || "") || null;
                   const hasLineage = product.lineage?.trim();
-                  const hasGenetics = product.genetics?.trim();
+                  const hasGeneticsDistinct = shouldShowGeneticsRow(
+                    product.genetic_ratio,
+                    product.lineage
+                  );
                   const hasYield = product.yield_info?.trim();
                   const terpeneList = toArray(product.terpenes);
                   const hasTerpenes = terpeneList.length > 0;
                   const hasDifficulty = product.growing_difficulty?.trim();
-                  const hasStructured = hasLineage || hasGenetics || hasYield || hasTerpenes || hasDifficulty;
+                  const hasStructured =
+                    hasLineage || hasGeneticsDistinct || hasYield || hasTerpenes || hasDifficulty;
 
                   if (!text && !hasStructured) {
                     return (
@@ -622,16 +646,22 @@ export default function ProductDetailPage() {
                       )}
                       {hasStructured && (
                         <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-6 space-y-3">
-                          {hasGenetics && (
-                            <p className="text-sm text-zinc-700">
-                              <span className="mr-2">🧬</span>
-                              <span className="font-semibold text-zinc-800">{t("พันธุกรรม", "Genetics")}:</span> {product.genetics}
+                          {hasGeneticsDistinct && (
+                            <p className="flex items-start gap-2 text-sm text-zinc-700">
+                              <Dna className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
+                              <span>
+                                <span className="font-semibold text-zinc-800">{t("พันธุกรรม", "Genetics")}:</span>{" "}
+                                {product.genetic_ratio}
+                              </span>
                             </p>
                           )}
                           {hasLineage && (
-                            <p className="text-sm text-zinc-700">
-                              <span className="mr-2">🧬</span>
-                              <span className="font-semibold text-zinc-800">{t("สายเลือด", "Lineage")}:</span> {product.lineage}
+                            <p className="flex items-start gap-2 text-sm text-zinc-700">
+                              <GitFork className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
+                              <span>
+                                <span className="font-semibold text-zinc-800">{t("สายเลือด", "Lineage")}:</span>{" "}
+                                {product.lineage}
+                              </span>
                             </p>
                           )}
                           {hasDifficulty && (

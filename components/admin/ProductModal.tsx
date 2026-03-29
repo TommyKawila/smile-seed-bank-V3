@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Wand2, Plus, Trash2, Loader2, ImagePlus, X } from "lucide-react";
+import { Wand2, Plus, Trash2, Loader2, ImagePlus, X, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,8 +21,23 @@ import { useBreeders } from "@/hooks/useBreeders";
 import { unknownFields } from "@/lib/validations/product";
 import { packSizeNum, toVariantSku } from "@/lib/sku-utils";
 import { processAndUploadImages } from "@/lib/supabase/storage-utils";
+import { useToast } from "@/hooks/use-toast";
+import { normalizeFloweringFromDb, normalizeSexFromDb } from "@/lib/cannabis-attributes";
 
 const MAX_IMAGES = 5;
+const AI_SCAN_STAGING_MAX = 5;
+
+type AiStagingItem = { key: string; preview: string; file: File };
+const AI_EXTRACT_URL = "/api/ai/extract";
+const AI_SCAN_MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+const AI_SCAN_LOADING_MESSAGES = [
+  "กำลังวิเคราะห์สายพันธุ์... (Analyzing genetics...)",
+  "กำลังคำนวณค่า THC & CBD... (Calculating THC & CBD...)",
+  "กำลังถอดรหัสข้อมูลจากรูปภาพ... (Decoding image data...)",
+  "Smile Seed AI กำลังใช้ความคิด... (Smile Seed AI is thinking...)",
+  "กำลังสกัดข้อมูลจาก Breeder... (Extracting breeder info...)",
+] as const;
 
 // ── Helpers for JSONB array fields ────────────────────────────────────────────
 const toStr = (v: unknown): string => {
@@ -103,11 +118,12 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
     autoFetch: false,
   });
   const { breeders } = useBreeders();
+  const { toast } = useToast();
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
   const isEditMode = !!initialData;
 
-  // ── Product image slots (primary images + AI source) ──────────────────────
+  // ── Product image slots (marketing gallery only — not sent to AI) ─────────
   type ImageSlot = { preview: string; file: File | null; url: string | null };
   const urlToSlot = (url: string | null | undefined): ImageSlot | null =>
     url ? { preview: url, file: null, url } : null;
@@ -117,10 +133,17 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
   const [uploadPhase, setUploadPhase] = useState<"idle" | "compress" | "upload">("idle");
   const [isDragging, setIsDragging] = useState(false);
   const productFileInputRef = useRef<HTMLInputElement>(null);
+  const aiScanFileInputRef = useRef<HTMLInputElement>(null);
+  const aiScanStagingRef = useRef<AiStagingItem[]>([]);
+
+  const [isAiScanDragging, setIsAiScanDragging] = useState(false);
+  const [aiScanStaging, setAiScanStaging] = useState<AiStagingItem[]>([]);
 
   const [aiText, setAiText] = useState("");
   const [aiProvider, setAiProvider] = useState<"gemini" | "openai">("gemini");
-  const [isExtracting, setIsExtracting] = useState(false);
+  /** null = idle; scanner = image Read & Discard; wand = text-only extract */
+  const [aiPending, setAiPending] = useState<"scanner" | "wand" | null>(null);
+  const [aiScanMessageIx, setAiScanMessageIx] = useState(0);
   const [aiError, setAiError] = useState<string | null>(null);
   const [submitLocalError, setSubmitLocalError] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
@@ -142,6 +165,18 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
       const firstVariantSku = p.product_variants?.[0] ? (p.product_variants[0] as { sku?: string | null }).sku : null;
       const derivedMasterSku = firstVariantSku?.replace(/-?\d+$/, "") ?? "";
       const catId = (p as { category_id?: number | bigint | null }).category_id;
+      let floweringNorm = normalizeFloweringFromDb(p.flowering_type);
+      let sexNorm = normalizeSexFromDb((p as { sex_type?: string | null }).sex_type);
+      const sexLegacy = String((p as { sex_type?: string | null }).sex_type ?? "").toLowerCase();
+      if (!sexNorm && p.seed_type) {
+        const st = String(p.seed_type).toUpperCase();
+        if (st === "FEMINIZED" || st === "FEM") sexNorm = "feminized";
+        else if (st === "REGULAR" || st === "REG") sexNorm = "regular";
+      }
+      if (!floweringNorm && (sexLegacy.includes("autoflower") || sexLegacy === "auto")) {
+        floweringNorm = "autoflower";
+        sexNorm = sexNorm ?? "feminized";
+      }
       setForm({
         name: p.name,
         category: p.category ?? null,
@@ -163,7 +198,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         indica_ratio: p.indica_ratio,
         sativa_ratio: p.sativa_ratio,
         strain_dominance: (p as { strain_dominance?: string | null }).strain_dominance ?? null,
-        flowering_type: p.flowering_type,
+        flowering_type: floweringNorm,
         seed_type: p.seed_type,
         yield_info: p.yield_info,
         growing_difficulty: p.growing_difficulty,
@@ -171,7 +206,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         flavors: p.flavors,
         medical_benefits: p.medical_benefits,
         genetic_ratio: (p as { genetic_ratio?: string | null }).genetic_ratio ?? null,
-        sex_type: (p as { sex_type?: string | null }).sex_type ?? null,
+        sex_type: sexNorm,
         lineage: (p as { lineage?: string | null }).lineage ?? null,
         terpenes: (p as { terpenes?: unknown }).terpenes ?? null,
         variants: p.product_variants?.map((v) => ({
@@ -198,15 +233,41 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
       setProductSlots([]);
     }
     setAiText("");
+    setAiScanStaging([]);
     setAiError(null);
     setSubmitLocalError(null);
     setFormKey((k) => k + 1);
   }, [open, initialData]);
 
+  useEffect(() => {
+    aiScanStagingRef.current = aiScanStaging;
+  }, [aiScanStaging]);
+
+  useEffect(() => {
+    if (aiPending !== "scanner") {
+      setAiScanMessageIx(0);
+      return;
+    }
+    setAiScanMessageIx(0);
+    const id = setInterval(() => {
+      setAiScanMessageIx((i) => (i + 1) % AI_SCAN_LOADING_MESSAGES.length);
+    }, 2500);
+    return () => clearInterval(id);
+  }, [aiPending]);
+
   const variants = form.variants ?? [{ ...emptyVariant }];
 
   const setField = <K extends keyof ProductFormData>(key: K, value: ProductFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setSexTypeField = (v: "feminized" | "regular" | null) => {
+    setForm((prev) => ({
+      ...prev,
+      sex_type: v,
+      seed_type:
+        v === "feminized" ? "FEMINIZED" : v === "regular" ? "REGULAR" : null,
+    }));
   };
 
   const setVariant = (index: number, field: string, value: unknown) => {
@@ -257,36 +318,105 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
     handleProductImageFiles(e.dataTransfer.files);
   };
 
-  // ── AI Extraction ─────────────────────────────────────────────────────────
-  const handleAiExtract = async () => {
-    // Use product slot previews (base64) as AI images
-    const aiImages = productSlots
-      .filter((s) => s.preview.startsWith("data:"))
-      .map((s) => s.preview);
-    if (!aiText.trim() && aiImages.length === 0) return;
-    setIsExtracting(true);
-    setAiError(null);
-    try {
-      const res = await fetch("/api/admin/ai-extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rawText: aiText,
-          provider: aiProvider,
-          images: aiImages,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setAiError(json?.error ?? "AI ส่งผลลัพธ์ไม่ได้");
-      } else {
-        setForm((prev) => ({ ...prev, ...json }));
+  const runAiExtract = useCallback(
+    async (opts: { rawText: string; images: string[]; source: "scanner" | "wand" }) => {
+      if (!opts.rawText.trim() && opts.images.length === 0) return;
+      setAiPending(opts.source);
+      setAiError(null);
+      try {
+        const res = await fetch(AI_EXTRACT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            rawText: opts.rawText,
+            provider: aiProvider,
+            images: opts.images,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          setAiError(json?.error ?? "AI ส่งผลลัพธ์ไม่ได้");
+          return;
+        }
+        setForm((prev) => {
+          const next = { ...prev, ...json } as Partial<ProductFormData>;
+          const sx = next.sex_type;
+          if (sx === "feminized" || sx === "regular") {
+            next.seed_type = sx === "feminized" ? "FEMINIZED" : "REGULAR";
+          }
+          return next;
+        });
+        if (opts.source === "scanner") setAiScanStaging([]);
+        toast({
+          title: "Data Extracted Successfully!",
+          description:
+            opts.source === "scanner"
+              ? "Form updated from scan — image was not added to the product gallery."
+              : "Form updated from text.",
+        });
+      } catch {
+        setAiError("เชื่อมต่อ AI ไม่ได้ กรุณาลองใหม่");
+      } finally {
+        setAiPending(null);
       }
-    } catch {
-      setAiError("เชื่อมต่อ AI ไม่ได้ กรุณาลองใหม่");
-    } finally {
-      setIsExtracting(false);
+    },
+    [aiProvider, toast]
+  );
+
+  const addAiStagingFromFiles = async (fileList: FileList | null) => {
+    if (!fileList?.length || aiPending) return;
+    const room =
+      AI_SCAN_STAGING_MAX - aiScanStagingRef.current.length;
+    if (room <= 0) return;
+    const collected: AiStagingItem[] = [];
+    for (const file of Array.from(fileList)) {
+      if (collected.length >= room) break;
+      if (!file.type.startsWith("image/")) continue;
+      if (file.size > AI_SCAN_MAX_FILE_BYTES) {
+        toast({
+          variant: "destructive",
+          title: "ไฟล์ใหญ่เกินไป (สูงสุด 5MB)",
+          description: "File too large (Max 5MB)",
+        });
+        continue;
+      }
+      const preview = await readAsBase64(file);
+      if (!preview.startsWith("data:")) continue;
+      collected.push({ key: crypto.randomUUID(), preview, file });
     }
+    if (!collected.length) return;
+    setAiScanStaging((prev) =>
+      [...prev, ...collected].slice(0, AI_SCAN_STAGING_MAX)
+    );
+  };
+
+  const removeAiStagingSlot = (key: string) =>
+    setAiScanStaging((prev) => prev.filter((s) => s.key !== key));
+
+  const handleAiScanFilesInput = (files: FileList | null) => {
+    void addAiStagingFromFiles(files);
+  };
+
+  const handleAiScanDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsAiScanDragging(false);
+    if (aiPending) return;
+    void addAiStagingFromFiles(e.dataTransfer.files);
+  };
+
+  const handleAiScannerExtract = () => {
+    if (!aiText.trim() && aiScanStaging.length === 0) return;
+    void runAiExtract({
+      rawText: aiText,
+      images: aiScanStaging.map((s) => s.preview).filter((x) => x.startsWith("data:")),
+      source: "scanner",
+    });
+  };
+
+  const handleAiWandExtract = () => {
+    if (!aiText.trim()) return;
+    void runAiExtract({ rawText: aiText, images: [], source: "wand" });
   };
 
   // ── Collect image URLs from slots (upload new files first) ──────────────────
@@ -397,37 +527,138 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           className="flex min-h-0 flex-1 flex-col"
         >
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-4 sm:p-6">
-        {/* AI Extraction Box — full width of scroll area */}
-        <div className="w-full rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4">
-          <div className="mb-2 flex items-center gap-2">
+        {/* AI Assistant — text wand + stateless image scanner (never touches gallery) */}
+        <div className="w-full rounded-xl border border-dashed border-primary/35 bg-gradient-to-br from-primary/[0.06] to-violet-50/40 p-4">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
             <Wand2 className="h-4 w-4 text-primary" />
             <p className="text-sm font-semibold text-primary">AI ช่วยกรอกข้อมูล</p>
             <Badge className="text-xs">เร็วกว่า 10x</Badge>
           </div>
-          <p className="mb-2 text-xs text-zinc-500">
-            วางข้อความดิบจากเว็บ Breeder แล้วให้ AI สกัดข้อมูลสินค้า (THC, CBD, Genetics ฯลฯ) เติมฟอร์มให้อัตโนมัติ
+          <p className="mb-3 text-xs text-zinc-500">
+            Wand = สกัดจากข้อความ · Staging สูงสุด 5 รูป แล้วกดสกัด — ไม่เข้าแกลเลอรีสินค้า
           </p>
-          <Textarea
-            placeholder="วางข้อความ/Description จากเว็บ Breeder ที่นี่... (ไม่บังคับ ถ้ามีรูปแล้ว)"
-            value={aiText}
-            onChange={(e) => setAiText(e.target.value)}
-            rows={3}
-            className="mb-3 bg-white text-sm"
-          />
-
-          {productSlots.length > 0 && (
-            <p className="mb-2 text-[11px] text-primary/80">
-              📷 {productSlots.filter(s => s.preview.startsWith("data:")).length} รูปใหม่ที่เลือก · AI จะอ่านรูปอัตโนมัติเมื่อกด Wand
-            </p>
-          )}
+          <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[1fr_minmax(11rem,15rem)] md:items-start">
+            <Textarea
+              placeholder="วางข้อความ/Description จากเว็บ Breeder แล้วกด «สกัดจากข้อความ»..."
+              value={aiText}
+              onChange={(e) => setAiText(e.target.value)}
+              rows={4}
+              className="min-h-[104px] border-zinc-200 bg-white text-sm md:min-h-[128px]"
+            />
+            <div className="relative flex flex-col gap-2">
+              <span className="flex items-center gap-1 text-[10px] font-bold leading-tight text-violet-800">
+                <Sparkles className="h-3 w-3 shrink-0 text-violet-500" />
+                ✨ AI Data Scanner (Read & Discard)
+              </span>
+              <input
+                ref={aiScanFileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                disabled={aiPending !== null}
+                onChange={(e) => {
+                  handleAiScanFilesInput(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+              {aiScanStaging.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {aiScanStaging.map((s) => (
+                    <div
+                      key={s.key}
+                      className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-violet-200 bg-white"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Image
+                        src={s.preview}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        unoptimized={s.preview.startsWith("data:")}
+                      />
+                      <button
+                        type="button"
+                        disabled={aiPending !== null}
+                        onClick={() => removeAiStagingSlot(s.key)}
+                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600 disabled:opacity-50"
+                        aria-label="ลบรูป"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {aiPending === "scanner" ? (
+                <div className="flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-violet-300 bg-violet-100/80 px-2 py-3">
+                  <Loader2 className="h-6 w-6 shrink-0 animate-spin text-violet-600" />
+                  <p className="text-center text-[9px] font-medium leading-snug text-violet-800">
+                    {AI_SCAN_LOADING_MESSAGES[aiScanMessageIx]}
+                  </p>
+                </div>
+              ) : (
+                aiScanStaging.length < AI_SCAN_STAGING_MAX && (
+                  <div
+                    onDragOver={(e) => {
+                      if (aiPending) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsAiScanDragging(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsAiScanDragging(false);
+                    }}
+                    onDrop={handleAiScanDrop}
+                    onClick={() =>
+                      !aiPending &&
+                      aiScanStaging.length < AI_SCAN_STAGING_MAX &&
+                      aiScanFileInputRef.current?.click()
+                    }
+                    className={`flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed p-2 text-center transition-colors ${
+                      isAiScanDragging
+                        ? "border-violet-400 bg-violet-100/60"
+                        : "border-violet-300/80 bg-white/90 hover:border-violet-400 hover:bg-violet-50/50"
+                    } ${aiPending && aiPending !== "scanner" ? "pointer-events-none opacity-50" : ""}`}
+                  >
+                    <Sparkles className="h-5 w-5 text-violet-400" />
+                    <span className="px-0.5 text-[9px] font-medium leading-tight text-zinc-600">
+                      เพิ่มรูป (สูงสุด {AI_SCAN_STAGING_MAX})
+                      <br />
+                      ลากหรือแตะ
+                    </span>
+                  </div>
+                )
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAiScannerExtract}
+                disabled={
+                  aiPending !== null || (aiScanStaging.length === 0 && !aiText.trim())
+                }
+                className="w-full border-violet-400 text-violet-800 hover:bg-violet-100"
+              >
+                <span className="mr-1">✨</span>
+                สกัดข้อมูลจาก {aiScanStaging.length} รูป
+              </Button>
+              <p className="text-[8px] leading-snug text-violet-600/80">
+                Stateless · max 5MB/ไฟล์ · not uploaded
+              </p>
+            </div>
+          </div>
 
           {/* Provider Toggle + Extract Button */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex rounded-lg border border-zinc-200 bg-white text-xs font-medium overflow-hidden">
               <button
                 type="button"
+                disabled={aiPending !== null}
                 onClick={() => setAiProvider("gemini")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors disabled:opacity-50 ${
                   aiProvider === "gemini"
                     ? "bg-primary text-white"
                     : "text-zinc-600 hover:bg-zinc-50"
@@ -437,8 +668,9 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               </button>
               <button
                 type="button"
+                disabled={aiPending !== null}
                 onClick={() => setAiProvider("openai")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 border-l border-zinc-200 transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 border-l border-zinc-200 transition-colors disabled:opacity-50 ${
                   aiProvider === "openai"
                     ? "bg-primary text-white"
                     : "text-zinc-600 hover:bg-zinc-50"
@@ -452,16 +684,19 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleAiExtract}
-              disabled={isExtracting || (!aiText.trim() && productSlots.filter(s => s.preview.startsWith("data:")).length === 0)}
+              onClick={handleAiWandExtract}
+              disabled={aiPending !== null || !aiText.trim()}
               className="border-primary text-primary hover:bg-primary hover:text-white"
             >
-              {isExtracting ? (
-                <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  {productSlots.some(s => s.file) ? "กำลังวิเคราะห์ภาพ..." : "กำลังสกัดข้อมูล..."}
+              {aiPending === "wand" ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  กำลังสกัดข้อมูล…
                 </>
               ) : (
-                <><Wand2 className="mr-1.5 h-3.5 w-3.5" /> สกัดข้อมูลด้วย AI</>
+                <>
+                  <Wand2 className="mr-1.5 h-3.5 w-3.5" /> สกัดจากข้อความ
+                </>
               )}
             </Button>
           </div>
@@ -586,7 +821,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           <div className="mx-auto w-full max-w-2xl space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-semibold">
-                📸 รูปภาพสินค้า ({productSlots.length}/{MAX_IMAGES})
+                📸 Product images / แกลเลอรีหน้าร้าน ({productSlots.length}/{MAX_IMAGES})
               </Label>
               {productSlots.length < MAX_IMAGES && (
                 <button
@@ -661,7 +896,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               )}
             </div>
             <p className="text-[11px] text-zinc-400">
-              รูปแรก = หลัก · จุดเขียว = รอ compress &amp; upload · AI อ่านรูปอัตโนมัติเมื่อกด ✨
+              รูปแรก = หลัก · จุดเขียว = รอ compress &amp; upload — ใช้เฉพาะโชว์หน้าร้าน (สแกน AI ใช้โซน AI Scan ด้านบน)
             </p>
             {isUploading && (
               <p className="flex items-center gap-1.5 text-xs text-primary">
@@ -676,7 +911,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           </div>
 
           {/* AI Specs Row */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
             <div className="space-y-1">
               <Label className="text-xs">THC %</Label>
               <Input
@@ -718,32 +953,39 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 <option value="Mostly Sativa">Mostly Sativa</option>
               </select>
             </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label className="text-xs">Flowering Type</Label>
+              <Label className="text-xs">Flowering Type (ช่วงออกดอก)</Label>
               <select
                 value={form.flowering_type ?? ""}
                 onChange={(e) =>
-                  setField("flowering_type", (e.target.value || null) as "AUTO" | "PHOTO" | null)
+                  setField(
+                    "flowering_type",
+                    (e.target.value || null) as "autoflower" | "photoperiod" | null
+                  )
                 }
                 className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">—</option>
-                <option value="AUTO">AUTO</option>
-                <option value="PHOTO">PHOTO</option>
+                <option value="photoperiod">Photoperiod</option>
+                <option value="autoflower">Autoflower</option>
               </select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Seed Type</Label>
+              <Label className="text-xs">Sex Type (เพศเมล็ด)</Label>
               <select
-                value={form.seed_type ?? ""}
+                value={form.sex_type ?? ""}
                 onChange={(e) =>
-                  setField("seed_type", (e.target.value || null) as "FEMINIZED" | "REGULAR" | null)
+                  setSexTypeField(
+                    (e.target.value || null) as "feminized" | "regular" | null
+                  )
                 }
                 className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">—</option>
-                <option value="FEMINIZED">FEMINIZED</option>
-                <option value="REGULAR">REGULAR</option>
+                <option value="feminized">Feminized</option>
+                <option value="regular">Regular</option>
               </select>
             </div>
           </div>
@@ -783,8 +1025,8 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
             </div>
           </div>
 
-          {/* Extended Specs Row 2: Lineage, Genetic Ratio, Sex Type */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {/* Extended Specs Row 2: Lineage, Genetic Ratio */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="space-y-1">
               <Label className={`text-xs ${isUnknown(form.lineage) ? "text-red-600" : ""}`}>
                 Lineage{isUnknown(form.lineage) && " ⚠"}
@@ -806,19 +1048,6 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 placeholder="Sativa 70% / Indica 30%"
                 className={`text-sm ${unknownCls(form.genetic_ratio)}`}
               />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Sex Type</Label>
-              <select
-                value={form.sex_type ?? ""}
-                onChange={(e) => setField("sex_type", e.target.value || null)}
-                className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">—</option>
-                <option value="Feminized">Feminized</option>
-                <option value="Regular">Regular</option>
-                <option value="Autoflower">Autoflower</option>
-              </select>
             </div>
           </div>
 

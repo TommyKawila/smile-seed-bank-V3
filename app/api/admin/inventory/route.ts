@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAutofloweringDb, isPhotoperiodDb } from "@/lib/cannabis-attributes";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -118,7 +119,7 @@ export async function GET(req: NextRequest) {
       price: r.price,
       margin: r.cost_price > 0 ? Math.round(((r.price - r.cost_price) / r.price) * 100) : 0,
       is_active: r.is_active,
-      category: p.category ?? (p.flowering_type === "AUTO" ? "Auto" : p.flowering_type === "PHOTO" ? "Photo" : p.flowering_type ?? "—"),
+      category: p.category ?? (isAutofloweringDb(p.flowering_type) ? "Auto" : isPhotoperiodDb(p.flowering_type) ? "Photo" : p.flowering_type ?? "—"),
       type: typeLabel,
       thc_level: p.thc_percent != null ? `${p.thc_percent}%` : "—",
     };

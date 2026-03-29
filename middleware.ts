@@ -40,8 +40,9 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAdminApi = path === "/api/admin" || path.startsWith("/api/admin/");
+  const isAiApi = path === "/api/ai" || path.startsWith("/api/ai/");
 
-  if (isAdminApi) {
+  if (isAdminApi || isAiApi) {
     if (!user || adminRoleFromMetadata(user) !== "ADMIN") {
       const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       copyCookies(supabaseResponse, res);
@@ -77,5 +78,7 @@ export const config = {
     "/admin/:path*",
     "/api/admin",
     "/api/admin/:path*",
+    "/api/ai",
+    "/api/ai/:path*",
   ],
 };

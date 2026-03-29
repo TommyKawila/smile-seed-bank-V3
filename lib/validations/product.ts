@@ -36,7 +36,7 @@ export const ProductSchema = z.object({
   indica_ratio: z.number().min(0).max(100).nullable().optional(),
   sativa_ratio: z.number().min(0).max(100).nullable().optional(),
   strain_dominance: z.enum(["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"]).nullable().optional(),
-  flowering_type: z.enum(["AUTO", "PHOTO"]).nullable().optional(),
+  flowering_type: z.enum(["autoflower", "photoperiod"]).nullable().optional(),
   seed_type: z.enum(["FEMINIZED", "REGULAR"]).nullable().optional(),
   yield_info: z.string().nullable().optional(),
   growing_difficulty: z.string().nullable().optional(),
@@ -45,7 +45,7 @@ export const ProductSchema = z.object({
   medical_benefits: z.unknown().nullable().optional(),
   // Extended Specs
   genetic_ratio: z.string().nullable().optional(),
-  sex_type: z.string().nullable().optional(),
+  sex_type: z.enum(["feminized", "regular"]).nullable().optional(),
   lineage: z.string().nullable().optional(),
   terpenes: z.unknown().nullable().optional(),
   variants: z.array(VariantSchema).min(1, "ต้องมีอย่างน้อย 1 แพ็กเกจ"),

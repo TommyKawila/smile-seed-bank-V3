@@ -272,7 +272,7 @@ model products {
   genetics           String?
   indica_ratio       Decimal?            @db.Decimal
   sativa_ratio       Decimal?            @db.Decimal
-  flowering_type     String?
+  flowering_type     String? // autoflower | photoperiod (lowercase)
   seed_type          String?
   yield_info         String?
   growing_difficulty String?
@@ -281,7 +281,7 @@ model products {
   medical_benefits   Json?               @default("[]")
   created_at         DateTime?           @default(now()) @db.Timestamptz(6)
   genetic_ratio      String?
-  sex_type           String?
+  sex_type           String? // feminized | regular (lowercase)
   lineage            String?
   terpenes           Json?
   image_url_4        String?

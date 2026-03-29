@@ -4,7 +4,10 @@ export type Json = string | number | boolean | null | { [key: string]: Json } | 
 
 export type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "CANCELLED" | "AWAITING_VERIFICATION";
 export type OrderOrigin = "WEB" | "MANUAL";
-export type FloweringType = "AUTO" | "PHOTO";
+/** DB: lowercase international standard */
+export type FloweringType = "autoflower" | "photoperiod";
+/** DB: lowercase — distinct from seed pack FEMINIZED/REGULAR column when both exist */
+export type ProductSexType = "feminized" | "regular";
 export type SeedType = "FEMINIZED" | "REGULAR";
 export type DiscountType = "PERCENTAGE" | "FIXED";
 
@@ -72,7 +75,7 @@ export interface Product {
   medical_benefits: Json | null;
   // Extended Specs (Phase 7+)
   genetic_ratio: string | null;   // e.g. "Sativa 70% / Indica 30%"
-  sex_type: string | null;        // Regular / Feminized / Autoflower
+  sex_type: ProductSexType | string | null;
   lineage: string | null;         // e.g. "OG Kush x White Widow"
   terpenes: Json | null;          // Array of terpene names
   /** SEO bundle from AI importer: meta_title_th, meta_description_th, meta_title_en, meta_description_en */
