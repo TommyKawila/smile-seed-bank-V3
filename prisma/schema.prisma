@@ -94,6 +94,7 @@ model customers {
   id                         String    @id @db.Uuid
   full_name                  String?
   email                      String?   @unique
+  role                       String    @default("USER")
   phone                      String?
   address                    String?
   line_user_id               String?
