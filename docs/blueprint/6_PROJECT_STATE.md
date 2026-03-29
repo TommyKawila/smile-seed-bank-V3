@@ -117,7 +117,7 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 
 ## 6. Last Updated
 
-**March 29, 2026** — Vercel/dashboard: `lib/dashboard-order-fees.ts` ต้องมีทั้ง `shipping_fee` และ `discount_amount` ก่อนเปิด aggregate ค่าธรรมเนียม; `lib/prisma.ts` resolve URL จาก `DATABASE_URL` / `POSTGRES_PRISMA_URL` / `POSTGRES_URL`
+**March 29, 2026** — Pre-prod dashboard audit: `lib/prisma.ts` (`PrismaPg` + URL จาก `DATABASE_URL` / `POSTGRES_PRISMA_URL` / `POSTGRES_URL`); `ordersTableHasFeeColumns` กันคอลัมน์ fee ไม่ครบ; `stats/route.ts` aggregate fee เฉพาะเมื่อ `hasFeeCols`; `prisma.config.ts` + `dotenv/config` (CLI โลคัล) — Vercel: ตั้ง `DATABASE_URL` (build+runtime, pooled) และ `DIRECT_URL` ถ้ารัน migrate จากเครื่อง/CI
 
 **March 28, 2026** — Prisma 7: `datasource` URL ใน `prisma.config.ts` (CLI); `schema.prisma` ไม่มี `url`/`directUrl`; generator ลบ deprecated `driverAdapters` preview; `lib/prisma.ts` ใช้ `datasource` object + `PrismaPg({ connectionString })` (PrismaClient ไม่รับ `datasource: { url }` คู่กับ adapter)
 
