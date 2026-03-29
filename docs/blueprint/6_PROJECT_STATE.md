@@ -117,6 +117,14 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 
 ## 6. Last Updated
 
+**March 29, 2026** — Google OAuth: `login/page.tsx` → `redirectTo` `${getURL()}auth/callback` (+ `?next=`); `app/auth/callback/route.ts` — `exchangeCodeForSession` + `safeNextPath` → `/profile` หรือ `next`; `lib/safe-redirect-path.ts` — ใช้ร่วม login/callback
+
+**March 29, 2026** — `middleware.ts` (root): `@supabase/ssr` `createServerClient` + cookie refresh; ป้องกัน `/admin` — ไม่มี session → `/login?next=...`; session แต่ `user_metadata.role !== ADMIN` → `/`
+
+**March 29, 2026** — `supabase/migrations/20260329120000_customers_role_sync_auth_metadata.sql` — trigger sync `customers.role` → `auth.users.raw_user_meta_data.role` (JWT ต้อง refresh ถึงจะเห็นค่าใหม่)
+
+**March 29, 2026** — `components/admin/user-nav.tsx` (Supabase `getUser`, role จาก `customers` / metadata, DropdownMenu, sign out → `/login`); `components/ui/dropdown-menu.tsx`; ผูกใน `AdminSidebar` + `app/admin/layout` header; `types/supabase.ts` `Customer.role`
+
 **March 29, 2026** — `customers.role` (`String` default `"USER"`) ใน `prisma/schema.prisma` — รัน `prisma migrate` / `db push` ให้ตรง DB
 
 **March 29, 2026** — `prisma.config.ts` โหลด `.env` แล้ว `.env.local` (override); `.env` ซิงก์ `DATABASE_URL`/`DIRECT_URL` กับโปรเจกต์ `jysdfxxilyjmjdmhazbu`; `db push` ผ่าน

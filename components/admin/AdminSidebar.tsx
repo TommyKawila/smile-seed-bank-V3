@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { UserNav } from "@/components/admin/user-nav";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -120,6 +121,10 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
       </nav>
 
       <Separator className="bg-zinc-800" />
+
+      <div className="hidden border-t border-zinc-800 px-3 py-3 lg:block">
+        <UserNav triggerClassName="w-full justify-start border-zinc-600 text-zinc-100 hover:bg-zinc-800 hover:text-white data-[state=open]:bg-zinc-800" />
+      </div>
 
       {/* Bottom Nav */}
       <div className="space-y-0.5 px-3 py-3">

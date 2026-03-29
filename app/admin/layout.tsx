@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { UserNav } from "@/components/admin/user-nav";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +41,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <Menu className="h-5 w-5" />
           </button>
-          <p className="text-sm font-semibold text-zinc-800">Admin Panel</p>
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-800">Admin Panel</p>
+          <UserNav />
         </header>
 
         {/* Page Content */}

@@ -156,6 +156,7 @@ export interface Customer {
   id: string;               // uuid — mirrors auth.users.id
   full_name: string | null;
   email: string | null;
+  role?: string | null;
   phone: string | null;
   address: string | null;
   line_user_id: string | null;

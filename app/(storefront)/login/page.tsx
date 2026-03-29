@@ -12,6 +12,12 @@ import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/context/LanguageContext";
 import { getURL } from "@/lib/get-url";
+import { safeNextPath } from "@/lib/safe-redirect-path";
+
+function nextParamFromWindow(): string | null {
+  if (typeof window === "undefined") return null;
+  return safeNextPath(new URLSearchParams(window.location.search).get("next"));
+}
 
 function GoogleIcon() {
   return (
@@ -50,7 +56,8 @@ export default function LoginPage() {
       if (mode === "login") {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw new Error(err.message);
-        router.push("/profile");
+        router.push(nextParamFromWindow() ?? "/profile");
+        router.refresh();
       } else {
         const { error: err } = await supabase.auth.signUp({
           email,
@@ -69,11 +76,19 @@ export default function LoginPage() {
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
+    const next = nextParamFromWindow();
+    const callbackBase = `${getURL()}auth/callback`;
+    const redirectTo = next
+      ? `${callbackBase}?next=${encodeURIComponent(next)}`
+      : callbackBase;
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${getURL()}profile` },
+      options: { redirectTo },
     });
-    if (err) { setError(err.message); setGoogleLoading(false); }
+    if (err) {
+      setError(err.message);
+      setGoogleLoading(false);
+    }
   };
 
   return (
