@@ -16,6 +16,7 @@ import { useBreeders } from "@/hooks/useBreeders";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { formatPrice } from "@/lib/utils";
+import { productDetailHref } from "@/lib/product-utils";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -38,15 +39,25 @@ function getPrimaryImage(product: { image_urls?: unknown; image_url?: string | n
   return product.image_url ?? null;
 }
 
-function getDefaultVariant(product: { product_variants?: { id: number; price: number; stock: number; is_active: boolean; unit_label: string }[] }) {
-  const variants = product.product_variants?.filter((v) => v.is_active && v.stock > 0) ?? [];
+function getDefaultVariant(product: {
+  product_variants?: {
+    id: number;
+    price: number;
+    stock: number | null;
+    is_active: boolean | null;
+    unit_label: string;
+  }[];
+}) {
+  const variants =
+    product.product_variants?.filter((v) => v.is_active !== false && (v.stock ?? 0) > 0) ?? [];
   return variants.sort((a, b) => a.price - b.price)[0] ?? null;
 }
 
 function ProductCard({ product }: { product: ReturnType<typeof useProducts>["products"][number] }) {
   const { addToCart, openCart } = useCartContext();
-  const lowStock = product.stock > 0 && product.stock <= 5;
-  const outOfStock = product.stock === 0;
+  const stock = product.stock ?? 0;
+  const lowStock = stock > 0 && stock <= 5;
+  const outOfStock = stock === 0;
   const defaultVariant = getDefaultVariant(product);
 
   const handleAdd = (e: React.MouseEvent) => {
@@ -71,7 +82,7 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
   return (
     <motion.div variants={cardVariants}>
       <Link
-        href={`/product/${product.id}`}
+        href={productDetailHref(product)}
         className="group block overflow-hidden rounded-2xl border border-zinc-100 bg-white transition-shadow hover:shadow-lg"
       >
         {/* Image */}
@@ -152,7 +163,7 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
             <div>
               <p className="text-xs text-zinc-400">เริ่มต้น</p>
               <p className="text-base font-bold text-primary">
-                {product.price > 0 ? formatPrice(product.price) : "สอบถาม"}
+                {(product.price ?? 0) > 0 ? formatPrice(product.price ?? 0) : "สอบถาม"}
               </p>
             </div>
             <Button

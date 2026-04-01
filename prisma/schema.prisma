@@ -257,6 +257,8 @@ model products {
   id                 BigInt              @id @default(autoincrement())
   breeder_id         BigInt?
   name               String
+  /// SEO URL segment; unique when set. Run `npx prisma migrate dev` / `db push` after adding column.
+  slug               String?             @unique
   category           String?
   description_th     String?
   description_en     String?

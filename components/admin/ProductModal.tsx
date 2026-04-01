@@ -93,6 +93,7 @@ function TagField({
 }
 
 import type { ProductFull } from "@/types/supabase";
+import { generateSlug } from "@/lib/product-utils";
 
 interface ProductModalProps {
   open: boolean;
@@ -104,6 +105,7 @@ const emptyVariant = { unit_label: "", price: 0, cost_price: 0, stock: 0, low_st
 
 const emptyForm: Partial<ProductFormData> = {
   name: "",
+  slug: "",
   category: null,
   category_id: null,
   breeder_id: null,
@@ -147,6 +149,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
   const [aiError, setAiError] = useState<string | null>(null);
   const [submitLocalError, setSubmitLocalError] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const slugTouchedRef = useRef(false);
 
   const [form, setForm] = useState<Partial<ProductFormData>>(emptyForm);
 
@@ -160,6 +163,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
   useEffect(() => {
     if (!open) return;
+    slugTouchedRef.current = false;
     const p = initialData as (typeof initialData & { image_url_4?: string | null; image_url_5?: string | null }) | null;
     if (p) {
       const firstVariantSku = p.product_variants?.[0] ? (p.product_variants[0] as { sku?: string | null }).sku : null;
@@ -179,6 +183,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
       }
       setForm({
         name: p.name,
+        slug: (p as { slug?: string | null }).slug ?? "",
         category: p.category ?? null,
         category_id: catId != null ? Number(catId) : null,
         breeder_id: p.breeder_id,
@@ -717,7 +722,16 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               <Input
                 id="name"
                 value={form.name ?? ""}
-                onChange={(e) => setField("name", e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setField("name", v);
+                  if (!slugTouchedRef.current) {
+                    const hasSlug = !!(form.slug ?? "").trim();
+                    if (!isEditMode || !hasSlug) {
+                      setField("slug", generateSlug(v));
+                    }
+                  }
+                }}
                 placeholder="เช่น Blue Dream Auto"
               />
               {getFieldError("name") && (
@@ -771,6 +785,26 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                     </option>
                   ))}
                 </select>
+              )}
+            </div>
+
+            <div className="space-y-1 md:col-span-2">
+              <Label htmlFor="slug">Slug (URL) *</Label>
+              <Input
+                id="slug"
+                value={form.slug ?? ""}
+                onChange={(e) => {
+                  slugTouchedRef.current = true;
+                  setField("slug", e.target.value);
+                }}
+                placeholder="blue-dream-auto"
+                className="font-mono text-sm"
+              />
+              <p className="text-[11px] text-zinc-500">
+                สร้างอัตโนมัติจากชื่อ — แก้ได้เมื่อต้องการ SEO; ใช้ a-z ตัวเลขและ - เท่านั้น
+              </p>
+              {getFieldError("slug") && (
+                <p className="text-xs text-red-500">{getFieldError("slug")}</p>
               )}
             </div>
 

@@ -15,6 +15,8 @@ export const VariantSchema = z.object({
 
 export const ProductSchema = z.object({
   name: z.string().min(2, "ชื่อสินค้าต้องมีอย่างน้อย 2 ตัวอักษร"),
+  /** SEO path segment — server normalizes / fills from name if omitted */
+  slug: z.string().max(180).optional().nullable(),
   category: z.string().nullable().optional(),
   category_id: z.number().nullable().optional(),
   breeder_id: z.number().nullable().optional(),

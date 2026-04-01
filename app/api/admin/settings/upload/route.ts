@@ -1,22 +1,51 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import {
+  optimizeImage,
+  isPresetName,
+  type ImagePresetName,
+} from "@/lib/services/image-service";
 
-const BUCKET = "brand-assets";
+const DEFAULT_BUCKET = "brand-assets";
+const ALLOWED_BUCKETS = ["brand-assets", "site-assets"] as const;
 
 /**
- * POST /api/admin/settings/upload
- * Accepts: multipart/form-data with fields: file (File), key (string)
- * Uploads logo to brand-assets bucket using service_role (bypasses RLS).
- * Returns: { url: string }
+ * POST /api/admin/settings/upload?preset=hero|product|logo
+ * multipart/form-data: file (File), key (string), optional bucket (brand-assets | site-assets)
+ * With preset: optimizes to WebP before upload; stored path ends in .webp
  */
 export async function POST(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const presetParam = searchParams.get("preset");
+    const preset: ImagePresetName | null =
+      presetParam && isPresetName(presetParam) ? presetParam : null;
+
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const key = form.get("key") as string | null;
+    const bucketRaw = form.get("bucket") as string | null;
+    const bucket =
+      bucketRaw && ALLOWED_BUCKETS.includes(bucketRaw as (typeof ALLOWED_BUCKETS)[number])
+        ? bucketRaw
+        : DEFAULT_BUCKET;
 
     if (!file || !key) {
       return NextResponse.json({ error: "file and key are required" }, { status: 400 });
+    }
+
+    if (presetParam && !preset) {
+      return NextResponse.json(
+        { error: "preset must be hero, product, or logo" },
+        { status: 400 }
+      );
+    }
+
+    if (key === "logo_secondary_png_url" && preset) {
+      return NextResponse.json(
+        { error: "Secondary logo must stay PNG; do not use preset on this key" },
+        { status: 400 }
+      );
     }
 
     if (key === "logo_secondary_png_url" && file.type !== "image/png") {
@@ -24,17 +53,24 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createAdminClient();
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+    let buffer = Buffer.from(await file.arrayBuffer());
+    let ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+    let contentType = file.type || "application/octet-stream";
+
+    if (preset) {
+      buffer = await optimizeImage(buffer, preset);
+      ext = "webp";
+      contentType = "image/webp";
+    }
+
     const path = `${key}-${Date.now()}.${ext}`;
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-
     const { error: uploadError } = await supabase.storage
-      .from(BUCKET)
+      .from(bucket)
       .upload(path, buffer, {
         cacheControl: "31536000",
         upsert: true,
-        contentType: file.type,
+        contentType,
       });
 
     if (uploadError) {
@@ -42,7 +78,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     return NextResponse.json({ url: data.publicUrl });
   } catch (err) {
     console.error("[settings/upload] unexpected error:", err);

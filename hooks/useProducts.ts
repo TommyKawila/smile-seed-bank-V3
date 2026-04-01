@@ -3,8 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
+import {
+  PRODUCT_SELECT_WITH_BREEDER,
+  PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS,
+  type ProductVariantRow,
+  type ProductWithBreeder,
+} from "@/lib/supabase/types";
 import { computeStartingPrice, computeTotalStock, isLowStock } from "@/lib/product-utils";
-import type { ProductVariant, ProductWithBreeder, ProductFull } from "@/types/supabase";
+import type { ProductFull } from "@/types/supabase";
 import {
   ProductSchema,
   VariantSchema,
@@ -14,7 +20,7 @@ import {
 // Re-export so existing component imports keep working
 export { ProductSchema, VariantSchema, type ProductFormData };
 
-type ProductListItem = ProductWithBreeder & { product_variants?: ProductVariant[] };
+type ProductListItem = ProductWithBreeder & { product_variants?: ProductVariantRow[] };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,7 +41,7 @@ interface UseProductsReturn {
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
-  fetchProductFull: (id: number) => Promise<ProductFull | null>;
+  fetchProductFull: (idOrSlug: number | string) => Promise<ProductFull | null>;
   createProduct: (data: ProductFormData) => Promise<{ productId: number } | null>;
   validationErrors: z.ZodError | null;
   isSubmitting: boolean;
@@ -57,15 +63,18 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     setError(null);
     try {
       const supabase = createClient();
-      const selectFields = includeVariants
-        ? "*, breeders(id, name, logo_url), product_variants(*)"
-        : "*, breeders(id, name, logo_url)";
-
-      let query = supabase
-        .from("products")
-        .select(selectFields)
-        .eq("is_active", true)
-        .order("id", { ascending: false });
+      // Branch select literals so PostgREST result types parse (no dynamic select string).
+      let query = includeVariants
+        ? supabase
+            .from("products")
+            .select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
+            .eq("is_active", true)
+            .order("id", { ascending: false })
+        : supabase
+            .from("products")
+            .select(PRODUCT_SELECT_WITH_BREEDER)
+            .eq("is_active", true)
+            .order("id", { ascending: false });
 
       if (category) query = query.eq("category", category);
       if (breeder_id) query = query.eq("breeder_id", breeder_id);
@@ -75,7 +84,7 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
 
       const { data, error: sbError } = await query;
       if (sbError) throw new Error(sbError.message);
-      setProducts((data as ProductListItem[]) ?? []);
+      setProducts((data ?? []) as ProductListItem[]);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -89,23 +98,33 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
 
   // ── Fetch single product with variants (for product detail page) ──────────
   const fetchProductFull = useCallback(
-    async (id: number): Promise<ProductFull | null> => {
+    async (idOrSlug: number | string): Promise<ProductFull | null> => {
       try {
         const supabase = createClient();
-        const { data, error: sbError } = await supabase
+        const isNumeric =
+          typeof idOrSlug === "number" ||
+          (typeof idOrSlug === "string" && /^\d+$/.test(String(idOrSlug).trim()));
+
+        let q = supabase
           .from("products")
-          .select("*, breeders(id, name, logo_url), product_variants(*)")
-          .eq("id", id)
-          .eq("is_active", true)
-          .single();
+          .select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
+          .eq("is_active", true);
+
+        if (typeof idOrSlug === "number") {
+          q = q.eq("id", idOrSlug);
+        } else if (isNumeric) {
+          q = q.eq("id", parseInt(String(idOrSlug).trim(), 10));
+        } else {
+          q = q.eq("slug", String(idOrSlug).trim());
+        }
+
+        const { data, error: sbError } = await q.single();
 
         if (sbError || !data) return null;
 
         const product = data as ProductFull;
-        // Show only active variants to storefront
-        product.product_variants = product.product_variants.filter(
-          (v) => v.is_active
-        );
+        const variants = product.product_variants ?? [];
+        product.product_variants = variants.filter((v) => v.is_active);
         return product;
       } catch {
         return null;

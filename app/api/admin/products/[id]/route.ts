@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { ProductSchema } from "@/lib/validations/product";
-import { computeStartingPrice, computeTotalStock } from "@/lib/product-utils";
+import {
+  computeStartingPrice,
+  computeTotalStock,
+  resolveProductSlugFromName,
+} from "@/lib/product-utils";
+import { ensureUniqueProductSlug } from "@/services/product-service";
 import type { ProductVariant } from "@/types/supabase";
 
 export async function PATCH(
@@ -26,9 +31,18 @@ export async function PATCH(
 
     const { variants, ...productData } = parsed.data;
 
+    const baseSlug = resolveProductSlugFromName(
+      productData.name,
+      productData.slug
+    );
+    const slug = await ensureUniqueProductSlug(baseSlug, productId);
+
     // Sanitize: undefined optional → null
     const sanitized = Object.fromEntries(
-      Object.entries(productData).map(([k, v]) => [k, v === undefined ? null : v])
+      Object.entries({ ...productData, slug }).map(([k, v]) => [
+        k,
+        v === undefined ? null : v,
+      ])
     );
 
     const supabase = await createAdminClient();

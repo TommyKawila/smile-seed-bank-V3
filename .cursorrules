@@ -41,3 +41,5 @@ After completing any requested phase or significant task, you MUST automatically
 * **ตัวอย่างโค้ด:** สำหรับให้นำไปใช้ซ้ำในจุดอื่นๆ ของระบบเพื่อป้องกันบั๊กซ้ำซ้อน
 
 ตอนนี้บอสสามารถสั่งให้ Cursor ตรวจสอบไฟล์นี้เป็นแนวทางในการแก้ไขหน้า Dashboard ได้เลยครับ! 🌿📝🚀
+
+"Every time I ask for a progress update or before starting a new task, please scan the /app directory to see what has been implemented and compare it with PROJECT_CONTEXT.md."

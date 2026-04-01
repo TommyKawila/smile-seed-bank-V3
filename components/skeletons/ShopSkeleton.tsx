@@ -1,20 +1,5 @@
 import { Skeleton } from "@/components/ui/Skeleton";
-
-function ProductCardSkeleton() {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
-      <Skeleton className="aspect-square w-full rounded-none" />
-      <div className="space-y-2 p-3">
-        <Skeleton className="h-3.5 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-        <div className="flex items-center justify-between pt-1">
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-7 w-7 rounded-full" />
-        </div>
-      </div>
-    </div>
-  );
-}
+import { ProductCardSkeleton } from "@/components/skeletons/ProductCardSkeleton";
 
 export function ShopSkeleton() {
   return (

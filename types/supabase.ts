@@ -1,6 +1,13 @@
+import type { Json } from "@/types/database.types";
+import type {
+  ProductVariantRow,
+  ProductWithBreeder as ProductWithBreederQuery,
+  ProductWithBreederAndVariants,
+} from "@/lib/supabase/types";
+
 // TypeScript interfaces mapped exactly from 3_DB_SCHEMA_RLS.md
 
-export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+export type { Json };
 
 export type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "CANCELLED" | "AWAITING_VERIFICATION";
 export type OrderOrigin = "WEB" | "MANUAL";
@@ -45,12 +52,13 @@ export interface Product {
   id: number;
   breeder_id: number | null;
   name: string;
+  slug?: string | null;
   master_sku?: string | null;
   category: string | null;
   description_th: string | null;
   description_en: string | null;
-  price: number;           // Starting price (calculated from cheapest variant)
-  stock: number;           // Total stock (sum of all variants)
+  price: number | null; // Denormalized starting price (DB column)
+  stock: number | null; // Denormalized total stock (DB column)
   is_active: boolean;
   image_url: string | null;
   image_url_2: string | null;
@@ -82,16 +90,19 @@ export interface Product {
   seo_meta: Json | null;
 }
 
+/** Aligns with `product_variants` Row in `types/database.types.ts` (+ optional app fields). */
 export interface ProductVariant {
   id: number;
-  product_id: number;
-  unit_label: string;       // e.g. "1 Seed", "5 Seeds", "10 Seeds"
-  cost_price: number;       // COGS per unit
-  price: number;            // Retail price (sale_price)
-  stock: number;            // stock_quantity
-  is_active: boolean;
-  sku?: string | null;      // unique code (optional until migration)
-  pack_size?: string | null; // e.g. "5" for 5 Seeds (optional)
+  product_id: number | null;
+  unit_label: string;
+  cost_price: number | null;
+  price: number;
+  stock: number | null;
+  is_active: boolean | null;
+  sku?: string | null;
+  low_stock_threshold?: number | null;
+  created_at?: string | null;
+  pack_size?: string | null;
 }
 
 export interface DiscountTier {
@@ -223,20 +234,20 @@ export interface Blog {
   created_at: string;
 }
 
-// ─── Joined / Derived Types ───────────────────────────────────────────────────
+// ─── Joined / Derived Types (aligned with Supabase generated schema) ───────────
 
-export interface ProductWithBreeder extends Product {
-  breeders: Pick<Breeder, "id" | "name" | "logo_url"> | null;
-}
+/** Row from `products` + embedded `breeders(id, name, logo_url)` */
+export type ProductWithBreeder = ProductWithBreederQuery;
 
-export interface ProductWithVariants extends Product {
-  product_variants: ProductVariant[];
-}
+/** Full product + breeder embed + all variant rows (see useProducts / product-service selects) */
+export type ProductFull = Omit<ProductWithBreederAndVariants, "product_variants"> & {
+  product_variants: ProductVariantRow[];
+};
 
-export interface ProductFull extends Product {
-  breeders: Pick<Breeder, "id" | "name" | "logo_url"> | null;
-  product_variants: ProductVariant[];
-}
+/** List rows when API includes optional `product_variants` (e.g. POS product search). */
+export type ProductWithBreederMaybeVariants = ProductWithBreeder & {
+  product_variants?: ProductVariantRow[];
+};
 
 export interface OrderWithItems extends Order {
   order_items: (OrderItem & { product_variants: ProductVariant & { products: Pick<Product, "id" | "name" | "image_url"> } })[];
@@ -270,44 +281,7 @@ export interface CartSummary {
   upsellMessage: string | null;
 }
 
-// ─── Database Generic Type (for Supabase client) ─────────────────────────────
+// ─── Database (Supabase CLI — single source of truth for clients) ────────────
 
-// Matches the exact shape @supabase/postgrest-js v2 GenericTable expects
-type TableDef<R, I, U> = {
-  Row: R;
-  Insert: I;
-  Update: U;
-  Relationships: never[];
-};
-
-export interface Database {
-  __InternalSupabase: { PostgrestVersion: "12" };
-  public: {
-    Tables: {
-      store_settings: TableDef<StoreSettings, Partial<StoreSettings>, Partial<StoreSettings>>;
-      breeders: TableDef<Breeder, Omit<Breeder, "id">, Partial<Omit<Breeder, "id">>>;
-      products: TableDef<Product, Omit<Product, "id">, Partial<Omit<Product, "id">>>;
-      product_variants: TableDef<ProductVariant, Omit<ProductVariant, "id">, Partial<Omit<ProductVariant, "id">>>;
-      discount_tiers: TableDef<DiscountTier, Omit<DiscountTier, "id">, Partial<Omit<DiscountTier, "id">>>;
-      tiered_discount_rules: TableDef<TieredDiscountRule, Omit<TieredDiscountRule, "id">, Partial<Omit<TieredDiscountRule, "id">>>;
-      shipping_rules: TableDef<ShippingRule, Omit<ShippingRule, "id">, Partial<Omit<ShippingRule, "id">>>;
-      promotions: TableDef<Promotion, Omit<Promotion, "id">, Partial<Omit<Promotion, "id">>>;
-      promo_codes: TableDef<PromoCode, Omit<PromoCode, "id">, Partial<Omit<PromoCode, "id">>>;
-      promo_code_usages: TableDef<PromoCodeUsage, Omit<PromoCodeUsage, "id">, Partial<Omit<PromoCodeUsage, "id">>>;
-      coupon_redemptions: TableDef<CouponRedemption, Omit<CouponRedemption, "id">, Partial<Omit<CouponRedemption, "id">>>;
-      customers: TableDef<Customer, Omit<Customer, "id">, Partial<Omit<Customer, "id">>>;
-      orders: TableDef<Order, Omit<Order, "id" | "created_at">, Partial<Omit<Order, "id">>>;
-      order_items: TableDef<OrderItem, Omit<OrderItem, "id">, Partial<Omit<OrderItem, "id">>>;
-      blogs: TableDef<Blog, Omit<Blog, "id" | "created_at">, Partial<Omit<Blog, "id" | "created_at">>>;
-      payment_settings: TableDef<
-        PaymentSettingsRow,
-        Omit<PaymentSettingsRow, "id"> & { id?: number },
-        Partial<PaymentSettingsRow>
-      >;
-    };
-    Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
-    Enums: { [_ in never]: never };
-    CompositeTypes: { [_ in never]: never };
-  };
-}
+export type { Database } from "@/types/database.types";
+export type { ProductRow, ProductVariantRow } from "@/lib/supabase/types";

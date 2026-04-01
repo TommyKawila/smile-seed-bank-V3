@@ -51,6 +51,12 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 - **Server-side payment settings** — `fetchCheckoutPaymentSettings()` in `lib/payment-settings-public.ts` uses `createClient` from `lib/supabase/server`; `.select('id, bank_accounts, prompt_pay')` only (no `line_id` / `crypto_wallets` / `messenger_url` on checkout); maps JSON to public `PaymentSetting` type; `app/(storefront)/checkout/page.tsx` async + `Suspense` / `loading.tsx`; UI in `components/storefront/CheckoutPageClient.tsx` (Card + `next/image` for QR); TH/EN via `useLanguage().t`
 - **`payment_settings` in Supabase types** — `PaymentSettingsRow` + `Tables.payment_settings` in `types/supabase.ts`
 
+### Product SEO slugs (DB + service)
+- **`products.slug`** — Prisma `String? @unique` + migrate comment (`prisma/schema.prisma`)
+- **`lib/product-utils.ts`** — `generateSlug`, `resolveProductSlugFromName`; Thai-only names → deterministic `p-{hex}` fallback
+- **`services/product-service.ts`** — `getProductBySlug`, `ensureUniqueProductSlug`, `createProductWithVariants` (auto slug + collision suffix), `backfillProductSlugs()`
+- **Admin API** — `POST/PATCH` `app/api/admin/products/...` — PATCH resolves slug via service; POST defers slug to `createProductWithVariants`
+
 ### Storefront breeder logos
 - **`resolvePublicAssetUrl()`** — `lib/public-storage-url.ts` (relative storage paths → full public URL)
 - **`BreederLogoImage`** — `components/storefront/BreederLogoImage.tsx`: fixed `width`/`height`, `alt` = `{name} logo`, `onError` → letter-in-circle fallback; wired on `app/(storefront)/shop/page.tsx`, `app/(storefront)/page.tsx`, `app/(storefront)/product/[slug]/page.tsx`, `app/(storefront)/breeders/page.tsx`, `components/storefront/BreederRibbon.tsx`
@@ -117,9 +123,32 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 
 ## 6. Last Updated
 
-**March 30, 2026** — Storefront product detail `app/(storefront)/product/[slug]/page.tsx`: Genetics row ใช้ `genetic_ratio` (ซ่อนเมื่อว่างหรือซ้ำกับ `lineage`), Lineage ใช้ `GitFork` + `lineage`, ลดซ้ำใต้ Indica/Sativa bar — `shouldShowGeneticsRow` / `normalizeSpecCompare`
+### Source of truth — March 31, 2026 *(next session: start here)*
 
-**March 30, 2026** — Cannabis attributes: `flowering_type` (`autoflower` \| `photoperiod`) + `sex_type` (`feminized` \| `regular`) — migration `supabase/migrations/20260330120000_products_flowering_sex_standardize.sql`, `lib/cannabis-attributes.ts`, `lib/validations/product.ts`, `services/ai-extractor.ts`. **ProductModal:** แถว Flowering + Sex คู่กัน; `seed_type` sync จาก Sex; AI Scanner staging สูงสุด 5 รูป (thumbnail + ลบ), สกัดเมื่อกดปุ่ม ✨ เท่านั้น, เคลียร์ staging เมื่อสำเร็จ — `components/admin/ProductModal.tsx`
+**0. Storefront settings RLS (Supabase)**
+- Migration `supabase/migrations/20260331120000_site_store_settings_public_select_rls.sql`: `site_settings` — `anon`/`authenticated` SELECT only whitelisted keys (logos, hero, company, legal, social); admin-only keys (e.g. `tiered_discount_*`) via service role. `store_settings` — public SELECT for brand row (logo_url, contact).
+- `lib/storefront-site-setting-keys.ts` + `GET /api/storefront/site-settings`: `.in("key", ...)` mirrors RLS whitelist (includes `hero_bg_mode`, `hero_svg_code`).
+
+**1. Database & schema standardization**
+- Cannabis attributes split: `flowering_type` = `photoperiod` \| `autoflower`; `sex_type` = `feminized` \| `regular` (no autoflower in sex column).
+- SQL migration cleans legacy rows and maps old “Autoflower” / `AUTO` / `PHOTO` style data: `supabase/migrations/20260330120000_products_flowering_sex_standardize.sql`.
+- Normalization helpers + null-safe DB wrappers: `lib/cannabis-attributes.ts` (`normalizeFloweringFromDb`, `normalizeSexFromDb`, `normalizeFloweringTypeFromDb`, `normalizeSexTypeFromDb`, `labelFloweringType`, `isAutofloweringDb`, `isPhotoperiodDb`).
+- Related: `lib/validations/product.ts`, `types/supabase.ts`, `services/ai-extractor.ts`, `prisma/schema.prisma` (comments), `app/api/admin/inventory/route.ts` (category fallback).
+
+**2. AI Scanner upgrade (batch / Read & Discard)**
+- Extraction images: base64 to API only — **not** written to Supabase storage or product gallery (`components/admin/ProductModal.tsx`).
+- **Staging area:** up to **5** images, thumbnails, per-image remove; extract **only** on ✨ button; clear staging after successful extract; **5MB** per-file guard + toast; rotating loading copy while `aiPending === "scanner"`.
+- **Unified context:** `POST /api/ai/extract` sends **textarea + all staged images** together (`services/ai-extractor.ts` multimodal).
+
+**3. Frontend UI/UX (storefront product detail)**
+- Genetics vs lineage: **Genetics** row shows `genetic_ratio`; **Lineage** row shows `lineage` (`app/(storefront)/product/[slug]/page.tsx`).
+- **Smart hide:** Genetics row omitted if `genetic_ratio` is empty or **identical** to `lineage` (`shouldShowGeneticsRow`, `normalizeSpecCompare`); duplicate caption under Indica/Sativa bar removed.
+- Icons: **Lucide** `Dna` (Genetics), `GitFork` (Lineage) in specs + Description summary.
+
+**4. Deployment**
+- Production deploy on **Vercel** completed; database migration applied / integrity verified after cannabis-attribute standardization.
+
+---
 
 **March 28, 2026** — `app/api/ai/extract/route.ts` re-export `POST` จาก `admin/ai-extract`; `middleware.ts` ป้องกัน `/api/ai/*` แบบเดียวกับ admin
 

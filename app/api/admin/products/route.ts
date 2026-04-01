@@ -3,7 +3,6 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { createProductWithVariants } from "@/services/product-service";
 import type { Product, ProductVariant } from "@/types/supabase";
 import { ProductSchema } from "@/lib/validations/product";
-
 type ProductInsert = Omit<Product, "id" | "price" | "stock">;
 type VariantInsert = Omit<ProductVariant, "id" | "product_id">;
 
@@ -36,7 +35,10 @@ export async function POST(req: NextRequest) {
 
     // Sanitize: replace undefined optional strings with null for Supabase
     const sanitized = Object.fromEntries(
-      Object.entries(productData).map(([k, v]) => [k, v === undefined ? null : v])
+      Object.entries(productData).map(([k, v]) => [
+        k,
+        v === undefined ? null : v,
+      ])
     ) as unknown as ProductInsert;
 
     const result = await createProductWithVariants(

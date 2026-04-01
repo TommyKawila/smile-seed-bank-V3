@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-import type { Database } from "@/types/supabase";
+import type { Database } from "@/types/database.types";
 import { safeNextPath } from "@/lib/safe-redirect-path";
 
 export async function GET(request: Request) {

@@ -22,8 +22,8 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const items = (rows ?? []).map((r: { stock: number; sku: string | null; unit_label: string; products: { name: string; master_sku: string | null; breeders: { name: string } | null } }) => ({
-    stock: r.stock,
+  const items = (rows ?? []).map((r) => ({
+    stock: r.stock ?? 0,
     sku: r.sku ?? "—",
     unit_label: r.unit_label,
     product_name: r.products?.name ?? "—",

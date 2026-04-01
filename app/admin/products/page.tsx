@@ -23,6 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ProductModal } from "@/components/admin/ProductModal";
 import { ProductTableRow } from "@/components/admin/ProductTableRow";
 import { useProducts } from "@/hooks/useProducts";
@@ -33,13 +35,38 @@ const STRAIN_DOMINANCE_OPTIONS = ["Mostly Indica", "Mostly Sativa", "Hybrid 50/5
 function ProductsTableSkeleton() {
   return (
     <>
-      {[...Array(5)].map((_, i) => (
-        <TableRow key={i}>
-          {[...Array(10)].map((_, j) => (
-            <TableCell key={j}>
-              <div className="h-4 animate-pulse rounded bg-zinc-100" />
-            </TableCell>
-          ))}
+      {Array.from({ length: 6 }).map((_, i) => (
+        <TableRow key={i} className="hover:bg-transparent">
+          <TableCell className="align-middle">
+            <Skeleton className="h-12 w-12 rounded-lg" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-[min(100%,12rem)] max-w-full rounded-md" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-24 max-w-full rounded-md" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-28 max-w-full rounded-md" />
+          </TableCell>
+          <TableCell className="text-right">
+            <Skeleton className="ml-auto h-4 w-16 rounded-md" />
+          </TableCell>
+          <TableCell className="text-right">
+            <Skeleton className="ml-auto h-4 w-10 rounded-md" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-8 w-8 rounded-md" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-6 w-14 rounded-full" />
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-8 w-8 rounded-md" />
+          </TableCell>
         </TableRow>
       ))}
     </>
@@ -48,12 +75,17 @@ function ProductsTableSkeleton() {
 
 function ProductsEmptyState({ hasSearch }: { hasSearch: boolean }) {
   return (
-    <TableRow>
-      <TableCell colSpan={10} className="py-12 text-center">
-        <PackageX className="mx-auto mb-2 h-8 w-8 text-zinc-300" />
-        <p className="text-sm text-zinc-400">
-          {hasSearch ? "ไม่พบสินค้าที่ค้นหา" : "ยังไม่มีสินค้า"}
-        </p>
+    <TableRow className="hover:bg-transparent">
+      <TableCell colSpan={10} className="p-0">
+        <EmptyState
+          icon={PackageX}
+          title={hasSearch ? "ไม่พบสินค้าที่ค้นหา" : "ยังไม่มีสินค้า"}
+          description={
+            hasSearch
+              ? "ลองเปลี่ยนคำค้นหา หรือล้างตัวกรอง"
+              : "เริ่มต้นด้วยการเพิ่มสินค้าใหม่จากปุ่มด้านบน"
+          }
+        />
       </TableCell>
     </TableRow>
   );

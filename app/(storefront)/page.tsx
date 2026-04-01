@@ -1,60 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
-import { ChevronRight, Leaf, Zap, Shield, Package, Search } from "lucide-react";
+import { ChevronRight, Leaf, Zap, Shield, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { formatPrice } from "@/lib/utils";
+import { productDetailHref } from "@/lib/product-utils";
 import { useLanguage } from "@/context/LanguageContext";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
-
-// ─── Hero Search Bar ───────────────────────────────────────────────────────────
-
-function HeroSearchBar({ t }: { t: (th: string, en: string) => string }) {
-  const router = useRouter();
-  const [q, setQ] = useState("");
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const query = q.trim();
-    router.push(query ? `/shop?q=${encodeURIComponent(query)}` : "/shop");
-  };
-  return (
-    <motion.form
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" }}
-      onSubmit={handleSubmit}
-      className="mx-auto w-full max-w-xl"
-    >
-      <div className="flex rounded-2xl border border-white/20 bg-white/10 shadow-xl backdrop-blur-md transition-all focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/20">
-        <span className="flex items-center pl-4 text-zinc-400">
-          <Search className="h-5 w-5" />
-        </span>
-        <input
-          type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={t("ค้นหาสินค้าหรือแบรนด์ที่คุณชอบ...", "Search products or brands you like...")}
-          className="min-h-12 flex-1 bg-transparent px-3 py-3 text-base text-white placeholder:text-zinc-400 focus:outline-none sm:min-h-14 sm:py-4"
-        />
-        <button
-          type="submit"
-          className="rounded-r-2xl bg-primary/90 px-4 font-semibold text-white transition-colors hover:bg-primary sm:px-5"
-        >
-          {t("ค้นหา", "Search")}
-        </button>
-      </div>
-    </motion.form>
-  );
-}
+import { Hero } from "@/components/storefront/Hero";
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
 
@@ -112,7 +71,7 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
             />
           </Link>
         )}
-        {product.stock <= 5 && product.stock > 0 && (
+        {(product.stock ?? 0) <= 5 && (product.stock ?? 0) > 0 && (
           <span className={`absolute left-2 top-2 ${glassBadge} text-red-800`}>
             {t("เหลือน้อย", "Low Stock")}
           </span>
@@ -146,14 +105,14 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
         </div>
         <div className="mt-2 flex items-center justify-between gap-3">
           <span className="text-base font-bold text-primary">
-            {product.price > 0 ? `${formatPrice(product.price)}+` : t("สอบถาม", "Inquire")}
+            {(product.price ?? 0) > 0 ? `${formatPrice(product.price ?? 0)}+` : t("สอบถาม", "Inquire")}
           </span>
           <Button
             size="sm"
             className="h-8 bg-primary text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-primary/90 active:scale-95"
             asChild
           >
-            <Link href={`/product/${product.id}`}>{t("ดูสินค้า", "View")}</Link>
+            <Link href={productDetailHref(product)}>{t("ดูสินค้า", "View")}</Link>
           </Button>
         </div>
       </div>
@@ -166,9 +125,6 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
 export default function HomePage() {
   const { products, isLoading } = useProducts({ limit: 8, autoFetch: true });
   const { t } = useLanguage();
-  const { settings: siteSettings } = useSiteSettings();
-  const useAnimatedSvg =
-    siteSettings.hero_bg_mode === "animated_svg" && !!siteSettings.hero_svg_code?.trim();
 
   const features = [
     {
@@ -190,96 +146,7 @@ export default function HomePage() {
 
   return (
     <div className="bg-white">
-      {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section className="relative flex min-h-[88vh] items-center justify-center overflow-hidden bg-zinc-900">
-        {useAnimatedSvg ? (
-          <div
-            className="absolute inset-0 [&>svg]:h-full [&>svg]:w-full"
-            dangerouslySetInnerHTML={{ __html: siteSettings.hero_svg_code! }}
-          />
-        ) : (
-          <div
-            className="absolute inset-0 bg-cover bg-center animate-ken-burns opacity-40"
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1601412436405-1f0c6b50921f?w=1600&q=80')",
-            }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/60 via-zinc-900/40 to-zinc-900/80" />
-
-        <div className="relative z-10 mx-auto max-w-3xl px-5 text-center">
-          <div className="space-y-5">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            >
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
-                <Leaf className="h-3 w-3" />
-                {t("เมล็ดพันธุ์พรีเมียม", "Premium Cannabis Seeds")}
-              </span>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-              className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl"
-            >
-              {t("เมล็ดพันธุ์คุณภาพ", "Quality Seeds")}
-              <br />
-              <span className="text-primary">
-                {t("คัดสรรเพื่อคุณ", "Selected for You")}
-              </span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-              className="mx-auto max-w-lg text-base leading-relaxed text-zinc-300 sm:text-lg"
-            >
-              {t(
-                "แหล่งรวมสายพันธุ์พรีเมียมจาก Breeder ชั้นนำทั่วโลก พร้อมส่งตรงถึงมือคุณด้วยความปลอดภัยและความใส่ใจ",
-                "Your source for premium genetics from the world's top breeders — delivered safely and discreetly."
-              )}
-            </motion.p>
-
-            <HeroSearchBar t={t} />
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
-              className="flex flex-col items-center justify-center gap-3 sm:flex-row"
-            >
-              <Button
-                asChild
-                className="h-12 min-w-[160px] bg-primary px-6 text-base font-semibold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary/90 active:scale-95"
-              >
-                <Link href="/shop">
-                  {t("ดูสินค้าทั้งหมด", "Shop Now")}
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="h-12 min-w-[160px] border-white/30 bg-white/10 px-6 text-base font-medium text-white backdrop-blur hover:bg-white/20"
-              >
-                <Link href="/blog">{t("อ่านบทความ", "Read Blog")}</Link>
-              </Button>
-            </motion.div>
-          </div>
-        </div>
-
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="h-8 w-5 rounded-full border-2 border-white/40 p-1">
-            <div className="mx-auto h-2 w-1 rounded-full bg-white/60" />
-          </div>
-        </div>
-      </section>
+      <Hero />
 
       {/* ── BREEDERS SHOWCASE ─────────────────────────────────────────────── */}
       <section className="py-14">

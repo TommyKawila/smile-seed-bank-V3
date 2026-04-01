@@ -19,7 +19,9 @@ type ServiceResult = { success: boolean; error: string | null };
 
 async function fetchLogoUrl(): Promise<string | null> {
   try {
-    const res = await fetch(`${SITE_URL}/api/admin/settings`, { cache: "no-store" });
+    const res = await fetch(`${SITE_URL}/api/storefront/site-settings`, {
+      cache: "no-store",
+    });
     if (!res.ok) return null;
     const data = await res.json() as Record<string, string>;
     return data.logo_main_url ?? null;

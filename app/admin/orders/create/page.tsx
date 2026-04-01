@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
 import { applyWholesalePrice } from "@/lib/wholesale-utils";
-import type { ProductWithBreeder } from "@/types/supabase";
+import type { ProductWithBreeder, ProductWithBreederMaybeVariants } from "@/types/supabase";
 
 type PosCustomer = {
   id: string;
@@ -447,11 +447,12 @@ export default function CreateOrderPage() {
                   <p className="py-4 text-center text-sm text-zinc-400">ไม่พบสินค้า</p>
                 ) : (
                   filteredProducts.map((product) => {
-                    const prod = product as ProductWithBreeder;
+                    const prod = product as ProductWithBreederMaybeVariants;
                     const breederName = prod.breeders?.name ?? "";
-                    const variants = prod.product_variants?.filter(
-                      (v) => v.is_active && v.stock > 0
-                    ) ?? [];
+                    const variants =
+                      prod.product_variants?.filter(
+                        (v) => v.is_active !== false && (v.stock ?? 0) > 0
+                      ) ?? [];
                     if (variants.length === 0) return null;
                     return (
                       <div

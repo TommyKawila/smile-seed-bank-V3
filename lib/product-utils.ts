@@ -4,6 +4,53 @@
 
 import type { ProductVariant } from "@/types/supabase";
 
+/** Deterministic fallback when name has no Latin letters (e.g. Thai-only). */
+function slugFallbackFromName(name: string): string {
+  const enc = new TextEncoder().encode(name.trim() || "x");
+  let h = 2166136261;
+  for (let i = 0; i < enc.length; i++) {
+    h ^= enc[i]!;
+    h = Math.imul(h, 16777619);
+  }
+  return `p-${(h >>> 0).toString(16)}`;
+}
+
+/**
+ * URL-safe slug: lowercase, spaces/specials → hyphens; keeps Unicode letters (Latin + Thai, etc.) and digits.
+ */
+export function generateSlug(name: string): string {
+  if (typeof name !== "string") return "";
+  const s = name
+    .trim()
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+  if (s) return s.slice(0, 180);
+  return slugFallbackFromName(name).slice(0, 180);
+}
+
+/** Prefer explicit slug; otherwise derive from name (never empty). */
+export function resolveProductSlugFromName(
+  name: string,
+  slugInput: string | null | undefined
+): string {
+  const raw = slugInput?.trim();
+  if (raw) return raw.slice(0, 180);
+  const g = generateSlug(name);
+  return g || slugFallbackFromName(name).slice(0, 180);
+}
+
+/** Storefront path: prefer slug, fall back to numeric id for legacy rows. */
+export function productDetailHref(product: {
+  id: number;
+  slug?: string | null;
+}): string {
+  const s = product.slug?.trim();
+  if (s) return `/product/${encodeURIComponent(s)}`;
+  return `/product/${product.id}`;
+}
+
 /** Extra standalone words to strip (case-insensitive, word boundaries). */
 const EXTRA_NOISE_WORDS = ["Pack", "Seeds"] as const;
 

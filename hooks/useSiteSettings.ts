@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { usePathname } from "next/navigation";
 
 export type SocialLink = { platform: string; handle: string };
 
@@ -10,6 +11,7 @@ export interface SiteSettings {
   site_name?: string;
   hero_bg_mode?: "static_image" | "animated_svg";
   hero_svg_code?: string;
+  hero_static_image_url?: string;
   company_name?: string;
   company_address?: string;
   company_email?: string;
@@ -22,22 +24,33 @@ export interface SiteSettings {
 }
 
 export function useSiteSettings() {
+  const pathname = usePathname();
+  const useAdmin = useMemo(
+    () => pathname?.startsWith("/admin") ?? false,
+    [pathname]
+  );
   const [settings, setSettings] = useState<SiteSettings>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const fetch_ = useCallback(async () => {
+    setIsLoading(true);
+    setSettings({});
     try {
-      const res = await fetch("/api/admin/settings");
+      const res = await fetch(
+        useAdmin ? "/api/admin/settings" : "/api/storefront/site-settings"
+      );
       if (res.ok) {
-        const data = await res.json() as SiteSettings;
+        const data = (await res.json()) as SiteSettings;
         setSettings(data);
       }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [useAdmin]);
 
-  useEffect(() => { void fetch_(); }, [fetch_]);
+  useEffect(() => {
+    void fetch_();
+  }, [fetch_]);
 
   const updateSetting = useCallback(async (key: string, value: string) => {
     await fetch("/api/admin/settings", {

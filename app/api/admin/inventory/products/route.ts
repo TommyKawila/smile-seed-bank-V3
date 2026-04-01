@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { computeStartingPrice, computeTotalStock } from "@/lib/product-utils";
 import { toMasterSku, toVariantSku } from "@/lib/sku-utils";
+import type { TablesInsert } from "@/lib/supabase/types";
 import type { ProductVariant } from "@/types/supabase";
 
 export async function POST(req: NextRequest) {
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const productInsert: Record<string, unknown> = {
+  const productInsert: TablesInsert<"products"> = {
     breeder_id: breederId,
     name,
     master_sku: masterSku,

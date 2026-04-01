@@ -23,7 +23,7 @@ export async function fetchPdfSettings(): Promise<PdfSettings> {
   const [storeRes, paymentRes, siteRes] = await Promise.all([
     fetch("/api/admin/store-settings"),
     fetch("/api/admin/settings/payment"),
-    fetch("/api/admin/settings"),
+    fetch("/api/storefront/site-settings"),
   ]);
 
   const store = await storeRes.json().catch(() => ({}));
