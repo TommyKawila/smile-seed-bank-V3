@@ -254,15 +254,15 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
             {/* Promo Code */}
             <div className="space-y-1.5">
               {promo.code ? (
-                <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                <div className="flex items-center justify-between rounded-xl border border-primary/25 bg-accent px-3 py-2">
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
                     <Tag className="h-3.5 w-3.5" />
                     {promo.code.code} — {t("ลด", "Off")}{" "}
                     {String(promo.code.discount_type || "").toUpperCase() === "PERCENTAGE"
                       ? `${promo.code.discount_value}%`
                       : formatPrice(promo.code.discount_value ?? promo.discountAmount)}
                   </span>
-                  <button onClick={handleClearPromo} className="text-xs text-emerald-600 underline">
+                  <button onClick={handleClearPromo} className="text-xs text-primary underline">
                     {t("ลบ", "Remove")}
                   </button>
                 </div>
@@ -332,7 +332,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                         className="flex w-full items-center justify-between rounded-lg border border-zinc-200 px-3 py-2.5 text-left text-sm hover:border-primary hover:bg-primary/5 transition-colors"
                       >
                         <span className="font-mono font-semibold">{c.code}</span>
-                        <span className="text-emerald-600">
+                        <span className="text-primary">
                           {String(c.discount_type || "").toUpperCase() === "PERCENTAGE"
                             ? `ลด ${c.discount_value}%`
                             : `ลด ${formatPrice(c.discount_value)}`}
@@ -353,13 +353,13 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                 <span>{formatPrice(summary.subtotal)}</span>
               </div>
               {summary.tierDiscount > 0 && (
-                <div className="flex justify-between text-emerald-600">
+                <div className="flex justify-between text-primary">
                   <span>{t("ส่วนลดขั้นบันได", "Tier discount")} ({summary.discountPercent}%)</span>
                   <span>-{formatPrice(summary.tierDiscount)}</span>
                 </div>
               )}
               {summary.promoDiscount > 0 && (
-                <div className="flex justify-between text-emerald-600">
+                <div className="flex justify-between text-primary">
                   <span>{t("ส่วนลดโค้ด", "Promo code")} ({promo.code?.code ?? ""})</span>
                   <span>-{formatPrice(summary.promoDiscount)}</span>
                 </div>

@@ -5,7 +5,7 @@ export function ProductCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm",
+        "overflow-hidden rounded-2xl border border-border bg-card shadow-sm",
         className
       )}
     >

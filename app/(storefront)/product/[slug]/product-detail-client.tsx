@@ -14,7 +14,20 @@ import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatPrice } from "@/lib/utils";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
+import {
+  FeminizedSeedSpecChip,
+  FeminizedStatCard,
+  GeneticRatioBar,
+} from "@/components/storefront/ProductSpecs";
 import type { ProductFull, ProductVariant } from "@/types/supabase";
+
+function formatCbdDisplay(raw: string | number | null | undefined): string {
+  if (raw == null || raw === "") return "";
+  const s = String(raw).trim();
+  if (!s) return "";
+  if (s.includes("%") || /^[<>≤≥]/.test(s)) return s;
+  return `${s}%`;
+}
 
 // ─── Image Gallery ────────────────────────────────────────────────────────────
 
@@ -143,25 +156,57 @@ function formatDescriptionWithBold(text: string, productName: string): React.Rea
 
 const glassSpec = "rounded-2xl border border-white/50 bg-white/70 p-4 shadow-sm backdrop-blur-md";
 
-// Stat card — glassmorphism + icon
+const statCardShell =
+  "flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-border/40 p-4 text-center";
+
+type StatCardTone = "thc" | "cbd" | "difficulty" | "sexNeutral";
+
+const STAT_TONE: Record<
+  StatCardTone,
+  { bg: string; fg: string; labelFg: string }
+> = {
+  thc: {
+    bg: "bg-[hsl(158_95%_45%_/_0.08)]",
+    fg: "text-primary",
+    labelFg: "text-primary",
+  },
+  cbd: {
+    bg: "bg-[hsl(180_50%_50%_/_0.08)]",
+    fg: "text-primary",
+    labelFg: "text-primary",
+  },
+  difficulty: {
+    bg: "bg-muted/50",
+    fg: "text-muted-foreground",
+    labelFg: "text-muted-foreground",
+  },
+  sexNeutral: {
+    bg: "bg-muted/40",
+    fg: "text-primary",
+    labelFg: "text-primary",
+  },
+};
+
+// Stat card — soft pastel lab palette
 function StatCard({
   value,
   label,
   icon: Icon,
-  accent = "primary",
+  tone,
 }: {
   value: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  accent?: "primary" | "neutral" | "muted";
+  tone: StatCardTone;
 }) {
-  const iconCls =
-    accent === "primary" ? "text-primary" : accent === "neutral" ? "text-zinc-600" : "text-zinc-500";
+  const t = STAT_TONE[tone];
   return (
-    <div className={`flex flex-col items-center justify-center ${glassSpec} text-zinc-800`}>
-      <Icon className={`mb-1.5 h-6 w-6 ${iconCls}`} />
-      <span className="text-xl font-extrabold tracking-tight">{value}</span>
-      <span className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">{label}</span>
+    <div className={`${statCardShell} ${t.bg}`}>
+      <Icon className={`mb-1.5 h-6 w-6 ${t.fg}`} />
+      <span className={`text-xl font-extrabold tracking-tight ${t.fg}`}>{value}</span>
+      <span className={`mt-0.5 text-xs font-semibold uppercase tracking-wider ${t.labelFg}`}>
+        {label}
+      </span>
     </div>
   );
 }
@@ -217,10 +262,10 @@ function SpecRow({
   return (
     <div className="flex items-start justify-between gap-4 border-b border-zinc-100 py-2.5 text-sm last:border-0">
       <span className="flex shrink-0 items-center gap-2 text-zinc-500">
-        {Icon && <Icon className="h-4 w-4 text-primary/60" />}
+        {Icon && <Icon className="h-4 w-4 text-primary" />}
         {label}
       </span>
-      <span className={`text-right font-semibold ${isUnk ? "text-amber-500 italic" : "text-zinc-800"}`}>
+      <span className={`text-right font-semibold ${isUnk ? "text-muted-foreground italic" : "text-zinc-800"}`}>
         {display}
       </span>
     </div>
@@ -264,11 +309,6 @@ export default function ProductDetailClient({
     setTimeout(() => setAdded(false), 2000);
     openCart();
   };
-
-  // ── Sativa / Indica Bar ──────────────────────────────────────────────────────
-  const indicaRatio = product?.indica_ratio ?? null;
-  const sativaRatio = product?.sativa_ratio ?? null;
-  const showRatioBar = indicaRatio !== null && sativaRatio !== null;
 
   if (!product) {
     return (
@@ -345,36 +385,23 @@ export default function ProductDetailClient({
                   {product.flowering_type}
                 </Badge>
               )}
-              {product.seed_type && (
+              {product.seed_type === "FEMINIZED" && <FeminizedSeedSpecChip />}
+              {product.seed_type === "REGULAR" && (
                 <Badge variant="outline">{product.seed_type}</Badge>
               )}
               {product.thc_percent && (
-                <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                <Badge className="bg-accent text-primary hover:bg-accent">
                   THC {product.thc_percent}%
                 </Badge>
               )}
               {product.cbd_percent && (
-                <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50">
-                  CBD {product.cbd_percent}%
+                <Badge className="bg-secondary text-secondary-foreground hover:bg-secondary">
+                  CBD {formatCbdDisplay(product.cbd_percent)}
                 </Badge>
               )}
             </div>
 
-            {/* Indica/Sativa Ratio Bar */}
-            {showRatioBar && (
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-medium text-zinc-600">
-                  <span>Indica {indicaRatio}%</span>
-                  <span>Sativa {sativaRatio}%</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-zinc-200">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400"
-                    style={{ width: `${indicaRatio}%` }}
-                  />
-                </div>
-              </div>
-            )}
+            <GeneticRatioBar product={product} variant="compact" t={t} />
 
             <Separator />
 
@@ -402,7 +429,7 @@ export default function ProductDetailClient({
                         <span className="block text-xs">{v.unit_label}</span>
                         <span className="block font-bold">{formatPrice(v.price)}</span>
                         {(v.stock ?? 0) <= 5 && (v.stock ?? 0) > 0 && (
-                          <span className="block text-[10px] text-red-500">เหลือ {v.stock}</span>
+                          <span className="block text-[10px] text-destructive">เหลือ {v.stock}</span>
                         )}
                       </button>
                     );
@@ -419,7 +446,7 @@ export default function ProductDetailClient({
               {selectedVariant &&
                 (selectedVariant.stock ?? 0) <= 5 &&
                 (selectedVariant.stock ?? 0) > 0 && (
-                <Badge className="bg-red-100 text-red-600 hover:bg-red-100">
+                <Badge className="border border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10">
                   เหลือเพียง {selectedVariant.stock} ชิ้น
                 </Badge>
               )}
@@ -430,8 +457,8 @@ export default function ProductDetailClient({
               disabled={outOfStock || !selectedVariant}
               className={`h-12 w-full text-base font-semibold transition-all ${
                 added
-                  ? "bg-emerald-600 text-white"
-                  : "bg-primary text-white hover:bg-primary/90"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
               } active:scale-[0.98]`}
             >
               <ShoppingCart className="mr-2 h-5 w-5" />
@@ -460,46 +487,52 @@ export default function ProductDetailClient({
               <div className="space-y-4">
 
                 {/* Stat Cards Row */}
-                {(product.thc_percent || product.cbd_percent || product.flowering_type || product.sex_type) && (
+                {(product.thc_percent ||
+                  product.cbd_percent ||
+                  product.flowering_type ||
+                  product.sex_type ||
+                  product.seed_type === "FEMINIZED") && (
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {product.thc_percent != null && (
-                      <StatCard value={`${product.thc_percent}%`} label="THC" icon={FlaskConical} accent="primary" />
+                      <StatCard value={`${product.thc_percent}%`} label="THC" icon={FlaskConical} tone="thc" />
                     )}
-                    {product.cbd_percent != null && (
-                      <StatCard value={`${product.cbd_percent}%`} label="CBD" icon={TestTube2} accent="neutral" />
-                    )}
-                    {(product.flowering_type ?? product.sex_type) && (
+                    {product.cbd_percent != null && product.cbd_percent !== "" && (
                       <StatCard
-                        value={product.sex_type ?? product.flowering_type ?? "—"}
-                        label={t("ประเภทเพศ", "Sex Type")}
-                        icon={Flower2}
-                        accent="primary"
+                        value={formatCbdDisplay(product.cbd_percent)}
+                        label="CBD"
+                        icon={TestTube2}
+                        tone="cbd"
                       />
                     )}
+                    {(product.flowering_type ??
+                      product.sex_type ??
+                      (product.seed_type === "FEMINIZED" ? "feminized" : null))
+                      ? product.sex_type === "feminized" ||
+                        (product.seed_type === "FEMINIZED" &&
+                          !product.flowering_type &&
+                          !product.sex_type)
+                        ? (
+                            <FeminizedStatCard label={t("ประเภทเพศ", "Sex Type")} />
+                          )
+                        : (
+                            <StatCard
+                              value={product.sex_type ?? product.flowering_type ?? "—"}
+                              label={t("ประเภทเพศ", "Sex Type")}
+                              icon={Flower2}
+                              tone="sexNeutral"
+                            />
+                          )
+                      : null}
                     <StatCard
                       value={product.growing_difficulty ?? "Unknown"}
                       label={t("ความยาก", "Difficulty")}
                       icon={Gauge}
-                      accent={product.growing_difficulty && product.growing_difficulty !== "Unknown" ? "neutral" : "muted"}
+                      tone="difficulty"
                     />
                   </div>
                 )}
 
-                {/* Indica / Sativa Ratio Bar */}
-                {showRatioBar && (
-                  <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
-                    <div className="mb-2 flex items-center justify-between text-xs font-bold">
-                      <span className="text-primary">🌿 Indica {indicaRatio}%</span>
-                      <span className="text-amber-600">☀️ Sativa {sativaRatio}%</span>
-                    </div>
-                    <div className="relative h-3 overflow-hidden rounded-full bg-zinc-200">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-primary via-emerald-400 to-amber-400 transition-all duration-700"
-                        style={{ width: `${indicaRatio}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
+                <GeneticRatioBar product={product} variant="card" t={t} />
 
                 {/* Genetics Details Card */}
                 {(shouldShowGeneticsRow(product.genetic_ratio, product.lineage) ||
@@ -509,7 +542,7 @@ export default function ProductDetailClient({
                   product.yield_info) && (
                   <div className="rounded-2xl border border-white/50 bg-white/70 p-5 shadow-sm backdrop-blur-md">
                     <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500">
-                      <Dna className="h-4 w-4 text-primary/60" /> {t("โปรไฟล์พันธุกรรม", "Genetic Profile")}
+                      <Dna className="h-4 w-4 text-primary" /> {t("โปรไฟล์พันธุกรรม", "Genetic Profile")}
                     </p>
                     {shouldShowGeneticsRow(product.genetic_ratio, product.lineage) && (
                       <SpecRow label={t("พันธุกรรม", "Genetics")} value={product.genetic_ratio} icon={Dna} />
@@ -523,12 +556,12 @@ export default function ProductDetailClient({
 
                 {/* Terpene Profile */}
                 {toArray(product.terpenes).length > 0 && (
-                  <div className="rounded-2xl border border-violet-100 bg-violet-50 p-5">
+                  <div className="rounded-2xl border border-secondary-foreground/15 bg-secondary p-5">
                     <ChipRow
                       emoji="🫙"
                       label={t("เทอร์พีน", "Terpene Profile")}
                       data={product.terpenes}
-                      chipClass="bg-violet-100 text-violet-800"
+                      chipClass="bg-secondary text-secondary-foreground"
                     />
                   </div>
                 )}
@@ -550,34 +583,34 @@ export default function ProductDetailClient({
               <div className="grid gap-4 sm:grid-cols-2">
 
                 {toArray(product.effects).length > 0 && (
-                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+                  <div className="rounded-2xl border border-primary/15 bg-accent p-5">
                     <ChipRow
                       emoji="⚡"
                       label={t("อาการ / ความรู้สึก", "Effects")}
                       data={product.effects}
-                      chipClass="bg-emerald-100 text-emerald-800"
+                      chipClass="bg-accent text-primary"
                     />
                   </div>
                 )}
 
                 {toArray(product.flavors).length > 0 && (
-                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5">
+                  <div className="rounded-2xl border border-border bg-secondary p-5">
                     <ChipRow
                       emoji="🍋"
                       label={t("รสชาติ & กลิ่น", "Flavors & Aroma")}
                       data={product.flavors}
-                      chipClass="bg-amber-100 text-amber-800"
+                      chipClass="bg-secondary text-secondary-foreground"
                     />
                   </div>
                 )}
 
                 {toArray(product.medical_benefits).length > 0 && (
-                  <div className="rounded-2xl border border-pink-100 bg-pink-50 p-5 sm:col-span-2">
+                  <div className="rounded-2xl border border-border bg-muted/40 p-5 sm:col-span-2">
                     <ChipRow
                       emoji="💊"
                       label={t("สรรพคุณทางยา", "Medical Benefits")}
                       data={product.medical_benefits}
-                      chipClass="bg-pink-100 text-pink-800"
+                      chipClass="bg-secondary text-secondary-foreground"
                     />
                   </div>
                 )}
@@ -632,7 +665,7 @@ export default function ProductDetailClient({
                         <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-6 space-y-3">
                           {hasGeneticsDistinct && (
                             <p className="flex items-start gap-2 text-sm text-zinc-700">
-                              <Dna className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
+                              <Dna className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                               <span>
                                 <span className="font-semibold text-zinc-800">{t("พันธุกรรม", "Genetics")}:</span>{" "}
                                 {product.genetic_ratio}
@@ -641,7 +674,7 @@ export default function ProductDetailClient({
                           )}
                           {hasLineage && (
                             <p className="flex items-start gap-2 text-sm text-zinc-700">
-                              <GitFork className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" aria-hidden />
+                              <GitFork className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                               <span>
                                 <span className="font-semibold text-zinc-800">{t("สายเลือด", "Lineage")}:</span>{" "}
                                 {product.lineage}

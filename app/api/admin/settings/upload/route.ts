@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import {
   optimizeImage,
   isPresetName,
@@ -52,12 +52,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Secondary logo must be PNG format" }, { status: 400 });
     }
 
-    const supabase = await createAdminClient();
+    const supabase = createServiceRoleClient();
     let buffer = Buffer.from(await file.arrayBuffer());
     let ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
     let contentType = file.type || "application/octet-stream";
 
-    if (preset) {
+    const isVideo = ext === "mp4" || ext === "webm";
+    if (isVideo) {
+      contentType =
+        ext === "webm"
+          ? "video/webm"
+          : file.type?.startsWith("video/")
+            ? file.type
+            : "video/mp4";
+    } else if (preset) {
       buffer = await optimizeImage(buffer, preset);
       ext = "webp";
       contentType = "image/webp";

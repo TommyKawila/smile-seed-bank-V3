@@ -29,10 +29,10 @@ export function LoginForPromoDialog({
 }: LoginForPromoDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md border-emerald-200 bg-gradient-to-b from-emerald-50/80 to-white">
+      <DialogContent className="sm:max-w-md border-primary/25 bg-gradient-to-b from-accent/80 to-white">
         <div className="flex flex-col items-center text-center space-y-4 py-2">
-          <div className="rounded-full bg-emerald-100 p-4">
-            <Gift className="h-10 w-10 text-emerald-600" />
+          <div className="rounded-full bg-accent p-4">
+            <Gift className="h-10 w-10 text-primary" />
           </div>
           <DialogHeader>
             <DialogTitle className="text-lg text-zinc-800">
@@ -43,7 +43,7 @@ export function LoginForPromoDialog({
           <Button
             onClick={() => void onLogin()}
             disabled={isLoading}
-            className="w-full bg-white border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-700 font-semibold py-6 gap-2"
+            className="w-full bg-white border-2 border-primary text-primary hover:bg-accent hover:border-primary font-semibold py-6 gap-2"
           >
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />

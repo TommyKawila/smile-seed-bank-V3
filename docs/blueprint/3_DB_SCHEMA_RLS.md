@@ -24,7 +24,8 @@
 - `image_url`, `image_url_2`, `image_url_3`, `video_url`: text
 - `strain_dominance`: text (Mostly Indica / Mostly Sativa / Hybrid 50/50)
 - *--- AI Extracted Specs ---*
-- `thc_percent`, `cbd_percent`: numeric
+- `thc_percent`: numeric
+- `cbd_percent`: text (free-form e.g. `< 1%`, `5`)
 - `genetics`: text
 - `indica_ratio`, `sativa_ratio`: numeric
 - `flowering_type`: text (AUTO/PHOTO)

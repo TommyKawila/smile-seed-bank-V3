@@ -127,8 +127,8 @@ export default function PaymentPage() {
           </div>
 
           {/* Bank Details */}
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 space-y-4">
-            <div className="flex items-center gap-2 text-emerald-800 font-semibold">
+          <div className="rounded-2xl border border-primary/25 bg-accent/50 p-5 space-y-4">
+            <div className="flex items-center gap-2 text-primary font-semibold">
               <CreditCard className="h-5 w-5" />
               ข้อมูลการโอนเงิน
             </div>
@@ -177,7 +177,7 @@ export default function PaymentPage() {
                         height={256}
                         className="size-[256px] rounded-lg"
                       />
-                      <p className="mt-3 text-center text-sm font-semibold text-emerald-700">
+                      <p className="mt-3 text-center text-sm font-semibold text-primary">
                         ยอดเงินรวมใน QR: {formatPrice(order.total_amount)}
                       </p>
                     </>
@@ -214,7 +214,7 @@ export default function PaymentPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-emerald-300 py-4 text-emerald-700 font-medium hover:bg-emerald-50 transition-colors"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 py-4 text-primary font-medium hover:bg-accent transition-colors"
             >
               <Upload className="h-5 w-5" />
               {selectedFile ? selectedFile.name : "เลือกไฟล์สลิป"}

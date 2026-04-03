@@ -65,6 +65,12 @@ export function Hero() {
     siteSettings.hero_bg_mode === "animated_svg" &&
     isHeroSvgMarkup(siteSettings.hero_svg_code);
 
+  const videoUrl = resolvePublicAssetUrl(siteSettings.hero_video_url);
+  const useVideo =
+    !isLoading &&
+    siteSettings.hero_bg_mode === "video" &&
+    Boolean(videoUrl);
+
   const staticBgUrl =
     resolvePublicAssetUrl(siteSettings.hero_static_image_url) ?? STATIC_HERO_FALLBACK;
 
@@ -80,6 +86,16 @@ export function Hero() {
           dangerouslySetInnerHTML={{
             __html: normalizeHeroSvgHtml(siteSettings.hero_svg_code),
           }}
+        />
+      ) : useVideo && videoUrl ? (
+        <video
+          className="absolute inset-0 z-0 h-full w-full object-cover opacity-40"
+          src={videoUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-hidden
         />
       ) : (
         <div

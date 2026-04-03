@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { createProductWithVariants } from "@/services/product-service";
 import type { Product, ProductVariant } from "@/types/supabase";
-import { ProductSchema } from "@/lib/validations/product";
+import {
+  ProductSchema,
+  deriveProductIsActiveForCatalog,
+} from "@/lib/validations/product";
 type ProductInsert = Omit<Product, "id" | "price" | "stock">;
 type VariantInsert = Omit<ProductVariant, "id" | "product_id">;
 
@@ -33,9 +36,14 @@ export async function POST(req: NextRequest) {
 
     const { variants, ...productData } = parsed.data;
 
+    const isActive = deriveProductIsActiveForCatalog(
+      variants,
+      productData.is_active
+    );
+
     // Sanitize: replace undefined optional strings with null for Supabase
     const sanitized = Object.fromEntries(
-      Object.entries(productData).map(([k, v]) => [
+      Object.entries({ ...productData, is_active: isActive }).map(([k, v]) => [
         k,
         v === undefined ? null : v,
       ])

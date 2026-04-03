@@ -310,7 +310,7 @@ export default function BreedersPage() {
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => toggleActive(b)} className="inline-flex">
                       {b.is_active ? (
-                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 cursor-pointer">
+                        <Badge className="bg-accent text-primary hover:bg-accent cursor-pointer">
                           <ToggleRight className="mr-1 h-3 w-3" /> Active
                         </Badge>
                       ) : (
@@ -339,7 +339,7 @@ export default function BreedersPage() {
           <div className="border-t border-zinc-100 px-4 py-2.5 text-xs text-zinc-400">
             ทั้งหมด {filtered.length} Breeder
             {breeders.filter((b) => b.is_active).length > 0 && (
-              <span className="ml-2 text-emerald-600">
+              <span className="ml-2 text-primary">
                 · Active {breeders.filter((b) => b.is_active).length} ราย
               </span>
             )}

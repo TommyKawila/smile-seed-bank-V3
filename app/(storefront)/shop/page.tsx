@@ -308,10 +308,10 @@ function ShopContent() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-emerald-50 px-4 py-8 sm:px-6"
+          className="border-b border-primary/15 bg-gradient-to-r from-accent via-white to-accent px-4 py-8 sm:px-6"
         >
           <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-start sm:gap-8">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-md sm:h-28 sm:w-28">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-primary/15 bg-white shadow-md sm:h-28 sm:w-28">
               <BreederLogoImage
                 src={urlBreeder.logo_url}
                 breederName={urlBreeder.name}

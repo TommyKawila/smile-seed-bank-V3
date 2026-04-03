@@ -70,9 +70,9 @@ function statusBadgeClass(s: string) {
     case "SENT":
       return "bg-sky-50 text-sky-800 border-sky-200";
     case "CONVERTED":
-      return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      return "bg-accent text-primary border-primary/25";
     case "SHIPPED":
-      return "bg-emerald-800 text-white border-emerald-900";
+      return "bg-primary text-white border-primary";
     case "EXPIRED":
       return "bg-amber-50 text-amber-900 border-amber-200";
     default:
@@ -88,13 +88,13 @@ function quotationStatusBadge(row: QuotationRow): { label: string; className: st
   if (row.convertedOrderId != null && row.status === "SHIPPED") {
     return {
       label: "ส่งแล้ว (ปิดดีล) ✅",
-      className: "border-emerald-800 bg-emerald-800 text-white shadow-sm",
+      className: "border-primary bg-primary text-white shadow-sm",
     };
   }
   if (row.convertedOrderId != null) {
     return {
       label: "ปิดดีลแล้ว ✅",
-      className: "border-emerald-600 bg-emerald-700 text-white shadow-sm",
+      className: "border-primary bg-primary text-white shadow-sm",
     };
   }
   if (row.status === "SENT") {
@@ -359,7 +359,7 @@ export default function QuotationsHistoryPage() {
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </Button>
           <Link href="/admin/quotations/new">
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+            <Button size="sm" className="bg-primary hover:bg-primary/90">
               <FileText className="mr-1.5 h-4 w-4" />
               สร้างใบเสนอราคา
             </Button>
@@ -381,7 +381,7 @@ export default function QuotationsHistoryPage() {
           </TabsTrigger>
           <TabsTrigger
             value="pending"
-            className="rounded-lg px-3 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm sm:text-sm"
+            className="rounded-lg px-3 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm sm:text-sm"
           >
             รอจัดการ
           </TabsTrigger>
@@ -435,7 +435,7 @@ export default function QuotationsHistoryPage() {
             </Button>
             <Button
               type="button"
-              className="bg-teal-600 hover:bg-teal-700"
+              className="bg-primary hover:bg-primary/90"
               disabled={convertTargetId === null || isConverting}
               onClick={() => convertTargetId != null && void runConvert(convertTargetId)}
             >
@@ -461,7 +461,7 @@ export default function QuotationsHistoryPage() {
             {loading ? (
               <tr>
                 <td colSpan={6} className="py-16 text-center text-zinc-400">
-                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-emerald-600" />
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                 </td>
               </tr>
             ) : rows.length === 0 ? (
@@ -488,7 +488,7 @@ export default function QuotationsHistoryPage() {
                     <td
                       className={cn(
                         "px-4 py-3 font-mono font-medium",
-                        isConverted ? "text-zinc-500" : "text-emerald-800"
+                        isConverted ? "text-zinc-500" : "text-primary"
                       )}
                     >
                       {r.quotationNumber}
@@ -500,7 +500,7 @@ export default function QuotationsHistoryPage() {
                     <td
                       className={cn(
                         "px-4 py-3 font-semibold",
-                        isConverted ? "text-zinc-500" : "text-emerald-700"
+                        isConverted ? "text-zinc-500" : "text-primary"
                       )}
                     >
                       {formatPrice(r.totalAmount)}
@@ -515,7 +515,7 @@ export default function QuotationsHistoryPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-violet-500 text-violet-700 hover:bg-violet-50 disabled:opacity-50"
+                          className="border-secondary-foreground/40 text-secondary-foreground hover:bg-secondary disabled:opacity-50"
                           disabled={busy}
                           onClick={() => void duplicateQuotation(r.id)}
                         >
@@ -528,7 +528,7 @@ export default function QuotationsHistoryPage() {
                           className={cn(
                             isConverted
                               ? "border-zinc-200 text-zinc-600 hover:bg-zinc-100"
-                              : "bg-emerald-700 text-white hover:bg-emerald-800"
+                              : "bg-primary text-white hover:bg-primary/90"
                           )}
                           disabled={busy}
                           onClick={() => void viewPdf(r.id)}
@@ -539,7 +539,7 @@ export default function QuotationsHistoryPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"
+                          className="border-primary text-primary hover:bg-accent disabled:opacity-40"
                           disabled={markSentDisabled}
                           onClick={() => void markSent(r.id)}
                         >
@@ -549,7 +549,7 @@ export default function QuotationsHistoryPage() {
                         {!isConverted && (
                           <Button
                             size="sm"
-                            className="bg-teal-600 text-white hover:bg-teal-700"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
                             disabled={busy || isConverting}
                             onClick={() => setConvertTargetId(String(r.id))}
                           >

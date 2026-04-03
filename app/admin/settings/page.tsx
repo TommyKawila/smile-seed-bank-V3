@@ -185,7 +185,7 @@ export default function SettingsPage() {
       </div>
 
       {saved && (
-        <div className="rounded-lg bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700">
+        <div className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-primary">
           ✅ บันทึกเรียบร้อยแล้ว
         </div>
       )}
@@ -414,7 +414,7 @@ export default function SettingsPage() {
               <span className="text-sm text-zinc-600">สถานะการเชื่อมต่อ</span>
               {lineStatus ? (
                 lineStatus.configured ? (
-                  <span className="flex items-center gap-1.5 text-sm text-emerald-600">
+                  <span className="flex items-center gap-1.5 text-sm text-primary">
                     <CheckCircle2 className="h-4 w-4" />
                     ตั้งค่าแล้ว
                   </span>
@@ -463,7 +463,7 @@ export default function SettingsPage() {
               {lineTestLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "ทดสอบส่งข้อความ"}
             </Button>
             {lineTestResult === "success" && (
-              <p className="text-sm text-emerald-600">✓ ส่งข้อความทดสอบสำเร็จ — ตรวจสอบ LINE ได้เลย</p>
+              <p className="text-sm text-primary">✓ ส่งข้อความทดสอบสำเร็จ — ตรวจสอบ LINE ได้เลย</p>
             )}
             {lineTestResult === "error" && (
               <p className="text-sm text-red-600">ส่งไม่สำเร็จ — ตรวจสอบ Token และ User ID ใน .env.local</p>

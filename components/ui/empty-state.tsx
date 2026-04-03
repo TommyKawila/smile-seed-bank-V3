@@ -23,12 +23,12 @@ export function EmptyState({
       )}
     >
       <Icon
-        className="mb-3 h-9 w-9 text-zinc-300"
+        className="mb-3 h-9 w-9 text-muted-foreground/40"
         strokeWidth={1.5}
         aria-hidden
       />
-      <h3 className="text-sm font-semibold tracking-tight text-zinc-800">{title}</h3>
-      <p className="mt-1 max-w-sm text-sm leading-relaxed text-zinc-500">{description}</p>
+      <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>
+      <p className="mt-1 max-w-sm text-sm leading-relaxed text-muted-foreground">{description}</p>
       {children ? <div className="mt-5">{children}</div> : null}
     </div>
   );

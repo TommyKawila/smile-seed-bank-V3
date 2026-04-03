@@ -1,6 +1,21 @@
 // Zod schemas for AI Importer pipeline — server-only validation after Claude + before DB
 
 import { z } from "zod";
+import {
+  formatGeneticRatioString,
+  normalizeSativaIndicaPercents,
+} from "@/lib/genetic-percent-utils";
+
+const nullableIntPercent = z.preprocess((v: unknown) => {
+  if (v === undefined) return undefined;
+  if (v === null || v === "") return null;
+  const n =
+    typeof v === "number" && Number.isFinite(v)
+      ? Math.round(v)
+      : parseInt(String(v).replace(/%/g, "").trim(), 10);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(100, Math.max(0, n));
+}, z.union([z.undefined(), z.null(), z.number().int().min(0).max(100)]));
 
 /** Coerce AI / sheet strings into a finite number or null (matches Prisma Decimal fields as numbers in Supabase layer). */
 function nullableRatio(min: number, max: number) {
@@ -74,6 +89,8 @@ export const AiImporterExtractedSchema = z
   .object({
     name: z.string().min(1).optional(),
     thc_percent: nullableRatio(0, 100),
+    sativa_percent: nullableIntPercent,
+    indica_percent: nullableIntPercent,
     indica_ratio: nullableRatio(0, 100),
     sativa_ratio: nullableRatio(0, 100),
     genetic_ratio: z.string().nullable().optional(),
@@ -85,8 +102,22 @@ export const AiImporterExtractedSchema = z
   })
   .transform((data) => {
     const urls = Array.from(new Set(data.images)).slice(0, 5);
+    const sp = data.sativa_percent ?? data.sativa_ratio;
+    const ip = data.indica_percent ?? data.indica_ratio;
+    const norm = normalizeSativaIndicaPercents(sp, ip);
+    const sativa_percent = norm.sativa_percent;
+    const indica_percent = norm.indica_percent;
+    const genetic_ratio =
+      sativa_percent != null && indica_percent != null
+        ? formatGeneticRatioString(sativa_percent, indica_percent)
+        : data.genetic_ratio ?? null;
     return {
       ...data,
+      sativa_percent,
+      indica_percent,
+      sativa_ratio: sativa_percent,
+      indica_ratio: indica_percent,
+      genetic_ratio,
       images: urls,
       image_url: urls[0],
       additional_images: urls.slice(1),

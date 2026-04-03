@@ -240,7 +240,7 @@ function EditableCell({
       {prefix && <span className="text-[10px] text-slate-400">{prefix}</span>}
       <Input
         type="number"
-        className={`h-7 w-14 border-0 border-b border-transparent bg-transparent px-1 py-0 text-sm shadow-none focus:border-emerald-500 focus:ring-0 ${bold ? "font-semibold text-slate-800" : "text-slate-600"}`}
+        className={`h-7 w-14 border-0 border-b border-transparent bg-transparent px-1 py-0 text-sm shadow-none focus:border-primary focus:ring-0 ${bold ? "font-semibold text-slate-800" : "text-slate-600"}`}
         value={local}
         onChange={(e) => setLocal(e.target.value)}
         onBlur={commit}
@@ -1358,7 +1358,7 @@ export default function ManualInventoryPage() {
                     setStrainSheetForm((f) => (f ? { ...f, categoryId: v } : f))
                   }
                 >
-                  <SelectTrigger className="h-9 border-emerald-200">
+                  <SelectTrigger className="h-9 border-primary/25">
                     <SelectValue placeholder="— เลือกหมวดหมู่ —" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1379,7 +1379,7 @@ export default function ManualInventoryPage() {
                     setStrainSheetForm((f) => (f ? { ...f, strainDominance: v } : f))
                   }
                 >
-                  <SelectTrigger className="h-9 border-emerald-200">
+                  <SelectTrigger className="h-9 border-primary/25">
                     <SelectValue placeholder="—" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1507,7 +1507,7 @@ export default function ManualInventoryPage() {
                   placeholder="ค้นหาชื่อสายพันธุ์ หรือ SKU..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 w-[220px] pl-8 rounded-md border-zinc-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  className="h-9 w-[220px] pl-8 rounded-md border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
             </div>
@@ -1524,7 +1524,7 @@ export default function ManualInventoryPage() {
                     onClick={() => togglePack(pack)}
                     className={`flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
                       isActive
-                        ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
+                        ? "border-primary bg-primary text-white hover:bg-primary/90"
                         : "border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 hover:border-zinc-300"
                     }`}
                   >
@@ -1581,7 +1581,7 @@ export default function ManualInventoryPage() {
                   variant="outline"
                   onClick={handleExportPNG}
                   disabled={!!exporting}
-                  className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  className="border-primary/30 text-primary hover:bg-accent"
                 >
                   {exporting === "png" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : "📸"}
                   {" "}Export PNG
@@ -1591,7 +1591,7 @@ export default function ManualInventoryPage() {
                   variant="outline"
                   onClick={handleExportPDF}
                   disabled={!!exporting}
-                  className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  className="border-primary/30 text-primary hover:bg-accent"
                 >
                   {exporting === "pdf" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : "📄"}
                   {" "}Export PDF
@@ -1605,7 +1605,7 @@ export default function ManualInventoryPage() {
                     type="checkbox"
                     checked={hideOutOfStock}
                     onChange={(e) => setHideOutOfStock(e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                    className="h-4 w-4 rounded border-zinc-300 text-primary focus:ring-primary"
                   />
                   ซ่อนสินค้าหมด
                 </label>
@@ -1638,7 +1638,7 @@ export default function ManualInventoryPage() {
                   variant="outline"
                   onClick={handleBatchSync}
                   disabled={syncableDraftSelectedCount === 0 || batchSyncing}
-                  className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  className="border-primary/30 text-primary hover:bg-accent"
                   title="Sync เฉพาะแถว Draft ที่เลือกและมี Master SKU"
                 >
                   {batchSyncing ? (
@@ -1692,7 +1692,7 @@ export default function ManualInventoryPage() {
                         type="checkbox"
                         checked={sortedRows.length > 0 && sortedRows.every((r) => selectedProductIds.has(r.productId))}
                         onChange={toggleSelectAll}
-                        className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
                         title="เลือกทั้งหมด"
                       />
                     </th>
@@ -1707,7 +1707,7 @@ export default function ManualInventoryPage() {
                       <th
                         key={p}
                         colSpan={packSpan}
-                        className={`${packGroupWidthClass} border-l border-slate-200 px-0 py-3 text-center font-medium text-emerald-800 transition-[width] duration-150`}
+                        className={`${packGroupWidthClass} border-l border-slate-200 px-0 py-3 text-center font-medium text-primary transition-[width] duration-150`}
                       >
                         {p} {p === 1 ? "Seed" : "Seeds"}
                       </th>
@@ -1738,26 +1738,26 @@ export default function ManualInventoryPage() {
                     return (
                     <tr
                       key={row.productId}
-                      className={`group border-b border-slate-100 transition-colors hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra}`}
+                      className={`group border-b border-slate-100 transition-colors hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra}`}
                     >
                       <td
-                        className={`sticky left-0 z-10 w-[50px] px-1 py-2 text-center font-mono text-sm text-muted-foreground tabular-nums transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}
+                        className={`sticky left-0 z-10 w-[50px] px-1 py-2 text-center font-mono text-sm text-muted-foreground tabular-nums transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}
                       >
                         {rowOffset + rowIdx + 1}
                       </td>
-                      <td className={`sticky left-[50px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[50px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <input
                           type="checkbox"
                           checked={selectedProductIds.has(row.productId)}
                           onChange={() => toggleSelectRow(row.productId)}
-                          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                          className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
                         />
                       </td>
-                      <td className={`sticky left-[90px] z-10 px-2 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[90px] z-10 px-2 py-2 transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 border-slate-200 text-slate-600 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
+                          className="h-7 border-slate-200 text-slate-600 hover:bg-accent hover:border-primary/30 hover:text-primary"
                           onClick={() => handleSync(row)}
                           disabled={batchSyncing || syncing === row.productId || (row.isNew && !row.masterSku?.trim())}
                           title={row.isNew ? "Sync: สร้าง product + variants" : "Sync/Link ไปยัง Product Detail"}
@@ -1769,7 +1769,7 @@ export default function ManualInventoryPage() {
                           )}
                         </Button>
                       </td>
-                      <td className={`sticky left-[132px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[132px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1785,7 +1785,7 @@ export default function ManualInventoryPage() {
                           )}
                         </Button>
                       </td>
-                      <td className={`sticky left-[172px] z-10 w-12 px-2 py-2 transition-colors group-hover:bg-emerald-50/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[172px] z-10 w-12 px-2 py-2 transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <label className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded border border-slate-200 bg-slate-50 hover:bg-slate-100">
                           <input
                             type="file"
@@ -1819,13 +1819,13 @@ export default function ManualInventoryPage() {
                           )}
                         </label>
                       </td>
-                      <td className={`sticky left-[224px] z-10 min-w-[90px] px-3 py-2 transition-colors group-hover:bg-emerald-50/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[224px] z-10 min-w-[90px] px-3 py-2 transition-colors group-hover:bg-accent/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         {row.isNew ? (
                           <Input
                             value={row.masterSku}
                             onChange={(e) => handleMasterSkuChange(row, e.target.value)}
                             placeholder="FB-ZKITTLEZ"
-                            className="h-7 w-28 font-mono text-xs border-transparent focus:border-emerald-500"
+                            className="h-7 w-28 font-mono text-xs border-transparent focus:border-primary"
                             autoFocus={row.productId === lastAddedRowId}
                             onFocus={() => {
                               if (row.productId === lastAddedRowId) setLastAddedRowId(null);
@@ -1835,22 +1835,22 @@ export default function ManualInventoryPage() {
                           <span className="font-mono text-xs text-slate-600">{row.masterSku || "—"}</span>
                         )}
                       </td>
-                      <td className={`sticky left-[314px] z-10 min-w-[160px] px-3 py-2 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-emerald-50/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[314px] z-10 min-w-[160px] px-3 py-2 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-accent/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         {row.isNew ? (
                           <Input
                             value={row.name}
                             onChange={(e) => handleNameChange(row, e.target.value)}
                             placeholder="Strain Name (auto-SKU)"
-                            className="h-7 min-w-[120px] border-transparent focus:border-emerald-500"
+                            className="h-7 min-w-[120px] border-transparent focus:border-primary"
                           />
                         ) : (
                           <button
                             type="button"
                             onClick={() => handleEditStrain(row)}
-                            className="inline-flex max-w-full items-center gap-1.5 text-left font-medium text-emerald-700 hover:text-emerald-800 cursor-pointer"
+                            className="inline-flex max-w-full items-center gap-1.5 text-left font-medium text-primary hover:text-primary cursor-pointer"
                           >
                             <span className="min-w-0 truncate">{row.name}</span>
-                            <Pencil className="h-3.5 w-3.5 shrink-0 text-emerald-600 opacity-80" aria-hidden />
+                            <Pencil className="h-3.5 w-3.5 shrink-0 text-primary opacity-80" aria-hidden />
                           </button>
                         )}
                       </td>
@@ -1859,7 +1859,7 @@ export default function ManualInventoryPage() {
                           value={row.categoryId || row.productCategory?.id || "__none__"}
                           onValueChange={(v) => handleCategoryChange(row, v)}
                         >
-                          <SelectTrigger className="h-8 border-emerald-200 bg-white text-xs text-emerald-800 hover:bg-emerald-50/50">
+                          <SelectTrigger className="h-8 border-primary/25 bg-white text-xs text-primary hover:bg-accent/50">
                             <SelectValue placeholder="— เลือกหมวดหมู่ —" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1879,7 +1879,7 @@ export default function ManualInventoryPage() {
                             onValueChange={(v) => handleStrainDominanceChange(row, v)}
                             disabled={savingDominance === row.productId}
                           >
-                            <SelectTrigger className="h-8 border-emerald-200 bg-white text-xs text-emerald-800 hover:bg-emerald-50/50">
+                            <SelectTrigger className="h-8 border-primary/25 bg-white text-xs text-primary hover:bg-accent/50">
                               <SelectValue placeholder="— ประเภทพันธุกรรม —" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1890,7 +1890,7 @@ export default function ManualInventoryPage() {
                             </SelectContent>
                           </Select>
                           {savingDominance === row.productId && (
-                            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-emerald-600" />
+                            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
                           )}
                         </div>
                       </td>
@@ -1991,7 +1991,7 @@ export default function ManualInventoryPage() {
                             มูลค่าทุนรวม ฿{footerTotals.grandCostValue.toLocaleString("th-TH")}
                           </div>
                         )}
-                        <div className="text-[10px] font-semibold tabular-nums leading-snug text-emerald-900">
+                        <div className="text-[10px] font-semibold tabular-nums leading-snug text-primary">
                           มูลค่าขายรวม ฿{footerTotals.grandPriceValue.toLocaleString("th-TH")}
                         </div>
                       </div>
@@ -2011,7 +2011,7 @@ export default function ManualInventoryPage() {
                               ฿{(footerTotals.perPackCostValue[packSize] ?? 0).toLocaleString("th-TH")}
                             </td>
                           )}
-                          <td className={`${packFooterClass} text-right text-emerald-950`}>
+                          <td className={`${packFooterClass} text-right text-primary`}>
                             ฿{(footerTotals.perPackPriceValue[packSize] ?? 0).toLocaleString("th-TH")}
                           </td>
                         </Fragment>
@@ -2107,7 +2107,7 @@ export default function ManualInventoryPage() {
       {selectedProductIds.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between gap-4 border-t border-slate-200 bg-white px-6 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
           <span className="text-sm font-medium text-slate-700">
-            เลือกแล้ว <span className="font-semibold text-emerald-700">{selectedProductIds.size}</span> รายการ
+            เลือกแล้ว <span className="font-semibold text-primary">{selectedProductIds.size}</span> รายการ
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -2118,7 +2118,7 @@ export default function ManualInventoryPage() {
             >
               ล้างการเลือก
             </Button>
-            <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => goToQuotationBuilder()}>
+            <Button size="sm" className="bg-primary text-white hover:bg-primary/90" onClick={() => goToQuotationBuilder()}>
               <FileText className="mr-1.5 h-4 w-4" />
               สร้างใบเสนอราคา
             </Button>
@@ -2138,7 +2138,7 @@ export default function ManualInventoryPage() {
           style={{ fontFamily: "'Prompt', 'Inter', sans-serif", transform: "none" }}
         >
           {/* Branded header — Digital Menu */}
-          <div className="flex items-center justify-between gap-6 border-b-2 border-emerald-700 bg-emerald-50/30 px-6 pt-8 pb-6">
+          <div className="flex items-center justify-between gap-6 border-b-2 border-primary bg-accent/50 px-6 pt-8 pb-6">
             <div className="w-16 flex-shrink-0" aria-hidden />
             <div className="flex flex-1 flex-col items-center justify-center gap-y-1 text-center">
               {settings.logo_main_url && exportMainLogoOk ? (
@@ -2149,15 +2149,15 @@ export default function ManualInventoryPage() {
                   onError={() => setExportMainLogoOk(false)}
                 />
               ) : (
-                <div className="flex h-20 w-24 flex-shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50">
+                <div className="flex h-20 w-24 flex-shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-accent">
                   {settings.logo_main_url ? (
-                    <Store className="h-10 w-10 text-emerald-700" aria-hidden />
+                    <Store className="h-10 w-10 text-primary" aria-hidden />
                   ) : (
-                    <span className="text-xl font-bold text-emerald-800">SB</span>
+                    <span className="text-xl font-bold text-primary">SB</span>
                   )}
                 </div>
               )}
-              <p className="text-sm font-medium text-emerald-600">www.smileseedbank.com</p>
+              <p className="text-sm font-medium text-primary">www.smileseedbank.com</p>
               <div className="flex items-center justify-center">
                 {selectedBreeder?.logo_url && exportBreederLogoOk ? (
                   <img
@@ -2168,8 +2168,8 @@ export default function ManualInventoryPage() {
                     onError={() => setExportBreederLogoOk(false)}
                   />
                 ) : (
-                  <div className="mr-2 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-emerald-100">
-                    <Sprout className="h-5 w-5 text-emerald-700" aria-hidden />
+                  <div className="mr-2 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-accent">
+                    <Sprout className="h-5 w-5 text-primary" aria-hidden />
                   </div>
                 )}
                 <span className="text-xs text-zinc-500">{selectedBreeder?.name ?? "Price List"}</span>
@@ -2177,34 +2177,34 @@ export default function ManualInventoryPage() {
             </div>
             <div className="flex w-16 flex-shrink-0 justify-end">
               {qrDataUrl ? (
-                <img src={qrDataUrl} alt="QR" width={64} height={64} className="rounded-lg border border-emerald-200" />
+                <img src={qrDataUrl} alt="QR" width={64} height={64} className="rounded-lg border border-primary/25" />
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-emerald-200 bg-white text-[10px] text-zinc-400">QR</div>
+                <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-primary/25 bg-white text-[10px] text-zinc-400">QR</div>
               )}
             </div>
           </div>
           <div className="p-6">
         <table className="w-full table-fixed border-collapse text-xs">
           <thead>
-            <tr className="border-b-2 border-emerald-700 bg-emerald-50">
-              <th className="w-[36px] px-1 py-2 text-left font-semibold text-emerald-900">Photo</th>
-              <th className="w-[140px] px-2 py-2 text-left font-semibold text-emerald-900">Strain Name</th>
-              <th className="w-[70px] px-2 py-2 text-left font-semibold text-emerald-900">Category</th>
-              <th className="w-[90px] px-2 py-2 text-left font-semibold text-emerald-900">ประเภทพันธุกรรม</th>
+            <tr className="border-b-2 border-primary bg-accent">
+              <th className="w-[36px] px-1 py-2 text-left font-semibold text-primary">Photo</th>
+              <th className="w-[140px] px-2 py-2 text-left font-semibold text-primary">Strain Name</th>
+              <th className="w-[70px] px-2 py-2 text-left font-semibold text-primary">Category</th>
+              <th className="w-[90px] px-2 py-2 text-left font-semibold text-primary">ประเภทพันธุกรรม</th>
               {packs.map((p) => (
                 <th
                   key={p}
                   colSpan={packSpan}
-                  className={`${showCost ? "w-[120px]" : "w-[80px]"} px-1 py-2 text-center font-semibold text-emerald-900 transition-[width] duration-150`}
+                  className={`${showCost ? "w-[120px]" : "w-[80px]"} px-1 py-2 text-center font-semibold text-primary transition-[width] duration-150`}
                 >
                   {p} {p === 1 ? "Seed" : "Seeds"}
                 </th>
               ))}
             </tr>
-            <tr className="border-b border-emerald-200 bg-emerald-50/50">
+            <tr className="border-b border-primary/25 bg-accent/50">
               <th colSpan={4} className="px-2 py-1" />
               {packs.map((p) => (
-                <th key={p} colSpan={packSpan} className="px-1 py-1 text-center text-[10px] font-normal text-emerald-700">
+                <th key={p} colSpan={packSpan} className="px-1 py-1 text-center text-[10px] font-normal text-primary">
                   {showCost ? "Stock | Cost | Price" : "Stock | Price"}
                 </th>
               ))}
@@ -2230,8 +2230,8 @@ export default function ManualInventoryPage() {
                   </div>
                 </td>
                 <td className="max-w-[140px] break-words px-2 py-2 font-medium text-zinc-900">{row.name}</td>
-                <td className="max-w-[70px] break-words px-2 py-2 text-emerald-800">{(row.productCategory?.name ?? row.category) ?? "—"}</td>
-                <td className="max-w-[90px] break-words px-2 py-2 text-emerald-700">{row.strainDominance || "—"}</td>
+                <td className="max-w-[70px] break-words px-2 py-2 text-primary">{(row.productCategory?.name ?? row.category) ?? "—"}</td>
+                <td className="max-w-[90px] break-words px-2 py-2 text-primary">{row.strainDominance || "—"}</td>
                 {packs.map((packSize) => {
                   const stock = row.byPack?.[packSize]?.stock ?? 0;
                   const cost = row.byPack?.[packSize]?.cost ?? 0;
@@ -2251,7 +2251,7 @@ export default function ManualInventoryPage() {
                             </>
                           )}
                           <span className="text-zinc-400"> | </span>
-                          <span className="font-medium text-emerald-800">{price > 0 ? price.toLocaleString("th-TH") : "—"}</span>
+                          <span className="font-medium text-primary">{price > 0 ? price.toLocaleString("th-TH") : "—"}</span>
                         </>
                       )}
                     </td>
@@ -2262,7 +2262,7 @@ export default function ManualInventoryPage() {
           </tbody>
           {showFooter && exportRows.length > 0 ? (
             <tfoot>
-              <tr className="border-t-2 border-emerald-300 bg-muted/50 font-bold text-xs">
+              <tr className="border-t-2 border-primary/30 bg-muted/50 font-bold text-xs">
                 <td colSpan={4} className="px-2 py-2 align-top">
                   <div className="max-w-[360px] space-y-0.5">
                     <div className="font-bold text-foreground">รวมทั้งหมด (Total)</div>
@@ -2274,7 +2274,7 @@ export default function ManualInventoryPage() {
                         มูลค่าทุนรวม ฿{exportFooterTotals.grandCostValue.toLocaleString("th-TH")}
                       </div>
                     )}
-                    <div className="text-[10px] font-semibold tabular-nums text-emerald-900">
+                    <div className="text-[10px] font-semibold tabular-nums text-primary">
                       มูลค่าขายรวม ฿{exportFooterTotals.grandPriceValue.toLocaleString("th-TH")}
                     </div>
                   </div>
@@ -2283,7 +2283,7 @@ export default function ManualInventoryPage() {
                   <td
                     key={`export-tfoot-${packSize}`}
                     colSpan={packSpan}
-                    className="border-l border-emerald-100 px-1 py-2 text-center tabular-nums text-zinc-800"
+                    className="border-l border-primary/15 px-1 py-2 text-center tabular-nums text-zinc-800"
                   >
                     <span className="font-medium">{exportFooterTotals.perPackStock[packSize] ?? 0}</span>
                     {showCost && (
@@ -2293,7 +2293,7 @@ export default function ManualInventoryPage() {
                       </>
                     )}
                     <span className="text-zinc-400"> | </span>
-                    <span className="font-medium text-emerald-900">
+                    <span className="font-medium text-primary">
                       ฿{(exportFooterTotals.perPackPriceValue[packSize] ?? 0).toLocaleString("th-TH")}
                     </span>
                   </td>
@@ -2304,7 +2304,7 @@ export default function ManualInventoryPage() {
         </table>
         <div className="mt-8 flex items-center justify-between border-t border-zinc-200 pt-6">
           <p className="text-sm text-zinc-600">
-            Contact us at Line: <span className="font-semibold text-emerald-800">{lineId ? (lineId.startsWith("@") ? lineId : `@${lineId}`) : "@smileseedbank"}</span>
+            Contact us at Line: <span className="font-semibold text-primary">{lineId ? (lineId.startsWith("@") ? lineId : `@${lineId}`) : "@smileseedbank"}</span>
           </p>
         </div>
         </div>

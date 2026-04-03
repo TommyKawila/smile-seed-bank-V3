@@ -358,8 +358,8 @@ export default function CreateOrderPage() {
                   className={cn(
                     "shrink-0 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                     breederFilter === "all"
-                      ? "border-emerald-600 bg-emerald-600 text-white"
-                      : "border-zinc-200 bg-white text-zinc-600 hover:border-emerald-300"
+                      ? "border-primary bg-primary text-white"
+                      : "border-zinc-200 bg-white text-zinc-600 hover:border-primary/30"
                   )}
                 >
                   ทั้งหมด
@@ -372,8 +372,8 @@ export default function CreateOrderPage() {
                     className={cn(
                       "shrink-0 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                       breederFilter === String(b.id)
-                        ? "border-emerald-600 bg-emerald-600 text-white"
-                        : "border-zinc-200 bg-white text-zinc-600 hover:border-emerald-300"
+                        ? "border-primary bg-primary text-white"
+                        : "border-zinc-200 bg-white text-zinc-600 hover:border-primary/30"
                     )}
                   >
                     {b.name}
@@ -395,8 +395,8 @@ export default function CreateOrderPage() {
                     className={cn(
                       "flex-1 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                       seedTypeFilter === opt.value
-                        ? "border-emerald-600 bg-emerald-600 text-white"
-                        : "border-zinc-200 bg-white text-zinc-600 hover:border-emerald-300"
+                        ? "border-primary bg-primary text-white"
+                        : "border-zinc-200 bg-white text-zinc-600 hover:border-primary/30"
                     )}
                   >
                     {opt.label}
@@ -419,8 +419,8 @@ export default function CreateOrderPage() {
                     className={cn(
                       "shrink-0 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                       dominanceFilter === opt.value
-                        ? "border-emerald-600 bg-emerald-600 text-white"
-                        : "border-zinc-200 bg-white text-zinc-600 hover:border-emerald-300"
+                        ? "border-primary bg-primary text-white"
+                        : "border-zinc-200 bg-white text-zinc-600 hover:border-primary/30"
                     )}
                   >
                     {opt.label}
@@ -503,16 +503,16 @@ export default function CreateOrderPage() {
                                   breeder_id: (prod as ProductWithBreeder).breeder_id ?? null,
                                 })
                               }
-                              className="flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-emerald-50"
+                              className="flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-accent"
                             >
                               <span className="text-sm text-zinc-700">
                                 {variant.unit_label} · เหลือ {variant.stock}
                               </span>
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-emerald-700">
+                                <span className="text-sm font-semibold text-primary">
                                   {formatPrice(price)}
                                 </span>
-                                <Plus className="h-4 w-4 text-emerald-600" />
+                                <Plus className="h-4 w-4 text-primary" />
                               </div>
                             </button>
                           );
@@ -600,7 +600,7 @@ export default function CreateOrderPage() {
               <div className="space-y-1.5" ref={customerSearchRef}>
                 <Label className="text-xs">เลือกลูกค้า</Label>
                 {selectedCustomer ? (
-                  <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/25 bg-accent px-3 py-2">
                     <div>
                       <p className="text-sm font-medium text-zinc-900">{selectedCustomer.name}</p>
                       <p className="text-xs text-zinc-500">{selectedCustomer.phone}</p>
@@ -752,7 +752,7 @@ export default function CreateOrderPage() {
                             <span className="text-zinc-400 line-through text-xs">
                               {formatPrice(Math.round((item.price * item.quantity) / (1 - wholesaleDiscount / 100)))}
                             </span>
-                            <span className="text-emerald-700 font-semibold">
+                            <span className="text-primary font-semibold">
                               {formatPrice(item.price * item.quantity)}
                             </span>
                           </span>
@@ -805,13 +805,13 @@ export default function CreateOrderPage() {
                 </div>
               </div>
               {promo.code && (
-                <p className="text-xs text-emerald-600">✅ {promo.code.code} — ลด {formatPrice(promo.discountAmount)}</p>
+                <p className="text-xs text-primary">✅ {promo.code.code} — ลด {formatPrice(promo.discountAmount)}</p>
               )}
               {promo.error && <p className="text-xs text-red-500">{promo.error}</p>}
 
               {/* Promotion Alerts */}
               {buyXGetYAlert && (
-                <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700 flex items-center gap-2">
+                <div className="rounded-lg bg-accent px-3 py-2 text-xs text-primary flex items-center gap-2">
                   <Gift className="h-4 w-4 shrink-0" />
                   <span>Freebies Earned: {buyXGetYAlert.name} — ได้รับฟรี {buyXGetYAlert.getQty} ชิ้น</span>
                 </div>
@@ -839,18 +839,18 @@ export default function CreateOrderPage() {
                   <span className="flex items-center gap-1">
                     {formatPrice(summary.subtotal)}
                     {activePromotion && (
-                      <Badge className="bg-emerald-600 text-white text-[10px]">โปรโมชั่น</Badge>
+                      <Badge className="bg-primary text-white text-[10px]">โปรโมชั่น</Badge>
                     )}
                   </span>
                 </div>
                 {summary.tierDiscount > 0 && (
-                  <div className="flex justify-between text-emerald-600">
+                  <div className="flex justify-between text-primary">
                     <span>ส่วนลดโปรโมชั่น {summary.appliedTier ? `(${summary.appliedTier.discount_percentage}%)` : summary.discountPercent > 0 ? `(${summary.discountPercent}%)` : ""}</span>
                     <span>-{formatPrice(summary.tierDiscount)}</span>
                   </div>
                 )}
                 {summary.promoDiscount > 0 && (
-                  <div className="flex justify-between text-emerald-600">
+                  <div className="flex justify-between text-primary">
                     <span>ส่วนลดโค้ด</span>
                     <span>-{formatPrice(summary.promoDiscount)}</span>
                   </div>
@@ -860,7 +860,7 @@ export default function CreateOrderPage() {
                   <span>{summary.shipping === 0 ? "ฟรี" : formatPrice(summary.shipping)}</span>
                 </div>
                 {pointsDiscountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-600">
+                  <div className="flex justify-between text-primary">
                     <span>ส่วนลดคะแนน ({effectivePointsRedeemed} คะแนน)</span>
                     <span>-{formatPrice(pointsDiscountAmount)}</span>
                   </div>
@@ -877,7 +877,7 @@ export default function CreateOrderPage() {
 
               {/* Submit */}
               {submitSuccess && (
-                <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{submitSuccess}</p>
+                <p className="rounded-lg bg-accent px-3 py-2 text-sm text-primary">{submitSuccess}</p>
               )}
               {submitError && (
                 <p className="text-sm text-red-500">{submitError}</p>

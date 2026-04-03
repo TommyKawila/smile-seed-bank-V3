@@ -12,6 +12,7 @@ import {
   isLowStock,
   resolveProductSlugFromName,
 } from "@/lib/product-utils";
+import { stripEmbeddedColorMarkup } from "@/lib/sanitize-product-text";
 import type {
   Product,
   ProductVariant,
@@ -31,7 +32,28 @@ function parseNumericProductIdParam(s: string): number | null {
   return n;
 }
 
+const TEXT_FIELDS_WITH_POSSIBLE_HTML: (keyof Product)[] = [
+  "description_th",
+  "description_en",
+  "genetic_ratio",
+  "lineage",
+  "genetics",
+  "yield_info",
+  "growing_difficulty",
+];
+
+function sanitizeProductTextFields<T extends Product>(row: T): T {
+  for (const key of TEXT_FIELDS_WITH_POSSIBLE_HTML) {
+    const v = row[key];
+    if (typeof v === "string" && v.length > 0) {
+      (row as Record<string, unknown>)[key] = stripEmbeddedColorMarkup(v);
+    }
+  }
+  return row;
+}
+
 function normalizeProductFullRow(data: ProductFull): ProductFull {
+  sanitizeProductTextFields(data);
   const variants = data.product_variants ?? [];
   data.product_variants = variants.filter((v) => v.is_active);
   return data;
@@ -60,7 +82,9 @@ export async function getActiveProducts(opts?: {
     const { data, error } = await query;
 
     if (error) return { data: null, error: error.message };
-    return { data: data as ProductWithBreeder[], error: null };
+    const rows = data as ProductWithBreeder[];
+    for (const row of rows) sanitizeProductTextFields(row);
+    return { data: rows, error: null };
   } catch (err) {
     logger.error("product-service.getActiveProducts failed", {
       cause: err,
@@ -235,18 +259,22 @@ export async function createProductWithVariants(
 
     const productId = (newProduct as { id: number }).id;
 
-    // Step 2: Insert child variants
+    // Step 2: Insert child variants (optional — draft products may have none)
     const variantRows = variants.map((v) => ({ ...v, product_id: productId }));
-    const { data: insertedVariants, error: variantError } = await db
-      .from("product_variants")
-      .insert(variantRows)
-      .select();
+    let insertedVariants: ProductVariant[] = [];
+    if (variantRows.length > 0) {
+      const { data: ins, error: variantError } = await db
+        .from("product_variants")
+        .insert(variantRows)
+        .select();
 
-    if (variantError) return { data: null, error: variantError.message };
+      if (variantError) return { data: null, error: variantError.message };
+      insertedVariants = (ins ?? []) as ProductVariant[];
+    }
 
     // Step 3: Recalculate and sync price & stock onto parent product
-    const startingPrice = computeStartingPrice(insertedVariants as ProductVariant[]);
-    const totalStock = computeTotalStock(insertedVariants as ProductVariant[]);
+    const startingPrice = computeStartingPrice(insertedVariants);
+    const totalStock = computeTotalStock(insertedVariants);
 
     await db
       .from("products")

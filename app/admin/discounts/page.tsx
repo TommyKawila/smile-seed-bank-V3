@@ -249,7 +249,7 @@ export default function AdminDiscountsPage() {
                         <TableCell>{row.min_spend != null ? row.min_spend.toLocaleString("th-TH") : "—"}</TableCell>
                         <TableCell className="text-center text-zinc-500">{row.used_count}</TableCell>
                         <TableCell className="text-center">
-                          <span className={row.is_active ? "text-emerald-600 font-medium" : "text-zinc-400"}>
+                          <span className={row.is_active ? "text-primary font-medium" : "text-zinc-400"}>
                             {row.is_active ? "เปิด" : "ปิด"}
                           </span>
                         </TableCell>

@@ -18,43 +18,39 @@ const config: Config = {
     },
     extend: {
       colors: {
-        // Sage Green — Primary Brand Color
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#15803d", // emerald-700
-          dark: "#065f46",    // emerald-800
-          light: "#d1fae5",   // emerald-100
-          foreground: "#ffffff",
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
-        // Zinc — Neutral & Text
-        background: "#ffffff",
-        foreground: "#18181b",  // zinc-900
-        muted: {
-          DEFAULT: "#f4f4f5",   // zinc-100
-          foreground: "#71717a", // zinc-500
-        },
-        card: {
-          DEFAULT: "#fafafa",   // zinc-50
-          foreground: "#27272a", // zinc-800
-        },
-        border: "#e4e4e7",      // zinc-200
-        input: "#e4e4e7",
-        ring: "#15803d",
-        // Shadcn UI mapping
+        sativa: "hsl(var(--sativa))",
         secondary: {
-          DEFAULT: "#f4f4f5",
-          foreground: "#27272a",
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "#ef4444",
-          foreground: "#ffffff",
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "#f0fdf4",   // green-50
-          foreground: "#15803d",
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
-          DEFAULT: "#ffffff",
-          foreground: "#18181b",
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
       },
       borderRadius: {

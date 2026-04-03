@@ -146,7 +146,7 @@ export default function BlogEditPage() {
             <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="กัญชา, ปลูก, Indoor" />
           </div>
           <div className="flex gap-2 pt-4">
-            <Button onClick={handleSave} disabled={saving} className="bg-emerald-700 hover:bg-emerald-800">
+            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90">
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               บันทึก
             </Button>

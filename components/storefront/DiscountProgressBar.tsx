@@ -19,7 +19,7 @@ export function DiscountProgressBar({ subtotal, rules, upsellMessage }: Discount
 
   if (!nextTier) {
     return currentTier ? (
-      <div className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+      <div className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-primary">
         ✓ {t("รับส่วนลด", "You get")} {currentTier.discount_percent}% {t("แล้ว!", "off!")}
       </div>
     ) : null;

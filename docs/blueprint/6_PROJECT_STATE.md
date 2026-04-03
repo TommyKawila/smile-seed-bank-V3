@@ -4,6 +4,24 @@
 
 ---
 
+### UI refactor — storefront / theme (status)
+- **Current status:** **100% Completed (Goddess Tier)** — Premium Eco-Clinical storefront theme, genetic bar polish, and product text sanitization are in place for pre-production.
+- **Key highlights:**
+  - Implemented **Premium Eco-Clinical** theme (**Deep Teal + Lavender**): `app/globals.css` `:root` + `tailwind.config.ts` semantic colors.
+  - **Double Glow** genetic bars in `components/storefront/ProductSpecs.tsx`: **Electric Mint (Sativa)** — `bg-sativa` + `hsl(var(--sativa)/0.4)` glow; **Rich Lavender (Indica)** — `bg-secondary` + `hsl(var(--secondary)/0.5)` glow; z-index layering (Sativa over Indica at the seam).
+  - **`lib/sanitize-product-text.ts`** — strips legacy inline `font` / `color` / color-bearing `style` from product text fields; wired in `services/product-service.ts` (`getProductBySlug`, `getActiveProducts`); public **`GET /api/products/[slug]`** returns the same normalized payload.
+- **Next steps:** Ready for **production deployment** and **testing with real users** (smoke-test checkout, product detail, mobile layouts).
+
+### Inventory flexibility — draft mode (status)
+- **Current status:** **100% Completed (Inventory Flexibility Refactor — Draft Mode)** — save product metadata before commercial fields are ready.
+- **Logic:** `lib/validations/product.ts` — Zod allows **`price: 0`**, **`variants: []`**, and preprocess strips empty pack rows; `ProductSchema` no longer requires `min(1)` variants.
+- **Automation:** **`deriveProductIsActiveForCatalog`** — sets **`products.is_active = false`** when there are no packages or total variant stock is 0, so drafts stay off the storefront; wired in **`POST /api/admin/products`** and **`PATCH /api/admin/products/[id]`**; **`createProductWithVariants`** skips inserting variants when the array is empty; **`PATCH`** skips `insert` when empty.
+- **UI/UX:** **`components/admin/ProductModal.tsx`** — remove last pack row allowed, hint when no variants, label notes draft workflow; partial save for THC/genetics/descriptions without packs/prices.
+
+### Theme (global) — technical reference
+- **Premium Eco-Clinical** — `app/globals.css` `:root` HSL (Deep Forest Teal `--primary`, Rich Lavender `--secondary`, Vibrant Electric Mint `--sativa`, Fresh Mint `--accent`, `--radius` 0.75rem); `tailwind.config.ts` semantic `hsl(var(--*))` incl. `sativa`; legacy `emerald-*` / `violet-*` / `teal-*` replaced with tokens where appropriate in storefront-focused paths.
+- **Storefront product detail** — `ProductSpecs.tsx` genetic bar + `product-detail-client.tsx`: StatCard / SpecRow icons `text-primary`; CBD chip `bg-secondary text-secondary-foreground`.
+
 ## 1. System Overview
 
 A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS, and Automated Accounting. Built for retail and wholesale cannabis seed sales with full Thai localization, loyalty points, and multi-channel order fulfillment.
@@ -13,7 +31,8 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 ## 2. Completed Modules & Features
 
 ### Inventory 2.0
-- **AI Genetic Extractor** — Gemini 1.5 / GPT-4o mini toggle; multimodal image upload for packaging/brochure text extraction; auto-fill product specs (genetics, THC/CBD, Indica/Sativa ratio, effects, flavors)
+- **Admin product draft save** — See **§ Inventory flexibility — draft mode** above (`deriveProductIsActiveForCatalog`, optional variants, `price` ≥ 0).
+- **AI Genetic Extractor** — Gemini 1.5 / OpenAI GPT-4o (default for OpenAI path); multimodal image upload; THC range → max; `cbd_percent` stored as free-form text (`prisma` `String?`); auto-fill genetics, THC/CBD, Indica/Sativa, effects, flavors (`services/ai-extractor.ts`, `ProductModal` CBD text field)
 - **Genetic Mapping** — Strain dominance (Mostly Indica / Mostly Sativa / Hybrid 50/50); filter in Manual Grid, POS, Shop, and Dashboard
 - **Manual Grid** — Bulk editing by Breeder + Category; custom package sizes; auto-SKU generation; inline stock/price; Sync to main catalog; PNG/PDF export; **PDF catalog** (`InventoryPdfDocument.tsx`) — no photo column; 535pt grid (NO 20, NAME 145, CAT 45, GEN 65, PACK 65 = Stk 25 + Price 40 × n packs), mirrored header/data, vertical rules, zebra, category bar full width; **Add Strain** prepends draft row + focus Master SKU; **Sync Selected** batch (sequential `await`, toast progress, local `gridRow` merge, no mid-batch refresh); header/row checkboxes include drafts; **types** — `InventoryRow` / `InventoryPackCell` / `InventoryVariant` in `manual/page.tsx`; toasts on failed category/breeder/grid load; **Grid API** — `breeder_id` OR null-`breeder_id` + `master_sku` prefix; optional `?debug=1`; sync sets `breeder_id` when null
 - **AI Sheet Import** — `/admin/inventory/ai-import`: Google Sheet/CSV → `lib/ai-import-sheet-parse.ts` (Thai headers, จำนวน Pack N / Pack N Price, หมด→0, section rows Photoperiod/Auto) → Master SKU `toBreederPrefix`-name-type; **Import selected → Manual Grid** (`lib/manual-grid-import-handoff.ts`); Firecrawl + Claude → breeder match → images + SEO; see **§7.1**

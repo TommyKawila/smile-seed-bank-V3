@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { updateSiteSettingAction } from "@/app/actions/site-settings";
 
 export type SocialLink = { platform: string; handle: string };
 
@@ -9,9 +10,10 @@ export interface SiteSettings {
   logo_main_url?: string;
   logo_secondary_png_url?: string;
   site_name?: string;
-  hero_bg_mode?: "static_image" | "animated_svg";
+  hero_bg_mode?: "static_image" | "video" | "animated_svg";
   hero_svg_code?: string;
   hero_static_image_url?: string;
+  hero_video_url?: string;
   company_name?: string;
   company_address?: string;
   company_email?: string;
@@ -53,11 +55,10 @@ export function useSiteSettings() {
   }, [fetch_]);
 
   const updateSetting = useCallback(async (key: string, value: string) => {
-    await fetch("/api/admin/settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, value }),
-    });
+    const result = await updateSiteSettingAction(key, value);
+    if (!result.ok) {
+      throw new Error(result.error ?? "Update failed");
+    }
     setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
 

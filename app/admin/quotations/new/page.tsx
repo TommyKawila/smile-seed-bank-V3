@@ -648,7 +648,7 @@ export default function QuotationsNewPage() {
           {customerToasts.map((t) => (
             <div
               key={t.id}
-              className="rounded-xl bg-emerald-700 px-4 py-3 text-sm font-medium text-white shadow-lg"
+              className="rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white shadow-lg"
             >
               {t.msg}
             </div>
@@ -708,7 +708,7 @@ export default function QuotationsNewPage() {
           </CardHeader>
           <CardContent className="max-h-[500px] overflow-y-auto">
             {loading ? (
-              <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
+              <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
             ) : products.length === 0 ? (
               <div className="py-12 text-center text-zinc-500">ไม่พบสินค้า</div>
             ) : (
@@ -799,7 +799,7 @@ export default function QuotationsNewPage() {
                             <li key={String(c.id ?? `${c.phone}-${c.name}`)}>
                               <button
                                 type="button"
-                                className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-emerald-50"
+                                className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-accent"
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => void applyOmniCustomer(c, { successToast: true })}
                               >
@@ -903,7 +903,7 @@ export default function QuotationsNewPage() {
                           <span className="text-[10px] text-red-600">สต็อกหมด</span>
                         )}
                       </div>
-                      <span className="min-w-[4rem] text-right font-medium text-emerald-700">
+                      <span className="min-w-[4rem] text-right font-medium text-primary">
                         ฿{item.subtotal.toLocaleString("th-TH")}
                       </span>
                       <Button variant="ghost" size="sm" className="h-7 w-7 text-red-500 hover:bg-red-50" onClick={() => removeFromDraft(idx)}>×</Button>
@@ -911,7 +911,7 @@ export default function QuotationsNewPage() {
                   ))}
                 </div>
                 <div className="border-t pt-3">
-                  <p className="text-right text-sm">รวมทั้งสิ้น: <span className="font-semibold text-emerald-700 text-lg">฿{grandTotal.toLocaleString("th-TH")}</span></p>
+                  <p className="text-right text-sm">รวมทั้งสิ้น: <span className="font-semibold text-primary text-lg">฿{grandTotal.toLocaleString("th-TH")}</span></p>
                 </div>
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <div className="flex gap-2">

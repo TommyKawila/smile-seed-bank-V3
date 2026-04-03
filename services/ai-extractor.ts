@@ -1,5 +1,10 @@
+import {
+  formatGeneticRatioString,
+  normalizeSativaIndicaPercents,
+} from "@/lib/genetic-percent-utils";
+
 // AI Product Extraction Service
-// Supports: Google Gemini 1.5 Flash | OpenAI GPT-4o-mini
+// Supports: Google Gemini 2.5 Flash | OpenAI GPT-4o
 // Both providers support multimodal input (text + images)
 // Both return the same ExtractedProductData interface
 
@@ -12,10 +17,15 @@ export interface ExtractedProductData {
   category?: string;
   genetics?: string;
   lineage?: string | null;
+  /** Derived display string; prefer sativa_percent + indica_percent from AI. */
   genetic_ratio?: string | null;
+  /** Integers 0–100; sum must be 100 when set (see sanitize). */
+  sativa_percent?: number | null;
+  indica_percent?: number | null;
   strain_dominance?: StrainDominanceValue | null;
   thc_percent?: number | null;
-  cbd_percent?: number | null;
+  /** As in source text, e.g. "< 1%", "0.5", "Trace". */
+  cbd_percent?: string | null;
   indica_ratio?: number | null;
   sativa_ratio?: number | null;
   /** Canonical: autoflower | photoperiod (lowercase) */
@@ -45,12 +55,13 @@ const JSON_SCHEMA = `{
   "category": "Seeds",
   "genetics": "string — short strain type summary e.g. '70% Sativa / 30% Indica', or \"Unknown\"",
   "lineage": "string — parent strains with × symbol e.g. 'OG Kush × White Widow', or \"Unknown\" if not found",
-  "genetic_ratio": "string — ratio like 'Sativa 70% / Indica 30%'. If Hybrid with no specific ratio use 'Sativa 50% / Indica 50%'. NEVER leave empty or just say 'Hybrid'. Use \"Unknown\" only if strain type is truly unidentifiable.",
-  "strain_dominance": "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50" | null — REQUIRED. Infer from genetics, genetic_ratio, or keywords in text/images. Keywords: "Indica Dominant", "Mostly Indica", "Indica-leaning" → "Mostly Indica"; "Sativa Dominant", "Mostly Sativa", "Sativa-leaning" → "Mostly Sativa"; "50/50", "Hybrid", "Balanced", "Indica/Sativa" → "Hybrid 50/50". Use null only if truly unidentifiable.",
-  "thc_percent": number | null (0-100, numbers only. Use null if not found — do NOT use \"Unknown\" for this field),
-  "cbd_percent": number | null (0-100. Use null if not found),
-  "indica_ratio": number | null (0-100 integer. Use null if not found),
-  "sativa_ratio": number | null (0-100 integer, typically 100-indica_ratio. Use null if not found),
+  "sativa_percent": number | null — integer 0–100. With indica_percent, the two MUST sum to 100. Example: text says \"Sativa 70%\" → sativa_percent: 70, indica_percent: 30. If only one side is stated (e.g. \"80% Indica\"), set that number and compute the other so the sum is 100. If no ratio can be inferred, set BOTH to null.",
+  "indica_percent": number | null — integer 0–100. Must pair with sativa_percent so sativa_percent + indica_percent === 100 when either is non-null.",
+  "strain_dominance": "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50" | null — REQUIRED. Infer from genetics, sativa_percent/indica_percent, or keywords in text/images. Keywords: "Indica Dominant", "Mostly Indica", "Indica-leaning" → "Mostly Indica"; "Sativa Dominant", "Mostly Sativa", "Sativa-leaning" → "Mostly Sativa"; "50/50", "Hybrid", "Balanced", "Indica/Sativa" → "Hybrid 50/50". Use null only if truly unidentifiable.",
+  "thc_percent": number | null — single numeric percent 0–100. If a RANGE appears (e.g. \"18-22%\", \"20–25%\", \"Up to 25%\", \"max 30%\"), output only the MAXIMUM value as a number. Use null if not found — do NOT use \"Unknown\" for this field,
+  "cbd_percent": string | null — copy the label from the text when it uses symbols or words (e.g. \"< 1%\", \"<1\", \"Trace\", \"0.5%\"). If only a plain number is given, output it as in the source (with or without \"%\"). Use null if not found,
+  "indica_ratio": number | null (0-100 integer — legacy mirror of indica_percent; omit or set equal to indica_percent when using new fields),
+  "sativa_ratio": number | null (0-100 integer — legacy mirror of sativa_percent),
   "flowering_type": "autoflower" | "photoperiod" | null — photoperiod = depends on light schedule; autoflower = ruderalis-type automatic flowering,
   "seed_type": "FEMINIZED" | "REGULAR" | null,
   "sex_type": "feminized" | "regular" | null — NEVER put \"Autoflower\" here; autoflowering belongs in flowering_type only,
@@ -69,14 +80,16 @@ You will receive raw text and/or images of cannabis seed packaging, brochures, o
 Read ALL visible text in the images carefully — prioritize English text.
 
 EXTRACTION RULES:
-1. FALLBACK: For any string field where data cannot be found or reasonably inferred, output the exact string "Unknown". For number fields (thc_percent, cbd_percent, indica_ratio, sativa_ratio) that cannot be found, output null.
-2. STRAIN_DOMINANCE: Look for keywords like "Mostly Indica", "Indica Dominant", "Indica-leaning", "Sativa Dominant", "Mostly Sativa", "50/50 Hybrid", "Balanced Hybrid". Map to exactly one of: "Mostly Indica", "Mostly Sativa", or "Hybrid 50/50". Use genetic_ratio (e.g. Indica 70%+ → Mostly Indica, Sativa 70%+ → Mostly Sativa, ~50/50 → Hybrid 50/50) if no explicit keywords.
-3. GENETIC RATIO: Always output a specific ratio like "Sativa 70% / Indica 30%". If the strain is identified as a Hybrid but no specific ratio is stated, you MUST output "Sativa 50% / Indica 50%". NEVER output just "Hybrid" alone.
+1. FALLBACK: For any string field where data cannot be found or reasonably inferred, output the exact string "Unknown". For number fields (thc_percent, sativa_percent, indica_percent) that cannot be found, output null. For cbd_percent, output null if not found (never \"Unknown\").
+2. STRAIN_DOMINANCE: Look for keywords like "Mostly Indica", "Indica Dominant", "Indica-leaning", "Sativa Dominant", "Mostly Sativa", "50/50 Hybrid", "Balanced Hybrid". Map to exactly one of: "Mostly Indica", "Mostly Sativa", or "Hybrid 50/50". Use sativa_percent/indica_percent (e.g. Indica ≥60% → Mostly Indica, Sativa ≥60% → Mostly Sativa, ~50/50 → Hybrid 50/50) if no explicit keywords.
+3. GENETIC PERCENTAGES (sativa_percent & indica_percent): Output two integers 0–100 only. They MUST sum to 100 whenever either is non-null. If the text says "Sativa 70%", set sativa_percent: 70 and indica_percent: 30. If only "80% Indica" is stated, set indica_percent: 80 and sativa_percent: 20. If a balanced hybrid with no numbers, use 50 and 50. If genetics cannot be determined at all, set BOTH to null. Do NOT output a separate genetic_ratio string — use only these two numeric keys.
 4. LINEAGE: Use the × symbol between parent strains. Identify Father × Mother if mentioned.
 5. TERPENES: Infer terpene names from flavor/aroma descriptions if not explicitly listed (e.g. citrus/lemon → Limonene, earthy/musky → Myrcene, spicy/pepper → Caryophyllene, pine → Pinene, floral → Linalool).
 6. DESCRIPTION (ENGLISH): Write a rich narrative of 5-8 sentences synthesizing: strain character, lineage heritage, THC/CBD potency, effects experience, flavor/aroma profile, growing traits, and recommended use cases. Tone: premium cannabis seed bank catalog.
 7. DESCRIPTION (THAI): Translate the English description into natural, fluent Thai. Write as if a native Thai speaker composed it — not a word-for-word translation.
-8. FLOWERING_TYPE vs SEX_TYPE (critical):
+8. THC POTENCY: If the label gives a range (e.g. 18–22%, 20-25%), always output the highest number only. Phrases like \"Up to X%\" / \"max X%\" / \"under X%\" → use X as thc_percent (single number).
+9. CBD POTENCY: Preserve symbols and wording from the label (e.g. \"< 1%\") in cbd_percent as a string; do not convert to a number if the source uses < or text like Trace.
+10. FLOWERING_TYPE vs SEX_TYPE (critical):
    - Keywords \"Auto\", \"Autoflow\", \"Autoflowering\", \"Ruderalis\", \"Fast Buds Auto\" → flowering_type MUST be \"autoflower\" (not sex_type).
    - Keywords \"Feminized\", \"Fem\", \"Female seeds\" → sex_type \"feminized\".
    - Keywords \"Regular\", \"Reg\", \"non-feminized\" → sex_type \"regular\".
@@ -85,9 +98,108 @@ EXTRACTION RULES:
    - Output lowercase exactly: flowering_type in autoflower|photoperiod|null; sex_type in feminized|regular|null.
 
 Return ONLY a valid JSON object (no markdown, no code fences, no explanation) matching this schema:
-${JSON_SCHEMA}`;
+${JSON_SCHEMA}
 
-// ─── Gemini 1.5 Flash (Multimodal) ───────────────────────────────────────────
+IMPORTANT: You must return the output as a RAW JSON object ONLY. Do not include markdown formatting, do not include \`\`\`json tags, and do not include any explanatory text. Just the JSON.
+
+JSON FORMATTING: Ensure all string values are properly escaped for JSON. Specifically, do not include literal newlines within string values; use '\\n' instead. If the text is long, summarize it to ensure the JSON object is complete and valid.`;
+
+/** Remove markdown ``` / ```json fences so JSON.parse succeeds when the model wraps output. */
+function sanitizeAiJsonText(raw: string): string {
+  return raw
+    .trim()
+    .replace(/^```(?:json)?\s*\n?/i, "")
+    .replace(/\s*```\s*$/, "")
+    .trim();
+}
+
+/** Replace raw line breaks inside JSON string literals with escaped \\n (fixes unterminated string errors). */
+function escapeIllegalNewlinesInJsonStrings(input: string): string {
+  let out = "";
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < input.length; i++) {
+    const c = input[i];
+    if (escape) {
+      out += c;
+      escape = false;
+      continue;
+    }
+    if (c === "\\") {
+      out += c;
+      escape = true;
+      continue;
+    }
+    if (c === '"') {
+      inString = !inString;
+      out += c;
+      continue;
+    }
+    if (inString && (c === "\n" || c === "\r")) {
+      if (c === "\r" && input[i + 1] === "\n") i++;
+      out += "\\n";
+      continue;
+    }
+    out += c;
+  }
+  return out;
+}
+
+/** If net `{` braces are unclosed (outside strings), append closing `}` (basic truncation repair). */
+function appendMissingClosingBraces(input: string): string {
+  let balance = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < input.length; i++) {
+    const c = input[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (c === "\\") {
+      escape = true;
+      continue;
+    }
+    if (c === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (c === "{") balance++;
+    else if (c === "}") balance--;
+  }
+  if (balance > 0) return input + "}".repeat(balance);
+  return input;
+}
+
+function parseAiJsonResponse(raw: string): ExtractedProductData {
+  let s = sanitizeAiJsonText(raw);
+  if (!s) {
+    throw new Error(
+      "AI returned empty content after removing markdown code fences — expected a JSON object"
+    );
+  }
+  s = escapeIllegalNewlinesInJsonStrings(s).trim();
+
+  const tryParse = (t: string): ExtractedProductData =>
+    JSON.parse(t) as ExtractedProductData;
+
+  try {
+    return tryParse(s);
+  } catch {
+    // fall through
+  }
+
+  const withBraces = appendMissingClosingBraces(s);
+  try {
+    return tryParse(withBraces);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`AI JSON parse failed after newline + brace repair: ${msg}`);
+  }
+}
+
+// ─── Gemini 2.5 Flash (Multimodal) — stable v1 REST (prompt-based JSON, no responseMimeType) ─
 
 async function extractWithGemini(
   text: string,
@@ -96,7 +208,7 @@ async function extractWithGemini(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return { data: null, error: "GEMINI_API_KEY ไม่ได้ตั้งค่าใน .env.local" };
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   // Build parts array: text first, then images as inlineData
   const parts: object[] = [
@@ -122,15 +234,26 @@ async function extractWithGemini(
       contents: [{ parts }],
       generationConfig: {
         temperature: 0.3,
-        maxOutputTokens: 2048,
-        responseMimeType: "application/json",
+        maxOutputTokens: 4096,
       },
     }),
   });
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Gemini ${res.status}: ${body.slice(0, 200)}`);
+    const bodyText = await res.text();
+    let detail = bodyText.slice(0, 500);
+    try {
+      const j = JSON.parse(bodyText) as { error?: { message?: string; status?: string } };
+      const msg = j?.error?.message ?? j?.error?.status;
+      if (msg) detail = `${msg} (${res.status})`;
+    } catch {
+      detail = `${res.status} ${detail}`;
+    }
+    console.error(
+      "[Gemini API] Request failed — check model name, API key, and billing. Details:",
+      detail
+    );
+    throw new Error(`Gemini ${res.status}: ${detail.slice(0, 240)}`);
   }
 
   const result = await res.json();
@@ -138,10 +261,11 @@ async function extractWithGemini(
     result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!rawJson) throw new Error("Gemini ไม่ส่งผลลัพธ์กลับมา");
-  return { data: JSON.parse(rawJson) as ExtractedProductData, error: null };
+
+  return { data: parseAiJsonResponse(rawJson), error: null };
 }
 
-// ─── OpenAI GPT-4o-mini (Multimodal Vision) ───────────────────────────────────
+// ─── OpenAI GPT-4o (Multimodal Vision) ────────────────────────────────────────
 
 async function extractWithOpenAI(
   text: string,
@@ -172,7 +296,7 @@ async function extractWithOpenAI(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       temperature: 0.2,
       response_format: { type: "json_object" },
       messages: [
@@ -191,7 +315,7 @@ async function extractWithOpenAI(
   const rawJson: string | undefined = result?.choices?.[0]?.message?.content;
 
   if (!rawJson) throw new Error("OpenAI ไม่ส่งผลลัพธ์กลับมา");
-  return { data: JSON.parse(rawJson) as ExtractedProductData, error: null };
+  return { data: parseAiJsonResponse(rawJson), error: null };
 }
 
 // ─── Map AI strain_dominance to our 3 standard values ──────────────────────────
@@ -239,6 +363,29 @@ function normalizeSexFromAi(
   return null;
 }
 
+function parseThcMax(v: unknown): number | null {
+  if (v == null || v === "Unknown" || v === "") return null;
+  if (typeof v === "number" && Number.isFinite(v)) {
+    return Math.min(100, Math.max(0, v));
+  }
+  const s = String(v).trim();
+  if (!s || s === "Unknown") return null;
+  const nums = s.match(/\d+(?:\.\d+)?/g);
+  if (!nums?.length) return null;
+  const vals = nums.map((x) => parseFloat(x)).filter((n) => Number.isFinite(n));
+  if (!vals.length) return null;
+  const max = Math.max(...vals);
+  return Math.min(100, Math.max(0, max));
+}
+
+function sanitizeCbd(v: unknown): string | null {
+  if (v == null || v === "Unknown" || v === "") return null;
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  const s = String(v).trim();
+  if (!s || s === "Unknown") return null;
+  return s;
+}
+
 function sanitize(data: ExtractedProductData): ExtractedProductData {
   const clampNum = (v: unknown): number | null => {
     if (v == null || v === "Unknown" || v === "") return null;
@@ -246,18 +393,36 @@ function sanitize(data: ExtractedProductData): ExtractedProductData {
     if (isNaN(n)) return null;
     return Math.min(100, Math.max(0, n));
   };
-  const sd = mapStrainDominance(data.strain_dominance) ?? (data.indica_ratio != null && data.sativa_ratio != null
-    ? (data.indica_ratio >= 60 ? "Mostly Indica" : data.sativa_ratio >= 60 ? "Mostly Sativa" : "Hybrid 50/50")
-    : mapStrainDominance(data.genetic_ratio) ?? mapStrainDominance(data.genetics));
+  const sp0 = data.sativa_percent ?? data.sativa_ratio;
+  const ip0 = data.indica_percent ?? data.indica_ratio;
+  const { sativa_percent: satP, indica_percent: indP } = normalizeSativaIndicaPercents(
+    sp0,
+    ip0
+  );
+  const sd =
+    mapStrainDominance(data.strain_dominance) ??
+    (satP != null && indP != null
+      ? indP >= 60
+        ? "Mostly Indica"
+        : satP >= 60
+          ? "Mostly Sativa"
+          : "Hybrid 50/50"
+      : mapStrainDominance(data.genetic_ratio) ?? mapStrainDominance(data.genetics));
   const flowering_type = normalizeFloweringFromAi(data);
   const sex_type = normalizeSexFromAi(data, flowering_type);
+  const genetic_ratio =
+    satP != null && indP != null ? formatGeneticRatioString(satP, indP) : data.genetic_ratio ?? null;
+
   return {
     ...data,
     strain_dominance: sd,
-    thc_percent: clampNum(data.thc_percent),
-    cbd_percent: clampNum(data.cbd_percent),
-    indica_ratio: clampNum(data.indica_ratio),
-    sativa_ratio: clampNum(data.sativa_ratio),
+    sativa_percent: satP,
+    indica_percent: indP,
+    genetic_ratio,
+    thc_percent: parseThcMax(data.thc_percent),
+    cbd_percent: sanitizeCbd(data.cbd_percent),
+    indica_ratio: indP,
+    sativa_ratio: satP,
     flowering_type,
     sex_type,
   };

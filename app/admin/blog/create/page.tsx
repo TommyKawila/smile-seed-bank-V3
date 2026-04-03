@@ -247,7 +247,7 @@ export default function BlogCreatePage() {
         <Button
           onClick={onSubmit}
           disabled={form.formState.isSubmitting}
-          className="bg-emerald-700 hover:bg-emerald-800"
+          className="bg-primary hover:bg-primary/90"
         >
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           บันทึก
@@ -454,7 +454,7 @@ export default function BlogCreatePage() {
                       >
                         <span>{prod.name} — {v.unit_label}</span>
                         {relatedProducts.includes(v.id) && (
-                          <span className="text-xs text-emerald-600">✓ เลือกแล้ว</span>
+                          <span className="text-xs text-primary">✓ เลือกแล้ว</span>
                         )}
                       </button>
                     ))

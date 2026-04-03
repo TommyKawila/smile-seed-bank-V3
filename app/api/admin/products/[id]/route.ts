@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { ProductSchema } from "@/lib/validations/product";
+import {
+  ProductSchema,
+  deriveProductIsActiveForCatalog,
+} from "@/lib/validations/product";
 import {
   computeStartingPrice,
   computeTotalStock,
@@ -31,6 +34,11 @@ export async function PATCH(
 
     const { variants, ...productData } = parsed.data;
 
+    const isActive = deriveProductIsActiveForCatalog(
+      variants,
+      productData.is_active
+    );
+
     const baseSlug = resolveProductSlugFromName(
       productData.name,
       productData.slug
@@ -39,7 +47,7 @@ export async function PATCH(
 
     // Sanitize: undefined optional → null
     const sanitized = Object.fromEntries(
-      Object.entries({ ...productData, slug }).map(([k, v]) => [
+      Object.entries({ ...productData, slug, is_active: isActive }).map(([k, v]) => [
         k,
         v === undefined ? null : v,
       ])
@@ -71,18 +79,22 @@ export async function PATCH(
     }
 
     const variantRows = variants.map((v) => ({ ...v, product_id: productId }));
-    const { data: insertedVariants, error: variantError } = await db
-      .from("product_variants")
-      .insert(variantRows)
-      .select();
+    let insertedVariants: ProductVariant[] = [];
+    if (variantRows.length > 0) {
+      const { data: ins, error: variantError } = await db
+        .from("product_variants")
+        .insert(variantRows)
+        .select();
 
-    if (variantError) {
-      return NextResponse.json({ error: variantError.message }, { status: 500 });
+      if (variantError) {
+        return NextResponse.json({ error: variantError.message }, { status: 500 });
+      }
+      insertedVariants = (ins ?? []) as ProductVariant[];
     }
 
     // ── 3. Sync price & stock on parent ───────────────────────────────────────
-    const startingPrice = computeStartingPrice(insertedVariants as ProductVariant[]);
-    const totalStock = computeTotalStock(insertedVariants as ProductVariant[]);
+    const startingPrice = computeStartingPrice(insertedVariants);
+    const totalStock = computeTotalStock(insertedVariants);
 
     await db
       .from("products")

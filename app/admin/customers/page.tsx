@@ -279,7 +279,7 @@ export default function CustomersPage() {
                           c.tier === "VIP"
                             ? "border-amber-300 text-amber-700"
                             : c.tier === "Wholesale"
-                              ? "border-emerald-300 text-emerald-700"
+                              ? "border-primary/30 text-primary"
                               : ""
                         }
                       >
@@ -294,7 +294,7 @@ export default function CustomersPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-zinc-500 hover:text-emerald-700"
+                        className="h-8 w-8 text-zinc-500 hover:text-primary"
                         onClick={() => openEdit(c)}
                       >
                         <Pencil className="h-4 w-4" />

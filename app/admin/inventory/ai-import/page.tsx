@@ -187,7 +187,7 @@ function statusBadge(status: RowStatus) {
     idle: { label: "Ready", className: "bg-zinc-100 text-zinc-700 border-zinc-200" },
     queued: { label: "Queued", className: "bg-amber-50 text-amber-800 border-amber-200" },
     running: { label: "Importing…", className: "bg-sky-50 text-sky-800 border-sky-200" },
-    done: { label: "Done", className: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+    done: { label: "Done", className: "bg-accent text-primary border-primary/25" },
     error: { label: "Error", className: "bg-red-50 text-red-800 border-red-200" },
     skipped: { label: "Skipped", className: "bg-zinc-50 text-zinc-500 border-zinc-200" },
   };
@@ -572,12 +572,12 @@ export default function AiImportPage() {
         <div>
           <Link
             href="/admin/inventory"
-            className="mb-2 inline-flex items-center gap-1 text-sm text-emerald-700 hover:underline"
+            className="mb-2 inline-flex items-center gap-1 text-sm text-primary hover:underline"
           >
             <ArrowLeft className="h-4 w-4" /> สต็อก / Inventory
           </Link>
           <h1 className="flex items-center gap-2 text-2xl font-semibold text-zinc-900">
-            <Sparkles className="h-7 w-7 text-emerald-600" />
+            <Sparkles className="h-7 w-7 text-primary" />
             AI Product Import
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
@@ -586,7 +586,7 @@ export default function AiImportPage() {
         </div>
       </div>
 
-      <Card className="border-emerald-100">
+      <Card className="border-primary/15">
         <CardHeader>
           <CardTitle className="text-lg">1. Load sheet</CardTitle>
           <CardDescription>
@@ -609,7 +609,7 @@ export default function AiImportPage() {
                 type="button"
                 onClick={handleFetchSheet}
                 disabled={fetching}
-                className="bg-emerald-700 text-white hover:bg-emerald-800"
+                className="bg-primary text-white hover:bg-primary/90"
               >
                 {fetching ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -665,7 +665,7 @@ export default function AiImportPage() {
               <Button
                 type="button"
                 variant="secondary"
-                className="border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+                className="border-primary/25 bg-accent text-primary hover:bg-accent"
                 disabled={manualImportCandidates.length === 0}
                 onClick={sendSelectedToManualGrid}
               >
@@ -694,7 +694,7 @@ export default function AiImportPage() {
                 type="button"
                 onClick={startBulkImport}
                 disabled={bulkRunning || importableRows.length === 0}
-                className="bg-emerald-700 text-white hover:bg-emerald-800"
+                className="bg-primary text-white hover:bg-primary/90"
               >
                 {bulkRunning ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -728,7 +728,7 @@ export default function AiImportPage() {
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
                 <div
-                  className="h-full rounded-full bg-emerald-600 transition-[width] duration-300"
+                  className="h-full rounded-full bg-primary transition-[width] duration-300"
                   style={{
                     width:
                       progress.total > 0
@@ -849,7 +849,7 @@ export default function AiImportPage() {
                               title="Review extracted data"
                               onClick={() => openReview(row)}
                             >
-                              <Eye className="h-4 w-4 text-emerald-700" />
+                              <Eye className="h-4 w-4 text-primary" />
                             </Button>
                           )}
                         </div>
@@ -909,8 +909,8 @@ export default function AiImportPage() {
                   {review.result.extracted.description_th?.trim() || "—"}
                 </p>
               </div>
-              <div className="space-y-3 rounded-md border border-emerald-100 bg-emerald-50/40 p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">
+              <div className="space-y-3 rounded-md border border-primary/15 bg-accent/60 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
                   SEO preview (Google-style)
                 </p>
                 <p className="text-[11px] text-zinc-600">

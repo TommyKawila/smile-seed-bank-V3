@@ -69,10 +69,13 @@ export interface Product {
   video_url: string | null;
   // AI Extracted Specs
   thc_percent: number | null;
-  cbd_percent: number | null;
+  cbd_percent: string | null;
   genetics: string | null;
   indica_ratio: number | null;
   sativa_ratio: number | null;
+  /** Integer 0–100; pair with indica_percent (sum 100). */
+  sativa_percent?: number | null;
+  indica_percent?: number | null;
   strain_dominance: string | null;  // Mostly Indica | Mostly Sativa | Hybrid 50/50
   flowering_type: FloweringType | null;
   seed_type: SeedType | null;

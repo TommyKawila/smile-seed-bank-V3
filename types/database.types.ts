@@ -631,7 +631,7 @@ export type Database = {
           breeder_id: number | null
           category: string | null
           category_id: number | null
-          cbd_percent: number | null
+          cbd_percent: string | null
           created_at: string | null
           description_en: string | null
           description_th: string | null
@@ -671,7 +671,7 @@ export type Database = {
           breeder_id?: number | null
           category?: string | null
           category_id?: number | null
-          cbd_percent?: number | null
+          cbd_percent?: string | null
           created_at?: string | null
           description_en?: string | null
           description_th?: string | null
@@ -711,7 +711,7 @@ export type Database = {
           breeder_id?: number | null
           category?: string | null
           category_id?: number | null
-          cbd_percent?: number | null
+          cbd_percent?: string | null
           created_at?: string | null
           description_en?: string | null
           description_th?: string | null
@@ -769,7 +769,7 @@ export type Database = {
           breeder_id: number | null
           category: string | null
           category_id: number | null
-          cbd_percent: number | null
+          cbd_percent: string | null
           created_at: string | null
           description_en: string | null
           description_th: string | null
@@ -808,7 +808,7 @@ export type Database = {
           breeder_id?: number | null
           category?: string | null
           category_id?: number | null
-          cbd_percent?: number | null
+          cbd_percent?: string | null
           created_at?: string | null
           description_en?: string | null
           description_th?: string | null
@@ -847,7 +847,7 @@ export type Database = {
           breeder_id?: number | null
           category?: string | null
           category_id?: number | null
-          cbd_percent?: number | null
+          cbd_percent?: string | null
           created_at?: string | null
           description_en?: string | null
           description_th?: string | null

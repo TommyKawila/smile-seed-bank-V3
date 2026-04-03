@@ -33,7 +33,7 @@ function ToastStack({ toasts, onDismiss }: { toasts: ToastMsg[]; onDismiss: (id:
       {toasts.map((t) => (
         <button key={t.id} type="button" onClick={() => onDismiss(t.id)}
           className={cn("flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-lg",
-            t.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white")}>
+            t.type === "success" ? "bg-primary text-white" : "bg-red-600 text-white")}>
           {t.type === "success" ? <BadgeCheck className="h-4 w-4 shrink-0" /> : <X className="h-4 w-4 shrink-0" />}
           {t.msg}
         </button>
@@ -72,7 +72,7 @@ type OrderRow = {
 const STATUS_CONFIG: Record<string, { label: string; labelEn: string; icon: React.ComponentType<{className?:string}>; cls: string }> = {
   PENDING:  { label: "รอดำเนินการ",  labelEn: "Pending",   icon: Clock,         cls: "bg-amber-100 text-amber-700" },
   PAID:     { label: "ชำระแล้ว",     labelEn: "Paid",      icon: CheckCircle2,  cls: "bg-blue-100 text-blue-700" },
-  SHIPPED:  { label: "จัดส่งแล้ว",   labelEn: "Shipped",   icon: Truck,         cls: "bg-emerald-100 text-emerald-700" },
+  SHIPPED:  { label: "จัดส่งแล้ว",   labelEn: "Shipped",   icon: Truck,         cls: "bg-accent text-primary" },
   CANCELLED:{ label: "ยกเลิก",       labelEn: "Cancelled", icon: XCircle,       cls: "bg-red-100 text-red-600" },
 };
 
@@ -352,18 +352,18 @@ function ProfileContent() {
 
                           {/* Tracking */}
                           {order.tracking_number && (
-                            <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
-                              <Truck className="h-4 w-4 shrink-0 text-emerald-600" />
+                            <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-primary/15 bg-accent px-3 py-2">
+                              <Truck className="h-4 w-4 shrink-0 text-primary" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">{t("เลขพัสดุ", "Tracking")}</p>
-                                <p className="font-mono text-sm font-bold text-emerald-900">{order.tracking_number}</p>
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">{t("เลขพัสดุ", "Tracking")}</p>
+                                <p className="font-mono text-sm font-bold text-primary">{order.tracking_number}</p>
                               </div>
                               <span
                                 role="button"
                                 tabIndex={0}
                                 onClick={(e) => { e.stopPropagation(); copyTracking(order.tracking_number!); }}
                                 onKeyDown={(e) => e.key === "Enter" && copyTracking(order.tracking_number!)}
-                                className="text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                                className="text-primary hover:text-primary cursor-pointer"
                               >
                                 {copied === order.tracking_number ? (
                                   <Check className="h-4 w-4" />
@@ -524,7 +524,7 @@ function ProfileContent() {
               <div className="p-5">
                 {customer?.line_user_id ? (
                   /* ── Connected state ── */
-                  <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5">
+                  <div className="flex items-center justify-between rounded-xl border border-primary/25 bg-accent px-4 py-3.5">
                     <div className="flex items-center gap-3">
                       {/* Official LINE icon (SVG) */}
                       <span className="flex h-9 w-9 items-center justify-center rounded-xl"
@@ -534,15 +534,15 @@ function ProfileContent() {
                         </svg>
                       </span>
                       <div>
-                        <p className="text-sm font-semibold text-emerald-800">
+                        <p className="text-sm font-semibold text-primary">
                           {t("เชื่อมต่อ LINE แล้ว", "LINE Connected")}
                         </p>
-                        <p className="text-xs text-emerald-600">
+                        <p className="text-xs text-primary">
                           {t("รับแจ้งเตือนการจัดส่งผ่าน LINE", "Shipping alerts active")}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                    <div className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-primary">
                       <Check className="h-3 w-3" />
                       {t("เชื่อมต่อแล้ว", "Active")}
                     </div>

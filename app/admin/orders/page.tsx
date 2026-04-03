@@ -58,7 +58,7 @@ function statusStyle(status: string): string {
   switch (status) {
     case "AWAITING_VERIFICATION": return "bg-amber-100 text-amber-800 border-amber-200";
     case "PAID":
-    case "COMPLETED":             return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    case "COMPLETED":             return "bg-accent text-primary border-primary/25";
     case "SHIPPED":
     case "DELIVERED":             return "bg-blue-100 text-blue-800 border-blue-200";
     case "CANCELLED":             return "bg-red-100 text-red-800 border-red-200";
@@ -103,7 +103,7 @@ function ToastStack({ toasts, onDismiss }: { toasts: ToastMsg[]; onDismiss: (id:
           className={cn(
             "flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-lg",
             t.type === "success"
-              ? "bg-emerald-600 text-white"
+              ? "bg-primary text-white"
               : "bg-red-600 text-white"
           )}
         >
@@ -126,13 +126,13 @@ function SlipThumb({ url, onClick }: { url: string; onClick: () => void }) {
       type="button"
       onClick={onClick}
       title="ดูสลิป"
-      className="mt-3 flex w-full items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-100 active:scale-[.98] transition-all"
+      className="mt-3 flex w-full items-center gap-3 rounded-xl border border-primary/25 bg-accent px-3 py-2 text-sm text-primary hover:bg-accent active:scale-[.98] transition-all"
     >
       {isPdf ? (
-        <FileText className="h-9 w-9 shrink-0 text-emerald-600" />
+        <FileText className="h-9 w-9 shrink-0 text-primary" />
       ) : (
         /* eslint-disable-next-line @next/next/no-img-element */
-        <img src={url} alt="Slip" className="h-9 w-9 shrink-0 rounded-lg object-cover border border-emerald-100" />
+        <img src={url} alt="Slip" className="h-9 w-9 shrink-0 rounded-lg object-cover border border-primary/15" />
       )}
       <span className="font-medium">{isPdf ? "ดูไฟล์ PDF" : "ดูสลิปโอนเงิน"}</span>
       <ImageIcon className="ml-auto h-4 w-4 opacity-60" />
@@ -171,7 +171,7 @@ function OrderCard({
             <button
               type="button"
               onClick={() => onDetailClick(order.id)}
-              className="font-mono text-base font-bold tracking-wide text-emerald-700 hover:text-emerald-800 hover:underline"
+              className="font-mono text-base font-bold tracking-wide text-primary hover:text-primary hover:underline"
             >
               #{order.order_number}
             </button>
@@ -192,12 +192,12 @@ function OrderCard({
             onClick={() => onDetailClick(order.id)}
             className="flex min-w-0 items-center gap-1.5 text-left hover:opacity-80"
           >
-            <User className="h-4 w-4 shrink-0 text-emerald-600" />
+            <User className="h-4 w-4 shrink-0 text-primary" />
             <span className="truncate text-sm text-zinc-700">
               {order.customer_name ?? "ไม่ระบุ"}
             </span>
           </button>
-          <span className="shrink-0 text-base font-bold text-emerald-700">
+          <span className="shrink-0 text-base font-bold text-primary">
             {formatPrice(Number(order.total_amount))}
           </span>
         </div>
@@ -237,7 +237,7 @@ function OrderCard({
           <div className="mt-3 flex gap-2">
             <Button
               size="sm"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-[.97]"
+              className="flex-1 bg-primary hover:bg-primary/90 active:scale-[.97]"
               onClick={() => onApprove(order.id)}
               disabled={busy}
             >
@@ -273,7 +273,7 @@ function OrderCard({
           <div className="mt-3 flex gap-2">
             <Button
               size="sm"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-[.97]"
+              className="flex-1 bg-primary hover:bg-primary/90 active:scale-[.97]"
               onClick={() => onShip(order.id)}
               disabled={busy}
             >
@@ -330,7 +330,7 @@ function OrderTableRow({
         <button
           type="button"
           onClick={() => onDetailClick(order.id)}
-          className="font-mono font-semibold text-emerald-700 hover:text-emerald-800 hover:underline"
+          className="font-mono font-semibold text-primary hover:text-primary hover:underline"
         >
           #{order.order_number}
         </button>
@@ -342,11 +342,11 @@ function OrderTableRow({
           onClick={() => onDetailClick(order.id)}
           className="flex items-center gap-1.5 text-left hover:opacity-80"
         >
-          <User className="h-4 w-4 text-emerald-600" />
+          <User className="h-4 w-4 text-primary" />
           <span className="text-zinc-700">{order.customer_name ?? "—"}</span>
         </button>
       </td>
-      <td className="px-4 py-3 font-bold text-emerald-700">
+      <td className="px-4 py-3 font-bold text-primary">
         {formatPrice(Number(order.total_amount))}
       </td>
       <td className="px-4 py-3">
@@ -367,10 +367,10 @@ function OrderTableRow({
           <button
             type="button"
             onClick={() => onSlipClick(order.slip_url!)}
-            className="group relative overflow-hidden rounded-lg border border-emerald-200 p-0.5 transition hover:border-emerald-400"
+            className="group relative overflow-hidden rounded-lg border border-primary/25 p-0.5 transition hover:border-primary/50"
           >
             {isPdf ? (
-              <FileText className="h-11 w-11 text-emerald-500 p-2" />
+              <FileText className="h-11 w-11 text-primary p-2" />
             ) : (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img src={order.slip_url} alt="Slip" className="h-11 w-11 rounded-md object-cover" />
@@ -385,7 +385,7 @@ function OrderTableRow({
           <div className="flex gap-1.5">
             <Button
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={() => onApprove(order.id)}
               disabled={busy}
             >
@@ -417,7 +417,7 @@ function OrderTableRow({
               {canShip && (
                 <Button
                   size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  className="bg-primary hover:bg-primary/90"
                   onClick={() => onShip(order.id)}
                   disabled={busy}
                 >
@@ -719,7 +719,7 @@ export default function AdminOrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ShoppingCart className="h-6 w-6 text-emerald-700" />
+          <ShoppingCart className="h-6 w-6 text-primary" />
           <h1 className="text-xl font-bold text-zinc-900">ออเดอร์</h1>
           {!isLoading && (
             <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
@@ -730,7 +730,7 @@ export default function AdminOrdersPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/admin/quotations/new"
-            className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+            className="flex items-center gap-1.5 rounded-lg border border-primary/25 bg-accent px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent"
           >
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Convert Quote to Order</span>
@@ -756,7 +756,7 @@ export default function AdminOrdersPage() {
 
       {!isLoading && orders.length > 0 && (
         <p className="text-sm text-zinc-500">
-          รายได้รวม (ชำระแล้ว/จัดส่งแล้ว/เสร็จสิ้น): <span className="font-semibold text-emerald-700">{formatPrice(totalRevenue)}</span>
+          รายได้รวม (ชำระแล้ว/จัดส่งแล้ว/เสร็จสิ้น): <span className="font-semibold text-primary">{formatPrice(totalRevenue)}</span>
         </p>
       )}
 
@@ -773,7 +773,7 @@ export default function AdminOrdersPage() {
               className={cn(
                 "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:rounded-md sm:py-1.5",
                 active
-                  ? "bg-emerald-700 text-white shadow-sm"
+                  ? "bg-primary text-white shadow-sm"
                   : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 sm:bg-transparent"
               )}
             >
@@ -794,7 +794,7 @@ export default function AdminOrdersPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center gap-3 py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-zinc-400">กำลังโหลด...</p>
         </div>
       ) : error ? (
@@ -868,7 +868,7 @@ export default function AdminOrdersPage() {
       <Dialog open={!!detailModal || detailLoading} onOpenChange={(o) => !o && !detailLoading && setDetailModal(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader className="flex flex-row items-center justify-between gap-2 pr-10">
-            <DialogTitle className="flex items-center gap-2 text-emerald-800">
+            <DialogTitle className="flex items-center gap-2 text-primary">
               <ShoppingCart className="h-5 w-5" />
               รายละเอียดออเดอร์
             </DialogTitle>
@@ -887,7 +887,7 @@ export default function AdminOrdersPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  className="border-primary/25 text-primary hover:bg-accent"
                   onClick={handlePrintPackingSlip}
                 >
                   <Printer className="mr-1.5 h-4 w-4" />
@@ -909,12 +909,12 @@ export default function AdminOrdersPage() {
           </DialogHeader>
           {detailLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : detailModal ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2">
-                <span className="font-mono font-bold text-emerald-800">#{detailModal.orderNumber}</span>
+              <div className="flex items-center justify-between rounded-lg bg-accent px-3 py-2">
+                <span className="font-mono font-bold text-primary">#{detailModal.orderNumber}</span>
                 <Badge className={statusStyle(detailModal.status)}>{statusLabel(detailModal.status)}</Badge>
               </div>
               <div>
@@ -929,7 +929,7 @@ export default function AdminOrdersPage() {
                         )}
                         <span className="text-zinc-600"> × {item.quantity}</span>
                       </span>
-                      <span className="shrink-0 font-medium text-emerald-700">{formatPrice(item.totalPrice)}</span>
+                      <span className="shrink-0 font-medium text-primary">{formatPrice(item.totalPrice)}</span>
                     </div>
                   ))}
                   <div className="space-y-1 border-t border-zinc-200 pt-2 text-right text-sm text-zinc-600">
@@ -963,7 +963,7 @@ export default function AdminOrdersPage() {
                         </p>
                       </>
                     )}
-                    <p className="pt-1 text-base font-bold text-emerald-800">
+                    <p className="pt-1 text-base font-bold text-primary">
                       รวมทั้งสิ้น {formatPrice(detailModal.totalAmount)}
                     </p>
                   </div>
@@ -1014,7 +1014,7 @@ export default function AdminOrdersPage() {
                   href={slipModalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-xl border border-emerald-200 py-8 text-emerald-700 hover:bg-emerald-50"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-primary/25 py-8 text-primary hover:bg-accent"
                 >
                   <FileText className="h-10 w-10" />
                   <span className="font-medium">เปิดไฟล์ PDF ในแท็บใหม่</span>
@@ -1098,8 +1098,8 @@ export default function AdminOrdersPage() {
       <Dialog open={!!shipModal} onOpenChange={(o) => !o && setShipModal(null)}>
         <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-emerald-800">
-              <Truck className="h-5 w-5 text-emerald-600" />
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <Truck className="h-5 w-5 text-primary" />
               บันทึกการจัดส่ง
             </DialogTitle>
           </DialogHeader>
@@ -1115,8 +1115,8 @@ export default function AdminOrdersPage() {
                     className={cn(
                       "rounded-md border px-3 py-2.5 text-sm font-medium transition-colors",
                       shipProvider === p.value
-                        ? "border-emerald-600 bg-emerald-600 text-white"
-                        : "border-emerald-200 bg-white text-zinc-700 hover:border-emerald-400 hover:bg-emerald-50"
+                        ? "border-primary bg-primary text-white"
+                        : "border-primary/25 bg-white text-zinc-700 hover:border-primary/50 hover:bg-accent"
                     )}
                   >
                     {p.label}
@@ -1140,7 +1140,7 @@ export default function AdminOrdersPage() {
               ยกเลิก
             </Button>
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={() => void handleShipSubmit()}
               disabled={!shipTracking.trim() || updatingId !== null}
             >

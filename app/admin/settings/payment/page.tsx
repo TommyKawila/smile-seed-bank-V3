@@ -218,7 +218,7 @@ export default function PaymentSettingsPage() {
       </div>
 
       {toast === "success" && (
-        <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 shadow-sm">
+        <div className="rounded-lg bg-accent px-4 py-3 text-sm font-medium text-primary shadow-sm">
           ✅ บันทึกเรียบร้อยแล้ว
         </div>
       )}

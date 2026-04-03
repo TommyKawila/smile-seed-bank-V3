@@ -1,25 +1,11 @@
 import { NextResponse } from "next/server";
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
+import { getSiteSettingsRecordMap, upsertSiteSetting } from "@/services/setting-service";
 
 export async function GET() {
   try {
-    const supabase = await createAdminClient();
-    const { data, error } = await supabase
-      .from("site_settings")
-      .select("key, value");
-
-    if (error) {
-      logger.error("Failed to fetch settings", { cause: error });
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    // Convert rows to { key: value } map
-    const settings = (data ?? []).reduce((acc, row) => {
-      acc[row.key] = row.value;
-      return acc;
-    }, {} as Record<string, string>);
-
+    const settings = await getSiteSettingsRecordMap();
     return NextResponse.json(settings);
   } catch (err) {
     logger.error("Unexpected error in settings GET", { cause: err });
@@ -43,17 +29,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "key and value required" }, { status: 400 });
     }
 
-    const supabase = await createAdminClient();
-    const { error } = await (supabase as any)
-      .from("site_settings")
-      .upsert({ key: body.key, value: body.value }, { onConflict: "key" });
-
-    if (error) {
-      logger.error("Failed to update setting", { 
-        cause: error, 
-        context: { key: body.key } 
+    const result = await upsertSiteSetting(body.key, body.value);
+    if (!result.ok) {
+      logger.error("Failed to update setting", {
+        context: { key: body.key, error: result.error },
       });
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
     logger.info(`Setting updated: ${body.key}`, { context: { user_id: user.id } });

@@ -377,9 +377,9 @@ export function CheckoutPageClient({
                         </p>
                       )}
                       {paymentSettings.map((pm) => (
-                        <Card key={`${pm.source}-${pm.id}`} className="border-emerald-100 bg-white shadow-sm">
+                        <Card key={`${pm.source}-${pm.id}`} className="border-primary/15 bg-white shadow-sm">
                           <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-base text-emerald-900">
+                            <CardTitle className="text-base text-primary">
                               {pm.source === "promptpay"
                                 ? t("พร้อมเพย์", "PromptPay")
                                 : pm.bank_name ?? t("โอนเงินผ่านธนาคาร", "Bank transfer")}
@@ -500,7 +500,7 @@ export function CheckoutPageClient({
                   )}
 
                   {promo.code && (
-                    <div className="flex items-center justify-between gap-2 text-sm text-emerald-600">
+                    <div className="flex items-center justify-between gap-2 text-sm text-primary">
                       <span>โค้ด: {promo.code.code} — {String(promo.code.discount_type || "").toUpperCase() === "PERCENTAGE" ? `ลด ${promo.code.discount_value}%` : `ลด ${formatPrice(promo.code.discount_value)}`}</span>
                       <span className="flex items-center gap-2">
                         -{formatPrice(summary.promoDiscount)}
@@ -517,13 +517,13 @@ export function CheckoutPageClient({
                       <span>{formatPrice(summary.subtotal)}</span>
                     </div>
                     {summary.tierDiscount > 0 && (
-                      <div className="flex justify-between text-emerald-600">
+                      <div className="flex justify-between text-primary">
                         <span>{t(`ส่วนลดขั้นบันได (${summary.discountPercent}%)`, `Tier discount (${summary.discountPercent}%)`)}</span>
                         <span>-{formatPrice(summary.tierDiscount)}</span>
                       </div>
                     )}
                     {summary.promoDiscount > 0 && (
-                      <div className="flex justify-between text-emerald-600">
+                      <div className="flex justify-between text-primary">
                         <span>{t(`ส่วนลดโค้ด (${promo.code?.code ?? ""})`, `Promo (${promo.code?.code ?? ""})`)}</span>
                         <span>-{formatPrice(summary.promoDiscount)}</span>
                       </div>

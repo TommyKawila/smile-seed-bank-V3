@@ -111,7 +111,7 @@ function MetricCard({
 function statusBadgeCls(status: string) {
   const s = (status ?? "").toUpperCase();
   if (["PAID", "COMPLETED", "SHIPPED", "DELIVERED"].includes(s))
-    return "bg-emerald-100 text-emerald-800";
+    return "bg-accent text-primary";
   if (s === "PENDING") return "bg-amber-100 text-amber-800";
   if (s === "CANCELLED" || s === "VOIDED") return "bg-zinc-200 text-zinc-700";
   return "bg-zinc-100 text-zinc-600";
@@ -190,7 +190,7 @@ export default function DashboardPage() {
               key={t.id}
               className={cn(
                 "rounded-xl px-4 py-3 text-sm font-medium shadow-lg",
-                t.type === "success" && "bg-emerald-700 text-white",
+                t.type === "success" && "bg-primary text-white",
                 t.type === "info" && "bg-indigo-700 text-white",
                 t.type === "error" && "bg-red-600 text-white"
               )}
@@ -239,7 +239,7 @@ export default function DashboardPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
       ) : data ? (
         <>
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                   : `ค่าส่ง ${formatPrice(data.metrics.totalShipping)} · ส่วนลด ${formatPrice(data.metrics.totalDiscount)}`
               }
               icon={TrendingUp}
-              accentClass="bg-emerald-600"
+              accentClass="bg-primary"
             />
             <MetricCard
               title="Net Product Sales"
@@ -271,7 +271,7 @@ export default function DashboardPage() {
               value={String(data.metrics.orderCount)}
               sub={isDashboardEmpty ? "ออเดอร์ที่ชำระแล้วจะปรากฏในกราฟและตาราง" : undefined}
               icon={Users}
-              accentClass="bg-emerald-700"
+              accentClass="bg-primary"
             />
             <MetricCard
               title="Conversion"
@@ -283,10 +283,10 @@ export default function DashboardPage() {
           </div>
 
           {isDashboardEmpty && (
-            <Card className="overflow-hidden border-emerald-200/70 bg-gradient-to-br from-emerald-50/90 via-white to-[#003366]/[0.06] shadow-sm">
+            <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-accent/90 via-white to-[#003366]/[0.06] shadow-sm">
               <CardContent className="flex flex-col items-center gap-4 px-6 py-10 text-center sm:py-12">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+                  <div className="rounded-2xl bg-accent p-3 text-primary">
                     <Leaf className="h-7 w-7" />
                   </div>
                   <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">
@@ -305,7 +305,7 @@ export default function DashboardPage() {
                 <Button
                   asChild
                   size="lg"
-                  className="gap-2 rounded-xl bg-emerald-700 px-8 text-white shadow-md hover:bg-emerald-800"
+                  className="gap-2 rounded-xl bg-primary px-8 text-white shadow-md hover:bg-primary/90"
                 >
                   <Link href="/admin/quotations/new">
                     <FilePlus className="h-5 w-5 shrink-0" />
@@ -320,7 +320,7 @@ export default function DashboardPage() {
             <Card className="border-zinc-200/80 lg:col-span-3">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-800">
-                  <BarChart3 className="h-4 w-4 text-emerald-600" />
+                  <BarChart3 className="h-4 w-4 text-primary" />
                   แนวโน้มรายได้ / ค่าส่ง / ส่วนลด
                 </CardTitle>
               </CardHeader>
@@ -430,8 +430,8 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 {isDashboardEmpty || data.recentOrders.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-emerald-200/60 bg-emerald-50/30 px-6 py-10 text-center">
-                    <PackageOpen className="h-10 w-10 text-emerald-600/70" aria-hidden />
+                  <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-primary/25/60 bg-accent/50 px-6 py-10 text-center">
+                    <PackageOpen className="h-10 w-10 text-primary/70" aria-hidden />
                     <p className="max-w-sm text-sm font-medium leading-relaxed text-zinc-700">
                       ยังไม่มีประวัติการสั่งซื้อ เริ่มต้นสร้างความประทับใจให้ลูกค้าคนแรกของคุณเลย!
                     </p>
@@ -466,7 +466,7 @@ export default function DashboardPage() {
                             <td className="py-2.5">
                               <Badge className={cn("text-xs font-normal", statusBadgeCls(o.status))}>{o.status}</Badge>
                             </td>
-                            <td className="py-2.5 text-right font-medium text-emerald-700">{formatPrice(o.totalAmount)}</td>
+                            <td className="py-2.5 text-right font-medium text-primary">{formatPrice(o.totalAmount)}</td>
                             <td className="py-2.5 text-right text-zinc-500">
                               {o.createdAt ? o.createdAt.slice(0, 10) : "—"}
                             </td>

@@ -247,15 +247,15 @@ export default function DailyReportPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm text-zinc-500">ส่วนลดที่ให้</p>
-                    <p className="mt-1 text-lg font-bold text-emerald-600">
+                    <p className="mt-1 text-lg font-bold text-primary">
                       {formatPrice(totalDiscounts)}
                     </p>
                     <p className="mt-0.5 text-xs text-zinc-400">
                       คะแนน {data.pointsRedeemed} pts · {formatPrice(data.pointsDiscountAmount)}
                     </p>
                   </div>
-                  <div className="rounded-xl bg-emerald-100 p-2.5">
-                    <Percent className="h-5 w-5 text-emerald-700" />
+                  <div className="rounded-xl bg-accent p-2.5">
+                    <Percent className="h-5 w-5 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -352,7 +352,7 @@ export default function DailyReportPage() {
                           </span>
                           <span className="font-medium text-zinc-800">{p.product_name}</span>
                         </div>
-                        <span className="text-sm font-semibold text-emerald-700">{p.quantity} ชิ้น</span>
+                        <span className="text-sm font-semibold text-primary">{p.quantity} ชิ้น</span>
                       </div>
                     ))}
                   </div>

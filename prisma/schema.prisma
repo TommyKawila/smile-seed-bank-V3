@@ -270,7 +270,8 @@ model products {
   image_url_3        String?
   video_url          String?
   thc_percent        Decimal?            @db.Decimal
-  cbd_percent        Decimal?            @db.Decimal
+  /// Free-form label e.g. "< 1%", "5", "Trace" — not strictly numeric.
+  cbd_percent        String?
   genetics           String?
   indica_ratio       Decimal?            @db.Decimal
   sativa_ratio       Decimal?            @db.Decimal
@@ -283,6 +284,8 @@ model products {
   medical_benefits   Json?               @default("[]")
   created_at         DateTime?           @default(now()) @db.Timestamptz(6)
   genetic_ratio      String?
+  sativa_percent     Int?
+  indica_percent     Int?
   sex_type           String? // feminized | regular (lowercase)
   lineage            String?
   terpenes           Json?

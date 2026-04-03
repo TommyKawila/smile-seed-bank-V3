@@ -143,9 +143,8 @@ The response MUST be a single JSON object matching this shape exactly (keys and 
 {
   "name": string | null (optional),
   "thc_percent": number | null,
-  "indica_ratio": number | null,
-  "sativa_ratio": number | null,
-  "genetic_ratio": string | null,
+  "sativa_percent": number | null,
+  "indica_percent": number | null,
   "terpenes": string[],
   "description_th": string | null,
   "images": string[],
@@ -156,9 +155,10 @@ The response MUST be a single JSON object matching this shape exactly (keys and 
 }
 
 Rules:
+- "sativa_percent" and "indica_percent": integers from 0 to 100. They MUST sum to 100 whenever either is non-null. If the text says "Sativa 70%", use sativa_percent: 70 and indica_percent: 30. If only one side is given (e.g. "80% Indica"), compute the other so the total is 100. If no genetic split can be inferred, set BOTH to null. Do not output a separate genetic_ratio string.
 - "seo": Generate SEO meta title (max 60 characters) and meta description (max 160 characters) in BOTH Thai ("th") and English ("en"). Titles should include strain + breeder keywords where natural; descriptions must be unique vs title and compelling for search snippets.
 - "images": Extract up to 5 UNIQUE absolute https image URLs from the scraped content only (markdown links, figure URLs, img src). The FIRST URL in the array MUST be the single best "hero" product shot; order remaining URLs by relevance (packaging, gallery). Fewer than 5 is OK. Empty array if no safe URLs.
-- Other fields: infer ratios from text; use null when impossible. "description_th": fluent Thai (2–6 sentences) for a premium seed bank.
+- Other fields: use null when impossible. "description_th": fluent Thai (2–6 sentences) for a premium seed bank.
 
 Strict: no extra keys, no trailing commas, valid JSON only.`;
 
@@ -378,6 +378,8 @@ export async function runAiImportPipeline(
   const thc = toProductDecimal(extracted.thc_percent ?? null);
   const indica = toProductDecimal(extracted.indica_ratio ?? null);
   const sativa = toProductDecimal(extracted.sativa_ratio ?? null);
+  const indicaPct = extracted.indica_percent ?? null;
+  const sativaPct = extracted.sativa_percent ?? null;
 
   const terpenesJson = terpenesToJsonValue(extracted.terpenes ?? []);
   const galleryUrls = imageUrlsJsonFromExtracted(extracted);
@@ -395,6 +397,8 @@ export async function runAiImportPipeline(
         thc_percent: thc !== null ? new Prisma.Decimal(thc) : undefined,
         indica_ratio: indica !== null ? new Prisma.Decimal(indica) : undefined,
         sativa_ratio: sativa !== null ? new Prisma.Decimal(sativa) : undefined,
+        sativa_percent: sativaPct ?? undefined,
+        indica_percent: indicaPct ?? undefined,
         genetic_ratio: extracted.genetic_ratio ?? existing.genetic_ratio,
         terpenes: terpenesJson as object,
       },
@@ -452,6 +456,8 @@ export async function runAiImportPipeline(
     genetics: null,
     indica_ratio: indica,
     sativa_ratio: sativa,
+    sativa_percent: sativaPct,
+    indica_percent: indicaPct,
     strain_dominance: null,
     flowering_type: null,
     seed_type: null,

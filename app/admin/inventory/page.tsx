@@ -79,7 +79,7 @@ function CategoryBadge({ value }: { value: string }) {
   return (
     <span
       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-        isAuto ? "bg-emerald-100 text-emerald-800" : "bg-violet-100 text-violet-800"
+        isAuto ? "bg-accent text-primary" : "bg-secondary text-secondary-foreground"
       }`}
     >
       {value}
@@ -126,7 +126,7 @@ function EditableCell({
       {prefix && <span className="text-xs text-zinc-400">{prefix}</span>}
       <Input
         type="number"
-        className="h-8 w-20 border-0 border-b border-transparent bg-transparent px-1 py-0 text-sm shadow-none focus:border-emerald-500 focus:ring-0"
+        className="h-8 w-20 border-0 border-b border-transparent bg-transparent px-1 py-0 text-sm shadow-none focus:border-primary focus:ring-0"
         value={local}
         onChange={(e) => setLocal(e.target.value)}
         onBlur={commit}
@@ -595,12 +595,12 @@ function AdminInventoryContent() {
             variant="outline"
             size="sm"
             onClick={() => { setPosOpen(true); setPosSuccess(null); setPosError(null); }}
-            className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+            className="border-primary/30 text-primary hover:bg-accent"
           >
             <ShoppingCart className="mr-1.5 h-4 w-4" /> สร้างออเดอร์
           </Button>
           <Link href={brandId ? `/admin/inventory/manual?breederId=${brandId}` : "/admin/inventory/manual"}>
-            <Button variant="outline" size="sm" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+            <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-accent">
               <LayoutGrid className="mr-1.5 h-4 w-4" /> Manual Grid
             </Button>
           </Link>
@@ -629,7 +629,7 @@ function AdminInventoryContent() {
                 placeholder="ค้นหาชื่อสายพันธุ์ หรือ SKU..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 w-[220px] pl-8 rounded-md border-zinc-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                className="h-9 w-[220px] pl-8 rounded-md border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
@@ -748,7 +748,7 @@ function AdminInventoryContent() {
                       {grp.variants.map((v, vIdx) => (
                         <tr
                           key={v.id}
-                          className={`border-b transition-colors hover:bg-emerald-50/50 ${v.stock === 0 ? "bg-red-50" : ""} ${(v.stock <= ((v as InventoryRow).low_stock_threshold ?? 5)) && v.stock > 0 ? "bg-red-50/50" : ""} ${vIdx % 2 === 1 ? "bg-zinc-50/30" : ""}`}
+                          className={`border-b transition-colors hover:bg-accent/50 ${v.stock === 0 ? "bg-red-50" : ""} ${(v.stock <= ((v as InventoryRow).low_stock_threshold ?? 5)) && v.stock > 0 ? "bg-red-50/50" : ""} ${vIdx % 2 === 1 ? "bg-zinc-50/30" : ""}`}
                         >
                           <td className="w-10 px-2 py-2" />
                           <td className="pl-8 pr-4 py-2 text-zinc-500">↳ {v.unit_label}</td>
@@ -956,7 +956,7 @@ function AdminInventoryContent() {
 
           {posSuccess ? (
             <div className="space-y-4">
-              <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{posSuccess}</p>
+              <p className="rounded-lg bg-accent px-4 py-3 text-sm font-medium text-primary">{posSuccess}</p>
               <DialogFooter>
                 <Button onClick={() => { setPosSuccess(null); setPosOpen(false); }}>ปิด</Button>
               </DialogFooter>
@@ -991,11 +991,11 @@ function AdminInventoryContent() {
                             key={v.id}
                             type="button"
                             onClick={() => addToOrder(prod, v)}
-                            className="flex w-full items-center justify-between px-4 py-2 text-sm hover:bg-emerald-50"
+                            className="flex w-full items-center justify-between px-4 py-2 text-sm hover:bg-accent"
                           >
                             <span>{v.unit_label}{v.sku && <span className="ml-1 font-mono text-xs text-zinc-400">({v.sku})</span>}</span>
                             <span className="flex items-center gap-3">
-                              <span className="font-semibold text-emerald-700">฿{v.price.toLocaleString()}</span>
+                              <span className="font-semibold text-primary">฿{v.price.toLocaleString()}</span>
                               <span className={`text-xs ${v.stock <= 5 ? "text-red-600 font-medium" : "text-zinc-400"}`}>สต็อก {v.stock}</span>
                               <Plus className="h-4 w-4 text-zinc-400" />
                             </span>
@@ -1018,7 +1018,7 @@ function AdminInventoryContent() {
                           <span className="font-medium">{line.productName}</span>
                           <span className="ml-2 text-zinc-500">{line.variantLabel}</span>
                         </div>
-                        <span className="text-sm font-semibold text-emerald-700">฿{line.price.toLocaleString()}</span>
+                        <span className="text-sm font-semibold text-primary">฿{line.price.toLocaleString()}</span>
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
@@ -1108,7 +1108,7 @@ function AdminInventoryContent() {
               {"error" in migrateResult ? (
                 <p className="text-sm text-red-600">{migrateResult.error}</p>
               ) : (
-                <p className="text-sm text-emerald-600">
+                <p className="text-sm text-primary">
                   Done. Updated {migrateResult.updated_products} products and {migrateResult.updated_variants} variants.
                 </p>
               )}

@@ -65,7 +65,7 @@ export default function BlogListPage() {
           <p className="text-sm text-zinc-500">จัดการบทความบล็อก</p>
         </div>
         <Link href="/admin/blog/create">
-          <Button className="bg-emerald-700 hover:bg-emerald-800">
+          <Button className="bg-primary hover:bg-primary/90">
             <Plus className="mr-2 h-4 w-4" />
             สร้างบทความ
           </Button>

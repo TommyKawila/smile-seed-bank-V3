@@ -102,7 +102,7 @@ export function UserNav({ triggerClassName }: UserNavProps) {
       <Button
         variant="outline"
         size="sm"
-        className={cn("h-9", triggerClassName || "border-emerald-800/30 text-emerald-900")}
+        className={cn("h-9", triggerClassName || "border-primary/30 text-primary")}
         asChild
       >
         <a href="/login">Sign in</a>
@@ -125,7 +125,7 @@ export function UserNav({ triggerClassName }: UserNavProps) {
           <span
             className={cn(
               "relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full",
-              "bg-emerald-800 text-sm font-semibold text-white"
+              "bg-primary text-sm font-semibold text-white"
             )}
           >
             {avatarUrl ? (
@@ -145,7 +145,7 @@ export function UserNav({ triggerClassName }: UserNavProps) {
         <DropdownMenuSeparator />
         <div className="px-2 py-1.5 text-sm">
           <span className="text-zinc-500">Role </span>
-          <span className="font-semibold text-emerald-800">{role}</span>
+          <span className="font-semibold text-primary">{role}</span>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600" onClick={() => void handleSignOut()}>

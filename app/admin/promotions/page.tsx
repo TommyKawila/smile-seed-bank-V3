@@ -96,7 +96,7 @@ function statusBadge(p: Promotion) {
   if (!p.is_active) return <Badge variant="secondary">ปิดใช้งาน</Badge>;
   if (start && !Number.isNaN(start.getTime()) && now < start) return <Badge className="bg-amber-100 text-amber-800">รอเริ่ม</Badge>;
   if (end && !Number.isNaN(end.getTime()) && now > end) return <Badge className="bg-zinc-200 text-zinc-600">หมดอายุ</Badge>;
-  return <Badge className="bg-emerald-100 text-emerald-800">Active</Badge>;
+  return <Badge className="bg-accent text-primary">Active</Badge>;
 }
 
 export default function PromotionsPage() {

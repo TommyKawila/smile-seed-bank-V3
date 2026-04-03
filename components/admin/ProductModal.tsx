@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Wand2, Plus, Trash2, Loader2, ImagePlus, X, Sparkles } from "lucide-react";
+import { Wand2, Plus, Trash2, Loader2, ImagePlus, X, Sparkles, Gem } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +58,13 @@ const isUnknown = (v: unknown): boolean => {
 const unknownCls = (v: unknown) =>
   isUnknown(v) ? "border-red-400 text-red-600 font-bold placeholder:text-red-300" : "";
 
+function toInt0to100(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(100, Math.max(0, Math.round(n)));
+}
+
 // ── Reusable tag-style textarea ───────────────────────────────────────────────
 function TagField({
   label,
@@ -94,6 +101,10 @@ function TagField({
 
 import type { ProductFull } from "@/types/supabase";
 import { generateSlug } from "@/lib/product-utils";
+import {
+  formatGeneticRatioString,
+  normalizeSativaIndicaPercents,
+} from "@/lib/genetic-percent-utils";
 
 interface ProductModalProps {
   open: boolean;
@@ -198,10 +209,19 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         video_url: p.video_url,
         is_active: p.is_active,
         thc_percent: p.thc_percent,
-        cbd_percent: p.cbd_percent,
+        cbd_percent:
+          p.cbd_percent != null && p.cbd_percent !== ""
+            ? String(p.cbd_percent)
+            : null,
         genetics: p.genetics,
         indica_ratio: p.indica_ratio,
         sativa_ratio: p.sativa_ratio,
+        sativa_percent:
+          toInt0to100((p as { sativa_percent?: number | null }).sativa_percent) ??
+          toInt0to100(p.sativa_ratio),
+        indica_percent:
+          toInt0to100((p as { indica_percent?: number | null }).indica_percent) ??
+          toInt0to100(p.indica_ratio),
         strain_dominance: (p as { strain_dominance?: string | null }).strain_dominance ?? null,
         flowering_type: floweringNorm,
         seed_type: p.seed_type,
@@ -222,7 +242,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           low_stock_threshold: (v as { low_stock_threshold?: number | null }).low_stock_threshold ?? 5,
           is_active: v.is_active,
           sku: (v as { sku?: string | null }).sku ?? null,
-        })) ?? [{ ...emptyVariant }],
+        })) ?? [],
       });
       // Prefer image_urls JSONB array, fallback to separate columns
       const existingUrls: string[] =
@@ -260,10 +280,58 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
     return () => clearInterval(id);
   }, [aiPending]);
 
-  const variants = form.variants ?? [{ ...emptyVariant }];
+  const variants = form.variants ?? [];
 
   const setField = <K extends keyof ProductFormData>(key: K, value: ProductFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setSativaPercentInput = (raw: string) => {
+    if (raw.trim() === "") {
+      setForm((prev) => ({
+        ...prev,
+        sativa_percent: null,
+        indica_percent: null,
+        sativa_ratio: null,
+        indica_ratio: null,
+        genetic_ratio: null,
+      }));
+      return;
+    }
+    const s = Math.min(100, Math.max(0, Math.round(Number(raw))));
+    const i = 100 - s;
+    setForm((prev) => ({
+      ...prev,
+      sativa_percent: s,
+      indica_percent: i,
+      sativa_ratio: s,
+      indica_ratio: i,
+      genetic_ratio: formatGeneticRatioString(s, i),
+    }));
+  };
+
+  const setIndicaPercentInput = (raw: string) => {
+    if (raw.trim() === "") {
+      setForm((prev) => ({
+        ...prev,
+        sativa_percent: null,
+        indica_percent: null,
+        sativa_ratio: null,
+        indica_ratio: null,
+        genetic_ratio: null,
+      }));
+      return;
+    }
+    const ind = Math.min(100, Math.max(0, Math.round(Number(raw))));
+    const s = 100 - ind;
+    setForm((prev) => ({
+      ...prev,
+      sativa_percent: s,
+      indica_percent: ind,
+      sativa_ratio: s,
+      indica_ratio: ind,
+      genetic_ratio: formatGeneticRatioString(s, ind),
+    }));
   };
 
   const setSexTypeField = (v: "feminized" | "regular" | null) => {
@@ -286,7 +354,6 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
     setField("variants", [...variants, { ...emptyVariant }] as ProductFormData["variants"]);
 
   const removeVariant = (index: number) => {
-    if (variants.length <= 1) return;
     setField("variants", variants.filter((_, i) => i !== index) as ProductFormData["variants"]);
   };
 
@@ -348,6 +415,19 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           const sx = next.sex_type;
           if (sx === "feminized" || sx === "regular") {
             next.seed_type = sx === "feminized" ? "FEMINIZED" : "REGULAR";
+          }
+          const sp = next.sativa_percent ?? toInt0to100(next.sativa_ratio);
+          const ip = next.indica_percent ?? toInt0to100(next.indica_ratio);
+          const norm = normalizeSativaIndicaPercents(sp, ip);
+          if (norm.sativa_percent != null && norm.indica_percent != null) {
+            next.sativa_percent = norm.sativa_percent;
+            next.indica_percent = norm.indica_percent;
+            next.sativa_ratio = norm.sativa_percent;
+            next.indica_ratio = norm.indica_percent;
+            next.genetic_ratio = formatGeneticRatioString(
+              norm.sativa_percent,
+              norm.indica_percent
+            );
           }
           return next;
         });
@@ -478,7 +558,25 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
       image_url_4: imageUrls[3] ?? null,
       image_url_5: imageUrls[4] ?? null,
     };
-    const formWithImages = { ...form, ...imageFields } as ProductFormData;
+    let formWithImages = { ...form, ...imageFields } as ProductFormData;
+    const sp = formWithImages.sativa_percent ?? null;
+    const ip = formWithImages.indica_percent ?? null;
+    if (sp != null && ip != null) {
+      const norm = normalizeSativaIndicaPercents(sp, ip);
+      if (norm.sativa_percent != null && norm.indica_percent != null) {
+        formWithImages = {
+          ...formWithImages,
+          sativa_percent: norm.sativa_percent,
+          indica_percent: norm.indica_percent,
+          sativa_ratio: norm.sativa_percent,
+          indica_ratio: norm.indica_percent,
+          genetic_ratio: formatGeneticRatioString(
+            norm.sativa_percent,
+            norm.indica_percent
+          ),
+        };
+      }
+    }
     const masterSkuVal = (formWithImages.master_sku ?? "").toString().trim();
     if (masterSkuVal) {
       formWithImages.variants = formWithImages.variants.map((v) => ({
@@ -533,7 +631,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         >
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-4 sm:p-6">
         {/* AI Assistant — text wand + stateless image scanner (never touches gallery) */}
-        <div className="w-full rounded-xl border border-dashed border-primary/35 bg-gradient-to-br from-primary/[0.06] to-violet-50/40 p-4">
+        <div className="w-full rounded-xl border border-dashed border-primary/35 bg-gradient-to-br from-primary/[0.06] to-secondary/40 p-4">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Wand2 className="h-4 w-4 text-primary" />
             <p className="text-sm font-semibold text-primary">AI ช่วยกรอกข้อมูล</p>
@@ -551,8 +649,8 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               className="min-h-[104px] border-zinc-200 bg-white text-sm md:min-h-[128px]"
             />
             <div className="relative flex flex-col gap-2">
-              <span className="flex items-center gap-1 text-[10px] font-bold leading-tight text-violet-800">
-                <Sparkles className="h-3 w-3 shrink-0 text-violet-500" />
+              <span className="flex items-center gap-1 text-[10px] font-bold leading-tight text-secondary-foreground">
+                <Sparkles className="h-3 w-3 shrink-0 text-secondary-foreground" />
                 ✨ AI Data Scanner (Read & Discard)
               </span>
               <input
@@ -572,7 +670,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                   {aiScanStaging.map((s) => (
                     <div
                       key={s.key}
-                      className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-violet-200 bg-white"
+                      className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-secondary-foreground/20 bg-white"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Image
@@ -596,9 +694,9 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 </div>
               )}
               {aiPending === "scanner" ? (
-                <div className="flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-violet-300 bg-violet-100/80 px-2 py-3">
-                  <Loader2 className="h-6 w-6 shrink-0 animate-spin text-violet-600" />
-                  <p className="text-center text-[9px] font-medium leading-snug text-violet-800">
+                <div className="flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-secondary-foreground/25 bg-secondary/80 px-2 py-3">
+                  <Loader2 className="h-6 w-6 shrink-0 animate-spin text-secondary-foreground" />
+                  <p className="text-center text-[9px] font-medium leading-snug text-secondary-foreground">
                     {AI_SCAN_LOADING_MESSAGES[aiScanMessageIx]}
                   </p>
                 </div>
@@ -624,11 +722,11 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                     }
                     className={`flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed p-2 text-center transition-colors ${
                       isAiScanDragging
-                        ? "border-violet-400 bg-violet-100/60"
-                        : "border-violet-300/80 bg-white/90 hover:border-violet-400 hover:bg-violet-50/50"
+                        ? "border-secondary-foreground/35 bg-secondary/60"
+                        : "border-secondary-foreground/30 bg-white/90 hover:border-secondary-foreground/35 hover:bg-secondary/50"
                     } ${aiPending && aiPending !== "scanner" ? "pointer-events-none opacity-50" : ""}`}
                   >
-                    <Sparkles className="h-5 w-5 text-violet-400" />
+                    <Sparkles className="h-5 w-5 text-secondary-foreground/60" />
                     <span className="px-0.5 text-[9px] font-medium leading-tight text-zinc-600">
                       เพิ่มรูป (สูงสุด {AI_SCAN_STAGING_MAX})
                       <br />
@@ -645,12 +743,12 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 disabled={
                   aiPending !== null || (aiScanStaging.length === 0 && !aiText.trim())
                 }
-                className="w-full border-violet-400 text-violet-800 hover:bg-violet-100"
+                className="w-full border-secondary-foreground/35 text-secondary-foreground hover:bg-secondary"
               >
                 <span className="mr-1">✨</span>
                 สกัดข้อมูลจาก {aiScanStaging.length} รูป
               </Button>
-              <p className="text-[8px] leading-snug text-violet-600/80">
+              <p className="text-[8px] leading-snug text-secondary-foreground/80">
                 Stateless · max 5MB/ไฟล์ · not uploaded
               </p>
             </div>
@@ -677,11 +775,12 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 onClick={() => setAiProvider("openai")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 border-l border-zinc-200 transition-colors disabled:opacity-50 ${
                   aiProvider === "openai"
-                    ? "bg-primary text-white"
-                    : "text-zinc-600 hover:bg-zinc-50"
+                    ? "bg-gradient-to-r from-primary via-primary/90 to-primary text-white shadow-sm ring-1 ring-primary/40"
+                    : "text-zinc-600 hover:bg-accent/90"
                 }`}
               >
-                <span>🤖</span> GPT-4o mini
+                <Gem className="h-3.5 w-3.5 shrink-0 opacity-95" aria-hidden />
+                GPT-4o
               </button>
             </div>
 
@@ -910,7 +1009,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                         </span>
                       )}
                       {slot.file && (
-                        <span className="absolute left-1 top-1 h-2 w-2 rounded-full bg-emerald-400 ring-1 ring-white" title="รูปใหม่ (จะ compress ก่อน upload)" />
+                        <span className="absolute left-1 top-1 h-2 w-2 rounded-full bg-primary/50 ring-1 ring-white" title="รูปใหม่ (จะ compress ก่อน upload)" />
                       )}
                       <button
                         type="button"
@@ -960,15 +1059,15 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">CBD %</Label>
+              <Label className="text-xs">CBD</Label>
               <Input
-                type="number"
-                min={0}
-                max={100}
-                step={0.1}
+                type="text"
+                inputMode="text"
                 value={form.cbd_percent ?? ""}
-                onChange={(e) => setField("cbd_percent", e.target.value ? Number(e.target.value) : null)}
-                placeholder="0–100"
+                onChange={(e) =>
+                  setField("cbd_percent", e.target.value.trim() === "" ? null : e.target.value)
+                }
+                placeholder={'เช่น < 1% หรือ 5'}
                 className="text-sm"
               />
             </div>
@@ -1059,7 +1158,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
             </div>
           </div>
 
-          {/* Extended Specs Row 2: Lineage, Genetic Ratio */}
+          {/* Extended Specs Row 2: Lineage + Sativa/Indica % */}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="space-y-1">
               <Label className={`text-xs ${isUnknown(form.lineage) ? "text-red-600" : ""}`}>
@@ -1072,16 +1171,47 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 className={`text-sm ${unknownCls(form.lineage)}`}
               />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-2">
               <Label className={`text-xs ${isUnknown(form.genetic_ratio) ? "text-red-600" : ""}`}>
-                Genetic Ratio{isUnknown(form.genetic_ratio) && " ⚠"}
+                Genetic ratio (Sativa / Indica){isUnknown(form.genetic_ratio) && " ⚠"}
               </Label>
-              <Input
-                value={form.genetic_ratio ?? ""}
-                onChange={(e) => setField("genetic_ratio", e.target.value || null)}
-                placeholder="Sativa 70% / Indica 30%"
-                className={`text-sm ${unknownCls(form.genetic_ratio)}`}
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="sativa_percent" className="text-[11px] text-zinc-500">
+                    Sativa (%)
+                  </Label>
+                  <Input
+                    id="sativa_percent"
+                    type="number"
+                    min={0}
+                    max={100}
+                    inputMode="numeric"
+                    value={form.sativa_percent ?? ""}
+                    onChange={(e) => setSativaPercentInput(e.target.value)}
+                    placeholder="70"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="indica_percent" className="text-[11px] text-zinc-500">
+                    Indica (%)
+                  </Label>
+                  <Input
+                    id="indica_percent"
+                    type="number"
+                    min={0}
+                    max={100}
+                    inputMode="numeric"
+                    value={form.indica_percent ?? ""}
+                    onChange={(e) => setIndicaPercentInput(e.target.value)}
+                    placeholder="30"
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-zinc-400">
+                กรอกข้างใดข้างหนึ่ง — อีกข้างคำนวณให้รวม 100% · บันทึกเป็น genetic_ratio อัตโนมัติ
+              </p>
             </div>
           </div>
 
@@ -1118,7 +1248,10 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           {/* Variants — Price/Stock editable only when creating; use Inventory for existing products */}
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <Label className="text-sm font-semibold">แพ็กเกจ / Variants *</Label>
+              <Label className="text-sm font-semibold">
+                แพ็กเกจ / Variants{" "}
+                <span className="font-normal text-zinc-500">(ว่างได้ — บันทึกสเปกเป็นฉบับร่าง)</span>
+              </Label>
               {isEditMode && (
                 <Link href={`/admin/inventory/manual${form.breeder_id ? `?breederId=${form.breeder_id}` : ""}`}>
                   <Button type="button" variant="outline" size="sm" className="text-xs">
@@ -1136,6 +1269,11 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               <p className="mb-2 text-xs text-red-500">{getFieldError("variants")}</p>
             )}
             <div className="space-y-2">
+              {variants.length === 0 && (
+                <p className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
+                  ยังไม่มีแพ็กเกจ — บันทึกสเปก/คำบรรยายได้ (สินค้าจะไม่แสดงหน้าร้านจนมีแพ็กและสต็อกมากกว่า 0)
+                </p>
+              )}
               {variants.map((v, i) => (
                 <div
                   key={i}
@@ -1210,21 +1348,20 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                       }
                       className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                         v.is_active
-                          ? "bg-emerald-100 text-emerald-700"
+                          ? "bg-accent text-primary"
                           : "bg-zinc-100 text-zinc-500"
                       }`}
                     >
                       {v.is_active ? "เปิด" : "ปิด"}
                     </button>
-                    {variants.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeVariant(i)}
-                        className="rounded p-1 text-red-400 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeVariant(i)}
+                      className="rounded p-1 text-red-400 hover:bg-red-50"
+                      title="ลบแพ็ก"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               ))}

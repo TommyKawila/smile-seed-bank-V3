@@ -390,7 +390,7 @@ export function CreateOrderModal({
                           className="h-8 w-20 text-right"
                         />
                       </td>
-                      <td className="px-3 py-2 text-right font-medium text-emerald-700">
+                      <td className="px-3 py-2 text-right font-medium text-primary">
                         ฿{item.subtotal.toLocaleString("th-TH")}
                       </td>
                     </tr>
@@ -411,7 +411,7 @@ export function CreateOrderModal({
               แนบเลขที่ใบอนุญาตใน PDF
             </label>
             <span className="text-sm text-slate-600">
-              รวมทั้งสิ้น: <span className="font-semibold text-emerald-700 text-lg">฿{grandTotal.toLocaleString("th-TH")}</span>
+              รวมทั้งสิ้น: <span className="font-semibold text-primary text-lg">฿{grandTotal.toLocaleString("th-TH")}</span>
             </span>
           </div>
 

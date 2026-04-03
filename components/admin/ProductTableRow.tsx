@@ -97,7 +97,7 @@ export function ProductTableRow({ product, onEdit }: ProductTableRowProps) {
         <Badge
           className={
             product.is_active
-              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+              ? "bg-accent text-primary hover:bg-accent"
               : "bg-zinc-100 text-zinc-500 hover:bg-zinc-100"
           }
         >
@@ -108,7 +108,7 @@ export function ProductTableRow({ product, onEdit }: ProductTableRowProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-zinc-500 hover:text-emerald-700"
+          className="h-8 w-8 text-zinc-500 hover:text-primary"
           onClick={() => onEdit(product)}
         >
           <Pencil className="h-4 w-4" />

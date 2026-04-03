@@ -52,13 +52,13 @@ function CouponCard({ coupon }: { coupon: EligibleCoupon }) {
     <div className={cn(
       "flex items-center gap-3 rounded-2xl border p-3 transition-colors",
       isWelcome
-        ? "border-emerald-200 bg-emerald-50"
+        ? "border-primary/25 bg-accent"
         : "border-zinc-100 bg-white"
     )}>
       {/* Discount pill */}
       <div className={cn(
         "flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl text-center",
-        isWelcome ? "bg-emerald-600 text-white" : "bg-zinc-800 text-white"
+        isWelcome ? "bg-primary text-white" : "bg-zinc-800 text-white"
       )}>
         <span className="text-xs font-bold leading-none">
           {coupon.discount_type === "PERCENTAGE" ? `${coupon.discount_value}%` : `฿${coupon.discount_value}`}
@@ -83,7 +83,7 @@ function CouponCard({ coupon }: { coupon: EligibleCoupon }) {
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
           copied
-            ? "bg-emerald-100 text-emerald-600"
+            ? "bg-accent text-primary"
             : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
         )}
         aria-label="คัดลอก"
@@ -113,7 +113,7 @@ export function FloatingOfferButton({ coupons }: Props) {
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             onClick={() => setDrawerOpen(true)}
-            className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2.5 text-white shadow-lg hover:bg-emerald-800 active:scale-95 transition-transform"
+            className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-white shadow-lg hover:bg-primary/90 active:scale-95 transition-transform"
           >
             <Tag className="h-4 w-4" />
             <span className="text-sm font-semibold">

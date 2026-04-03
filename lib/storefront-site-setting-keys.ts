@@ -9,6 +9,7 @@ export const STOREFRONT_SITE_SETTING_KEYS = [
   "hero_bg_mode",
   "hero_svg_code",
   "hero_static_image_url",
+  "hero_video_url",
   "company_name",
   "company_address",
   "company_email",
