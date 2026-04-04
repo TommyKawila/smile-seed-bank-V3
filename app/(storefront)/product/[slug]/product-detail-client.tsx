@@ -12,12 +12,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { labelFloweringType } from "@/lib/cannabis-attributes";
+import { seedTypeDetailShort, sexTypeDetailShort } from "@/lib/seed-type-filter";
 import { formatPrice } from "@/lib/utils";
+import { shopBreederHref } from "@/lib/breeder-slug";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import {
   FeminizedSeedSpecChip,
   FeminizedStatCard,
   GeneticRatioBar,
+  RegularSeedSpecChip,
+  RegularStatCard,
 } from "@/components/storefront/ProductSpecs";
 import type { ProductFull, ProductVariant } from "@/types/supabase";
 
@@ -272,6 +277,21 @@ function SpecRow({
   );
 }
 
+function parsePackCountFromLabel(unitLabel: string): number {
+  const m = String(unitLabel).match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function sortVariantsByPriceThenPack<T extends { price: number; unit_label: string }>(
+  variants: T[]
+): T[] {
+  return [...variants].sort((a, b) => {
+    const d = a.price - b.price;
+    if (d !== 0) return d;
+    return parsePackCountFromLabel(a.unit_label) - parsePackCountFromLabel(b.unit_label);
+  });
+}
+
 // ─── Product Detail Page ──────────────────────────────────────────────────────
 
 export default function ProductDetailClient({
@@ -285,11 +305,10 @@ export default function ProductDetailClient({
   const [product] = useState<ProductWithSpecs | null>(initialProduct);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(() => {
     if (!initialProduct) return null;
-    return (
-      initialProduct.product_variants?.find(
-        (v) => v.is_active !== false && (v.stock ?? 0) > 0
-      ) ?? null
-    );
+    const active =
+      initialProduct.product_variants?.filter((v) => v.is_active !== false) ?? [];
+    const sorted = sortVariantsByPriceThenPack(active);
+    return sorted.find((v) => (v.stock ?? 0) > 0) ?? sorted[0] ?? null;
   });
   const [added, setAdded] = useState(false);
 
@@ -322,7 +341,9 @@ export default function ProductDetailClient({
     );
   }
 
-  const activeVariants = product.product_variants?.filter((v) => v.is_active !== false) ?? [];
+  const activeVariants = sortVariantsByPriceThenPack(
+    product.product_variants?.filter((v) => v.is_active !== false) ?? []
+  );
   const outOfStock = !selectedVariant || selectedVariant.stock === 0;
 
   return (
@@ -357,7 +378,7 @@ export default function ProductDetailClient({
             {/* Breeder — clickable tag with logo */}
             {product.breeders && (
               <Link
-                href={`/shop?breeder=${product.breeders.id}`}
+                href={shopBreederHref(product.breeders)}
                 className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-primary shadow-sm transition-all hover:border-primary/40 hover:bg-primary/10 hover:shadow-md"
               >
                 <BreederLogoImage
@@ -382,13 +403,11 @@ export default function ProductDetailClient({
             <div className="flex flex-wrap gap-2">
               {product.flowering_type && (
                 <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
-                  {product.flowering_type}
+                  {labelFloweringType(product.flowering_type)}
                 </Badge>
               )}
               {product.seed_type === "FEMINIZED" && <FeminizedSeedSpecChip />}
-              {product.seed_type === "REGULAR" && (
-                <Badge variant="outline">{product.seed_type}</Badge>
-              )}
+              {product.seed_type === "REGULAR" && <RegularSeedSpecChip />}
               {product.thc_percent && (
                 <Badge className="bg-accent text-primary hover:bg-accent">
                   THC {product.thc_percent}%
@@ -491,7 +510,8 @@ export default function ProductDetailClient({
                   product.cbd_percent ||
                   product.flowering_type ||
                   product.sex_type ||
-                  product.seed_type === "FEMINIZED") && (
+                  product.seed_type === "FEMINIZED" ||
+                  product.seed_type === "REGULAR") && (
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {product.thc_percent != null && (
                       <StatCard value={`${product.thc_percent}%`} label="THC" icon={FlaskConical} tone="thc" />
@@ -506,22 +526,38 @@ export default function ProductDetailClient({
                     )}
                     {(product.flowering_type ??
                       product.sex_type ??
-                      (product.seed_type === "FEMINIZED" ? "feminized" : null))
-                      ? product.sex_type === "feminized" ||
-                        (product.seed_type === "FEMINIZED" &&
-                          !product.flowering_type &&
-                          !product.sex_type)
-                        ? (
-                            <FeminizedStatCard label={t("ประเภทเพศ", "Sex Type")} />
-                          )
-                        : (
+                      (product.seed_type === "FEMINIZED" ? "feminized" : null) ??
+                      (product.seed_type === "REGULAR" ? "regular" : null))
+                      ? (() => {
+                          const isFem =
+                            product.sex_type === "feminized" ||
+                            (product.seed_type === "FEMINIZED" &&
+                              !product.flowering_type &&
+                              !product.sex_type);
+                          const isReg =
+                            !isFem &&
+                            (product.seed_type === "REGULAR" || product.sex_type === "regular");
+                          if (isFem) {
+                            return <FeminizedStatCard label={t("ประเภทเพศ", "Sex Type")} />;
+                          }
+                          if (isReg) {
+                            return <RegularStatCard label={t("ประเภทเพศ", "Sex Type")} />;
+                          }
+                          const v =
+                            sexTypeDetailShort(product.sex_type) ??
+                            (product.flowering_type
+                              ? labelFloweringType(product.flowering_type)
+                              : null) ??
+                            "—";
+                          return (
                             <StatCard
-                              value={product.sex_type ?? product.flowering_type ?? "—"}
+                              value={v}
                               label={t("ประเภทเพศ", "Sex Type")}
                               icon={Flower2}
                               tone="sexNeutral"
                             />
-                          )
+                          );
+                        })()
                       : null}
                     <StatCard
                       value={product.growing_difficulty ?? "Unknown"}
@@ -548,8 +584,16 @@ export default function ProductDetailClient({
                       <SpecRow label={t("พันธุกรรม", "Genetics")} value={product.genetic_ratio} icon={Dna} />
                     )}
                     <SpecRow label={t("สายเลือด", "Lineage")} value={product.lineage} icon={GitFork} />
-                    <SpecRow label={t("ประเภทดอก", "Flowering")} value={product.flowering_type} icon={Clock} />
-                    <SpecRow label={t("ประเภทเมล็ด", "Seed Type")} value={product.seed_type} icon={Package} />
+                    <SpecRow
+                      label={t("ประเภทดอก", "Flowering")}
+                      value={labelFloweringType(product.flowering_type)}
+                      icon={Clock}
+                    />
+                    <SpecRow
+                      label={t("ประเภทเมล็ด", "Seed Type")}
+                      value={seedTypeDetailShort(product.seed_type) ?? product.seed_type ?? ""}
+                      icon={Package}
+                    />
                     <SpecRow label={t("ผลผลิต", "Yield")} value={product.yield_info} alwaysShow icon={Sprout} />
                   </div>
                 )}

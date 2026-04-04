@@ -7,8 +7,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Variants } from "framer-motion";
-import { SlidersHorizontal, Search, X, Leaf, PackageX, ChevronLeft, MapPin, Star, Trophy, Zap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import {
+  SlidersHorizontal,
+  Search,
+  X,
+  Leaf,
+  PackageX,
+  ChevronLeft,
+  MapPin,
+  Star,
+  Trophy,
+  Zap,
+  ArrowUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProducts } from "@/hooks/useProducts";
@@ -19,6 +30,28 @@ import { formatPrice } from "@/lib/utils";
 import { productDetailHref } from "@/lib/product-utils";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useTranslations } from "@/hooks/use-translations";
+import {
+  breederSlugFromName,
+  resolveBreederFromShopParam,
+  shopBreederHref,
+} from "@/lib/breeder-slug";
+import {
+  catalogFloweringBucket,
+  floweringTypeToSlug,
+  labelForSeedTypeBadge,
+  productCardFloweringChipLabel,
+  type CatalogFloweringBucket,
+} from "@/lib/seed-type-filter";
+import { BreederTypeFilter } from "@/components/storefront/BreederTypeFilter";
+import { FilterSidebar, ShopFilterMobileSheet } from "@/components/storefront/FilterSidebar";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { MicroGeneticsBar } from "@/components/storefront/MicroGeneticsBar";
+import { parseListParam, productMatchesShopAttributeFilters } from "@/lib/shop-attribute-filters";
+
+const SHOP_PAGE_INITIAL = 30;
+const SHOP_PAGE_STEP = 24;
+const BACK_TO_TOP_SCROLL_THRESHOLD = 400;
 
 // ─── Product Card ─────────────────────────────────────────────────────────────
 
@@ -31,6 +64,9 @@ const glassBadge =
   "rounded-full border border-white/30 bg-white/20 px-2 py-0.5 text-[10px] font-medium backdrop-blur-md";
 const glassChip =
   "rounded-full border border-zinc-200/70 bg-white/70 px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm";
+
+const compactSpecChip = `${glassChip} bg-muted/50 text-[9px] font-medium tracking-wide text-zinc-700`;
+const compactSpecChipThc = `${glassChip} bg-muted/50 text-[9px] font-medium tracking-wide text-primary`;
 
 function getPrimaryImage(product: { image_urls?: unknown; image_url?: string | null }): string | null {
   if (Array.isArray(product.image_urls) && (product.image_urls as string[]).length > 0) {
@@ -59,6 +95,8 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
   const lowStock = stock > 0 && stock <= 5;
   const outOfStock = stock === 0;
   const defaultVariant = getDefaultVariant(product);
+  const floweringLabel = productCardFloweringChipLabel(product);
+  const seedLabel = labelForSeedTypeBadge(product.seed_type);
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -114,7 +152,7 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
           {/* Breeder Logo — clickable link */}
           {product.breeders && (
             <Link
-              href={`/shop?breeder=${product.breeders.id}`}
+              href={shopBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
               className="absolute bottom-2 right-2 flex h-9 w-9 overflow-hidden rounded-full border border-white/30 bg-white/20 shadow-md backdrop-blur-md transition-transform hover:scale-110"
             >
@@ -131,11 +169,13 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
           )}
         </div>
 
+        <MicroGeneticsBar product={product} />
+
         {/* Card Body */}
         <div className="flex flex-col gap-2 p-4">
           {product.breeders && (
             <Link
-              href={`/shop?breeder=${product.breeders.id}`}
+              href={shopBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
               className="inline-block max-w-fit text-xs font-semibold text-primary underline-offset-2 hover:underline"
             >
@@ -148,14 +188,12 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
 
           {/* Spec Chips — glassmorphism */}
           <div className="flex flex-wrap gap-1.5">
-            {product.flowering_type && (
-              <span className={`${glassChip} text-zinc-700`}>{product.flowering_type}</span>
+            {floweringLabel && (
+              <span className={compactSpecChip}>{floweringLabel}</span>
             )}
-            {product.seed_type && (
-              <span className={`${glassChip} text-zinc-700`}>{product.seed_type}</span>
-            )}
-            {product.thc_percent && (
-              <span className={`${glassChip} text-primary`}>THC {product.thc_percent}%</span>
+            {seedLabel && <span className={compactSpecChip}>{seedLabel}</span>}
+            {product.thc_percent != null && (
+              <span className={compactSpecChipThc}>THC {product.thc_percent}%</span>
             )}
           </div>
 
@@ -183,42 +221,63 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
 
 // ─── Shop Page ────────────────────────────────────────────────────────────────
 
-const CATEGORIES = ["ทั้งหมด", "Seeds", "Accessories", "Nutrients"];
-
 function ShopContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const breederParam = searchParams.get("breeder");
+  const geneticsParam = searchParams.get("genetics") ?? "";
+  const difficultyParam = searchParams.get("difficulty") ?? "";
+  const thcParam = searchParams.get("thc") ?? "";
+  const cbdParam = searchParams.get("cbd") ?? "";
+  const sexParam = searchParams.get("sex") ?? "";
+  const ftParam = searchParams.get("ft") ?? "";
   const qParam = searchParams.get("q") ?? "";
 
   /** Full catalog client-side (~90 items): no server limit — instant filter in memory */
   const { products, isLoading } = useProducts({ autoFetch: true, includeVariants: true });
-  const { breeders: allBreeders } = useBreeders();
+  const { breeders: allBreeders, isLoading: breedersLoading } = useBreeders();
   const { locale, t } = useLanguage();
+  const { t: tMsg } = useTranslations();
+  const isLg = useMediaQuery("(min-width: 1024px)", true);
   const [searchTerm, setSearchTerm] = useState("");
   useEffect(() => {
     setSearchTerm(qParam);
   }, [qParam]);
-  const [activeCategory, setActiveCategory] = useState("ทั้งหมด");
-  const [activeBreeder, setActiveBreeder] = useState<string>("ทั้งหมด");
   const [showFilter, setShowFilter] = useState(false);
   const [bannerExpanded, setBannerExpanded] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(SHOP_PAGE_INITIAL);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
-  // Breeder selected via URL param (must be before any hook that depends on it)
+  // Breeder selected via URL param — slug preferred; numeric id still supported
   const urlBreeder = useMemo(
-    () => (breederParam ? allBreeders.find((b) => b.id === Number(breederParam)) : null),
+    () => (breederParam ? resolveBreederFromShopParam(allBreeders, breederParam) : null),
     [breederParam, allBreeders]
   );
+
+  useEffect(() => {
+    if (!breederParam?.trim() || breedersLoading) return;
+    const resolved = resolveBreederFromShopParam(allBreeders, breederParam);
+    if (!resolved) {
+      router.replace("/shop", { scroll: false });
+      return;
+    }
+    if (/^\d+$/.test(breederParam.trim())) {
+      const sp = new URLSearchParams(searchParams.toString());
+      sp.set("breeder", breederSlugFromName(resolved.name));
+      router.replace(`/shop?${sp.toString()}`, { scroll: false });
+    }
+  }, [breederParam, allBreeders, breedersLoading, router, searchParams]);
 
   useEffect(() => {
     setBannerExpanded(false);
   }, [urlBreeder?.id]);
 
-  // Extract unique breeder names for the filter panel (used when no URL param)
-  const breederNames = useMemo(() => {
-    const names = products.map((p) => p.breeders?.name).filter(Boolean) as string[];
-    return ["ทั้งหมด", ...Array.from(new Set(names))];
-  }, [products]);
+  useEffect(() => {
+    if (!searchParams.get("type")) return;
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.delete("type");
+    router.replace(sp.toString() ? `/shop?${sp.toString()}` : "/shop", { scroll: false });
+  }, [searchParams, router]);
 
   const qNorm = searchTerm.trim().toLowerCase();
 
@@ -254,28 +313,157 @@ function ShopContent() {
     });
   }, [products, qNorm, matchingBreederIds]);
 
+  /** Flowering pill counts: search + optional breeder scope (not filtered by ft). */
+  const catalogFloweringScope = useMemo(() => {
+    const base = searchFilteredProducts;
+    if (!urlBreeder) return base;
+    return base.filter((p) => p.breeder_id === urlBreeder.id);
+  }, [searchFilteredProducts, urlBreeder]);
+
+  const catalogFloweringOptions = useMemo(() => {
+    const rows: { slug: string; label: string; count: number }[] = [
+      { slug: "auto", label: t("ออโต้", "Auto"), count: 0 },
+      { slug: "photo", label: t("โฟโต้", "Photo"), count: 0 },
+      { slug: "photo-ff", label: t("โฟโต้ FF", "Photo FF"), count: 0 },
+    ];
+    const idx = (b: CatalogFloweringBucket) => (b === "auto" ? 0 : b === "photo" ? 1 : 2);
+    for (const p of catalogFloweringScope) {
+      const b = catalogFloweringBucket({
+        flowering_type: p.flowering_type,
+        category: p.category,
+        product_categories: p.product_categories,
+      });
+      if (!b) continue;
+      rows[idx(b)].count += 1;
+    }
+    return rows;
+  }, [catalogFloweringScope, t]);
+
+  useEffect(() => {
+    const raw = ftParam?.trim();
+    if (!raw) return;
+    const key = floweringTypeToSlug(raw);
+    const ok = key === "auto" || key === "photo" || key === "photo-ff";
+    if (ok) return;
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.delete("ft");
+    router.replace(sp.toString() ? `/shop?${sp.toString()}` : "/shop", { scroll: false });
+  }, [ftParam, router, searchParams]);
+
+  useEffect(() => {
+    const tid = setTimeout(() => {
+      const next = searchTerm.trim();
+      if (next === qParam.trim()) return;
+      const sp = new URLSearchParams(searchParams.toString());
+      if (next) sp.set("q", next);
+      else sp.delete("q");
+      const qs = sp.toString();
+      router.replace(qs ? `/shop?${qs}` : "/shop", { scroll: false });
+    }, 400);
+    return () => clearTimeout(tid);
+  }, [searchTerm, qParam, router, searchParams]);
+
   const filteredProducts = useMemo(() => {
+    const geneticsSel = parseListParam(geneticsParam);
+    const difficultySel = parseListParam(difficultyParam);
+    const thcSel = parseListParam(thcParam);
+    const cbdSel = parseListParam(cbdParam);
+    const sexSel = parseListParam(sexParam);
+    const ftWant = floweringTypeToSlug(ftParam);
     return searchFilteredProducts.filter((p) => {
-      const matchCategory = activeCategory === "ทั้งหมด" || p.category === activeCategory;
-      const matchBreeder = urlBreeder
-        ? p.breeder_id === urlBreeder.id
-        : activeBreeder === "ทั้งหมด" || p.breeders?.name === activeBreeder;
-      return matchCategory && matchBreeder;
+      let matchBreeder: boolean;
+      if (breederParam?.trim()) {
+        if (breedersLoading) matchBreeder = true;
+        else if (!urlBreeder) matchBreeder = false;
+        else matchBreeder = p.breeder_id === urlBreeder.id;
+      } else {
+        matchBreeder = true;
+      }
+      const b = catalogFloweringBucket({
+        flowering_type: p.flowering_type,
+        category: p.category,
+        product_categories: p.product_categories,
+      });
+      const matchFt =
+        !ftWant ||
+        (b != null &&
+          (b === "photo_ff" ? "photo-ff" : b) === ftWant);
+      const matchAttributes = productMatchesShopAttributeFilters(
+        {
+          strain_dominance: p.strain_dominance,
+          growing_difficulty: p.growing_difficulty,
+          thc_percent: p.thc_percent,
+          cbd_percent: p.cbd_percent ?? null,
+          seed_type: p.seed_type ?? null,
+        },
+        geneticsSel,
+        difficultySel,
+        thcSel,
+        cbdSel,
+        sexSel
+      );
+      return matchBreeder && matchFt && matchAttributes;
     });
-  }, [searchFilteredProducts, activeCategory, activeBreeder, urlBreeder]);
+  }, [
+    searchFilteredProducts,
+    urlBreeder,
+    breederParam,
+    breedersLoading,
+    ftParam,
+    geneticsParam,
+    difficultyParam,
+    thcParam,
+    cbdParam,
+    sexParam,
+  ]);
+
+  const filteredIdsKey = useMemo(
+    () => filteredProducts.map((p) => p.id).join(","),
+    [filteredProducts]
+  );
+
+  useEffect(() => {
+    setVisibleCount(SHOP_PAGE_INITIAL);
+  }, [filteredIdsKey]);
+
+  const visibleProducts = useMemo(
+    () => filteredProducts.slice(0, visibleCount),
+    [filteredProducts, visibleCount]
+  );
+
+  const totalFiltered = filteredProducts.length;
+  const shownCount = visibleProducts.length;
+  const hasMoreProducts = shownCount < totalFiltered;
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > BACK_TO_TOP_SCROLL_THRESHOLD);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const hasFilters =
-    activeCategory !== "ทั้งหมด" || activeBreeder !== "ทั้งหมด" || searchTerm.trim().length > 0;
+    searchTerm.trim().length > 0 ||
+    !!ftParam?.trim() ||
+    parseListParam(geneticsParam).length > 0 ||
+    parseListParam(difficultyParam).length > 0 ||
+    parseListParam(thcParam).length > 0 ||
+    parseListParam(cbdParam).length > 0 ||
+    parseListParam(sexParam).length > 0;
 
   const clearFilters = () => {
     setSearchTerm("");
-    setActiveCategory("ทั้งหมด");
-    setActiveBreeder("ทั้งหมด");
-    if (breederParam) router.push("/shop");
+    if (breederParam && urlBreeder) {
+      router.replace(`/shop?breeder=${encodeURIComponent(breederSlugFromName(urlBreeder.name))}`, {
+        scroll: false,
+      });
+      return;
+    }
+    router.push("/shop");
   };
 
-  const activeBreederId = breederParam ? parseInt(breederParam, 10) : null;
-  const safeActiveId = activeBreederId != null && !Number.isNaN(activeBreederId) ? activeBreederId : null;
+  const activeBreederSlug =
+    urlBreeder && breederParam?.trim() ? breederSlugFromName(urlBreeder.name) : null;
 
   const isEn = locale === "en";
   const fullDesc = urlBreeder
@@ -294,11 +482,11 @@ function ShopContent() {
     : [];
 
   return (
-    <div className="min-h-screen bg-white pt-20">
-      {/* Sticky Breeder Ribbon — stays at top for easy brand switching */}
-      <div className="sticky top-20 z-20 border-b border-zinc-100 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm sm:px-6">
+    <div className="min-h-screen bg-white pt-20 sm:pt-28">
+      {/* Breeder ribbon — scrolls with page (not sticky) */}
+      <div className="border-b border-zinc-100 bg-white px-4 py-3 sm:px-6">
         <div className="mx-auto max-w-7xl">
-          <BreederRibbon compact activeBreederId={safeActiveId} scrollOnNav={false} />
+          <BreederRibbon compact activeBreederSlug={activeBreederSlug} scrollOnNav={false} />
         </div>
       </div>
       {/* ── Breeder Banner (URL param mode) ──────────────────────────────── */}
@@ -326,7 +514,7 @@ function ShopContent() {
             <div className="min-w-0 flex-1">
               <Link href="/breeders" className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
                 <ChevronLeft className="h-3.5 w-3.5" />
-                กลับไปหน้ารวมค่ายเมล็ด
+                {tMsg("breeder.back_to_list", "Back to Breeders")}
               </Link>
               <span className="mb-1 block rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary w-fit">Breeder Collection</span>
               <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 sm:text-3xl">{urlBreeder.name}</h1>
@@ -375,14 +563,16 @@ function ShopContent() {
               </div>
 
               <p className="mt-3 text-xs text-zinc-400">
-                {isLoading ? "กำลังโหลด..." : `${filteredProducts.length} สายพันธุ์`}
+                {isLoading
+                  ? t("กำลังโหลด...", "Loading...")
+                  : `${filteredProducts.length} ${tMsg("breeder.strains_count", "Strains")}`}
               </p>
             </div>
 
             <div className="shrink-0">
               <Button variant="outline" size="sm" onClick={() => router.push("/shop")} className="gap-1.5 border-zinc-200 text-zinc-600 hover:border-primary hover:text-primary">
                 <ChevronLeft className="h-4 w-4" />
-                ดูสินค้าทั้งหมดของร้าน
+                {tMsg("breeder.view_all_products", "View All Products")}
               </Button>
             </div>
           </div>
@@ -399,195 +589,192 @@ function ShopContent() {
         </div>
       )}
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {/* Search + Filter Toggle */}
-        <div className="mb-5 flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <Input
-              placeholder={t("ค้นหาสินค้าหรือแบรนด์...", "Search products or brands...")}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full min-w-0 pl-9"
+      <div className="mx-auto max-w-7xl px-4 pb-8 pt-0 sm:px-6">
+        {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
+        <div className="sticky top-20 z-40 -mx-4 mb-4 border-b border-zinc-200 bg-white px-4 pt-3 pb-2 sm:-mx-6 sm:top-28 sm:px-6">
+          {catalogFloweringScope.length > 0 && catalogFloweringOptions.length > 1 && (
+            <BreederTypeFilter
+              options={catalogFloweringOptions}
+              allLabel={t("ทั้งหมด", "All")}
+              paramKey="ft"
+              ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
             />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-              >
-                <X className="h-4 w-4 text-zinc-400 hover:text-zinc-600" />
-              </button>
-            )}
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilter((v) => !v)}
-            className={showFilter ? "border-primary bg-primary/5 text-primary" : ""}
-          >
-            <SlidersHorizontal className="mr-1.5 h-4 w-4" />
-            ตัวกรอง
-          </Button>
-        </div>
-
-        {/* Filter Panel */}
-        {showFilter && (
-          <div className="mb-5 rounded-xl border border-zinc-200 bg-zinc-50 p-4 space-y-4">
-            {/* Category */}
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                หมวดหมู่
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                      activeCategory === cat
-                        ? "bg-primary text-white"
-                        : "bg-white border border-zinc-200 text-zinc-600 hover:border-primary hover:text-primary"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
+          )}
+          <div className="mt-1 flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+              <Input
+                placeholder={t("ค้นหาสินค้าหรือแบรนด์...", "Search products or brands...")}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full min-w-0 bg-white pl-9"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  <X className="h-4 w-4 text-zinc-400 hover:text-zinc-600" />
+                </button>
+              )}
             </div>
-
-            {/* Breeder */}
-            {breederNames.length > 1 && (
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Breeder / แบรนด์
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {breederNames.map((b) => (
-                    <button
-                      key={b}
-                      onClick={() => setActiveBreeder(b)}
-                      className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                        activeBreeder === b
-                          ? "bg-primary text-white"
-                          : "bg-white border border-zinc-200 text-zinc-600 hover:border-primary hover:text-primary"
-                      }`}
-                    >
-                      {b}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Active Filter Chips */}
-        {hasFilters && (
-          <div className="mb-4 flex items-center gap-2 flex-wrap">
-            {activeCategory !== "ทั้งหมด" && (
-              <Badge variant="outline" className="gap-1 text-xs">
-                {activeCategory}
-                <button onClick={() => setActiveCategory("ทั้งหมด")}>
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            )}
-            {activeBreeder !== "ทั้งหมด" && (
-              <Badge variant="outline" className="gap-1 text-xs">
-                {activeBreeder}
-                <button onClick={() => setActiveBreeder("ทั้งหมด")}>
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            )}
-            <button
-              onClick={clearFilters}
-              className="text-xs text-zinc-400 underline hover:text-zinc-600"
+            <Button
+              variant="outline"
+              className={`shrink-0 bg-white lg:hidden ${showFilter ? "border-primary bg-primary/5 text-primary" : ""}`}
+              onClick={() => setShowFilter((v) => !v)}
+              aria-expanded={showFilter}
+              aria-controls="shop-filters"
             >
-              ล้างทั้งหมด
-            </button>
-          </div>
-        )}
-
-        {/* Breeder profile cards when search matches a brand */}
-        {qNorm && matchingBreeders.length > 0 && (
-          <div className="mb-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              {t("แบรนด์ที่ตรงกับคำค้น", "Brands matching your search")}
-            </p>
-            <div className="flex flex-wrap gap-4">
-              {matchingBreeders.map((b) => {
-                const summary = locale === "en"
-                  ? (b.summary_en ?? b.summary_th ?? b.description ?? "")
-                  : (b.summary_th ?? b.summary_en ?? b.description ?? "");
-                return (
-                  <Link
-                    key={b.id}
-                    href={`/shop?breeder=${b.id}`}
-                    className="flex w-full max-w-md items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:w-auto"
-                  >
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
-                      <BreederLogoImage
-                        src={b.logo_url}
-                        breederName={b.name}
-                        width={56}
-                        height={56}
-                        className="rounded-xl"
-                        imgClassName="object-contain p-1"
-                        sizes="56px"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-zinc-900">{b.name}</p>
-                      <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500">{summary.slice(0, 120)}{summary.length > 120 ? "…" : ""}</p>
-                      <span className="mt-1.5 inline-block text-xs font-medium text-primary">
-                        {t("ดูสายพันธุ์", "View genetics")} →
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Product Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className="overflow-hidden rounded-2xl border border-zinc-100">
-                <div className="aspect-square animate-pulse bg-zinc-100" />
-                <div className="space-y-2 p-4">
-                  <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-100" />
-                  <div className="h-4 animate-pulse rounded bg-zinc-100" />
-                  <div className="h-8 animate-pulse rounded bg-zinc-100" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 px-4 py-20 text-center">
-            <PackageX className="h-12 w-12 text-zinc-200" />
-            <p className="text-base font-medium text-zinc-500">
-              {t("ไม่พบสินค้าที่ตรงกับการค้นหา", "No results found")}
-            </p>
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              {t("ล้างตัวกรอง", "Clear filters")}
+              <SlidersHorizontal className="mr-1.5 h-4 w-4" />
+              {t("ตัวกรอง", "Filters")}
             </Button>
           </div>
-        ) : (
-          <motion.div
-            initial="hidden"
-            animate="show"
-            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
-            className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
-          >
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </motion.div>
-        )}
+        </div>
+
+        <div className="flex min-h-0 flex-col lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-stretch lg:gap-8">
+          {isLg && (
+            <aside className="flex min-h-0 min-w-0 flex-col items-stretch self-stretch">
+              <FilterSidebar t={t} />
+            </aside>
+          )}
+
+          <div className="min-w-0">
+            {!isLg && (
+              <ShopFilterMobileSheet
+                t={t}
+                open={showFilter}
+                onOpenChange={setShowFilter}
+                resultCount={filteredProducts.length}
+                onClearAll={clearFilters}
+              />
+            )}
+
+            {hasFilters && (
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="text-xs text-zinc-400 underline hover:text-zinc-600"
+                >
+                  {t("ล้างทั้งหมด", "Clear all")}
+                </button>
+              </div>
+            )}
+
+            {qNorm && matchingBreeders.length > 0 && (
+              <div className="mb-6">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  {t("แบรนด์ที่ตรงกับคำค้น", "Brands matching your search")}
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  {matchingBreeders.map((b) => {
+                    const summary = locale === "en"
+                      ? (b.summary_en ?? b.summary_th ?? b.description ?? "")
+                      : (b.summary_th ?? b.summary_en ?? b.description ?? "");
+                    return (
+                      <Link
+                        key={b.id}
+                        href={shopBreederHref(b)}
+                        className="flex w-full max-w-md items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:w-auto"
+                      >
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
+                          <BreederLogoImage
+                            src={b.logo_url}
+                            breederName={b.name}
+                            width={56}
+                            height={56}
+                            className="rounded-xl"
+                            imgClassName="object-contain p-1"
+                            sizes="56px"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-zinc-900">{b.name}</p>
+                          <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500">{summary.slice(0, 120)}{summary.length > 120 ? "…" : ""}</p>
+                          <span className="mt-1.5 inline-block text-xs font-medium text-primary">
+                            {t("ดูสายพันธุ์", "View genetics")} →
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {isLoading ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} className="overflow-hidden rounded-2xl border border-zinc-100">
+                    <div className="aspect-square animate-pulse bg-zinc-100" />
+                    <div className="space-y-2 p-4">
+                      <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-100" />
+                      <div className="h-4 animate-pulse rounded bg-zinc-100" />
+                      <div className="h-8 animate-pulse rounded bg-zinc-100" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 px-4 py-20 text-center">
+                <PackageX className="h-12 w-12 text-zinc-200" />
+                <p className="text-base font-medium text-zinc-500">
+                  {t("ไม่พบสินค้าที่ตรงกับการค้นหา", "No results found")}
+                </p>
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  {t("ล้างตัวกรอง", "Clear filters")}
+                </Button>
+              </div>
+            ) : (
+              <>
+                <motion.div
+                  initial="hidden"
+                  animate="show"
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
+                  className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3"
+                >
+                  {visibleProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </motion.div>
+                {totalFiltered > 0 && (
+                  <p className="mt-6 text-center text-sm text-zinc-500">
+                    {t("แสดง {current} จาก {total} สินค้า", "Showing {current} of {total} products")
+                      .replace("{current}", String(shownCount))
+                      .replace("{total}", String(totalFiltered))}
+                  </p>
+                )}
+                {hasMoreProducts && (
+                  <div className="mt-4 flex justify-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-w-[10rem] border-primary/30 bg-white font-semibold text-primary hover:bg-primary/5"
+                      onClick={() =>
+                        setVisibleCount((c) => Math.min(c + SHOP_PAGE_STEP, totalFiltered))
+                      }
+                    >
+                      {t("โหลดเพิ่ม", "Load more")}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
+
+      {showBackToTop && (
+        <button
+          type="button"
+          aria-label={t("กลับขึ้นด้านบน", "Back to top")}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-primary/80 text-white shadow-md backdrop-blur-md transition hover:bg-primary sm:bottom-8 sm:right-8"
+        >
+          <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+        </button>
+      )}
     </div>
   );
 }

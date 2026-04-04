@@ -7,6 +7,7 @@ import { useBreeders } from "@/hooks/useBreeders";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Breeder } from "@/types/supabase";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
+import { breederSlugFromName, shopBreederHref } from "@/lib/breeder-slug";
 
 const ITEM_W = 140;
 const ITEM_W_COMPACT = 100;
@@ -15,11 +16,12 @@ type BreederTooltipData = { breeder: Breeder; mx: number; my: number };
 
 export function BreederRibbon({
   compact = false,
-  activeBreederId = null,
+  activeBreederSlug = null,
   scrollOnNav = true,
 }: {
   compact?: boolean;
-  activeBreederId?: number | null;
+  /** Slug from `breederSlugFromName` — matches `?breeder=` in the shop URL */
+  activeBreederSlug?: string | null;
   /** When false, router.push(..., { scroll: false }) for in-page updates (e.g. Shop page). */
   scrollOnNav?: boolean;
 }) {
@@ -225,12 +227,16 @@ export function BreederRibbon({
           {items.map((b, i) => {
             const isDuplicate = i >= active.length * 2;
             const hasTooltip = !!(b.summary_th ?? b.summary_en ?? b.description);
-            const isActive = activeBreederId != null && b.id === activeBreederId;
+            const slug = breederSlugFromName(b.name);
+            const isActive =
+              activeBreederSlug != null &&
+              activeBreederSlug !== "" &&
+              slug.toLowerCase() === activeBreederSlug.toLowerCase();
 
             return (
               <a
                 key={`${b.id}-${i}`}
-                href={`/shop?breeder=${b.id}`}
+                href={shopBreederHref(b)}
                 draggable={false}
                 tabIndex={isDuplicate ? -1 : 0}
                 aria-hidden={isDuplicate}

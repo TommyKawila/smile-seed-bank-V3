@@ -1095,14 +1095,15 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 onChange={(e) =>
                   setField(
                     "flowering_type",
-                    (e.target.value || null) as "autoflower" | "photoperiod" | null
+                    (e.target.value || null) as "autoflower" | "photoperiod" | "photo_ff" | null
                   )
                 }
                 className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">—</option>
-                <option value="photoperiod">Photoperiod</option>
-                <option value="autoflower">Autoflower</option>
+                <option value="autoflower">Auto</option>
+                <option value="photoperiod">Photo</option>
+                <option value="photo_ff">Photo FF</option>
               </select>
             </div>
             <div className="space-y-1">
@@ -1117,8 +1118,8 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">—</option>
-                <option value="feminized">Feminized</option>
-                <option value="regular">Regular</option>
+                <option value="feminized">Fem</option>
+                <option value="regular">Reg</option>
               </select>
             </div>
           </div>

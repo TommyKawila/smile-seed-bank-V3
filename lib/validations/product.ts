@@ -65,7 +65,7 @@ export const ProductSchema = z.object({
   sativa_percent: z.number().int().min(0).max(100).nullable().optional(),
   indica_percent: z.number().int().min(0).max(100).nullable().optional(),
   strain_dominance: z.enum(["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"]).nullable().optional(),
-  flowering_type: z.enum(["autoflower", "photoperiod"]).nullable().optional(),
+  flowering_type: z.enum(["autoflower", "photoperiod", "photo_ff"]).nullable().optional(),
   seed_type: z.enum(["FEMINIZED", "REGULAR"]).nullable().optional(),
   yield_info: z.string().nullable().optional(),
   growing_difficulty: z.string().nullable().optional(),

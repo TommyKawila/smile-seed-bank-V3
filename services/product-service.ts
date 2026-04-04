@@ -12,6 +12,7 @@ import {
   isLowStock,
   resolveProductSlugFromName,
 } from "@/lib/product-utils";
+import { resolveBreederFromShopParam } from "@/lib/breeder-slug";
 import { stripEmbeddedColorMarkup } from "@/lib/sanitize-product-text";
 import type {
   Product,
@@ -61,9 +62,26 @@ function normalizeProductFullRow(data: ProductFull): ProductFull {
 
 // ─── Storefront Queries ───────────────────────────────────────────────────────
 
+/** Resolve `?breeder=` slug or legacy numeric id to breeder id (for server filters). */
+export async function getBreederIdFromShopParam(
+  param: string
+): Promise<number | null> {
+  const trimmed = param.trim();
+  if (!trimmed) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from("breeders").select("id, name").eq("is_active", true);
+  const row = resolveBreederFromShopParam(
+    (data ?? []) as { id: number; name: string }[],
+    trimmed
+  );
+  return row ? Number(row.id) : null;
+}
+
 export async function getActiveProducts(opts?: {
   category?: string;
   breeder_id?: number;
+  /** Prefer slug in URLs; resolves to `breeder_id` (empty list if unknown slug) */
+  breeder_shop_param?: string;
   limit?: number;
 }): Promise<ServiceResult<ProductWithBreeder[]>> {
   try {
@@ -76,7 +94,13 @@ export async function getActiveProducts(opts?: {
       .order("id", { ascending: false });
 
     if (opts?.category) query = query.eq("category", opts.category);
-    if (opts?.breeder_id) query = query.eq("breeder_id", opts.breeder_id);
+    let breederId: number | undefined = opts?.breeder_id;
+    if (opts?.breeder_shop_param?.trim()) {
+      const id = await getBreederIdFromShopParam(opts.breeder_shop_param);
+      if (id == null) return { data: [], error: null };
+      breederId = id;
+    }
+    if (breederId != null) query = query.eq("breeder_id", breederId);
     if (opts?.limit) query = query.limit(opts.limit);
 
     const { data, error } = await query;

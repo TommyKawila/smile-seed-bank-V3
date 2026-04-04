@@ -1,19 +1,29 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Venus } from "lucide-react";
+import { Mars, Venus } from "lucide-react";
 import type { Product } from "@/types/supabase";
 
-/** Compact FEMINIZED chip — flat secondary (lavender) per Premium Eco-Clinical. */
+/** Compact feminized chip — flat secondary (lavender) per Premium Eco-Clinical. */
 export function FeminizedSeedSpecChip({ className }: { className?: string }) {
   return (
     <div
       className={`inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 ${className ?? ""}`}
     >
       <Venus className="h-6 w-6 shrink-0 text-secondary-foreground" aria-hidden />
-      <span className="text-xs font-medium uppercase tracking-wide text-secondary-foreground">
-        FEMINIZED
-      </span>
+      <span className="text-xs font-semibold tracking-wide text-secondary-foreground">Fem</span>
+    </div>
+  );
+}
+
+/** Compact regular seed chip — outline + Mars. */
+export function RegularSeedSpecChip({ className }: { className?: string }) {
+  return (
+    <div
+      className={`inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1.5 ${className ?? ""}`}
+    >
+      <Mars className="h-6 w-6 shrink-0 text-primary" aria-hidden />
+      <span className="text-xs font-semibold tracking-wide text-primary">Reg</span>
     </div>
   );
 }
@@ -23,10 +33,21 @@ export function FeminizedStatCard({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-border/40 bg-secondary p-4 text-center">
       <Venus className="mb-1.5 h-6 w-6 text-secondary-foreground" aria-hidden />
-      <span className="text-xl font-medium tracking-tight text-secondary-foreground">
-        FEMINIZED
-      </span>
+      <span className="text-xl font-semibold tracking-tight text-secondary-foreground">Fem</span>
       <span className="mt-0.5 text-xs font-medium uppercase tracking-wider text-secondary-foreground">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/** Bento stat cell when seed / sex is regular — muted slot + Mars. */
+export function RegularStatCard({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-border/40 bg-muted/50 p-4 text-center">
+      <Mars className="mb-1.5 h-6 w-6 text-primary" aria-hidden />
+      <span className="text-xl font-semibold tracking-tight text-primary">Reg</span>
+      <span className="mt-0.5 text-xs font-medium uppercase tracking-wider text-primary">
         {label}
       </span>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -27,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { UserNav } from "@/components/admin/user-nav";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -59,6 +61,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ onClose }: AdminSidebarProps) {
   const pathname = usePathname();
+  const { settings } = useSiteSettings();
   const [lowStockCount, setLowStockCount] = useState(0);
 
   useEffect(() => {
@@ -70,19 +73,50 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
 
   return (
     <aside className="flex h-full w-64 flex-col bg-zinc-900 text-zinc-100">
-      {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Leaf className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold leading-none">Smile Seed Bank</p>
-            <p className="text-xs text-zinc-400">Admin Panel</p>
-          </div>
-        </div>
+      {/* Logo — same brand asset as storefront (`logo_main_url`) */}
+      <div className="flex items-start justify-between gap-2 px-5 py-5">
+        <Link
+          href="/admin/dashboard"
+          className="flex min-w-0 flex-1 flex-col gap-1.5"
+          onClick={onClose}
+        >
+          {settings.logo_main_url ? (
+            <>
+              <Image
+                src={settings.logo_main_url}
+                alt="Smile Seed Bank"
+                width={280}
+                height={96}
+                className="h-10 w-auto max-w-[200px] object-contain object-left sm:h-12"
+                unoptimized
+              />
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                Admin Panel
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+                  <Leaf className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-sm font-semibold leading-tight text-zinc-100">
+                  Smile Seed Bank
+                </span>
+              </div>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                Admin Panel
+              </p>
+            </>
+          )}
+        </Link>
         {onClose && (
-          <button onClick={onClose} className="rounded p-1 hover:bg-zinc-800 lg:hidden">
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded p-1 hover:bg-zinc-800 lg:hidden"
+            aria-label="Close menu"
+          >
             <X className="h-4 w-4" />
           </button>
         )}

@@ -9,6 +9,16 @@
 - **Key highlights:**
   - Implemented **Premium Eco-Clinical** theme (**Deep Teal + Lavender**): `app/globals.css` `:root` + `tailwind.config.ts` semantic colors.
   - **Double Glow** genetic bars in `components/storefront/ProductSpecs.tsx`: **Electric Mint (Sativa)** — `bg-sativa` + `hsl(var(--sativa)/0.4)` glow; **Rich Lavender (Indica)** — `bg-secondary` + `hsl(var(--secondary)/0.5)` glow; z-index layering (Sativa over Indica at the seam).
+  - **Shop grid Micro-Genetics Bar** — `components/storefront/MicroGeneticsBar.tsx` (under product image in `app/(storefront)/shop/page.tsx` `ProductCard`): `getGeneticPercents` → `genetic_ratio` parse → `strain_dominance` fallback; Sativa `bg-emerald-400` / Indica `bg-violet-400`; perfect 50/50 → full `bg-teal-500`; primary glow + `group-hover` height 4px→6px.
+  - **Shop / home product card spec chips** — `productCardFloweringChipLabel` + `labelForSeedTypeBadge` in `lib/seed-type-filter.ts`; shop `app/(storefront)/shop/page.tsx` + home `page.tsx`: flowering `AUTO`/`PHOTO`/`PHOTO FF`, seed `FEM`/`REG`, THC compact uppercase style (`compactSpecChip` / `compactSpecChipThc`).
+  - **Admin sex select** — `ProductModal`: display **Fem** / **Reg** (values `feminized` / `regular`).
+  - **Product detail seed labels** — `ProductSpecs` (`FeminizedSeedSpecChip` / `RegularSeedSpecChip`, `FeminizedStatCard` / `RegularStatCard`); `product-detail-client` spec grid + `SpecRow` seed type uses `seedTypeDetailShort` / `sexTypeDetailShort` from `lib/seed-type-filter.ts`.
+  - **Product detail pack order** — `product-detail-client.tsx`: `sortVariantsByPriceThenPack` (price asc, tie-break `unit_label` first number); initial selected variant uses same order.
+  - **Shop filters refactor** — Horizontal `BreederTypeFilter` uses `ft` (Auto / Photo / Photo FF) + `catalogFloweringBucket` counts from full catalog (search ± breeder scope); sidebar `FilterSidebar` (no breeder pills): Genetics icons, THC+CBD buckets, Difficulty, Sex Fem/Reg; `productMatchesShopAttributeFilters` + URL `cbd`/`sex`; legacy `type` query stripped; `q` debounced to URL.
+  - **Shop pagination + back-to-top** — `app/(storefront)/shop/page.tsx`: initial **30** visible products, **24** per "Load more" (`SHOP_PAGE_INITIAL` / `SHOP_PAGE_STEP`); reset when filtered id list changes; progress line + floating **Back to top** after **400px** scroll (`bg-primary/80`, `backdrop-blur-md`, `ArrowUp`).
+  - **Breeder banner i18n (shop `?breeder=`)** — `locales/th.json` + `locales/en.json` (`breeder.back_to_list`, `breeder.strains_count`, `breeder.view_all_products`); `hooks/use-translations.ts` + `lib/i18n-messages.ts`; `app/(storefront)/shop/page.tsx` breeder profile strip.
+  - **Shop filters mobile sheet** — `useMediaQuery("(min-width: 1024px)")` in `app/(storefront)/shop/page.tsx`; below `lg`, `ShopFilterMobileSheet` (shadcn `Sheet`, blurred overlay) replaces inline sidebar; header title + close, scroll body `FilterSidebarContent`, footer **ล้างทั้งหมด** / **แสดงผล (n) รายการ**; desktop: two-column `lg:grid-cols-[280px_minmax(0,1fr)]` + `lg:items-stretch`; sticky strip (pills + search) `top-20`/`sm:top-28` `z-40` `bg-white` (no `overflow-*` on shop root); `FilterSidebar` `lg:top-[230px]` + `lg:max-h-[calc(100vh-230px)]`; scroll area `pt-4`; ribbon not sticky; filter toggle `lg:hidden`; grid `lg:grid-cols-3`; `hooks/use-media-query.ts`, `components/ui/sheet.tsx` overlay blur.
+  - **Flowering type `photo_ff`** — Admin `ProductModal` select + `lib/validations/product.ts` Zod; `lib/cannabis-attributes.ts` (`normalizeFloweringFromDb`, `isPhotoperiodLikeDb`, `isPhotoFfDb`, `labelFloweringType`); `lib/seed-type-filter.ts` breeder keys + `labelForFloweringSlug`; DB column remains **string** (no Postgres enum). If save fails elsewhere, add `photo_ff` to any strict enum/check.
   - **`lib/sanitize-product-text.ts`** — strips legacy inline `font` / `color` / color-bearing `style` from product text fields; wired in `services/product-service.ts` (`getProductBySlug`, `getActiveProducts`); public **`GET /api/products/[slug]`** returns the same normalized payload.
 - **Next steps:** Ready for **production deployment** and **testing with real users** (smoke-test checkout, product detail, mobile layouts).
 
@@ -80,6 +90,22 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 - **`resolvePublicAssetUrl()`** — `lib/public-storage-url.ts` (relative storage paths → full public URL)
 - **`BreederLogoImage`** — `components/storefront/BreederLogoImage.tsx`: fixed `width`/`height`, `alt` = `{name} logo`, `onError` → letter-in-circle fallback; wired on `app/(storefront)/shop/page.tsx`, `app/(storefront)/page.tsx`, `app/(storefront)/product/[slug]/page.tsx`, `app/(storefront)/breeders/page.tsx`, `components/storefront/BreederRibbon.tsx`
 - **`next.config.mjs`** — `images.remotePatterns` from `NEXT_PUBLIC_SUPABASE_URL` + storage pathname; fallback host `jysdfxxilyjmjdmhazbu.supabase.co` (correct spelling)
+
+### Storefront shop breeder filter (URL `?breeder=`)
+- **`lib/breeder-slug.ts`** — `breederSlugFromName` (from `generateSlug`), `shopBreederHref`, `resolveBreederFromShopParam` (slug preferred, legacy numeric id); invalid param → `router.replace("/shop")` on shop page.
+- **`app/(storefront)/shop/page.tsx`** — resolves breeder from query; numeric id URLs rewrite to slug; filter grid empty while invalid after load; **`BreederRibbon`** — `activeBreederSlug` + `shopBreederHref` per card.
+- **Links** — `product-detail-client.tsx`, `app/(storefront)/page.tsx`, `breeders/page.tsx` use `shopBreederHref` (not `breeder` id).
+
+### Breeder detail — flowering type pills (`?type=`)
+- **`lib/seed-type-filter.ts`** — `resolveCategoryLabelForFilters` (FK `product_categories.name` then `category` string); `collectionKeyFromCategory` (original substring, FF / fast flowering / fast version); short labels Auto / Photo / Fast; `breederDisplayTypeKeyFromProduct` + `labelForBreederDisplayTypeSlug`.
+- **`lib/supabase/types.ts`** — `PRODUCT_SELECT_*` embeds `product_categories(id, name)` on shop/product list queries.
+- **`components/storefront/BreederTypeFilter.tsx`** — horizontal scroll pills for flowering types; hidden when ≤1 distinct type for that breeder’s stock.
+- **`app/(storefront)/shop/page.tsx`** — when `?breeder=` is set, counts + filter by `flowering_type`; `?type=` sync via `router.replace`.
+
+### Shop filter sidebar (breeder-aware)
+- **`lib/shop-attribute-filters.ts`** — multi-select query `genetics`, `difficulty`, `thc` (comma-separated); matches `strain_dominance`, `growing_difficulty`, `thc_percent`.
+- **`components/storefront/FilterSidebar.tsx`** — `FilterSidebarContent` shared; desktop `FilterSidebar` card; **`ShopFilterMobileSheet`** (`< lg`) with sticky footer; breeder row when not `?breeder=`; attribute checkboxes (Teal/Lavender) in breeder context; no category pills (top `BreederTypeFilter` covers types).
+- **`shop/page.tsx`** — strips `genetics`/`difficulty`/`thc` without breeder; **Clear all** with breeder keeps `?breeder=` + `?type=`; clears sidebar attribute params only; mobile filter toggle opens sheet (`id="shop-filters"`).
 
 ### Sales & Document Module
 - **Executive Dashboard v1** — `/admin/dashboard`; `GET /api/admin/dashboard/stats?range=7|30|month`; `GET /api/admin/dashboard/orders-export` + `lib/export-utils` (`xlsx`) ส่งออก Excel ตามช่วง; toast กำลังเตรียม/สำเร็จ; `lib/dashboard-date-range` ใช้ร่วม stats/export; Top 5 strains pie: `topStrains.breederName` จาก join `products`/`breeders`; legend/tooltip `ชื่อสาย (Breeder)` ใน `app/admin/dashboard/page.tsx`; empty state เมื่อ `totalRevenue===0` และ `orderCount===0` — placeholder กราฟ, CTA `/admin/quotations/new`, ข้อความตารางออเดอร์/Top Spenders

@@ -275,7 +275,7 @@ model products {
   genetics           String?
   indica_ratio       Decimal?            @db.Decimal
   sativa_ratio       Decimal?            @db.Decimal
-  flowering_type     String? // autoflower | photoperiod (lowercase)
+  flowering_type     String? // autoflower | photoperiod | photo_ff (lowercase)
   seed_type          String?
   yield_info         String?
   growing_difficulty String?

@@ -12,8 +12,13 @@ import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { formatPrice } from "@/lib/utils";
 import { productDetailHref } from "@/lib/product-utils";
+import { shopBreederHref } from "@/lib/breeder-slug";
 import { useLanguage } from "@/context/LanguageContext";
 import { Hero } from "@/components/storefront/Hero";
+import {
+  labelForSeedTypeBadge,
+  productCardFloweringChipLabel,
+} from "@/lib/seed-type-filter";
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
 
@@ -33,6 +38,10 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
   const { t } = useLanguage();
   const glassBadge = "rounded-full border border-white/30 bg-white/20 px-2 py-0.5 text-[10px] font-medium backdrop-blur-md";
   const glassChip = "rounded-full border border-zinc-200/70 bg-white/70 px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm";
+  const compactSpecChip = `${glassChip} bg-muted/50 text-[9px] font-medium tracking-wide text-zinc-700`;
+  const compactSpecChipThc = `${glassChip} bg-muted/50 text-[9px] font-medium tracking-wide text-primary`;
+  const floweringLabel = productCardFloweringChipLabel(product);
+  const seedLabel = labelForSeedTypeBadge(product.seed_type);
 
   return (
     <motion.div
@@ -56,7 +65,7 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
         )}
         {product.breeders && (
           <Link
-            href={`/shop?breeder=${product.breeders.id}`}
+            href={shopBreederHref(product.breeders)}
             onClick={(e) => e.stopPropagation()}
             className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-white/30 bg-white/20 shadow-md backdrop-blur-md transition-transform duration-200 hover:scale-110"
           >
@@ -82,7 +91,7 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
       <div className="flex flex-col gap-2 p-4 sm:p-4">
         {product.breeders && (
           <Link
-            href={`/shop?breeder=${product.breeders.id}`}
+            href={shopBreederHref(product.breeders)}
             onClick={(e) => e.stopPropagation()}
             className="mb-0.5 inline-block max-w-fit text-xs font-semibold text-primary underline-offset-2 hover:underline"
           >
@@ -93,14 +102,10 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
           {product.name}
         </h3>
         <div className="flex flex-wrap gap-1.5">
-          {product.flowering_type && (
-            <span className={`${glassChip} text-zinc-700`}>{product.flowering_type}</span>
-          )}
-          {product.seed_type && (
-            <span className={`${glassChip} text-zinc-700`}>{product.seed_type}</span>
-          )}
-          {product.thc_percent && (
-            <span className={`${glassChip} text-primary`}>THC {product.thc_percent}%</span>
+          {floweringLabel && <span className={compactSpecChip}>{floweringLabel}</span>}
+          {seedLabel && <span className={compactSpecChip}>{seedLabel}</span>}
+          {product.thc_percent != null && (
+            <span className={compactSpecChipThc}>THC {product.thc_percent}%</span>
           )}
         </div>
         <div className="mt-2 flex items-center justify-between gap-3">
