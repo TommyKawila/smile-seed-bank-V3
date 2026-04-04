@@ -16,6 +16,9 @@ import {
   VariantSchema,
   type ProductFormData,
 } from "@/lib/validations/product";
+import { FLOWERING_DB_PHOTO_3N, FLOWERING_DB_PHOTO_PLAIN } from "@/lib/constants";
+
+export type CategoryFilterMode = "fk" | "photo_3n" | "plain_photo";
 
 // Re-export so existing component imports keep working
 export { ProductSchema, VariantSchema, type ProductFormData };
@@ -30,6 +33,8 @@ interface UseProductsOptions {
   category?: string;
   breeder_id?: number;
   categoryId?: string | number;
+  /** Admin product list: plain Photo / Photoperiod category vs FK-only vs Photo 3N sentinel */
+  categoryFilterMode?: CategoryFilterMode;
   strain_dominance?: StrainDominance | null;
   limit?: number;
   autoFetch?: boolean;
@@ -56,6 +61,7 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     category,
     breeder_id,
     categoryId,
+    categoryFilterMode,
     strain_dominance,
     limit,
     autoFetch = true,
@@ -91,7 +97,22 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
 
       if (category) query = query.eq("category", category);
       if (breeder_id) query = query.eq("breeder_id", breeder_id);
-      if (categoryId != null && categoryId !== "") query = query.eq("category_id", Number(categoryId));
+      if (categoryId != null && categoryId !== "") {
+        const cid = String(categoryId);
+        if (cid === FLOWERING_DB_PHOTO_3N) {
+          query = query.eq("flowering_type", FLOWERING_DB_PHOTO_3N);
+        } else if (categoryFilterMode === "plain_photo") {
+          const photoCatId = Number(cid);
+          if (!Number.isNaN(photoCatId)) {
+            const inList = FLOWERING_DB_PHOTO_PLAIN.join(",");
+            query = query.or(
+              `flowering_type.in.(${inList}),and(flowering_type.is.null,category_id.eq.${photoCatId})`
+            );
+          }
+        } else {
+          query = query.eq("category_id", Number(categoryId));
+        }
+      }
       if (strain_dominance) query = query.eq("strain_dominance", strain_dominance);
       if (limit) query = query.limit(limit);
 
@@ -103,7 +124,16 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [category, breeder_id, categoryId, strain_dominance, limit, includeVariants, includeInactive]);
+  }, [
+    category,
+    breeder_id,
+    categoryId,
+    categoryFilterMode,
+    strain_dominance,
+    limit,
+    includeVariants,
+    includeInactive,
+  ]);
 
   useEffect(() => {
     if (autoFetch) fetchProducts();

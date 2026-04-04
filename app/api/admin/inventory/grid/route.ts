@@ -3,6 +3,8 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
 import { parsePackFromUnitLabel, toBreederPart, toBreederPrefix } from "@/lib/sku-utils";
+import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
+import { adminGridCategoryWhereInput } from "@/lib/admin-grid-category-filter";
 
 export const dynamic = "force-dynamic";
 
@@ -12,15 +14,12 @@ function isAllToken(s: string | null | undefined): boolean {
   return t === "" || t.toLowerCase() === "all";
 }
 
-/** Only positive integer strings; avoids BigInt("all") / UUID throwing and emptying results via catch. */
-function parseBigIntId(raw: string): bigint | null {
-  const t = raw.trim();
-  if (!/^\d+$/.test(t)) return null;
-  try {
-    return BigInt(t);
-  } catch {
-    return null;
+function sortedUniquePackNums(nums: number[], min = 1, max = 99): number[] {
+  const s = new Set<number>();
+  for (const x of nums) {
+    if (Number.isInteger(x) && x >= min && x <= max) s.add(x);
   }
+  return [...s].sort((a, b) => a - b);
 }
 
 export async function GET(req: NextRequest) {
@@ -47,17 +46,23 @@ export async function GET(req: NextRequest) {
       select: { name: true, allowed_packages: true },
     });
 
-    const raw = breeder?.allowed_packages as { sizes?: number[]; active?: number[] } | number[] | null;
+    const raw = breeder?.allowed_packages as
+      | { sizes?: number[]; active?: number[]; manual_grid_extra_packs?: number[] }
+      | number[]
+      | null;
     const defaultPacks = [1, 2, 3, 5];
-    
-    const sizes = Array.isArray(raw)
-      ? [...new Set(raw.filter((p: number) => p >= 1 && p <= 99))].sort((a, b) => a - b)
-      : (raw?.sizes ? [...new Set(raw.sizes.filter((p: number) => p >= 1 && p <= 99))].sort((a, b) => a - b) : defaultPacks);
-
+    const extraFromBreeder =
+      !Array.isArray(raw) && raw && typeof raw === "object" && Array.isArray(raw.manual_grid_extra_packs)
+        ? raw.manual_grid_extra_packs
+        : [];
+    const baseSizesRaw = Array.isArray(raw)
+      ? sortedUniquePackNums(raw)
+      : sortedUniquePackNums(raw?.sizes?.length ? raw.sizes : defaultPacks);
+    const baseSizes = baseSizesRaw.length > 0 ? baseSizesRaw : defaultPacks;
+    const sizes = sortedUniquePackNums([...baseSizes, ...extraFromBreeder]);
     const active = Array.isArray(raw)
       ? sizes
-      : (raw?.active ? [...new Set(raw.active.filter((p: number) => p >= 1 && p <= 99))].sort((a, b) => a - b) : sizes);
-    
+      : sortedUniquePackNums(raw?.active?.length ? raw.active : sizes);
     const packs = active.length > 0 ? active : defaultPacks;
 
     const longSkuPrefix =
@@ -93,16 +98,12 @@ export async function GET(req: NextRequest) {
           }
         : { breeder_id: bid };
 
-    const applyCategory = !isAllToken(categoryId);
-    const categoryBigInt = applyCategory ? parseBigIntId(categoryId) : null;
-    if (applyCategory && categoryBigInt == null) {
-      console.warn("[Grid API] Ignoring invalid categoryId (expected numeric id):", categoryRaw);
-    }
     const applyDominance = !isAllToken(dominance);
 
     const whereParts: Prisma.productsWhereInput[] = [breederScope];
-    if (applyCategory && categoryBigInt != null) {
-      whereParts.push({ category_id: categoryBigInt });
+    if (!isAllToken(categoryId)) {
+      const catWhere = await adminGridCategoryWhereInput(categoryId);
+      if (catWhere) whereParts.push(catWhere);
     }
     if (applyDominance && dominance) {
       whereParts.push({
@@ -150,7 +151,7 @@ export async function GET(req: NextRequest) {
         categoryId: categoryId || "(omit)",
         categoryRaw,
         dominance: dominance || "(omit)",
-        applyCategory,
+        hasCategoryFilter: !isAllToken(categoryId),
         applyDominance,
         longSkuPrefix,
         shortSkuPrefix,
@@ -169,6 +170,7 @@ export async function GET(req: NextRequest) {
       image_urls: true,
       category: true,
       category_id: true,
+      flowering_type: true,
       thc_percent: true,
       terpenes: true,
       strain_dominance: true,
@@ -219,7 +221,8 @@ export async function GET(req: NextRequest) {
           if (!variantByPackSize.has(packSize)) variantByPackSize.set(packSize, v);
         }
 
-        const allSizes = sizes.length > 0 ? sizes : packs;
+        const variantSizes = p.product_variants.map((v) => parsePackFromUnitLabel(v.unit_label));
+        const allSizes = sortedUniquePackNums([...sizes, ...variantSizes]);
         const byPack: Record<string, { stock: number; cost: number; price: number }> = {};
         const variantIdsByPack: Record<string, number | null> = {};
         const lowStockThresholdByPack: Record<string, number> = {};
@@ -238,18 +241,30 @@ export async function GET(req: NextRequest) {
         const primaryImg = Array.isArray(p.image_urls) && (p.image_urls as string[]).length > 0
           ? (p.image_urls as string[])[0]
           : (p as { image_url?: string | null }).image_url ?? null;
+        const ft = String((p as { flowering_type?: string | null }).flowering_type ?? "")
+          .trim()
+          .toLowerCase()
+          .replace(/-/g, "_");
+        const isPhoto3n = ft === FLOWERING_DB_PHOTO_3N;
         return {
           productId: Number(p.id),
           masterSku: p.master_sku ?? "",
           name: p.name,
           imageUrl: primaryImg,
           strainDominance: p.strain_dominance ?? null,
-          category: p.product_categories?.name ?? (p.category === "Photo (FF)" ? "Photo" : p.category === "Seeds" ? "" : p.category ?? ""),
-          productCategory: p.product_categories ? { id: String(p.product_categories.id), name: p.product_categories.name } : null,
-          categoryId: p.category_id != null ? String(p.category_id) : undefined,
+          category: isPhoto3n
+            ? "Photo 3N"
+            : p.product_categories?.name ?? (p.category === "Photo (FF)" ? "Photo" : p.category === "Seeds" ? "" : p.category ?? ""),
+          productCategory: isPhoto3n
+            ? { id: FLOWERING_DB_PHOTO_3N, name: "Photo 3N" }
+            : p.product_categories
+              ? { id: String(p.product_categories.id), name: p.product_categories.name }
+              : null,
+          categoryId: isPhoto3n ? FLOWERING_DB_PHOTO_3N : p.category_id != null ? String(p.category_id) : undefined,
+          floweringType: ft || null,
           thcPercent: p.thc_percent != null ? Number(p.thc_percent) : null,
           terpenes: Array.isArray(p.terpenes) ? (p.terpenes as string[]).join(", ") : (typeof p.terpenes === "string" ? p.terpenes : ""),
-          packs,
+          packs: allSizes,
           byPack,
           variantIdsByPack,
           lowStockThresholdByPack,

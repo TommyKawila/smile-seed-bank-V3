@@ -17,12 +17,17 @@ async function main() {
         { name: 'Auto', sort_order: 2 },
         { name: 'Auto Original Line', sort_order: 3 },
         { name: 'CBD', sort_order: 4 },
+        { name: 'Photo 3N', sort_order: 5 },
       ],
     });
     console.log('✅ สร้าง product_categories เรียบร้อย');
   }
 
   const catList = await prisma.product_categories.findMany();
+  if (!catList.some((c: { name: string }) => c.name === 'Photo 3N')) {
+    await prisma.product_categories.create({ data: { name: 'Photo 3N', sort_order: 5 } });
+    console.log('✅ เพิ่ม product category Photo 3N');
+  }
   const photoId = catList.find((c: { name: string }) => c.name === 'Photo' || c.name.includes('Photo'))?.id ?? null;
   const autoId = catList.find((c: { name: string }) => c.name === 'Auto' && !c.name.includes('Original'))?.id ?? null;
 

@@ -1,6 +1,6 @@
 /** Canonical DB values for products.flowering_type / products.sex_type (lowercase). */
 
-export const FLOWERING_TYPES = ["autoflower", "photoperiod", "photo_ff"] as const;
+export const FLOWERING_TYPES = ["autoflower", "photoperiod", "photo_ff", "photo_3n"] as const;
 export type FloweringTypeCanonical = (typeof FLOWERING_TYPES)[number];
 
 export const SEX_TYPES = ["feminized", "regular"] as const;
@@ -11,10 +11,11 @@ export type SexTypeCanonical = (typeof SEX_TYPES)[number];
  */
 export const normalizeFloweringFromDb = (
   val: string | null | undefined
-): "photoperiod" | "autoflower" | "photo_ff" | "" => {
+): "photoperiod" | "autoflower" | "photo_ff" | "photo_3n" | "" => {
   if (!val) return "";
   const normalized = val.trim().toLowerCase().replace(/-/g, "_");
   if (normalized === "photo_ff") return "photo_ff";
+  if (normalized === "photo_3n" || normalized.includes("triploid")) return "photo_3n";
   if (normalized.includes("auto")) return "autoflower";
   if (normalized.includes("photo")) return "photoperiod";
   return "";
@@ -55,6 +56,7 @@ export function labelFloweringType(raw: string | null | undefined): string {
   const c = normalizeFloweringTypeFromDb(raw);
   if (c === "autoflower") return "Autoflower";
   if (c === "photo_ff") return "Photo FF";
+  if (c === "photo_3n") return "Photo 3N";
   if (c === "photoperiod") return "Photoperiod";
   return raw?.trim() ? String(raw) : "—";
 }
@@ -75,4 +77,8 @@ export function isPhotoperiodLikeDb(raw: string | null | undefined): boolean {
 
 export function isPhotoFfDb(raw: string | null | undefined): boolean {
   return normalizeFloweringTypeFromDb(raw) === "photo_ff";
+}
+
+export function isPhoto3nDb(raw: string | null | undefined): boolean {
+  return normalizeFloweringTypeFromDb(raw) === "photo_3n";
 }

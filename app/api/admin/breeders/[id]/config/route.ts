@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 const PackConfigSchema = z.object({
   sizes: z.array(z.number().int().min(1).max(99)),
   active: z.array(z.number().int().min(1).max(99)),
+  manual_grid_extra_packs: z.array(z.number().int().min(1).max(99)).optional(),
 }).refine((d) => d.active.every((a) => d.sizes.includes(a)), "active must be subset of sizes");
 
 const ConfigSchema = z.object({

@@ -29,6 +29,7 @@ import { ProductModal } from "@/components/admin/ProductModal";
 import { ProductTableRow } from "@/components/admin/ProductTableRow";
 import { useProducts } from "@/hooks/useProducts";
 import type { ProductFull } from "@/types/supabase";
+import { CATEGORY_NAME_PLAIN_PHOTO, FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
 
 const STRAIN_DOMINANCE_OPTIONS = ["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"] as const;
 
@@ -106,12 +107,24 @@ export default function ProductsPage() {
   const [breeders, setBreeders] = useState<{ id: number; name: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
+  const categoryFilterMode = useMemo(() => {
+    if (!categoryId || categoryId === "all") return undefined;
+    if (categoryId === FLOWERING_DB_PHOTO_3N) return "photo_3n" as const;
+    const cat = categories.find((c) => c.id === categoryId);
+    if (!cat) return "fk" as const;
+    const n = cat.name.trim().toLowerCase().replace(/\s+/g, " ");
+    if ((CATEGORY_NAME_PLAIN_PHOTO as readonly string[]).includes(n)) return "plain_photo" as const;
+    return "fk" as const;
+  }, [categoryId, categories]);
+
   const { products, isLoading, error, refetch } = useProducts({
     autoFetch: true,
     includeVariants: true,
     includeInactive: true,
     breeder_id: breederId ? Number(breederId) : undefined,
     categoryId: categoryId && categoryId !== "all" ? categoryId : undefined,
+    categoryFilterMode:
+      categoryId && categoryId !== "all" ? categoryFilterMode : undefined,
     strain_dominance:
       dominance && dominance !== "all"
         ? (dominance as (typeof STRAIN_DOMINANCE_OPTIONS)[number])
@@ -244,6 +257,7 @@ export default function ProductsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">ทั้งหมด</SelectItem>
+                <SelectItem value={FLOWERING_DB_PHOTO_3N}>Photo 3N</SelectItem>
                 {categories.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}

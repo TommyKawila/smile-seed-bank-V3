@@ -3,6 +3,12 @@
  * (uses `product_categories.name` when present, else legacy `products.category` string).
  */
 
+import { normalizeFloweringFromDb } from "@/lib/cannabis-attributes";
+import {
+  CATEGORY_NAME_PLAIN_PHOTO,
+  FLOWERING_LABEL_PHOTO_3N,
+} from "@/lib/constants";
+
 /** Canonical slug for URL and matching (lowercase, hyphens). */
 export function floweringTypeToSlug(raw: string | null | undefined): string {
   if (raw == null) return "";
@@ -63,24 +69,59 @@ export function breederDisplayTypeKeyFromProduct(p: BreederDisplayProductInput):
   return ft;
 }
 
-/** Shop-wide flowering buckets for pill filter (Auto / Photo / Photo FF). */
-export type CatalogFloweringBucket = "auto" | "photo" | "photo_ff";
+/** Shop-wide flowering buckets for pill filter (Auto / Photo / Photo FF / Photo 3N).
+ *  Admin Manual Grid category filter uses the same DB values via `lib/admin-grid-category-filter.ts`. */
+export type CatalogFloweringBucket = "auto" | "photo" | "photo_ff" | "photo_3n";
 
+function normalizeCategoryLabelKey(label: string | null | undefined): string {
+  return (label ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/**
+ * When `flowering_type` is empty, infer bucket from `product_categories.name` / legacy `category` only.
+ * Strict: never maps 3N/FF into plain `photo`.
+ */
+function catalogBucketFromCategoryLabelOnly(p: BreederDisplayProductInput): CatalogFloweringBucket | null {
+  const label = resolveCategoryLabelForFilters(p);
+  const n = normalizeCategoryLabelKey(label);
+  if (!n) return null;
+  if (n === normalizeCategoryLabelKey(FLOWERING_LABEL_PHOTO_3N)) return "photo_3n";
+  if (n === "photo ff" || n === "photo_ff") return "photo_ff";
+  if (collectionKeyFromCategory(label) === "ff") return "photo_ff";
+  if ((CATEGORY_NAME_PLAIN_PHOTO as readonly string[]).includes(n)) return "photo";
+  return null;
+}
+
+/**
+ * Single source of truth: `photo_3n` and `photo_ff` are exclusive; `photo` is plain photoperiod only
+ * (FF collection hint upgrades photoperiod → `photo_ff` bucket for counts/pills).
+ * NULL `flowering_type` + category **Photo** / **Photoperiod** → `photo` (legacy rows).
+ */
 export function catalogFloweringBucket(p: BreederDisplayProductInput): CatalogFloweringBucket | null {
-  const ftRaw = (p.flowering_type ?? "").trim().toLowerCase().replace(/-/g, "_");
-  if (ftRaw === "photo_ff") return "photo_ff";
-  const key = breederDisplayTypeKeyFromProduct(p);
-  if (key === "photo-ff") return "photo_ff";
-  if (ftRaw === "autoflower" || key.startsWith("auto")) return "auto";
-  if (
-    ftRaw === "photoperiod" ||
-    key === "photoperiod" ||
-    key === "photo-original-line" ||
-    (key.startsWith("photo") && key !== "photo-ff")
-  ) {
+  const v = normalizeFloweringFromDb(p.flowering_type);
+  if (v === "photo_3n") return "photo_3n";
+  if (v === "photo_ff") return "photo_ff";
+  if (v === "autoflower") return "auto";
+  if (v === "photoperiod") {
+    const coll = collectionKeyFromCategory(resolveCategoryLabelForFilters(p));
+    if (coll === "ff") return "photo_ff";
     return "photo";
   }
+  if (v === "") return catalogBucketFromCategoryLabelOnly(p);
   return null;
+}
+
+/** URL `ft` param (slug) vs product — use for shop grid when a pill is selected. */
+export function productMatchesCatalogFtParam(
+  p: BreederDisplayProductInput,
+  ftParam: string | null | undefined
+): boolean {
+  const want = floweringTypeToSlug(ftParam);
+  if (!want) return true;
+  const b = catalogFloweringBucket(p);
+  if (b == null) return false;
+  const slug = b === "photo_ff" ? "photo-ff" : b === "photo_3n" ? "photo-3n" : b;
+  return want === slug;
 }
 
 export function breederDisplayTypeMatches(
@@ -125,6 +166,7 @@ export function labelForFloweringSlug(
   if (s === "autoflower") return t("ออโต้", "Auto");
   if (s === "photoperiod") return t("โฟโต้", "Photo");
   if (s === "photo-ff" || s === "photo_ff") return t("โฟโต้ FF", "Photo FF");
+  if (s === "photo-3n" || s === "photo_3n") return t("Photo 3N", "Photo 3N");
   if (s === "fast-flowering" || s === "fast-version" || s === "fastversion") {
     return t("ฟาสต์", "Fast");
   }
@@ -174,19 +216,33 @@ export function productCardFloweringChipLabel(product: {
   category?: string | null;
   product_categories?: { name: string } | null;
 }): string | null {
-  const raw = product.flowering_type?.trim();
-  if (!raw) return null;
-  const ft = raw.toLowerCase().replace(/-/g, "_");
-  if (ft === "autoflower") return "AUTO";
-  if (ft === "photo_ff") return "PHOTO FF";
-  if (ft === "photoperiod") {
+  const label = resolveCategoryLabelForFilters(product);
+  const v = normalizeFloweringFromDb(product.flowering_type);
+
+  const ffHintFromHaystack = (): boolean => {
     const haystack = [product.name, product.category ?? "", product.product_categories?.name ?? ""].join(" ");
     const lower = haystack.toLowerCase();
-    const ffHint =
+    return (
       lower.includes("fast version") ||
       lower.includes("fast flowering") ||
-      /\bff\b/i.test(haystack);
-    return ffHint ? "PHOTO FF" : "PHOTO";
+      /\bff\b/i.test(haystack)
+    );
+  };
+
+  if (v === "photo_3n") return "PHOTO 3N";
+  if (v === "photo_ff") return "PHOTO FF";
+  if (v === "autoflower") return "AUTO";
+  if (v === "photoperiod") {
+    if (collectionKeyFromCategory(label) === "ff" || ffHintFromHaystack()) return "PHOTO FF";
+    return "PHOTO";
   }
-  return raw.replace(/-/g, " ").toUpperCase();
+  if (v === "") {
+    const b = catalogBucketFromCategoryLabelOnly(product);
+    if (b === "photo_3n") return "PHOTO 3N";
+    if (b === "photo_ff") return "PHOTO FF";
+    if (b === "photo") return ffHintFromHaystack() ? "PHOTO FF" : "PHOTO";
+    return null;
+  }
+  const raw = product.flowering_type?.trim() ?? "";
+  return raw ? raw.replace(/-/g, " ").toUpperCase() : null;
 }

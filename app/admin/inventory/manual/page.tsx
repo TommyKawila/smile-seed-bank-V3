@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Loader2,
   Link2,
@@ -29,6 +29,7 @@ import { toPng } from "html-to-image";
 import { pdf } from "@react-pdf/renderer";
 import QRCode from "qrcode";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { consumeManualGridImport } from "@/lib/manual-grid-import-handoff";
+import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
 import { resolvePdfLogos } from "@/lib/pdf-image-data-uri";
 import { InventoryPdfDocument, ensurePdfPromptFont } from "./components/InventoryPdfDocument";
 import {
@@ -82,6 +84,7 @@ export type InventoryRow = {
   category: string;
   productCategory?: { id: string; name: string } | null;
   categoryId?: string;
+  floweringType?: string | null;
   thcPercent?: number | null;
   terpenes?: string | null;
   packs: number[];
@@ -89,7 +92,41 @@ export type InventoryRow = {
   variantIdsByPack?: InventoryVariantIdsByPack;
   lowStockThresholdByPack?: InventoryLowStockThresholdByPack;
   isNew?: boolean;
+  /** Local-only: row not yet persisted / needs sync (optional explicit flag) */
+  syncStatus?: "pending" | "synced";
 };
+
+function isManualGridRowUnsynced(r: InventoryRow): boolean {
+  if (r.syncStatus === "pending") return true;
+  return r.isNew === true || r.productId < 0;
+}
+
+/** Smart columns: pack sizes where at least one row has stock or retail price (excludes 0/0 ghost variants). */
+function isPackCellStockedOrPriced(c: InventoryPackCell | undefined): boolean {
+  if (!c) return false;
+  const stock = Math.max(0, Number(c.stock) || 0);
+  const price = Math.max(0, Number(c.price) || 0);
+  return stock > 0 || price > 0;
+}
+
+function collectPackSizesFromRows(rows: InventoryRow[]): number[] {
+  const s = new Set<number>();
+  for (const r of rows) {
+    if (!r.byPack) continue;
+    for (const k of Object.keys(r.byPack)) {
+      const n = Number(k);
+      if (Number.isNaN(n) || n < 1 || n > 99) continue;
+      if (isPackCellStockedOrPriced(r.byPack[n])) s.add(n);
+    }
+  }
+  return [...s].sort((a, b) => a - b);
+}
+
+function mergeUniqueSorted(...lists: number[][]): number[] {
+  const s = new Set<number>();
+  for (const list of lists) for (const n of list) if (n >= 1 && n <= 99) s.add(n);
+  return [...s].sort((a, b) => a - b);
+}
 
 type PackFooterTotals = {
   totalStrains: number;
@@ -149,6 +186,7 @@ type InventoryGridApiRow = {
   category?: string;
   productCategory?: { id: string; name: string } | null;
   categoryId?: string;
+  floweringType?: string | null;
   thcPercent?: number | null;
   terpenes?: string | null;
   packs?: number[];
@@ -173,6 +211,7 @@ type SyncInventoryRowPayload = {
   category?: unknown;
   productCategory?: unknown;
   categoryId?: unknown;
+  floweringType?: unknown;
   packs?: unknown;
   byPack?: unknown;
   variantIdsByPack?: InventoryRow["variantIdsByPack"];
@@ -208,8 +247,12 @@ function normalizeByPack(raw: unknown, packSizes: number[]): Record<number, Inve
 }
 
 type Category = { id: string; name: string };
-type Breeder = { id: number; name: string; logo_url?: string | null; allowed_packages: number[] | { sizes: number[]; active: number[] } | null };
-type PackagesConfig = { sizes: number[]; active: number[] };
+type Breeder = {
+  id: number;
+  name: string;
+  logo_url?: string | null;
+  allowed_packages: number[] | { sizes: number[]; active: number[]; manual_grid_extra_packs?: number[] } | null;
+};
 const STRAIN_DOMINANCE_OPTIONS = ["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"] as const;
 
 function EditableCell({
@@ -240,7 +283,7 @@ function EditableCell({
       {prefix && <span className="text-[10px] text-slate-400">{prefix}</span>}
       <Input
         type="number"
-        className={`h-7 w-14 border-0 border-b border-transparent bg-transparent px-1 py-0 text-sm shadow-none focus:border-primary focus:ring-0 ${bold ? "font-semibold text-slate-800" : "text-slate-600"}`}
+        className={`h-7 w-14 border-0 border-b border-transparent bg-transparent px-1 py-0 text-sm shadow-none focus:border-primary focus:ring-0 ${bold ? "font-semibold text-foreground" : "text-slate-600"}`}
         value={local}
         onChange={(e) => setLocal(e.target.value)}
         onBlur={commit}
@@ -256,11 +299,13 @@ export default function ManualInventoryPage() {
   const [hasMounted, setHasMounted] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const [breeders, setBreeders] = useState<Breeder[]>([]);
   const [breederId, setBreederId] = useState<string>("");
   const [category, setCategory] = useState("all");
   const [dominance, setDominance] = useState("all");
-  const [packagesConfig, setPackagesConfig] = useState<PackagesConfig>({ sizes: [1, 2, 3, 5], active: [1, 2, 3, 5] });
+  /** User-pinned pack sizes (always show) — persisted on breeder as `manual_grid_extra_packs` */
+  const [extraPackSizes, setExtraPackSizes] = useState<number[]>([]);
   const [rows, setRows] = useState<InventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingCell, setSavingCell] = useState<string | null>(null);
@@ -337,7 +382,23 @@ export default function ManualInventoryPage() {
       .catch(() => {});
   }, []);
 
-  const packs = useMemo(() => [...packagesConfig.active].sort((a, b) => a - b), [packagesConfig.active]);
+  const derivedPackSizes = useMemo(() => collectPackSizesFromRows(rows), [rows]);
+  const packs = useMemo(() => {
+    const m = mergeUniqueSorted(derivedPackSizes, extraPackSizes);
+    return m.length > 0 ? m : DEFAULT_PACKS;
+  }, [derivedPackSizes, extraPackSizes]);
+  const categoryOptionsForGrid = useMemo(() => {
+    const rest = categories.filter(
+      (c) =>
+        c.id !== FLOWERING_DB_PHOTO_3N &&
+        c.name.trim().toLowerCase() !== "photo 3n"
+    );
+    const hasPhoto3n =
+      categories.some((c) => c.id === FLOWERING_DB_PHOTO_3N) ||
+      categories.some((c) => c.name.trim().toLowerCase() === "photo 3n");
+    if (!hasPhoto3n) return [...categories, { id: FLOWERING_DB_PHOTO_3N, name: "Photo 3N" }];
+    return [...rest, { id: FLOWERING_DB_PHOTO_3N, name: "Photo 3N" }];
+  }, [categories]);
   const packSpan = showCost ? 3 : 2;
   const packGroupWidthClass = showCost ? "w-[156px]" : "w-[104px]";
   const totalStockForRow = useCallback((row: InventoryRow) => {
@@ -380,10 +441,18 @@ export default function ManualInventoryPage() {
 
   const sortedRows = useMemo(() => {
     const catKey = (r: InventoryRow) => (r.category?.trim() ? r.category.trim() : "\uFFFF");
-    return [...visibleRows].sort((a, b) => {
+    const tier2 = (a: InventoryRow, b: InventoryRow) => {
       const c = catKey(a).localeCompare(catKey(b), "th", { sensitivity: "base" });
       if (c !== 0) return c;
       return (a.name ?? "").localeCompare(b.name ?? "", "th", { sensitivity: "base" });
+    };
+    return [...visibleRows].sort((a, b) => {
+      const ua = isManualGridRowUnsynced(a);
+      const ub = isManualGridRowUnsynced(b);
+      if (ua && !ub) return -1;
+      if (!ua && ub) return 1;
+      if (ua && ub) return a.productId - b.productId;
+      return tier2(a, b);
     });
   }, [visibleRows]);
 
@@ -593,7 +662,7 @@ export default function ManualInventoryPage() {
       const params = new URLSearchParams({ breederId });
       if (category && category !== "all") params.set("categoryId", category);
       if (dominance && dominance !== "all") params.set("dominance", dominance);
-      const res = await fetch(`/api/admin/inventory/grid?${params}`);
+      const res = await fetch(`/api/admin/inventory/grid?${params}`, { cache: "no-store" });
       if (!res.ok) {
         const msg = `โหลดตารางสินค้าไม่สำเร็จ (${res.status})`;
         setFetchError(msg);
@@ -620,16 +689,22 @@ export default function ManualInventoryPage() {
         return;
       }
       const rawRows = data.rows;
-      const packSizes = data.packagesConfig?.sizes ?? data.packagesConfig?.active ?? data.allowedPackages ?? DEFAULT_PACKS;
-      const arr = Array.isArray(packSizes) ? packSizes : [];
+      const globalFallback =
+        data.packagesConfig?.sizes ?? data.packagesConfig?.active ?? data.allowedPackages ?? DEFAULT_PACKS;
+      const arr = Array.isArray(globalFallback) ? globalFallback : [];
       const packSizesForNorm = arr.length ? arr : DEFAULT_PACKS;
       const normalized: InventoryRow[] = rawRows.map((r) => {
-        const byPack = normalizeByPack(r.byPack, packSizesForNorm);
+        const fromRow =
+          Array.isArray(r.packs) && r.packs.length
+            ? r.packs.filter((n) => typeof n === "number" && n >= 1 && n <= 99)
+            : [];
+        const packKeysForRow = fromRow.length ? [...new Set(fromRow)].sort((a, b) => a - b) : packSizesForNorm;
+        const byPack = normalizeByPack(r.byPack, packKeysForRow);
         const variantIdsByPack: InventoryVariantIdsByPack = {};
         const lowStockThresholdByPack: InventoryLowStockThresholdByPack = {};
         const rawVid = r.variantIdsByPack as Record<string, number | null> | undefined;
         const rawTh = r.lowStockThresholdByPack as Record<string, number> | undefined;
-        for (const p of packSizesForNorm) {
+        for (const p of packKeysForRow) {
           const key = String(p);
           variantIdsByPack[p] = rawVid?.[key] ?? null;
           lowStockThresholdByPack[p] = rawTh?.[key] ?? 5;
@@ -643,24 +718,16 @@ export default function ManualInventoryPage() {
           category: r.category ?? "",
           productCategory: r.productCategory ?? null,
           categoryId: r.categoryId,
+          floweringType: r.floweringType ?? null,
           thcPercent: r.thcPercent,
           terpenes: r.terpenes ?? null,
-          packs: r.packs ?? packSizesForNorm,
+          packs: packKeysForRow,
           byPack,
           variantIdsByPack,
           lowStockThresholdByPack,
         };
       });
       setRows(normalized);
-      if (data.packagesConfig?.sizes?.length) {
-        setPackagesConfig({
-          sizes: data.packagesConfig.sizes,
-          active: data.packagesConfig.active ?? data.packagesConfig.sizes,
-        });
-      } else if (data.allowedPackages?.length) {
-        const ap = data.allowedPackages;
-        setPackagesConfig({ sizes: ap, active: ap });
-      }
     } catch {
       const msg = "โหลดตารางสินค้าไม่สำเร็จ — ลองใหม่อีกครั้ง";
       setFetchError(msg);
@@ -669,6 +736,18 @@ export default function ManualInventoryPage() {
       setLoading(false);
     }
   }, [breederId, category, dominance, toast]);
+
+  const applyCategory = useCallback(
+    (value: string) => {
+      setCategory(value);
+      const params = new URLSearchParams(searchParams.toString());
+      if (value === "all") params.delete("categoryId");
+      else params.set("categoryId", value);
+      const q = params.toString();
+      router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   useEffect(() => {
     setHasMounted(true);
@@ -682,6 +761,8 @@ export default function ManualInventoryPage() {
   useEffect(() => {
     const q = searchParams.get("breederId");
     if (q) setBreederId(q);
+    const cat = searchParams.get("categoryId");
+    if (cat) setCategory(cat);
   }, [searchParams]);
 
   useEffect(() => {
@@ -690,7 +771,7 @@ export default function ManualInventoryPage() {
 
   useEffect(() => {
     if (!hasMounted || !breederId || loading) return;
-    if (categories.length === 0) return;
+    if (categoryOptionsForGrid.length === 0) return;
     const payload = consumeManualGridImport();
     if (!payload || payload.breederId !== breederId) return;
     const packsToUse = packs.length ? packs : DEFAULT_PACKS;
@@ -706,9 +787,9 @@ export default function ManualInventoryPage() {
           lowStockThresholdByPack[p] = 5;
         }
         const matched: Category | undefined = d.category
-          ? categories.find((c) => c.name === d.category)
+          ? categoryOptionsForGrid.find((c) => c.name === d.category)
           : undefined;
-        const resolvedCat = matched ?? categories[0];
+        const resolvedCat = matched ?? categoryOptionsForGrid[0];
         return {
           productId: -(Date.now() + idx),
           masterSku: d.masterSku,
@@ -722,6 +803,7 @@ export default function ManualInventoryPage() {
           variantIdsByPack,
           lowStockThresholdByPack,
           isNew: true,
+          syncStatus: "pending",
         };
       });
       return [...drafts, ...prev];
@@ -730,44 +812,38 @@ export default function ManualInventoryPage() {
       title: "นำเข้าแบบร่าง",
       description: `เพิ่ม ${payload.drafts.length} แถวจาก AI Import ที่ด้านบน`,
     });
-  }, [hasMounted, breederId, loading, categories, packs, toast]);
+  }, [hasMounted, breederId, loading, categoryOptionsForGrid, packs, toast]);
 
   useEffect(() => {
-    if (breederId && breeders.length) {
-      const b = breeders.find((x) => String(x.id) === breederId);
-      const ap = b?.allowed_packages;
-      if (ap) {
-        if (Array.isArray(ap)) setPackagesConfig({ sizes: ap, active: ap });
-        else if (ap && typeof ap === "object" && "sizes" in ap) setPackagesConfig({ sizes: ap.sizes, active: ap.active ?? ap.sizes });
-      }
+    if (!breederId || !breeders.length) {
+      setExtraPackSizes([]);
+      return;
+    }
+    const b = breeders.find((x) => String(x.id) === breederId);
+    const ap = b?.allowed_packages;
+    if (ap && typeof ap === "object" && !Array.isArray(ap) && Array.isArray(ap.manual_grid_extra_packs)) {
+      setExtraPackSizes(
+        [...new Set(ap.manual_grid_extra_packs.filter((n) => n >= 1 && n <= 99))].sort((a, b) => a - b)
+      );
+    } else {
+      setExtraPackSizes([]);
     }
   }, [breederId, breeders]);
 
-  const togglePack = (pack: number) => {
-    const isActive = packagesConfig.active.includes(pack);
-    const nextActive = isActive
-      ? packagesConfig.active.filter((p) => p !== pack)
-      : [...packagesConfig.active, pack].sort((a, b) => a - b);
-    if (nextActive.length === 0) return;
-    setPackagesConfig({ ...packagesConfig, active: nextActive });
-  };
-
-  const removePack = (pack: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const nextSizes = packagesConfig.sizes.filter((p) => p !== pack);
-    const nextActive = packagesConfig.active.filter((p) => p !== pack);
-    if (nextSizes.length === 0) return;
-    setPackagesConfig({ sizes: nextSizes, active: nextActive });
-  };
-
   const addCustomPack = () => {
     const n = parseInt(customPackInput, 10);
-    if (n >= 1 && n <= 99 && !packagesConfig.sizes.includes(n)) {
-      const nextSizes = [...packagesConfig.sizes, n].sort((a, b) => a - b);
-      const nextActive = [...packagesConfig.active, n].sort((a, b) => a - b);
-      setPackagesConfig({ sizes: nextSizes, active: nextActive });
+    if (n < 1 || n > 99) return;
+    const merged = mergeUniqueSorted(derivedPackSizes, extraPackSizes);
+    if (merged.includes(n)) {
       setCustomPackInput("");
+      return;
     }
+    setExtraPackSizes((prev) => mergeUniqueSorted(prev, [n]));
+    setCustomPackInput("");
+  };
+
+  const removeExtraPack = (pack: number) => {
+    setExtraPackSizes((prev) => prev.filter((p) => p !== pack));
   };
 
   const selectedBreeder = useMemo(
@@ -787,7 +863,7 @@ export default function ManualInventoryPage() {
       byPack[p] = { stock: 0, cost: 0, price: 0 };
       variantIdsByPack[p] = null;
     }
-    const cat = category === "all" ? categories[0] : categories.find((c) => c.id === category);
+    const cat = category === "all" ? categoryOptionsForGrid[0] : categoryOptionsForGrid.find((c) => c.id === category);
     const newRow: InventoryRow = {
       productId: -Date.now(),
       masterSku: "",
@@ -800,6 +876,7 @@ export default function ManualInventoryPage() {
       variantIdsByPack,
       lowStockThresholdByPack: Object.fromEntries(packsToUse.map((p) => [p, 5])),
       isNew: true,
+      syncStatus: "pending",
     };
     setRows((prev) => [newRow, ...prev]);
     setLastAddedRowId(newRow.productId);
@@ -832,7 +909,7 @@ export default function ManualInventoryPage() {
   };
 
   const handleCategoryChange = (row: InventoryRow, categoryId: string) => {
-    const cat = categories.find((c) => c.id === categoryId);
+    const cat = categoryOptionsForGrid.find((c) => c.id === categoryId);
     updateRow(row.productId, { categoryId: categoryId === "__none__" ? "" : categoryId, category: cat?.name ?? "" });
   };
 
@@ -895,14 +972,36 @@ export default function ManualInventoryPage() {
 
   const saveConfig = async () => {
     if (!breederId) return;
+    const b = breeders.find((x) => String(x.id) === breederId);
+    const raw = b?.allowed_packages;
+    let sizes: number[] = [...DEFAULT_PACKS];
+    let active: number[] = [...DEFAULT_PACKS];
+    if (Array.isArray(raw)) {
+      sizes = [...raw];
+      active = [...raw];
+    } else if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      sizes = raw.sizes?.length ? [...raw.sizes] : sizes;
+      active = raw.active?.length ? [...raw.active] : active;
+    }
+    const mergedSizes = mergeUniqueSorted(sizes, extraPackSizes);
+    const mergedActive = mergeUniqueSorted(active, extraPackSizes);
     setConfigSaving(true);
     try {
       const res = await fetch(`/api/admin/breeders/${breederId}/config`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ allowed_packages: packagesConfig }),
+        body: JSON.stringify({
+          allowed_packages: {
+            sizes: mergedSizes.length ? mergedSizes : DEFAULT_PACKS,
+            active: mergedActive.length ? mergedActive : mergedSizes.length ? mergedSizes : DEFAULT_PACKS,
+            manual_grid_extra_packs: extraPackSizes,
+          },
+        }),
       });
-      if (res.ok) await fetchGrid();
+      if (res.ok) {
+        await fetchBreeders();
+        await fetchGrid();
+      }
     } finally {
       setConfigSaving(false);
     }
@@ -1007,40 +1106,55 @@ export default function ManualInventoryPage() {
       category: typeof gr.category === "string" ? gr.category : prev.category,
       productCategory: (gr.productCategory as InventoryRow["productCategory"]) ?? prev.productCategory,
       categoryId: typeof gr.categoryId === "string" ? gr.categoryId : prev.categoryId,
+      floweringType:
+        gr.floweringType === null || typeof gr.floweringType === "string"
+          ? (gr.floweringType as string | null)
+          : prev.floweringType,
       packs: packKeys,
       byPack: byPackRaw != null ? normalizeByPack(byPackRaw, packKeys) : prev.byPack,
       variantIdsByPack: vid ?? prev.variantIdsByPack,
       lowStockThresholdByPack: lowTh ?? prev.lowStockThresholdByPack,
       isNew: undefined,
+      syncStatus: "synced",
     };
   }, []);
 
   const syncRowToServer = useCallback(
     async (row: InventoryRow): Promise<InventoryRow> => {
       if (!row.masterSku?.trim()) throw new Error("Master SKU จำเป็น");
-      const catId = row.categoryId || (row.category && categories.find((c) => c.name === row.category)?.id);
-      const catName = row.category || (row.categoryId && categories.find((c) => c.id === row.categoryId)?.name) || null;
+      const isPhoto3n = row.categoryId === FLOWERING_DB_PHOTO_3N;
+      const shouldClearPhoto3n = !isPhoto3n && row.floweringType === FLOWERING_DB_PHOTO_3N;
+      const catId = isPhoto3n
+        ? undefined
+        : row.categoryId || (row.category && categoryOptionsForGrid.find((c) => c.name === row.category)?.id);
+      const catName = isPhoto3n
+        ? "Photo 3N"
+        : row.category || (row.categoryId && categoryOptionsForGrid.find((c) => c.id === row.categoryId)?.name) || null;
       const cleanByPack = buildCleanByPack(row);
+      const payload: Record<string, unknown> = {
+        masterSku: row.masterSku.trim(),
+        breederId: Number(breederId),
+        name: row.name || row.masterSku,
+        category: catName,
+        categoryId: catId || undefined,
+        strain_dominance: row.strainDominance !== undefined ? row.strainDominance : undefined,
+        byPack: cleanByPack,
+        packSizes: packs,
+      };
+      if (isPhoto3n || shouldClearPhoto3n) {
+        payload.flowering_type = isPhoto3n ? FLOWERING_DB_PHOTO_3N : null;
+      }
       const res = await fetch("/api/admin/inventory/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          masterSku: row.masterSku.trim(),
-          breederId: Number(breederId),
-          name: row.name || row.masterSku,
-          category: catName,
-          categoryId: catId || undefined,
-          strain_dominance: row.strainDominance !== undefined ? row.strainDominance : undefined,
-          byPack: cleanByPack,
-          packSizes: packs,
-        }),
+        body: JSON.stringify(payload),
       });
       const json = (await res.json()) as { error?: string; gridRow?: SyncInventoryRowPayload };
       if (!res.ok) throw new Error(json.error ?? "Sync ล้มเหลว");
       if (!json.gridRow) throw new Error("ไม่ได้รับข้อมูลหลัง sync");
       return mergeSyncedInventoryRow(row, json.gridRow);
     },
-    [breederId, buildCleanByPack, categories, mergeSyncedInventoryRow, packs]
+    [breederId, buildCleanByPack, categoryOptionsForGrid, mergeSyncedInventoryRow, packs]
   );
 
   const handleSync = async (row: InventoryRow) => {
@@ -1083,7 +1197,7 @@ export default function ManualInventoryPage() {
       return;
     }
     const catId = strainSheetForm.categoryId === "__none__" ? "" : strainSheetForm.categoryId;
-    const cat = categories.find((c) => c.id === catId);
+    const cat = categoryOptionsForGrid.find((c) => c.id === catId);
     const valDominance =
       strainSheetForm.strainDominance === "__none__"
         ? null
@@ -1363,7 +1477,7 @@ export default function ManualInventoryPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">— เลือกหมวดหมู่ —</SelectItem>
-                    {categories.map((c) => (
+                    {categoryOptionsForGrid.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
                       </SelectItem>
@@ -1471,13 +1585,13 @@ export default function ManualInventoryPage() {
             </div>
             <div className="space-y-1">
               <Label>Category</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={category} onValueChange={applyCategory}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">ทั้งหมด</SelectItem>
-                  {categories.map((c) => (
+                  {categoryOptionsForGrid.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
                     </SelectItem>
@@ -1513,59 +1627,62 @@ export default function ManualInventoryPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Label className="w-full text-xs text-zinc-500">Allowed Package Sizes (คลิกเปิด/ปิด คอลัมน์, X ลบถาวร)</Label>
-            {packagesConfig.sizes.slice().sort((a, b) => a - b).map((pack) => {
-              const isActive = packagesConfig.active.includes(pack);
-              return (
-                <div key={pack} className="relative group">
-                  <button
-                    type="button"
-                    onClick={() => togglePack(pack)}
-                    className={`flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
-                      isActive
-                        ? "border-primary bg-primary text-white hover:bg-primary/90"
-                        : "border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-50 hover:border-zinc-300"
-                    }`}
-                  >
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+              <span className="font-medium text-zinc-700">
+                Smart columns (แพ็กที่มีสต็อกหรือราคาขาย {'>'} 0 เท่านั้น / stocked or priced only):
+              </span>
+              <span className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 font-mono tabular-nums">
+                {derivedPackSizes.length
+                  ? derivedPackSizes.join(", ")
+                  : "— (ไม่มีแพ็ก active — ใช้ค่าเริ่มต้น 1,2,3,5 จนกว่าจะมีสต็อก/ราคา)"}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="text-xs text-zinc-500">
+                Always show (แสดงแม้ยัง 0 สต็อก/ราคา — สำหรับกรอกใหม่; บันทึกกับ Breeder)
+              </Label>
+              {extraPackSizes.map((pack) => (
+                <div key={pack} className="group relative">
+                  <span className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/5 px-2.5 py-1 text-sm font-medium text-primary">
                     {pack} {pack === 1 ? "Seed" : "Seeds"}
-                  </button>
+                  </span>
                   <button
                     type="button"
-                    onClick={(e) => removePack(pack, e)}
+                    onClick={() => removeExtraPack(pack)}
                     className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-300 text-white opacity-0 transition hover:bg-red-500 group-hover:opacity-100"
-                    title="ลบออกจาก config"
+                    title="ลบออกจาก Always show"
                   >
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </div>
-              );
-            })}
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min={1}
-                max={99}
-                placeholder="Pack"
-                className="h-8 w-20"
-                value={customPackInput}
-                onChange={(e) => setCustomPackInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addCustomPack()}
-              />
-              <Button type="button" variant="outline" size="sm" onClick={addCustomPack} className="h-8">
-                Add Pack
+              ))}
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={1}
+                  max={99}
+                  placeholder="Pack"
+                  className="h-8 w-20"
+                  value={customPackInput}
+                  onChange={(e) => setCustomPackInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addCustomPack()}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={addCustomPack} className="h-8">
+                  Add Pack
+                </Button>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={saveConfig}
+                disabled={!breederId || configSaving}
+                className="ml-1"
+              >
+                {configSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                บันทึก Config
               </Button>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={saveConfig}
-              disabled={!breederId || configSaving}
-              className="ml-2"
-            >
-              {configSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              บันทึก Config
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -1680,8 +1797,8 @@ export default function ManualInventoryPage() {
             </div>
           ) : (
             <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
+            <div className="overflow-x-auto scroll-smooth overscroll-x-contain">
+              <table className="w-full min-w-max text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
                     <th className="sticky left-0 z-10 w-[50px] bg-slate-50 px-1 py-3 text-center text-xs font-medium text-muted-foreground">
@@ -1733,19 +1850,30 @@ export default function ManualInventoryPage() {
                 <tbody>
                   {paginatedRows.map((row, rowIdx) => {
                     const rowTotalStock = totalStockForRow(row);
+                    const isUnsynced = isManualGridRowUnsynced(row);
                     const isRowDimmed = !row.isNew && rowTotalStock === 0;
                     const zebra = (rowOffset + rowIdx) % 2 === 1 ? "bg-slate-50/50" : "";
                     return (
                     <tr
                       key={row.productId}
-                      className={`group border-b border-slate-100 transition-colors hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra}`}
+                      className={`group border-b border-slate-100 transition-colors hover:bg-accent/30 ${isUnsynced ? "bg-amber-50/50" : zebra}`}
                     >
                       <td
-                        className={`sticky left-0 z-10 w-[50px] px-1 py-2 text-center font-mono text-sm text-muted-foreground tabular-nums transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}
+                        className={`sticky left-0 z-10 w-[50px] px-1 py-2 text-center font-mono text-sm text-muted-foreground tabular-nums transition-colors group-hover:bg-accent/30 ${isUnsynced ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}
                       >
-                        {rowOffset + rowIdx + 1}
+                        <div className="flex flex-col items-center gap-1">
+                          <span>{rowOffset + rowIdx + 1}</span>
+                          {isUnsynced && (
+                            <Badge
+                              variant="secondary"
+                              className="border border-amber-200/90 bg-amber-100 px-1.5 py-0 text-[10px] font-semibold text-amber-950"
+                            >
+                              New
+                            </Badge>
+                          )}
+                        </div>
                       </td>
-                      <td className={`sticky left-[50px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[50px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-accent/30 ${isUnsynced ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <input
                           type="checkbox"
                           checked={selectedProductIds.has(row.productId)}
@@ -1753,7 +1881,7 @@ export default function ManualInventoryPage() {
                           className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
                         />
                       </td>
-                      <td className={`sticky left-[90px] z-10 px-2 py-2 transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[90px] z-10 px-2 py-2 transition-colors group-hover:bg-accent/30 ${isUnsynced ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <Button
                           variant="outline"
                           size="sm"
@@ -1769,7 +1897,7 @@ export default function ManualInventoryPage() {
                           )}
                         </Button>
                       </td>
-                      <td className={`sticky left-[132px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[132px] z-10 w-10 px-1 py-2 transition-colors group-hover:bg-accent/30 ${isUnsynced ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1785,7 +1913,7 @@ export default function ManualInventoryPage() {
                           )}
                         </Button>
                       </td>
-                      <td className={`sticky left-[172px] z-10 w-12 px-2 py-2 transition-colors group-hover:bg-accent/30 ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[172px] z-10 w-12 px-2 py-2 transition-colors group-hover:bg-accent/30 ${isUnsynced ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         <label className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded border border-slate-200 bg-slate-50 hover:bg-slate-100">
                           <input
                             type="file"
@@ -1819,7 +1947,7 @@ export default function ManualInventoryPage() {
                           )}
                         </label>
                       </td>
-                      <td className={`sticky left-[224px] z-10 min-w-[90px] px-3 py-2 transition-colors group-hover:bg-accent/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[224px] z-10 min-w-[90px] px-3 py-2 transition-colors group-hover:bg-accent/30 ${isRowDimmed ? "opacity-50" : ""} ${isUnsynced ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         {row.isNew ? (
                           <Input
                             value={row.masterSku}
@@ -1835,7 +1963,7 @@ export default function ManualInventoryPage() {
                           <span className="font-mono text-xs text-slate-600">{row.masterSku || "—"}</span>
                         )}
                       </td>
-                      <td className={`sticky left-[314px] z-10 min-w-[160px] px-3 py-2 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-accent/30 ${isRowDimmed ? "opacity-50" : ""} ${row.isNew ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
+                      <td className={`sticky left-[314px] z-10 min-w-[160px] px-3 py-2 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-accent/30 ${isRowDimmed ? "opacity-50" : ""} ${isUnsynced ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         {row.isNew ? (
                           <Input
                             value={row.name}
@@ -1864,7 +1992,7 @@ export default function ManualInventoryPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none__">— เลือกหมวดหมู่ —</SelectItem>
-                            {categories.map((c) => (
+                            {categoryOptionsForGrid.map((c) => (
                               <SelectItem key={c.id} value={c.id}>
                                 {c.name}
                               </SelectItem>
@@ -1901,15 +2029,18 @@ export default function ManualInventoryPage() {
                         const variantId = row.variantIdsByPack?.[packSize] ?? null;
                         const th = row.lowStockThresholdByPack?.[packSize] ?? 5;
                         const outOfStock = stock === 0 && price > 0;
-                        const notAvailable = stock === 0 && price === 0;
                         const lowStock = stock > 0 && stock <= th;
+                        const zeroStock = Math.max(0, Number(stock) || 0) === 0;
+                        const packFadeClass = zeroStock
+                          ? "opacity-[0.35] transition-opacity focus-within:opacity-100"
+                          : "";
                         const key = `${row.productId}-${packSize}`;
                         const packCellClass = "w-[52px] border-l border-slate-100 px-1 py-2 align-top";
                         const outClass = outOfStock ? "bg-red-50/80" : "";
                         const lowClass = lowStock && !outOfStock ? "bg-amber-50/50" : "";
                         return (
                           <Fragment key={packSize}>
-                            <td className={`${packCellClass} ${outClass} ${lowClass}`}>
+                            <td className={`${packCellClass} ${outClass} ${lowClass} ${packFadeClass}`}>
                               <div className="flex items-center justify-end gap-0.5">
                                 {lowStock && variantId != null && (
                                   <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" title={`แจ้งต่ำ ≤ ${th}`} />
@@ -1950,7 +2081,7 @@ export default function ManualInventoryPage() {
                               )}
                             </td>
                             {showCost && (
-                              <td className={`${packCellClass} ${notAvailable ? "text-slate-300" : ""}`}>
+                              <td className={`${packCellClass} ${packFadeClass}`}>
                                 <EditableCell
                                   value={cost}
                                   saving={!row.isNew && savingCell === `${key}-cost`}
@@ -1959,7 +2090,7 @@ export default function ManualInventoryPage() {
                                 />
                               </td>
                             )}
-                            <td className={`${packCellClass} ${notAvailable ? "text-slate-300" : ""} ${outOfStock ? "bg-red-50/80" : ""}`}>
+                            <td className={`${packCellClass} ${packFadeClass} ${outOfStock ? "bg-red-50/80" : ""}`}>
                               <EditableCell
                                 value={price}
                                 saving={!row.isNew && savingCell === `${key}-price`}

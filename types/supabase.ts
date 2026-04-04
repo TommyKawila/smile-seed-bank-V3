@@ -12,7 +12,7 @@ export type { Json };
 export type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "CANCELLED" | "AWAITING_VERIFICATION";
 export type OrderOrigin = "WEB" | "MANUAL";
 /** DB: lowercase international standard */
-export type FloweringType = "autoflower" | "photoperiod" | "photo_ff";
+export type FloweringType = "autoflower" | "photoperiod" | "photo_ff" | "photo_3n";
 /** DB: lowercase — distinct from seed pack FEMINIZED/REGULAR column when both exist */
 export type ProductSexType = "feminized" | "regular";
 export type SeedType = "FEMINIZED" | "REGULAR";

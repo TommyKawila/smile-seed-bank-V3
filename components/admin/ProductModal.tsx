@@ -1109,7 +1109,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 onChange={(e) =>
                   setField(
                     "flowering_type",
-                    (e.target.value || null) as "autoflower" | "photoperiod" | "photo_ff" | null
+                    (e.target.value || null) as "autoflower" | "photoperiod" | "photo_ff" | "photo_3n" | null
                   )
                 }
                 className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -1118,6 +1118,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 <option value="autoflower">Auto</option>
                 <option value="photoperiod">Photo</option>
                 <option value="photo_ff">Photo FF</option>
+                <option value="photo_3n">Photo 3N (Triploid)</option>
               </select>
             </div>
             <div className="space-y-1">

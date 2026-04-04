@@ -38,6 +38,7 @@ import {
 } from "@/lib/breeder-slug";
 import {
   catalogFloweringBucket,
+  productMatchesCatalogFtParam,
   floweringTypeToSlug,
   labelForSeedTypeBadge,
   productCardFloweringChipLabel,
@@ -329,8 +330,15 @@ function ShopContent() {
       { slug: "auto", label: t("ออโต้", "Auto"), count: 0 },
       { slug: "photo", label: t("โฟโต้", "Photo"), count: 0 },
       { slug: "photo-ff", label: t("โฟโต้ FF", "Photo FF"), count: 0 },
+      { slug: "photo-3n", label: tMsg("photo_3n", "Photo 3N"), count: 0 },
     ];
-    const idx = (b: CatalogFloweringBucket) => (b === "auto" ? 0 : b === "photo" ? 1 : 2);
+    const idx = (b: CatalogFloweringBucket) => {
+      if (b === "auto") return 0;
+      if (b === "photo") return 1;
+      if (b === "photo_ff") return 2;
+      if (b === "photo_3n") return 3;
+      return -1;
+    };
     for (const p of catalogFloweringScope) {
       const b = catalogFloweringBucket({
         flowering_type: p.flowering_type,
@@ -338,16 +346,17 @@ function ShopContent() {
         product_categories: p.product_categories,
       });
       if (!b) continue;
-      rows[idx(b)].count += 1;
+      const i = idx(b);
+      if (i >= 0) rows[i].count += 1;
     }
     return rows;
-  }, [catalogFloweringScope, t]);
+  }, [catalogFloweringScope, t, tMsg]);
 
   useEffect(() => {
     const raw = ftParam?.trim();
     if (!raw) return;
     const key = floweringTypeToSlug(raw);
-    const ok = key === "auto" || key === "photo" || key === "photo-ff";
+    const ok = key === "auto" || key === "photo" || key === "photo-ff" || key === "photo-3n";
     if (ok) return;
     const sp = new URLSearchParams(searchParams.toString());
     sp.delete("ft");
@@ -369,7 +378,6 @@ function ShopContent() {
 
   /** Breeder + search + flowering (ft) scope only — used for sidebar filter option counts. */
   const shopScopedProducts = useMemo(() => {
-    const ftWant = floweringTypeToSlug(ftParam);
     return searchFilteredProducts.filter((p) => {
       let matchBreeder: boolean;
       if (breederParam?.trim()) {
@@ -379,14 +387,14 @@ function ShopContent() {
       } else {
         matchBreeder = true;
       }
-      const b = catalogFloweringBucket({
-        flowering_type: p.flowering_type,
-        category: p.category,
-        product_categories: p.product_categories,
-      });
-      const matchFt =
-        !ftWant ||
-        (b != null && (b === "photo_ff" ? "photo-ff" : b) === ftWant);
+      const matchFt = productMatchesCatalogFtParam(
+        {
+          flowering_type: p.flowering_type,
+          category: p.category,
+          product_categories: p.product_categories,
+        },
+        ftParam
+      );
       return matchBreeder && matchFt;
     });
   }, [searchFilteredProducts, urlBreeder, breederParam, breedersLoading, ftParam]);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
 import { toVariantSku, parsePackFromUnitLabel } from "@/lib/sku-utils";
+import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -9,19 +10,32 @@ function packToLabel(pack: number): string {
   return pack === 1 ? "1 Seed" : `${pack} Seeds`;
 }
 
+function isNumericCategoryId(v: unknown): boolean {
+  if (v == null || v === "") return false;
+  return /^\d+$/.test(String(v).trim());
+}
+
+function normalizeFloweringType(v: unknown): typeof FLOWERING_DB_PHOTO_3N | null {
+  if (v == null || v === "") return null;
+  const s = String(v).trim().toLowerCase().replace(/-/g, "_");
+  return s === FLOWERING_DB_PHOTO_3N ? FLOWERING_DB_PHOTO_3N : null;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { masterSku, breederId, name, category, categoryId, strain_dominance, byPack, packSizes } = body as {
-    masterSku: string;
-    breederId: number;
-    name: string;
-    category?: string;
-    categoryId?: string | number;
-    strain_dominance?: "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50" | null;
-    byPack: Record<number, { stock: number; price: number }>;
-    /** Active pack columns from Manual Grid (for row shape) */
-    packSizes?: number[];
-  };
+  const { masterSku, breederId, name, category, categoryId, strain_dominance, byPack, packSizes, flowering_type } =
+    body as {
+      masterSku: string;
+      breederId: number;
+      name: string;
+      category?: string;
+      categoryId?: string | number;
+      strain_dominance?: "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50" | null;
+      byPack: Record<number, { stock: number; price: number }>;
+      /** Active pack columns from Manual Grid (for row shape) */
+      packSizes?: number[];
+      flowering_type?: string | null;
+    };
 
   if (!masterSku?.trim()) {
     return NextResponse.json({ error: "masterSku required" }, { status: 400 });
@@ -43,33 +57,54 @@ export async function POST(req: NextRequest) {
   });
   const wasCreated = !product;
 
-  const cid = categoryId != null && categoryId !== "" ? BigInt(String(categoryId)) : null;
+  const cid = isNumericCategoryId(categoryId) ? BigInt(String(categoryId)) : null;
   const masterSkuTrim = masterSku.trim();
+  const hasFloweringKey = Object.prototype.hasOwnProperty.call(body, "flowering_type");
+  const ftNorm = normalizeFloweringType(flowering_type);
+
   if (!product) {
+    const createData: Parameters<typeof prisma.products.create>[0]["data"] = {
+      breeder_id: bid,
+      name: name || masterSkuTrim,
+      category: category ?? null,
+      strain_dominance: strain_dominance ?? null,
+      master_sku: masterSkuTrim,
+      is_active: true,
+      price: 0,
+      stock: 0,
+      ...(hasFloweringKey
+        ? flowering_type === null
+          ? { flowering_type: null, category_id: cid }
+          : ftNorm === FLOWERING_DB_PHOTO_3N
+            ? { flowering_type: FLOWERING_DB_PHOTO_3N, category_id: null }
+            : { category_id: cid }
+        : { category_id: cid }),
+    };
     product = await prisma.products.create({
-      data: {
-        breeder_id: bid,
-        name: name || masterSkuTrim,
-        category: category ?? null,
-        category_id: cid,
-        strain_dominance: strain_dominance ?? null,
-        master_sku: masterSkuTrim,
-        is_active: true,
-        price: 0,
-        stock: 0,
-      },
+      data: createData,
       include: { product_variants: true },
     });
   } else {
+    const updateData: Record<string, unknown> = {
+      ...(product.breeder_id == null ? { breeder_id: bid } : {}),
+      name: name || product.name,
+      category: category ?? product.category ?? null,
+      ...(strain_dominance !== undefined && { strain_dominance }),
+    };
+    if (hasFloweringKey) {
+      if (flowering_type === null) {
+        updateData.flowering_type = null;
+        updateData.category_id = cid;
+      } else if (ftNorm === FLOWERING_DB_PHOTO_3N) {
+        updateData.flowering_type = FLOWERING_DB_PHOTO_3N;
+        updateData.category_id = null;
+      }
+    } else if (cid != null) {
+      updateData.category_id = cid;
+    }
     await prisma.products.update({
       where: { id: product.id },
-      data: {
-        ...(product.breeder_id == null ? { breeder_id: bid } : {}),
-        name: name || product.name,
-        category: category ?? product.category ?? null,
-        ...(cid != null && { category_id: cid }),
-        ...(strain_dominance !== undefined && { strain_dominance }),
-      },
+      data: updateData as Parameters<typeof prisma.products.update>[0]["data"],
     });
   }
 
@@ -186,17 +221,28 @@ export async function POST(req: NextRequest) {
         ? (p.image_urls as string[])[0]
         : p.image_url ?? null;
     const pc = p.product_categories;
+    const ftRow = String((p as { flowering_type?: string | null }).flowering_type ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/-/g, "_");
+    const isPhoto3n = ftRow === FLOWERING_DB_PHOTO_3N;
     gridRow = {
       productId: Number(p.id),
       masterSku: p.master_sku ?? "",
       name: p.name,
       imageUrl: primaryImg,
       strainDominance: p.strain_dominance ?? null,
-      category:
-        pc?.name ??
-        (p.category === "Photo (FF)" ? "Photo" : p.category === "Seeds" ? "" : p.category ?? ""),
-      productCategory: pc ? { id: String(pc.id), name: pc.name } : null,
-      categoryId: p.category_id != null ? String(p.category_id) : undefined,
+      category: isPhoto3n
+        ? "Photo 3N"
+        : pc?.name ??
+          (p.category === "Photo (FF)" ? "Photo" : p.category === "Seeds" ? "" : p.category ?? ""),
+      productCategory: isPhoto3n
+        ? { id: FLOWERING_DB_PHOTO_3N, name: "Photo 3N" }
+        : pc
+          ? { id: String(pc.id), name: pc.name }
+          : null,
+      categoryId: isPhoto3n ? FLOWERING_DB_PHOTO_3N : p.category_id != null ? String(p.category_id) : undefined,
+      floweringType: ftRow || null,
       packs: allSizes,
       byPack: byPackOut,
       variantIdsByPack,

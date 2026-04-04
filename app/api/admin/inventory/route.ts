@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAutofloweringDb, isPhotoFfDb, isPhotoperiodDb } from "@/lib/cannabis-attributes";
+import { isAutofloweringDb, isPhoto3nDb, isPhotoFfDb, isPhotoperiodDb } from "@/lib/cannabis-attributes";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -125,9 +125,11 @@ export async function GET(req: NextRequest) {
           ? "Auto"
           : isPhotoFfDb(p.flowering_type)
             ? "Photo FF"
-            : isPhotoperiodDb(p.flowering_type)
-              ? "Photo"
-              : p.flowering_type ?? "—"),
+            : isPhoto3nDb(p.flowering_type)
+              ? "Photo 3N"
+              : isPhotoperiodDb(p.flowering_type)
+                ? "Photo"
+                : p.flowering_type ?? "—"),
       type: typeLabel,
       thc_level: p.thc_percent != null ? `${p.thc_percent}%` : "—",
     };
