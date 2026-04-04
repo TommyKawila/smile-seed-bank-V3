@@ -3,5 +3,13 @@
     "back_to_list": "Back to Breeders",
     "strains_count": "Strains",
     "view_all_products": "View All Products"
+  },
+  "common": {
+    "back_to_shop": "Back to Shop"
+  },
+  "product": {
+    "stock_left_simple": "{n} left",
+    "only_n_left": "Only {n} left",
+    "add_to_cart": "Add to Cart"
   }
 }

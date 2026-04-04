@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, Fragment, Suspense } from "react";
 import { InventorySkeleton } from "@/components/skeletons/InventorySkeleton";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   useReactTable,
   getCoreRowModel,
@@ -181,26 +181,15 @@ function AdminInventoryContent() {
   const [posError, setPosError] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
+  const router = useRouter();
   useEffect(() => {
     const stock = searchParams.get("stock");
     if (stock === "low" || stock === "out") setStockLevel(stock);
   }, [searchParams]);
 
-  const fetchInventory = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (category) params.set("categoryId", category);
-    if (typeFilter) params.set("type", typeFilter);
-    if (brandId) params.set("brand", brandId);
-    if (stockLevel) params.set("stock", stockLevel);
-    const res = await fetch(`/api/admin/inventory?${params}`);
-    const data = await res.json();
-    if (Array.isArray(data)) setRows(data);
-    else setRows([]);
-  }, [category, typeFilter, brandId, stockLevel]);
-
   const fetchMeta = useCallback(async () => {
     const [invRes, prodsRes, breedRes, catRes] = await Promise.all([
-      fetch("/api/admin/inventory"),
+      fetch("/api/admin/inventory", { cache: "no-store" }),
       fetch("/api/admin/products"),
       fetch("/api/admin/breeders"),
       fetch("/api/admin/categories"),
@@ -221,10 +210,11 @@ function AdminInventoryContent() {
     if (typeFilter) params.set("type", typeFilter);
     if (brandId) params.set("brand", brandId);
     if (stockLevel) params.set("stock", stockLevel);
-    const res = await fetch(`/api/admin/inventory?${params}`);
+    const res = await fetch(`/api/admin/inventory?${params}`, { cache: "no-store" });
     const data = await res.json();
     if (Array.isArray(data)) setRows(data);
-  }, [category, typeFilter, brandId, stockLevel]);
+    router.refresh();
+  }, [category, typeFilter, brandId, stockLevel, router]);
 
   useEffect(() => {
     setLoading(true);
@@ -447,7 +437,11 @@ function AdminInventoryContent() {
       byProduct.set(r.product_id, list);
     }
     return Array.from(byProduct.entries()).map(([product_id, variants]) => {
-      const v0 = variants[0]!;
+      const sorted = [...variants].sort((a, b) => {
+        if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
+        return String(a.unit_label).localeCompare(String(b.unit_label), undefined, { numeric: true });
+      });
+      const v0 = sorted[0]!;
       return {
         product_id,
         product_name: v0.product_name,
@@ -456,7 +450,7 @@ function AdminInventoryContent() {
         category: v0.category,
         type: v0.type,
         thc_level: v0.thc_level,
-        variants,
+        variants: sorted,
       };
     });
   }, [rows]);
@@ -751,7 +745,14 @@ function AdminInventoryContent() {
                           className={`border-b transition-colors hover:bg-accent/50 ${v.stock === 0 ? "bg-red-50" : ""} ${(v.stock <= ((v as InventoryRow).low_stock_threshold ?? 5)) && v.stock > 0 ? "bg-red-50/50" : ""} ${vIdx % 2 === 1 ? "bg-zinc-50/30" : ""}`}
                         >
                           <td className="w-10 px-2 py-2" />
-                          <td className="pl-8 pr-4 py-2 text-zinc-500">↳ {v.unit_label}</td>
+                          <td className="pl-8 pr-4 py-2 text-zinc-500">
+                          ↳ {v.unit_label}
+                          {!v.is_active && (
+                            <span className="ml-2 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600">
+                              ปิด / Inactive
+                            </span>
+                          )}
+                        </td>
                           <td className="px-4 py-2" />
                           <td className="px-4 py-2" />
                           <td className="px-4 py-2" />

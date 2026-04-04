@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useTranslations } from "@/hooks/use-translations";
 import { labelFloweringType } from "@/lib/cannabis-attributes";
 import { seedTypeDetailShort, sexTypeDetailShort } from "@/lib/seed-type-filter";
 import { formatPrice } from "@/lib/utils";
@@ -25,6 +26,10 @@ import {
   RegularStatCard,
 } from "@/components/storefront/ProductSpecs";
 import type { ProductFull, ProductVariant } from "@/types/supabase";
+
+function fillN(template: string, n: number) {
+  return template.replace(/\{n\}/g, String(n));
+}
 
 function formatCbdDisplay(raw: string | number | null | undefined): string {
   if (raw == null || raw === "") return "";
@@ -301,6 +306,7 @@ export default function ProductDetailClient({
 }) {
   const { addToCart, openCart } = useCartContext();
   const { locale, t } = useLanguage();
+  const { t: tMsg } = useTranslations();
 
   const [product] = useState<ProductWithSpecs | null>(initialProduct);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(() => {
@@ -335,7 +341,7 @@ export default function ProductDetailClient({
         <Leaf className="h-12 w-12 text-zinc-200" />
         <p className="text-lg font-semibold text-zinc-700">ไม่พบสินค้า</p>
         <Button asChild variant="outline">
-          <Link href="/shop">กลับไปร้านค้า</Link>
+          <Link href="/shop">{tMsg("common.back_to_shop", "Back to Shop")}</Link>
         </Button>
       </div>
     );
@@ -354,7 +360,7 @@ export default function ProductDetailClient({
           href="/shop"
           className="mb-4 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-primary"
         >
-          <ChevronLeft className="h-4 w-4" /> กลับไปร้านค้า
+          <ChevronLeft className="h-4 w-4" /> {tMsg("common.back_to_shop", "Back to Shop")}
         </Link>
 
         {/* Main Layout */}
@@ -448,7 +454,9 @@ export default function ProductDetailClient({
                         <span className="block text-xs">{v.unit_label}</span>
                         <span className="block font-bold">{formatPrice(v.price)}</span>
                         {(v.stock ?? 0) <= 5 && (v.stock ?? 0) > 0 && (
-                          <span className="block text-[10px] text-destructive">เหลือ {v.stock}</span>
+                          <span className="block text-[10px] text-destructive">
+                            {fillN(tMsg("product.stock_left_simple", "{n} left"), v.stock ?? 0)}
+                          </span>
                         )}
                       </button>
                     );
@@ -466,7 +474,7 @@ export default function ProductDetailClient({
                 (selectedVariant.stock ?? 0) <= 5 &&
                 (selectedVariant.stock ?? 0) > 0 && (
                 <Badge className="border border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10">
-                  เหลือเพียง {selectedVariant.stock} ชิ้น
+                  {fillN(tMsg("product.only_n_left", "Only {n} left"), selectedVariant.stock ?? 0)}
                 </Badge>
               )}
             </div>
@@ -481,7 +489,11 @@ export default function ProductDetailClient({
               } active:scale-[0.98]`}
             >
               <ShoppingCart className="mr-2 h-5 w-5" />
-              {outOfStock ? "หมดสต็อก" : added ? "✓ เพิ่มแล้ว!" : "เพิ่มในตะกร้า"}
+              {outOfStock
+                ? t("หมดสต็อก", "Out of stock")
+                : added
+                  ? t("✓ เพิ่มแล้ว!", "✓ Added!")
+                  : tMsg("product.add_to_cart", "Add to Cart")}
             </Button>
           </motion.div>
         </div>

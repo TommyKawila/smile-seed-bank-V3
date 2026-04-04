@@ -47,7 +47,11 @@ import { BreederTypeFilter } from "@/components/storefront/BreederTypeFilter";
 import { FilterSidebar, ShopFilterMobileSheet } from "@/components/storefront/FilterSidebar";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { MicroGeneticsBar } from "@/components/storefront/MicroGeneticsBar";
-import { parseListParam, productMatchesShopAttributeFilters } from "@/lib/shop-attribute-filters";
+import {
+  calculateFilterCounts,
+  parseListParam,
+  productMatchesShopAttributeFilters,
+} from "@/lib/shop-attribute-filters";
 
 const SHOP_PAGE_INITIAL = 30;
 const SHOP_PAGE_STEP = 24;
@@ -363,12 +367,8 @@ function ShopContent() {
     return () => clearTimeout(tid);
   }, [searchTerm, qParam, router, searchParams]);
 
-  const filteredProducts = useMemo(() => {
-    const geneticsSel = parseListParam(geneticsParam);
-    const difficultySel = parseListParam(difficultyParam);
-    const thcSel = parseListParam(thcParam);
-    const cbdSel = parseListParam(cbdParam);
-    const sexSel = parseListParam(sexParam);
+  /** Breeder + search + flowering (ft) scope only — used for sidebar filter option counts. */
+  const shopScopedProducts = useMemo(() => {
     const ftWant = floweringTypeToSlug(ftParam);
     return searchFilteredProducts.filter((p) => {
       let matchBreeder: boolean;
@@ -386,9 +386,24 @@ function ShopContent() {
       });
       const matchFt =
         !ftWant ||
-        (b != null &&
-          (b === "photo_ff" ? "photo-ff" : b) === ftWant);
-      const matchAttributes = productMatchesShopAttributeFilters(
+        (b != null && (b === "photo_ff" ? "photo-ff" : b) === ftWant);
+      return matchBreeder && matchFt;
+    });
+  }, [searchFilteredProducts, urlBreeder, breederParam, breedersLoading, ftParam]);
+
+  const filterOptionCounts = useMemo(
+    () => calculateFilterCounts(shopScopedProducts),
+    [shopScopedProducts]
+  );
+
+  const filteredProducts = useMemo(() => {
+    const geneticsSel = parseListParam(geneticsParam);
+    const difficultySel = parseListParam(difficultyParam);
+    const thcSel = parseListParam(thcParam);
+    const cbdSel = parseListParam(cbdParam);
+    const sexSel = parseListParam(sexParam);
+    return shopScopedProducts.filter((p) =>
+      productMatchesShopAttributeFilters(
         {
           strain_dominance: p.strain_dominance,
           growing_difficulty: p.growing_difficulty,
@@ -401,15 +416,10 @@ function ShopContent() {
         thcSel,
         cbdSel,
         sexSel
-      );
-      return matchBreeder && matchFt && matchAttributes;
-    });
+      )
+    );
   }, [
-    searchFilteredProducts,
-    urlBreeder,
-    breederParam,
-    breedersLoading,
-    ftParam,
+    shopScopedProducts,
     geneticsParam,
     difficultyParam,
     thcParam,
@@ -635,7 +645,7 @@ function ShopContent() {
         <div className="flex min-h-0 flex-col lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-stretch lg:gap-8">
           {isLg && (
             <aside className="flex min-h-0 min-w-0 flex-col items-stretch self-stretch">
-              <FilterSidebar t={t} />
+              <FilterSidebar t={t} counts={filterOptionCounts} />
             </aside>
           )}
 
@@ -643,6 +653,7 @@ function ShopContent() {
             {!isLg && (
               <ShopFilterMobileSheet
                 t={t}
+                counts={filterOptionCounts}
                 open={showFilter}
                 onOpenChange={setShowFilter}
                 resultCount={filteredProducts.length}

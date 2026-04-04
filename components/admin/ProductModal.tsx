@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useProducts, type ProductFormData } from "@/hooks/useProducts";
@@ -814,6 +815,19 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
         {/* Product fields */}
         <div className="space-y-4">
+          <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <Label className="text-sm font-medium">เปิดขาย (แสดงในร้านค้า)</Label>
+              <p className="text-xs text-zinc-500">
+                ปิดเมื่อยังไม่พร้อมขาย — ระบบอาจบังคับปิดหากไม่มีแพ็กหรือสต็อกรวมเป็น 0
+              </p>
+            </div>
+            <Switch
+              checked={form.is_active !== false}
+              onCheckedChange={(v) => setField("is_active", v)}
+              aria-label="เปิดขาย"
+            />
+          </div>
           {/* Basic Info */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-1">

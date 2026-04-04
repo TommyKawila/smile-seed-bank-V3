@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
         breeders ( id, name )
       )
     `)
-    .eq("is_active", true)
-    .order("product_id")
-    .order("id");
+    .order("product_id", { ascending: true })
+    .order("is_active", { ascending: false })
+    .order("id", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

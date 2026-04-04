@@ -3,5 +3,13 @@
     "back_to_list": "กลับไปหน้ารวมค่ายเมล็ด",
     "strains_count": "สายพันธุ์",
     "view_all_products": "ดูสินค้าทั้งหมดของร้าน"
+  },
+  "common": {
+    "back_to_shop": "กลับไปร้านค้า"
+  },
+  "product": {
+    "stock_left_simple": "เหลือ {n}",
+    "only_n_left": "เหลือเพียง {n} ชิ้น",
+    "add_to_cart": "เพิ่มในตะกร้า"
   }
 }

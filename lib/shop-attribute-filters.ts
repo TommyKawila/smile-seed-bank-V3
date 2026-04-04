@@ -56,7 +56,7 @@ export function productMatchesThcFilter(
   return false;
 }
 
-function parseCbdNumeric(cbd: string | null | undefined): number | null {
+export function parseCbdNumeric(cbd: string | null | undefined): number | null {
   if (cbd == null || cbd === "") return null;
   const m = String(cbd).match(/(\d+(?:\.\d+)?)/);
   if (!m) return null;
@@ -114,6 +114,95 @@ export function productMatchesShopAttributeFilters(
     productMatchesCbdFilter(p.cbd_percent, cbd) &&
     productMatchesSexFilter(p.seed_type, sex)
   );
+}
+
+export type ShopFilterCountProduct = {
+  strain_dominance?: string | null;
+  growing_difficulty?: string | null;
+  thc_percent?: number | null;
+  cbd_percent?: string | null;
+  seed_type?: string | null;
+};
+
+export type ShopFilterOptionCounts = {
+  genetics: Record<string, number>;
+  thc: Record<string, number>;
+  cbd: Record<string, number>;
+  difficulty: Record<string, number>;
+  sex: Record<string, number>;
+};
+
+export function defaultFilterOptionCounts(): ShopFilterOptionCounts {
+  return {
+    genetics: { hybrid: 0, "sativa-dom": 0, "indica-dom": 0 },
+    thc: { high: 0, mid: 0, low: 0 },
+    cbd: { high: 0, mid: 0, low: 0 },
+    difficulty: { easy: 0, moderate: 0, hard: 0 },
+    sex: { feminized: 0, regular: 0 },
+  };
+}
+
+function classifyGeneticsSlug(strainDominance: string | null | undefined): string | null {
+  const dom = (strainDominance ?? "").trim();
+  if (dom === "Hybrid 50/50") return "hybrid";
+  if (dom === "Mostly Sativa") return "sativa-dom";
+  if (dom === "Mostly Indica") return "indica-dom";
+  return null;
+}
+
+function classifyThcSlug(thcPercent: number | null | undefined): string | null {
+  if (thcPercent == null || Number.isNaN(Number(thcPercent))) return null;
+  const n = Number(thcPercent);
+  if (n > 20) return "high";
+  if (n >= 15 && n <= 20) return "mid";
+  if (n < 15) return "low";
+  return null;
+}
+
+function classifyCbdSlug(cbdPercent: string | null | undefined): string | null {
+  const n = parseCbdNumeric(cbdPercent);
+  if (n == null) return null;
+  if (n > 5) return "high";
+  if (n >= 2 && n <= 5) return "mid";
+  if (n < 2) return "low";
+  return null;
+}
+
+function classifyDifficultySlug(growingDifficulty: string | null | undefined): string | null {
+  const raw = (growingDifficulty ?? "").trim().toLowerCase();
+  if (raw === "easy") return "easy";
+  if (raw === "moderate") return "moderate";
+  if (raw === "difficult" || raw === "hard") return "hard";
+  return null;
+}
+
+function classifySexSlug(seedType: string | null | undefined): string | null {
+  const u = (seedType ?? "").toUpperCase();
+  if (u === "FEMINIZED") return "feminized";
+  if (u === "REGULAR") return "regular";
+  return null;
+}
+
+/** Counts products per filter bucket (same thresholds as productMatches*). Scope = breeder/search/ft only (exclude sidebar URL filters). */
+export function calculateFilterCounts(products: ShopFilterCountProduct[]): ShopFilterOptionCounts {
+  const c = defaultFilterOptionCounts();
+  for (const p of products) {
+    const g = classifyGeneticsSlug(p.strain_dominance);
+    if (g && g in c.genetics) c.genetics[g] += 1;
+
+    const th = classifyThcSlug(p.thc_percent);
+    if (th && th in c.thc) c.thc[th] += 1;
+
+    const cb = classifyCbdSlug(p.cbd_percent ?? null);
+    if (cb && cb in c.cbd) c.cbd[cb] += 1;
+
+    const d = classifyDifficultySlug(p.growing_difficulty);
+    if (d && d in c.difficulty) c.difficulty[d] += 1;
+
+    const s = classifySexSlug(p.seed_type ?? null);
+    if (s && s in c.sex) c.sex[s] += 1;
+  }
+  return c;
 }
 
 /** @deprecated Use productMatchesShopAttributeFilters */

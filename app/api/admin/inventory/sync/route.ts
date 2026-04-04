@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     if (Number.isNaN(packSize) || packSize < 1 || packSize > 99) continue;
     if (data == null || typeof data !== "object" || Array.isArray(data) || typeof data === "number") continue;
     const cell = data as Record<string, unknown>;
-    if (!("stock" in cell) && !("price" in cell)) continue;
+    if (!("stock" in cell) && !("price" in cell) && !("cost" in cell)) continue;
     const stock = Math.max(0, Number(cell.stock) || 0);
     const cost = Math.max(0, Number(cell.cost) || 0);
     const price = Math.max(0, Number(cell.price) || 0);
@@ -93,13 +93,22 @@ export async function POST(req: NextRequest) {
       (v) => parsePackFromUnitLabel(v.unit_label) === packSize
     );
 
+    const hasEconomics = stock > 0 || price > 0 || cost > 0;
+
     if (existing) {
       await prisma.product_variants.update({
         where: { id: existing.id },
-        data: { stock: Math.max(0, stock), cost_price: cost, price: Math.max(0, price), sku },
+        data: {
+          unit_label: label,
+          stock: Math.max(0, stock),
+          cost_price: cost,
+          price: Math.max(0, price),
+          sku,
+          is_active: true,
+        },
       });
-    } else if (stock > 0 || price > 0) {
-      await prisma.product_variants.create({
+    } else if (hasEconomics) {
+      const created = await prisma.product_variants.create({
         data: {
           product_id: product.id,
           unit_label: label,
@@ -110,6 +119,7 @@ export async function POST(req: NextRequest) {
           is_active: true,
         },
       });
+      product.product_variants = [...product.product_variants, created];
     }
   }
 

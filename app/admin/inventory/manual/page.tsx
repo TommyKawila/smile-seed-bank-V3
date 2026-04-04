@@ -1047,8 +1047,8 @@ export default function ManualInventoryPage() {
     if (!row.masterSku?.trim()) return;
     setSyncing(row.productId);
     try {
-      const merged = await syncRowToServer(row);
-      setRows((prev) => prev.map((r) => (r.productId === row.productId ? merged : r)));
+      await syncRowToServer(row);
+      await fetchGrid();
       toast({
         title: "สำเร็จ (Success)",
         description: "Sync เรียบร้อย — ข้อมูลอัปเดตในกริดแล้ว",
@@ -1097,8 +1097,8 @@ export default function ManualInventoryPage() {
     };
     setStrainSheetSaving(true);
     try {
-      const merged = await syncRowToServer(updated);
-      setRows((prev) => prev.map((r) => (r.productId === merged.productId ? merged : r)));
+      await syncRowToServer(updated);
+      await fetchGrid();
       setEditingStrainId(null);
       setStrainSheetForm(null);
       toast({
@@ -1138,8 +1138,7 @@ export default function ManualInventoryPage() {
           description: `Syncing ${i + 1}/${targets.length} strains…`,
         });
         try {
-          const merged = await syncRowToServer(row);
-          setRows((prev) => prev.map((r) => (r.productId === row.productId ? merged : r)));
+          await syncRowToServer(row);
           setSelectedProductIds((prev) => {
             const next = new Set(prev);
             next.delete(row.productId);
@@ -1151,6 +1150,7 @@ export default function ManualInventoryPage() {
         }
       }
       progressToast.dismiss();
+      await fetchGrid();
       toast({
         title: fail === 0 ? "สำเร็จ (Success)" : "เสร็จสิ้น (Done)",
         description:

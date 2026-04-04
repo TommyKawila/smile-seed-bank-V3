@@ -109,6 +109,7 @@ export default function ProductsPage() {
   const { products, isLoading, error, refetch } = useProducts({
     autoFetch: true,
     includeVariants: true,
+    includeInactive: true,
     breeder_id: breederId ? Number(breederId) : undefined,
     categoryId: categoryId && categoryId !== "all" ? categoryId : undefined,
     strain_dominance:
@@ -315,7 +316,12 @@ export default function ProductsPage() {
                 <ProductsEmptyState hasSearch={Boolean(searchTerm.trim())} />
               ) : (
                 filteredProducts.map((product) => (
-                  <ProductTableRow key={product.id} product={product as ProductFull} onEdit={openEdit} />
+                  <ProductTableRow
+                    key={product.id}
+                    product={product as ProductFull}
+                    onEdit={openEdit}
+                    onStatusUpdated={refetch}
+                  />
                 ))
               )}
             </TableBody>

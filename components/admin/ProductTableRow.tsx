@@ -7,7 +7,9 @@ import { AlertTriangle, Package, PackageX, Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import { isLowStock } from "@/hooks/useProducts";
 import { cn, formatPrice } from "@/lib/utils";
 import type { ProductFull } from "@/types/supabase";
@@ -19,11 +21,19 @@ const THUMB_BLUR_DATA_URL =
 export interface ProductTableRowProps {
   product: ProductFull;
   onEdit: (product: ProductFull) => void;
+  onStatusUpdated?: () => void;
 }
 
-export function ProductTableRow({ product, onEdit }: ProductTableRowProps) {
+export function ProductTableRow({ product, onEdit, onStatusUpdated }: ProductTableRowProps) {
+  const { toast } = useToast();
   const lowStock = isLowStock(product.stock);
   const [thumbLoaded, setThumbLoaded] = useState(false);
+  const [active, setActive] = useState(Boolean(product.is_active));
+  const [statusPending, setStatusPending] = useState(false);
+
+  useEffect(() => {
+    setActive(Boolean(product.is_active));
+  }, [product.id, product.is_active]);
 
   useEffect(() => {
     setThumbLoaded(false);
@@ -94,15 +104,58 @@ export function ProductTableRow({ product, onEdit }: ProductTableRowProps) {
         </Link>
       </TableCell>
       <TableCell>
-        <Badge
-          className={
-            product.is_active
-              ? "bg-accent text-primary hover:bg-accent"
-              : "bg-zinc-100 text-zinc-500 hover:bg-zinc-100"
-          }
-        >
-          {product.is_active ? "เปิดขาย" : "ปิดอยู่"}
-        </Badge>
+        <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
+          <Switch
+            checked={active}
+            disabled={statusPending}
+            onCheckedChange={async (next) => {
+              const prev = active;
+              setActive(next);
+              setStatusPending(true);
+              try {
+                const res = await fetch(`/api/admin/products/${product.id}/status`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ is_active: next }),
+                });
+                const data = (await res.json()) as {
+                  is_active?: boolean;
+                  couldNotActivate?: boolean;
+                  error?: string;
+                };
+                if (!res.ok) throw new Error(data.error ?? "อัปเดตสถานะไม่สำเร็จ");
+                setActive(Boolean(data.is_active));
+                toast({
+                  title: "สำเร็จ (Success)",
+                  description: data.couldNotActivate
+                    ? "สต็อกไม่เพียงพอ — สถานะยังปิดอยู่ (Insufficient stock — still off)"
+                    : "อัปเดตสถานะสินค้าแล้ว (Product status updated)",
+                });
+                onStatusUpdated?.();
+              } catch (e) {
+                setActive(prev);
+                toast({
+                  variant: "destructive",
+                  title: "ไม่สำเร็จ",
+                  description: e instanceof Error ? e.message : String(e),
+                });
+              } finally {
+                setStatusPending(false);
+              }
+            }}
+            aria-label={active ? "เปิดขาย" : "ปิดขาย"}
+          />
+          <Badge
+            variant="outline"
+            className={
+              active
+                ? "border-primary/30 bg-accent/50 text-primary"
+                : "border-zinc-200 bg-zinc-50 text-zinc-500"
+            }
+          >
+            {active ? "เปิดขาย" : "ปิดอยู่"}
+          </Badge>
+        </div>
       </TableCell>
       <TableCell>
         <Button

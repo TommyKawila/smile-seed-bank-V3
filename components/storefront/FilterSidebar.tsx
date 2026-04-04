@@ -3,7 +3,8 @@
 import { useCallback } from "react";
 import { Mars, Venus, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { parseListParam } from "@/lib/shop-attribute-filters";
+import { parseListParam, type ShopFilterOptionCounts, defaultFilterOptionCounts } from "@/lib/shop-attribute-filters";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
@@ -113,7 +114,13 @@ const SEX_ROWS: { slug: "feminized" | "regular"; labelTh: string; labelEn: strin
 ];
 
 /** Shared filter fields (URL-driven). */
-export function FilterSidebarContent({ t }: { t: TFn }) {
+export function FilterSidebarContent({
+  t,
+  counts = defaultFilterOptionCounts(),
+}: {
+  t: TFn;
+  counts?: ShopFilterOptionCounts;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -163,15 +170,19 @@ export function FilterSidebarContent({ t }: { t: TFn }) {
   const checkboxClass =
     "peer h-4 w-4 shrink-0 rounded border-primary/35 text-primary accent-primary focus:ring-2 focus:ring-primary/30 focus:ring-offset-0";
 
-  const rowClass = (on: boolean) =>
-    `flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-sm transition-colors ${
+  const rowClass = (on: boolean, isZero: boolean) =>
+    `flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-sm transition-colors ${
+      isZero ? "opacity-60" : ""
+    } ${
       on
         ? "border-primary/45 bg-secondary/50 text-secondary-foreground"
         : "border-transparent bg-white/60 text-muted-foreground hover:bg-accent/60 hover:text-foreground"
     }`;
 
-  const sexRowClass = (on: boolean, isFem: boolean) =>
-    `flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-sm transition-colors ${
+  const sexRowClass = (on: boolean, isFem: boolean, isZero: boolean) =>
+    `flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-sm transition-colors ${
+      isZero ? "opacity-60" : ""
+    } ${
       on
         ? isFem
           ? "border-secondary/50 bg-secondary/50 text-secondary-foreground"
@@ -189,8 +200,9 @@ export function FilterSidebarContent({ t }: { t: TFn }) {
           {GENETICS_ROWS.map(({ slug, labelTh, labelEn, icon }) => {
             const on = geneticsOn(slug);
             const tint = GENETICS_ICON_COLORS[icon];
+            const cnt = counts.genetics[slug] ?? 0;
             return (
-              <label key={slug} className={rowClass(on)}>
+              <label key={slug} className={rowClass(on, cnt === 0)}>
                 <input
                   type="checkbox"
                   className={checkboxClass}
@@ -206,10 +218,23 @@ export function FilterSidebarContent({ t }: { t: TFn }) {
                   >
                     <GeneticsDominanceIcon variant={icon} />
                   </span>
-                  <span
-                    className={`font-medium leading-tight ${on ? "text-primary" : "text-muted-foreground"}`}
-                  >
-                    {t(labelTh, labelEn)}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "font-medium leading-tight",
+                        on ? "text-primary" : "text-muted-foreground"
+                      )}
+                    >
+                      {t(labelTh, labelEn)}
+                    </span>
+                    <span
+                      className={cn(
+                        "shrink-0 text-xs font-normal tabular-nums",
+                        cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                      )}
+                    >
+                      ({cnt})
+                    </span>
                   </span>
                 </span>
               </label>
@@ -228,15 +253,26 @@ export function FilterSidebarContent({ t }: { t: TFn }) {
         <div className="mb-2 space-y-1">
           {THC_ROWS.map(({ slug, labelTh, labelEn }) => {
             const on = thcOn(slug);
+            const cnt = counts.thc[slug] ?? 0;
             return (
-              <label key={`thc-${slug}`} className={rowClass(on)}>
+              <label key={`thc-${slug}`} className={rowClass(on, cnt === 0)}>
                 <input
                   type="checkbox"
                   className={checkboxClass}
                   checked={on}
                   onChange={() => toggleT(slug)}
                 />
-                <span className="font-medium">{t(labelTh, labelEn)}</span>
+                <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <span className="font-medium">{t(labelTh, labelEn)}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 text-xs font-normal tabular-nums",
+                      cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                    )}
+                  >
+                    ({cnt})
+                  </span>
+                </span>
               </label>
             );
           })}
@@ -247,15 +283,26 @@ export function FilterSidebarContent({ t }: { t: TFn }) {
         <div className="space-y-1">
           {CBD_ROWS.map(({ slug, labelTh, labelEn }) => {
             const on = cbdOn(slug);
+            const cnt = counts.cbd[slug] ?? 0;
             return (
-              <label key={`cbd-${slug}`} className={rowClass(on)}>
+              <label key={`cbd-${slug}`} className={rowClass(on, cnt === 0)}>
                 <input
                   type="checkbox"
                   className={checkboxClass}
                   checked={on}
                   onChange={() => toggleC(slug)}
                 />
-                <span className="font-medium">{t(labelTh, labelEn)}</span>
+                <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <span className="font-medium">{t(labelTh, labelEn)}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 text-xs font-normal tabular-nums",
+                      cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                    )}
+                  >
+                    ({cnt})
+                  </span>
+                </span>
               </label>
             );
           })}
@@ -269,15 +316,26 @@ export function FilterSidebarContent({ t }: { t: TFn }) {
         <div className="space-y-1.5">
           {DIFF_ROWS.map(({ slug, labelTh, labelEn }) => {
             const on = difficultyOn(slug);
+            const cnt = counts.difficulty[slug] ?? 0;
             return (
-              <label key={slug} className={rowClass(on)}>
+              <label key={slug} className={rowClass(on, cnt === 0)}>
                 <input
                   type="checkbox"
                   className={checkboxClass}
                   checked={on}
                   onChange={() => toggleD(slug)}
                 />
-                <span className="font-medium">{t(labelTh, labelEn)}</span>
+                <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <span className="font-medium">{t(labelTh, labelEn)}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 text-xs font-normal tabular-nums",
+                      cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                    )}
+                  >
+                    ({cnt})
+                  </span>
+                </span>
               </label>
             );
           })}
@@ -291,21 +349,32 @@ export function FilterSidebarContent({ t }: { t: TFn }) {
         <div className="space-y-1">
           {SEX_ROWS.map(({ slug, labelTh, labelEn, fem }) => {
             const on = sexOn(slug);
+            const cnt = counts.sex[slug] ?? 0;
             return (
-              <label key={slug} className={sexRowClass(on, fem)}>
+              <label key={slug} className={sexRowClass(on, fem, cnt === 0)}>
                 <input
                   type="checkbox"
                   className={checkboxClass}
                   checked={on}
                   onChange={() => toggleS(slug)}
                 />
-                <span className="flex min-w-0 flex-1 items-center gap-2 font-medium">
+                <span className="flex min-w-0 flex-1 items-center gap-2">
                   {fem ? (
                     <Venus className="h-4 w-4 shrink-0 text-secondary-foreground" aria-hidden />
                   ) : (
                     <Mars className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                   )}
-                  {t(labelTh, labelEn)}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="font-medium">{t(labelTh, labelEn)}</span>
+                    <span
+                      className={cn(
+                        "shrink-0 text-xs font-normal tabular-nums",
+                        cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                      )}
+                    >
+                      ({cnt})
+                    </span>
+                  </span>
                 </span>
               </label>
             );
@@ -317,14 +386,14 @@ export function FilterSidebarContent({ t }: { t: TFn }) {
 }
 
 /** Desktop / lg+ sticky sidebar. top ≈ Navbar 112px + search strip ~110px + 8px gap → 230px. */
-export function FilterSidebar({ t }: { t: TFn }) {
+export function FilterSidebar({ t, counts }: { t: TFn; counts: ShopFilterOptionCounts }) {
   return (
     <div
       id="shop-filters-desktop"
       className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-xl border border-zinc-200/80 bg-gradient-to-br from-accent/40 via-zinc-50/90 to-secondary/30 shadow-sm lg:top-[230px] lg:max-h-[calc(100vh-230px)]"
     >
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl px-3 pb-3 pt-4 [-webkit-overflow-scrolling:touch]">
-        <FilterSidebarContent t={t} />
+        <FilterSidebarContent t={t} counts={counts} />
       </div>
     </div>
   );
@@ -333,12 +402,14 @@ export function FilterSidebar({ t }: { t: TFn }) {
 /** Mobile sheet with header, scroll, sticky footer. */
 export function ShopFilterMobileSheet({
   t,
+  counts,
   open,
   onOpenChange,
   resultCount,
   onClearAll,
 }: {
   t: TFn;
+  counts: ShopFilterOptionCounts;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   resultCount: number;
@@ -366,7 +437,7 @@ export function ShopFilterMobileSheet({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch]">
-          <FilterSidebarContent t={t} />
+          <FilterSidebarContent t={t} counts={counts} />
         </div>
 
         <div className="shrink-0 border-t border-zinc-200/80 bg-white/90 p-4 backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">

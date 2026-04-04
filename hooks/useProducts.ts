@@ -34,6 +34,8 @@ interface UseProductsOptions {
   limit?: number;
   autoFetch?: boolean;
   includeVariants?: boolean;
+  /** Admin: list inactive (off-catalog) products too */
+  includeInactive?: boolean;
 }
 
 interface UseProductsReturn {
@@ -50,7 +52,16 @@ interface UseProductsReturn {
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
-  const { category, breeder_id, categoryId, strain_dominance, limit, autoFetch = true, includeVariants = false } = opts;
+  const {
+    category,
+    breeder_id,
+    categoryId,
+    strain_dominance,
+    limit,
+    autoFetch = true,
+    includeVariants = false,
+    includeInactive = false,
+  } = opts;
 
   const [products, setProducts] = useState<ProductListItem[]>([]);
   const [isLoading, setIsLoading] = useState(autoFetch);
@@ -68,13 +79,15 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
         ? supabase
             .from("products")
             .select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
-            .eq("is_active", true)
             .order("id", { ascending: false })
         : supabase
             .from("products")
             .select(PRODUCT_SELECT_WITH_BREEDER)
-            .eq("is_active", true)
             .order("id", { ascending: false });
+
+      if (!includeInactive) {
+        query = query.eq("is_active", true);
+      }
 
       if (category) query = query.eq("category", category);
       if (breeder_id) query = query.eq("breeder_id", breeder_id);
@@ -90,7 +103,7 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [category, breeder_id, categoryId, strain_dominance, limit, includeVariants]);
+  }, [category, breeder_id, categoryId, strain_dominance, limit, includeVariants, includeInactive]);
 
   useEffect(() => {
     if (autoFetch) fetchProducts();
