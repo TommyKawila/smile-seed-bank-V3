@@ -56,6 +56,18 @@ export function wherePhotoCategoryStrict(categoryId: bigint): Prisma.productsWhe
  * Map `product_categories.name` to a Prisma where clause, or null → FK-only filter.
  * Order: Photo 3N before generic Photo; Photo FF before plain Photo substring rules.
  */
+/** Autoflower bucket: match canonical FT (any casing) or rows only linked by category FK when FT not set. */
+export function whereAutoflowerCategory(categoryId: bigint): Prisma.productsWhereInput {
+  return {
+    OR: [
+      { flowering_type: { equals: "autoflower", mode: "insensitive" } },
+      {
+        AND: [{ category_id: categoryId }, { flowering_type: null }],
+      },
+    ],
+  };
+}
+
 export function categoryNameToWhereInput(
   name: string,
   categoryId: bigint
@@ -65,7 +77,13 @@ export function categoryNameToWhereInput(
   if (n === "photo ff" || n === "photo_ff") return { flowering_type: "photo_ff" };
   if (n.includes("photo") && (n.includes("ff") || n.includes("fast"))) return { flowering_type: "photo_ff" };
   if (n === "photo" || n === "photoperiod") return wherePhotoCategoryStrict(categoryId);
-  if (n === "auto" || n === "autoflower") return { flowering_type: "autoflower" };
+  if (
+    n === "auto" ||
+    n === "autoflower" ||
+    (n.includes("autoflower") && !n.includes("photo"))
+  ) {
+    return whereAutoflowerCategory(categoryId);
+  }
   return null;
 }
 
