@@ -22,7 +22,7 @@ import { useBreeders } from "@/hooks/useBreeders";
 import { unknownFields } from "@/lib/validations/product";
 import { packSizeNum, toVariantSku } from "@/lib/sku-utils";
 import { useToast } from "@/hooks/use-toast";
-import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { ProductImageUpload } from "@/components/admin/ProductImageUpload";
 import { normalizeFloweringFromDb, normalizeSexFromDb } from "@/lib/cannabis-attributes";
 
 const MAX_IMAGES = 5;
@@ -137,7 +137,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
   const isEditMode = !!initialData;
 
-  /** Public image URLs (marketing gallery) — optimized on pick via ImageUploadField → `image_url`… */
+  /** Public image URLs (marketing gallery) — optimized via ProductImageUpload → `image_url`… */
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const aiScanFileInputRef = useRef<HTMLInputElement>(null);
   const aiScanStagingRef = useRef<AiStagingItem[]>([]);
@@ -893,60 +893,19 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
             </div>
           </div>
 
-          {/* Product images — same client optimize + Supabase upload as Magazine CMS */}
+          {/* Product images — multi-select, reorder (dnd-kit), same optimize + upload pipeline */}
           <div className="mx-auto w-full max-w-2xl space-y-4">
             <Label className="text-sm font-semibold">
-              📸 Product images / แกลเลอรีหน้าร้าน ({galleryUrls.length}/{MAX_IMAGES})
+              📸 Product images / แกลเลอรีหน้าร้าน
             </Label>
-            <div className="space-y-4">
-              {galleryUrls.map((url, i) => (
-                <div key={`${i}-${url.slice(-24)}`} className="space-y-1">
-                  {i === 0 && (
-                    <span className="inline-block rounded bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
-                      หลัก (รูปแรก)
-                    </span>
-                  )}
-                  <ImageUploadField
-                    value={url}
-                    onChange={(v) => {
-                      setGalleryUrls((prev) => {
-                        const next = [...prev];
-                        if (!v) next.splice(i, 1);
-                        else next[i] = v;
-                        return next;
-                      });
-                    }}
-                    uploadTarget="product"
-                    variant="product"
-                    toastOnSuccess={false}
-                    compact
-                    label={`รูป ${i + 1}`}
-                    disabled={isSubmitting}
-                  />
-                </div>
-              ))}
-              {galleryUrls.length < MAX_IMAGES && (
-                <ImageUploadField
-                  value=""
-                  onChange={(v) => {
-                    if (!v) return;
-                    setGalleryUrls((prev) => [...prev, v]);
-                  }}
-                  uploadTarget="product"
-                  variant="product"
-                  toastOnSuccess={false}
-                  compact
-                  label={
-                    galleryUrls.length === 0
-                      ? "เพิ่มรูปสินค้า (หลัก)"
-                      : `เพิ่มรูป ${galleryUrls.length + 1}`
-                  }
-                  disabled={isSubmitting}
-                />
-              )}
-            </div>
+            <ProductImageUpload
+              value={galleryUrls}
+              onChange={setGalleryUrls}
+              maxImages={MAX_IMAGES}
+              disabled={isSubmitting}
+            />
             <p className="text-[11px] text-zinc-400">
-              รูปแรก = หลัก · บีบอัดและอัปโหลดทันที (1200px · ~0.8MB) — ใช้เฉพาะโชว์หน้าร้าน (สแกน AI ใช้โซน AI Scan ด้านบน)
+              รูปแรก = รูปหลัก · ลากจัดลำดับได้ · บีบอัดและอัปโหลดตามลำดับ (1200px · ~0.8MB) — ใช้เฉพาะโชว์หน้าร้าน (สแกน AI ใช้โซน AI Scan ด้านบน)
             </p>
           </div>
 
