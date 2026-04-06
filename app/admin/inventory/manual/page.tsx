@@ -290,8 +290,18 @@ function EditableCell({
   useEffect(() => setLocal(String(value)), [value]);
 
   const commit = () => {
-    const n = parseFloat(local);
-    if (!Number.isNaN(n) && n !== value) onSave(n);
+    const trimmed = local.trim();
+    const n = trimmed === "" ? 0 : parseFloat(trimmed);
+    if (trimmed !== "" && Number.isNaN(n)) {
+      setLocal(String(value));
+      return;
+    }
+    if (n !== value) onSave(n);
+    setLocal(String(n));
+  };
+
+  const handleFocus = () => {
+    if (value === 0 || local === "0") setLocal("");
   };
 
   return (
@@ -302,6 +312,7 @@ function EditableCell({
         className={`h-7 w-14 border-0 border-b border-transparent bg-transparent px-1 py-0 text-sm shadow-none focus:border-primary focus:ring-0 ${bold ? "font-semibold text-foreground" : "text-slate-600"}`}
         value={local}
         onChange={(e) => setLocal(e.target.value)}
+        onFocus={handleFocus}
         onBlur={commit}
         onKeyDown={(e) => e.key === "Enter" && commit()}
         disabled={saving}
@@ -370,6 +381,30 @@ export default function ManualInventoryPage() {
   useEffect(() => {
     setExportMainLogoOk(true);
   }, [settings.logo_main_url]);
+
+  useEffect(() => {
+    if (lastAddedRowId == null) return;
+    const id = `manual-grid-strain-name-${lastAddedRowId}`;
+    let cancelled = false;
+    const run = () => {
+      if (cancelled) return;
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      if (el) {
+        el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        el.focus({ preventScroll: true });
+      }
+      setLastAddedRowId(null);
+    };
+    const t = window.setTimeout(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(run);
+      });
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [lastAddedRowId]);
 
   useEffect(() => {
     try {
@@ -898,6 +933,7 @@ export default function ManualInventoryPage() {
     };
     setRows((prev) => [newRow, ...prev]);
     setLastAddedRowId(newRow.productId);
+    setCurrentPage(1);
   };
 
   const syncableNewCount = useMemo(
@@ -2011,10 +2047,6 @@ export default function ManualInventoryPage() {
                             onChange={(e) => handleMasterSkuChange(row, e.target.value)}
                             placeholder="FB-ZKITTLEZ"
                             className="h-7 w-28 font-mono text-xs border-transparent focus:border-primary"
-                            autoFocus={row.productId === lastAddedRowId}
-                            onFocus={() => {
-                              if (row.productId === lastAddedRowId) setLastAddedRowId(null);
-                            }}
                           />
                         ) : (
                           <span className="font-mono text-xs text-slate-600">{row.masterSku || "—"}</span>
@@ -2023,6 +2055,7 @@ export default function ManualInventoryPage() {
                       <td className={`sticky left-[314px] z-10 min-w-[160px] px-3 py-2 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-accent/30 ${isRowDimmed ? "opacity-50" : ""} ${isUnsynced ? "bg-amber-50/50" : zebra ? "bg-slate-50/50" : "bg-white"}`}>
                         {row.isNew ? (
                           <Input
+                            id={`manual-grid-strain-name-${row.productId}`}
                             value={row.name}
                             onChange={(e) => handleNameChange(row, e.target.value)}
                             placeholder="Strain Name (auto-SKU)"
