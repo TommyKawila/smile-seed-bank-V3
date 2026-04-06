@@ -12,7 +12,6 @@ import {
   Tag,
   Settings,
   Leaf,
-  BookOpen,
   PlusSquare,
   Percent,
   X,
@@ -24,6 +23,7 @@ import {
   FileText,
   Camera,
   Sparkles,
+  Newspaper,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -47,7 +47,7 @@ const navItems = [
   { href: "/admin/customers", label: "ลูกค้า", icon: Users },
   { href: "/admin/promotions", label: "โปรโมชั่น", icon: Tag },
   { href: "/admin/discounts", label: "ส่วนลด / คูปอง", icon: Percent },
-  { href: "/admin/blog", label: "บทความ", icon: BookOpen },
+  { href: "/admin/magazine", label: "นิตยสาร", icon: Newspaper },
 ];
 
 const bottomItems = [

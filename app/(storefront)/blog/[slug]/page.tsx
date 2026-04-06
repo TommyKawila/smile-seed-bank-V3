@@ -2,209 +2,310 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import type { Blog } from "@/types/supabase";
+import { Inter, Playfair_Display } from "next/font/google";
+import { ChevronRight, Clock, Eye } from "lucide-react";
+import type { MagazineProductPublic } from "@/lib/blog-service";
+import {
+  getAffiliatesByIds,
+  getMagazineProductsByIds,
+  getPublishedPostBySlug,
+  getRelatedMagazinePosts,
+  getSmartProducts,
+} from "@/lib/blog-service";
+import {
+  splitForSmartTieIn,
+  parseArticleSegments,
+  collectProductIdsFromSegments,
+} from "@/lib/magazine-article-segments";
+import { tiptapJsonToHtml } from "@/lib/tiptap-to-html";
+import {
+  articleMetaDescription,
+  defaultOgImageUrl,
+  resolveAbsoluteUrl,
+  truncateMetaDescription,
+} from "@/lib/magazine-seo";
+import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { formatDate } from "@/lib/utils";
-import { Calendar, Tag, ArrowLeft, Eye } from "lucide-react";
+import { MagazineArticleBody } from "@/components/storefront/magazine/MagazineArticleBody";
+import { MagazineArticleJsonLd } from "@/components/storefront/magazine/MagazineArticleJsonLd";
+import { MagazineArticleShare } from "@/components/storefront/magazine/MagazineArticleShare";
+import { SmartTieInStrip } from "@/components/storefront/magazine/SmartTieInStrip";
+import { BlogViewTracker } from "@/components/storefront/magazine/BlogViewTracker";
+import { NewsletterBox } from "@/components/storefront/magazine/NewsletterBox";
+import { ShopTheStorySection } from "@/components/storefront/magazine/ShopTheStorySection";
 
-export const dynamic = "force-dynamic";
+const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-magazine-serif" });
 
-export const revalidate = 600;
+export const revalidate = 120;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async function getBlogBySlug(slug: string): Promise<Blog | null> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("blogs")
-    .select("*")
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .single();
-  return (data as Blog) ?? null;
+function readingMinutesFromHtml(html: string): number {
+  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const words = text.split(/\s/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
 }
 
-async function getRelatedBlogs(currentId: number, category: string | null): Promise<Blog[]> {
-  const supabase = await createClient();
-  let query = supabase
-    .from("blogs")
-    .select("id, slug, title, title_en, excerpt, excerpt_en, image_url, category, created_at, is_published, view_count, content, content_en, excerpt_en")
-    .eq("is_published", true)
-    .neq("id", currentId)
-    .order("created_at", { ascending: false })
-    .limit(3);
-
-  if (category) query = query.eq("category", category);
-
-  const { data } = await query;
-  return (data as Blog[]) ?? [];
+function collectAffiliateIds(segments: ReturnType<typeof parseArticleSegments>): number[] {
+  return segments.filter((s) => s.kind === "affiliateId").map((s) => s.id);
 }
-
-// ─── generateMetadata ─────────────────────────────────────────────────────────
 
 export async function generateMetadata({
   params,
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const blog = await getBlogBySlug(params.slug);
-  if (!blog) return { title: "ไม่พบบทความ" };
+  const post = await getPublishedPostBySlug(params.slug);
+  if (!post) return { title: "ไม่พบบทความ" };
 
-  const title = blog.title ?? blog.title_en ?? "บทความ";
-  const description = blog.excerpt ?? blog.excerpt_en ?? "";
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const base = siteUrl.replace(/\/$/, "");
+  const contentHtml = tiptapJsonToHtml(post.content);
+  const description = post.excerpt?.trim()
+    ? truncateMetaDescription(post.excerpt.trim())
+    : articleMetaDescription(null, contentHtml);
+
+  const rawImage = post.featured_image?.trim();
+  const ogImageUrl = rawImage ? resolveAbsoluteUrl(siteUrl, rawImage) : defaultOgImageUrl(siteUrl);
+  const pageUrl = `${base}/blog/${post.slug}`;
 
   return {
-    title: `${title} — Smile Seed Bank`,
+    metadataBase: new URL(base),
+    title: {
+      absolute: `${post.title} | Tommy Smile Seed Magazine`,
+    },
     description,
+    authors: [{ name: "Smile Seed Bank Editorial" }],
     openGraph: {
-      title,
+      title: post.title,
       description,
+      locale: "th_TH",
       type: "article",
-      publishedTime: blog.created_at,
-      url: `${siteUrl}/blog/${blog.slug}`,
-      images: blog.image_url ? [{ url: blog.image_url, alt: title }] : [],
-      siteName: "Smile Seed Bank",
+      url: pageUrl,
+      siteName: "Tommy Smile Seed Magazine",
+      publishedTime: post.created_at,
+      modifiedTime: post.updated_at,
+      authors: ["Smile Seed Bank Editorial"],
+      images: [
+        {
+          url: ogImageUrl,
+          alt: post.title,
+          width: 1200,
+          height: 630,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: post.title,
       description,
-      images: blog.image_url ? [blog.image_url] : [],
+      images: [ogImageUrl],
     },
     alternates: {
-      canonical: `${siteUrl}/blog/${blog.slug}`,
+      canonical: `/blog/${post.slug}`,
     },
   };
 }
 
-// generateStaticParams removed — route is force-dynamic, no build-time Supabase calls needed.
+export default async function BlogArticlePage({ params }: { params: { slug: string } }) {
+  const post = await getPublishedPostBySlug(params.slug);
+  if (!post) notFound();
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+  const rawHtml = tiptapJsonToHtml(post.content);
+  const [beforeTie, afterTie] = splitForSmartTieIn(rawHtml);
+  const segmentsBefore = parseArticleSegments(beforeTie);
+  const segmentsAfter = parseArticleSegments(afterTie);
+  const affiliateIds = [
+    ...collectAffiliateIds(segmentsBefore),
+    ...collectAffiliateIds(segmentsAfter),
+  ];
 
-export default async function BlogDetailPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const blog = await getBlogBySlug(params.slug);
-  if (!blog) notFound();
+  const inContentProductIds = [
+    ...collectProductIdsFromSegments(segmentsBefore),
+    ...collectProductIdsFromSegments(segmentsAfter),
+  ];
+  const relatedProductIds = post.related_products ?? [];
+  const productIdsAll = [
+    ...new Set([...relatedProductIds, ...inContentProductIds]),
+  ];
 
-  const related = await getRelatedBlogs(blog.id, blog.category);
+  const [affiliateMap, productMap, smartProducts, related] = await Promise.all([
+    getAffiliatesByIds(affiliateIds),
+    getMagazineProductsByIds(productIdsAll),
+    getSmartProducts(post.tags, 2),
+    getRelatedMagazinePosts(post.id, post.category?.slug ?? null, 2),
+  ]);
 
-  // Determine display language (prefer TH, fallback to EN)
-  const title = blog.title ?? blog.title_en ?? "ไม่มีชื่อ";
-  const content = blog.content ?? blog.content_en ?? "";
+  const shopStoryProducts: MagazineProductPublic[] = relatedProductIds
+    .map((id) => productMap.get(id))
+    .filter((p): p is MagazineProductPublic => p != null);
+
+  const readMin = readingMinutesFromHtml(rawHtml);
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const base = siteUrl.replace(/\/$/, "");
+  const pageUrl = `${base}/blog/${post.slug}`;
+  const metaDesc = articleMetaDescription(post.excerpt, rawHtml);
+  const rawFeatured = post.featured_image?.trim();
+  const jsonLdImage = rawFeatured
+    ? resolveAbsoluteUrl(siteUrl, rawFeatured)
+    : defaultOgImageUrl(siteUrl);
 
   return (
-    <div className="min-h-screen bg-white pb-20 pt-24">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        {/* Back Link */}
-        <Link
-          href="/blog"
-          className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-primary"
+    <div
+      className={`min-h-screen bg-[#050505] text-white ${inter.variable} ${playfair.variable} font-sans antialiased`}
+    >
+      <MagazineArticleJsonLd
+        title={post.title}
+        description={metaDesc}
+        imageUrls={[jsonLdImage]}
+        datePublished={post.published_at ?? post.created_at}
+        dateModified={post.updated_at}
+        url={pageUrl}
+      />
+      <BlogViewTracker postId={post.id} />
+      <article className="mx-auto max-w-3xl px-4 pb-24 pt-24 sm:px-6 lg:px-8">
+        <nav
+          className="mb-10 flex flex-wrap items-center gap-1 text-xs text-zinc-500"
+          aria-label="Breadcrumb"
         >
-          <ArrowLeft className="h-4 w-4" />
-          กลับไปหน้าบทความ
-        </Link>
+          <Link href="/blog" className="transition hover:text-emerald-400/90">
+            Magazine
+          </Link>
+          {post.category && (
+            <>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
+              <Link
+                href={`/blog?category=${encodeURIComponent(post.category.slug)}`}
+                className="transition hover:text-emerald-400/90"
+              >
+                {post.category.name}
+              </Link>
+            </>
+          )}
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
+          <span className="line-clamp-1 text-zinc-600">{post.title}</span>
+        </nav>
 
-        {/* Hero Image */}
-        {blog.image_url && (
-          <div className="relative mb-8 h-56 w-full overflow-hidden rounded-2xl sm:h-80">
-            <Image
-              src={blog.image_url}
-              alt={title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 768px"
-              priority
-            />
-          </div>
+        {post.category && (
+          <span className="mb-4 inline-flex rounded-full border border-emerald-500/35 bg-emerald-950/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300/95">
+            [{post.category.name}]
+          </span>
         )}
 
-        {/* Meta */}
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          {blog.category && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              <Tag className="h-3 w-3" />
-              {blog.category}
-            </span>
+        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
+          {post.title}
+        </h1>
+
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/10 pb-8 text-sm text-zinc-500">
+          <span>Smile Seed Bank Editorial</span>
+          {post.published_at && (
+            <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
           )}
-          <span className="flex items-center gap-1.5 text-xs text-zinc-400">
-            <Calendar className="h-3.5 w-3.5" />
-            <time dateTime={blog.created_at}>{formatDate(blog.created_at)}</time>
+          <span className="inline-flex items-center gap-1.5">
+            <Clock className="h-4 w-4 text-zinc-600" aria-hidden />
+            {readMin} min read
           </span>
-          <span className="flex items-center gap-1 text-xs text-zinc-400">
-            <Eye className="h-3.5 w-3.5" />
-            {blog.view_count.toLocaleString("th-TH")} ครั้ง
+          <span className="inline-flex items-center gap-1.5">
+            <Eye className="h-4 w-4 text-zinc-600" aria-hidden />
+            {post.view_count.toLocaleString("th-TH")} views
           </span>
         </div>
 
-        {/* Title */}
-        <h1 className="mb-4 text-2xl font-extrabold leading-tight tracking-tight text-zinc-900 sm:text-3xl">
-          {title}
-        </h1>
+        {post.featured_image && (
+          <div className="relative -mx-4 mt-10 aspect-[21/9] min-h-[220px] overflow-hidden rounded-2xl border border-white/5 sm:mx-0">
+            <Image
+              src={post.featured_image}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 720px"
+              priority
+              placeholder="blur"
+              blurDataURL={SHIMMER_BLUR_DATA_URL}
+              unoptimized={!post.featured_image.includes("supabase.co")}
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/20 to-transparent" />
+          </div>
+        )}
 
-        {/* Bilingual Toggle — show EN title/excerpt if both languages exist */}
-        {blog.title_en && blog.title && (
-          <p className="mb-6 border-l-4 border-primary/30 pl-4 text-sm italic text-zinc-400">
-            {blog.title_en}
+        {post.excerpt && (
+          <p className="mt-10 border-l-2 border-emerald-500/40 pl-5 text-lg leading-relaxed text-zinc-400">
+            {post.excerpt}
           </p>
         )}
 
-        {/* Article Content */}
-        <article
-          className="prose prose-zinc prose-headings:font-bold prose-a:text-primary prose-img:rounded-xl max-w-none leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: content }}
-        />
+        <div className="mx-auto mt-12 max-w-[720px]">
+          <MagazineArticleBody
+            segments={segmentsBefore}
+            affiliateMap={affiliateMap}
+            productMap={productMap}
+          />
+          <SmartTieInStrip products={smartProducts} />
+          <MagazineArticleBody
+            segments={segmentsAfter}
+            affiliateMap={affiliateMap}
+            productMap={productMap}
+          />
+        </div>
 
-        {/* English Content (if bilingual) */}
-        {blog.content_en && blog.content && (
-          <details className="mt-8 rounded-xl border border-zinc-100 bg-zinc-50 p-5">
-            <summary className="cursor-pointer text-sm font-semibold text-zinc-600">
-              🇬🇧 English Version
-            </summary>
-            <article
-              className="prose prose-zinc prose-sm mt-4 max-w-none"
-              dangerouslySetInnerHTML={{ __html: blog.content_en }}
-            />
-          </details>
-        )}
+        <ShopTheStorySection products={shopStoryProducts} />
 
-        {/* Related Articles */}
         {related.length > 0 && (
-          <div className="mt-16">
-            <h2 className="mb-6 text-lg font-bold text-zinc-900">บทความที่เกี่ยวข้อง</h2>
-            <div className="grid gap-4 sm:grid-cols-3">
+          <section className="mx-auto mt-20 max-w-[720px] border-t border-white/10 pt-16">
+            <h2 className="font-[family-name:var(--font-magazine-serif)] text-2xl font-semibold text-white">
+              Read more
+            </h2>
+            <ul className="mt-8 grid gap-6 sm:grid-cols-2">
               {related.map((r) => (
-                <Link
-                  key={r.id}
-                  href={`/blog/${r.slug}`}
-                  className="group overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  {r.image_url && (
-                    <div className="relative h-32 w-full overflow-hidden">
-                      <Image
-                        src={r.image_url}
-                        alt={r.title ?? "Related post"}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 640px) 100vw, 33vw"
-                      />
+                <li key={r.id}>
+                  <Link
+                    href={`/blog/${r.slug}`}
+                    className="group block overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/40 transition hover:border-emerald-500/25"
+                  >
+                    {r.featured_image && (
+                      <div className="relative aspect-[16/10] w-full overflow-hidden">
+                        <Image
+                          src={r.featured_image}
+                          alt=""
+                          fill
+                          className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                          sizes="(max-width: 640px) 100vw, 50vw"
+                          loading="lazy"
+                          placeholder="blur"
+                          blurDataURL={SHIMMER_BLUR_DATA_URL}
+                          unoptimized={!r.featured_image.includes("supabase.co")}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      {r.category && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500/90">
+                          {r.category.name}
+                        </span>
+                      )}
+                      <p className="mt-2 line-clamp-2 font-[family-name:var(--font-magazine-serif)] text-base font-semibold text-zinc-100 group-hover:text-emerald-100/95">
+                        {r.title}
+                      </p>
                     </div>
-                  )}
-                  <div className="p-4">
-                    <p className="line-clamp-2 text-sm font-semibold leading-tight text-zinc-900 group-hover:text-primary">
-                      {r.title ?? r.title_en}
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-400">{formatDate(r.created_at)}</p>
-                  </div>
-                </Link>
+                  </Link>
+                </li>
               ))}
-            </div>
-          </div>
+            </ul>
+          </section>
         )}
-      </div>
+
+        <div className="mx-auto mt-16 max-w-[720px] space-y-10">
+          <NewsletterBox />
+          <MagazineArticleShare url={pageUrl} title={post.title} />
+          <Link
+            href="/blog"
+            className="inline-flex text-sm font-medium text-emerald-400/90 transition hover:text-emerald-300"
+          >
+            ← Back to Magazine
+          </Link>
+        </div>
+      </article>
     </div>
   );
 }

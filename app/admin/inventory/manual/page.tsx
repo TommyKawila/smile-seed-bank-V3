@@ -7,17 +7,18 @@ import Image from "next/image";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Loader2,
-  Link2,
   ChevronLeft,
   ChevronRight,
   Plus,
   X,
   Search,
+  XCircle,
   ImagePlus,
   Trash2,
   Settings2,
   FileText,
   RefreshCw,
+  Sparkles,
   Store,
   Sprout,
   Pencil,
@@ -31,6 +32,15 @@ import QRCode from "qrcode";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,6 +108,12 @@ export type InventoryRow = {
 
 function isManualGridRowUnsynced(r: InventoryRow): boolean {
   if (r.syncStatus === "pending") return true;
+  return r.isNew === true || r.productId < 0;
+}
+
+/** Draft / temp ID row not yet linked in main catalog; needs Master SKU before sync. */
+export function isManualGridNewItemReadyToSync(r: InventoryRow): boolean {
+  if (!r.masterSku?.trim()) return false;
   return r.isNew === true || r.productId < 0;
 }
 
@@ -313,6 +329,7 @@ export default function ManualInventoryPage() {
   const [syncing, setSyncing] = useState<number | null>(null);
   const [batchSyncing, setBatchSyncing] = useState(false);
   const [batchSyncLabel, setBatchSyncLabel] = useState("");
+  const [syncNewItemsDialogOpen, setSyncNewItemsDialogOpen] = useState(false);
   const [lastAddedRowId, setLastAddedRowId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [rowPendingDelete, setRowPendingDelete] = useState<InventoryRow | null>(null);
@@ -339,6 +356,7 @@ export default function ManualInventoryPage() {
   });
   const [lowStockOnly, setLowStockOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<20 | 50 | 100 | "all">(20);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -882,11 +900,10 @@ export default function ManualInventoryPage() {
     setLastAddedRowId(newRow.productId);
   };
 
-  const syncableDraftSelectedCount = useMemo(() => {
-    return rows.filter(
-      (r) => selectedProductIds.has(r.productId) && r.isNew && r.masterSku?.trim()
-    ).length;
-  }, [rows, selectedProductIds]);
+  const syncableNewCount = useMemo(
+    () => sortedRows.filter(isManualGridNewItemReadyToSync).length,
+    [sortedRows]
+  );
 
   const updateRow = (rowId: number, updates: Partial<InventoryRow>) => {
     setRows((prev) =>
@@ -1230,10 +1247,8 @@ export default function ManualInventoryPage() {
     }
   };
 
-  const handleBatchSync = async () => {
-    const targets = rows.filter(
-      (r) => selectedProductIds.has(r.productId) && r.isNew && r.masterSku?.trim()
-    );
+  const runBatchSyncNewItems = useCallback(async () => {
+    const targets = sortedRows.filter(isManualGridNewItemReadyToSync);
     if (targets.length === 0 || !breederId) return;
     setBatchSyncing(true);
     const progressToast = toast({
@@ -1277,7 +1292,7 @@ export default function ManualInventoryPage() {
       setBatchSyncing(false);
       setBatchSyncLabel("");
     }
-  };
+  }, [sortedRows, breederId, syncRowToServer, fetchGrid, toast]);
 
   const handleDeleteClick = (row: InventoryRow) => {
     if (row.isNew) {
@@ -1427,6 +1442,29 @@ export default function ManualInventoryPage() {
             : "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้? การกระทำนี้ไม่สามารถย้อนกลับได้ / Are you sure you want to delete this? This action cannot be undone."
         }
       />
+      <AlertDialog open={syncNewItemsDialogOpen} onOpenChange={setSyncNewItemsDialogOpen}>
+        <AlertDialogContent className="border-emerald-200/60 bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-emerald-900">Sync new strains</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-600">
+              Syncing {syncableNewCount} new strains to the main catalog. Proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-200">Cancel</AlertDialogCancel>
+            <Button
+              type="button"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              onClick={async () => {
+                setSyncNewItemsDialogOpen(false);
+                await runBatchSyncNewItems();
+              }}
+            >
+              Proceed
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Sheet
         open={editingStrainId !== null}
         onOpenChange={(open) => {
@@ -1616,13 +1654,27 @@ export default function ManualInventoryPage() {
             <div className="space-y-1">
               <Label>ค้นหา</Label>
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <Input
+                  ref={searchInputRef}
                   placeholder="ค้นหาชื่อสายพันธุ์ หรือ SKU..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 w-[220px] pl-8 rounded-md border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="h-9 w-[220px] rounded-md border-zinc-200 pl-8 pr-9 focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
+                {searchQuery.trim() !== "" && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full text-zinc-400 transition hover:text-emerald-500 focus-visible:outline focus-visible:ring-2 focus-visible:ring-primary/30"
+                    onClick={() => {
+                      setSearchQuery("");
+                      queueMicrotask(() => searchInputRef.current?.focus());
+                    }}
+                  >
+                    <XCircle className="h-4 w-4" strokeWidth={1.75} />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1753,17 +1805,22 @@ export default function ManualInventoryPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={handleBatchSync}
-                  disabled={syncableDraftSelectedCount === 0 || batchSyncing}
-                  className="border-primary/30 text-primary hover:bg-accent"
-                  title="Sync เฉพาะแถว Draft ที่เลือกและมี Master SKU"
+                  onClick={() => setSyncNewItemsDialogOpen(true)}
+                  disabled={syncableNewCount === 0 || batchSyncing || !breederId}
+                  className="border-emerald-500/40 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-500/60"
+                  title="Sync all new draft strains in the current filtered view (Master SKU required). No checkbox selection needed."
                 >
                   {batchSyncing ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin text-emerald-700" />
                   ) : (
-                    <RefreshCw className="mr-1.5 h-4 w-4" />
+                    <>
+                      <Sparkles className="mr-1 h-4 w-4 text-emerald-600" />
+                      <RefreshCw className="mr-1.5 h-3.5 w-3.5 text-emerald-700" />
+                    </>
                   )}
-                  Sync Selected
+                  {syncableNewCount > 0
+                    ? `Sync ${syncableNewCount} New Items`
+                    : "Sync New Items"}
                   {batchSyncing && batchSyncLabel ? ` (${batchSyncLabel})` : ""}
                 </Button>
                 <Button
@@ -1885,15 +1942,15 @@ export default function ManualInventoryPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 border-slate-200 text-slate-600 hover:bg-accent hover:border-primary/30 hover:text-primary"
+                          className="h-7 min-w-[2rem] border-emerald-200/80 px-2 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400/60"
                           onClick={() => handleSync(row)}
                           disabled={batchSyncing || syncing === row.productId || (row.isNew && !row.masterSku?.trim())}
                           title={row.isNew ? "Sync: สร้าง product + variants" : "Sync/Link ไปยัง Product Detail"}
                         >
                           {syncing === row.productId ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
-                            <Link2 className="h-4 w-4" />
+                            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} />
                           )}
                         </Button>
                       </td>

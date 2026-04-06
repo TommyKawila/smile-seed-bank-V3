@@ -1,19 +1,24 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
+import {
+  buildProductStoragePath,
+  validateMagazineImageFile,
+} from "@/lib/supabase-upload";
 
 const BUCKET = "product-images";
 
-function safeProductsPath(raw: string | null): string | null {
+/** Legacy paths from inventory (optional). */
+function safeLegacyProductsPath(raw: string | null): string | null {
   if (!raw || typeof raw !== "string") return null;
   const t = raw.trim();
   if (t.includes("..") || t.startsWith("/")) return null;
-  if (!/^products\/[a-zA-Z0-9._-]+\.webp$/.test(t)) return null;
+  if (!/^products\/[a-zA-Z0-9._-]+$/.test(t)) return null;
   return t;
 }
 
 /**
  * POST /api/admin/products/upload
- * form: file (required), objectPath (optional, under products/)
+ * form: file (required), objectPath (optional legacy `products/...` under product-images)
  */
 export async function POST(req: Request) {
   try {
@@ -25,19 +30,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "file is required" }, { status: 400 });
     }
 
-    const supabase = await createAdminClient();
+    const err = validateMagazineImageFile(file);
+    if (err) {
+      return NextResponse.json({ error: err }, { status: 400 });
+    }
+
+    const supabase = createServiceRoleClient();
     const buffer = Buffer.from(await file.arrayBuffer());
     const sizeBytes = buffer.length;
 
-    let key = safeProductsPath(objectPathRaw);
-    if (!key) {
-      key = `products/upload-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.webp`;
-    }
+    const legacy = safeLegacyProductsPath(objectPathRaw);
+    const key = legacy ?? buildProductStoragePath(file.name);
 
     const { error } = await supabase.storage.from(BUCKET).upload(key, buffer, {
       cacheControl: "31536000",
       upsert: true,
-      contentType: "image/webp",
+      contentType: file.type || "application/octet-stream",
     });
 
     if (error) {

@@ -8,7 +8,10 @@ export const viewport = {
   userScalable: false,
 };
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Smile Seed Bank — Premium Cannabis Seeds",
     template: "%s | Smile Seed Bank",
@@ -18,7 +21,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "th_TH",
-    url: process.env.NEXT_PUBLIC_SITE_URL,
+    url: siteUrl,
     siteName: "Smile Seed Bank",
   },
 };

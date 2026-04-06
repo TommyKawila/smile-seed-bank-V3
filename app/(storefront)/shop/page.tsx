@@ -352,16 +352,29 @@ function ShopContent() {
     return rows;
   }, [catalogFloweringScope, t, tMsg]);
 
+  /** Pills with count > 0 only (bucket via catalogFloweringBucket). */
+  const catalogFloweringPillOptions = useMemo(
+    () => catalogFloweringOptions.filter((o) => o.count > 0),
+    [catalogFloweringOptions]
+  );
+
   useEffect(() => {
     const raw = ftParam?.trim();
     if (!raw) return;
     const key = floweringTypeToSlug(raw);
+    const allowed = new Set(catalogFloweringPillOptions.map((o) => o.slug));
+    if (key && allowed.size > 0 && !allowed.has(key)) {
+      const sp = new URLSearchParams(searchParams.toString());
+      sp.delete("ft");
+      router.replace(sp.toString() ? `/shop?${sp.toString()}` : "/shop", { scroll: false });
+      return;
+    }
     const ok = key === "auto" || key === "photo" || key === "photo-ff" || key === "photo-3n";
     if (ok) return;
     const sp = new URLSearchParams(searchParams.toString());
     sp.delete("ft");
     router.replace(sp.toString() ? `/shop?${sp.toString()}` : "/shop", { scroll: false });
-  }, [ftParam, router, searchParams]);
+  }, [ftParam, router, searchParams, catalogFloweringPillOptions]);
 
   useEffect(() => {
     const tid = setTimeout(() => {
@@ -610,9 +623,9 @@ function ShopContent() {
       <div className="mx-auto max-w-7xl px-4 pb-8 pt-0 sm:px-6">
         {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
         <div className="sticky top-20 z-40 -mx-4 mb-4 border-b border-zinc-200 bg-white px-4 pt-3 pb-2 sm:-mx-6 sm:top-28 sm:px-6">
-          {catalogFloweringScope.length > 0 && catalogFloweringOptions.length > 1 && (
+          {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 && (
             <BreederTypeFilter
-              options={catalogFloweringOptions}
+              options={catalogFloweringPillOptions}
               allLabel={t("ทั้งหมด", "All")}
               paramKey="ft"
               ariaLabel={t("ประเภทการออกดอก", "Flowering type")}

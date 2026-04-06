@@ -33,6 +33,7 @@ const nextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60,
     remotePatterns: supabaseStorageRemotePatterns(),
   },
   async headers() {

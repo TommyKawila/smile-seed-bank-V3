@@ -1,32 +1,20 @@
-import imageCompression from "browser-image-compression";
+import { compressImageForMagazineUpload } from "@/lib/image-optimizer";
+import {
+  validateMagazineImageFile,
+  validateMagazineImageOriginal,
+} from "@/lib/supabase-upload";
 
 const BUCKET = "product-images";
 
-/** Client-side: max dimension, WebP @ 80%, target under ~1MB (library iterates toward maxSizeMB). */
-const COMPRESSION_OPTIONS = {
-  maxSizeMB: 1,
-  maxWidthOrHeight: 1200,
-  initialQuality: 0.8,
-  fileType: "image/webp" as const,
-  useWebWorker: true,
-};
-
 export type ProcessUploadOptions = {
-  /** Folder + naming: `products/product-{productKey}-{batchTs}-{i}.webp` */
-  productKey: string;
-  /** Per-file: delete this public URL after a successful upload (same index as files). */
+  /** @deprecated unused — kept for call-site compatibility */
+  productKey?: string;
   replaceUrls?: (string | null | undefined)[];
   onPhase?: (phase: "compress" | "upload") => void;
 };
 
-function sanitizeProductKey(raw: string): string {
-  const s = raw.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return (s || "product").slice(0, 48);
-}
-
 /**
- * Compresses (client-side) and uploads images via POST /api/admin/products/upload.
- * Returns public CDN URLs.
+ * Compresses (1200px / ~0.8MB, same as Magazine CMS) and uploads via POST /api/admin/products/upload.
  */
 export async function processAndUploadImages(
   files: File[],
@@ -34,50 +22,42 @@ export async function processAndUploadImages(
 ): Promise<string[]> {
   const limited = files.slice(0, 5);
   const urls: string[] = [];
-  const productKey = sanitizeProductKey(opts?.productKey ?? "upload");
-  const batchTs = Date.now();
   const replaceUrls = opts?.replaceUrls ?? [];
 
   for (let i = 0; i < limited.length; i++) {
     const file = limited[i];
     opts?.onPhase?.("compress");
 
-    let processed: Blob = file;
-    let outSize = file.size;
-    try {
-      processed = await imageCompression(file, COMPRESSION_OPTIONS);
-      outSize = processed.size;
-    } catch (e) {
-      console.warn("[product-image] compression fallback to original attempt:", e);
-      try {
-        processed = await imageCompression(file, {
-          ...COMPRESSION_OPTIONS,
-          maxSizeMB: 1,
-        });
-        outSize = processed.size;
-      } catch {
-        /* last resort: still try upload as-is (server expects webp — may fail for HEIC) */
-      }
+    const origErr = validateMagazineImageOriginal(file);
+    if (origErr) {
+      throw new Error(origErr);
     }
 
-    const objectPath = `products/product-${productKey}-${batchTs}-${i}.webp`;
-    const webpFile = new File([processed], objectPath.split("/").pop() ?? "upload.webp", {
-      type: "image/webp",
-    });
+    let processed: File;
+    try {
+      const r = await compressImageForMagazineUpload(file);
+      processed = r.file;
+    } catch (e) {
+      throw new Error(e instanceof Error ? e.message : "Compression failed");
+    }
+
+    const post = validateMagazineImageFile(processed);
+    if (post) {
+      throw new Error(post);
+    }
 
     console.log("[product-image]", {
       name: file.name,
-      objectPath,
       originalBytes: file.size,
-      compressedBytes: outSize,
+      compressedBytes: processed.size,
       originalType: file.type,
+      outType: processed.type,
     });
 
     opts?.onPhase?.("upload");
 
     const formData = new FormData();
-    formData.append("file", webpFile);
-    formData.append("objectPath", objectPath);
+    formData.append("file", processed);
 
     const res = await fetch("/api/admin/products/upload", {
       method: "POST",
@@ -94,7 +74,8 @@ export async function processAndUploadImages(
     const remove = replaceUrls[i];
     if (remove && typeof remove === "string") {
       const oldPath = publicProductImagePath(remove);
-      if (oldPath && oldPath !== objectPath) {
+      const newPath = publicProductImagePath(json.url);
+      if (oldPath && newPath && oldPath !== newPath) {
         try {
           const delRes = await fetch("/api/admin/storage/delete", {
             method: "POST",

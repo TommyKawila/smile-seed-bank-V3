@@ -1,7 +1,9 @@
-// prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
+// prisma/seed.ts — product defaults + Digital Magazine mock data
+import "./load-env";
+import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { seedMagazine } from "./seed-magazine";
 
 async function main() {
   const connectionString = process.env.DATABASE_URL;
@@ -80,9 +82,14 @@ async function main() {
     console.log(`✅ นำเข้า: ${item.name}`);
   }
 
+  console.log("🌿 Running magazine seed…");
+  await seedMagazine();
+  const { prisma: prismaLib } = await import("@/lib/prisma");
+  await prismaLib.$disconnect();
+
   await prisma.$disconnect();
   await pool.end();
-  console.log('✨ เสร็จสิ้น!');
+  console.log("✨ เสร็จสิ้น!");
 }
 
 main().catch((e) => {

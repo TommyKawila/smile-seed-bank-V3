@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Wand2, Plus, Trash2, Loader2, ImagePlus, X, Sparkles, Gem } from "lucide-react";
+import { Wand2, Plus, Trash2, Loader2, X, Sparkles, Gem } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,8 +21,8 @@ import { useProducts, type ProductFormData } from "@/hooks/useProducts";
 import { useBreeders } from "@/hooks/useBreeders";
 import { unknownFields } from "@/lib/validations/product";
 import { packSizeNum, toVariantSku } from "@/lib/sku-utils";
-import { processAndUploadImages } from "@/lib/supabase/storage-utils";
 import { useToast } from "@/hooks/use-toast";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { normalizeFloweringFromDb, normalizeSexFromDb } from "@/lib/cannabis-attributes";
 
 const MAX_IMAGES = 5;
@@ -137,16 +137,8 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
   const isEditMode = !!initialData;
 
-  // ── Product image slots (marketing gallery only — not sent to AI) ─────────
-  type ImageSlot = { preview: string; file: File | null; url: string | null };
-  const urlToSlot = (url: string | null | undefined): ImageSlot | null =>
-    url ? { preview: url, file: null, url } : null;
-
-  const [productSlots, setProductSlots] = useState<ImageSlot[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadPhase, setUploadPhase] = useState<"idle" | "compress" | "upload">("idle");
-  const [isDragging, setIsDragging] = useState(false);
-  const productFileInputRef = useRef<HTMLInputElement>(null);
+  /** Public image URLs (marketing gallery) — optimized on pick via ImageUploadField → `image_url`… */
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const aiScanFileInputRef = useRef<HTMLInputElement>(null);
   const aiScanStagingRef = useRef<AiStagingItem[]>([]);
 
@@ -251,12 +243,10 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           ? (p.image_urls as string[])
           : ([p.image_url, p.image_url_2, p.image_url_3, p.image_url_4, p.image_url_5]
               .filter(Boolean) as string[]);
-      setProductSlots(
-        existingUrls.map((url) => urlToSlot(url)).filter((s): s is ImageSlot => s !== null)
-      );
+      setGalleryUrls(existingUrls.filter(Boolean).slice(0, MAX_IMAGES));
     } else {
       setForm(emptyForm);
-      setProductSlots([]);
+      setGalleryUrls([]);
     }
     setAiText("");
     setAiScanStaging([]);
@@ -366,30 +356,6 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-
-  const handleProductImageFiles = async (files: FileList | null) => {
-    if (!files) return;
-    const remaining = MAX_IMAGES - productSlots.length;
-    if (remaining <= 0) return;
-    const toProcess = Array.from(files).slice(0, remaining);
-    const newSlots: ImageSlot[] = await Promise.all(
-      toProcess.map(async (file) => ({
-        preview: await readAsBase64(file),
-        file,
-        url: null,
-      }))
-    );
-    setProductSlots((prev) => [...prev, ...newSlots]);
-  };
-
-  const removeProductSlot = (index: number) =>
-    setProductSlots((prev) => prev.filter((_, i) => i !== index));
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleProductImageFiles(e.dataTransfer.files);
-  };
 
   const runAiExtract = useCallback(
     async (opts: { rawText: string; images: string[]; source: "scanner" | "wand" }) => {
@@ -505,51 +471,14 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
     void runAiExtract({ rawText: aiText, images: [], source: "wand" });
   };
 
-  // ── Collect image URLs from slots (upload new files first) ──────────────────
-  const resolveImageUrls = async (): Promise<string[]> => {
-    const newFileSlots = productSlots.filter((s) => s.file !== null);
-    const newFiles = newFileSlots.map((s) => s.file as File);
-    const replaceUrls = newFileSlots.map((s) =>
-      s.url && /^https?:\/\//.test(s.url) ? s.url : undefined
-    );
-    let uploadedUrls: string[] = [];
-    if (newFiles.length > 0) {
-      setIsUploading(true);
-      setUploadPhase("compress");
-      const productKey =
-        initialData?.id != null && Number(initialData.id) > 0
-          ? String(initialData.id)
-          : (form.master_sku || form.name || `new-${Date.now()}`).toString();
-      try {
-        uploadedUrls = await processAndUploadImages(newFiles, {
-          productKey,
-          replaceUrls,
-          onPhase: (p) => setUploadPhase(p),
-        });
-      } finally {
-        setUploadPhase("idle");
-        setIsUploading(false);
-      }
-    }
-    let uploadIdx = 0;
-    return productSlots.map((s) => {
-      if (s.url) return s.url;
-      return uploadedUrls[uploadIdx++] ?? "";
-    }).filter(Boolean);
-  };
+  const resolveImageUrls = (): string[] =>
+    galleryUrls.map((u) => u.trim()).filter(Boolean).slice(0, MAX_IMAGES);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLocalError(null);
 
-    // Upload any new image files and get all URLs
-    let imageUrls: string[] = [];
-    try {
-      imageUrls = await resolveImageUrls();
-    } catch (err) {
-      setSubmitLocalError(`อัปโหลดรูปภาพล้มเหลว: ${String(err)}`);
-      return;
-    }
+    const imageUrls = resolveImageUrls();
 
     const imageFields: Partial<ProductFormData> = {
       image_urls: imageUrls.length > 0 ? imageUrls : null,
@@ -964,97 +893,61 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
             </div>
           </div>
 
-          {/* Product Image Upload Zone — centered, max width on large modals */}
-          <div className="mx-auto w-full max-w-2xl space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold">
-                📸 Product images / แกลเลอรีหน้าร้าน ({productSlots.length}/{MAX_IMAGES})
-              </Label>
-              {productSlots.length < MAX_IMAGES && (
-                <button
-                  type="button"
-                  onClick={() => productFileInputRef.current?.click()}
-                  className="flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20"
-                >
-                  <ImagePlus className="h-3.5 w-3.5" /> เพิ่มรูป
-                </button>
-              )}
-            </div>
-            <input
-              ref={productFileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => handleProductImageFiles(e.target.files)}
-            />
-            {/* Drop zone */}
-            <div
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              onClick={() => productSlots.length < MAX_IMAGES && productFileInputRef.current?.click()}
-              className={`min-h-[100px] rounded-xl border-2 border-dashed p-3 transition-colors cursor-pointer ${
-                isDragging
-                  ? "border-primary bg-primary/5"
-                  : "border-zinc-200 bg-zinc-50 hover:border-primary/50"
-              }`}
-            >
-              {productSlots.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-4 text-zinc-400">
-                  <ImagePlus className="h-8 w-8 opacity-40" />
-                  <p className="text-xs font-medium">ลากรูปมาวาง หรือคลิกเพื่อเลือก</p>
-                  <p className="text-[10px] opacity-70">สูงสุด 5 รูป · WebP · ความกว้างไม่เกิน 1200px · ~80% quality</p>
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {productSlots.map((slot, i) => (
-                    <div key={i} className="relative h-20 w-20 shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <Image
-                        src={slot.preview}
-                        alt={`product-img-${i + 1}`}
-                        fill
-                        className="rounded-xl object-cover border-2 border-zinc-200"
-                        unoptimized={slot.preview.startsWith("data:")}
-                      />
-                      {i === 0 && (
-                        <span className="absolute bottom-0 left-0 right-0 rounded-b-xl bg-primary/80 py-0.5 text-center text-[9px] font-bold text-white">
-                          หลัก
-                        </span>
-                      )}
-                      {slot.file && (
-                        <span className="absolute left-1 top-1 h-2 w-2 rounded-full bg-primary/50 ring-1 ring-white" title="รูปใหม่ (จะ compress ก่อน upload)" />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeProductSlot(i)}
-                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {isDragging && productSlots.length < MAX_IMAGES && (
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-primary bg-primary/10 text-primary">
-                      <ImagePlus className="h-6 w-6" />
-                    </div>
+          {/* Product images — same client optimize + Supabase upload as Magazine CMS */}
+          <div className="mx-auto w-full max-w-2xl space-y-4">
+            <Label className="text-sm font-semibold">
+              📸 Product images / แกลเลอรีหน้าร้าน ({galleryUrls.length}/{MAX_IMAGES})
+            </Label>
+            <div className="space-y-4">
+              {galleryUrls.map((url, i) => (
+                <div key={`${i}-${url.slice(-24)}`} className="space-y-1">
+                  {i === 0 && (
+                    <span className="inline-block rounded bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+                      หลัก (รูปแรก)
+                    </span>
                   )}
+                  <ImageUploadField
+                    value={url}
+                    onChange={(v) => {
+                      setGalleryUrls((prev) => {
+                        const next = [...prev];
+                        if (!v) next.splice(i, 1);
+                        else next[i] = v;
+                        return next;
+                      });
+                    }}
+                    uploadTarget="product"
+                    variant="product"
+                    toastOnSuccess={false}
+                    compact
+                    label={`รูป ${i + 1}`}
+                    disabled={isSubmitting}
+                  />
                 </div>
+              ))}
+              {galleryUrls.length < MAX_IMAGES && (
+                <ImageUploadField
+                  value=""
+                  onChange={(v) => {
+                    if (!v) return;
+                    setGalleryUrls((prev) => [...prev, v]);
+                  }}
+                  uploadTarget="product"
+                  variant="product"
+                  toastOnSuccess={false}
+                  compact
+                  label={
+                    galleryUrls.length === 0
+                      ? "เพิ่มรูปสินค้า (หลัก)"
+                      : `เพิ่มรูป ${galleryUrls.length + 1}`
+                  }
+                  disabled={isSubmitting}
+                />
               )}
             </div>
             <p className="text-[11px] text-zinc-400">
-              รูปแรก = หลัก · จุดเขียว = รอ compress &amp; upload — ใช้เฉพาะโชว์หน้าร้าน (สแกน AI ใช้โซน AI Scan ด้านบน)
+              รูปแรก = หลัก · บีบอัดและอัปโหลดทันที (1200px · ~0.8MB) — ใช้เฉพาะโชว์หน้าร้าน (สแกน AI ใช้โซน AI Scan ด้านบน)
             </p>
-            {isUploading && (
-              <p className="flex items-center gap-1.5 text-xs text-primary">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {uploadPhase === "compress"
-                  ? "กำลังบีบอัดรูป… (Compressing)"
-                  : uploadPhase === "upload"
-                    ? "กำลังอัปโหลด… (Uploading)"
-                    : "กำลังประมวลผลรูป… (Processing)"}
-              </p>
-            )}
           </div>
 
           {/* AI Specs Row */}

@@ -34,7 +34,7 @@ export function BreederTypeFilter({
     [pathname, router, searchParams, paramKey]
   );
 
-  if (options.length <= 1) return null;
+  if (options.length === 0) return null;
 
   return (
     <div className="mb-4 -mx-1 px-1">
