@@ -37,6 +37,15 @@ type BankRow = {
   accountName: string;
 };
 
+/** LIFF universal link when LIFF id is set; else HTTPS /track/{orderId}. */
+function trackUrlForInvoice(orderId: string): string {
+  const lid =
+    typeof process !== "undefined" && process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+  if (lid) return `https://liff.line.me/${lid}/track/${orderId}`;
+  const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://smileseedbank.com").replace(/\/$/, "");
+  return `${site}/track/${orderId}`;
+}
+
 /** Maps POS Thai payment labels to English for the EN clipboard template. */
 function paymentMethodLabelToEnglish(thLabel: string): string {
   const t = thLabel.trim();
@@ -75,7 +84,7 @@ function buildClipboardText(data: PosMiniInvoiceData, bank: BankRow | null): str
   const oid = data.orderId?.trim();
   const trackLine =
     oid && oid.length > 0
-      ? `\n🔗 ตรวจสอบสถานะและรับแจ้งเตือนผ่าน Line: ${siteBase}/track/${oid}`
+      ? `\n🔗 ตรวจสอบสถานะและรับแจ้งเตือนผ่าน Line: ${trackUrlForInvoice(oid)}`
       : "";
 
   return `🌱 *Smile Seed Bank - สรุปรายการสั่งซื้อ*
@@ -118,7 +127,7 @@ function buildClipboardTextEn(data: PosMiniInvoiceData, bank: BankRow | null): s
   const oid = data.orderId?.trim();
   const trackLine =
     oid && oid.length > 0
-      ? `\n🔗 Track status & LINE notifications: ${siteBase}/track/${oid}`
+      ? `\n🔗 Track status & LINE notifications: ${trackUrlForInvoice(oid)}`
       : "";
 
   return `🌱 *Smile Seed Bank — Order summary*
