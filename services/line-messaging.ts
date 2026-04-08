@@ -391,6 +391,38 @@ export async function sendCustomerShippingAlert(opts: {
   }
 }
 
+/** Push plain text to a LINE user (customer OA chat). */
+export async function pushTextToLineUser(
+  lineUserId: string,
+  text: string
+): Promise<ServiceResult> {
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!token) return { success: false, error: "LINE_CHANNEL_ACCESS_TOKEN ไม่ได้ตั้งค่า" };
+  if (!lineUserId?.trim()) return { success: false, error: "Missing LINE user id" };
+
+  try {
+    const res = await fetch(LINE_PUSH_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        to: lineUserId.trim(),
+        messages: [{ type: "text", text }],
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(`LINE API error ${res.status}: ${JSON.stringify(body)}`);
+    }
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 function buildInfoRow(label: string, value: string) {

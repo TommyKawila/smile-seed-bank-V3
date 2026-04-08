@@ -4,7 +4,7 @@
 import { getSql } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
 import { sendShippingConfirmationEmail } from "@/services/email-service";
-import { sendCustomerShippingAlert } from "@/services/line-messaging";
+import { pushTextToLineUser } from "@/services/line-messaging";
 
 export interface AdminOrderRow {
   id: number;
@@ -134,12 +134,20 @@ export async function markShipped(
         const rows = await sql<{
           email: string | null;
           full_name: string | null;
-          line_user_id: string | null;
           order_number: string;
+          order_line_uid: string | null;
+          web_customer_line_uid: string | null;
+          profile_line_id: string | null;
         }[]>`
-          SELECT c.email, c.full_name, c.line_user_id, o.order_number
+          SELECT c.email,
+                 c.full_name,
+                 o.order_number,
+                 o.line_user_id AS order_line_uid,
+                 c.line_user_id AS web_customer_line_uid,
+                 cp.line_id AS profile_line_id
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
+          LEFT JOIN "Customer" cp ON cp.id = o.customer_profile_id
           WHERE o.id = ${orderId}
           LIMIT 1
         `;
@@ -148,6 +156,12 @@ export async function markShipped(
 
         const name = row.full_name ?? "คุณลูกค้า";
         const orderNumber = row.order_number;
+
+        const lineTarget =
+          row.order_line_uid?.trim() ||
+          row.web_customer_line_uid?.trim() ||
+          row.profile_line_id?.trim() ||
+          null;
 
         // Email notification
         if (row.email) {
@@ -165,17 +179,12 @@ export async function markShipped(
           }
         }
 
-        // LINE notification
-        if (row.line_user_id) {
+        // LINE: plain text (claim / profile / legacy customer line)
+        if (lineTarget) {
           try {
-            await sendCustomerShippingAlert({
-              lineUserId: row.line_user_id,
-              orderNumber,
-              orderId,
-              trackingNumber,
-              shippingProvider,
-              customerName: name,
-            });
+            const lineText = `🌱 สินค้าของคุณถูกจัดส่งแล้ว! เลขพัสดุ: ${trackingNumber}`;
+            const r = await pushTextToLineUser(lineTarget, lineText);
+            if (!r.success) console.error("[orders-service] markShipped LINE push:", r.error);
           } catch (lineErr) {
             console.error("[orders-service] markShipped LINE error:", lineErr);
           }

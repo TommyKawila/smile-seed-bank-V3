@@ -139,6 +139,7 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 - **Void Order** — Triggered when an order is voided; includes order number, amount, and reason
 - **Daily Closing** — Triggered when "บันทึก Snapshot" is pressed; sends daily sales total and order count
 - **Admin UI** — Settings page: status check + "ทดสอบส่งข้อความ" button; fire-and-forget (errors logged, no crash)
+- **Claim order / public track (Approach 2)** — `orders.line_user_id`; migration `20260406120000_orders_line_user_id`; `POST /api/admin/orders/simple` returns `orderId`; `components/admin/PosMiniInvoiceModal.tsx` copy-template ลิงก์ `${NEXT_PUBLIC_SITE_URL}/track/{orderId}`; `GET /api/track/[orderId]` (สถานะ + tracking, ไม่เปิด PII — ใช้ลิงก์ที่มี order id เป็นหลัก), `POST /api/track/[orderId]/claim` (LIFF `lineUserId` → ผูกครั้งแรกเท่านั้น); `app/(storefront)/track/[orderId]/page.tsx` + `@line/liff` + `NEXT_PUBLIC_LIFF_ID`; `services/orders-service.ts` `markShipped` → `pushTextToLineUser` ข้อความจัดส่งเมื่อมี `line_user_id`/ลูกค้า LINE
 
 ---
 
@@ -161,6 +162,7 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 | `LINE_CHANNEL_ACCESS_TOKEN` | Messaging API token (from LINE Developers Console) |
 | `LINE_CHANNEL_SECRET` | Channel secret (for webhook validation if needed) |
 | `LINE_ADMIN_USER_ID` | Admin's LINE User ID — receives all alerts (Low Stock, Void, Daily Summary) |
+| `NEXT_PUBLIC_LIFF_ID` | LIFF app id for `/track/[orderId]` claim flow in LINE in-app browser |
 
 ---
 

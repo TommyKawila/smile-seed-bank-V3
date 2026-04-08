@@ -71,7 +71,7 @@ export async function createManualOrderFromItems(input: {
       },
     });
 
-    const lowStockVariants: { name: string; unitLabel: string; stock: number }[] = [];
+    const postDeductionLowStockAlerts: { name: string; unitLabel: string; stock: number }[] = [];
 
     for (const item of items) {
       const variant = await tx.product_variants.findUnique({
@@ -99,7 +99,7 @@ export async function createManualOrderFromItems(input: {
       const afterStock = currentStock - item.quantity;
       const threshold = variant.low_stock_threshold ?? 5;
       if (afterStock <= threshold) {
-        lowStockVariants.push({
+        postDeductionLowStockAlerts.push({
           name: (variant.products as { name?: string })?.name ?? item.productName,
           unitLabel: variant.unit_label,
           stock: afterStock,
@@ -132,9 +132,9 @@ export async function createManualOrderFromItems(input: {
       data: { total_cost: new Prisma.Decimal(totalCostAcc) },
     });
 
-    if (lowStockVariants.length > 0) {
+    if (postDeductionLowStockAlerts.length > 0) {
       void (async () => {
-        for (const v of lowStockVariants) {
+        for (const v of postDeductionLowStockAlerts) {
           const r = await sendLowStockAlert({
             productName: v.name,
             unitLabel: v.unitLabel,

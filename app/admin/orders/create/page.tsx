@@ -25,6 +25,23 @@ import { toastErrorMessage } from "@/lib/admin-toast";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
 import { applyWholesalePrice } from "@/lib/wholesale-utils";
 import type { ProductWithBreeder, ProductWithBreederMaybeVariants } from "@/types/supabase";
+import { PosLowStockWarning } from "@/components/admin/PosLowStockWarning";
+import { PosBreederCombobox } from "@/components/admin/PosBreederCombobox";
+import {
+  PosMiniInvoiceModal,
+  type PosMiniInvoiceData,
+  type PosMiniInvoiceLine,
+} from "@/components/admin/PosMiniInvoiceModal";
+
+function posPaymentMethodLabelTh(code: string): string {
+  const m: Record<string, string> = {
+    CASH: "เงินสด",
+    TRANSFER: "โอนเงิน",
+    CRYPTO: "Crypto",
+    COD: "COD (เก็บเงินปลายทาง)",
+  };
+  return m[code] ?? code;
+}
 
 type PosCustomer = {
   id: string;
@@ -81,6 +98,7 @@ export default function CreateOrderPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+  const [miniInvoice, setMiniInvoice] = useState<PosMiniInvoiceData | null>(null);
 
   const [customer, setCustomer] = useState<CustomerInfo>({
     full_name: "",
@@ -251,6 +269,18 @@ export default function CreateOrderPage() {
 
 
   // Client-side filtering: search (strain_name, master_sku, breeder_name), breeder, seed type (case-insensitive)
+  const variantStockById = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const p of products) {
+      const pv = (p as ProductWithBreederMaybeVariants).product_variants;
+      if (!pv) continue;
+      for (const v of pv) {
+        m.set(v.id, v.stock ?? 0);
+      }
+    }
+    return m;
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     const q = search.toLowerCase().trim();
     return products.filter((p) => {
@@ -323,7 +353,25 @@ export default function CreateOrderPage() {
       }
 
       const result = await res.json();
-      setSubmitSuccess(`✅ สร้างออเดอร์ #${result.orderNumber} สำเร็จ (หักสต็อกแล้ว)`);
+      const orderNumber = String(result.orderNumber ?? "");
+      const orderId =
+        result.orderId != null && result.orderId !== ""
+          ? String(result.orderId)
+          : undefined;
+      const miniLines: PosMiniInvoiceLine[] = items.map((i) => ({
+        productName: i.productName,
+        unitLabel: i.unitLabel,
+        quantity: i.quantity,
+        lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+        isFreeGift: !!i.isFreeGift,
+      }));
+      setMiniInvoice({
+        orderNumber,
+        orderId,
+        lines: miniLines,
+        grandTotal,
+        paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
+      });
       clearCart();
       setSelectedCustomer(null);
       setPointsToRedeem(0);
@@ -350,35 +398,14 @@ export default function CreateOrderPage() {
               <CardTitle className="text-base">เลือกสินค้า</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Breeder filter — horizontal scroll */}
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 scrollbar-thin">
-                <button
-                  type="button"
-                  onClick={() => setBreederFilter("all")}
-                  className={cn(
-                    "shrink-0 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-                    breederFilter === "all"
-                      ? "border-primary bg-primary text-white"
-                      : "border-zinc-200 bg-white text-zinc-600 hover:border-primary/30"
-                  )}
-                >
-                  ทั้งหมด
-                </button>
-                {breeders.map((b) => (
-                  <button
-                    key={b.id}
-                    type="button"
-                    onClick={() => setBreederFilter(String(b.id))}
-                    className={cn(
-                      "shrink-0 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
-                      breederFilter === String(b.id)
-                        ? "border-primary bg-primary text-white"
-                        : "border-zinc-200 bg-white text-zinc-600 hover:border-primary/30"
-                    )}
-                  >
-                    {b.name}
-                  </button>
-                ))}
+              {/* Breeder filter — searchable combobox */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-zinc-600">ค่ายเมล็ด / Breeder</Label>
+                <PosBreederCombobox
+                  breeders={breeders}
+                  value={breederFilter}
+                  onChange={setBreederFilter}
+                />
               </div>
 
               {/* Seed Type filter — Button Group */}
@@ -773,6 +800,8 @@ export default function CreateOrderPage() {
                 </div>
               )}
 
+              <PosLowStockWarning items={items} variantStockById={variantStockById} />
+
               <Separator />
 
               {/* Promo Code — disabled when Promotion (tiered) is active */}
@@ -898,6 +927,15 @@ export default function CreateOrderPage() {
           </Card>
         </div>
       </div>
+
+      <PosMiniInvoiceModal
+        open={miniInvoice !== null}
+        data={miniInvoice}
+        onClose={() => {
+          setMiniInvoice(null);
+          setSubmitSuccess(null);
+        }}
+      />
 
       {/* Quick Add Customer Modal */}
       <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>

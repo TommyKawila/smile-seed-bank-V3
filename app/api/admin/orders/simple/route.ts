@@ -55,8 +55,10 @@ export async function POST(req: NextRequest) {
 
     const orderNumber = generateOrderNumber();
     let totalCostAcc = 0;
+    /** Collected inside the transaction; LINE alerts run after commit (must be in outer scope). */
+    const postDeductionLowStockAlerts: { name: string; unitLabel: string; stock: number }[] = [];
 
-    await prisma.$transaction(async (tx) => {
+    const { orderId: createdOrderId } = await prisma.$transaction(async (tx) => {
       const order = await tx.orders.create({
         data: {
           order_number: orderNumber,
@@ -79,8 +81,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const lowStockVariants: { name: string; unitLabel: string; stock: number }[] = [];
-
       for (const item of items) {
         const variant = await tx.product_variants.findUnique({
           where: { id: BigInt(item.variantId) },
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
           const afterStock = currentStock - item.quantity;
           const threshold = variant.low_stock_threshold ?? 5;
           if (afterStock <= threshold) {
-            lowStockVariants.push({
+            postDeductionLowStockAlerts.push({
               name: (variant.products as { name?: string })?.name ?? item.productName,
               unitLabel: variant.unit_label,
               stock: afterStock,
@@ -156,18 +156,23 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+
+      return { orderId: order.id };
     });
 
-    if (status === "COMPLETED" && lowStockVariants.length > 0) {
+    if (status === "COMPLETED" && postDeductionLowStockAlerts.length > 0) {
       void (async () => {
-        for (const v of lowStockVariants) {
+        for (const v of postDeductionLowStockAlerts) {
           const r = await sendLowStockAlert({ productName: v.name, unitLabel: v.unitLabel, stock: v.stock });
           if (!r.success) console.error("[orders/simple] LINE low stock alert:", r.error);
         }
       })();
     }
 
-    return NextResponse.json(bigintToJson({ orderNumber, status }), { status: 201 });
+    return NextResponse.json(
+      bigintToJson({ orderNumber, status, orderId: createdOrderId }),
+      { status: 201 }
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });
