@@ -207,7 +207,7 @@ model order_items {
 model orders {
   id                     BigInt              @id @default(autoincrement())
   order_number           String              @unique @db.VarChar(48)
-  source_quotation_number String?          @map("source_quotation_number") @db.VarChar(48)
+  source_quotation_number String?          @db.VarChar(48)
   customer_id            String?             @db.Uuid
   customer_profile_id    BigInt?
   order_origin           String?             @default("WEB")

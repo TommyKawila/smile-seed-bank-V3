@@ -51,25 +51,30 @@ export async function createManualOrderFromItems(input: {
     const profileId =
       customer?.customerProfileId != null ? BigInt(customer.customerProfileId) : null;
 
-    const order = await tx.orders.create({
-      data: {
-        order_number: orderNumber,
-        source_quotation_number: input.source_quotation_number?.trim() ?? null,
-        total_amount: new Prisma.Decimal(total_amount),
-        total_cost: new Prisma.Decimal(0),
-        shipping_fee: new Prisma.Decimal(shipping_fee),
-        discount_amount: new Prisma.Decimal(discount_amount),
-        status: "COMPLETED",
-        order_origin: "MANUAL",
-        payment_method: customer?.payment_method ?? "CASH",
-        shipping_address: customer?.address ?? null,
-        customer_name: customer?.full_name ?? null,
-        customer_phone: customer?.phone ?? null,
-        customer_note: customer?.note ?? null,
-        customer_id: customer?.customerId ?? null,
-        customer_profile_id: profileId,
-      },
-    });
+    const orderCreate: Prisma.ordersCreateInput = {
+      order_number: orderNumber,
+      source_quotation_number: input.source_quotation_number?.trim() ?? null,
+      total_amount: new Prisma.Decimal(total_amount),
+      total_cost: new Prisma.Decimal(0),
+      shipping_fee: new Prisma.Decimal(shipping_fee),
+      discount_amount: new Prisma.Decimal(discount_amount),
+      status: "COMPLETED",
+      order_origin: "MANUAL",
+      payment_method: customer?.payment_method ?? "CASH",
+      shipping_address: customer?.address ?? null,
+      customer_name: customer?.full_name ?? null,
+      customer_phone: customer?.phone ?? null,
+      customer_note: customer?.note ?? null,
+    };
+    const webCust = customer?.customerId?.trim();
+    if (webCust) {
+      orderCreate.customers = { connect: { id: webCust } };
+    }
+    if (profileId) {
+      orderCreate.customer_profile = { connect: { id: profileId } };
+    }
+
+    const order = await tx.orders.create({ data: orderCreate });
 
     const postDeductionLowStockAlerts: { name: string; unitLabel: string; stock: number }[] = [];
 
@@ -106,20 +111,19 @@ export async function createManualOrderFromItems(input: {
         });
       }
 
-      await tx.order_items.create({
-        data: {
-          order_id: order.id,
-          variant_id: BigInt(item.variantId),
-          product_id: BigInt(item.productId),
-          product_name: item.productName,
-          unit_label: item.unitLabel ?? null,
-          quantity: item.quantity,
-          unit_price: item.unitPrice,
-          unit_cost: costPrice,
-          total_price: lineTotal,
-          subtotal: lineTotal,
-        },
-      });
+      const lineCreate: Prisma.order_itemsCreateInput = {
+        orders: { connect: { id: order.id } },
+        variant_id: BigInt(item.variantId),
+        product_id: BigInt(item.productId),
+        product_name: item.productName,
+        unit_label: item.unitLabel ?? null,
+        quantity: item.quantity,
+        unit_price: new Prisma.Decimal(item.unitPrice),
+        unit_cost: new Prisma.Decimal(costPrice),
+        total_price: new Prisma.Decimal(lineTotal),
+        subtotal: new Prisma.Decimal(lineTotal),
+      };
+      await tx.order_items.create({ data: lineCreate });
 
       await tx.product_variants.update({
         where: { id: BigInt(item.variantId) },

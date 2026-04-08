@@ -59,27 +59,28 @@ export async function POST(req: NextRequest) {
     const postDeductionLowStockAlerts: { name: string; unitLabel: string; stock: number }[] = [];
 
     const { orderId: createdOrderId } = await prisma.$transaction(async (tx) => {
-      const order = await tx.orders.create({
-        data: {
-          order_number: orderNumber,
-          total_amount: new Prisma.Decimal(totalAmount),
-          total_cost: new Prisma.Decimal(0),
-          shipping_fee: new Prisma.Decimal(0),
-          discount_amount: new Prisma.Decimal(0),
-          status,
-          order_origin: "MANUAL",
-          points_redeemed: points_redeemed,
-          points_discount_amount: new Prisma.Decimal(points_discount_amount),
-          promotion_rule_id: promotion_rule_id ? BigInt(promotion_rule_id) : null,
-          promotion_discount_amount: new Prisma.Decimal(promotion_discount_amount),
-          customer_profile_id: customer_profile_id ? BigInt(customer_profile_id) : null,
-          payment_method: customer?.payment_method ?? null,
-          shipping_address: customer?.address ?? null,
-          customer_name: customer?.full_name ?? null,
-          customer_phone: customer?.phone ?? null,
-          customer_note: customer?.note ?? null,
-        },
-      });
+      const orderCreate: Prisma.ordersCreateInput = {
+        order_number: orderNumber,
+        total_amount: new Prisma.Decimal(totalAmount),
+        total_cost: new Prisma.Decimal(0),
+        shipping_fee: new Prisma.Decimal(0),
+        discount_amount: new Prisma.Decimal(0),
+        status,
+        order_origin: "MANUAL",
+        points_redeemed: points_redeemed,
+        points_discount_amount: new Prisma.Decimal(points_discount_amount),
+        promotion_rule_id: promotion_rule_id ? BigInt(promotion_rule_id) : null,
+        promotion_discount_amount: new Prisma.Decimal(promotion_discount_amount),
+        payment_method: customer?.payment_method ?? null,
+        shipping_address: customer?.address ?? null,
+        customer_name: customer?.full_name ?? null,
+        customer_phone: customer?.phone ?? null,
+        customer_note: customer?.note ?? null,
+      };
+      if (customer_profile_id) {
+        orderCreate.customer_profile = { connect: { id: BigInt(customer_profile_id) } };
+      }
+      const order = await tx.orders.create({ data: orderCreate });
 
       for (const item of items) {
         const variant = await tx.product_variants.findUnique({
@@ -110,20 +111,19 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        await tx.order_items.create({
-          data: {
-            order_id: order.id,
-            variant_id: BigInt(item.variantId),
-            product_id: BigInt(item.productId),
-            product_name: item.productName,
-            unit_label: item.unitLabel ?? null,
-            quantity: item.quantity,
-            unit_price: new Prisma.Decimal(item.price),
-            unit_cost: new Prisma.Decimal(costPrice),
-            total_price: new Prisma.Decimal(lineTotal),
-            subtotal: new Prisma.Decimal(lineTotal),
-          },
-        });
+        const lineCreate: Prisma.order_itemsCreateInput = {
+          orders: { connect: { id: order.id } },
+          variant_id: BigInt(item.variantId),
+          product_id: BigInt(item.productId),
+          product_name: item.productName,
+          unit_label: item.unitLabel ?? null,
+          quantity: item.quantity,
+          unit_price: new Prisma.Decimal(item.price),
+          unit_cost: new Prisma.Decimal(costPrice),
+          total_price: new Prisma.Decimal(lineTotal),
+          subtotal: new Prisma.Decimal(lineTotal),
+        };
+        await tx.order_items.create({ data: lineCreate });
 
         if (status === "COMPLETED") {
           await tx.product_variants.update({

@@ -32,6 +32,7 @@ export async function POST(
     }
 
     const lineUserId = parsed.data.lineUserId.trim();
+    console.log("[track/claim] request", { orderId: String(id) });
 
     const order = await prisma.orders.findUnique({
       where: { id },
@@ -45,8 +46,10 @@ export async function POST(
     const existing = order.line_user_id?.trim();
     if (existing) {
       if (existing === lineUserId) {
+        console.log("[track/claim] already same user", { orderId: String(id) });
         return NextResponse.json({ ok: true, alreadyLinked: true, orderNumber: order.order_number });
       }
+      console.warn("[track/claim] forbidden other user", { orderId: String(id) });
       return NextResponse.json(
         { error: "This order is already linked to another LINE account" },
         { status: 403 }
@@ -57,6 +60,7 @@ export async function POST(
       where: { id },
       data: { line_user_id: lineUserId },
     });
+    console.log("[track/claim] linked ok", { orderId: String(id) });
 
     return NextResponse.json({ ok: true, alreadyLinked: false, orderNumber: order.order_number });
   } catch (err) {
