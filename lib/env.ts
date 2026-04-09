@@ -13,11 +13,12 @@ const envSchema = z.object({
     .string()
     .min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required — copy from Supabase Project Settings → API"),
 
+  /** Public site origin — Vercel: e.g. https://smile-seed-bank.vercel.app (no trailing slash). */
   NEXT_PUBLIC_SITE_URL: z.preprocess(
     emptyToUndefined,
     z
       .string()
-      .url("NEXT_PUBLIC_SITE_URL must be a valid URL when set (e.g. https://yoursite.com)")
+      .url("NEXT_PUBLIC_SITE_URL must be a valid URL when set (e.g. https://smile-seed-bank.vercel.app)")
       .optional()
   ),
 

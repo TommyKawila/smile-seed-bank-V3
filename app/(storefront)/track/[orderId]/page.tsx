@@ -28,6 +28,14 @@ const STEP3 = "Step 3: Linking your Order...";
 
 const LIFF_CDN = "https://static.line-scdn.net/liff/edge/2/sdk.js";
 
+/** Keep in sync with LINE Console callback + Vercel NEXT_PUBLIC_SITE_URL (no trailing slash). */
+const DEFAULT_PUBLIC_SITE = "https://smile-seed-bank.vercel.app";
+
+function getLiffLoginRedirectUri(): string {
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_PUBLIC_SITE).replace(/\/$/, "");
+  return `${base}/track`;
+}
+
 export default function TrackOrderPage() {
   const params = useParams();
   const raw = params?.orderId;
@@ -166,9 +174,10 @@ export default function TrackOrderPage() {
         console.log("🍋 [track] setClaimPhase STEP2", { ts: Date.now() });
 
         if (!loggedIn) {
-          console.log("🍎 [track] liff.login redirect", { orderId, ts: Date.now() });
+          const redirectUri = getLiffLoginRedirectUri();
+          console.log("🍎 [track] liff.login redirect", { orderId, redirectUri, ts: Date.now() });
           claimAttemptedRef.current = false;
-          liff.login({ redirectUri: window.location.href });
+          liff.login({ redirectUri });
           setClaimPhase(null);
           return;
         }
