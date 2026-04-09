@@ -1,4 +1,8 @@
-/** Shared LIFF `liff.state` → app path (used by storefront home redirect). */
+/** localStorage key — preserved across LINE OAuth (see storefront home + track page). */
+export const LIFF_REDIRECT_PATH_KEY = "liff_redirect_path";
+
+/** sessionStorage: auto login attempt counter per tab (prevents liff.login loops). */
+export const LIFF_LOGIN_ATTEMPT_KEY = "liff_track_login_attempts";
 
 export function fullyDecodeState(value: string): string {
   let s = value.trim();
@@ -14,7 +18,10 @@ export function fullyDecodeState(value: string): string {
   return s;
 }
 
-/** Normalize raw `liff.state` to a path starting with `/track/...`. */
+/**
+ * Normalize `liff.state` or vault path to `/track/...`.
+ * Handles full URLs, path-only, and bare ids (`22`, `/22`).
+ */
 export function normalizeLiffStateToPath(raw: string): string {
   let targetPath = fullyDecodeState(raw);
 
@@ -35,4 +42,24 @@ export function normalizeLiffStateToPath(raw: string): string {
   }
 
   return targetPath;
+}
+
+/** Normalize path from localStorage (may be full URL or `/track/id`). */
+export function normalizeVaultPathToTrack(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "/";
+  if (/^https?:\/\//i.test(t)) {
+    try {
+      const path = new URL(t).pathname || "/";
+      return normalizeLiffStateToPath(path);
+    } catch {
+      return normalizeLiffStateToPath(t);
+    }
+  }
+  return normalizeLiffStateToPath(t);
+}
+
+export function isLiffClientFeaturesError(message: string): boolean {
+  const m = message.toLowerCase();
+  return m.includes("unable to load client features") || m.includes("client features");
 }

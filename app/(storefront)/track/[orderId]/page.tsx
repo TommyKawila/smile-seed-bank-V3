@@ -6,6 +6,11 @@ import Script from "next/script";
 import type { Liff } from "@line/liff";
 import { CheckCircle2, Loader2, Package, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  isLiffClientFeaturesError,
+  LIFF_LOGIN_ATTEMPT_KEY,
+  LIFF_REDIRECT_PATH_KEY,
+} from "@/lib/liff-track-path";
 
 type TrackPayload = {
   orderNumber: string;
@@ -45,6 +50,7 @@ export default function TrackOrderPage() {
   const [claimNote, setClaimNote] = useState<string | null>(null);
   const [liffSdkReady, setLiffSdkReady] = useState(false);
   const [retryTick, setRetryTick] = useState(0);
+  const [manualLoginMode, setManualLoginMode] = useState<null | "features" | "max_attempts">(null);
 
   const claimAttemptedRef = useRef(false);
   const liffIdDisplay = process.env.NEXT_PUBLIC_LIFF_ID || "MISSING";
@@ -82,6 +88,7 @@ export default function TrackOrderPage() {
 
   useEffect(() => {
     claimAttemptedRef.current = false;
+    setManualLoginMode(null);
   }, [orderId]);
 
   useEffect(() => {
@@ -152,7 +159,19 @@ export default function TrackOrderPage() {
         }
 
         console.log("🍊 [track] await liff.init", { orderId, liffId, ts: Date.now() });
-        await liff.init({ liffId });
+        try {
+          await liff.init({ liffId });
+        } catch (initErr) {
+          const msg = initErr instanceof Error ? initErr.message : String(initErr);
+          console.log("🍎 [track] liff.init failed", initErr);
+          if (isLiffClientFeaturesError(msg)) {
+            setManualLoginMode("features");
+            setClaimPhase(null);
+            claimAttemptedRef.current = true;
+            return;
+          }
+          throw initErr;
+        }
         console.log("🍋 [track] liff.init resolved", { orderId, ts: Date.now() });
 
         if (cancelled) {
@@ -172,10 +191,38 @@ export default function TrackOrderPage() {
             orderId,
             ts: Date.now(),
           });
+          try {
+            localStorage.setItem(LIFF_REDIRECT_PATH_KEY, window.location.pathname);
+          } catch {
+            /* private mode */
+          }
+          let attempts = 0;
+          try {
+            attempts = parseInt(sessionStorage.getItem(LIFF_LOGIN_ATTEMPT_KEY) || "0", 10);
+          } catch {
+            /* ignore */
+          }
+          if (attempts >= 3) {
+            setManualLoginMode("max_attempts");
+            setClaimPhase(null);
+            claimAttemptedRef.current = true;
+            return;
+          }
+          try {
+            sessionStorage.setItem(LIFF_LOGIN_ATTEMPT_KEY, String(attempts + 1));
+          } catch {
+            /* ignore */
+          }
           claimAttemptedRef.current = false;
           liff.login();
           setClaimPhase(null);
           return;
+        }
+
+        try {
+          sessionStorage.removeItem(LIFF_LOGIN_ATTEMPT_KEY);
+        } catch {
+          /* ignore */
         }
 
         setClaimPhase(STEP3);
@@ -281,18 +328,42 @@ export default function TrackOrderPage() {
     !forbiddenWarning &&
     !liffInitError &&
     !apiError &&
-    !waitingForSdk;
+    !waitingForSdk &&
+    !manualLoginMode;
 
   const claiming = Boolean(claimPhase);
 
   const handleTryAgain = () => {
     claimAttemptedRef.current = false;
+    setManualLoginMode(null);
     setLiffInitError(null);
     setApiError(null);
     setForbiddenWarning(null);
     setClaimNote(null);
     setClaimPhase(null);
     setRetryTick((t) => t + 1);
+  };
+
+  const handleManualLogin = () => {
+    const liff = typeof window !== "undefined" ? window.liff : undefined;
+    if (!liff) {
+      setLiffInitError("LIFF SDK unavailable.");
+      return;
+    }
+    setManualLoginMode(null);
+    setLiffInitError(null);
+    try {
+      localStorage.setItem(LIFF_REDIRECT_PATH_KEY, window.location.pathname);
+    } catch {
+      /* ignore */
+    }
+    try {
+      sessionStorage.removeItem(LIFF_LOGIN_ATTEMPT_KEY);
+    } catch {
+      /* ignore */
+    }
+    claimAttemptedRef.current = false;
+    liff.login();
   };
 
   const showTryAgain =
@@ -353,6 +424,26 @@ export default function TrackOrderPage() {
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50/60 px-3 py-2 text-sm text-emerald-900">
               <Loader2 className="h-4 w-4 shrink-0 animate-spin text-emerald-700" />
               <span>{claimPhase}</span>
+            </div>
+          )}
+
+          {manualLoginMode && (
+            <div
+              className="mb-4 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-3 text-sm text-amber-950"
+              role="status"
+            >
+              <p className="mb-2 text-xs leading-relaxed">
+                {manualLoginMode === "features"
+                  ? "LINE could not load in-app features in this environment. Use the button below to sign in with LINE in the browser."
+                  : "Automatic LINE login was tried several times. Use manual login to continue."}
+              </p>
+              <Button
+                type="button"
+                className="w-full bg-emerald-700 text-white hover:bg-emerald-800"
+                onClick={handleManualLogin}
+              >
+                Manual Login with LINE
+              </Button>
             </div>
           )}
 

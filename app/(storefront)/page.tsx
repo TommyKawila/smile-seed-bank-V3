@@ -1,13 +1,17 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useLayoutEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import { ChevronRight, Leaf, Zap, Shield, Package, Loader2 } from "lucide-react";
-import { normalizeLiffStateToPath } from "@/lib/liff-track-path";
+import {
+  LIFF_REDIRECT_PATH_KEY,
+  normalizeLiffStateToPath,
+  normalizeVaultPathToTrack,
+} from "@/lib/liff-track-path";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
@@ -134,19 +138,51 @@ function StorefrontHomeWithLiffRedirect() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const liffRaw = searchParams.get("liff.state");
-  const isLiffRedirect = Boolean(liffRaw?.trim());
+  const hasQueryState = Boolean(liffRaw?.trim());
+  const [vaultGateOpen, setVaultGateOpen] = useState(!hasQueryState);
+  const [badLiffState, setBadLiffState] = useState(false);
 
-  useEffect(() => {
-    if (!liffRaw?.trim()) return;
-    try {
-      const path = normalizeLiffStateToPath(liffRaw);
-      router.replace(path);
-    } catch (e) {
-      console.error("[home] liff.state redirect failed", e);
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const raw = searchParams.get("liff.state")?.trim();
+    if (raw) {
+      try {
+        const path = normalizeLiffStateToPath(raw);
+        try {
+          localStorage.removeItem(LIFF_REDIRECT_PATH_KEY);
+        } catch {
+          /* ignore */
+        }
+        router.replace(path);
+      } catch (e) {
+        console.error("[home] liff.state redirect failed", e);
+        setBadLiffState(true);
+        setVaultGateOpen(true);
+        router.replace("/");
+      }
+      return;
     }
-  }, [liffRaw, router]);
 
-  if (isLiffRedirect) {
+    try {
+      const vault = localStorage.getItem(LIFF_REDIRECT_PATH_KEY)?.trim();
+      if (vault) {
+        setVaultGateOpen(false);
+        const path = normalizeVaultPathToTrack(vault);
+        localStorage.removeItem(LIFF_REDIRECT_PATH_KEY);
+        router.replace(path);
+        return;
+      }
+    } catch (e) {
+      console.error("[home] local vault redirect failed", e);
+    }
+
+    setVaultGateOpen(true);
+  }, [searchParams, router]);
+
+  const showLoading = (hasQueryState && !badLiffState) || !vaultGateOpen;
+
+  if (showLoading) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
