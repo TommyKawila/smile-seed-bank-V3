@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Script from "next/script";
 import type { Liff } from "@line/liff";
 import { CheckCircle2, Loader2, Package, Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type TrackPayload = {
   orderNumber: string;
@@ -28,14 +29,6 @@ const STEP3 = "Step 3: Linking your Order...";
 
 const LIFF_CDN = "https://static.line-scdn.net/liff/edge/2/sdk.js";
 
-/** Keep in sync with LINE Console callback + Vercel NEXT_PUBLIC_SITE_URL (no trailing slash). */
-const DEFAULT_PUBLIC_SITE = "https://smile-seed-bank.vercel.app";
-
-function getLiffLoginRedirectUri(): string {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_PUBLIC_SITE).replace(/\/$/, "");
-  return `${base}/track`;
-}
-
 export default function TrackOrderPage() {
   const params = useParams();
   const raw = params?.orderId;
@@ -51,6 +44,7 @@ export default function TrackOrderPage() {
   const [forbiddenWarning, setForbiddenWarning] = useState<string | null>(null);
   const [claimNote, setClaimNote] = useState<string | null>(null);
   const [liffSdkReady, setLiffSdkReady] = useState(false);
+  const [retryTick, setRetryTick] = useState(0);
 
   const claimAttemptedRef = useRef(false);
   const liffIdDisplay = process.env.NEXT_PUBLIC_LIFF_ID || "MISSING";
@@ -174,10 +168,12 @@ export default function TrackOrderPage() {
         console.log("🍋 [track] setClaimPhase STEP2", { ts: Date.now() });
 
         if (!loggedIn) {
-          const redirectUri = getLiffLoginRedirectUri();
-          console.log("🍎 [track] liff.login redirect", { orderId, redirectUri, ts: Date.now() });
+          console.log("🍎 [track] liff.login (default redirect = LIFF endpoint / root)", {
+            orderId,
+            ts: Date.now(),
+          });
           claimAttemptedRef.current = false;
-          liff.login({ redirectUri });
+          liff.login();
           setClaimPhase(null);
           return;
         }
@@ -270,7 +266,7 @@ export default function TrackOrderPage() {
       console.log("🍋 [track] useEffect cleanup", { orderId, ts: Date.now() });
       cancelled = true;
     };
-  }, [orderId, loading, data, load, liffSdkReady]);
+  }, [orderId, loading, data, load, liffSdkReady, retryTick]);
 
   const showLinked = lineLinkedLocal || (data?.lineLinked ?? false);
   const liffIdForUi = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
@@ -288,6 +284,22 @@ export default function TrackOrderPage() {
     !waitingForSdk;
 
   const claiming = Boolean(claimPhase);
+
+  const handleTryAgain = () => {
+    claimAttemptedRef.current = false;
+    setLiffInitError(null);
+    setApiError(null);
+    setForbiddenWarning(null);
+    setClaimNote(null);
+    setClaimPhase(null);
+    setRetryTick((t) => t + 1);
+  };
+
+  const showTryAgain =
+    !loading &&
+    !!data &&
+    !showLinked &&
+    (Boolean(liffInitError) || Boolean(apiError));
 
   return (
     <>
@@ -412,6 +424,17 @@ export default function TrackOrderPage() {
                 <p className="text-xs text-zinc-500">
                   เปิดลิงก์นี้ในแอป LINE หรือล็อกอิน LINE แล้วกลับมาหน้านี้เพื่อเชื่อมบัญชีและรับแจ้งเตือนเมื่อจัดส่ง
                 </p>
+              )}
+
+              {showTryAgain && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-emerald-700/30 text-emerald-900 hover:bg-emerald-50"
+                  onClick={handleTryAgain}
+                >
+                  Try Again
+                </Button>
               )}
             </div>
           )}

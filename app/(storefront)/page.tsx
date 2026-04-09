@@ -1,10 +1,13 @@
 "use client";
 
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
-import { ChevronRight, Leaf, Zap, Shield, Package } from "lucide-react";
+import { ChevronRight, Leaf, Zap, Shield, Package, Loader2 } from "lucide-react";
+import { normalizeLiffStateToPath } from "@/lib/liff-track-path";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
@@ -127,7 +130,40 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
 
 // ─── Home Page ─────────────────────────────────────────────────────────────────
 
-export default function HomePage() {
+function StorefrontHomeWithLiffRedirect() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const liffRaw = searchParams.get("liff.state");
+  const isLiffRedirect = Boolean(liffRaw?.trim());
+
+  useEffect(() => {
+    if (!liffRaw?.trim()) return;
+    try {
+      const path = normalizeLiffStateToPath(liffRaw);
+      router.replace(path);
+    } catch (e) {
+      console.error("[home] liff.state redirect failed", e);
+    }
+  }, [liffRaw, router]);
+
+  if (isLiffRedirect) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35 }}
+        className="flex min-h-[50vh] flex-col items-center justify-center gap-4 bg-white px-4 py-20"
+      >
+        <Loader2 className="h-10 w-10 animate-spin text-emerald-700" aria-hidden />
+        <p className="text-center text-sm text-zinc-600">Redirecting to your order...</p>
+      </motion.div>
+    );
+  }
+
+  return <HomePageMain />;
+}
+
+function HomePageMain() {
   const { products, isLoading } = useProducts({ limit: 8, autoFetch: true });
   const { t } = useLanguage();
 
@@ -283,5 +319,20 @@ export default function HomePage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 bg-white px-4 py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-emerald-700" aria-hidden />
+          <p className="text-sm text-zinc-500">Loading…</p>
+        </div>
+      }
+    >
+      <StorefrontHomeWithLiffRedirect />
+    </Suspense>
   );
 }
