@@ -1,11 +1,8 @@
 import type { MetadataRoute } from "next";
-
-function baseUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-}
+import { getSiteOrigin } from "@/lib/get-url";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = baseUrl();
+  const base = getSiteOrigin();
   return {
     rules: [
       {

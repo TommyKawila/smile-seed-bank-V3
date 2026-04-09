@@ -13,7 +13,7 @@
  * Env vars needed:
  *   LINE_LOGIN_CHANNEL_ID
  *   LINE_LOGIN_CHANNEL_SECRET
- *   NEXT_PUBLIC_BASE_URL
+ *   NEXT_PUBLIC_SITE_URL (canonical origin; also used by getURL() for redirect_uri)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";

@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getURL } from "@/lib/get-url";
+import { getSiteOrigin } from "@/lib/get-url";
 
 const LINE_AUTHORIZE = "https://access.line.me/oauth2/v2.1/authorize";
-
-function lineClientId(): string | undefined {
-  return (
-    process.env.NEXT_PUBLIC_LINE_CLIENT_ID?.trim() || process.env.LINE_LOGIN_CHANNEL_ID?.trim() || undefined
-  );
-}
 
 export async function GET(req: NextRequest) {
   const orderId = req.nextUrl.searchParams.get("orderId")?.trim() ?? "";
@@ -15,13 +9,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid orderId" }, { status: 400 });
   }
 
-  const clientId = lineClientId();
+  const clientId = process.env.LINE_LOGIN_CHANNEL_ID?.trim();
   if (!clientId) {
-    return NextResponse.json({ error: "LINE client is not configured" }, { status: 500 });
+    console.log("🍎 [line/login] missing LINE_LOGIN_CHANNEL_ID");
+    return NextResponse.json({ error: "LINE is not configured" }, { status: 500 });
   }
 
-  const siteUrl = getURL().replace(/\/$/, "");
-  const redirectUri = `${siteUrl}/api/line/callback`;
+  const base = getSiteOrigin();
+  const redirectUri = `${base}/api/line/callback`;
+  console.log("🍊 [line/login]", { orderId, redirectUri });
 
   const qs = new URLSearchParams({
     response_type: "code",
@@ -31,5 +27,7 @@ export async function GET(req: NextRequest) {
     scope: "openid profile",
   });
 
-  return NextResponse.redirect(`${LINE_AUTHORIZE}?${qs.toString()}`);
+  const lineAuthUrl = `${LINE_AUTHORIZE}?${qs.toString()}`;
+  console.log("🍋 [line/login] redirect to LINE authorize");
+  return NextResponse.redirect(lineAuthUrl);
 }

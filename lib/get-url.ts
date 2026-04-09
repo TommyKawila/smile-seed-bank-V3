@@ -1,24 +1,29 @@
 /**
- * Returns the canonical base URL of the application, with trailing slash.
+ * Canonical public site URL — **NEXT_PUBLIC_SITE_URL** is the single source of truth.
+ * Fallbacks: NEXT_PUBLIC_VERCEL_URL (Vercel), then local dev.
  *
- * Priority:
- *  1. NEXT_PUBLIC_BASE_URL  — explicit override (recommended for custom domains)
- *  2. NEXT_PUBLIC_VERCEL_URL — auto-injected by Vercel (preview + production)
- *  3. http://localhost:3000/ — local development fallback
- *
- * Works in both server-side (API routes, Server Components) and
- * client-side contexts (browser env vars are prefixed NEXT_PUBLIC_).
+ * Returns a string with a single trailing slash.
  */
 export function getURL(): string {
   let url =
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    process.env.NEXT_PUBLIC_VERCEL_URL ??
+    (process.env.NEXT_PUBLIC_SITE_URL && process.env.NEXT_PUBLIC_SITE_URL.trim()) ||
+    process.env.NEXT_PUBLIC_VERCEL_URL ||
     "http://localhost:3000/";
 
-  // Ensure protocol prefix
   url = url.includes("http") ? url : `https://${url}`;
-  // Ensure single trailing slash
   url = url.endsWith("/") ? url : `${url}/`;
 
   return url;
+}
+
+/**
+ * Same origin as `getURL()` without trailing slash. Non-localhost HTTP URLs are upgraded to HTTPS
+ * so LINE / OG links stay correct in production.
+ */
+export function getSiteOrigin(): string {
+  let o = getURL().replace(/\/$/, "");
+  if (!o.includes("localhost") && o.startsWith("http://")) {
+    o = o.replace(/^http:\/\//i, "https://");
+  }
+  return o;
 }

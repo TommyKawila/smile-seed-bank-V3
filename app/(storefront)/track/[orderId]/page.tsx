@@ -85,11 +85,9 @@ function TrackOrderInner() {
 
         {oauthError && (
           <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" role="alert">
-            {oauthError === "already_linked"
-              ? "ออเดอร์นี้เชื่อมกับ LINE อื่นแล้ว"
-              : oauthError === "cancelled"
-                ? "ยกเลิกการเข้าสู่ระบบ LINE"
-                : `ไม่สามารถเชื่อม LINE ได้ (${oauthError})`}
+            {oauthError === "auth_failed"
+              ? "เชื่อม LINE ไม่สำเร็จ ลองใหม่อีกครั้ง"
+              : `ไม่สามารถเชื่อม LINE ได้ (${oauthError})`}
           </p>
         )}
 
@@ -116,13 +114,11 @@ function TrackOrderInner() {
             {showLinked ? (
               <div className="flex items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50/80 px-3 py-2 text-sm font-medium text-emerald-900">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
-                เชื่อม LINE แล้ว — รับแจ้งเตือนจัดส่ง
+                LINE Linked ✅
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-xs text-zinc-600">
-                  เชื่อมบัญชี LINE เพื่อรับแจ้งเตือนเมื่อจัดส่ง (ไม่บังคับ)
-                </p>
+                <p className="text-xs text-zinc-600">รับแจ้งเตือนจัดส่งผ่าน LINE (ไม่บังคับ)</p>
                 <Button asChild className="w-full bg-emerald-700 text-white hover:bg-emerald-800">
                   <Link href={connectHref}>Connect LINE Notifications</Link>
                 </Button>

@@ -33,6 +33,7 @@ import { SmartTieInStrip } from "@/components/storefront/magazine/SmartTieInStri
 import { BlogViewTracker } from "@/components/storefront/magazine/BlogViewTracker";
 import { NewsletterBox } from "@/components/storefront/magazine/NewsletterBox";
 import { ShopTheStorySection } from "@/components/storefront/magazine/ShopTheStorySection";
+import { getSiteOrigin } from "@/lib/get-url";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-magazine-serif" });
@@ -57,8 +58,8 @@ export async function generateMetadata({
   const post = await getPublishedPostBySlug(params.slug);
   if (!post) return { title: "ไม่พบบทความ" };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const base = siteUrl.replace(/\/$/, "");
+  const siteUrl = getSiteOrigin();
+  const base = siteUrl;
   const contentHtml = tiptapJsonToHtml(post.content);
   const description = post.excerpt?.trim()
     ? truncateMetaDescription(post.excerpt.trim())
@@ -141,8 +142,8 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
 
   const readMin = readingMinutesFromHtml(rawHtml);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const base = siteUrl.replace(/\/$/, "");
+  const siteUrl = getSiteOrigin();
+  const base = siteUrl;
   const pageUrl = `${base}/blog/${post.slug}`;
   const metaDesc = articleMetaDescription(post.excerpt, rawHtml);
   const rawFeatured = post.featured_image?.trim();

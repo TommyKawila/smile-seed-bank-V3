@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { getSiteOrigin } from "@/lib/get-url";
 
 export type PosMiniInvoiceLine = {
   productName: string;
@@ -37,10 +38,9 @@ type BankRow = {
   accountName: string;
 };
 
-/** Public HTTPS track link (LINE OAuth connect from track page). */
+/** Standard storefront track URL — no LIFF / liff.line.me. */
 function trackUrlForInvoice(orderId: string): string {
-  const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://smileseedbank.com").replace(/\/$/, "");
-  return `${site}/track/${orderId}`;
+  return `${getSiteOrigin()}/track/${orderId}`;
 }
 
 /** Maps POS Thai payment labels to English for the EN clipboard template. */
@@ -59,11 +59,7 @@ function paymentMethodLabelToEnglish(thLabel: string): string {
 }
 
 function buildClipboardText(data: PosMiniInvoiceData, bank: BankRow | null): string {
-  const siteBase = (
-    typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : "https://smileseedbank.com"
-  ).replace(/\/$/, "");
+  const siteBase = getSiteOrigin();
   const dash = "----------------------------------";
   const lineStr = data.lines
     .map((l) => {
@@ -101,11 +97,7 @@ ${dash}
 }
 
 function buildClipboardTextEn(data: PosMiniInvoiceData, bank: BankRow | null): string {
-  const siteBase = (
-    typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : "https://smileseedbank.com"
-  ).replace(/\/$/, "");
+  const siteBase = getSiteOrigin();
   const dash = "----------------------------------";
   const payEn = paymentMethodLabelToEnglish(data.paymentMethodLabel);
   const lineStr = data.lines

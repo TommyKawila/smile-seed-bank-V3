@@ -5,7 +5,7 @@
  *
  * Env vars needed:
  *   LINE_LOGIN_CHANNEL_ID     — from LINE Developers > LINE Login channel
- *   NEXT_PUBLIC_BASE_URL      — e.g. https://smileseedbank.com
+ *   NEXT_PUBLIC_SITE_URL      — canonical site origin (getURL() / redirect_uri)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";

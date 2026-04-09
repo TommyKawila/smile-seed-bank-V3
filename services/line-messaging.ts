@@ -2,6 +2,8 @@
 // Uses LINE Messaging API Push to send ONLY to the designated Admin User ID
 // Requires LINE_ADMIN_USER_ID in .env.local (e.g. LINE_ADMIN_USER_ID="Uxxxxxxxxxxxx")
 
+import { getSiteOrigin } from "@/lib/get-url";
+
 const LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push";
 const LINE_BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast";
 
@@ -102,7 +104,7 @@ export async function notifyAdminNewOrder(opts: {
             action: {
               type: "uri",
               label: "ดูออเดอร์ในระบบ",
-              uri: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/admin/orders`,
+              uri: `${getSiteOrigin()}/admin/orders`,
             },
           },
         ],
@@ -250,11 +252,7 @@ export async function sendCustomerShippingAlert(opts: {
   const carrierLabel = CARRIER_LABELS[opts.shippingProvider] ?? opts.shippingProvider;
   const trackUrl = buildCarrierTrackingUrl(opts.trackingNumber, opts.shippingProvider);
 
-  // Absolute URL required for LINE in-app browser (iOS/Android). Must be https in production.
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const origin = baseUrl.includes("localhost")
-    ? baseUrl
-    : (baseUrl.startsWith("http") ? baseUrl.replace(/^http:\/\//i, "https://") : `https://${baseUrl}`);
+  const origin = getSiteOrigin();
   const orderDeepLink =
     opts.orderId != null
       ? `${origin}/profile?tab=orders&open=${opts.orderId}`

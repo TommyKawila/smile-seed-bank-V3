@@ -139,7 +139,7 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 - **Void Order** — Triggered when an order is voided; includes order number, amount, and reason
 - **Daily Closing** — Triggered when "บันทึก Snapshot" is pressed; sends daily sales total and order count
 - **Admin UI** — Settings page: status check + "ทดสอบส่งข้อความ" button; fire-and-forget (errors logged, no crash)
-- **Claim order / public track (Approach 2)** — `orders.line_user_id`; migration `20260406120000_orders_line_user_id`; `POST /api/admin/orders/simple` returns `orderId`; `components/admin/PosMiniInvoiceModal.tsx` copy-template ลิงก์ `${NEXT_PUBLIC_SITE_URL}/track/{orderId}`; `GET /api/track/[orderId]` (สถานะ + tracking, ไม่เปิด PII); **LINE OAuth (ไม่ใช้ LIFF):** `GET /api/line/login?orderId=` → LINE authorize → `GET /api/line/callback` (แลก `code`, ดึง profile `userId`, `prisma.orders.update` `line_user_id`) → redirect `/track/[orderId]?success=true`; optional legacy `POST /api/track/[orderId]/claim` (body `lineUserId`); `app/(storefront)/track/[orderId]/page.tsx` — ปุ่ม “Connect LINE Notifications” ลิงก์ไป `/api/line/login`; `services/orders-service.ts` `markShipped` → `pushTextToLineUser` เมื่อมี `line_user_id`
+- **Claim order / public track (Approach 2)** — `orders.line_user_id`; migration `20260406120000_orders_line_user_id`; `POST /api/admin/orders/simple` returns `orderId`; `components/admin/PosMiniInvoiceModal.tsx` — track link ผ่าน `getSiteOrigin()` / `NEXT_PUBLIC_SITE_URL`; `GET /api/track/[orderId]`; **LINE OAuth:** `LINE_LOGIN_CHANNEL_ID` + `lib/get-url.ts` (`getSiteOrigin`) → `GET /api/line/login?orderId=` → `GET /api/line/callback` (Prisma `line_user_id`) → `/track/[orderId]?success=true` หรือ `?error=auth_failed`; `app/(storefront)/track/[orderId]/page.tsx` — ปุ่ม Connect LINE; optional `POST /api/track/[orderId]/claim`; `markShipped` → `pushTextToLineUser`
 
 ---
 
@@ -162,9 +162,9 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 | `LINE_CHANNEL_ACCESS_TOKEN` | Messaging API token (from LINE Developers Console) |
 | `LINE_CHANNEL_SECRET` | Channel secret (for webhook validation if needed) |
 | `LINE_ADMIN_USER_ID` | Admin's LINE User ID — receives all alerts (Low Stock, Void, Daily Summary) |
-| `NEXT_PUBLIC_LINE_CLIENT_ID` | LINE Login channel id (OAuth) for `/api/line/login` → track linking; fallback `LINE_LOGIN_CHANNEL_ID` |
-| `LINE_CHANNEL_SECRET` | Channel secret for `/api/line/callback` token exchange; fallback `LINE_LOGIN_CHANNEL_SECRET` |
-| `NEXT_PUBLIC_BASE_URL` | Canonical site URL (callback `redirect_uri` must match LINE Console) |
+| `LINE_LOGIN_CHANNEL_ID` | LINE Login channel id — `client_id` for `/api/line/login` (track OAuth) |
+| `LINE_LOGIN_CHANNEL_SECRET` | Same LINE Login channel — `/api/line/callback` token exchange |
+| `NEXT_PUBLIC_SITE_URL` | **Canonical site URL** — `lib/get-url.ts` (`getURL` / `getSiteOrigin`); LINE OAuth `redirect_uri`, metadata, sitemap, emails; set to production domain (e.g. `https://smile-seed-bank.vercel.app`). If unset locally, `getURL()` falls back to `VERCEL_URL` then `http://localhost:3000/` |
 
 ---
 

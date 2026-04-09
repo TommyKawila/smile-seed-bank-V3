@@ -12,11 +12,12 @@ import { MagazineCategoryPills } from "@/components/storefront/magazine/Magazine
 import { MagazineHeroCarousel } from "@/components/storefront/magazine/MagazineHeroCarousel";
 import { MagazineLatestGrid } from "@/components/storefront/magazine/MagazineLatestGrid";
 import { MagazineTrending } from "@/components/storefront/magazine/MagazineTrending";
+import { getSiteOrigin } from "@/lib/get-url";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-magazine-serif" });
 
-const siteBase = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const siteBase = getSiteOrigin();
 
 export const metadata: Metadata = {
   title: {
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     description:
       "แหล่งรวมความรู้เรื่องสายพันธุ์กัญชา, เกษตรอินทรีย์ และไลฟ์สไตล์จากเชียงใหม่ โดยทีมงาน Smile Seed Bank",
     type: "website",
-    url: `${siteBase.replace(/\/$/, "")}/blog`,
+    url: `${siteBase}/blog`,
     siteName: "Tommy Smile Seed Magazine",
   },
   twitter: {

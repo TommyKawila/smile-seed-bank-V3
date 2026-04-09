@@ -1,9 +1,11 @@
 // Email Service — Resend (https://resend.com)
 // Handles transactional emails: order confirmation, tracking update
 
+import { getSiteOrigin } from "@/lib/get-url";
+
 const RESEND_URL = "https://api.resend.com/emails";
 const FROM_EMAIL = "Smile Seed Bank <orders@smileseedbank.com>";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://smileseedbank.com";
+const SITE_URL = getSiteOrigin();
 
 // Bank details — keep in sync with payment/[orderNumber]/page.tsx BANK constant
 const BANK = {

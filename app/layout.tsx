@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { getSiteOrigin } from "@/lib/get-url";
 
 export const viewport = {
   width: "device-width",
@@ -8,7 +9,7 @@ export const viewport = {
   userScalable: false,
 };
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const siteUrl = getSiteOrigin();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
