@@ -1,6 +1,5 @@
+import { getLineOaBaseUrl } from "@/lib/line-oa-url";
 import { cn } from "@/lib/utils";
-
-const DEFAULT_LINE_OA = "https://line.me/R/ti/p/@your-id";
 
 export type LineParcelTrackingCtaProps = {
   href?: string;
@@ -9,13 +8,10 @@ export type LineParcelTrackingCtaProps = {
 };
 
 /**
- * Minimal LINE OA link for parcel / order updates. Override URL via `href` or `NEXT_PUBLIC_LINE_OA_URL`.
+ * Minimal LINE OA link. Override via `href`, else `NEXT_PUBLIC_LINE_OA_URL` / `lib/line-oa-url` fallback.
  */
 export function LineParcelTrackingCta({ href, className, children }: LineParcelTrackingCtaProps) {
-  const url =
-    href?.trim() ||
-    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_LINE_OA_URL?.trim()) ||
-    DEFAULT_LINE_OA;
+  const url = href?.trim() || getLineOaBaseUrl();
 
   return (
     <a

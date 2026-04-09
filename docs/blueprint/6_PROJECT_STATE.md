@@ -25,7 +25,7 @@
   - **Shop filters mobile sheet** — `useMediaQuery("(min-width: 1024px)")` in `app/(storefront)/shop/page.tsx`; below `lg`, `ShopFilterMobileSheet` (shadcn `Sheet`, blurred overlay) replaces inline sidebar; header title + close, scroll body `FilterSidebarContent`, footer **ล้างทั้งหมด** / **แสดงผล (n) รายการ**; desktop: two-column `lg:grid-cols-[280px_minmax(0,1fr)]` + `lg:items-stretch`; sticky strip (pills + search) `top-20`/`sm:top-28` `z-40` `bg-white` (no `overflow-*` on shop root); `FilterSidebar` `lg:top-[230px]` + `lg:max-h-[calc(100vh-230px)]`; scroll area `pt-4`; ribbon not sticky; filter toggle `lg:hidden`; grid `lg:grid-cols-3`; `hooks/use-media-query.ts`, `components/ui/sheet.tsx` overlay blur.
   - **Flowering type `photo_ff`** — Admin `ProductModal` select + `lib/validations/product.ts` Zod; `lib/cannabis-attributes.ts` (`normalizeFloweringFromDb`, `isPhotoperiodLikeDb`, `isPhotoFfDb`, `labelFloweringType`); `lib/seed-type-filter.ts` breeder keys + `labelForFloweringSlug`; DB column remains **string** (no Postgres enum). If save fails elsewhere, add `photo_ff` to any strict enum/check.
   - **`lib/sanitize-product-text.ts`** — strips legacy inline `font` / `color` / color-bearing `style` from product text fields; wired in `services/product-service.ts` (`getProductBySlug`, `getActiveProducts`); public **`GET /api/products/[slug]`** returns the same normalized payload.
-  - **Checkout / payment order summary** — `components/storefront/CheckoutPageClient.tsx` + `app/(storefront)/payment/[orderNumber]/page.tsx`: minimalist summary header (status pill), clearer subtotal/total labels; `components/storefront/LineParcelTrackingCta.tsx` — outlined LINE green CTA “ติดตามสถานะพัสดุผ่าน Line” (default `https://line.me/R/ti/p/@your-id`, override `NEXT_PUBLIC_LINE_OA_URL`).
+  - **Checkout / payment order summary** — `components/storefront/CheckoutPageClient.tsx` + `app/(storefront)/payment/[orderNumber]/page.tsx`: minimalist summary header (status pill), clearer subtotal/total labels; `components/storefront/LineParcelTrackingCta.tsx` + `lib/line-oa-url.ts` (`NEXT_PUBLIC_LINE_OA_URL`, fallback `https://lin.ee/OcxDMjO`); `app/(storefront)/order-success/page.tsx` — primary LINE CTA uses `lineOaUrlWithOrderHint` (prefill text for `line.me/R/oaMessage/...` only).
 - **Next steps:** Ready for **production deployment** and **testing with real users** (smoke-test checkout, product detail, mobile layouts).
 
 ### Inventory flexibility — draft mode (status)
@@ -166,6 +166,7 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 | `LINE_LOGIN_CHANNEL_ID` | LINE Login channel id — `client_id` for `/api/line/login` (track OAuth) |
 | `LINE_LOGIN_CHANNEL_SECRET` | Same LINE Login channel — `/api/line/callback` token exchange |
 | `NEXT_PUBLIC_SITE_URL` | **Canonical site URL** — `lib/get-url.ts` (`getURL` / `getSiteOrigin`); LINE OAuth `redirect_uri`, metadata, sitemap, emails; set to production domain (e.g. `https://smile-seed-bank.vercel.app`). If unset locally, `getURL()` falls back to `VERCEL_URL` then `http://localhost:3000/` |
+| `NEXT_PUBLIC_LINE_OA_URL` | LINE Official Account URL — `lib/line-oa-url.ts`; order success + parcel CTA; fallback `https://lin.ee/OcxDMjO` |
 
 ---
 

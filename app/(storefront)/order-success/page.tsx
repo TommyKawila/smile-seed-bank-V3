@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -8,33 +8,12 @@ import { CheckCircle2, MessageCircle, ShoppingBag, Home } from "lucide-react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-
-const DEFAULT_LINE_ID = "@smileseedsbank";
-
-function buildLineOaUrl(lineId: string | null, orderNumber: string): string {
-  const id = (lineId ?? DEFAULT_LINE_ID).trim() || DEFAULT_LINE_ID;
-  const normalized = id.startsWith("@") ? id : `@${id}`;
-  const message = encodeURIComponent(`แจ้งออเดอร์ #${orderNumber} ครับ/ค่ะ`);
-  return `https://line.me/R/oaMessage/${normalized}/?${message}`;
-}
+import { lineOaUrlWithOrderHint } from "@/lib/line-oa-url";
 
 function OrderSuccessContent() {
   const params = useSearchParams();
   const orderNumber = params.get("order") ?? "—";
-  const [lineId, setLineId] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/storefront/payment-settings", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((data: { lineId?: string | null }) => {
-        const id = data?.lineId?.trim() || null;
-        setLineId(id ?? null);
-        if (!id) console.warn("[order-success] Line ID missing in payment_settings, using default");
-      })
-      .catch(() => setLineId(null));
-  }, []);
-
-  const lineDeepLink = buildLineOaUrl(lineId, orderNumber);
+  const lineDeepLink = lineOaUrlWithOrderHint(orderNumber);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 pt-16">
