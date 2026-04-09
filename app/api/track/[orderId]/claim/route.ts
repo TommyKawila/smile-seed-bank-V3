@@ -9,7 +9,7 @@ const BodySchema = z.object({
 });
 
 /**
- * Link LINE user id (from LIFF) to an order. Idempotent if same user re-claims.
+ * Link LINE user id to an order (optional server-to-server). Idempotent if same user re-claims.
  */
 export async function POST(
   req: NextRequest,

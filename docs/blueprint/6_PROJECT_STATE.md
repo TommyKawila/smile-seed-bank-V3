@@ -139,7 +139,7 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 - **Void Order** — Triggered when an order is voided; includes order number, amount, and reason
 - **Daily Closing** — Triggered when "บันทึก Snapshot" is pressed; sends daily sales total and order count
 - **Admin UI** — Settings page: status check + "ทดสอบส่งข้อความ" button; fire-and-forget (errors logged, no crash)
-- **Claim order / public track (Approach 2)** — `orders.line_user_id`; migration `20260406120000_orders_line_user_id`; `POST /api/admin/orders/simple` returns `orderId`; `components/admin/PosMiniInvoiceModal.tsx` copy-template ลิงก์ `${NEXT_PUBLIC_SITE_URL}/track/{orderId}`; `GET /api/track/[orderId]` (สถานะ + tracking, ไม่เปิด PII — ใช้ลิงก์ที่มี order id เป็นหลัก), `POST /api/track/[orderId]/claim` (LIFF `lineUserId` → ผูกครั้งแรกเท่านั้น); `app/(storefront)/track/[orderId]/page.tsx` + `@line/liff` + `NEXT_PUBLIC_LIFF_ID`; `services/orders-service.ts` `markShipped` → `pushTextToLineUser` ข้อความจัดส่งเมื่อมี `line_user_id`/ลูกค้า LINE — **Local Vault redirect:** `lib/liff-track-path.ts` (`LIFF_REDIRECT_PATH_KEY`, `normalizeLiffStateToPath` / `normalizeVaultPathToTrack`, `LIFF_LOGIN_ATTEMPT_KEY`, `isLiffClientFeaturesError`); `app/(storefront)/page.tsx` `StorefrontHomeWithLiffRedirect` — `liff.state` ก่อน แล้ว `localStorage` vault → `router.replace` + `removeItem`; track page เก็บ path ก่อน `liff.login()`, session attempt cap, `liff.init` try/catch + Manual Login เมื่อ client-features error
+- **Claim order / public track (Approach 2)** — `orders.line_user_id`; migration `20260406120000_orders_line_user_id`; `POST /api/admin/orders/simple` returns `orderId`; `components/admin/PosMiniInvoiceModal.tsx` copy-template ลิงก์ `${NEXT_PUBLIC_SITE_URL}/track/{orderId}`; `GET /api/track/[orderId]` (สถานะ + tracking, ไม่เปิด PII); **LINE OAuth (ไม่ใช้ LIFF):** `GET /api/line/login?orderId=` → LINE authorize → `GET /api/line/callback` (แลก `code`, ดึง profile `userId`, `prisma.orders.update` `line_user_id`) → redirect `/track/[orderId]?success=true`; optional legacy `POST /api/track/[orderId]/claim` (body `lineUserId`); `app/(storefront)/track/[orderId]/page.tsx` — ปุ่ม “Connect LINE Notifications” ลิงก์ไป `/api/line/login`; `services/orders-service.ts` `markShipped` → `pushTextToLineUser` เมื่อมี `line_user_id`
 
 ---
 
@@ -162,7 +162,9 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 | `LINE_CHANNEL_ACCESS_TOKEN` | Messaging API token (from LINE Developers Console) |
 | `LINE_CHANNEL_SECRET` | Channel secret (for webhook validation if needed) |
 | `LINE_ADMIN_USER_ID` | Admin's LINE User ID — receives all alerts (Low Stock, Void, Daily Summary) |
-| `NEXT_PUBLIC_LIFF_ID` | LIFF app id for `/track/[orderId]` claim flow in LINE in-app browser |
+| `NEXT_PUBLIC_LINE_CLIENT_ID` | LINE Login channel id (OAuth) for `/api/line/login` → track linking; fallback `LINE_LOGIN_CHANNEL_ID` |
+| `LINE_CHANNEL_SECRET` | Channel secret for `/api/line/callback` token exchange; fallback `LINE_LOGIN_CHANNEL_SECRET` |
+| `NEXT_PUBLIC_BASE_URL` | Canonical site URL (callback `redirect_uri` must match LINE Console) |
 
 ---
 

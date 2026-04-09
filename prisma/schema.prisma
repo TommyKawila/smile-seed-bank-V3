@@ -226,7 +226,7 @@ model orders {
   slip_url            String?
   reject_note         String?
   shipping_provider   String?
-  /// LINE Messaging API user id (U…) — set when customer claims order via /track/[orderId] LIFF
+  /// LINE Messaging API user id (U…) — set via /track LINE OAuth or POST /api/track/.../claim
   line_user_id        String?
   customer_name       String?
   customer_note       String?

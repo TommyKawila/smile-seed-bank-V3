@@ -37,11 +37,8 @@ type BankRow = {
   accountName: string;
 };
 
-/** LIFF universal link when LIFF id is set; else HTTPS /track/{orderId}. */
+/** Public HTTPS track link (LINE OAuth connect from track page). */
 function trackUrlForInvoice(orderId: string): string {
-  const lid =
-    typeof process !== "undefined" && process.env.NEXT_PUBLIC_LIFF_ID?.trim();
-  if (lid) return `https://liff.line.me/${lid}/track/${orderId}`;
   const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://smileseedbank.com").replace(/\/$/, "");
   return `${site}/track/${orderId}`;
 }
