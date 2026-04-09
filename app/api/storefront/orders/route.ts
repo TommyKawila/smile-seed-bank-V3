@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
         orderNumber: data.orderNumber,
         orderId: data.orderId,
         paymentMethod: payment_method,
+        orderStatus: "PENDING",
         items: emailItems,
         freeGiftCount: items.filter((i) => i.isFreeGift).length,
         subtotal: summary.subtotal,

@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import {
   evaluateDiscountTier,
   generateUpsellMessage,
-  calculateShipping,
   evaluateFreeGifts,
   calculateCartSummary,
   type TieredDiscountRule,
@@ -20,6 +19,10 @@ import type {
   Promotion,
   PromoCode,
 } from "@/types/supabase";
+import {
+  STOREFRONT_SHIPPING_CATEGORY,
+  SHIPPING_RULES_BROADCAST_CHANNEL,
+} from "@/lib/storefront-shipping";
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
@@ -47,7 +50,6 @@ const AddToCartSchema = z.object({
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CART_STORAGE_KEY = "ssb_cart_v3";
-const PRIMARY_CATEGORY = "Seeds";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -117,6 +119,16 @@ export function useCart(): UseCartReturn {
   }, [items]);
 
   // ── Fetch discount tiers, tiered_discounts, shipping rules on mount ───────
+  const refetchShippingRules = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const { data } = await supabase.from("shipping_rules").select("*");
+      setShippingRules((data as ShippingRule[]) ?? []);
+    } catch {
+      /* keep prior rules */
+    }
+  }, []);
+
   useEffect(() => {
     const loadRules = async () => {
       setIsLoadingRules(true);
@@ -149,8 +161,17 @@ export function useCart(): UseCartReturn {
       }
     };
 
-    loadRules();
+    void loadRules();
   }, []);
+
+  useEffect(() => {
+    if (typeof BroadcastChannel === "undefined") return;
+    const ch = new BroadcastChannel(SHIPPING_RULES_BROADCAST_CHANNEL);
+    ch.onmessage = () => {
+      void refetchShippingRules();
+    };
+    return () => ch.close();
+  }, [refetchShippingRules]);
 
   // ── Compute cart summary (compound: tier first, then promo on remaining) ───
   const summary = useMemo((): CartSummary => {
@@ -162,7 +183,7 @@ export function useCart(): UseCartReturn {
       items,
       discountTiers,
       shippingRules,
-      PRIMARY_CATEGORY,
+      STOREFRONT_SHIPPING_CATEGORY,
       promo.discountAmount,
       rules,
       promoInfo
@@ -374,5 +395,5 @@ export function useCart(): UseCartReturn {
   };
 }
 
-// ─── Re-export pure helpers for direct component use ─────────────────────────
-export { evaluateDiscountTier, generateUpsellMessage, calculateShipping };
+// ─── Re-export pure helpers (import cart-utils directly for calculateShipping) ─
+export { evaluateDiscountTier, generateUpsellMessage };

@@ -18,6 +18,7 @@ import {
   Boxes,
   FolderTree,
   CreditCard,
+  Truck,
   LayoutGrid,
   BarChart2,
   FileText,
@@ -52,6 +53,7 @@ const navItems = [
 
 const bottomItems = [
   { href: "/admin/settings", label: "ตั้งค่าร้านค้า", icon: Settings },
+  { href: "/admin/settings/shipping", label: "ค่าจัดส่ง", icon: Truck },
   { href: "/admin/settings/payment", label: "ช่องทางชำระเงิน", icon: CreditCard },
 ];
 

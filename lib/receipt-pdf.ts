@@ -1,8 +1,5 @@
 import { jsPDF } from "jspdf";
-import {
-  QUOTATION_SHIPPING_COST as SHIPPING_COST,
-  QUOTATION_SHIPPING_FREE_THRESHOLD as SHIPPING_FREE_THRESHOLD,
-} from "./order-financials";
+import { defaultQuotationShippingFee } from "./order-financials";
 import { PROMPT_FONT_BASE64 } from "./prompt-font-base64";
 import { formatPhoneNumber } from "./utils";
 
@@ -348,7 +345,7 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
     }
   } else if (docType === "quotation") {
     lineSubtotal = grandTotal;
-    shippingCost = lineSubtotal <= SHIPPING_FREE_THRESHOLD ? SHIPPING_COST : 0;
+    shippingCost = defaultQuotationShippingFee(lineSubtotal);
   }
   const netTotal = lineSubtotal + shippingCost - discountAmount;
 

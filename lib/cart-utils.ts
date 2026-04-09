@@ -1,4 +1,10 @@
 import type { CartItem, CartSummary, DiscountTier, ShippingRule, Promotion } from "@/types/supabase";
+import {
+  QUOTATION_SHIPPING_COST,
+  QUOTATION_SHIPPING_FREE_THRESHOLD,
+  shippingFeeForSubtotal,
+} from "@/lib/order-financials";
+import { STOREFRONT_SHIPPING_CATEGORY } from "@/lib/storefront-shipping";
 
 export interface TieredDiscountRule {
   min_spend: number;
@@ -51,11 +57,44 @@ export function generateUpsellMessage(
   return `ซื้ออีก ฿${gap.toLocaleString("th-TH")} เพื่อรับส่วนลด ${nextTier.discount_percentage}%`;
 }
 
-export function calculateShipping(category: string, subtotal: number, rules: ShippingRule[]): number {
-  const rule = rules.find((r) => r.category_name.toLowerCase() === category.toLowerCase());
-  if (!rule) return 0;
-  if (subtotal >= rule.free_shipping_threshold) return 0;
-  return rule.base_fee;
+function resolveShippingParams(
+  category: string,
+  rules: ShippingRule[] | null | undefined
+): { threshold: number; fee: number } {
+  const list = Array.isArray(rules) ? rules : [];
+  const rule = list.find(
+    (r) => String(r.category_name ?? "").toLowerCase() === category.toLowerCase()
+  );
+  if (!rule) {
+    return {
+      threshold: QUOTATION_SHIPPING_FREE_THRESHOLD,
+      fee: QUOTATION_SHIPPING_COST,
+    };
+  }
+  const th = Number(rule.free_shipping_threshold);
+  const fee = Number(rule.base_fee);
+  const ok =
+    Number.isFinite(th) &&
+    Number.isFinite(fee) &&
+    th >= 0 &&
+    fee >= 0;
+  if (!ok) {
+    return {
+      threshold: QUOTATION_SHIPPING_FREE_THRESHOLD,
+      fee: QUOTATION_SHIPPING_COST,
+    };
+  }
+  return { threshold: th, fee };
+}
+
+/** Uses `shipping_rules` when present and valid; otherwise `order-financials` defaults. */
+export function calculateShipping(
+  category: string,
+  subtotal: number,
+  rules: ShippingRule[] | null | undefined
+): number {
+  const { threshold, fee } = resolveShippingParams(category, rules);
+  return shippingFeeForSubtotal(subtotal, threshold, fee);
 }
 
 export function evaluateFreeGifts(
@@ -93,7 +132,7 @@ export function calculateCartSummary(
   items: CartItem[],
   tiers: DiscountTier[],
   shippingRules: ShippingRule[],
-  primaryCategory: string = "Seeds",
+  primaryCategory: string = STOREFRONT_SHIPPING_CATEGORY,
   promoDiscount: number = 0,
   tieredRules?: TieredDiscountRule[],
   promoInfo?: PromoInfo | null

@@ -24,6 +24,7 @@ export async function fetchDiscountTiers(): Promise<DiscountTier[]> {
   return (data as DiscountTier[]) ?? [];
 }
 
+/** Cart shipping amounts use `calculateShipping` in `lib/cart-utils.ts` (DB rules + `order-financials` fallback). */
 export async function fetchShippingRules(): Promise<ShippingRule[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("shipping_rules").select("*");

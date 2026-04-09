@@ -249,12 +249,34 @@ export async function uploadSlip(
 
 export interface EmailItem {
   variantId: number;
-  /** Formatted: "Lemon Paya (Photo) by Sensi Seeds" */
-  name: string;
+  /** Plain product title (no breeder suffix). */
+  productName: string;
+  breederName: string | null;
+  genetics: string | null;
+  /** Short label e.g. "Auto · Fem" */
+  typeLabel: string;
   /** Pack size label from unit_label, e.g. "5 Seeds" */
   unitLabel: string;
   qty: number;
   price: number;
+}
+
+function emailTypeLabel(
+  flowering: string | null,
+  seedType: string | null,
+  sexType: string | null
+): string {
+  const parts: string[] = [];
+  const ft = (flowering ?? "").toLowerCase();
+  if (ft.includes("auto")) parts.push("Auto");
+  else if (ft === "photo_ff") parts.push("Photo FF");
+  else if (ft === "photo_3n") parts.push("Photo 3N");
+  else if (ft.includes("photo")) parts.push("Photo");
+  const sex = (sexType ?? "").toLowerCase();
+  const st = (seedType ?? "").toLowerCase();
+  if (st.includes("fem") || sex.includes("fem")) parts.push("Fem");
+  else if (st.includes("reg") || sex.includes("reg")) parts.push("Reg");
+  return parts.length ? parts.join(" · ") : "—";
 }
 
 /**
@@ -275,6 +297,10 @@ export async function fetchEmailItems(
       variant_id: number;
       product_name: string;
       flowering_type: string | null;
+      seed_type: string | null;
+      sex_type: string | null;
+      genetics: string | null;
+      strain_dominance: string | null;
       breeder_name: string | null;
       unit_label: string | null;
     }[]>`
@@ -282,6 +308,10 @@ export async function fetchEmailItems(
         pv.id         AS variant_id,
         p.name        AS product_name,
         p.flowering_type,
+        p.seed_type,
+        p.sex_type,
+        p.genetics,
+        p.strain_dominance,
         b.name        AS breeder_name,
         pv.unit_label
       FROM product_variants pv
@@ -297,27 +327,30 @@ export async function fetchEmailItems(
       if (!info) {
         return {
           variantId: item.variantId,
-          name: `Product #${item.variantId}`,
+          productName: `Product #${item.variantId}`,
+          breederName: null,
+          genetics: null,
+          typeLabel: "—",
           unitLabel: "",
           qty: item.quantity,
           price: item.price,
         };
       }
 
-      // e.g. "Photo" | "Auto"
-      const flowerLabel =
-        (info.flowering_type ?? "").toLowerCase().includes("auto") ? "Auto"
-        : (info.flowering_type ?? "").toLowerCase().includes("photo") ? "Photo"
-        : null;
-
-      // e.g. "Lemon Paya (Photo) by Sensi Seeds"
-      let nameParts = info.product_name;
-      if (flowerLabel) nameParts += ` (${flowerLabel})`;
-      if (info.breeder_name) nameParts += ` by ${info.breeder_name}`;
+      const genetics =
+        info.genetics?.trim() || info.strain_dominance?.trim() || null;
+      const typeLabel = emailTypeLabel(
+        info.flowering_type,
+        info.seed_type,
+        info.sex_type
+      );
 
       return {
         variantId: item.variantId,
-        name: nameParts,
+        productName: info.product_name,
+        breederName: info.breeder_name,
+        genetics,
+        typeLabel,
         unitLabel: info.unit_label ?? "",
         qty: item.quantity,
         price: item.price,
@@ -328,7 +361,10 @@ export async function fetchEmailItems(
     // Fallback: return items without enrichment rather than crashing
     return checkoutItems.map((item) => ({
       variantId: item.variantId,
-      name: `Product #${item.variantId}`,
+      productName: `Product #${item.variantId}`,
+      breederName: null,
+      genetics: null,
+      typeLabel: "—",
       unitLabel: "",
       qty: item.quantity,
       price: item.price,

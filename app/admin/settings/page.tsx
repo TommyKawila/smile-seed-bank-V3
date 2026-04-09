@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2, Upload, Trash2, ImageIcon, CreditCard, ChevronRight, MessageCircle, CheckCircle2, XCircle, Plus, Building2 } from "lucide-react";
+import { Loader2, Upload, Trash2, ImageIcon, CreditCard, ChevronRight, MessageCircle, CheckCircle2, XCircle, Plus, Building2, Truck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -475,6 +475,22 @@ export default function SettingsPage() {
       <Separator />
 
       {/* ── Payment Settings Link ─────────────────────────────────────────────── */}
+      <Link
+        href="/admin/settings/shipping"
+        className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <Truck className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-semibold text-zinc-900">ค่าจัดส่ง</p>
+            <p className="text-xs text-zinc-500">ค่าส่งมาตรฐานและยอดส่งฟรี (หมวด Seeds)</p>
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-zinc-400" />
+      </Link>
+
       <Link
         href="/admin/settings/payment"
         className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
