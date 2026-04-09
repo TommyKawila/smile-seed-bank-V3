@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCartContext } from "@/context/CartContext";
 import { useAuth } from "@/hooks/use-auth";
 import { DiscountProgressBar } from "@/components/storefront/DiscountProgressBar";
+import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackingCta";
 import { LoginForPromoDialog } from "@/components/storefront/LoginForPromoDialog";
 import { useLanguage } from "@/context/LanguageContext";
 import { createClient } from "@/lib/supabase/client";
@@ -441,11 +442,18 @@ export function CheckoutPageClient({
             </div>
 
             <div className="space-y-4 lg:col-span-2">
-              <Card className="sticky top-24">
-                <CardContent className="p-5 space-y-4">
-                  <h2 className="text-sm font-bold text-zinc-700">{t("สรุปออเดอร์", "Order summary")}</h2>
+              <Card className="sticky top-24 border-zinc-200/80 shadow-sm">
+                <CardContent className="space-y-4 p-5">
+                  <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                      {t("สรุปรายการ", "Order summary")}
+                    </h2>
+                    <span className="shrink-0 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium text-zinc-600">
+                      {t("รอชำระเงิน", "Pending")}
+                    </span>
+                  </div>
 
-                  <div className="space-y-3 max-h-52 overflow-y-auto">
+                  <div className="max-h-52 space-y-3 overflow-y-auto">
                     {items.map((item) => (
                       <OrderItemRow key={item.variantId} item={item} />
                     ))}
@@ -512,30 +520,38 @@ export function CheckoutPageClient({
                   )}
 
                   <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between text-zinc-600">
-                      <span>{t("ยอดรวม", "Subtotal")}</span>
-                      <span>{formatPrice(summary.subtotal)}</span>
+                    <div className="flex justify-between gap-3 text-zinc-600">
+                      <span className="text-xs text-zinc-500">{t("ยอดสินค้า", "Subtotal")}</span>
+                      <span className="tabular-nums text-zinc-800">{formatPrice(summary.subtotal)}</span>
                     </div>
                     {summary.tierDiscount > 0 && (
-                      <div className="flex justify-between text-primary">
-                        <span>{t(`ส่วนลดขั้นบันได (${summary.discountPercent}%)`, `Tier discount (${summary.discountPercent}%)`)}</span>
-                        <span>-{formatPrice(summary.tierDiscount)}</span>
+                      <div className="flex justify-between gap-3 text-primary">
+                        <span className="text-xs">
+                          {t(`ส่วนลดขั้นบันได (${summary.discountPercent}%)`, `Tier (${summary.discountPercent}%)`)}
+                        </span>
+                        <span className="tabular-nums">-{formatPrice(summary.tierDiscount)}</span>
                       </div>
                     )}
                     {summary.promoDiscount > 0 && (
-                      <div className="flex justify-between text-primary">
-                        <span>{t(`ส่วนลดโค้ด (${promo.code?.code ?? ""})`, `Promo (${promo.code?.code ?? ""})`)}</span>
-                        <span>-{formatPrice(summary.promoDiscount)}</span>
+                      <div className="flex justify-between gap-3 text-primary">
+                        <span className="text-xs">
+                          {t(`ส่วนลดโค้ด (${promo.code?.code ?? ""})`, `Promo (${promo.code?.code ?? ""})`)}
+                        </span>
+                        <span className="tabular-nums">-{formatPrice(summary.promoDiscount)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-zinc-600">
-                      <span>{t("ค่าส่ง", "Shipping")}</span>
-                      <span>{summary.shipping === 0 ? t("ฟรี 🎉", "Free") : formatPrice(summary.shipping)}</span>
+                    <div className="flex justify-between gap-3 text-zinc-600">
+                      <span className="text-xs text-zinc-500">{t("ค่าจัดส่ง", "Shipping")}</span>
+                      <span className="tabular-nums text-zinc-800">
+                        {summary.shipping === 0 ? t("ฟรี", "Free") : formatPrice(summary.shipping)}
+                      </span>
                     </div>
-                    <Separator />
-                    <div className="flex justify-between text-base font-bold text-zinc-900">
-                      <span>{t("ยอดสุทธิ", "Total")}</span>
-                      <span className="text-primary">{formatPrice(summary.total)}</span>
+                    <Separator className="my-1 bg-zinc-100" />
+                    <div className="flex justify-between gap-3 pt-0.5 text-zinc-900">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        {t("ยอดสุทธิ", "Total")}
+                      </span>
+                      <span className="text-lg font-semibold tabular-nums text-primary">{formatPrice(summary.total)}</span>
                     </div>
                   </div>
 
@@ -548,6 +564,11 @@ export function CheckoutPageClient({
                       </span>
                     </div>
                   )}
+
+                  <Separator className="bg-zinc-100" />
+                  <LineParcelTrackingCta>
+                    {t("ติดตามสถานะพัสดุผ่าน Line", "Track parcel status on LINE")}
+                  </LineParcelTrackingCta>
 
                   {submitError && (
                     <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{submitError}</p>

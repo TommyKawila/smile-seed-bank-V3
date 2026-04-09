@@ -7,6 +7,8 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronLeft, CreditCard, Upload, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackingCta";
 import { formatPrice } from "@/lib/utils";
 import generatePayload from "promptpay-qr";
 import QRCode from "qrcode";
@@ -121,9 +123,22 @@ export default function PaymentPage() {
         >
           {/* Order Summary */}
           <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">ยอดที่ต้องชำระ</p>
-            <p className="mt-1 text-3xl font-extrabold text-primary">{formatPrice(order.total_amount)}</p>
-            <p className="mt-1 text-sm text-zinc-500">เลขออเดอร์ #{orderNumber}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">เลขออเดอร์</p>
+                <p className="mt-0.5 font-mono text-sm font-semibold text-zinc-900">#{orderNumber}</p>
+              </div>
+              <span className="shrink-0 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium text-zinc-600">
+                รอชำระเงิน
+              </span>
+            </div>
+            <Separator className="my-4 bg-zinc-100" />
+            <div className="flex items-end justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">ยอดสุทธิ</p>
+              <p className="text-2xl font-bold tabular-nums text-primary">{formatPrice(order.total_amount)}</p>
+            </div>
+            <Separator className="my-4 bg-zinc-100" />
+            <LineParcelTrackingCta />
           </div>
 
           {/* Bank Details */}

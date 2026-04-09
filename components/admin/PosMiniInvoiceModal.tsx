@@ -38,7 +38,7 @@ type BankRow = {
   accountName: string;
 };
 
-/** Standard storefront track URL — no LIFF / liff.line.me. */
+/** Storefront HTTPS track URL (same origin as `getSiteOrigin()`). */
 function trackUrlForInvoice(orderId: string): string {
   return `${getSiteOrigin()}/track/${orderId}`;
 }
