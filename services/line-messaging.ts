@@ -3,6 +3,7 @@
 // Requires LINE_ADMIN_USER_ID in .env.local (e.g. LINE_ADMIN_USER_ID="Uxxxxxxxxxxxx")
 
 import { getSiteOrigin } from "@/lib/get-url";
+import { appendLineOpenExternalBrowserParam } from "@/lib/line-flex";
 
 const LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push";
 const LINE_BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast";
@@ -253,10 +254,12 @@ export async function sendCustomerShippingAlert(opts: {
   const trackUrl = buildCarrierTrackingUrl(opts.trackingNumber, opts.shippingProvider);
 
   const origin = getSiteOrigin();
-  const orderDeepLink =
+  const orderDeepLinkRaw =
     opts.orderId != null
       ? `${origin}/profile?tab=orders&open=${opts.orderId}`
       : `${origin}/profile?tab=orders`;
+  const orderDeepLink = appendLineOpenExternalBrowserParam(orderDeepLinkRaw);
+  const trackUrlExternal = appendLineOpenExternalBrowserParam(trackUrl);
 
   const message = {
     type: "flex",
@@ -350,7 +353,7 @@ export async function sendCustomerShippingAlert(opts: {
             action: {
               type: "uri",
               label: "🔍 ติดตามพัสดุ",
-              uri: trackUrl,
+              uri: trackUrlExternal,
             },
           },
           {

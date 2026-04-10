@@ -54,26 +54,26 @@ export async function sendLineFlexNotification(
   kind: "PAYMENT_CONFIRMED" | "ORDER_SHIPPED",
   ship?: { trackingNumber: string; shippingProvider: string }
 ): Promise<void> {
-  console.log("LINE_DEBUG: Fetching order:", orderId);
-  const detail = await loadAdminOrderDetail(orderId);
-  if (!detail) {
-    console.warn(`[LINE flex notify] orderId=${orderId} kind=${kind} skipped: order not found`);
-    return;
-  }
-
-  console.log("LINE_DEBUG: Order Line ID:", detail.lineUserId ?? null);
-  console.log("LINE_DEBUG: Token Length:", process.env.LINE_CHANNEL_ACCESS_TOKEN?.length || 0);
-
-  const lineUid = detail.lineUserId?.trim();
-  if (!lineUid) {
-    console.warn(`[LINE flex notify] orderId=${orderId} kind=${kind} skipped: no line_user_id`);
-    return;
-  }
-
-  const origin = getSiteOrigin();
-  const detailUrl = `${origin}/order-success/${encodeURIComponent(detail.orderNumber)}`;
-
   try {
+    console.log("LINE_DEBUG: Fetching order:", orderId);
+    const detail = await loadAdminOrderDetail(orderId);
+    if (!detail) {
+      console.warn(`[LINE flex notify] orderId=${orderId} kind=${kind} skipped: order not found`);
+      return;
+    }
+
+    console.log("LINE_DEBUG: Order Line ID:", detail.lineUserId ?? null);
+    console.log("LINE_DEBUG: Token Length:", process.env.LINE_CHANNEL_ACCESS_TOKEN?.length || 0);
+
+    const lineUid = detail.lineUserId?.trim();
+    if (!lineUid) {
+      console.warn(`[LINE flex notify] orderId=${orderId} kind=${kind} skipped: no line_user_id`);
+      return;
+    }
+
+    const origin = getSiteOrigin();
+    const detailUrl = `${origin}/order-success/${encodeURIComponent(detail.orderNumber)}`;
+
     if (kind === "PAYMENT_CONFIRMED") {
       const flex = generatePaymentConfirmedFlexMessage(detailToFlexInput(detail));
       const result = await pushFlexMessageToLineUser(lineUid, flex);

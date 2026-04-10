@@ -1,6 +1,24 @@
 import { getSiteOrigin } from "@/lib/get-url";
 import { computeOrderReceiptFinancials, type OrderReceiptDetailInput } from "@/lib/order-receipt-math";
 
+/**
+ * LINE in-app WebView blocks some OAuth flows (e.g. Google). Appending `openExternalBrowser=1`
+ * asks many LINE clients to open the URL in the system browser instead of the in-app WebView.
+ */
+export function appendLineOpenExternalBrowserParam(url: string): string {
+  const raw = url.trim();
+  if (!raw) return raw;
+  try {
+    const u = new URL(raw);
+    if (u.searchParams.get("openExternalBrowser") === "1") return raw;
+    u.searchParams.set("openExternalBrowser", "1");
+    return u.toString();
+  } catch {
+    if (/[?&]openExternalBrowser=1(?:&|$|#)/.test(raw)) return raw;
+    return raw.includes("?") ? `${raw}&openExternalBrowser=1` : `${raw}?openExternalBrowser=1`;
+  }
+}
+
 export type OrderFlexMessageInput = OrderReceiptDetailInput & {
   orderNumber: string;
   customerName: string | null;
@@ -46,7 +64,10 @@ type MiniReceiptParts = {
 };
 
 function buildMiniReceiptFlexParts(order: OrderFlexMessageInput): MiniReceiptParts {
-  const receiptDownloadUri = order.receiptDownloadUri?.trim() || null;
+  const receiptDownloadUriRaw = order.receiptDownloadUri?.trim() || null;
+  const receiptDownloadUri = receiptDownloadUriRaw
+    ? appendLineOpenExternalBrowserParam(receiptDownloadUriRaw)
+    : null;
   const { itemsGrossSubtotal, discountForPdf, shippingFee, grandTotal } = computeOrderReceiptFinancials(order);
   const orderNum = order.orderNumber.trim() || "—";
 
@@ -215,7 +236,9 @@ function buildMiniReceiptFlexParts(order: OrderFlexMessageInput): MiniReceiptPar
   ];
 
   const origin = getSiteOrigin();
-  const detailUrl = `${origin}/order-success/${encodeURIComponent(orderNum)}`;
+  const detailUrl = appendLineOpenExternalBrowserParam(
+    `${origin}/order-success/${encodeURIComponent(orderNum)}`
+  );
   const bodyContents = [...itemNodes, ...financialRows, ...shipBlock];
 
   return {
@@ -416,7 +439,7 @@ export function generateOrderShippedFlexMessage(input: ShippedFlexInput): {
           action: {
             type: "uri" as const,
             label: "ติดตามพัสดุ / Track parcel",
-            uri: input.trackingUrl,
+            uri: appendLineOpenExternalBrowserParam(input.trackingUrl),
           },
         },
       ]
@@ -497,7 +520,7 @@ export function generateOrderShippedFlexMessage(input: ShippedFlexInput): {
             action: {
               type: "uri",
               label: "ดูสถานะออเดอร์ / View order",
-              uri: input.detailUrl,
+              uri: appendLineOpenExternalBrowserParam(input.detailUrl),
             },
           },
         ],

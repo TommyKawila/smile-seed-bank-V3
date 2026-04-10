@@ -70,11 +70,18 @@ export async function approvePayment(orderId: number): Promise<ServiceResult<nul
   try {
     const sql = getSql();
     await sql`UPDATE orders SET status = 'PAID', reject_note = NULL WHERE id = ${orderId}`;
-    void sendLineFlexNotification(orderId, "PAYMENT_CONFIRMED");
+
+    console.log("LOG: DB Updated, attempting LINE notification...");
+    try {
+      await sendLineFlexNotification(orderId, "PAYMENT_CONFIRMED");
+    } catch (lineErr) {
+      console.error("LOG: LINE Notification failed internally:", lineErr);
+    }
+
     return { data: null, error: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[orders-service] approvePayment error:", msg);
+    console.error("LOG: Main ApprovePayment process crashed:", err);
     return { data: null, error: msg };
   }
 }
