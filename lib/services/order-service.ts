@@ -46,6 +46,7 @@ export interface CreateOrderInput {
   payment_method: string;
   customer_id: string | null;
   promo_code_id: number | null;
+  order_note?: string | null;
 }
 
 export interface CreateOrderResult {
@@ -61,6 +62,29 @@ export interface OrderPublicView {
   slip_url: string | null;
 }
 
+export interface OrderSuccessItemRow {
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+export interface OrderSuccessView {
+  order_number: string;
+  status: string;
+  total_amount: number;
+  shipping_address: string | null;
+  payment_method: string | null;
+  slip_url: string | null;
+  items: OrderSuccessItemRow[];
+}
+
+export type OrderSuccessViewError =
+  | "not_found"
+  | "login_required"
+  | "forbidden"
+  | "server";
+
 export type ServiceResult<T> = { data: T | null; error: string | null };
 
 // ─── createOrder ─────────────────────────────────────────────────────────────
@@ -73,7 +97,9 @@ export async function createOrder(
   input: CreateOrderInput
 ): Promise<ServiceResult<CreateOrderResult>> {
   try {
-    const { customer, items, summary, payment_method, customer_id, promo_code_id } = input;
+    const { customer, items, summary, payment_method, customer_id, promo_code_id, order_note } =
+      input;
+    const noteTrimmed = order_note?.trim() ?? "";
     const resolvedCustomerId = customer_id ?? null;
 
     const variantIds = [...new Set(items.map((i) => i.variantId))];
@@ -141,6 +167,7 @@ export async function createOrder(
           total_amount: new Prisma.Decimal(summary.total),
           total_cost: new Prisma.Decimal(totalCost),
           status: "PENDING",
+          ...(noteTrimmed ? { customer_note: noteTrimmed } : {}),
         },
       });
 
@@ -190,6 +217,80 @@ export async function createOrder(
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[order-service] createOrder error:", msg);
     return { data: null, error: msg };
+  }
+}
+
+// ─── getOrderForSuccessView ───────────────────────────────────────────────────
+
+/**
+ * Order success page payload. If order has `customer_id`, only the same logged-in user may view it;
+ * guest orders (`customer_id` null) are readable by anyone with the order number.
+ */
+export async function getOrderForSuccessView(
+  orderNumber: string,
+  requesterUserId: string | null
+): Promise<{ data: OrderSuccessView | null; error: OrderSuccessViewError | null }> {
+  try {
+    const sql = getSql();
+    const rows = await sql<
+      {
+        id: number;
+        customer_id: string | null;
+        order_number: string;
+        status: string | null;
+        total_amount: string;
+        shipping_address: string | null;
+        payment_method: string | null;
+        slip_url: string | null;
+      }[]
+    >`
+      SELECT id, customer_id, order_number, status, total_amount::text AS total_amount,
+             shipping_address, payment_method, slip_url
+      FROM orders
+      WHERE order_number = ${orderNumber}
+      LIMIT 1
+    `;
+    const order = rows[0];
+    if (!order) return { data: null, error: "not_found" };
+
+    if (order.customer_id != null) {
+      if (!requesterUserId) return { data: null, error: "login_required" };
+      if (order.customer_id !== requesterUserId) return { data: null, error: "forbidden" };
+    }
+
+    const itemRows = await sql<{ product_name: string; quantity: number; unit_price: string }[]>`
+      SELECT product_name, quantity, unit_price::text AS unit_price
+      FROM order_items
+      WHERE order_id = ${order.id}
+      ORDER BY id ASC
+    `;
+
+    const items: OrderSuccessItemRow[] = itemRows.map((r) => {
+      const unit = Number(r.unit_price);
+      const qty = r.quantity;
+      return {
+        product_name: r.product_name,
+        quantity: qty,
+        unit_price: unit,
+        line_total: unit * qty,
+      };
+    });
+
+    return {
+      data: {
+        order_number: order.order_number,
+        status: order.status ?? "UNKNOWN",
+        total_amount: Number(order.total_amount),
+        shipping_address: order.shipping_address,
+        payment_method: order.payment_method,
+        slip_url: order.slip_url,
+        items,
+      },
+      error: null,
+    };
+  } catch (err) {
+    console.error("[order-service] getOrderForSuccessView error:", err);
+    return { data: null, error: "server" };
   }
 }
 
@@ -365,10 +466,12 @@ export async function fetchEmailItems(
       WHERE pv.id IN ${sql(variantIds)}
     `;
 
-    const infoMap = new Map(rows.map((r) => [r.variant_id, r]));
+    const infoMap = new Map(
+      rows.map((r) => [Number(r.variant_id), r] as const)
+    );
 
     return checkoutItems.map((item) => {
-      const info = infoMap.get(item.variantId);
+      const info = infoMap.get(Number(item.variantId));
       if (!info) {
         return {
           variantId: item.variantId,

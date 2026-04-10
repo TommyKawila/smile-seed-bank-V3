@@ -108,7 +108,7 @@ function QrUpload({
 }
 
 const emptyBank: BankAccount = { bankName: "", accountName: "", accountNo: "", isActive: true };
-const emptyPromptPay: PromptPay = { identifier: "", qrUrl: "", isActive: true };
+const emptyPromptPay: PromptPay = { identifier: "", qrUrl: "", isActive: true, codEnabled: false };
 const emptyCrypto: CryptoWallet = { network: "", address: "", qrUrl: "", isActive: true };
 
 export default function PaymentSettingsPage() {
@@ -332,6 +332,13 @@ export default function PaymentSettingsPage() {
                 onCheckedChange={(v) => updatePromptPay("isActive", v)}
               />
               <Label className="text-xs">เปิดใช้งาน</Label>
+            </div>
+            <div className="flex items-center gap-2 border-t border-zinc-100 pt-3">
+              <Switch
+                checked={form.promptPay?.codEnabled ?? false}
+                onCheckedChange={(v) => updatePromptPay("codEnabled", v)}
+              />
+              <Label className="text-xs">แสดงช่องทาง COD หน้า Checkout</Label>
             </div>
           </CardContent>
         </Card>

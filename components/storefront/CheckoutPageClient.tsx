@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { Loader2, ShoppingBag, ChevronLeft, ShieldCheck, Tag, Sparkles } from "lucide-react";
+import generatePayload from "promptpay-qr";
+import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,13 +17,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCartContext } from "@/context/CartContext";
 import { useAuth } from "@/hooks/use-auth";
 import { DiscountProgressBar } from "@/components/storefront/DiscountProgressBar";
-import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackingCta";
 import { LoginForPromoDialog } from "@/components/storefront/LoginForPromoDialog";
 import { useLanguage, type Locale } from "@/context/LanguageContext";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
 import { createClient } from "@/lib/supabase/client";
 import { getURL } from "@/lib/get-url";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import type { PaymentSetting } from "@/lib/payment-settings-public";
 import { toast } from "sonner";
 
@@ -42,6 +43,7 @@ const CheckoutFormSchema = z.object({
   full_name: z.string().min(2, "กรุณาระบุชื่อ-นามสกุล"),
   phone: z.string().min(9, "เบอร์โทรศัพท์ไม่ถูกต้อง").max(15),
   address: z.string().min(10, "กรุณาระบุที่อยู่จัดส่ง (อย่างน้อย 10 ตัวอักษร)"),
+  order_note: z.string().max(2000).optional().default(""),
   payment_method: z.enum(["TRANSFER", "CRYPTO", "COD", "CASH"]),
 });
 
@@ -97,22 +99,50 @@ function OrderItemRow({
 export type CheckoutPageClientProps = {
   paymentSettings: PaymentSetting[];
   paymentSettingsError: boolean;
+  storefrontCryptoEnabled: boolean;
+  storefrontCodEnabled: boolean;
 };
 
 export function CheckoutPageClient({
   paymentSettings,
   paymentSettingsError,
+  storefrontCryptoEnabled,
+  storefrontCodEnabled,
 }: CheckoutPageClientProps) {
   const router = useRouter();
   const { items, summary, promo, tieredDiscountRules, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount } = useCartContext();
   const { user, customer } = useAuth();
   const { locale, t } = useLanguage();
 
-  const paymentMethodOptions: { value: CheckoutForm["payment_method"]; label: string; desc: string }[] = [
-    { value: "TRANSFER", label: t("โอนเงิน", "Bank Transfer"), desc: t("ธนาคาร / PromptPay", "Bank / PromptPay") },
-    { value: "CRYPTO", label: t("คริปโต", "Crypto"), desc: t("USDT / BTC", "USDT / BTC") },
-    { value: "COD", label: "COD", desc: t("เก็บเงินปลายทาง", "Cash on delivery") },
-  ];
+  const allowedPaymentOptions = useMemo(
+    () =>
+      [
+        {
+          value: "TRANSFER" as const,
+          label: t("โอนเงิน", "Bank Transfer"),
+          desc: t("ธนาคาร / PromptPay", "Bank / PromptPay"),
+        },
+        ...(storefrontCryptoEnabled
+          ? [
+              {
+                value: "CRYPTO" as const,
+                label: t("คริปโต", "Crypto"),
+                desc: t("USDT / BTC", "USDT / BTC"),
+              },
+            ]
+          : []),
+        ...(storefrontCodEnabled
+          ? [
+              {
+                value: "COD" as const,
+                label: "COD",
+                desc: t("เก็บเงินปลายทาง", "Cash on delivery"),
+              },
+            ]
+          : []),
+      ],
+    [storefrontCryptoEnabled, storefrontCodEnabled, t]
+  );
 
   const [ordersCount, setOrdersCount] = useState<number | null>(null);
   const [promoInput, setPromoInput] = useState("");
@@ -122,8 +152,10 @@ export function CheckoutPageClient({
     full_name: "",
     phone: "",
     address: "",
+    order_note: "",
     payment_method: "TRANSFER",
   });
+  const [promptPayQrDataUrl, setPromptPayQrDataUrl] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof CheckoutForm, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -142,6 +174,50 @@ export function CheckoutPageClient({
       }));
     }
   }, [customer]);
+
+  useEffect(() => {
+    setForm((prev) => {
+      const allowed = new Set<CheckoutForm["payment_method"]>(["TRANSFER"]);
+      if (storefrontCryptoEnabled) allowed.add("CRYPTO");
+      if (storefrontCodEnabled) allowed.add("COD");
+      if (allowed.has(prev.payment_method)) return prev;
+      return { ...prev, payment_method: "TRANSFER" };
+    });
+  }, [storefrontCryptoEnabled, storefrontCodEnabled]);
+
+  useEffect(() => {
+    const pp = paymentSettings.find((p) => p.source === "promptpay");
+    const id = pp?.account_number?.trim();
+    if (form.payment_method !== "TRANSFER" || !id || paymentSettingsError) {
+      setPromptPayQrDataUrl(null);
+      return;
+    }
+    const amount = summary.total;
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPromptPayQrDataUrl(null);
+      return;
+    }
+    let cancelled = false;
+    try {
+      const payload = generatePayload(id, { amount });
+      void QRCode.toDataURL(payload, {
+        width: 280,
+        margin: 2,
+        color: { dark: "#0f172a", light: "#ffffff" },
+      })
+        .then((url) => {
+          if (!cancelled) setPromptPayQrDataUrl(url);
+        })
+        .catch(() => {
+          if (!cancelled) setPromptPayQrDataUrl(null);
+        });
+    } catch {
+      setPromptPayQrDataUrl(null);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [form.payment_method, paymentSettings, paymentSettingsError, summary.total]);
 
   useEffect(() => {
     if (!user) {
@@ -212,6 +288,14 @@ export function CheckoutPageClient({
       return;
     }
 
+    const allowedIds = new Set(allowedPaymentOptions.map((p) => p.value));
+    if (!allowedIds.has(parsed.data.payment_method)) {
+      setSubmitError(
+        t("ช่องทางชำระเงินนี้ไม่เปิดใช้งาน", "This payment method is not available.")
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const res = await fetch("/api/storefront/orders", {
@@ -224,6 +308,7 @@ export function CheckoutPageClient({
             address: parsed.data.address,
             email: user?.email ?? null,
           },
+          order_note: parsed.data.order_note?.trim() || null,
           items: items.map((i) => ({
             variantId: i.variantId,
             quantity: i.quantity,
@@ -263,7 +348,7 @@ export function CheckoutPageClient({
       if (parsed.data.payment_method === "TRANSFER") {
         router.push(`/payment/${orderNumber}`);
       } else {
-        router.push(`/order-success?order=${orderNumber}`);
+        router.push(`/order-success/${encodeURIComponent(orderNumber)}`);
       }
     } catch (err) {
       setSubmitError(String(err).replace("Error: ", ""));
@@ -349,6 +434,23 @@ export function CheckoutPageClient({
                       <p className="text-xs text-red-500">{fieldErrors.address}</p>
                     )}
                   </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="order_note">
+                      {t("หมายเหตุถึงผู้ขาย (ไม่บังคับ)", "Order note (optional)")}
+                    </Label>
+                    <Textarea
+                      id="order_note"
+                      value={form.order_note}
+                      onChange={(e) => setField("order_note", e.target.value)}
+                      placeholder={t("เช่น วันเวลาที่สะดวกรับ", "e.g. preferred delivery time")}
+                      rows={3}
+                      className="resize-none"
+                    />
+                    {fieldErrors.order_note && (
+                      <p className="text-xs text-red-500">{fieldErrors.order_note}</p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -358,8 +460,15 @@ export function CheckoutPageClient({
                   {fieldErrors.payment_method && (
                     <p className="text-xs text-red-500">{fieldErrors.payment_method}</p>
                   )}
-                  <div className="grid grid-cols-3 gap-2">
-                    {paymentMethodOptions.map((pm) => (
+                  <div
+                    className={cn(
+                      "grid gap-2",
+                      allowedPaymentOptions.length === 1 && "grid-cols-1",
+                      allowedPaymentOptions.length === 2 && "grid-cols-2",
+                      allowedPaymentOptions.length >= 3 && "grid-cols-3"
+                    )}
+                  >
+                    {allowedPaymentOptions.map((pm) => (
                       <button
                         key={pm.value}
                         type="button"
@@ -425,7 +534,21 @@ export function CheckoutPageClient({
                                 <span className="font-medium text-zinc-900">{pm.account_name}</span>
                               </div>
                             )}
-                            {pm.qr_code_url ? (
+                            {pm.source === "promptpay" && promptPayQrDataUrl ? (
+                              <div className="mx-auto mt-2 flex w-[220px] max-w-full justify-center">
+                                <Image
+                                  src={promptPayQrDataUrl}
+                                  alt={t(
+                                    "QR พร้อมเพย์ตามยอดออเดอร์",
+                                    "PromptPay QR with order amount"
+                                  )}
+                                  width={QR_IMAGE_SIZE}
+                                  height={QR_IMAGE_SIZE}
+                                  className="h-[220px] w-[220px] max-w-full rounded-lg border border-zinc-200 object-contain"
+                                  unoptimized
+                                />
+                              </div>
+                            ) : pm.qr_code_url ? (
                               <div className="mx-auto mt-2 flex w-[220px] max-w-full justify-center">
                                 <Image
                                   src={pm.qr_code_url}
@@ -580,11 +703,6 @@ export function CheckoutPageClient({
                       </span>
                     </div>
                   )}
-
-                  <Separator className="bg-zinc-100" />
-                  <LineParcelTrackingCta>
-                    {t("ติดตามสถานะพัสดุผ่าน Line", "Track parcel status on LINE")}
-                  </LineParcelTrackingCta>
 
                   {submitError && (
                     <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{submitError}</p>

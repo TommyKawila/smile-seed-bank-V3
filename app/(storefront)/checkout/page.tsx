@@ -7,9 +7,15 @@ export const dynamic = "force-dynamic";
 
 /** Server-only: payment settings use Supabase server client + strict select in fetchCheckoutPaymentSettings. */
 async function CheckoutWithPaymentData() {
-  const { settings, error } = await fetchCheckoutPaymentSettings();
+  const { settings, error, storefrontCryptoEnabled, storefrontCodEnabled } =
+    await fetchCheckoutPaymentSettings();
   return (
-    <CheckoutPageClient paymentSettings={settings} paymentSettingsError={error} />
+    <CheckoutPageClient
+      paymentSettings={settings}
+      paymentSettingsError={error}
+      storefrontCryptoEnabled={storefrontCryptoEnabled}
+      storefrontCodEnabled={storefrontCodEnabled}
+    />
   );
 }
 

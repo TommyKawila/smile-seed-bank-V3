@@ -1,3 +1,4 @@
+import { cartItemPackDescription, type CartPackLocale } from "@/lib/cart-pack-display";
 import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
 import { lineOaUrlWithOrderHint } from "@/lib/line-oa-url";
 import type { EmailItem } from "@/lib/services/order-service";
@@ -63,14 +64,20 @@ export function buildOrderConfirmationHtml(opts: {
   shippingAddress: string;
   locale: string;
   logoUrl: string | null;
+  /** Dynamic amount-encoded PromptPay QR (data URL). Takes precedence over static qrUrl. */
+  promptPayQrDataUrl?: string | null;
+  /** Shown next to PromptPay row; QR payload should use the same ID. */
+  promptPayDisplayId?: string | null;
 }): string {
   const { locale, paymentMethod } = opts;
+  const packLocale: CartPackLocale = locale === "en" ? "en" : "th";
   const isTransfer = paymentMethod === "TRANSFER";
   const pendingPayment = ["PENDING", "PENDING_PAYMENT"].includes(opts.orderStatus);
   const hasPaymentData =
     opts.payment.bank ||
     opts.payment.promptPay?.identifier ||
-    opts.payment.promptPay?.qrUrl;
+    opts.payment.promptPay?.qrUrl ||
+    !!opts.promptPayQrDataUrl;
   const showPaymentBlock = isTransfer && pendingPayment && hasPaymentData;
 
   const itemRows = opts.items
@@ -78,8 +85,13 @@ export function buildOrderConfirmationHtml(opts: {
       const lineTotal = i.price * i.qty;
       const breeder = i.breederName ? esc(i.breederName) : "—";
       const gen = i.genetics ? esc(i.genetics) : "—";
-      const typ = esc(i.typeLabel);
-      const pack = i.unitLabel ? esc(i.unitLabel) : "";
+      const typ = i.typeLabel && i.typeLabel !== "—" ? esc(i.typeLabel) : "—";
+      const packLine = cartItemPackDescription(
+        { unitLabel: i.unitLabel || "", quantity: i.qty, isFreeGift: false },
+        packLocale,
+        { includeLineQuantity: true }
+      );
+      const pack = packLine ? esc(packLine) : "";
       return `
     <tr>
       <td style="padding:14px 8px 14px 0;border-bottom:1px solid #e4e4e7;vertical-align:top">
@@ -94,11 +106,11 @@ export function buildOrderConfirmationHtml(opts: {
             <td style="padding:0 0 4px;vertical-align:top">${gen}</td>
           </tr>
           <tr>
-            <td style="padding:0 8px 0 0;vertical-align:top">${L(locale, "ประเภท", "Type")}</td>
+            <td style="padding:0 8px 0 0;vertical-align:top">${L(locale, "ประเภทเมล็ด", "Seed type")}</td>
             <td style="padding:0;vertical-align:top">${typ}</td>
           </tr>
         </table>
-        ${pack ? `<p style="margin:8px 0 0;color:#a1a1aa;font-size:11px">${L(locale, "แพ็ก", "Pack")}: ${pack}</p>` : ""}
+        ${pack ? `<p style="margin:8px 0 0;color:#a1a1aa;font-size:11px;font-variant-numeric:tabular-nums">${L(locale, "แพ็กเกจ", "Packaging")}: ${pack}</p>` : ""}
       </td>
       <td style="padding:14px 8px;border-bottom:1px solid #e4e4e7;text-align:center;color:#52525b;font-size:14px;vertical-align:top;font-variant-numeric:tabular-nums">${i.qty}</td>
       <td style="padding:14px 0 14px 8px;border-bottom:1px solid #e4e4e7;text-align:right;color:#18181b;font-size:14px;font-weight:600;vertical-align:top">${moneySpan(lineTotal, locale)}</td>
@@ -116,7 +128,7 @@ export function buildOrderConfirmationHtml(opts: {
       : "";
 
   const logoHtml = opts.logoUrl
-    ? `<img src="${esc(opts.logoUrl)}" alt="Smile Seed Bank" style="max-height:52px;max-width:180px;object-fit:contain;display:block;margin:0 auto 10px">`
+    ? `<img src="${esc(opts.logoUrl)}" alt="Smile Seed Bank" width="240" height="64" style="max-height:64px;max-width:240px;width:auto;height:auto;object-fit:contain;display:block;margin:0 auto 10px">`
     : `<span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px">Smile Seed Bank</span>`;
 
   let paymentSection = "";
@@ -137,22 +149,28 @@ export function buildOrderConfirmationHtml(opts: {
           <td style="padding:8px 0;color:#27272a;font-size:14px;border-top:1px solid #e4e4e7">${esc(opts.payment.bank.accountName)}</td>
         </tr>`);
     }
-    if (opts.payment.promptPay?.identifier) {
+    const ppDisplay =
+      opts.promptPayDisplayId?.trim() || opts.payment.promptPay?.identifier?.trim() || "";
+    if (ppDisplay) {
       rows.push(`
         <tr>
           <td style="padding:8px 12px 0 0;color:#71717a;font-size:11px;font-weight:600;text-transform:uppercase;vertical-align:top;border-top:1px solid #e4e4e7">PromptPay</td>
-          <td style="padding:8px 0 0;color:#18181b;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;border-top:1px solid #e4e4e7">${esc(opts.payment.promptPay.identifier)}</td>
+          <td style="padding:8px 0 0;color:#18181b;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;border-top:1px solid #e4e4e7">${esc(ppDisplay)}</td>
         </tr>`);
     }
 
-    const qrBlock =
-      opts.payment.promptPay?.qrUrl && opts.payment.promptPay.qrUrl.startsWith("http")
-        ? `
+    const qrSrc =
+      opts.promptPayQrDataUrl?.trim() ||
+      (opts.payment.promptPay?.qrUrl?.startsWith("http")
+        ? opts.payment.promptPay.qrUrl.trim()
+        : "");
+    const qrBlock = qrSrc
+      ? `
       <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e4e4e7;text-align:center">
-        <p style="margin:0 0 8px;color:#71717a;font-size:11px;font-weight:600;text-transform:uppercase">${L(locale, "สแกน PromptPay", "Scan PromptPay")}</p>
-        <img src="${esc(opts.payment.promptPay.qrUrl)}" alt="PromptPay QR" width="200" height="200" style="max-width:200px;height:auto;border-radius:8px;border:1px solid #e4e4e7;display:inline-block">
+        <p style="margin:0 0 8px;color:#71717a;font-size:11px;font-weight:600;text-transform:uppercase">${L(locale, "สแกน PromptPay (ยอดตามออเดอร์)", "Scan PromptPay (order amount)")}</p>
+        <img src="${esc(qrSrc)}" alt="PromptPay QR" width="200" height="200" style="max-width:200px;width:200px;height:200px;border-radius:8px;border:1px solid #e4e4e7;display:inline-block">
       </div>`
-        : "";
+      : "";
 
     paymentSection = `
   <div style="margin:24px 0;border:1px solid #e4e4e7;border-radius:12px;overflow:hidden;background:#fafafa">

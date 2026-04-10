@@ -6,7 +6,11 @@ import {
   buildOrderConfirmationHtml,
   loadPaymentBlocksForEmail,
 } from "@/lib/email-order-confirmation-html";
+import { promptPayAmountQrDataUrl } from "@/lib/promptpay-qr-node";
 import type { EmailItem } from "@/lib/services/order-service";
+
+/** Official PromptPay ID for transactional emails (amount-encoded QR). */
+const PROMPTPAY_ID_ORDER_EMAIL = "0897553362";
 
 const RESEND_URL = "https://api.resend.com/emails";
 const FROM_EMAIL = "Smile Seed Bank <orders@smileseedbank.com>";
@@ -58,6 +62,14 @@ export async function sendOrderConfirmationEmail(opts: {
   const locale = opts.locale ?? "th";
   const logoUrl = await fetchLogoUrl();
   const payment = await loadPaymentBlocksForEmail();
+  const pm = opts.paymentMethod ?? "TRANSFER";
+  const st = opts.orderStatus ?? "PENDING";
+  const transferPending =
+    pm === "TRANSFER" && ["PENDING", "PENDING_PAYMENT"].includes(st);
+  const promptPayQrDataUrl =
+    transferPending && opts.total > 0
+      ? await promptPayAmountQrDataUrl(PROMPTPAY_ID_ORDER_EMAIL, opts.total)
+      : null;
 
   try {
     const res = await fetch(RESEND_URL, {
@@ -77,8 +89,8 @@ export async function sendOrderConfirmationEmail(opts: {
           orderNumber: opts.orderNumber,
           orderId: opts.orderId,
           customerName: opts.toName,
-          paymentMethod: opts.paymentMethod ?? "TRANSFER",
-          orderStatus: opts.orderStatus ?? "PENDING",
+          paymentMethod: pm,
+          orderStatus: st,
           items: opts.items,
           payment,
           freeGiftCount: opts.freeGiftCount ?? 0,
@@ -89,6 +101,8 @@ export async function sendOrderConfirmationEmail(opts: {
           shippingAddress: opts.shippingAddress,
           locale,
           logoUrl,
+          promptPayQrDataUrl,
+          promptPayDisplayId: PROMPTPAY_ID_ORDER_EMAIL,
         }),
       }),
     });

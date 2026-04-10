@@ -11,6 +11,8 @@ export const PromptPaySchema = z.object({
   identifier: z.string(),
   qrUrl: z.union([z.string().url(), z.literal("")]).optional(),
   isActive: z.boolean().default(true),
+  /** Storefront checkout: show COD payment tab when true. */
+  codEnabled: z.boolean().optional().default(false),
 });
 
 export const CryptoWalletSchema = z.object({

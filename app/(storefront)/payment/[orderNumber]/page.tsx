@@ -79,7 +79,7 @@ export default function PaymentPage() {
       const res = await fetch("/api/storefront/orders/upload-slip", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Upload failed");
-      router.push(`/order-success?order=${orderNumber}`);
+      router.push(`/order-success/${encodeURIComponent(orderNumber)}`);
     } catch (err) {
       setUploadError(String(err).replace("Error: ", ""));
     } finally {
