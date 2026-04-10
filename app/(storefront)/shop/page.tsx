@@ -28,6 +28,7 @@ import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { formatPrice } from "@/lib/utils";
 import { productDetailHref } from "@/lib/product-utils";
+import { toast } from "sonner";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTranslations } from "@/hooks/use-translations";
@@ -107,7 +108,7 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
     e.preventDefault();
     e.stopPropagation();
     if (defaultVariant) {
-      addToCart({
+      const { error } = addToCart({
         variantId: defaultVariant.id,
         productId: product.id,
         productName: product.name,
@@ -115,8 +116,13 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
         unitLabel: defaultVariant.unit_label,
         price: defaultVariant.price,
         quantity: 1,
+        stock_quantity: defaultVariant.stock ?? 0,
         masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
       });
+      if (error) {
+        toast.error(error);
+        return;
+      }
     } else {
       openCart();
     }

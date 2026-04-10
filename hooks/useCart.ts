@@ -43,6 +43,7 @@ const AddToCartSchema = z.object({
   unitLabel: z.string().min(1),
   price: z.number().positive("ราคาต้องมากกว่า 0"),
   quantity: z.number().int().positive("จำนวนต้องมากกว่า 0"),
+  stock_quantity: z.number().int().min(0).optional(),
   masterSku: z.string().nullable().optional(),
   breeder_id: z.number().int().positive().nullable().optional(),
 });
@@ -68,7 +69,7 @@ interface UseCartReturn {
   isValidatingPromo: boolean;
   addToCart: (item: Omit<CartItem, "isFreeGift">) => { error: string | null };
   removeFromCart: (variantId: number) => void;
-  updateQuantity: (variantId: number, quantity: number) => void;
+  updateQuantity: (variantId: number, quantity: number) => { ok: boolean; maxStock?: number };
   applyPromoCode: (code: string, customerEmail?: string | null, customerPhone?: string | null, customerUserId?: string | null) => Promise<{ success: boolean; requireLogin?: boolean; attemptedCode?: string; message?: string }>;
   clearPromoCode: () => void;
   clearCart: () => void;
@@ -235,29 +236,51 @@ export function useCart(): UseCartReturn {
 
   const addToCart = useCallback(
     (itemData: Omit<CartItem, "isFreeGift">): { error: string | null } => {
-      // Zod validation — ตรวจสอบข้อมูลก่อนเพิ่มลงตะกร้าทุกครั้ง
       const parsed = AddToCartSchema.safeParse(itemData);
       if (!parsed.success) {
         return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
       }
 
-      const { variantId, quantity } = parsed.data;
+      const { variantId, quantity: addQty } = parsed.data;
+      const cap = parsed.data.stock_quantity;
 
+      let mergeError: string | null = null;
       setItems((prev) => {
         const existing = prev.find(
           (i) => i.variantId === variantId && !i.isFreeGift
         );
+        const maxStock =
+          existing?.stock_quantity !== undefined
+            ? existing.stock_quantity
+            : cap;
+
         if (existing) {
+          const nextQty = existing.quantity + addQty;
+          if (maxStock !== undefined && nextQty > maxStock) {
+            mergeError = `ขออภัย สินค้าชิ้นนี้มีสต็อกเพียง ${maxStock} ชิ้นเท่านั้น`;
+            return prev;
+          }
           return prev.map((i) =>
             i.variantId === variantId && !i.isFreeGift
-              ? { ...i, quantity: i.quantity + quantity }
+              ? {
+                  ...i,
+                  quantity: nextQty,
+                  stock_quantity:
+                    maxStock !== undefined ? maxStock : i.stock_quantity,
+                }
               : i
           );
         }
+
+        if (cap !== undefined && addQty > cap) {
+          mergeError = `ขออภัย สินค้าชิ้นนี้มีสต็อกเพียง ${cap} ชิ้นเท่านั้น`;
+          return prev;
+        }
+
         return [...prev, { ...parsed.data, isFreeGift: false }];
       });
 
-      return { error: null };
+      return { error: mergeError };
     },
     []
   );
@@ -266,17 +289,37 @@ export function useCart(): UseCartReturn {
     setItems((prev) => prev.filter((i) => i.variantId !== variantId));
   }, []);
 
-  const updateQuantity = useCallback((variantId: number, quantity: number) => {
-    if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => i.variantId !== variantId));
-      return;
-    }
-    setItems((prev) =>
-      prev.map((i) =>
-        i.variantId === variantId && !i.isFreeGift ? { ...i, quantity } : i
-      )
-    );
-  }, []);
+  const updateQuantity = useCallback(
+    (variantId: number, quantity: number): { ok: boolean; maxStock?: number } => {
+      const out: { ok: boolean; maxStock?: number } = { ok: true };
+      setItems((prev) => {
+        const item = prev.find(
+          (i) => i.variantId === variantId && !i.isFreeGift
+        );
+        if (!item) {
+          out.ok = false;
+          return prev;
+        }
+
+        if (quantity <= 0) {
+          return prev.filter((i) => i.variantId !== variantId);
+        }
+
+        const max = item.stock_quantity;
+        if (max !== undefined && quantity > max) {
+          out.ok = false;
+          out.maxStock = max;
+          return prev;
+        }
+
+        return prev.map((i) =>
+          i.variantId === variantId && !i.isFreeGift ? { ...i, quantity } : i
+        );
+      });
+      return out;
+    },
+    []
+  );
 
   // ── Apply Promo Code — calls validate API (coupon_redemptions + usage_limit) ─
   const applyPromoCode = useCallback(

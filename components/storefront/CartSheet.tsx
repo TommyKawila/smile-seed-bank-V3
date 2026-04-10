@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingBag, Loader2, Tag, ChevronRight, Sparkles, Ticket } from "lucide-react";
 import {
@@ -28,6 +28,90 @@ import { DiscountProgressBar } from "./DiscountProgressBar";
 import { LoginForPromoDialog } from "./LoginForPromoDialog";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+function CartLineQuantityInput({
+  variantId,
+  quantity,
+  stockMax,
+  outOfStock,
+  ariaQuantity,
+  updateQuantity,
+  onCappedToStock,
+}: {
+  variantId: number;
+  quantity: number;
+  stockMax: number | undefined;
+  outOfStock: boolean;
+  ariaQuantity: string;
+  updateQuantity: (variantId: number, q: number) => { ok: boolean; maxStock?: number };
+  onCappedToStock: () => void;
+}) {
+  const [text, setText] = useState(String(quantity));
+
+  useEffect(() => {
+    setText(String(quantity));
+  }, [quantity, variantId]);
+
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      disabled={outOfStock}
+      aria-label={ariaQuantity}
+      className={cn(
+        "h-7 w-11 border-0 bg-transparent p-0 text-center text-sm font-medium shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+        outOfStock && "cursor-not-allowed opacity-50"
+      )}
+      value={text}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw === "") {
+          setText("");
+          return;
+        }
+        if (/^0+$/.test(raw)) {
+          setText(raw);
+          return;
+        }
+        const parsed = parseInt(raw, 10);
+        if (Number.isNaN(parsed)) return;
+
+        let v = Math.max(1, parsed);
+        if (stockMax !== undefined) {
+          if (v > stockMax) onCappedToStock();
+          v = Math.min(v, stockMax);
+        }
+        setText(String(v));
+        const r = updateQuantity(variantId, v);
+        if (!r.ok && r.maxStock !== undefined) {
+          setText(String(r.maxStock));
+        }
+      }}
+      onBlur={() => {
+        if (text.trim() === "") {
+          setText("1");
+          updateQuantity(variantId, 1);
+          return;
+        }
+        const parsed = parseInt(text, 10);
+        if (Number.isNaN(parsed)) {
+          setText(String(quantity));
+          return;
+        }
+        let v = Math.max(1, parsed);
+        if (stockMax !== undefined) {
+          if (v > stockMax) onCappedToStock();
+          v = Math.min(v, stockMax);
+        }
+        setText(String(v));
+        updateQuantity(variantId, v);
+      }}
+    />
+  );
+}
 
 interface CartSheetProps {
   open: boolean;
@@ -124,6 +208,18 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
     setCouponInput("");
   };
 
+  const stockToast = (n: number) =>
+    t(
+      `ขออภัย สินค้าชิ้นนี้มีสต็อกเพียง ${n} ชิ้นเท่านั้น`,
+      `Sorry, only ${n} items available`
+    );
+
+  const notifyQtyCappedToStock = useCallback(() => {
+    toast.warning(
+      t("จำกัดจำนวนตามสต็อกที่มีอยู่", "Limited to available stock")
+    );
+  }, [t]);
+
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
@@ -185,6 +281,11 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                         {item.productName}
                       </p>
                       <p className="text-xs text-zinc-500">{item.unitLabel}</p>
+                      {item.stock_quantity === 0 && (
+                        <p className="text-xs font-medium text-red-600">
+                          {t("หมดสต็อก", "Out of stock")}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -193,25 +294,60 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                       ) : (
                         <>
                           {/* Qty Controls */}
+                          {(() => {
+                            const max = item.stock_quantity;
+                            const outOfStock = max === 0;
+                            const atMax =
+                              max !== undefined && item.quantity >= max;
+                            return (
                           <div className="flex items-center gap-1 rounded-lg border border-zinc-200 p-0.5">
                             <button
-                              onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                              type="button"
+                              onClick={() =>
+                                updateQuantity(item.variantId, item.quantity - 1)
+                              }
                               className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-zinc-100"
                               aria-label="ลดจำนวน"
                             >
                               <Minus className="h-3 w-3 text-zinc-600" />
                             </button>
-                            <span className="w-6 text-center text-sm font-medium">
-                              {item.quantity}
-                            </span>
+                            <CartLineQuantityInput
+                              variantId={item.variantId}
+                              quantity={item.quantity}
+                              stockMax={max}
+                              outOfStock={outOfStock}
+                              ariaQuantity={t("จำนวน", "Quantity")}
+                              updateQuantity={updateQuantity}
+                              onCappedToStock={notifyQtyCappedToStock}
+                            />
                             <button
-                              onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                              className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-zinc-100"
+                              type="button"
+                              disabled={outOfStock || atMax}
+                              onClick={() => {
+                                if (outOfStock || atMax) return;
+                                const r = updateQuantity(
+                                  item.variantId,
+                                  item.quantity + 1
+                                );
+                                if (
+                                  !r.ok &&
+                                  r.maxStock !== undefined
+                                ) {
+                                  toast.error(stockToast(r.maxStock));
+                                }
+                              }}
+                              className={cn(
+                                "flex h-6 w-6 items-center justify-center rounded-md hover:bg-zinc-100",
+                                (outOfStock || atMax) &&
+                                  "cursor-not-allowed opacity-40 hover:bg-transparent"
+                              )}
                               aria-label="เพิ่มจำนวน"
                             >
                               <Plus className="h-3 w-3 text-zinc-600" />
                             </button>
                           </div>
+                            );
+                          })()}
                           <span className="text-sm font-semibold text-zinc-900">
                             {formatPrice(item.price * item.quantity)}
                           </span>

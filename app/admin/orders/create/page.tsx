@@ -526,6 +526,7 @@ export default function CreateOrderPage() {
                                   unitLabel: variant.unit_label,
                                   price,
                                   quantity: 1,
+                                  stock_quantity: variant.stock ?? 0,
                                   masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
                                   breeder_id: (prod as ProductWithBreeder).breeder_id ?? null,
                                 })
@@ -759,6 +760,7 @@ export default function CreateOrderPage() {
                       {!item.isFreeGift && (
                         <div className="flex items-center gap-1">
                           <button
+                            type="button"
                             onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
                             className="rounded p-0.5 hover:bg-zinc-100"
                           >
@@ -766,8 +768,25 @@ export default function CreateOrderPage() {
                           </button>
                           <span className="w-6 text-center text-sm">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                            className="rounded p-0.5 hover:bg-zinc-100"
+                            type="button"
+                            disabled={
+                              item.stock_quantity === 0 ||
+                              (item.stock_quantity !== undefined &&
+                                item.quantity >= item.stock_quantity)
+                            }
+                            onClick={() => {
+                              const r = updateQuantity(
+                                item.variantId,
+                                item.quantity + 1
+                              );
+                              if (!r.ok && r.maxStock !== undefined) {
+                                toast({
+                                  title: `ขออภัย สินค้าชิ้นนี้มีสต็อกเพียง ${r.maxStock} ชิ้นเท่านั้น`,
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            className="rounded p-0.5 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             <Plus className="h-3.5 w-3.5 text-zinc-500" />
                           </button>

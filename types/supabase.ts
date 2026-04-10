@@ -267,6 +267,8 @@ export interface CartItem {
   unitLabel: string;
   price: number;
   quantity: number;
+  /** Variant available stock (from `product_variants.stock`) at add-to-cart time */
+  stock_quantity?: number;
   isFreeGift?: boolean;
   masterSku?: string | null; // For tiered discount aggregation by strain
   breeder_id?: number | null; // For promotion rules (BUY_X_GET_Y)

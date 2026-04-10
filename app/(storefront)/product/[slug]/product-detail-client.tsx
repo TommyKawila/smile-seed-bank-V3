@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTranslations } from "@/hooks/use-translations";
@@ -320,7 +321,7 @@ export default function ProductDetailClient({
 
   const handleAddToCart = () => {
     if (!product || !selectedVariant) return;
-    addToCart({
+    const { error } = addToCart({
       variantId: selectedVariant.id,
       productId: product.id,
       productName: product.name,
@@ -328,8 +329,13 @@ export default function ProductDetailClient({
       unitLabel: selectedVariant.unit_label,
       price: selectedVariant.price,
       quantity: 1,
+      stock_quantity: selectedVariant.stock ?? 0,
       masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
     });
+    if (error) {
+      toast.error(error);
+      return;
+    }
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
     openCart();
