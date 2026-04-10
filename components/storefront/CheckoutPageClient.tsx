@@ -17,11 +17,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { DiscountProgressBar } from "@/components/storefront/DiscountProgressBar";
 import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackingCta";
 import { LoginForPromoDialog } from "@/components/storefront/LoginForPromoDialog";
-import { useLanguage } from "@/context/LanguageContext";
+import { useLanguage, type Locale } from "@/context/LanguageContext";
+import { cartItemPackDescription } from "@/lib/cart-pack-display";
 import { createClient } from "@/lib/supabase/client";
 import { getURL } from "@/lib/get-url";
 import { formatPrice } from "@/lib/utils";
 import type { PaymentSetting } from "@/lib/payment-settings-public";
+import { toast } from "sonner";
 
 const QR_IMAGE_SIZE = 220;
 
@@ -40,15 +42,20 @@ const CheckoutFormSchema = z.object({
   full_name: z.string().min(2, "กรุณาระบุชื่อ-นามสกุล"),
   phone: z.string().min(9, "เบอร์โทรศัพท์ไม่ถูกต้อง").max(15),
   address: z.string().min(10, "กรุณาระบุที่อยู่จัดส่ง (อย่างน้อย 10 ตัวอักษร)"),
-  line_user_id: z.string().optional().or(z.literal("")),
   payment_method: z.enum(["TRANSFER", "CRYPTO", "COD", "CASH"]),
 });
 
 type CheckoutForm = z.infer<typeof CheckoutFormSchema>;
 
-function OrderItemRow({ item }: { item: ReturnType<typeof useCartContext>["items"][number] }) {
+function OrderItemRow({
+  item,
+  locale,
+}: {
+  item: ReturnType<typeof useCartContext>["items"][number];
+  locale: Locale;
+}) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-start gap-3">
       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
         {item.productImage ? (
           <Image src={item.productImage} alt={item.productName} fill className="object-cover" />
@@ -61,13 +68,26 @@ function OrderItemRow({ item }: { item: ReturnType<typeof useCartContext>["items
           <span className="absolute -right-1 -top-1 text-[10px]">🎁</span>
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-sm font-medium text-zinc-800">{item.productName}</p>
-        <p className="text-xs text-zinc-500">
-          {item.unitLabel} × {item.quantity}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="min-w-0 break-words text-sm font-medium text-zinc-800">{item.productName}</p>
+          {item.breederLogoUrl ? (
+            <span className="inline-flex h-5 shrink-0 items-center self-center">
+              <Image
+                src={item.breederLogoUrl}
+                alt=""
+                width={96}
+                height={20}
+                className="h-5 w-auto max-w-[7rem] object-contain object-left"
+              />
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+          {cartItemPackDescription(item, locale, { includeLineQuantity: true })}
         </p>
       </div>
-      <span className="text-sm font-semibold text-zinc-900">
+      <span className="shrink-0 text-sm font-semibold tabular-nums text-zinc-900">
         {item.isFreeGift ? "ฟรี" : formatPrice(item.price * item.quantity)}
       </span>
     </div>
@@ -102,7 +122,6 @@ export function CheckoutPageClient({
     full_name: "",
     phone: "",
     address: "",
-    line_user_id: "",
     payment_method: "TRANSFER",
   });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof CheckoutForm, string>>>({});
@@ -120,7 +139,6 @@ export function CheckoutPageClient({
         full_name: customer.full_name ?? prev.full_name,
         phone: customer.phone ?? prev.phone,
         address: customer.address ?? prev.address,
-        line_user_id: customer.line_user_id ?? prev.line_user_id,
       }));
     }
   }, [customer]);
@@ -204,7 +222,6 @@ export function CheckoutPageClient({
             full_name: parsed.data.full_name,
             phone: parsed.data.phone,
             address: parsed.data.address,
-            line_user_id: parsed.data.line_user_id || null,
             email: user?.email ?? null,
           },
           items: items.map((i) => ({
@@ -229,6 +246,15 @@ export function CheckoutPageClient({
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (res.status === 409 && body.code === "INSUFFICIENT_STOCK") {
+          const msg = t(
+            "ขออภัย สินค้าบางรายการในตะกร้าหมดสต็อกแล้ว",
+            "Sorry, some items in your cart are out of stock."
+          );
+          toast.error(msg);
+          setSubmitError(msg);
+          return;
+        }
         throw new Error(body.error ?? (locale === "en" ? "Could not create order" : "สร้างออเดอร์ไม่สำเร็จ กรุณาลองใหม่"));
       }
 
@@ -322,16 +348,6 @@ export function CheckoutPageClient({
                     {fieldErrors.address && (
                       <p className="text-xs text-red-500">{fieldErrors.address}</p>
                     )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="line_user_id">{t("Line ID (ไม่บังคับ)", "Line ID (optional)")}</Label>
-                    <Input
-                      id="line_user_id"
-                      value={form.line_user_id}
-                      onChange={(e) => setField("line_user_id", e.target.value)}
-                      placeholder="@yourline"
-                    />
                   </div>
                 </CardContent>
               </Card>
@@ -455,7 +471,7 @@ export function CheckoutPageClient({
 
                   <div className="max-h-52 space-y-3 overflow-y-auto">
                     {items.map((item) => (
-                      <OrderItemRow key={item.variantId} item={item} />
+                      <OrderItemRow key={item.variantId} item={item} locale={locale} />
                     ))}
                   </div>
 

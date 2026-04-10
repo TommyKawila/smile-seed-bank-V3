@@ -4,6 +4,14 @@
  */
 import { getSql } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import {
+  assertSufficientStockForCheckoutLines,
+  deductVariantStockForOrderItems,
+  InsufficientStockError,
+  type CheckoutStockLine,
+} from "@/lib/order-inventory";
 import { generateOrderNumber } from "@/lib/utils";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
@@ -65,16 +73,21 @@ export async function createOrder(
   input: CreateOrderInput
 ): Promise<ServiceResult<CreateOrderResult>> {
   try {
-    const sql = getSql();
     const { customer, items, summary, payment_method, customer_id, promo_code_id } = input;
     const resolvedCustomerId = customer_id ?? null;
 
-    // Fetch cost prices before transaction (read-only)
-    const variantIds = items.map((i) => i.variantId);
-    const variantRows = await sql<{ id: number; cost_price: number }[]>`
-      SELECT id, cost_price FROM product_variants WHERE id IN ${sql(variantIds)}
-    `;
-    const costMap = new Map(variantRows.map((v) => [v.id, v.cost_price ?? 0]));
+    const variantIds = [...new Set(items.map((i) => i.variantId))];
+    const variantRows = await prisma.product_variants.findMany({
+      where: { id: { in: variantIds.map((id) => BigInt(id)) } },
+      select: { id: true, cost_price: true },
+    });
+    if (variantRows.length !== variantIds.length) {
+      return { data: null, error: "One or more products are no longer available" };
+    }
+
+    const costMap = new Map(
+      variantRows.map((v) => [Number(v.id), v.cost_price != null ? Number(v.cost_price) : 0])
+    );
     const totalCost = items.reduce(
       (sum, item) => sum + (costMap.get(item.variantId) ?? 0) * item.quantity,
       0
@@ -82,66 +95,98 @@ export async function createOrder(
 
     const orderNumber = generateOrderNumber();
 
-    const result = await sql.begin(async (tx) => {
-      // 1. Upsert customer profile if logged in
+    const stockLines: CheckoutStockLine[] = items.map((i) => ({
+      variantId: i.variantId,
+      quantity: i.quantity,
+      productName: i.productName || "Unknown",
+    }));
+
+    const result = await prisma.$transaction(async (tx) => {
+      await assertSufficientStockForCheckoutLines(tx, stockLines);
+      await deductVariantStockForOrderItems(
+        tx,
+        stockLines.map((l) => ({ variantId: l.variantId, quantity: l.quantity }))
+      );
+
       if (resolvedCustomerId) {
-        await tx`
-          INSERT INTO customers (id, full_name, phone, address, email, line_user_id)
-          VALUES (
-            ${resolvedCustomerId}, ${customer.full_name}, ${customer.phone},
-            ${customer.address}, ${customer.email ?? null}, ${customer.line_user_id ?? null}
-          )
-          ON CONFLICT (id) DO UPDATE SET
-            full_name    = EXCLUDED.full_name,
-            phone        = EXCLUDED.phone,
-            address      = EXCLUDED.address,
-            email        = COALESCE(EXCLUDED.email, customers.email),
-            line_user_id = COALESCE(EXCLUDED.line_user_id, customers.line_user_id)
-        `;
+        await tx.customers.upsert({
+          where: { id: resolvedCustomerId },
+          create: {
+            id: resolvedCustomerId,
+            full_name: customer.full_name,
+            phone: customer.phone ?? null,
+            address: customer.address,
+            email: customer.email ?? undefined,
+            line_user_id: customer.line_user_id ?? undefined,
+          },
+          update: {
+            full_name: customer.full_name,
+            phone: customer.phone ?? undefined,
+            address: customer.address,
+            ...(customer.email != null ? { email: customer.email } : {}),
+            ...(customer.line_user_id != null && customer.line_user_id !== ""
+              ? { line_user_id: customer.line_user_id }
+              : {}),
+          },
+        });
       }
 
-      // 2. Insert order
-      const [orderRow] = await tx<{ id: bigint }[]>`
-        INSERT INTO orders
-          (order_number, customer_id, order_origin, payment_method, shipping_address, total_amount, total_cost, status)
-        VALUES
-          (${orderNumber}, ${resolvedCustomerId}, 'WEB', ${payment_method},
-           ${customer.address}, ${summary.total}, ${totalCost}, 'PENDING')
-        RETURNING id
-      `;
-      const orderId = Number(orderRow.id);
+      const order = await tx.orders.create({
+        data: {
+          order_number: orderNumber,
+          customer_id: resolvedCustomerId,
+          order_origin: "WEB",
+          payment_method: payment_method,
+          shipping_address: customer.address,
+          total_amount: new Prisma.Decimal(summary.total),
+          total_cost: new Prisma.Decimal(totalCost),
+          status: "PENDING",
+        },
+      });
 
-      // 3. Insert order_items
-      const orderItems = items.map((item) => ({
-        order_id: orderId,
-        variant_id: item.variantId,
-        product_name: item.productName || "Unknown",
-        quantity: item.quantity,
-        unit_price: item.price,
-        unit_cost: costMap.get(item.variantId) ?? 0,
-      }));
-      if (orderItems.length > 0) {
-        await tx`INSERT INTO order_items ${tx(orderItems)}`;
-      }
+      await tx.order_items.createMany({
+        data: items.map((item) => ({
+          order_id: order.id,
+          variant_id: BigInt(item.variantId),
+          product_name: item.productName || "Unknown",
+          quantity: item.quantity,
+          unit_price: new Prisma.Decimal(item.price),
+          unit_cost: new Prisma.Decimal(costMap.get(item.variantId) ?? 0),
+        })),
+      });
 
-      // 4. Record promo usage
       if (promo_code_id) {
-        await tx`
-          INSERT INTO promo_code_usages (promo_code_id, order_id, customer_email, customer_phone)
-          VALUES (${promo_code_id}, ${orderId}, ${customer.email ?? null}, ${customer.phone})
-        `;
+        await tx.promo_code_usages.create({
+          data: {
+            promo_code_id: BigInt(promo_code_id),
+            order_id: order.id,
+            customer_email: customer.email,
+            customer_phone: customer.phone,
+          },
+        });
         const redemptionEmail = customer.email ?? customer.phone;
-        await tx`
-          INSERT INTO coupon_redemptions (coupon_id, user_id, email, order_id)
-          VALUES (${promo_code_id}, ${resolvedCustomerId}, ${redemptionEmail}, ${orderId})
-        `;
+        if (!redemptionEmail?.trim()) {
+          throw new Error("Email or phone required when using a promo code");
+        }
+        await tx.coupon_redemptions.create({
+          data: {
+            coupon_id: BigInt(promo_code_id),
+            user_id: resolvedCustomerId,
+            email: redemptionEmail,
+            order_id: order.id,
+          },
+        });
       }
 
-      return { orderId };
+      return { orderId: Number(order.id) };
     });
 
     return { data: { orderNumber, orderId: result.orderId }, error: null };
   } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      console.warn("[order-service] createOrder:", err.message);
+      return { data: null, error: "INSUFFICIENT_STOCK" };
+    }
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[order-service] createOrder error:", msg);
     return { data: null, error: msg };

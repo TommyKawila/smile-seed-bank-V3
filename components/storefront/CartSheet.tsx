@@ -30,17 +30,7 @@ import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-function parsePackCountFromUnitLabel(unitLabel: string): number {
-  const m = String(unitLabel).match(/(\d+)/);
-  return m ? parseInt(m[1], 10) : 0;
-}
-
-function bilingualSeedsPackLine(unitLabel: string): string {
-  const count = parsePackCountFromUnitLabel(unitLabel);
-  if (count <= 0) return unitLabel;
-  return `${count} seeds pack / แพคเกจ ${count} เมล็ด`;
-}
+import { cartItemPackDescription } from "@/lib/cart-pack-display";
 
 function CartLineQuantityInput({
   variantId,
@@ -144,7 +134,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
     itemCount,
   } = useCartContext();
 
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const { user, customer } = useAuth();
   const [couponInput, setCouponInput] = useState("");
   const [couponsOpen, setCouponsOpen] = useState(false);
@@ -305,9 +295,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                         ) : null}
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {item.isFreeGift
-                          ? item.unitLabel
-                          : bilingualSeedsPackLine(item.unitLabel)}
+                        {cartItemPackDescription(item, locale)}
                       </p>
                       {item.stock_quantity === 0 && (
                         <p className="text-xs font-medium text-red-600">

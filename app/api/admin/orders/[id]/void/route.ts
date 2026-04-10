@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { restoreVariantStockForOrderItems } from "@/lib/order-inventory";
 import { sendVoidOrderAlert } from "@/services/line-messaging";
 
 export const dynamic = "force-dynamic";
@@ -44,14 +45,7 @@ export async function PATCH(
     const customerProfileId = order.customer_profile_id;
 
     await prisma.$transaction(async (tx) => {
-      for (const item of order.order_items) {
-        if (item.variant_id) {
-          await tx.product_variants.update({
-            where: { id: item.variant_id },
-            data: { stock: { increment: item.quantity } },
-          });
-        }
-      }
+      await restoreVariantStockForOrderItems(tx, order.order_items);
 
       await tx.orders.update({
         where: { id: BigInt(orderId) },

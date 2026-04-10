@@ -3,6 +3,10 @@
  */
 import { getSql } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
+import {
+  REJECT_STOCK_RESTORE_STATUSES,
+  restoreVariantStockForOrderItems,
+} from "@/lib/order-inventory";
 import { sendShippingConfirmationEmail } from "@/services/email-service";
 import { pushTextToLineUser } from "@/services/line-messaging";
 
@@ -71,10 +75,40 @@ export async function approvePayment(orderId: number): Promise<ServiceResult<nul
   }
 }
 
+const REJECT_STOCK_NOTE_SUFFIX =
+  " | Stock has been restored automatically upon cancellation.";
+
 export async function rejectPayment(orderId: number, note: string): Promise<ServiceResult<null>> {
   try {
-    const sql = getSql();
-    await sql`UPDATE orders SET status = 'CANCELLED', reject_note = ${note} WHERE id = ${orderId}`;
+    const oid = BigInt(orderId);
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.orders.findUnique({
+        where: { id: oid },
+        include: { order_items: true },
+      });
+      if (!order) {
+        throw new Error("Order not found");
+      }
+      if (order.status === "CANCELLED") {
+        throw new Error("Order is already cancelled");
+      }
+      const status = order.status ?? "";
+      const canRestoreStock = (REJECT_STOCK_RESTORE_STATUSES as readonly string[]).includes(status);
+      if (!canRestoreStock) {
+        throw new Error(
+          `Cannot reject/cancel order in status "${status}". Only ${REJECT_STOCK_RESTORE_STATUSES.join(", ")} are allowed.`
+        );
+      }
+      await restoreVariantStockForOrderItems(tx, order.order_items);
+      const trimmed = note.trim();
+      const rejectNote = trimmed
+        ? `${trimmed}${REJECT_STOCK_NOTE_SUFFIX}`
+        : `Cancelled.${REJECT_STOCK_NOTE_SUFFIX}`;
+      await tx.orders.update({
+        where: { id: oid },
+        data: { status: "CANCELLED", reject_note: rejectNote },
+      });
+    });
     return { data: null, error: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

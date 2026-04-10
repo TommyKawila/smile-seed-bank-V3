@@ -156,6 +156,7 @@ function OrderCard({
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
+  const canCancelPending = order.status === "PENDING";
   const canShip = order.status === "PAID" || order.status === "COMPLETED";
   const canVoid = order.status === "COMPLETED";
   const canReceipt = isReceiptEligibleStatus(order.status);
@@ -258,6 +259,19 @@ function OrderCard({
             </Button>
           </div>
         )}
+        {canCancelPending && (
+          <div className="mt-3">
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full border-red-200 text-red-600 hover:bg-red-50 active:scale-[.97]"
+              onClick={() => onReject(order.id)}
+              disabled={busy}
+            >
+              <XCircle className="mr-1.5 h-4 w-4" /> ยกเลิกออเดอร์
+            </Button>
+          </div>
+        )}
         {canReceipt && (
           <div className="mt-3">
             <Button
@@ -317,6 +331,7 @@ function OrderTableRow({
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
+  const canCancelPending = order.status === "PENDING";
   const canShip = order.status === "PAID" || order.status === "COMPLETED";
   const canVoid = order.status === "COMPLETED";
   const canReceipt = isReceiptEligibleStatus(order.status);
@@ -404,6 +419,17 @@ function OrderTableRow({
         ) : (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap gap-1.5">
+              {canCancelPending && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-red-200 text-red-600 hover:bg-red-50"
+                  onClick={() => onReject(order.id)}
+                  disabled={busy}
+                >
+                  ยกเลิกออเดอร์
+                </Button>
+              )}
               {canReceipt && (
                 <Button
                   size="sm"
@@ -893,6 +919,20 @@ export default function AdminOrdersPage() {
                   <Printer className="mr-1.5 h-4 w-4" />
                   พิมพ์ใบปะหน้า
                 </Button>
+                {detailModal.status === "PENDING" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-red-200 text-red-600 hover:bg-red-50"
+                    onClick={() => {
+                      setDetailModal(null);
+                      handleRejectOpen(detailModal.id);
+                    }}
+                  >
+                    <XCircle className="mr-1.5 h-4 w-4" />
+                    ยกเลิกออเดอร์
+                  </Button>
+                )}
                 {detailModal.status === "COMPLETED" && (
                   <Button
                     size="sm"

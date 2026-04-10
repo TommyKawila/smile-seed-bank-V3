@@ -9,7 +9,6 @@ const CheckoutSchema = z.object({
     full_name: z.string().min(2, "กรุณาระบุชื่อ"),
     phone: z.string().min(9, "เบอร์โทรไม่ถูกต้อง"),
     address: z.string().min(10, "กรุณาระบุที่อยู่"),
-    line_user_id: z.string().nullable().optional(),
     email: z.string().email().nullable().optional(),
   }),
   items: z
@@ -55,7 +54,7 @@ export async function POST(req: NextRequest) {
         phone: customer.phone,
         address: customer.address,
         email: customer.email ?? null,
-        line_user_id: customer.line_user_id ?? null,
+        line_user_id: null,
       },
       items: items.map((i) => ({
         variantId: i.variantId,
@@ -71,6 +70,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (error || !data) {
+      if (error === "INSUFFICIENT_STOCK") {
+        return NextResponse.json(
+          { code: "INSUFFICIENT_STOCK", error: "INSUFFICIENT_STOCK" },
+          { status: 409 }
+        );
+      }
       return NextResponse.json({ error: error ?? "สร้างคำสั่งซื้อไม่สำเร็จ" }, { status: 500 });
     }
 
