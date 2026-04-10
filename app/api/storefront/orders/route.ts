@@ -3,7 +3,6 @@ import { z } from "zod";
 import { createOrder, fetchEmailItems } from "@/lib/services/order-service";
 import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
 import { sendOrderConfirmationEmail } from "@/services/email-service";
-import { notifyAdminNewOrder } from "@/services/line-messaging";
 
 const CheckoutSchema = z.object({
   customer: z.object({
@@ -132,14 +131,6 @@ export async function POST(req: NextRequest) {
         locale,
       });
     })();
-    void notifyAdminNewOrder({
-      orderNumber: data.orderNumber,
-      customerName: customer.full_name,
-      total: summary.total,
-      paymentMethod: payment_method,
-      shippingAddress: customer.address,
-      itemCount: items.filter((i) => !i.isFreeGift).length,
-    });
 
     return NextResponse.json(
       { orderNumber: data.orderNumber, orderId: data.orderId },

@@ -34,6 +34,12 @@ export async function POST(req: Request) {
   }
 
   const { bankAccounts, promptPay, cryptoWallets, lineId, messengerUrl } = parsed.data;
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      "[payment POST] cryptoWallets isActive:",
+      cryptoWallets.map((w) => w.isActive)
+    );
+  }
   const sql = getSql();
 
   try {

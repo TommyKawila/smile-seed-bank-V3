@@ -15,6 +15,20 @@ import {
   type CryptoWallet,
 } from "@/lib/validations/payment-settings";
 
+function normalizeCryptoWalletFromApi(raw: unknown): CryptoWallet {
+  const c = raw as Record<string, unknown>;
+  const inactive =
+    c.isActive === false ||
+    c.isactive === false ||
+    c.is_active === false;
+  return {
+    network: String(c.network ?? ""),
+    address: String(c.address ?? ""),
+    qrUrl: typeof c.qrUrl === "string" ? c.qrUrl : "",
+    isActive: !inactive,
+  };
+}
+
 /** Inline QR uploader — uploads to brand-assets bucket via existing endpoint */
 function QrUpload({
   value,
@@ -134,7 +148,7 @@ export default function PaymentSettingsPage() {
             : [emptyBank],
           promptPay: data.promptPay ?? emptyPromptPay,
           cryptoWallets: Array.isArray(data.cryptoWallets) && data.cryptoWallets.length > 0
-            ? data.cryptoWallets
+            ? data.cryptoWallets.map(normalizeCryptoWalletFromApi)
             : [emptyCrypto],
           lineId: data.lineId ?? "",
           messengerUrl: data.messengerUrl ?? "",
@@ -156,7 +170,14 @@ export default function PaymentSettingsPage() {
       const payload = {
         ...form,
         bankAccounts: form.bankAccounts.filter((b) => b.bankName.trim() || b.accountNo.trim()),
-        cryptoWallets: form.cryptoWallets.filter((c) => c.network.trim() || c.address.trim()),
+        cryptoWallets: form.cryptoWallets
+          .filter((c) => c.network.trim() || c.address.trim())
+          .map((c) => ({
+            network: c.network.trim(),
+            address: c.address.trim(),
+            qrUrl: (c.qrUrl ?? "").trim(),
+            isActive: c.isActive !== false,
+          })),
       };
       const res = await fetch("/api/admin/settings/payment", {
         method: "POST",

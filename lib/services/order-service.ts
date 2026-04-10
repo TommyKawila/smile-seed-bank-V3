@@ -12,6 +12,7 @@ import {
   InsufficientStockError,
   type CheckoutStockLine,
 } from "@/lib/order-inventory";
+import { sendAdminNotification } from "@/lib/admin-notification";
 import { generateOrderNumber } from "@/lib/utils";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
@@ -208,6 +209,18 @@ export async function createOrder(
       return { orderId: Number(order.id) };
     });
 
+    const totalFmt = summary.total.toLocaleString("th-TH", {
+      maximumFractionDigits: 0,
+    });
+    void sendAdminNotification(
+      [
+        `🆕 New Order #${orderNumber}`,
+        `Customer: ${customer.full_name}`,
+        `Total: ฿${totalFmt}`,
+        `Status: PENDING`,
+      ].join("\n")
+    );
+
     return { data: { orderNumber, orderId: result.orderId }, error: null };
   } catch (err) {
     if (err instanceof InsufficientStockError) {
@@ -339,9 +352,23 @@ export async function uploadSlip(
     const { orderNumber, file } = input;
     const sql = getSql();
 
-    // Guard: validate order + payment method
-    const rows = await sql<{ id: number; payment_method: string | null; slip_url: string | null }[]>`
-      SELECT id, payment_method, slip_url FROM orders WHERE order_number = ${orderNumber} LIMIT 1
+    // Guard: validate order + payment method (+ fields for admin notification)
+    const rows = await sql<
+      {
+        id: number;
+        payment_method: string | null;
+        slip_url: string | null;
+        total_amount: string;
+        customer_name: string | null;
+        cust_full: string | null;
+      }[]
+    >`
+      SELECT o.id, o.payment_method, o.slip_url, o.total_amount::text AS total_amount,
+             o.customer_name, c.full_name AS cust_full
+      FROM orders o
+      LEFT JOIN customers c ON c.id = o.customer_id
+      WHERE o.order_number = ${orderNumber}
+      LIMIT 1
     `;
     const order = rows[0];
     if (!order) return { data: null, error: "Order not found" };
@@ -382,6 +409,20 @@ export async function uploadSlip(
       UPDATE orders SET slip_url = ${slipUrl}, status = 'AWAITING_VERIFICATION'
       WHERE id = ${order.id}
     `;
+
+    const displayName =
+      order.customer_name?.trim() || order.cust_full?.trim() || "—";
+    const totalFmt = Number(order.total_amount).toLocaleString("th-TH", {
+      maximumFractionDigits: 0,
+    });
+    void sendAdminNotification(
+      [
+        `💰 Slip Uploaded for #${orderNumber}`,
+        `Customer: ${displayName}`,
+        `Total: ฿${totalFmt}`,
+        `Please verify in the Admin Dashboard.`,
+      ].join("\n")
+    );
 
     return { data: { slip_url: slipUrl }, error: null };
   } catch (err) {
