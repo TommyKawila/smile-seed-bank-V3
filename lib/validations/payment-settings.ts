@@ -28,7 +28,8 @@ export const PromptPaySchema = z.object({
 export const CryptoWalletSchema = z.object({
   network: z.string().min(1, "กรุณาระบุเครือข่าย"),
   address: z.string().min(1, "กรุณาระบุที่อยู่"),
-  qrUrl: z.union([z.string().url(), z.literal("")]).optional(),
+  /** Free text / relative URLs allowed — strict .url() was rejecting valid admin input and breaking saves. */
+  qrUrl: z.string().optional().default(""),
   isActive: boolCoerce(true),
 });
 

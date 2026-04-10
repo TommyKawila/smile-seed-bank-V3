@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Loader2, Plus, Trash2, CreditCard, QrCode, Wallet, MessageCircle, Upload, ImageIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,15 +18,22 @@ import {
 
 function normalizeCryptoWalletFromApi(raw: unknown): CryptoWallet {
   const c = raw as Record<string, unknown>;
-  const inactive =
-    c.isActive === false ||
-    c.isactive === false ||
-    c.is_active === false;
+  const rawActive = c.isActive ?? c.isactive ?? c.is_active;
+  const isActive =
+    rawActive === false ||
+    rawActive === "false" ||
+    rawActive === 0
+      ? false
+      : rawActive === true ||
+          rawActive === "true" ||
+          rawActive === 1
+        ? true
+        : true;
   return {
     network: String(c.network ?? ""),
     address: String(c.address ?? ""),
     qrUrl: typeof c.qrUrl === "string" ? c.qrUrl : "",
-    isActive: !inactive,
+    isActive,
   };
 }
 
@@ -126,6 +134,7 @@ const emptyPromptPay: PromptPay = { identifier: "", qrUrl: "", isActive: true, c
 const emptyCrypto: CryptoWallet = { network: "", address: "", qrUrl: "", isActive: true };
 
 export default function PaymentSettingsPage() {
+  const router = useRouter();
   const [form, setForm] = useState<PaymentSettingsForm>({
     bankAccounts: [],
     promptPay: emptyPromptPay,
@@ -179,16 +188,44 @@ export default function PaymentSettingsPage() {
             isActive: c.isActive !== false,
           })),
       };
+      if (process.env.NODE_ENV === "development") {
+        console.log("Payload to be sent:", JSON.stringify(payload, null, 2));
+      }
       const res = await fetch("/api/admin/settings/payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const json = await res.json();
+      const json = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        bankAccounts?: unknown[];
+        promptPay?: unknown;
+        cryptoWallets?: unknown[];
+        lineId?: string;
+        messengerUrl?: string;
+      };
       if (!res.ok) {
         setToast("error");
         return;
       }
+      if (json.ok && Array.isArray(json.cryptoWallets)) {
+        setForm((prev) => ({
+          ...prev,
+          bankAccounts:
+            Array.isArray(json.bankAccounts) && json.bankAccounts.length > 0
+              ? (json.bankAccounts as BankAccount[])
+              : [emptyBank],
+          promptPay: (json.promptPay as PromptPay) ?? prev.promptPay ?? emptyPromptPay,
+          cryptoWallets:
+            json.cryptoWallets.length > 0
+              ? json.cryptoWallets.map(normalizeCryptoWalletFromApi)
+              : [emptyCrypto],
+          lineId: json.lineId ?? prev.lineId,
+          messengerUrl: json.messengerUrl ?? prev.messengerUrl,
+        }));
+      }
+      router.refresh();
       setToast("success");
       setTimeout(() => setToast(null), 3000);
     } finally {
