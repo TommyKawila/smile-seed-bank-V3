@@ -399,7 +399,7 @@ export async function pushFlexMessageToLineUser(
   if (!lineUserId?.trim()) return { success: false, error: "Missing LINE user id" };
 
   try {
-    const res = await fetch(LINE_PUSH_URL, {
+    const response = await fetch(LINE_PUSH_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -411,12 +411,25 @@ export async function pushFlexMessageToLineUser(
       }),
     });
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(`LINE API error ${res.status}: ${JSON.stringify(body)}`);
+    const text = await response.text();
+    let data: unknown = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { raw: text };
     }
+
+    if (!response.ok) {
+      console.error("LINE_API_ERROR:", JSON.stringify(data, null, 2));
+      return {
+        success: false,
+        error: `LINE API error ${response.status}: ${JSON.stringify(data)}`,
+      };
+    }
+    console.log("LINE_SUCCESS:", data);
     return { success: true, error: null };
   } catch (err) {
+    console.error("LINE_FETCH_CRASH:", err);
     return { success: false, error: String(err) };
   }
 }

@@ -54,11 +54,15 @@ export async function sendLineFlexNotification(
   kind: "PAYMENT_CONFIRMED" | "ORDER_SHIPPED",
   ship?: { trackingNumber: string; shippingProvider: string }
 ): Promise<void> {
+  console.log("LINE_DEBUG: Fetching order:", orderId);
   const detail = await loadAdminOrderDetail(orderId);
   if (!detail) {
     console.warn(`[LINE flex notify] orderId=${orderId} kind=${kind} skipped: order not found`);
     return;
   }
+
+  console.log("LINE_DEBUG: Order Line ID:", detail.lineUserId ?? null);
+  console.log("LINE_DEBUG: Token Length:", process.env.LINE_CHANNEL_ACCESS_TOKEN?.length || 0);
 
   const lineUid = detail.lineUserId?.trim();
   if (!lineUid) {
