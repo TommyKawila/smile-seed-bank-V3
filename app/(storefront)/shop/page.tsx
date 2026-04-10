@@ -118,6 +118,8 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
         quantity: 1,
         stock_quantity: defaultVariant.stock ?? 0,
         masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
+        breeder_id: product.breeder_id ?? null,
+        breederLogoUrl: product.breeders?.logo_url ?? null,
       });
       if (error) {
         toast.error(error);

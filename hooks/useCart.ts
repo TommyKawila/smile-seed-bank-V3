@@ -46,6 +46,7 @@ const AddToCartSchema = z.object({
   stock_quantity: z.number().int().min(0).optional(),
   masterSku: z.string().nullable().optional(),
   breeder_id: z.number().int().positive().nullable().optional(),
+  breederLogoUrl: z.string().nullable().optional(),
 });
 
 // ─── Constants ────────────────────────────────────────────────────────────────

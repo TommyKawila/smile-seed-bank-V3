@@ -272,6 +272,8 @@ export interface CartItem {
   isFreeGift?: boolean;
   masterSku?: string | null; // For tiered discount aggregation by strain
   breeder_id?: number | null; // For promotion rules (BUY_X_GET_Y)
+  /** From `breeders.logo_url` when item was added */
+  breederLogoUrl?: string | null;
 }
 
 export interface CartSummary {

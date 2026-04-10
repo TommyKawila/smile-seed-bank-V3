@@ -529,6 +529,7 @@ export default function CreateOrderPage() {
                                   stock_quantity: variant.stock ?? 0,
                                   masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
                                   breeder_id: (prod as ProductWithBreeder).breeder_id ?? null,
+                                  breederLogoUrl: (prod as ProductWithBreeder).breeders?.logo_url ?? null,
                                 })
                               }
                               className="flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-accent"

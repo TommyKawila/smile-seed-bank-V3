@@ -31,6 +31,17 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+function parsePackCountFromUnitLabel(unitLabel: string): number {
+  const m = String(unitLabel).match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function bilingualSeedsPackLine(unitLabel: string): string {
+  const count = parsePackCountFromUnitLabel(unitLabel);
+  if (count <= 0) return unitLabel;
+  return `${count} seeds pack / แพคเกจ ${count} เมล็ด`;
+}
+
 function CartLineQuantityInput({
   variantId,
   quantity,
@@ -276,11 +287,28 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
 
                   {/* Info */}
                   <div className="flex flex-1 flex-col justify-between">
-                    <div>
-                      <p className="text-sm font-medium leading-tight text-zinc-900">
-                        {item.productName}
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="min-w-0 text-sm font-medium leading-tight text-zinc-900 break-words">
+                          {item.productName}
+                        </p>
+                        {item.breederLogoUrl ? (
+                          <span className="inline-flex h-5 shrink-0 items-center self-center">
+                            <Image
+                              src={item.breederLogoUrl}
+                              alt=""
+                              width={96}
+                              height={20}
+                              className="h-5 w-auto max-w-[7rem] object-contain object-left"
+                            />
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {item.isFreeGift
+                          ? item.unitLabel
+                          : bilingualSeedsPackLine(item.unitLabel)}
                       </p>
-                      <p className="text-xs text-zinc-500">{item.unitLabel}</p>
                       {item.stock_quantity === 0 && (
                         <p className="text-xs font-medium text-red-600">
                           {t("หมดสต็อก", "Out of stock")}
