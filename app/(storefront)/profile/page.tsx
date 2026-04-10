@@ -10,7 +10,7 @@ import {
   User, Package, MapPin, Phone, Mail, ChevronRight,
   Loader2, LogOut, Check, X, Leaf, ShoppingBag,
   Truck, Clock, CheckCircle2, XCircle, Copy, Tag, BadgeCheck, Save,
-  Link2, Link2Off,
+  Link2, Link2Off, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,9 +71,13 @@ type OrderRow = {
 
 const STATUS_CONFIG: Record<string, { label: string; labelEn: string; icon: React.ComponentType<{className?:string}>; cls: string }> = {
   PENDING:  { label: "รอดำเนินการ",  labelEn: "Pending",   icon: Clock,         cls: "bg-amber-100 text-amber-700" },
+  AWAITING_VERIFICATION: { label: "รอตรวจสอบสลิป", labelEn: "Verifying", icon: Clock, cls: "bg-sky-100 text-sky-800" },
   PAID:     { label: "ชำระแล้ว",     labelEn: "Paid",      icon: CheckCircle2,  cls: "bg-blue-100 text-blue-700" },
+  COMPLETED:{ label: "เสร็จสมบูรณ์", labelEn: "Completed", icon: CheckCircle2,  cls: "bg-emerald-100 text-emerald-800" },
   SHIPPED:  { label: "จัดส่งแล้ว",   labelEn: "Shipped",   icon: Truck,         cls: "bg-accent text-primary" },
-  CANCELLED:{ label: "ยกเลิก",       labelEn: "Cancelled", icon: XCircle,       cls: "bg-red-100 text-red-600" },
+  DELIVERED:{ label: "ส่งถึงแล้ว",   labelEn: "Delivered", icon: Truck,         cls: "bg-emerald-100 text-emerald-800" },
+  CANCELLED:{ label: "ยกเลิกแล้ว",   labelEn: "Cancelled", icon: XCircle,       cls: "bg-red-100 text-red-600" },
+  VOIDED:   { label: "ยกเลิก·คืนสต็อก", labelEn: "Voided", icon: XCircle,       cls: "bg-zinc-200 text-zinc-700" },
 };
 
 function StatusBadge({ status, locale }: { status: string; locale: string }) {
@@ -309,6 +313,7 @@ function ProfileContent() {
                   const itemCount = order.order_items?.length ?? 0;
                   const img = firstItem?.product_variants?.products?.image_url;
                   const itemName = firstItem?.product_variants?.products?.name ?? "สินค้า";
+                  const showReceiptBtn = order.status === "PAID" || order.status === "COMPLETED";
                   return (
                     <motion.button
                       key={order.id}
@@ -345,7 +350,21 @@ function ProfileContent() {
                               </p>
                             </div>
                             <div className="flex flex-col items-end gap-1.5">
-                              <StatusBadge status={order.status} locale={locale} />
+                              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                                <StatusBadge status={order.status} locale={locale} />
+                                {showReceiptBtn ? (
+                                  <a
+                                    href={`/api/storefront/orders/${encodeURIComponent(order.order_number)}/receipt`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-primary/35 bg-white px-2 py-1 text-[11px] font-semibold text-primary shadow-sm hover:bg-emerald-50/60"
+                                  >
+                                    <FileText className="h-3.5 w-3.5" />
+                                    {locale === "en" ? "Receipt" : "ใบเสร็จ"}
+                                  </a>
+                                ) : null}
+                              </div>
                               <p className="text-sm font-bold text-primary">{formatPrice(order.total_amount)}</p>
                             </div>
                           </div>

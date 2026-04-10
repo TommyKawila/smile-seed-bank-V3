@@ -501,7 +501,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <p className="font-semibold text-zinc-900">ช่องทางการชำระเงิน</p>
-            <p className="text-xs text-zinc-500">บัญชีธนาคาร, PromptPay, Crypto, Line, Messenger</p>
+            <p className="text-xs text-zinc-500">บัญชีธนาคาร, PromptPay, Line, Messenger</p>
           </div>
         </div>
         <ChevronRight className="h-5 w-5 text-zinc-400" />

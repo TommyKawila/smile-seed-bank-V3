@@ -389,6 +389,38 @@ export async function sendCustomerShippingAlert(opts: {
   }
 }
 
+/** Push a Flex message to a LINE user (customer OA chat). */
+export async function pushFlexMessageToLineUser(
+  lineUserId: string,
+  flex: { type: "flex"; altText: string; contents: Record<string, unknown> }
+): Promise<ServiceResult> {
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!token) return { success: false, error: "LINE_CHANNEL_ACCESS_TOKEN ไม่ได้ตั้งค่า" };
+  if (!lineUserId?.trim()) return { success: false, error: "Missing LINE user id" };
+
+  try {
+    const res = await fetch(LINE_PUSH_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        to: lineUserId.trim(),
+        messages: [flex],
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(`LINE API error ${res.status}: ${JSON.stringify(body)}`);
+    }
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
 /** Push plain text to a LINE user (customer OA chat). */
 export async function pushTextToLineUser(
   lineUserId: string,

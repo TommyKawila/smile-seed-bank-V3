@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { restoreVariantStockForOrderItems } from "@/lib/order-inventory";
+import { revalidateAfterOrderStatusChange } from "@/lib/revalidate-storefront-order";
 import { sendVoidOrderAlert } from "@/services/line-messaging";
 
 export const dynamic = "force-dynamic";
@@ -33,9 +34,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Order is already voided" }, { status: 400 });
     }
 
-    if (order.status !== "COMPLETED") {
+    if (order.status !== "COMPLETED" && order.status !== "PAID") {
       return NextResponse.json(
-        { error: "Only COMPLETED orders can be voided" },
+        { error: "Only PAID or COMPLETED orders can be voided" },
         { status: 400 }
       );
     }
@@ -76,6 +77,8 @@ export async function PATCH(
       });
       if (!r.success) console.error("[orders/void] LINE alert:", r.error);
     })();
+
+    await revalidateAfterOrderStatusChange(orderId, order.order_number);
 
     return NextResponse.json({ success: true, status: "VOIDED" });
   } catch (err) {

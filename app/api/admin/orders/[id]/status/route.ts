@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidateAfterOrderStatusChange } from "@/lib/revalidate-storefront-order";
 import { approvePayment, rejectPayment, markShipped } from "@/services/orders-service";
 
 const StatusSchema = z.discriminatedUnion("action", [
@@ -37,6 +38,7 @@ export async function PATCH(
     if (action === "approve") {
       const { error } = await approvePayment(orderId);
       if (error) return NextResponse.json({ error }, { status: 500 });
+      await revalidateAfterOrderStatusChange(orderId);
       return NextResponse.json({ success: true, status: "PAID" });
     }
 
@@ -44,6 +46,7 @@ export async function PATCH(
       const note = (parsed.data.note ?? "").trim() || "Payment rejected";
       const { error } = await rejectPayment(orderId, note);
       if (error) return NextResponse.json({ error }, { status: 500 });
+      await revalidateAfterOrderStatusChange(orderId);
       return NextResponse.json({ success: true, status: "CANCELLED" });
     }
 
@@ -51,6 +54,7 @@ export async function PATCH(
       const { trackingNumber, shippingProvider } = parsed.data;
       const { data, error } = await markShipped(orderId, trackingNumber.trim(), shippingProvider);
       if (error) return NextResponse.json({ error }, { status: 500 });
+      await revalidateAfterOrderStatusChange(orderId);
       return NextResponse.json({
         success: true,
         status: "SHIPPED",

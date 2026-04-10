@@ -8,7 +8,7 @@ import {
   restoreVariantStockForOrderItems,
 } from "@/lib/order-inventory";
 import { sendShippingConfirmationEmail } from "@/services/email-service";
-import { pushTextToLineUser } from "@/services/line-messaging";
+import { sendLineFlexNotification } from "@/lib/order-line-notifications";
 
 export interface AdminOrderRow {
   id: number;
@@ -22,6 +22,7 @@ export interface AdminOrderRow {
   tracking_number: string | null;
   shipping_provider: string | null;
   created_at: string;
+  line_user_id: string | null;
 }
 
 export type ServiceResult<T> = { data: T | null; error: string | null };
@@ -37,7 +38,8 @@ export async function listOrders(opts?: {
                  COALESCE(c.full_name, o.customer_name) AS customer_name,
                  o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
                  o.tracking_number, o.shipping_provider, o.created_at,
-                 o.customer_phone, o.shipping_address, o.customer_note
+                 o.customer_phone, o.shipping_address, o.customer_note,
+                 o.line_user_id
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
           WHERE o.status = ${opts.status}
@@ -49,7 +51,8 @@ export async function listOrders(opts?: {
                  COALESCE(c.full_name, o.customer_name) AS customer_name,
                  o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
                  o.tracking_number, o.shipping_provider, o.created_at,
-                 o.customer_phone, o.shipping_address, o.customer_note
+                 o.customer_phone, o.shipping_address, o.customer_note,
+                 o.line_user_id
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
           ORDER BY o.created_at DESC
@@ -67,6 +70,7 @@ export async function approvePayment(orderId: number): Promise<ServiceResult<nul
   try {
     const sql = getSql();
     await sql`UPDATE orders SET status = 'PAID', reject_note = NULL WHERE id = ${orderId}`;
+    void sendLineFlexNotification(orderId, "PAYMENT_CONFIRMED");
     return { data: null, error: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -191,12 +195,6 @@ export async function markShipped(
         const name = row.full_name ?? "คุณลูกค้า";
         const orderNumber = row.order_number;
 
-        const lineTarget =
-          row.order_line_uid?.trim() ||
-          row.web_customer_line_uid?.trim() ||
-          row.profile_line_id?.trim() ||
-          null;
-
         // Email notification
         if (row.email) {
           try {
@@ -213,14 +211,15 @@ export async function markShipped(
           }
         }
 
-        // LINE: plain text (claim / profile / legacy customer line)
-        if (lineTarget) {
+        const orderLineOnly = row.order_line_uid?.trim();
+        if (orderLineOnly) {
           try {
-            const lineText = `🌱 สินค้าของคุณถูกจัดส่งแล้ว! เลขพัสดุ: ${trackingNumber}`;
-            const r = await pushTextToLineUser(lineTarget, lineText);
-            if (!r.success) console.error("[orders-service] markShipped LINE push:", r.error);
+            await sendLineFlexNotification(orderId, "ORDER_SHIPPED", {
+              trackingNumber,
+              shippingProvider,
+            });
           } catch (lineErr) {
-            console.error("[orders-service] markShipped LINE error:", lineErr);
+            console.error("[orders-service] markShipped LINE flex error:", lineErr);
           }
         }
       } catch (fetchErr) {

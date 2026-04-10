@@ -392,16 +392,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
         {items.length > 0 && (
           <div className="border-t border-zinc-200 px-5 py-4 space-y-3">
             {/* Tier Progress */}
-            <DiscountProgressBar
-              subtotal={summary.subtotal}
-              rules={tieredDiscountRules}
-              upsellMessage={summary.upsellMessage}
-            />
-            {summary.upsellMessage && (
-              <div className="rounded-xl bg-primary/5 px-3 py-2 text-xs text-primary">
-                💡 {summary.upsellMessage}
-              </div>
-            )}
+            <DiscountProgressBar subtotal={summary.subtotal} rules={tieredDiscountRules} />
 
             {/* Promo Code */}
             <div className="space-y-1.5">

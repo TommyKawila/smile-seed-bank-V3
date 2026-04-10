@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { generateOrderNumber } from "@/lib/utils";
+import { generateOrderNumber } from "@/lib/order-utils";
 import type { Order, OrderItem } from "@/types/supabase";
 import { listOrders } from "@/services/orders-service";
 

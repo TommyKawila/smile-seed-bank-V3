@@ -12,6 +12,8 @@ export interface AdminOrder {
   tracking_number: string | null;
   shipping_provider: string | null;
   created_at: string;
+  /** LINE Messaging API user id — required to push Flex from admin */
+  line_user_id: string | null;
 }
 
 export function useAdminOrders(statusFilter?: string) {

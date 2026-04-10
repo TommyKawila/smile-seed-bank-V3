@@ -21,10 +21,6 @@ export function formatDate(dateString: string): string {
   }).format(new Date(dateString));
 }
 
-export function generateOrderNumber(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
 export function formatPhoneNumber(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (digits.length === 10 && digits.startsWith("0")) {

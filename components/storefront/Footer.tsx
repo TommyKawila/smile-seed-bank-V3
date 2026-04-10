@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Leaf } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { lineMeAddFriendUrl } from "@/lib/line-oa-url";
 
 export function Footer() {
   const { t } = useLanguage();
@@ -56,7 +57,7 @@ export function Footer() {
             {/* Social Icons */}
             <div className="mt-4 flex items-center gap-3">
               <a
-                href="https://line.me"
+                href={lineMeAddFriendUrl(null)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[#06C755] text-white transition-opacity hover:opacity-80"

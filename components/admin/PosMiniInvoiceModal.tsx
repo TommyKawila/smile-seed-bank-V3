@@ -49,8 +49,6 @@ function paymentMethodLabelToEnglish(thLabel: string): string {
   const exact: Record<string, string> = {
     เงินสด: "Cash",
     โอนเงิน: "Bank Transfer",
-    CRYPTO: "Crypto",
-    Crypto: "Crypto",
     COD: "Cash on Delivery (COD)",
   };
   if (exact[t]) return exact[t];

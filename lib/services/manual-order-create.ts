@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { generateOrderNumber } from "@/lib/utils";
+import { generateOrderNumber } from "@/lib/order-utils";
 import { sendLowStockAlert } from "@/services/line-messaging";
 
 export type ManualDeductItem = {

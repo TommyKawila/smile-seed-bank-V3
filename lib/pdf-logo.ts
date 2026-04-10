@@ -1,17 +1,38 @@
 import { SMILE_SEED_BANK_LOGO_BASE64 } from "./logo-base64";
 
+function arrayBufferToDataUrl(ab: ArrayBuffer, mime: string): string {
+  const safeMime = mime.startsWith("image/") ? mime.split(";")[0].trim() : "image/png";
+  const u8 = new Uint8Array(ab);
+  let b64: string;
+  if (typeof Buffer !== "undefined") {
+    b64 = Buffer.from(ab).toString("base64");
+  } else {
+    let s = "";
+    for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]!);
+    b64 = btoa(s);
+  }
+  return `data:${safeMime};base64,${b64}`;
+}
+
+/** Works in Node (receipt API) and browser — no FileReader (not available server-side). */
 export async function getBase64ImageFromURL(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, { mode: "cors" });
     if (!res.ok) return null;
-    const blob = await res.blob();
-    if (!blob.type.startsWith("image/")) return null;
-    return await new Promise<string>((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result as string);
-      r.onerror = reject;
-      r.readAsDataURL(blob);
-    });
+    const ct = res.headers.get("content-type") ?? "";
+    const mime = ct.split(";")[0].trim() || "image/png";
+    const ab = await res.arrayBuffer();
+    if (ab.byteLength < 8) return null;
+    if (mime.startsWith("image/")) {
+      return arrayBufferToDataUrl(ab, mime);
+    }
+    const u8 = new Uint8Array(ab);
+    const isPng = u8[0] === 0x89 && u8[1] === 0x50;
+    const isJpeg = u8[0] === 0xff && u8[1] === 0xd8;
+    const isWebp = u8[0] === 0x52 && u8[1] === 0x49;
+    if (!isPng && !isJpeg && !isWebp) return null;
+    const guess = isJpeg ? "image/jpeg" : isWebp ? "image/webp" : "image/png";
+    return arrayBufferToDataUrl(ab, guess);
   } catch {
     return null;
   }

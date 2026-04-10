@@ -66,3 +66,51 @@ export async function fetchPdfSettings(): Promise<PdfSettings> {
     legalBusinessRegistrationNumber: site.legal_business_registration_number ?? null,
   };
 }
+
+/** Public storefront: site-settings + payment-settings only (no admin routes). */
+export async function fetchStorefrontReceiptPdfSettings(): Promise<PdfSettings> {
+  const [siteRes, paymentRes] = await Promise.all([
+    fetch("/api/storefront/site-settings", { cache: "no-store" }),
+    fetch("/api/storefront/payment-settings", { cache: "no-store" }),
+  ]);
+  const site = (await siteRes.json().catch(() => ({}))) as Record<string, string | undefined>;
+  const payment = (await paymentRes.json().catch(() => ({}))) as {
+    bank?: { name: string; accountNo: string; accountName: string } | null;
+    lineId?: string | null;
+  };
+
+  const logoDataUrl = await resolvePdfLogo({
+    logo_secondary_png_url: site.logo_secondary_png_url ?? null,
+    logo_main_url: site.logo_main_url ?? null,
+  });
+
+  let socialLinks: SocialLink[] = [];
+  try {
+    const s = site.social_media;
+    if (s) {
+      const arr = JSON.parse(s);
+      socialLinks = Array.isArray(arr) ? arr : [];
+    }
+  } catch {
+    /* ignore */
+  }
+
+  const b = payment.bank;
+
+  return {
+    logoDataUrl,
+    companyName: site.company_name?.trim() || "Smile Seed Bank",
+    companyAddress: site.company_address ?? null,
+    companyEmail: site.company_email ?? null,
+    companyPhone: site.company_phone ?? null,
+    companyLineId: payment.lineId ?? null,
+    bankName: b?.name ?? null,
+    bankAccountName: b?.accountName ?? null,
+    bankAccountNo: b?.accountNo ?? null,
+    socialLinks,
+    legalSeedLicenseUrl: site.legal_seed_license_url ?? null,
+    legalSeedLicenseNumber: site.legal_seed_license_number ?? null,
+    legalBusinessRegistrationUrl: site.legal_business_registration_url ?? null,
+    legalBusinessRegistrationNumber: site.legal_business_registration_number ?? null,
+  };
+}

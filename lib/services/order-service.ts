@@ -5,6 +5,7 @@
 import { getSql } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { getLineUserIdByEmailForCheckout } from "@/lib/line-customer-line-resolve";
 import { Prisma } from "@prisma/client";
 import {
   assertSufficientStockForCheckoutLines,
@@ -13,7 +14,7 @@ import {
   type CheckoutStockLine,
 } from "@/lib/order-inventory";
 import { sendAdminNotification } from "@/lib/admin-notification";
-import { generateOrderNumber } from "@/lib/utils";
+import { generateOrderNumber } from "@/lib/order-utils";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
@@ -72,12 +73,24 @@ export interface OrderSuccessItemRow {
 
 export interface OrderSuccessView {
   order_number: string;
+  /** YYYY-MM-DD (Bangkok calendar day from DB `created_at`) */
+  order_date: string;
   status: string;
   total_amount: number;
   shipping_address: string | null;
   payment_method: string | null;
   slip_url: string | null;
+  tracking_number: string | null;
+  shipping_provider: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  shipping_fee: number;
+  discount_amount: number;
+  promotion_discount_amount: number;
+  points_discount_amount: number;
   items: OrderSuccessItemRow[];
+  /** True when `orders.line_user_id` is set (e.g. auto-linked from customer profile). */
+  line_linked: boolean;
 }
 
 export type OrderSuccessViewError =
@@ -120,108 +133,154 @@ export async function createOrder(
       0
     );
 
-    const orderNumber = generateOrderNumber();
-
     const stockLines: CheckoutStockLine[] = items.map((i) => ({
       variantId: i.variantId,
       quantity: i.quantity,
       productName: i.productName || "Unknown",
     }));
 
-    const result = await prisma.$transaction(async (tx) => {
-      await assertSufficientStockForCheckoutLines(tx, stockLines);
-      await deductVariantStockForOrderItems(
-        tx,
-        stockLines.map((l) => ({ variantId: l.variantId, quantity: l.quantity }))
-      );
+    const guestEmailLineUserId =
+      !resolvedCustomerId && customer.email?.trim()
+        ? await getLineUserIdByEmailForCheckout(customer.email)
+        : null;
 
-      if (resolvedCustomerId) {
-        await tx.customers.upsert({
-          where: { id: resolvedCustomerId },
-          create: {
-            id: resolvedCustomerId,
-            full_name: customer.full_name,
-            phone: customer.phone ?? null,
-            address: customer.address,
-            email: customer.email ?? undefined,
-            line_user_id: customer.line_user_id ?? undefined,
-          },
-          update: {
-            full_name: customer.full_name,
-            phone: customer.phone ?? undefined,
-            address: customer.address,
-            ...(customer.email != null ? { email: customer.email } : {}),
-            ...(customer.line_user_id != null && customer.line_user_id !== ""
-              ? { line_user_id: customer.line_user_id }
-              : {}),
-          },
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const orderNumber = generateOrderNumber();
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          await assertSufficientStockForCheckoutLines(tx, stockLines);
+          await deductVariantStockForOrderItems(
+            tx,
+            stockLines.map((l) => ({ variantId: l.variantId, quantity: l.quantity }))
+          );
+
+          let orderLineUserId: string | null = null;
+          if (resolvedCustomerId) {
+            const existing = await tx.customers.findUnique({
+              where: { id: resolvedCustomerId },
+              select: { line_user_id: true },
+            });
+            const fromInput = customer.line_user_id?.trim() || null;
+            const fromProfile = existing?.line_user_id?.trim() || null;
+            orderLineUserId = fromInput || fromProfile;
+
+            await tx.customers.upsert({
+              where: { id: resolvedCustomerId },
+              create: {
+                id: resolvedCustomerId,
+                full_name: customer.full_name,
+                phone: customer.phone ?? null,
+                address: customer.address,
+                email: customer.email ?? undefined,
+                line_user_id: orderLineUserId ?? undefined,
+              },
+              update: {
+                full_name: customer.full_name,
+                phone: customer.phone ?? undefined,
+                address: customer.address,
+                ...(customer.email != null ? { email: customer.email } : {}),
+                ...(customer.line_user_id != null && customer.line_user_id !== ""
+                  ? { line_user_id: customer.line_user_id.trim() }
+                  : {}),
+              },
+            });
+          } else if (guestEmailLineUserId) {
+            orderLineUserId = guestEmailLineUserId;
+          }
+
+          const order = await tx.orders.create({
+            data: {
+              order_number: orderNumber,
+              customer_id: resolvedCustomerId,
+              order_origin: "WEB",
+              payment_method: payment_method,
+              shipping_address: customer.address,
+              customer_name: customer.full_name,
+              customer_phone: customer.phone ?? null,
+              shipping_fee: new Prisma.Decimal(summary.shipping),
+              discount_amount: new Prisma.Decimal(summary.discount),
+              total_amount: new Prisma.Decimal(summary.total),
+              total_cost: new Prisma.Decimal(totalCost),
+              status: "PENDING",
+              ...(noteTrimmed ? { customer_note: noteTrimmed } : {}),
+              ...(orderLineUserId ? { line_user_id: orderLineUserId } : {}),
+            },
+          });
+
+          await tx.order_items.createMany({
+            data: items.map((item) => ({
+              order_id: order.id,
+              variant_id: BigInt(item.variantId),
+              product_name: item.productName || "Unknown",
+              quantity: item.quantity,
+              unit_price: new Prisma.Decimal(item.price),
+              unit_cost: new Prisma.Decimal(costMap.get(item.variantId) ?? 0),
+            })),
+          });
+
+          if (promo_code_id) {
+            await tx.promo_code_usages.create({
+              data: {
+                promo_code_id: BigInt(promo_code_id),
+                order_id: order.id,
+                customer_email: customer.email,
+                customer_phone: customer.phone,
+              },
+            });
+            const redemptionEmail = customer.email ?? customer.phone;
+            if (!redemptionEmail?.trim()) {
+              throw new Error("Email or phone required when using a promo code");
+            }
+            await tx.coupon_redemptions.create({
+              data: {
+                coupon_id: BigInt(promo_code_id),
+                user_id: resolvedCustomerId,
+                email: redemptionEmail,
+                order_id: order.id,
+              },
+            });
+          }
+
+          return { orderId: Number(order.id) };
         });
-      }
 
-      const order = await tx.orders.create({
-        data: {
-          order_number: orderNumber,
-          customer_id: resolvedCustomerId,
-          order_origin: "WEB",
-          payment_method: payment_method,
-          shipping_address: customer.address,
-          total_amount: new Prisma.Decimal(summary.total),
-          total_cost: new Prisma.Decimal(totalCost),
-          status: "PENDING",
-          ...(noteTrimmed ? { customer_note: noteTrimmed } : {}),
-        },
-      });
-
-      await tx.order_items.createMany({
-        data: items.map((item) => ({
-          order_id: order.id,
-          variant_id: BigInt(item.variantId),
-          product_name: item.productName || "Unknown",
-          quantity: item.quantity,
-          unit_price: new Prisma.Decimal(item.price),
-          unit_cost: new Prisma.Decimal(costMap.get(item.variantId) ?? 0),
-        })),
-      });
-
-      if (promo_code_id) {
-        await tx.promo_code_usages.create({
-          data: {
-            promo_code_id: BigInt(promo_code_id),
-            order_id: order.id,
-            customer_email: customer.email,
-            customer_phone: customer.phone,
-          },
+        const totalFmt = summary.total.toLocaleString("th-TH", {
+          maximumFractionDigits: 0,
         });
-        const redemptionEmail = customer.email ?? customer.phone;
-        if (!redemptionEmail?.trim()) {
-          throw new Error("Email or phone required when using a promo code");
+        void sendAdminNotification(
+          [
+            `🆕 New Order #${orderNumber}`,
+            `Customer: ${customer.full_name}`,
+            `Total: ฿${totalFmt}`,
+            `Status: PENDING`,
+          ].join("\n")
+        );
+
+        return { data: { orderNumber, orderId: result.orderId }, error: null };
+      } catch (err) {
+        if (err instanceof InsufficientStockError) {
+          console.warn("[order-service] createOrder:", err.message);
+          return { data: null, error: "INSUFFICIENT_STOCK" };
         }
-        await tx.coupon_redemptions.create({
-          data: {
-            coupon_id: BigInt(promo_code_id),
-            user_id: resolvedCustomerId,
-            email: redemptionEmail,
-            order_id: order.id,
-          },
-        });
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === "P2002"
+        ) {
+          const meta = err.meta as { target?: string | string[] } | undefined;
+          const t = meta?.target;
+          const orderNoCollision =
+            t === "order_number" || (Array.isArray(t) && t.includes("order_number"));
+          if (orderNoCollision && attempt < 4) {
+            continue;
+          }
+        }
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[order-service] createOrder error:", msg);
+        return { data: null, error: msg };
       }
+    }
 
-      return { orderId: Number(order.id) };
-    });
-
-    const totalFmt = summary.total.toLocaleString("th-TH", {
-      maximumFractionDigits: 0,
-    });
-    void sendAdminNotification(
-      [
-        `🆕 New Order #${orderNumber}`,
-        `Customer: ${customer.full_name}`,
-        `Total: ฿${totalFmt}`,
-        `Status: PENDING`,
-      ].join("\n")
-    );
-
-    return { data: { orderNumber, orderId: result.orderId }, error: null };
+    return { data: null, error: "Could not allocate unique order number" };
   } catch (err) {
     if (err instanceof InsufficientStockError) {
       console.warn("[order-service] createOrder:", err.message);
@@ -241,7 +300,8 @@ export async function createOrder(
  */
 export async function getOrderForSuccessView(
   orderNumber: string,
-  requesterUserId: string | null
+  requesterUserId: string | null,
+  options?: { skipCustomerAuth?: boolean }
 ): Promise<{ data: OrderSuccessView | null; error: OrderSuccessViewError | null }> {
   try {
     const sql = getSql();
@@ -250,15 +310,32 @@ export async function getOrderForSuccessView(
         id: number;
         customer_id: string | null;
         order_number: string;
+        created_at: Date | null;
         status: string | null;
         total_amount: string;
         shipping_address: string | null;
         payment_method: string | null;
         slip_url: string | null;
+        tracking_number: string | null;
+        shipping_provider: string | null;
+        customer_name: string | null;
+        customer_phone: string | null;
+        shipping_fee: string;
+        discount_amount: string;
+        promotion_discount_amount: string;
+        points_discount_amount: string;
+        line_user_id: string | null;
       }[]
     >`
-      SELECT id, customer_id, order_number, status, total_amount::text AS total_amount,
-             shipping_address, payment_method, slip_url
+      SELECT id, customer_id, order_number, created_at, status, total_amount::text AS total_amount,
+             shipping_address, payment_method, slip_url,
+             tracking_number, shipping_provider,
+             customer_name, customer_phone,
+             shipping_fee::text AS shipping_fee,
+             discount_amount::text AS discount_amount,
+             promotion_discount_amount::text AS promotion_discount_amount,
+             points_discount_amount::text AS points_discount_amount,
+             line_user_id
       FROM orders
       WHERE order_number = ${orderNumber}
       LIMIT 1
@@ -266,7 +343,7 @@ export async function getOrderForSuccessView(
     const order = rows[0];
     if (!order) return { data: null, error: "not_found" };
 
-    if (order.customer_id != null) {
+    if (!options?.skipCustomerAuth && order.customer_id != null) {
       if (!requesterUserId) return { data: null, error: "login_required" };
       if (order.customer_id !== requesterUserId) return { data: null, error: "forbidden" };
     }
@@ -289,15 +366,32 @@ export async function getOrderForSuccessView(
       };
     });
 
+    const orderDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(order.created_at ? new Date(order.created_at) : new Date());
+
     return {
       data: {
         order_number: order.order_number,
+        order_date: orderDate,
         status: order.status ?? "UNKNOWN",
         total_amount: Number(order.total_amount),
         shipping_address: order.shipping_address,
         payment_method: order.payment_method,
         slip_url: order.slip_url,
+        tracking_number: order.tracking_number,
+        shipping_provider: order.shipping_provider,
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+        shipping_fee: Number(order.shipping_fee ?? 0),
+        discount_amount: Number(order.discount_amount ?? 0),
+        promotion_discount_amount: Number(order.promotion_discount_amount ?? 0),
+        points_discount_amount: Number(order.points_discount_amount ?? 0),
         items,
+        line_linked: Boolean(order.line_user_id?.trim()),
       },
       error: null,
     };

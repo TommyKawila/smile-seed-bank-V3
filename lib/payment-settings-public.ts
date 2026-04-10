@@ -3,10 +3,10 @@ import type { Json } from "@/types/supabase";
 
 /**
  * Strict PostgREST select for checkout — never use "*".
- * Intentionally excludes: crypto_wallets, line_id, messenger_url, updated_at (and any future secret columns).
+ * Excludes messenger_url, updated_at, and legacy jsonb not used by storefront.
  */
 export const CHECKOUT_PAYMENT_SETTINGS_SELECT =
-  "id, bank_accounts, prompt_pay, crypto_wallets" as const;
+  "id, bank_accounts, prompt_pay" as const;
 
 /** Public storefront shape for payment instructions (no API keys or admin-only fields). */
 export type PaymentSetting = {
@@ -30,13 +30,6 @@ type PromptJson = {
   identifier?: string;
   qrUrl?: string;
   isActive?: boolean;
-  codEnabled?: boolean;
-};
-
-type CryptoWalletJson = {
-  network?: string;
-  address?: string;
-  isActive?: boolean;
 };
 
 function parseBankAccounts(raw: Json | null): BankJson[] {
@@ -49,11 +42,6 @@ function parsePromptPay(raw: Json | null): PromptJson | null {
   return raw as PromptJson;
 }
 
-function parseCryptoWallets(raw: Json | null): CryptoWalletJson[] {
-  if (!raw || !Array.isArray(raw)) return [];
-  return raw as CryptoWalletJson[];
-}
-
 /**
  * Loads active payment display rows for checkout via Supabase (RLS-safe columns only).
  * Maps JSON columns to PaymentSetting — DB uses bank_accounts / prompt_pay, not flat columns.
@@ -61,9 +49,6 @@ function parseCryptoWallets(raw: Json | null): CryptoWalletJson[] {
 export async function fetchCheckoutPaymentSettings(): Promise<{
   settings: PaymentSetting[];
   error: boolean;
-  /** At least one active crypto wallet with network + address (addresses not exposed in `settings`). */
-  storefrontCryptoEnabled: boolean;
-  storefrontCodEnabled: boolean;
 }> {
   try {
     const supabase = await createClient();
@@ -78,8 +63,6 @@ export async function fetchCheckoutPaymentSettings(): Promise<{
       return {
         settings: [],
         error: true,
-        storefrontCryptoEnabled: false,
-        storefrontCodEnabled: false,
       };
     }
 
@@ -87,8 +70,6 @@ export async function fetchCheckoutPaymentSettings(): Promise<{
       return {
         settings: [],
         error: false,
-        storefrontCryptoEnabled: false,
-        storefrontCodEnabled: false,
       };
     }
 
@@ -123,22 +104,12 @@ export async function fetchCheckoutPaymentSettings(): Promise<{
       });
     }
 
-    const storefrontCryptoEnabled = parseCryptoWallets(data.crypto_wallets).some(
-      (w) =>
-        w?.isActive &&
-        String(w.network ?? "").trim().length > 0 &&
-        String(w.address ?? "").trim().length > 0
-    );
-    const storefrontCodEnabled = pp?.codEnabled === true;
-
-    return { settings, error: false, storefrontCryptoEnabled, storefrontCodEnabled };
+    return { settings, error: false };
   } catch (e) {
     console.error("[fetchCheckoutPaymentSettings]", e);
     return {
       settings: [],
       error: true,
-      storefrontCryptoEnabled: false,
-      storefrontCodEnabled: false,
     };
   }
 }

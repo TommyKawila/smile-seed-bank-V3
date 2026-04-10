@@ -37,8 +37,8 @@ function posPaymentMethodLabelTh(code: string): string {
   const m: Record<string, string> = {
     CASH: "เงินสด",
     TRANSFER: "โอนเงิน",
-    CRYPTO: "Crypto",
-    COD: "COD (เก็บเงินปลายทาง)",
+    CRYPTO: "คริปโต (ประวัติ)",
+    COD: "COD (ประวัติ)",
   };
   return m[code] ?? code;
 }
@@ -596,8 +596,6 @@ export default function CreateOrderPage() {
                 >
                   <option value="CASH">เงินสด</option>
                   <option value="TRANSFER">โอนเงิน</option>
-                  <option value="CRYPTO">Crypto</option>
-                  <option value="COD">COD</option>
                 </select>
               </div>
               <div className="space-y-1">

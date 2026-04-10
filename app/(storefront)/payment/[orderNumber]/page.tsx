@@ -5,10 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ChevronLeft, CreditCard, Upload, Loader2, AlertCircle } from "lucide-react";
+import { ChevronLeft, CreditCard, Upload, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackingCta";
+import { lineOaPrefillUrlForOrderSuccess } from "@/lib/line-oa-url";
 import { formatPrice } from "@/lib/utils";
 import generatePayload from "promptpay-qr";
 import QRCode from "qrcode";
@@ -16,6 +17,7 @@ import QRCode from "qrcode";
 type PaySettings = {
   bank: { name: string; accountNo: string; accountName: string } | null;
   promptPay: { identifier: string; qrUrl: string } | null;
+  lineId?: string | null;
 };
 
 export default function PaymentPage() {
@@ -24,12 +26,14 @@ export default function PaymentPage() {
   const orderNumber = (params.orderNumber as string) ?? "";
   const [order, setOrder] = useState<{ total_amount: number; payment_method: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paySettings, setPaySettings] = useState<PaySettings>({ bank: null, promptPay: null });
+  const [paySettings, setPaySettings] = useState<PaySettings>({ bank: null, promptPay: null, lineId: null });
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lineCtaRef = useRef<HTMLDivElement>(null);
 
   // Fetch order + payment settings in parallel
   useEffect(() => {
@@ -41,7 +45,12 @@ export default function PaymentPage() {
         .then((r) => (r.ok ? r.json() : { bank: null, promptPay: null })),
     ]).then(([orderData, ps]) => {
       if (orderData) setOrder({ total_amount: orderData.total_amount, payment_method: orderData.payment_method });
-      setPaySettings(ps as PaySettings);
+      const p = ps as PaySettings & { lineId?: string | null };
+      setPaySettings({
+        bank: p.bank ?? null,
+        promptPay: p.promptPay ?? null,
+        lineId: p.lineId?.trim() || null,
+      });
     }).finally(() => setLoading(false));
   }, [orderNumber]);
 
@@ -58,6 +67,19 @@ export default function PaymentPage() {
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null));
   }, [order?.total_amount, order?.payment_method, paySettings.promptPay?.identifier]);
+
+  useEffect(() => {
+    if (!uploadSuccess || !orderNumber) return;
+    const t = setTimeout(() => {
+      router.push(`/order-success/${encodeURIComponent(orderNumber)}`);
+    }, 2400);
+    return () => clearTimeout(t);
+  }, [uploadSuccess, orderNumber, router]);
+
+  useEffect(() => {
+    if (!uploadSuccess) return;
+    lineCtaRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [uploadSuccess]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,7 +101,7 @@ export default function PaymentPage() {
       const res = await fetch("/api/storefront/orders/upload-slip", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Upload failed");
-      router.push(`/order-success/${encodeURIComponent(orderNumber)}`);
+      setUploadSuccess(true);
     } catch (err) {
       setUploadError(String(err).replace("Error: ", ""));
     } finally {
@@ -137,8 +159,6 @@ export default function PaymentPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">ยอดสุทธิ</p>
               <p className="text-2xl font-bold tabular-nums text-primary">{formatPrice(order.total_amount)}</p>
             </div>
-            <Separator className="my-4 bg-zinc-100" />
-            <LineParcelTrackingCta />
           </div>
 
           {/* Bank Details */}
@@ -216,37 +236,76 @@ export default function PaymentPage() {
             )}
           </div>
 
-          {/* Slip Upload */}
-          <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm space-y-4">
-            <p className="font-semibold text-zinc-800">ส่งหลักฐานการโอนเงิน</p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 py-4 text-primary font-medium hover:bg-accent transition-colors"
-            >
-              <Upload className="h-5 w-5" />
-              {selectedFile ? selectedFile.name : "เลือกไฟล์สลิป"}
-            </button>
-            {uploadError && <p className="text-xs text-red-500 text-center">{uploadError}</p>}
+          {/* Slip Upload — primary conversion */}
+          <div
+            className={`rounded-2xl border bg-white p-5 shadow-md space-y-4 ${
+              uploadSuccess
+                ? "border-emerald-200 ring-1 ring-emerald-100"
+                : "border-primary/35 ring-2 ring-primary/15"
+            }`}
+          >
+            {!uploadSuccess ? (
+              <>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">ขั้นตอนถัดไป</p>
+                  <p className="mt-1 text-lg font-bold text-zinc-900">ส่งหลักฐานการโอนเงิน</p>
+                  <p className="mt-1 text-xs text-zinc-500">อัปโหลดสลิปหรือ PDF เพื่อยืนยันการชำระเงิน</p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/[0.04] py-4 text-primary font-semibold hover:bg-primary/[0.08] transition-colors"
+                >
+                  <Upload className="h-5 w-5" />
+                  {selectedFile ? selectedFile.name : "เลือกไฟล์สลิป"}
+                </button>
+                {uploadError && <p className="text-xs text-red-500 text-center">{uploadError}</p>}
 
-            <Button
-              onClick={handleConfirm}
-              disabled={!selectedFile || uploading}
-              className="w-full h-12 bg-primary text-base font-semibold text-white hover:bg-primary/90"
+                <Button
+                  onClick={handleConfirm}
+                  disabled={!selectedFile || uploading}
+                  className="w-full h-12 bg-primary text-base font-semibold text-white shadow-sm hover:bg-primary/90"
+                >
+                  {uploading ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> กำลังอัปโหลด...</>
+                  ) : (
+                    <>ยืนยันการชำระเงิน</>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-3 py-1 text-center">
+                <CheckCircle2 className="h-12 w-12 text-emerald-600" strokeWidth={2} />
+                <p className="text-lg font-bold text-zinc-900">บันทึกหลักฐานเรียบร้อย</p>
+                <p className="text-sm text-zinc-600">กำลังพาไปหน้าสถานะออเดอร์…</p>
+              </div>
+            )}
+          </div>
+
+          {/* LINE — secondary follow-up; emphasized after slip OK */}
+          <div ref={lineCtaRef} className="pt-1">
+            <p
+              className={`mb-2 text-center text-[11px] font-medium ${
+                uploadSuccess ? "text-emerald-800" : "text-zinc-400"
+              }`}
             >
-              {uploading ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> กำลังอัปโหลด...</>
-              ) : (
-                <>ยืนยันการชำระเงิน</>
-              )}
-            </Button>
+              {uploadSuccess ? "ถัดไป — ติดตามพัสดุเมื่อจัดส่งแล้ว" : "บริการเสริม — ไม่บังคับตอนนี้"}
+            </p>
+            <LineParcelTrackingCta
+              href={lineOaPrefillUrlForOrderSuccess(orderNumber, paySettings.lineId ?? null)}
+              className={
+                uploadSuccess
+                  ? "border-[#06C755] bg-[#06C755]/10 py-3 text-base font-semibold shadow-md ring-2 ring-[#06C755]/30"
+                  : "border-zinc-200/90 bg-zinc-50/90 py-2 text-xs font-normal text-zinc-600 hover:bg-zinc-100/90"
+              }
+            />
           </div>
         </motion.div>
       </div>

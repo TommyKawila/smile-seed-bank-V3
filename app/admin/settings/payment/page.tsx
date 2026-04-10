@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import { Loader2, Plus, Trash2, CreditCard, QrCode, Wallet, MessageCircle, Upload, ImageIcon } from "lucide-react";
+import { Loader2, Plus, Trash2, CreditCard, QrCode, MessageCircle, Upload, ImageIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,29 +12,7 @@ import {
   type PaymentSettingsForm,
   type BankAccount,
   type PromptPay,
-  type CryptoWallet,
 } from "@/lib/validations/payment-settings";
-
-function normalizeCryptoWalletFromApi(raw: unknown): CryptoWallet {
-  const c = raw as Record<string, unknown>;
-  const rawActive = c.isActive ?? c.isactive ?? c.is_active;
-  const isActive =
-    rawActive === false ||
-    rawActive === "false" ||
-    rawActive === 0
-      ? false
-      : rawActive === true ||
-          rawActive === "true" ||
-          rawActive === 1
-        ? true
-        : true;
-  return {
-    network: String(c.network ?? ""),
-    address: String(c.address ?? ""),
-    qrUrl: typeof c.qrUrl === "string" ? c.qrUrl : "",
-    isActive,
-  };
-}
 
 /** Inline QR uploader — uploads to brand-assets bucket via existing endpoint */
 function QrUpload({
@@ -130,63 +107,62 @@ function QrUpload({
 }
 
 const emptyBank: BankAccount = { bankName: "", accountName: "", accountNo: "", isActive: true };
-const emptyPromptPay: PromptPay = { identifier: "", qrUrl: "", isActive: true, codEnabled: false };
-const emptyCrypto: CryptoWallet = { network: "", address: "", qrUrl: "", isActive: true };
+const emptyPromptPay: PromptPay = { identifier: "", qrUrl: "", isActive: true };
 
 export default function PaymentSettingsPage() {
-  const router = useRouter();
   const [form, setForm] = useState<PaymentSettingsForm>({
     bankAccounts: [],
     promptPay: emptyPromptPay,
-    cryptoWallets: [],
     lineId: "",
     messengerUrl: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  /** UI + toggles locked until POST succeeds and form state is updated from server. */
+  const [isLocked, setIsLocked] = useState(false);
   const [toast, setToast] = useState<"success" | "error" | null>(null);
+  /** Bumps when save starts so in-flight GET cannot overwrite form after user intent. */
+  const fetchGenRef = useRef(0);
 
-  const fetchSettings = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/settings/payment");
-      if (res.ok) {
+  useEffect(() => {
+    const gen = ++fetchGenRef.current;
+    const ac = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/settings/payment", { signal: ac.signal });
+        if (!res.ok) {
+          if (gen === fetchGenRef.current) setIsLoading(false);
+          return;
+        }
         const data = await res.json();
+        if (gen !== fetchGenRef.current) return;
         setForm({
           bankAccounts: Array.isArray(data.bankAccounts) && data.bankAccounts.length > 0
             ? data.bankAccounts
             : [emptyBank],
           promptPay: data.promptPay ?? emptyPromptPay,
-          cryptoWallets: Array.isArray(data.cryptoWallets) && data.cryptoWallets.length > 0
-            ? data.cryptoWallets.map(normalizeCryptoWalletFromApi)
-            : [emptyCrypto],
           lineId: data.lineId ?? "",
           messengerUrl: data.messengerUrl ?? "",
         });
+      } catch (e) {
+        if (e instanceof Error && e.name === "AbortError") return;
+        if (gen === fetchGenRef.current) setIsLoading(false);
+      } finally {
+        if (gen === fetchGenRef.current) setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
+    })();
+    return () => ac.abort();
   }, []);
 
-  useEffect(() => {
-    void fetchSettings();
-  }, [fetchSettings]);
-
   const handleSave = async () => {
+    fetchGenRef.current += 1;
+    setIsLocked(true);
     setIsSaving(true);
     setToast(null);
     try {
       const payload = {
         ...form,
         bankAccounts: form.bankAccounts.filter((b) => b.bankName.trim() || b.accountNo.trim()),
-        cryptoWallets: form.cryptoWallets
-          .filter((c) => c.network.trim() || c.address.trim())
-          .map((c) => ({
-            network: c.network.trim(),
-            address: c.address.trim(),
-            qrUrl: (c.qrUrl ?? "").trim(),
-            isActive: c.isActive !== false,
-          })),
       };
       if (process.env.NODE_ENV === "development") {
         console.log("Payload to be sent:", JSON.stringify(payload, null, 2));
@@ -201,35 +177,28 @@ export default function PaymentSettingsPage() {
         error?: string;
         bankAccounts?: unknown[];
         promptPay?: unknown;
-        cryptoWallets?: unknown[];
         lineId?: string;
         messengerUrl?: string;
       };
-      if (!res.ok) {
+      if (!res.ok || json.ok !== true) {
         setToast("error");
         return;
       }
-      if (json.ok && Array.isArray(json.cryptoWallets)) {
-        setForm((prev) => ({
-          ...prev,
-          bankAccounts:
-            Array.isArray(json.bankAccounts) && json.bankAccounts.length > 0
-              ? (json.bankAccounts as BankAccount[])
-              : [emptyBank],
-          promptPay: (json.promptPay as PromptPay) ?? prev.promptPay ?? emptyPromptPay,
-          cryptoWallets:
-            json.cryptoWallets.length > 0
-              ? json.cryptoWallets.map(normalizeCryptoWalletFromApi)
-              : [emptyCrypto],
-          lineId: json.lineId ?? prev.lineId,
-          messengerUrl: json.messengerUrl ?? prev.messengerUrl,
-        }));
-      }
-      router.refresh();
+      setForm((prev) => ({
+        ...prev,
+        bankAccounts:
+          Array.isArray(json.bankAccounts) && json.bankAccounts.length > 0
+            ? (json.bankAccounts as BankAccount[])
+            : [emptyBank],
+        promptPay: (json.promptPay as PromptPay) ?? prev.promptPay ?? emptyPromptPay,
+        lineId: json.lineId ?? prev.lineId,
+        messengerUrl: json.messengerUrl ?? prev.messengerUrl,
+      }));
       setToast("success");
       setTimeout(() => setToast(null), 3000);
     } finally {
       setIsSaving(false);
+      setIsLocked(false);
     }
   };
 
@@ -247,17 +216,6 @@ export default function PaymentSettingsPage() {
   const updatePromptPay = (field: keyof PromptPay, value: string | boolean) =>
     setForm((f) => ({ ...f, promptPay: { ...(f.promptPay ?? emptyPromptPay), [field]: value } }));
 
-  const addCrypto = () => setForm((f) => ({ ...f, cryptoWallets: [...f.cryptoWallets, { ...emptyCrypto }] }));
-  const removeCrypto = (i: number) =>
-    setForm((f) => ({ ...f, cryptoWallets: f.cryptoWallets.filter((_, idx) => idx !== i) }));
-  const updateCrypto = (i: number, field: keyof CryptoWallet, value: string | boolean) =>
-    setForm((f) => ({
-      ...f,
-      cryptoWallets: f.cryptoWallets.map((c, idx) =>
-        idx === i ? { ...c, [field]: value } : c
-      ),
-    }));
-
   if (isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -271,7 +229,7 @@ export default function PaymentSettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-zinc-900">ช่องทางการชำระเงิน</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          จัดการบัญชีธนาคาร, PromptPay, Crypto และช่องทางติดต่อ (ไม่รวม COD)
+          จัดการบัญชีธนาคาร, PromptPay และช่องทางติดต่อ
         </p>
       </div>
 
@@ -350,6 +308,7 @@ export default function PaymentSettingsPage() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={b.isActive}
+                  disabled={isSaving || isLocked}
                   onCheckedChange={(v) => updateBank(i, "isActive", v)}
                 />
                 <Label className="text-xs">เปิดใช้งาน</Label>
@@ -359,118 +318,40 @@ export default function PaymentSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* ── PromptPay & Crypto ───────────────────────────────────────────────── */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <QrCode className="h-4 w-4" />
-              PromptPay
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label className="text-xs">เบอร์โทร / เลข PromptPay</Label>
-              <Input
-                placeholder="เช่น 0812345678"
-                value={form.promptPay?.identifier ?? ""}
-                onChange={(e) => updatePromptPay("identifier", e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            <QrUpload
-              value={form.promptPay?.qrUrl ?? ""}
-              onChange={(url) => updatePromptPay("qrUrl", url)}
+      {/* ── PromptPay ────────────────────────────────────────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <QrCode className="h-4 w-4" />
+            PromptPay
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-xs">เบอร์โทร / เลข PromptPay</Label>
+            <Input
+              placeholder="เช่น 0812345678"
+              value={form.promptPay?.identifier ?? ""}
+              onChange={(e) => updatePromptPay("identifier", e.target.value)}
+              className="mt-1"
             />
+          </div>
 
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={form.promptPay?.isActive ?? true}
-                onCheckedChange={(v) => updatePromptPay("isActive", v)}
-              />
-              <Label className="text-xs">เปิดใช้งาน</Label>
-            </div>
-            <div className="flex items-center gap-2 border-t border-zinc-100 pt-3">
-              <Switch
-                checked={form.promptPay?.codEnabled ?? false}
-                onCheckedChange={(v) => updatePromptPay("codEnabled", v)}
-              />
-              <Label className="text-xs">แสดงช่องทาง COD หน้า Checkout</Label>
-            </div>
-          </CardContent>
-        </Card>
+          <QrUpload
+            value={form.promptPay?.qrUrl ?? ""}
+            onChange={(url) => updatePromptPay("qrUrl", url)}
+          />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Wallet className="h-4 w-4" />
-              Crypto Wallets
-            </CardTitle>
-            <Button variant="outline" size="sm" onClick={addCrypto} className="gap-1.5">
-              <Plus className="h-3.5 w-3.5" />
-              เพิ่ม
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {(form.cryptoWallets.length === 0 ? [emptyCrypto] : form.cryptoWallets).map((c, i) => (
-              <div
-                key={i}
-                className="flex flex-col gap-3 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-zinc-500">Wallet #{i + 1}</span>
-                  {form.cryptoWallets.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-red-500 hover:text-red-600"
-                      onClick={() => removeCrypto(i)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-                <div>
-                  <Label className="text-xs">เครือข่าย</Label>
-                  <Input
-                    placeholder="เช่น USDT-TRC20, BTC"
-                    value={c.network}
-                    onChange={(e) => updateCrypto(i, "network", e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">ที่อยู่ Wallet</Label>
-                  <Input
-                    placeholder="Address"
-                    value={c.address}
-                    onChange={(e) => updateCrypto(i, "address", e.target.value)}
-                    className="mt-1 font-mono text-xs"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">URL รูป QR (ถ้ามี)</Label>
-                  <Input
-                    placeholder="https://..."
-                    value={c.qrUrl ?? ""}
-                    onChange={(e) => updateCrypto(i, "qrUrl", e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={c.isActive}
-                    onCheckedChange={(v) => updateCrypto(i, "isActive", v)}
-                  />
-                  <Label className="text-xs">เปิดใช้งาน</Label>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={form.promptPay?.isActive ?? true}
+              disabled={isSaving || isLocked}
+              onCheckedChange={(v) => updatePromptPay("isActive", v)}
+            />
+            <Label className="text-xs">เปิดใช้งาน</Label>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ── Contact ──────────────────────────────────────────────────────────── */}
       <Card>
@@ -506,7 +387,7 @@ export default function PaymentSettingsPage() {
       <div className="flex justify-end">
         <Button
           onClick={() => void handleSave()}
-          disabled={isSaving}
+          disabled={isSaving || isLoading || isLocked}
           className="min-w-[180px] gap-2"
         >
           {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}

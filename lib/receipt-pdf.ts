@@ -1,4 +1,6 @@
 import { jsPDF } from "jspdf";
+import { parsePackCountFromUnitLabel } from "./cart-pack-display";
+import { getImageDimensionsFromDataUrl } from "./image-data-url-dimensions";
 import { defaultQuotationShippingFee } from "./order-financials";
 import { PROMPT_FONT_BASE64 } from "./prompt-font-base64";
 import { formatPhoneNumber } from "./utils";
@@ -6,7 +8,7 @@ import { formatPhoneNumber } from "./utils";
 export type ReceiptItem = {
   productName: string;
   breeder?: string | null;
-  unitLabel: string;
+  unitLabel?: string | null;
   quantity: number;
   price: number;
   discount: number;
@@ -47,6 +49,11 @@ export type ReceiptPDFOptions = {
   itemsSubtotal?: number | null;
   /** Receipt: from `orders.shipping_fee` & `orders.discount_amount` when generating from an order */
   orderFinancials?: { shippingFee: number; discountAmount: number } | null;
+  /**
+   * When `orderFinancials` is omitted but `shippingCost` is set — gross items subtotal =
+   * `grandTotal - shippingCost + receiptOrderDiscount`.
+   */
+  receiptOrderDiscount?: number | null;
   paymentDate?: string | null;
   paymentMethod?: string | null;
 };
@@ -55,6 +62,52 @@ export const RECEIPT_ELIGIBLE_STATUSES = ["PAID", "COMPLETED", "SHIPPED", "DELIV
 
 export function isReceiptEligibleStatus(status: string): boolean {
   return (RECEIPT_ELIGIBLE_STATUSES as readonly string[]).includes(status);
+}
+
+/** Split order-level discount across lines by line total (for receipt transparency). */
+export function allocateOrderDiscountToLines(lineTotals: number[], orderDiscount: number): number[] {
+  const n = lineTotals.length;
+  if (n === 0 || orderDiscount <= 0) return lineTotals.map(() => 0);
+  const sum = lineTotals.reduce((a, b) => a + b, 0);
+  if (sum <= 0) return lineTotals.map(() => 0);
+  const shares: number[] = [];
+  let allocated = 0;
+  for (let i = 0; i < n; i++) {
+    if (i === n - 1) {
+      shares.push(Math.round((orderDiscount - allocated) * 100) / 100);
+    } else {
+      const v = Math.round(((orderDiscount * lineTotals[i]) / sum) * 100) / 100;
+      shares.push(v);
+      allocated += v;
+    }
+  }
+  return shares;
+}
+
+function formatBahtPdf(amount: number): string {
+  const n = Math.round(amount * 100) / 100;
+  const opts: Intl.NumberFormatOptions =
+    Number.isInteger(n) ? { maximumFractionDigits: 0 } : { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  return `฿${n.toLocaleString("th-TH", opts)}`;
+}
+
+function itemTitleLine(productName: string | null | undefined, breeder: string | null | undefined): string {
+  const name = (productName ?? "").toString().trim() || "—";
+  const b = (breeder ?? "").toString().trim();
+  return b ? `${name} by ${b}` : name;
+}
+
+function packCellLines(unitLabel: string | null | undefined): { th: string; en: string } {
+  const raw = (unitLabel ?? "").toString();
+  const n = parsePackCountFromUnitLabel(raw);
+  if (n > 0) {
+    return {
+      th: `แพ็ค ${n} เมล็ด`,
+      en: `${n} seeds pack`,
+    };
+  }
+  const u = raw.trim();
+  return { th: u || "—", en: u || "—" };
 }
 
 export function formatPaymentMethodForPdf(m: string | null | undefined): string | null {
@@ -77,10 +130,11 @@ function registerThaiFont(doc: jsPDF) {
 }
 
 const MARGIN = 15;
-const COL_X = [15, 25, 95, 115, 130, 150, 170, 195];
+/** Column boundaries (mm): No | Item | Pack | Qty | Unit | Total — no per-line discount column */
+const COL_X = [15, 25, 95, 115, 133, 158, 195];
 const CELL_PAD = 2;
 const LOGO_W = 40;
-const LOGO_H = 40 * (18 / 50);
+const LOGO_H_FALLBACK = 40 * (18 / 50);
 
 function fallbackStr(val: string | null | undefined, def: string): string {
   const s = (val ?? "").toString().trim();
@@ -124,6 +178,7 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
     shippingCost: shippingCostOpt,
     itemsSubtotal: itemsSubtotalOpt,
     orderFinancials,
+    receiptOrderDiscount,
     paymentDate,
     paymentMethod,
   } = opts;
@@ -154,6 +209,7 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
   const ordDate = fallbackStr(orderDate, "—");
   const cust = formatCustomerName(fallbackStr(customerName, "General Customer"));
 
+  let logoDrawH = LOGO_H_FALLBACK;
   if (logoDataUrl) {
     try {
       const finalLogoBase64 = logoDataUrl.startsWith("data:image/png;base64,")
@@ -165,11 +221,15 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
         finalLogoBase64.startsWith("data:image/jpeg") || finalLogoBase64.startsWith("data:image/jpg")
           ? "JPEG"
           : "PNG";
-      doc.addImage(finalLogoBase64, fmt, MARGIN, y, LOGO_W, LOGO_H, "LOGO", "FAST");
+      const dim = getImageDimensionsFromDataUrl(finalLogoBase64);
+      logoDrawH =
+        dim && dim.width > 0 ? (LOGO_W * dim.height) / dim.width : LOGO_H_FALLBACK;
+      doc.addImage(finalLogoBase64, fmt, MARGIN, y, LOGO_W, logoDrawH, "LOGO", "FAST");
     } catch {
       doc.setFontSize(12);
       setThemeColor("main");
       doc.text(companyName, MARGIN, y + 8);
+      logoDrawH = 10;
     }
   } else {
     doc.setFontSize(12);
@@ -197,7 +257,7 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
       doc.text(`ช่องทางการชำระเงิน / Payment Method: ${paymentMethod}`, rightEdge, y + headerLineY, { align: "right" });
     }
   }
-  y += Math.max(LOGO_H, headerLineY + 4);
+  y += Math.max(logoDataUrl ? logoDrawH : LOGO_H_FALLBACK, headerLineY + 4);
 
   const lineH = 5;
   doc.setFontSize(9);
@@ -220,6 +280,15 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
     doc.setFontSize(9);
     doc.text("ที่อยู่จัดส่ง / Shipping Address:", MARGIN, y);
     y += lineH;
+    const shipNameRaw = fallbackStr(customerName, "").trim();
+    if (shipNameRaw) {
+      doc.text(formatCustomerName(shipNameRaw).toUpperCase(), MARGIN, y);
+      y += lineH;
+    }
+    if (custPhone) {
+      doc.text(`Phone: ${formatPhoneNumber(custPhone)}`, MARGIN, y);
+      y += lineH;
+    }
     const addrLines = doc.splitTextToSize(custAddr, rightEdge - MARGIN);
     for (const line of addrLines) {
       doc.text(line, MARGIN, y);
@@ -246,7 +315,7 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
   y += 8;
 
   const headerRowH = 12;
-  const dataRowH = 14;
+  const dataRowH = 16;
   const rowPadTop = 5;
   const tableTop = y;
 
@@ -260,8 +329,7 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
     { th: "แพ็ก", en: "Pack", col: 2, align: "center" as const },
     { th: "จำนวน", en: "Qty", col: 3, align: "center" as const },
     { th: "ราคา/หน่วย", en: "Unit Price", col: 4, align: "right" as const },
-    { th: "ส่วนลด", en: "Discount", col: 5, align: "right" as const },
-    { th: "รวม", en: "Total", col: 6, align: "right" as const },
+    { th: "รวม", en: "Total", col: 5, align: "right" as const },
   ];
   const thY = y + 4;
   const enY = y + 4 + 3 + 2;
@@ -297,26 +365,34 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
   const itemColW = Math.max(20, COL_X[2] - COL_X[1] - CELL_PAD * 2 - 3);
   for (let idx = 0; idx < items.length; idx++) {
     const item = items[idx];
-    if (y > 250) {
+    if (y > 248) {
       doc.addPage();
       registerThaiFont(doc);
       y = MARGIN;
     }
     y += rowPadTop;
     const textY = y;
+    doc.setFont("Prompt", "normal");
     doc.setFontSize(9);
     doc.setTextColor(40, 40, 40);
     doc.text(String(idx + 1), (COL_X[0] + COL_X[1]) / 2, textY, { align: "center" });
-    const itemLabel = item.breeder?.trim() ? `${item.productName} (${item.breeder})` : item.productName;
+    const itemLabel = itemTitleLine(item.productName, item.breeder);
     const lines = doc.splitTextToSize(itemLabel, itemColW);
     for (let i = 0; i < Math.min(lines.length, 2); i++) {
       doc.text(lines[i], COL_X[1] + CELL_PAD, textY + i * 4);
     }
-    doc.text(item.unitLabel, (COL_X[2] + COL_X[3]) / 2, textY, { align: "center" });
+    const pack = packCellLines(item.unitLabel);
+    const packMidX = (COL_X[2] + COL_X[3]) / 2;
+    doc.setFontSize(6.5);
+    doc.setTextColor(72, 72, 72);
+    doc.text(pack.th, packMidX, textY, { align: "center" });
+    doc.text(pack.en, packMidX, textY + 3.4, { align: "center" });
+    doc.setFontSize(9);
+    doc.setTextColor(40, 40, 40);
     doc.text(String(item.quantity), (COL_X[3] + COL_X[4]) / 2, textY, { align: "center" });
-    doc.text(`฿${item.price.toLocaleString("th-TH")}`, COL_X[5] - CELL_PAD, textY, { align: "right" });
-    doc.text(`฿${item.discount.toLocaleString("th-TH")}`, COL_X[6] - CELL_PAD, textY, { align: "right" });
-    doc.text(`฿${item.subtotal.toLocaleString("th-TH")}`, COL_X[7] - CELL_PAD, textY, { align: "right" });
+    doc.text(formatBahtPdf(item.price), COL_X[5] - CELL_PAD, textY, { align: "right" });
+    const lineGross = item.subtotal;
+    doc.text(formatBahtPdf(lineGross), COL_X[6] - CELL_PAD, textY, { align: "right" });
     y += dataRowH - rowPadTop;
     tableBottom = y;
   }
@@ -338,10 +414,11 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
     lineSubtotal = grandTotal - shippingCost + discountAmount;
   } else if (shippingCostOpt !== undefined && shippingCostOpt !== null) {
     shippingCost = Math.max(0, Number(shippingCostOpt) || 0);
+    discountAmount = Math.max(0, Number(receiptOrderDiscount) || 0);
     if (itemsSubtotalOpt !== undefined && itemsSubtotalOpt !== null) {
       lineSubtotal = Math.max(0, Number(itemsSubtotalOpt) || 0);
     } else {
-      lineSubtotal = Math.max(0, grandTotal - shippingCost);
+      lineSubtotal = Math.max(0, grandTotal - shippingCost + discountAmount);
     }
   } else if (docType === "quotation") {
     lineSubtotal = grandTotal;
@@ -353,12 +430,26 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
   doc.setFontSize(9);
   doc.setTextColor(60, 60, 60);
   const useOrderFin = isReceipt && orderFinancials != null;
-  const receiptBreakdown = useOrderFin && (shippingCost > 0 || discountAmount > 0);
-  const subtotalLabel = receiptBreakdown ? "ยอดรวมสินค้า / Items Subtotal:" : "ยอดรวม / Subtotal:";
-  doc.text(`${subtotalLabel} ฿${lineSubtotal.toLocaleString("th-TH")}`, sumX, y, { align: "right" });
+  const legacyReceiptFin =
+    isReceipt &&
+    orderFinancials == null &&
+    shippingCostOpt !== undefined &&
+    shippingCostOpt !== null &&
+    (shippingCost > 0 || discountAmount > 0);
+  const receiptBreakdown = useOrderFin || legacyReceiptFin;
+  const subtotalLabel =
+    useOrderFin || (isReceipt && receiptBreakdown)
+      ? "ยอดรวมสินค้า / Items Subtotal:"
+      : "ยอดรวม / Subtotal:";
+  doc.text(`${subtotalLabel} ${formatBahtPdf(lineSubtotal)}`, sumX, y, { align: "right" });
   y += 5;
-  if (receiptBreakdown && discountAmount > 0) {
-    doc.text(`ส่วนลด / Discount: -฿${discountAmount.toLocaleString("th-TH")}`, sumX, y, { align: "right" });
+  if (receiptBreakdown && discountAmount > 0.005) {
+    doc.setFont("Prompt", "normal");
+    doc.setTextColor(160, 45, 45);
+    doc.setFontSize(9.5);
+    doc.text(`ส่วนลด / Discount: -${formatBahtPdf(discountAmount)}`, sumX, y, { align: "right" });
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
     y += 5;
   }
   const showLegacyReceiptShipping =
@@ -371,16 +462,16 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
       setThemeColor("main");
       doc.text("ค่าจัดส่ง / Shipping: ฟรี / Free", sumX, y, { align: "right" });
     } else {
-      doc.text(`ค่าจัดส่ง / Shipping: ฿${shippingCost.toLocaleString("th-TH")}`, sumX, y, { align: "right" });
+      doc.text(`ค่าจัดส่ง / Shipping: ${formatBahtPdf(shippingCost)}`, sumX, y, { align: "right" });
     }
     doc.setTextColor(60, 60, 60);
     y += 8;
   } else if (receiptBreakdown && shippingCost > 0) {
-    doc.text(`ค่าจัดส่ง / Shipping: ฿${shippingCost.toLocaleString("th-TH")}`, sumX, y, { align: "right" });
+    doc.text(`ค่าจัดส่ง / Shipping: ${formatBahtPdf(shippingCost)}`, sumX, y, { align: "right" });
     y += 8;
   }
 
-  const tableRight = COL_X[7];
+  const tableRight = COL_X[6];
   const netBarWidth = tableRight - MARGIN;
   setThemeDraw();
   doc.setLineWidth(0.5);
@@ -390,7 +481,8 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
   doc.rect(MARGIN, y, netBarWidth, 8, "F");
   doc.setFontSize(10);
   doc.setTextColor(255, 255, 255);
-  doc.text(`ยอดรวมสุทธิ / Net Grand Total: ฿${netTotal.toLocaleString("th-TH")}`, tableRight - CELL_PAD, y + 5.5, { align: "right" });
+  doc.setFont("Prompt", "normal");
+  doc.text(`ยอดรวมสุทธิ / Net Grand Total: ${formatBahtPdf(netTotal)}`, tableRight - CELL_PAD, y + 5.5, { align: "right" });
   doc.setFontSize(9);
   y += 14;
   if (isReceipt) {

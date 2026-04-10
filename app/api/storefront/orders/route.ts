@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createOrder, fetchEmailItems } from "@/lib/services/order-service";
-import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
 import { sendOrderConfirmationEmail } from "@/services/email-service";
 
 const CheckoutSchema = z.object({
@@ -56,21 +55,6 @@ export async function POST(req: NextRequest) {
       locale,
       order_note,
     } = parsed.data;
-
-    const { storefrontCryptoEnabled, storefrontCodEnabled } =
-      await fetchCheckoutPaymentSettings();
-    if (payment_method === "CRYPTO" && !storefrontCryptoEnabled) {
-      return NextResponse.json(
-        { error: "ช่องทางคริปโตไม่เปิดใช้งาน" },
-        { status: 400 }
-      );
-    }
-    if (payment_method === "COD" && !storefrontCodEnabled) {
-      return NextResponse.json(
-        { error: "ช่องทาง COD ไม่เปิดใช้งาน" },
-        { status: 400 }
-      );
-    }
 
     const { data, error } = await createOrder({
       customer: {

@@ -5,8 +5,10 @@ import Image from "next/image";
 import {
   X, Leaf, MapPin, Truck, Copy, Check,
   Clock, XCircle, Package, CreditCard,
-  ShieldCheck, Hourglass, ExternalLink,
+  ShieldCheck, Hourglass, ExternalLink, Upload,
+  CheckCircle2, RotateCcw, FileText,
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { cn, formatPrice } from "@/lib/utils";
 
@@ -57,14 +59,34 @@ const STATUS_MAP: Record<string, {
     desc: "เราได้รับการชำระเงินแล้ว กำลังเตรียมแพ็คสินค้าให้คุณ 🌿",
     icon: ShieldCheck, cls: "text-primary", bg: "bg-accent border-primary/25",
   },
+  COMPLETED: {
+    label: "คำสั่งซื้อเสร็จสมบูรณ์",
+    desc: "ขอบคุณที่ไว้วางใจเรา",
+    icon: CheckCircle2, cls: "text-primary", bg: "bg-accent border-primary/25",
+  },
   SHIPPED: {
     label: "จัดส่งแล้ว",
     desc: "สินค้าถูกส่งออกไปแล้ว กำลังเดินทางมาหาคุณ 📦",
     icon: Truck, cls: "text-primary", bg: "bg-accent border-primary/25",
   },
+  DELIVERED: {
+    label: "ส่งถึงแล้ว",
+    desc: "พัสดุถึงปลายทางแล้ว หวังว่าคุณจะพึงพอใจกับสินค้า",
+    icon: Package, cls: "text-primary", bg: "bg-accent border-primary/25",
+  },
   CANCELLED: {
     label: "ยกเลิกแล้ว",
-    desc: "ออเดอร์นี้ถูกยกเลิก กรุณาติดต่อเราหากมีข้อสงสัย",
+    desc: "ออเดอร์นี้ถูกยกเลิกแล้ว",
+    icon: XCircle, cls: "text-red-600", bg: "bg-red-50 border-red-200",
+  },
+  VOIDED: {
+    label: "ยกเลิกและคืนสินค้า",
+    desc: "ออเดอร์นี้ถูกยกเลิกแล้ว",
+    icon: RotateCcw, cls: "text-zinc-600", bg: "bg-zinc-100 border-zinc-300",
+  },
+  PAYMENT_REJECTED: {
+    label: "การชำระเงินไม่ผ่าน",
+    desc: "ออเดอร์นี้ถูกยกเลิกแล้ว",
     icon: XCircle, cls: "text-red-600", bg: "bg-red-50 border-red-200",
   },
 };
@@ -172,7 +194,8 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
       ? Math.round(subtotal - Number(order?.total_amount ?? 0))
       : 0;
 
-  const statusInfo = STATUS_MAP[order?.status ?? ""] ?? STATUS_MAP.PENDING;
+  const rawStatus = (order?.status ?? "").trim();
+  const statusInfo = STATUS_MAP[rawStatus] ?? STATUS_MAP.PENDING;
   const StatusIcon = statusInfo.icon;
 
   const dateStr = order
@@ -238,6 +261,31 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
                   <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">{statusInfo.desc}</p>
                 </div>
               </div>
+
+              {(order.status === "PAID" || order.status === "COMPLETED") && (
+                <a
+                  href={`/api/storefront/orders/${encodeURIComponent(order.order_number)}/receipt`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-white py-3 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-emerald-50/50"
+                >
+                  <FileText className="h-4 w-4 shrink-0" />
+                  {locale === "en" ? "Download receipt (PDF)" : "ดาวน์โหลดใบเสร็จ (PDF)"}
+                </a>
+              )}
+
+              {order.status === "PENDING" && order.payment_method === "TRANSFER" && (
+                <Link
+                  href={`/order-success/${encodeURIComponent(order.order_number)}`}
+                  onClick={onClose}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-white shadow-sm transition-transform active:scale-[0.98]"
+                >
+                  <Upload className="h-5 w-5 shrink-0" />
+                  {locale === "en"
+                    ? "Pay / upload slip"
+                    : "แจ้งโอนเงิน / อัปโหลดสลิป"}
+                </Link>
+              )}
 
               {/* ── Shipping / Tracking ── */}
               {order.tracking_number && (

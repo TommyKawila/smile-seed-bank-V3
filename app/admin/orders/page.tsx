@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ShoppingCart, Loader2, CheckCircle2, XCircle,
   ImageIcon, User, RefreshCw, FileText, Clock, BadgeCheck,
-  Truck, Package, Plus, Printer, RotateCcw, Receipt,
+  Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,15 @@ import { useAdminOrders, type AdminOrder } from "@/hooks/useAdminOrders";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { openPackingSlipPrint } from "@/components/admin/PackingSlipPrint";
-import { generateReceiptPDF, formatPaymentMethodForPdf, isReceiptEligibleStatus } from "@/lib/receipt-pdf";
+import {
+  generateReceiptPDF,
+  formatPaymentMethodForPdf,
+  isReceiptEligibleStatus,
+} from "@/lib/receipt-pdf";
+import { computeOrderReceiptFinancials } from "@/lib/order-receipt-math";
+import { getSiteOrigin } from "@/lib/get-url";
+import { generateOrderFlexMessage } from "@/lib/line-flex";
+import { createReceiptDownloadQuery } from "@/lib/receipt-download-token";
 import { fetchPdfSettings } from "@/lib/pdf-settings";
 import { ReceiptPreviewModal } from "@/components/admin/ReceiptPreviewModal";
 
@@ -51,6 +59,43 @@ const PAYMENT_LABELS: Record<string, string> = {
   COD: "COD",
   CREDIT_CARD: "บัตรเครดิต",
 };
+
+function buildLineFlexJsonFromOrderDetail(d: {
+  orderNumber: string;
+  customerName: string | null;
+  customerPhone: string | null;
+  shippingAddress: string | null;
+  totalAmount: number;
+  shippingFee: number;
+  discountAmount: number;
+  items: { productName: string; unitLabel: string; breederName: string | null; quantity: number; totalPrice: number }[];
+}): string {
+  const origin = getSiteOrigin();
+  const on = encodeURIComponent(d.orderNumber);
+  const q = createReceiptDownloadQuery(d.orderNumber);
+  const receiptDownloadUri =
+    q.t && q.e
+      ? `${origin}/api/storefront/orders/${on}/receipt?t=${encodeURIComponent(q.t)}&e=${encodeURIComponent(q.e)}`
+      : `${origin}/api/storefront/orders/${on}/receipt`;
+  const flex = generateOrderFlexMessage({
+    orderNumber: d.orderNumber,
+    customerName: d.customerName,
+    customerPhone: d.customerPhone,
+    shippingAddress: d.shippingAddress,
+    receiptDownloadUri,
+    totalAmount: d.totalAmount,
+    shippingFee: d.shippingFee,
+    discountAmount: d.discountAmount,
+    items: d.items.map((i) => ({
+      productName: i.productName,
+      unitLabel: i.unitLabel,
+      breederName: i.breederName,
+      quantity: i.quantity,
+      totalPrice: i.totalPrice,
+    })),
+  });
+  return JSON.stringify(flex, null, 2);
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -158,7 +203,7 @@ function OrderCard({
   const canAct = order.status === "AWAITING_VERIFICATION";
   const canCancelPending = order.status === "PENDING";
   const canShip = order.status === "PAID" || order.status === "COMPLETED";
-  const canVoid = order.status === "COMPLETED";
+  const canVoid = order.status === "COMPLETED" || order.status === "PAID";
   const canReceipt = isReceiptEligibleStatus(order.status);
   const busy = isUpdating === order.id;
   const pmLabel = PAYMENT_LABELS[order.payment_method ?? ""] ?? order.payment_method ?? "—";
@@ -284,10 +329,10 @@ function OrderCard({
           </div>
         )}
         {canShip && (
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex flex-col gap-2">
             <Button
               size="sm"
-              className="flex-1 bg-primary hover:bg-primary/90 active:scale-[.97]"
+              className="w-full bg-primary hover:bg-primary/90 active:scale-[.97]"
               onClick={() => onShip(order.id)}
               disabled={busy}
             >
@@ -297,16 +342,31 @@ function OrderCard({
                 <><Truck className="mr-1.5 h-4 w-4" /> ยืนยันการจัดส่ง</>
               )}
             </Button>
-            {canVoid && (
+            {order.status === "PAID" && canVoid && (
               <Button
                 size="sm"
-                variant="ghost"
-                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                variant="outline"
+                className="w-full border-red-300 text-red-700 hover:bg-red-50 active:scale-[.97]"
                 onClick={() => onVoid(order.id)}
                 disabled={busy}
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="mr-1.5 h-4 w-4 shrink-0" />
+                ยกเลิกและคืนสต็อก
               </Button>
+            )}
+            {order.status === "COMPLETED" && canVoid && (
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                  onClick={() => onVoid(order.id)}
+                  disabled={busy}
+                  aria-label="ยกเลิกและคืนสต็อก"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </div>
         )}
@@ -333,7 +393,7 @@ function OrderTableRow({
   const canAct = order.status === "AWAITING_VERIFICATION";
   const canCancelPending = order.status === "PENDING";
   const canShip = order.status === "PAID" || order.status === "COMPLETED";
-  const canVoid = order.status === "COMPLETED";
+  const canVoid = order.status === "COMPLETED" || order.status === "PAID";
   const canReceipt = isReceiptEligibleStatus(order.status);
   const busy = isUpdating === order.id;
   const isPdf = order.slip_url?.toLowerCase().includes(".pdf");
@@ -453,12 +513,22 @@ function OrderTableRow({
               {canVoid && (
                 <Button
                   size="sm"
-                  variant="ghost"
-                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                  variant={order.status === "PAID" ? "outline" : "ghost"}
+                  className={
+                    order.status === "PAID"
+                      ? "shrink-0 border-red-300 text-red-700 hover:bg-red-50"
+                      : "text-red-600 hover:bg-red-50 hover:text-red-700"
+                  }
                   onClick={() => onVoid(order.id)}
                   disabled={busy}
+                  aria-label="ยกเลิกและคืนสต็อก"
                 >
-                  <RotateCcw className="h-3.5 w-3.5" title="ยกเลิก/คืนสต็อก" />
+                  <RotateCcw
+                    className={cn("h-3.5 w-3.5 shrink-0", order.status === "PAID" && "mr-1")}
+                  />
+                  {order.status === "PAID" ? (
+                    <span className="max-w-[9rem] truncate text-xs font-medium">ยกเลิก·คืนสต็อก</span>
+                  ) : null}
                 </Button>
               )}
             </div>
@@ -500,6 +570,7 @@ type OrderDetail = {
   shippingProvider: string | null;
   paymentMethod: string | null;
   createdAt: string;
+  lineUserId?: string | null;
   items: { productName: string; unitLabel: string; breederName: string | null; quantity: number; unitPrice: number; totalPrice: number }[];
 };
 
@@ -636,15 +707,31 @@ export default function AdminOrdersPage() {
   const buildOrderReceiptDoc = useCallback(async (detail: OrderDetail) => {
     const pdfSettings = await fetchPdfSettings();
     const orderDate = detail.createdAt ? new Date(detail.createdAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
-    const items = detail.items.map((i) => ({
-      productName: i.productName,
-      breeder: i.breederName,
-      unitLabel: i.unitLabel ?? "—",
-      quantity: i.quantity,
-      price: i.unitPrice,
-      discount: 0,
-      subtotal: i.totalPrice,
-    }));
+    const shipping = detail.shippingFee ?? 0;
+    const {
+      receiptItems: items,
+      discountForPdf,
+      itemsGrossSubtotal,
+      netPayableItems,
+    } = computeOrderReceiptFinancials({
+      totalAmount: detail.totalAmount,
+      shippingFee: shipping,
+      discountAmount: detail.discountAmount,
+      items: detail.items.map((i) => ({
+        productName: i.productName,
+        unitLabel: i.unitLabel,
+        breederName: i.breederName,
+        quantity: i.quantity,
+        totalPrice: i.totalPrice,
+      })),
+    });
+    const grossTarget = netPayableItems + discountForPdf;
+    if (process.env.NODE_ENV === "development" && items.length > 0) {
+      if (Math.abs(itemsGrossSubtotal - grossTarget) > 0.05) {
+        // eslint-disable-next-line no-console
+        console.warn("[receipt PDF] gross line sum vs target", { itemsGrossSubtotal, grossTarget });
+      }
+    }
     return generateReceiptPDF({
       docType: "receipt",
       orderNumber: detail.orderNumber,
@@ -652,6 +739,7 @@ export default function AdminOrdersPage() {
       customerName: detail.customerName ?? "",
       customerEmail: detail.customerEmail ?? null,
       customerPhone: detail.customerPhone ?? null,
+      customerAddress: detail.shippingAddress ?? null,
       customerNote: detail.customerNote ?? null,
       items,
       grandTotal: detail.totalAmount,
@@ -666,8 +754,8 @@ export default function AdminOrdersPage() {
       bankAccountNo: pdfSettings.bankAccountNo,
       socialLinks: pdfSettings.socialLinks ?? [],
       orderFinancials: {
-        shippingFee: detail.shippingFee ?? 0,
-        discountAmount: detail.discountAmount ?? 0,
+        shippingFee: shipping,
+        discountAmount: discountForPdf,
       },
       paymentDate: orderDate,
       paymentMethod: formatPaymentMethodForPdf(detail.paymentMethod),
@@ -675,7 +763,13 @@ export default function AdminOrdersPage() {
   }, []);
 
   const buildReceiptFromPayload = useCallback(
-    (d: unknown) => buildOrderReceiptDoc(d as OrderDetail),
+    (d: unknown) => {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console -- receipt PDF debug
+        console.log("Data passed to PDF:", d);
+      }
+      return buildOrderReceiptDoc(d as OrderDetail);
+    },
     [buildOrderReceiptDoc]
   );
 
@@ -729,6 +823,17 @@ export default function AdminOrdersPage() {
     }
     openReceiptPreview(detailModal.id);
   }, [detailModal, openReceiptPreview, pushToast]);
+
+  const handleCopyLineFlexJson = useCallback(async () => {
+    if (!detailModal) return;
+    try {
+      const text = buildLineFlexJsonFromOrderDetail(detailModal);
+      await navigator.clipboard.writeText(text);
+      pushToast("คัดลอก Flex JSON แล้ว", "success");
+    } catch (err) {
+      pushToast(String(err), "error");
+    }
+  }, [detailModal, pushToast]);
 
   // Tab counts (from current full list — best-effort)
   const countByStatus = orders.reduce<Record<string, number>>((acc, o) => {
@@ -919,6 +1024,16 @@ export default function AdminOrdersPage() {
                   <Printer className="mr-1.5 h-4 w-4" />
                   พิมพ์ใบปะหน้า
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-zinc-600"
+                  title="Backup: copy Flex JSON if automated send fails"
+                  onClick={() => void handleCopyLineFlexJson()}
+                >
+                  <Copy className="mr-1.5 h-4 w-4" />
+                  Copy Flex JSON
+                </Button>
                 {detailModal.status === "PENDING" && (
                   <Button
                     size="sm"
@@ -933,15 +1048,19 @@ export default function AdminOrdersPage() {
                     ยกเลิกออเดอร์
                   </Button>
                 )}
-                {detailModal.status === "COMPLETED" && (
+                {(detailModal.status === "COMPLETED" || detailModal.status === "PAID") && (
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                    variant={detailModal.status === "PAID" ? "outline" : "ghost"}
+                    className={
+                      detailModal.status === "PAID"
+                        ? "border-red-300 text-red-700 hover:bg-red-50"
+                        : "text-red-600 hover:bg-red-50 hover:text-red-700"
+                    }
                     onClick={() => { setDetailModal(null); handleVoidOpen(detailModal.id); }}
                   >
                     <RotateCcw className="mr-1.5 h-4 w-4" />
-                    ยกเลิกออเดอร์
+                    {detailModal.status === "PAID" ? "ยกเลิกและคืนสต็อก" : "ยกเลิกออเดอร์"}
                   </Button>
                 )}
               </div>

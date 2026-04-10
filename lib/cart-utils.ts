@@ -5,6 +5,7 @@ import {
   shippingFeeForSubtotal,
 } from "@/lib/order-financials";
 import { STOREFRONT_SHIPPING_CATEGORY } from "@/lib/storefront-shipping";
+import { formatPrice } from "@/lib/utils";
 
 export interface TieredDiscountRule {
   min_spend: number;
@@ -54,7 +55,7 @@ export function generateUpsellMessage(
     .sort((a, b) => a.min_amount - b.min_amount)[0];
   if (!nextTier) return null;
   const gap = nextTier.min_amount - subtotal;
-  return `ซื้ออีก ฿${gap.toLocaleString("th-TH")} เพื่อรับส่วนลด ${nextTier.discount_percentage}%`;
+  return `ซื้ออีก ${formatPrice(gap)} เพื่อรับส่วนลด ${nextTier.discount_percentage}%`;
 }
 
 function resolveShippingParams(

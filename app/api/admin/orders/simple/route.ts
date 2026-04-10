@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
-import { generateOrderNumber } from "@/lib/utils";
+import { generateOrderNumber } from "@/lib/order-utils";
 import { sendLowStockAlert } from "@/services/line-messaging";
 
 const CreateOrderSchema = z.object({

@@ -32,7 +32,7 @@ const PAYMENT_LABELS: Record<string, string> = {
   CASH: "เงินสด",
   TRANSFER: "โอนเงิน",
   COD: "COD",
-  CRYPTO: "Crypto",
+  CRYPTO: "คริปโต (ประวัติ)",
 };
 
 type ReportData = {

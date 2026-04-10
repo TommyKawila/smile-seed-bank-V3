@@ -1,4 +1,4 @@
-import { getLineOaBaseUrl } from "@/lib/line-oa-url";
+import { getLineOaBaseUrl, isGenericLineMarketingUrl } from "@/lib/line-oa-url";
 import { cn } from "@/lib/utils";
 
 export type LineParcelTrackingCtaProps = {
@@ -11,7 +11,9 @@ export type LineParcelTrackingCtaProps = {
  * Minimal LINE OA link. Override via `href`, else `NEXT_PUBLIC_LINE_OA_URL` / `lib/line-oa-url` fallback.
  */
 export function LineParcelTrackingCta({ href, className, children }: LineParcelTrackingCtaProps) {
-  const url = href?.trim() || getLineOaBaseUrl();
+  const candidate = href?.trim() ?? "";
+  const url =
+    candidate && !isGenericLineMarketingUrl(candidate) ? candidate : getLineOaBaseUrl();
 
   return (
     <a
