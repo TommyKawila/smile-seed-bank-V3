@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import {
   uploadMagazineImage,
@@ -18,10 +18,14 @@ import { cn } from "@/lib/utils";
 
 type Phase = "idle" | "optimizing" | "uploading";
 
+export type ImageUploadPhase = Phase;
+
 export type ImageUploadFieldProps = {
   value: string;
   onChange: (url: string) => void;
   disabled?: boolean;
+  /** Fires when compression/upload phase changes (for disabling save until URL is ready). */
+  onPhaseChange?: (phase: Phase) => void;
   label?: string;
   /** `magazine` bucket vs `product-images` bucket */
   uploadTarget?: "magazine" | "product";
@@ -42,10 +46,15 @@ export function ImageUploadField({
   variant = "magazine",
   toastOnSuccess = true,
   compact = false,
+  onPhaseChange,
 }: ImageUploadFieldProps) {
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>("idle");
+
+  useEffect(() => {
+    onPhaseChange?.(phase);
+  }, [phase, onPhaseChange]);
   const [localError, setLocalError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [lastCompressLine, setLastCompressLine] = useState<string | null>(null);

@@ -11,6 +11,7 @@ import {
   Sparkles,
   Newspaper,
   BarChart2,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -221,13 +222,22 @@ export function MagazineAdminDashboard() {
               </p>
             </div>
           </div>
-          <Link
-            href="/admin/magazine/new"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500"
-          >
-            <Plus className="h-4 w-4" />
-            New article
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/magazine/categories"
+              className="inline-flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/60 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-emerald-600/40 hover:text-white"
+            >
+              <FolderOpen className="h-4 w-4 text-emerald-500/90" />
+              Categories
+            </Link>
+            <Link
+              href="/admin/magazine/new"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500"
+            >
+              <Plus className="h-4 w-4" />
+              New article
+            </Link>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

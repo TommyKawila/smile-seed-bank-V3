@@ -32,6 +32,48 @@ type InitialPost = {
 
 const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
 
+/** TipTap JSON + server action transport: plain JSON only (no File/BigInt/class instances). */
+function toPlainContentJson(obj: object): object {
+  try {
+    return JSON.parse(
+      JSON.stringify(obj, (_k, v) => (typeof v === "bigint" ? v.toString() : v))
+    ) as object;
+  } catch {
+    return emptyDoc;
+  }
+}
+
+function toSerializablePayload(raw: MagazineSaveInput): MagazineSaveInput {
+  const fi = raw.featured_image;
+  const featured =
+    fi == null || fi === ""
+      ? null
+      : typeof fi === "string"
+        ? fi.trim() || null
+        : null;
+
+  return {
+    title: String(raw.title ?? "").trim(),
+    slug: String(raw.slug ?? "").trim(),
+    excerpt: String(raw.excerpt ?? ""),
+    content: toPlainContentJson(raw.content as object),
+    featured_image: featured,
+    tags: (raw.tags ?? []).map((t) => String(t)),
+    status: raw.status,
+    category_id:
+      raw.category_id == null || !Number.isFinite(Number(raw.category_id))
+        ? null
+        : Number(raw.category_id),
+    related_product_ids: [
+      ...new Set(
+        (raw.related_product_ids ?? [])
+          .map((n) => Number(n))
+          .filter((n) => Number.isFinite(n) && n > 0)
+      ),
+    ],
+  };
+}
+
 function parseTags(s: string): string[] {
   return s
     .split(",")
@@ -74,6 +116,9 @@ export function MagazinePostForm({
   );
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [imageBusy, setImageBusy] = useState(false);
+
+  const saveDisabled = pending || imageBusy;
 
   const debouncedSlugFromTitle = useDebouncedCallback((t: string) => {
     if (!slugDirty) setSlug(generateSlug(t));
@@ -114,10 +159,17 @@ export function MagazinePostForm({
   ]);
 
   const save = (nextStatus: "DRAFT" | "PUBLISHED") => {
+    if (imageBusy) {
+      setError("รอให้อัปโหลดรูปเสร็จก่อน / Wait for image upload to finish.");
+      return;
+    }
     setStatus(nextStatus);
     setError(null);
     setFeedback(null);
-    const payload = { ...buildPayload(), status: nextStatus };
+    const payload = toSerializablePayload({
+      ...buildPayload(),
+      status: nextStatus,
+    });
     startTransition(async () => {
       if (isEdit && initial) {
         const r = await updateMagazinePost(initial.id, payload);
@@ -164,12 +216,12 @@ export function MagazinePostForm({
             {feedback && (
               <span className="text-sm text-emerald-400/90">{feedback}</span>
             )}
-            {pending && (
+            {(pending || imageBusy) && (
               <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
             )}
             <button
               type="button"
-              disabled={pending}
+              disabled={saveDisabled}
               onClick={() => save("DRAFT")}
               className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 disabled:opacity-50"
             >
@@ -177,7 +229,7 @@ export function MagazinePostForm({
             </button>
             <button
               type="button"
-              disabled={pending}
+              disabled={saveDisabled}
               onClick={() => save("PUBLISHED")}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:opacity-50"
             >
@@ -286,6 +338,7 @@ export function MagazinePostForm({
         <ImageUploadField
           value={featuredImage}
           onChange={setFeaturedImage}
+          onPhaseChange={(phase) => setImageBusy(phase !== "idle")}
           disabled={pending}
           label="Featured image"
         />
