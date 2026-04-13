@@ -243,8 +243,9 @@ export interface Blog {
 export type ProductWithBreeder = ProductWithBreederQuery;
 
 /** Full product + breeder embed + all variant rows (see useProducts / product-service selects) */
-export type ProductFull = Omit<ProductWithBreederAndVariants, "product_variants"> & {
+export type ProductFull = Omit<ProductWithBreederAndVariants, "product_variants" | "product_images"> & {
   product_variants: ProductVariantRow[];
+  product_images?: import("@/lib/supabase/types").ProductImageRow[] | null;
 };
 
 /** List rows when API includes optional `product_variants` (e.g. POS product search). */

@@ -22,7 +22,7 @@ import { useBreeders } from "@/hooks/useBreeders";
 import { unknownFields } from "@/lib/validations/product";
 import { packSizeNum, toVariantSku } from "@/lib/sku-utils";
 import { useToast } from "@/hooks/use-toast";
-import { ProductImageUpload } from "@/components/admin/ProductImageUpload";
+import { ProductImageUpload, type ProductGalleryEntry } from "@/components/admin/ProductImageUpload";
 import { normalizeFloweringFromDb, normalizeSexFromDb } from "@/lib/cannabis-attributes";
 
 const MAX_IMAGES = 5;
@@ -137,8 +137,8 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
 
   const isEditMode = !!initialData;
 
-  /** Public image URLs (marketing gallery) — optimized via ProductImageUpload → `image_url`… */
-  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
+  /** Gallery + shop main + optional pack-specific image (persisted to `product_images`) */
+  const [galleryEntries, setGalleryEntries] = useState<ProductGalleryEntry[]>([]);
   const aiScanFileInputRef = useRef<HTMLInputElement>(null);
   const aiScanStagingRef = useRef<AiStagingItem[]>([]);
 
@@ -237,16 +237,50 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
           sku: (v as { sku?: string | null }).sku ?? null,
         })) ?? [],
       });
-      // Prefer image_urls JSONB array, fallback to separate columns
-      const existingUrls: string[] =
-        Array.isArray(p.image_urls) && p.image_urls.length > 0
-          ? (p.image_urls as string[])
-          : ([p.image_url, p.image_url_2, p.image_url_3, p.image_url_4, p.image_url_5]
-              .filter(Boolean) as string[]);
-      setGalleryUrls(existingUrls.filter(Boolean).slice(0, MAX_IMAGES));
+      const pim = (
+        p as ProductFull & {
+          product_images?: {
+            id: number;
+            url: string;
+            variant_id: number | null;
+            is_main: boolean;
+            sort_order: number;
+          }[];
+        }
+      ).product_images;
+      if (Array.isArray(pim) && pim.length > 0) {
+        const vmap = new Map(
+          (p.product_variants ?? []).map((v) => [Number(v.id), v.unit_label])
+        );
+        const sorted = [...pim].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        setGalleryEntries(
+          sorted.map((row) => ({
+            id: `pi-${row.id}`,
+            url: row.url,
+            is_main: row.is_main,
+            variant_unit_label:
+              row.variant_id != null ? vmap.get(Number(row.variant_id)) ?? null : null,
+          }))
+        );
+      } else {
+        const existingUrls: string[] =
+          Array.isArray(p.image_urls) && p.image_urls.length > 0
+            ? (p.image_urls as string[])
+            : ([p.image_url, p.image_url_2, p.image_url_3, p.image_url_4, p.image_url_5]
+                .filter(Boolean) as string[]);
+        const u = existingUrls.filter(Boolean).slice(0, MAX_IMAGES);
+        setGalleryEntries(
+          u.map((url, i) => ({
+            id: `leg-${i}-${url.slice(-12)}`,
+            url,
+            is_main: i === 0,
+            variant_unit_label: null,
+          }))
+        );
+      }
     } else {
       setForm(emptyForm);
-      setGalleryUrls([]);
+      setGalleryEntries([]);
     }
     setAiText("");
     setAiScanStaging([]);
@@ -471,22 +505,31 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
     void runAiExtract({ rawText: aiText, images: [], source: "wand" });
   };
 
-  const resolveImageUrls = (): string[] =>
-    galleryUrls.map((u) => u.trim()).filter(Boolean).slice(0, MAX_IMAGES);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLocalError(null);
 
-    const imageUrls = resolveImageUrls();
+    const ordered = galleryEntries.map((e) => e.url.trim()).filter(Boolean).slice(0, MAX_IMAGES);
+    const mainUrl =
+      galleryEntries.find((e) => e.is_main)?.url?.trim() ?? ordered[0] ?? null;
+    const legacyOrdered = mainUrl
+      ? [mainUrl, ...ordered.filter((u) => u !== mainUrl)].slice(0, MAX_IMAGES)
+      : ordered;
+
+    const gallery_entries = galleryEntries.map((e) => ({
+      url: e.url.trim(),
+      is_main: e.is_main,
+      variant_unit_label: e.variant_unit_label,
+    }));
 
     const imageFields: Partial<ProductFormData> = {
-      image_urls: imageUrls.length > 0 ? imageUrls : null,
-      image_url: imageUrls[0] ?? null,
-      image_url_2: imageUrls[1] ?? null,
-      image_url_3: imageUrls[2] ?? null,
-      image_url_4: imageUrls[3] ?? null,
-      image_url_5: imageUrls[4] ?? null,
+      image_urls: legacyOrdered.length > 0 ? legacyOrdered : null,
+      image_url: legacyOrdered[0] ?? null,
+      image_url_2: legacyOrdered[1] ?? null,
+      image_url_3: legacyOrdered[2] ?? null,
+      image_url_4: legacyOrdered[3] ?? null,
+      image_url_5: legacyOrdered[4] ?? null,
+      gallery_entries: gallery_entries.length > 0 ? gallery_entries : undefined,
     };
     let formWithImages = { ...form, ...imageFields } as ProductFormData;
     const sp = formWithImages.sativa_percent ?? null;
@@ -899,13 +942,14 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               📸 Product images / แกลเลอรีหน้าร้าน
             </Label>
             <ProductImageUpload
-              value={galleryUrls}
-              onChange={setGalleryUrls}
+              entries={galleryEntries}
+              onChange={setGalleryEntries}
+              variantLabels={variants.map((v) => v.unit_label?.trim()).filter(Boolean) as string[]}
               maxImages={MAX_IMAGES}
               disabled={isSubmitting}
             />
             <p className="text-[11px] text-zinc-400">
-              รูปแรก = รูปหลัก · ลากจัดลำดับได้ · บีบอัดและอัปโหลดตามลำดับ (1200px · ~0.8MB) — ใช้เฉพาะโชว์หน้าร้าน (สแกน AI ใช้โซน AI Scan ด้านบน)
+              เลือก “Main thumbnail” = รูปการ์ดร้าน · เลือก Pack image = สลับรูปตามแพ็กในหน้ารายละเอียด · ลากจัดลำดับได้
             </p>
           </div>
 

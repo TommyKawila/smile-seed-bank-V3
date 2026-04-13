@@ -257,7 +257,7 @@ export async function ensureUniqueProductSlug(
 export async function createProductWithVariants(
   product: Omit<Product, "id" | "price" | "stock">,
   variants: Omit<ProductVariant, "id" | "product_id">[]
-): Promise<ServiceResult<{ productId: number }>> {
+): Promise<ServiceResult<{ productId: number; variants: ProductVariant[] }>> {
   try {
     // Use admin client to bypass RLS — this runs in a server API route
     const supabase = await createAdminClient();
@@ -305,7 +305,7 @@ export async function createProductWithVariants(
       .update({ price: startingPrice, stock: totalStock })
       .eq("id", productId);
 
-    return { data: { productId }, error: null };
+    return { data: { productId, variants: insertedVariants }, error: null };
   } catch (err) {
     logger.error("product-service.createProductWithVariants failed", {
       cause: err,

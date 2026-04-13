@@ -11,6 +11,7 @@ import {
 } from "@/lib/product-utils";
 import { ensureUniqueProductSlug } from "@/services/product-service";
 import type { ProductVariant } from "@/types/supabase";
+import { syncProductImagesForProduct } from "@/lib/product-images-sync";
 
 export async function PATCH(
   req: NextRequest,
@@ -32,7 +33,7 @@ export async function PATCH(
       );
     }
 
-    const { variants, ...productData } = parsed.data;
+    const { variants, gallery_entries, ...productData } = parsed.data;
 
     const isActive = deriveProductIsActiveForCatalog(
       variants,
@@ -100,6 +101,15 @@ export async function PATCH(
       .from("products")
       .update({ price: startingPrice, stock: totalStock })
       .eq("id", productId);
+
+    await syncProductImagesForProduct(
+      productId,
+      gallery_entries,
+      insertedVariants.map((v) => ({
+        id: Number(v.id),
+        unit_label: v.unit_label,
+      }))
+    );
 
     return NextResponse.json({ productId });
   } catch (err) {

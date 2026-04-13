@@ -3,6 +3,12 @@
 
 import { z } from "zod";
 
+export const GalleryEntrySchema = z.object({
+  url: z.string().url(),
+  is_main: z.boolean(),
+  variant_unit_label: z.string().nullable().optional(),
+});
+
 export const VariantSchema = z.object({
   unit_label: z.string().min(1, "กรุณาระบุขนาดแพ็กเกจ (เช่น 1 Seed)"),
   /** Draft / pre-pricing: 0 allowed */
@@ -46,6 +52,8 @@ export const ProductSchema = z.object({
   image_url_4: z.string().url().nullable().optional(),
   image_url_5: z.string().url().nullable().optional(),
   image_urls: z.array(z.string().url()).max(5).nullable().optional(),
+  /** Admin: per-image main + variant binding; persisted to `product_images` */
+  gallery_entries: z.array(GalleryEntrySchema).max(5).optional(),
   video_url: z.string().url().nullable().optional(),
   is_active: z.boolean().default(true),
   // AI Specs — optional

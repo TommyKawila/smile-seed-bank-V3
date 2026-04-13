@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { createProductWithVariants } from "@/services/product-service";
+import { syncProductImagesForProduct } from "@/lib/product-images-sync";
 import type { Product, ProductVariant } from "@/types/supabase";
 import {
   ProductSchema,
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { variants, ...productData } = parsed.data;
+    const { variants, gallery_entries, ...productData } = parsed.data;
 
     const isActive = deriveProductIsActiveForCatalog(
       variants,
@@ -59,7 +60,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json(result.data, { status: 201 });
+    if (result.data) {
+      await syncProductImagesForProduct(
+        result.data.productId,
+        gallery_entries,
+        result.data.variants.map((v) => ({
+          id: Number(v.id),
+          unit_label: v.unit_label,
+        }))
+      );
+    }
+
+    return NextResponse.json(
+      { productId: result.data?.productId },
+      { status: 201 }
+    );
   } catch (err) {
     console.error("[/api/admin/products] Unexpected Error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

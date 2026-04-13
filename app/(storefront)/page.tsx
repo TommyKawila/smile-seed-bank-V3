@@ -20,6 +20,7 @@ import {
   labelForSeedTypeBadge,
   productCardFloweringChipLabel,
 } from "@/lib/seed-type-filter";
+import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ const cardVariant: Variants = {
 
 function ProductCard({ product }: { product: ReturnType<typeof useProducts>["products"][number] }) {
   const { t } = useLanguage();
+  const cardImage = getListingThumbnailUrl(product);
   const glassBadge = "rounded-full border border-white/30 bg-white/20 px-2 py-0.5 text-[10px] font-medium backdrop-blur-md";
   const glassChip = "rounded-full border border-zinc-200/70 bg-white/70 px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm";
   const compactSpecChip = `${glassChip} bg-muted/50 text-[9px] font-medium tracking-wide text-zinc-700`;
@@ -51,9 +53,9 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-zinc-50">
-        {product.image_url ? (
+        {cardImage ? (
           <Image
-            src={product.image_url}
+            src={cardImage}
             alt={product.name}
             fill
             sizes="(max-width: 768px) 50vw, 25vw"

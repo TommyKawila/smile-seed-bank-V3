@@ -39,9 +39,18 @@ type Phase = "idle" | "optimizing" | "uploading";
 const ACCEPT =
   "image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp";
 
+export type ProductGalleryEntry = {
+  id: string;
+  url: string;
+  is_main: boolean;
+  variant_unit_label: string | null;
+};
+
 export type ProductImageUploadProps = {
-  value: string[];
-  onChange: (urls: string[]) => void;
+  entries: ProductGalleryEntry[];
+  onChange: (entries: ProductGalleryEntry[]) => void;
+  /** Pack labels from current variant rows (e.g. "1 Seed") */
+  variantLabels: string[];
   disabled?: boolean;
   maxImages?: number;
 };
@@ -49,15 +58,21 @@ export type ProductImageUploadProps = {
 function SortableThumb({
   id,
   url,
-  index,
+  entry,
+  variantLabels,
   disabled,
   onRemove,
+  onSetMain,
+  onVariantLabel,
 }: {
   id: string;
   url: string;
-  index: number;
+  entry: ProductGalleryEntry;
+  variantLabels: string[];
   disabled: boolean;
   onRemove: () => void;
+  onSetMain: () => void;
+  onVariantLabel: (label: string | null) => void;
 }) {
   const {
     attributes,
@@ -78,18 +93,18 @@ function SortableThumb({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group relative overflow-hidden rounded-xl border bg-white shadow-sm transition",
+        "group relative flex flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition",
         isDragging
           ? "z-50 border-emerald-500 ring-2 ring-emerald-500/30"
           : "border-zinc-200 hover:border-emerald-400/60",
         disabled && "opacity-60"
       )}
     >
-      {index === 0 && (
+      {entry.is_main ? (
         <span className="absolute left-2 top-2 z-10 rounded-md bg-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
-          รูปหลัก · Main
+          รูปร้าน · Shop listing
         </span>
-      )}
+      ) : null}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={url}
@@ -97,16 +112,47 @@ function SortableThumb({
         className="aspect-square w-full object-cover"
         draggable={false}
       />
+      <div className="space-y-1 border-t border-zinc-100 bg-zinc-50/90 px-2 py-1.5">
+        <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-medium text-zinc-600">
+          <input
+            type="radio"
+            name="product-gallery-main"
+            className="accent-emerald-700"
+            checked={entry.is_main}
+            disabled={disabled}
+            onChange={onSetMain}
+          />
+          Main thumbnail
+        </label>
+        <label className="block text-[9px] font-medium uppercase tracking-wide text-zinc-500">
+          Pack image
+          <select
+            className="mt-0.5 w-full rounded border border-zinc-200 bg-white px-1 py-1 text-[11px] text-zinc-800"
+            value={entry.variant_unit_label ?? ""}
+            disabled={disabled}
+            onChange={(e) =>
+              onVariantLabel(e.target.value.trim() || null)
+            }
+          >
+            <option value="">— None (gallery only) —</option>
+            {variantLabels.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       <div
         {...attributes}
         {...listeners}
         className={cn(
-          "absolute bottom-0 left-0 right-0 flex cursor-grab touch-none items-center justify-center gap-1 border-t border-zinc-200/80 bg-white/90 py-1.5 text-[10px] font-medium text-zinc-500 active:cursor-grabbing",
+          "flex cursor-grab touch-none items-center justify-center gap-1 border-t border-zinc-200/80 bg-white/90 py-1 text-[10px] font-medium text-zinc-500 active:cursor-grabbing",
           disabled && "pointer-events-none"
         )}
       >
         <GripVertical className="h-3.5 w-3.5 text-emerald-700/80" />
-        ลากจัดลำดับ
+        Drag
       </div>
       <button
         type="button"
@@ -116,7 +162,7 @@ function SortableThumb({
           e.stopPropagation();
           onRemove();
         }}
-        className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+        className="absolute right-1.5 top-8 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
         aria-label="Remove image"
       >
         <X className="h-4 w-4" />
@@ -126,8 +172,9 @@ function SortableThumb({
 }
 
 export function ProductImageUpload({
-  value,
+  entries,
   onChange,
+  variantLabels,
   disabled,
   maxImages = 5,
 }: ProductImageUploadProps) {
@@ -138,7 +185,7 @@ export function ProductImageUpload({
   const [lastLine, setLastLine] = useState<string | null>(null);
 
   const busy = phase !== "idle";
-  const count = value.length;
+  const count = entries.length;
   const atLimit = count >= maxImages;
   const canAdd = !atLimit && !disabled && !busy;
 
@@ -195,17 +242,28 @@ export function ProductImageUpload({
     async (files: File[]) => {
       if (!canAdd || files.length === 0) return;
       setLocalError(null);
-      const room = maxImages - value.length;
+      const room = maxImages - entries.length;
       const slice = files.slice(0, room);
-      const nextUrls: string[] = [...value];
+      const next = [...entries];
       for (const file of slice) {
         const url = await processOne(file);
-        if (url) nextUrls.push(url);
-        else break;
+        if (!url) break;
+        const isOnly = next.length === 0;
+        next.push({
+          id: crypto.randomUUID(),
+          url,
+          is_main: isOnly,
+          variant_unit_label: null,
+        });
       }
-      if (nextUrls.length > value.length) onChange(nextUrls);
+      if (next.length > entries.length) {
+        if (!next.some((e) => e.is_main)) {
+          next[0] = { ...next[0], is_main: true };
+        }
+        onChange(next);
+      }
     },
-    [canAdd, maxImages, onChange, processOne, value]
+    [canAdd, maxImages, onChange, processOne, entries]
   );
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,16 +291,40 @@ export function ProductImageUpload({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = value.indexOf(String(active.id));
-    const newIndex = value.indexOf(String(over.id));
+    const ids = entries.map((e) => e.id);
+    const oldIndex = ids.indexOf(String(active.id));
+    const newIndex = ids.indexOf(String(over.id));
     if (oldIndex < 0 || newIndex < 0) return;
-    onChange(arrayMove(value, oldIndex, newIndex));
+    onChange(arrayMove(entries, oldIndex, newIndex));
   };
 
   const removeAt = (i: number) => {
-    onChange(value.filter((_, j) => j !== i));
+    const next = entries.filter((_, j) => j !== i);
+    if (next.length && !next.some((e) => e.is_main)) {
+      next[0] = { ...next[0], is_main: true };
+    }
+    onChange(next);
     setLocalError(null);
   };
+
+  const setMain = (id: string) => {
+    onChange(
+      entries.map((e) => ({
+        ...e,
+        is_main: e.id === id,
+      }))
+    );
+  };
+
+  const setVariantFor = (id: string, label: string | null) => {
+    onChange(
+      entries.map((e) =>
+        e.id === id ? { ...e, variant_unit_label: label } : e
+      )
+    );
+  };
+
+  const sortableIds = entries.map((e) => e.id);
 
   return (
     <div className="space-y-3">
@@ -329,22 +411,25 @@ export function ProductImageUpload({
         <p className="text-xs text-emerald-700">{lastLine}</p>
       )}
 
-      {value.length > 0 && (
+      {entries.length > 0 && (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext items={value} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {value.map((url, i) => (
+          <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {entries.map((entry, i) => (
                 <SortableThumb
-                  key={`${i}-${url}`}
-                  id={url}
-                  url={url}
-                  index={i}
+                  key={entry.id}
+                  id={entry.id}
+                  url={entry.url}
+                  entry={entry}
+                  variantLabels={variantLabels}
                   disabled={disabled || busy}
                   onRemove={() => removeAt(i)}
+                  onSetMain={() => setMain(entry.id)}
+                  onVariantLabel={(l) => setVariantFor(entry.id, l)}
                 />
               ))}
             </div>

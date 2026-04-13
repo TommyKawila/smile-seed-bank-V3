@@ -54,6 +54,7 @@ import {
   parseListParam,
   productMatchesShopAttributeFilters,
 } from "@/lib/shop-attribute-filters";
+import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 
 const SHOP_PAGE_INITIAL = 30;
 const SHOP_PAGE_STEP = 24;
@@ -74,11 +75,12 @@ const glassChip =
 const compactSpecChip = `${glassChip} bg-muted/50 text-[9px] font-medium tracking-wide text-zinc-700`;
 const compactSpecChipThc = `${glassChip} bg-muted/50 text-[9px] font-medium tracking-wide text-primary`;
 
-function getPrimaryImage(product: { image_urls?: unknown; image_url?: string | null }): string | null {
-  if (Array.isArray(product.image_urls) && (product.image_urls as string[]).length > 0) {
-    return (product.image_urls as string[])[0] ?? null;
-  }
-  return product.image_url ?? null;
+function getPrimaryImage(product: {
+  image_urls?: unknown;
+  image_url?: string | null;
+  product_images?: unknown;
+}): string | null {
+  return getListingThumbnailUrl(product);
 }
 
 function getDefaultVariant(product: {
@@ -101,6 +103,7 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
   const lowStock = stock > 0 && stock <= 5;
   const outOfStock = stock === 0;
   const defaultVariant = getDefaultVariant(product);
+  const cardImage = getPrimaryImage(product);
   const floweringLabel = productCardFloweringChipLabel(product);
   const seedLabel = labelForSeedTypeBadge(product.seed_type);
 
@@ -112,7 +115,7 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
         variantId: defaultVariant.id,
         productId: product.id,
         productName: product.name,
-        productImage: getPrimaryImage(product),
+        productImage: cardImage,
         unitLabel: defaultVariant.unit_label,
         price: defaultVariant.price,
         quantity: 1,
@@ -138,9 +141,9 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
       >
         {/* Image */}
         <div className="relative aspect-square overflow-hidden bg-zinc-50">
-          {product.image_url ? (
+          {cardImage ? (
             <Image
-              src={product.image_url}
+              src={cardImage}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

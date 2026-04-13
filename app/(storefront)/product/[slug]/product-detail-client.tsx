@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -27,6 +27,10 @@ import {
   RegularStatCard,
 } from "@/components/storefront/ProductSpecs";
 import type { ProductFull, ProductVariant } from "@/types/supabase";
+import {
+  buildDetailGalleryUrls,
+  resolveDetailHeroUrl,
+} from "@/lib/product-gallery-utils";
 
 function fillN(template: string, n: number) {
   return template.replace(/\{n\}/g, String(n));
@@ -44,28 +48,46 @@ function formatCbdDisplay(raw: string | number | null | undefined): string {
 
 function ProductGallery({
   product,
+  selectedVariantId,
 }: {
-  product: { image_urls?: unknown; image_url?: string | null; image_url_2?: string | null; image_url_3?: string | null; image_url_4?: string | null; image_url_5?: string | null; name: string; breeders?: { logo_url?: string | null; name: string } | null };
+  product: {
+    image_urls?: unknown;
+    image_url?: string | null;
+    image_url_2?: string | null;
+    image_url_3?: string | null;
+    image_url_4?: string | null;
+    image_url_5?: string | null;
+    product_images?: unknown;
+    name: string;
+    breeders?: { logo_url?: string | null; name: string } | null;
+  };
+  selectedVariantId: number | null;
 }) {
-  // Prefer the JSONB array, fallback to separate columns for old data
-  const images: string[] =
-    Array.isArray(product.image_urls) && (product.image_urls as unknown[]).length > 0
-      ? (product.image_urls as string[]).filter(Boolean)
-      : [product.image_url, product.image_url_2, product.image_url_3, product.image_url_4, product.image_url_5].filter(
-          (u): u is string => Boolean(u)
-        );
+  const images = useMemo(
+    () => buildDetailGalleryUrls(product, selectedVariantId),
+    [product, selectedVariantId]
+  );
+  const defaultHero = useMemo(
+    () => resolveDetailHeroUrl(product, selectedVariantId),
+    [product, selectedVariantId]
+  );
 
   const [selected, setSelected] = useState(0);
-  const current = images[selected] ?? null;
+
+  useEffect(() => {
+    const i = defaultHero ? images.indexOf(defaultHero) : 0;
+    setSelected(i >= 0 ? i : 0);
+  }, [defaultHero, images, selectedVariantId]);
+
+  const current = images[selected] ?? defaultHero ?? null;
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Main Image */}
       <motion.div
-        key={selected}
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
+        key={`${current ?? "none"}-${selected}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
         className="relative aspect-square overflow-hidden rounded-2xl bg-zinc-50"
       >
         {current ? (
@@ -82,7 +104,6 @@ function ProductGallery({
             <Leaf className="h-20 w-20 text-zinc-200" />
           </div>
         )}
-        {/* Breeder Logo — glassmorphism badge */}
         <div className="absolute right-3 top-3 h-16 w-16 overflow-hidden rounded-2xl border border-white/60 bg-white/75 shadow-xl backdrop-blur-md transition-transform duration-200 hover:scale-110">
           <BreederLogoImage
             src={product.breeders?.logo_url}
@@ -94,7 +115,6 @@ function ProductGallery({
             sizes="64px"
           />
         </div>
-        {/* Image counter */}
         {images.length > 1 && (
           <span className="absolute left-3 top-3 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
             {selected + 1} / {images.length}
@@ -102,12 +122,11 @@ function ProductGallery({
         )}
       </motion.div>
 
-      {/* Thumbnails */}
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-0.5">
           {images.map((url, i) => (
             <button
-              key={i}
+              key={`${url}-${i}`}
               type="button"
               onClick={() => setSelected(i)}
               className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
@@ -116,7 +135,7 @@ function ProductGallery({
                   : "border-zinc-200 opacity-60 hover:opacity-100"
               }`}
             >
-              <Image src={url} alt={`thumb-${i + 1}`} fill className="object-cover" />
+              <Image src={url} alt={`thumb-${i + 1}`} fill sizes="64px" className="object-cover" />
             </button>
           ))}
         </div>
@@ -325,7 +344,7 @@ export default function ProductDetailClient({
       variantId: selectedVariant.id,
       productId: product.id,
       productName: product.name,
-      productImage: product.image_url,
+      productImage: resolveDetailHeroUrl(product, selectedVariant.id),
       unitLabel: selectedVariant.unit_label,
       price: selectedVariant.price,
       quantity: 1,
@@ -379,7 +398,10 @@ export default function ProductDetailClient({
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <ProductGallery product={product as Parameters<typeof ProductGallery>[0]["product"]} />
+            <ProductGallery
+              product={product as Parameters<typeof ProductGallery>[0]["product"]}
+              selectedVariantId={selectedVariant?.id ?? null}
+            />
           </motion.div>
 
           {/* ── Right: Info ───────────────────────────────────────────────── */}
