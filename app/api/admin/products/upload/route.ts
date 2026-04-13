@@ -4,6 +4,7 @@ import {
   buildProductStoragePath,
   validateMagazineImageFile,
 } from "@/lib/supabase-upload";
+import { applyWatermark, storagePathAsWebp } from "@/lib/watermark";
 
 const BUCKET = "product-images";
 
@@ -36,16 +37,19 @@ export async function POST(req: Request) {
     }
 
     const supabase = createServiceRoleClient();
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const raw = Buffer.from(await file.arrayBuffer());
+    const { buffer, watermarked } = await applyWatermark(raw);
     const sizeBytes = buffer.length;
 
     const legacy = safeLegacyProductsPath(objectPathRaw);
-    const key = legacy ?? buildProductStoragePath(file.name);
+    const baseKey = legacy ?? buildProductStoragePath(file.name);
+    const key = watermarked ? storagePathAsWebp(baseKey) : baseKey;
+    const contentType = watermarked ? "image/webp" : file.type || "application/octet-stream";
 
     const { error } = await supabase.storage.from(BUCKET).upload(key, buffer, {
       cacheControl: "31536000",
       upsert: true,
-      contentType: file.type || "application/octet-stream",
+      contentType,
     });
 
     if (error) {

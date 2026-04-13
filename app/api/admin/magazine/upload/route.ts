@@ -5,6 +5,7 @@ import {
   buildMagazineStoragePath,
   validateMagazineImageFile,
 } from "@/lib/supabase-upload";
+import { applyWatermark, storagePathAsWebp } from "@/lib/watermark";
 
 /**
  * POST /api/admin/magazine/upload
@@ -23,14 +24,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: err }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const supabase = createServiceRoleClient();
-    const path = buildMagazineStoragePath(file.name);
+    const raw = Buffer.from(await file.arrayBuffer());
+    const { buffer, watermarked } = await applyWatermark(raw);
+    const objectPath = watermarked
+      ? storagePathAsWebp(buildMagazineStoragePath(file.name))
+      : buildMagazineStoragePath(file.name);
+    const contentType = watermarked
+      ? "image/webp"
+      : file.type || "application/octet-stream";
 
-    const { error } = await supabase.storage.from(MAGAZINE_BUCKET).upload(path, buffer, {
+    const supabase = createServiceRoleClient();
+
+    const { error } = await supabase.storage.from(MAGAZINE_BUCKET).upload(objectPath, buffer, {
       cacheControl: "3600",
       upsert: false,
-      contentType: file.type || "application/octet-stream",
+      contentType,
     });
 
     if (error) {
@@ -38,7 +46,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const { data } = supabase.storage.from(MAGAZINE_BUCKET).getPublicUrl(path);
+    const { data } = supabase.storage.from(MAGAZINE_BUCKET).getPublicUrl(objectPath);
     return NextResponse.json({ url: data.publicUrl });
   } catch (e) {
     console.error("[magazine/upload]", e);

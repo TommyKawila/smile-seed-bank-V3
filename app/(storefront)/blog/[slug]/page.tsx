@@ -193,7 +193,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           </span>
         )}
 
-        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
+        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-bold leading-[1.7] tracking-tight text-white sm:text-4xl md:text-5xl">
           {post.title}
         </h1>
 
@@ -213,7 +213,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         </div>
 
         {post.featured_image && (
-          <div className="relative -mx-4 mt-10 aspect-[21/9] min-h-[220px] overflow-hidden rounded-2xl border border-white/5 sm:mx-0">
+          <div className="relative -mx-4 mt-10 aspect-[16/10] min-h-[260px] overflow-hidden rounded-2xl border border-white/5 sm:mx-0 md:min-h-[400px] lg:min-h-[520px]">
             <Image
               src={post.featured_image}
               alt=""
