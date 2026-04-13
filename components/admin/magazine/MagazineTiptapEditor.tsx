@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Theme, type EmojiClickData } from "emoji-picker-react";
 import {
   Bold,
   Italic,
@@ -13,8 +15,25 @@ import {
   Quote,
   Minus,
   ShoppingBag,
+  Smile,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MagazineProductPickerDialog } from "./MagazineProductPickerDialog";
+
+const EmojiPickerDynamic = dynamic(
+  async () => (await import("emoji-picker-react")).default,
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex h-[360px] w-[352px] items-center justify-center rounded-lg bg-zinc-900 text-xs text-zinc-500"
+        aria-hidden
+      >
+        Loading…
+      </div>
+    ),
+  }
+);
 
 const defaultDoc = { type: "doc", content: [{ type: "paragraph" }] };
 
@@ -51,6 +70,39 @@ function ToolbarButton({
   );
 }
 
+function EmojiInsertPopover({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title="Insert emoji"
+          className="rounded-md px-2 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+        >
+          <Smile className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-auto border-zinc-700 bg-zinc-950 p-0 shadow-xl"
+        align="start"
+        sideOffset={6}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <EmojiPickerDynamic
+          width={352}
+          height={400}
+          theme={Theme.DARK}
+          onEmojiClick={(data: EmojiClickData) => {
+            editor.chain().focus().insertContent(data.emoji).run();
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function MenuBar({
   editor,
   onInsertProduct,
@@ -76,6 +128,7 @@ function MenuBar({
       >
         <Italic className="h-4 w-4" />
       </ToolbarButton>
+      <EmojiInsertPopover editor={editor} />
       <span className="mx-1 h-5 w-px bg-zinc-700" aria-hidden />
       <ToolbarButton
         title="Heading 1"

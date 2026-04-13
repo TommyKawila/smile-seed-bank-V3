@@ -23,6 +23,7 @@ import {
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { FeaturedProductsCarousel } from "@/components/storefront/FeaturedProductsCarousel";
+import { EditorialHighlightSection } from "@/components/storefront/EditorialHighlightSection";
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
 
@@ -181,6 +182,8 @@ function HomePageMain() {
       <Hero />
 
       <FeaturedProductsCarousel products={featuredProducts} isLoading={featuredLoading} />
+
+      <EditorialHighlightSection />
 
       {/* ── BREEDERS SHOWCASE ─────────────────────────────────────────────── */}
       <section className="py-14">

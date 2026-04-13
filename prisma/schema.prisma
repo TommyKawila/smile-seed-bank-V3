@@ -64,6 +64,7 @@ model blog_posts {
   id               BigInt           @id @default(autoincrement())
   title            String
   slug             String           @unique
+  /// TipTap JSON document; UTF-8 (emoji-safe in PostgreSQL `jsonb`)
   content          Json?            @db.Json
   excerpt          String?          @db.Text
   featured_image   String?
