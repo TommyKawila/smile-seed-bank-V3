@@ -87,6 +87,15 @@ export const ProductSchema = z.object({
   terpenes: z.unknown().nullable().optional(),
   /** May be empty for metadata-only draft; placeholder rows stripped by preprocess */
   variants: VariantsFieldSchema,
+  /** Homepage carousel (lower priority = earlier) */
+  is_featured: z.boolean().default(false).optional(),
+  featured_priority: z.number().int().min(0).max(9999).default(0).optional(),
+  featured_tagline: z
+    .preprocess(
+      (v) => (v === "" || v === undefined || v === null ? null : v),
+      z.string().max(400).nullable()
+    )
+    .optional(),
 });
 
 /** Storefront visibility: no packages or zero total stock → not listed as available */

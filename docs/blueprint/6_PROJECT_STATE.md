@@ -112,6 +112,12 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 - **`services/product-service.ts`** — `getProductBySlug`, `ensureUniqueProductSlug`, `createProductWithVariants` (auto slug + collision suffix), `backfillProductSlugs()`
 - **Admin API** — `POST/PATCH` `app/api/admin/products/...` — PATCH resolves slug via service; POST defers slug to `createProductWithVariants`
 
+### Homepage featured carousel
+- **Schema** — `products.is_featured`, `products.featured_priority` (migration `20260411120000_products_featured`); `products.featured_tagline` (`20260411130000_products_featured_tagline`).
+- **Service / API** — `getFeaturedProducts()` in `services/product-service.ts`; `GET /api/storefront/featured-products` → `{ products }`.
+- **Storefront** — `components/storefront/FeaturedProductsCarousel.tsx` (Embla, `getListingThumbnailUrl`, strain line, hover zoom, tagline / short-description fallback on image gradient); `app/(storefront)/page.tsx` after `Hero`.
+- **Admin** — `ProductModal`: **แนะนำบนหน้าแรก** + priority + **Featured tagline** (when featured); Zod in `lib/validations/product.ts`.
+
 ### Storefront breeder logos
 - **`resolvePublicAssetUrl()`** — `lib/public-storage-url.ts` (relative storage paths → full public URL)
 - **`BreederLogoImage`** — `components/storefront/BreederLogoImage.tsx`: fixed `width`/`height`, `alt` = `{name} logo`, `onError` → letter-in-circle fallback; wired on `app/(storefront)/shop/page.tsx`, `app/(storefront)/page.tsx`, `app/(storefront)/product/[slug]/page.tsx`, `app/(storefront)/breeders/page.tsx`, `components/storefront/BreederRibbon.tsx`

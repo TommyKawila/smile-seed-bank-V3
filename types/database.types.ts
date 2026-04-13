@@ -681,6 +681,8 @@ export type Database = {
           description_en: string | null
           description_th: string | null
           effects: Json | null
+          featured_priority: number | null
+          featured_tagline: string | null
           flavors: Json | null
           flowering_type: string | null
           genetic_ratio: string | null
@@ -695,6 +697,7 @@ export type Database = {
           image_urls: Json | null
           indica_ratio: number | null
           is_active: boolean | null
+          is_featured: boolean | null
           lineage: string | null
           master_sku: string | null
           medical_benefits: Json | null
@@ -721,6 +724,8 @@ export type Database = {
           description_en?: string | null
           description_th?: string | null
           effects?: Json | null
+          featured_priority?: number | null
+          featured_tagline?: string | null
           flavors?: Json | null
           flowering_type?: string | null
           genetic_ratio?: string | null
@@ -735,6 +740,7 @@ export type Database = {
           image_urls?: Json | null
           indica_ratio?: number | null
           is_active?: boolean | null
+          is_featured?: boolean | null
           lineage?: string | null
           master_sku?: string | null
           medical_benefits?: Json | null
@@ -761,6 +767,8 @@ export type Database = {
           description_en?: string | null
           description_th?: string | null
           effects?: Json | null
+          featured_priority?: number | null
+          featured_tagline?: string | null
           flavors?: Json | null
           flowering_type?: string | null
           genetic_ratio?: string | null
@@ -775,6 +783,7 @@ export type Database = {
           image_urls?: Json | null
           indica_ratio?: number | null
           is_active?: boolean | null
+          is_featured?: boolean | null
           lineage?: string | null
           master_sku?: string | null
           medical_benefits?: Json | null

@@ -123,6 +123,9 @@ const emptyForm: Partial<ProductFormData> = {
   breeder_id: null,
   master_sku: null,
   is_active: true,
+  is_featured: false,
+  featured_priority: 0,
+  featured_tagline: null,
   variants: [{ ...emptyVariant }],
 };
 
@@ -201,6 +204,10 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         image_url_5: p.image_url_5 ?? null,
         video_url: p.video_url,
         is_active: p.is_active,
+        is_featured: (p as { is_featured?: boolean | null }).is_featured ?? false,
+        featured_priority:
+          (p as { featured_priority?: number | null }).featured_priority ?? 0,
+        featured_tagline: (p as { featured_tagline?: string | null }).featured_tagline ?? null,
         thc_percent: p.thc_percent,
         cbd_percent:
           p.cbd_percent != null && p.cbd_percent !== ""
@@ -799,6 +806,61 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               onCheckedChange={(v) => setField("is_active", v)}
               aria-label="เปิดขาย"
             />
+          </div>
+          <div className="flex flex-col gap-3 rounded-lg border border-emerald-100/80 bg-emerald-50/50 px-4 py-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <Label className="text-sm font-medium">แนะนำบนหน้าแรก</Label>
+                <p className="text-xs text-zinc-500">
+                  แสดงในแถบสไลด์ — ตัวเลขน้อยแสดงก่อน (เรียงจากน้อยไปมาก)
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 sm:justify-end">
+                <Switch
+                  checked={form.is_featured === true}
+                  onCheckedChange={(v) => setField("is_featured", v)}
+                  aria-label="แนะนำบนหน้าแรก"
+                />
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="featured_priority" className="text-xs whitespace-nowrap">
+                    ลำดับความสำคัญ
+                  </Label>
+                  <Input
+                    id="featured_priority"
+                    type="number"
+                    min={0}
+                    max={9999}
+                    className="h-9 w-24"
+                    value={form.featured_priority ?? 0}
+                    onChange={(e) => {
+                      const n = parseInt(e.target.value, 10);
+                      setField(
+                        "featured_priority",
+                        Number.isFinite(n) ? Math.min(9999, Math.max(0, n)) : 0
+                      );
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            {form.is_featured === true && (
+              <div className="space-y-1 border-t border-emerald-100/70 pt-3">
+                <Label htmlFor="featured_tagline">Featured tagline</Label>
+                <Input
+                  id="featured_tagline"
+                  value={form.featured_tagline ?? ""}
+                  onChange={(e) =>
+                    setField("featured_tagline", e.target.value || null)
+                  }
+                  placeholder="สายพันธุ์นี้ได้รับรางวัล High Times Cup 2025"
+                  maxLength={400}
+                  className="border-zinc-200 bg-white"
+                />
+                <p className="text-[10px] text-zinc-500">
+                  แสดงบนการ์ดสไลด์ — ถ้าว่าง ระบบจะใช้ข้อความสั้นจากรายละเอียดสินค้าแทน
+                </p>
+              </div>
+            )}
           </div>
           {/* Basic Info */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

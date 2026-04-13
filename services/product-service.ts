@@ -121,6 +121,37 @@ export async function getActiveProducts(opts?: {
   }
 }
 
+/** Homepage carousel: active + flagged featured, lowest priority first. */
+export async function getFeaturedProducts(
+  limit = 12
+): Promise<ServiceResult<ProductWithBreeder[]>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT_WITH_BREEDER)
+      .eq("is_active", true)
+      .eq("is_featured", true)
+      .order("featured_priority", { ascending: true })
+      .order("id", { ascending: false })
+      .limit(limit);
+
+    if (error) return { data: null, error: error.message };
+    const rows = data as ProductWithBreeder[];
+    for (const row of rows) sanitizeProductTextFields(row);
+    return { data: rows, error: null };
+  } catch (err) {
+    logger.error("product-service.getFeaturedProducts failed", {
+      cause: err,
+      context: { limit },
+    });
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 /** Storefront: match `slug` first, then numeric `id` for legacy `/product/123` links. */
 export async function getProductBySlug(
   slug: string

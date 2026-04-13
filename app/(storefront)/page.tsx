@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -21,6 +21,8 @@ import {
   productCardFloweringChipLabel,
 } from "@/lib/seed-type-filter";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
+import type { ProductWithBreeder } from "@/lib/supabase/types";
+import { FeaturedProductsCarousel } from "@/components/storefront/FeaturedProductsCarousel";
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
 
@@ -133,6 +135,28 @@ function ProductCard({ product }: { product: ReturnType<typeof useProducts>["pro
 function HomePageMain() {
   const { products, isLoading } = useProducts({ limit: 8, autoFetch: true });
   const { t } = useLanguage();
+  const [featuredProducts, setFeaturedProducts] = useState<ProductWithBreeder[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/storefront/featured-products");
+        const json = (await res.json()) as { products?: ProductWithBreeder[] };
+        if (!cancelled && res.ok && Array.isArray(json.products)) {
+          setFeaturedProducts(json.products);
+        }
+      } catch {
+        if (!cancelled) setFeaturedProducts([]);
+      } finally {
+        if (!cancelled) setFeaturedLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const features = [
     {
@@ -155,6 +179,8 @@ function HomePageMain() {
   return (
     <div className="bg-white">
       <Hero />
+
+      <FeaturedProductsCarousel products={featuredProducts} isLoading={featuredLoading} />
 
       {/* ── BREEDERS SHOWCASE ─────────────────────────────────────────────── */}
       <section className="py-14">

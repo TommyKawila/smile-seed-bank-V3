@@ -356,6 +356,10 @@ model products {
   category_id        BigInt?
   strain_dominance   String?
   seo_meta           Json?
+  /// Homepage featured carousel
+  is_featured       Boolean? @default(false)
+  featured_priority Int?     @default(0)
+  featured_tagline  String?  @db.Text
   product_variants   product_variants[]
   product_images     product_images[]
   breeders           breeders?           @relation(fields: [breeder_id], references: [id], onUpdate: NoAction)

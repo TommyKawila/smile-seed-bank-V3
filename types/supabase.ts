@@ -60,6 +60,10 @@ export interface Product {
   price: number | null; // Denormalized starting price (DB column)
   stock: number | null; // Denormalized total stock (DB column)
   is_active: boolean;
+  /** Homepage featured carousel */
+  is_featured?: boolean | null;
+  featured_priority?: number | null;
+  featured_tagline?: string | null;
   image_url: string | null;
   image_url_2: string | null;
   image_url_3: string | null;
