@@ -143,6 +143,7 @@ model customers {
   wholesale_discount_percent Decimal?  @default(0) @db.Decimal
   created_at                 DateTime? @default(now()) @db.Timestamptz(6)
   orders                     orders[]
+  user_saved_promotions      UserSavedPromotion[]
 
   @@schema("public")
 }
@@ -418,6 +419,8 @@ model promotion_campaigns {
   image_height       Int?
   image_url_mobile   String  @default("")
   target_url      String    @default("")
+  /// When true, clicking the banner saves the promo to profile (and optional URL still opens if set).
+  save_to_profile Boolean   @default(false)
   display_delay_ms Int      @default(3000)
   display_mode    CampaignDisplayMode @default(POPUP)
   probability     Float     @default(1.0)
@@ -435,8 +438,25 @@ model promotion_campaigns {
   created_at      DateTime  @default(now()) @db.Timestamptz(6)
   updated_at      DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
   promo_codes     promo_codes? @relation(fields: [promo_code_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  user_saved_promotions UserSavedPromotion[]
 
   @@index([promo_code_id])
+  @@schema("public")
+}
+
+/// Links auth user (customers.id) to a promotion campaign for one-click checkout.
+model UserSavedPromotion {
+  id                    BigInt   @id @default(autoincrement())
+  user_id               String   @db.Uuid
+  promotion_campaign_id BigInt
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+
+  customers             customers             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  promotion_campaigns   promotion_campaigns   @relation(fields: [promotion_campaign_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, promotion_campaign_id])
+  @@index([user_id])
+  @@map("user_saved_promotions")
   @@schema("public")
 }
 

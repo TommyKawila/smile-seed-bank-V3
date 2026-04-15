@@ -12,6 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { savePromotionToUser } from "@/app/actions/promotion-campaign-actions";
+import { mergeGuestSavedPromotion } from "@/lib/saved-promotion-local";
 
 type CampaignPayload = {
   id: string;
@@ -21,6 +24,7 @@ type CampaignPayload = {
   image_width: number | null;
   image_height: number | null;
   target_url: string;
+  save_to_profile?: boolean;
   display_delay_ms: number;
   display_mode: "POPUP" | "EASTER_EGG";
   probability: number;
@@ -28,6 +32,10 @@ type CampaignPayload = {
   discount_type: string;
   discount_value: string;
 };
+
+function isSaveActionUrl(target: string | undefined): boolean {
+  return target?.trim().toLowerCase() === "action:save";
+}
 
 const SEEN_KEY = "ssb_promo_sess_";
 
@@ -114,32 +122,54 @@ export function PromotionBanner() {
   const w = campaign.image_width ?? 720;
   const h = campaign.image_height ?? 400;
   const isEgg = campaign.display_mode === "EASTER_EGG";
-  const target = campaign.target_url?.trim();
+  const rawTarget = campaign.target_url?.trim() ?? "";
+  const httpLink = /^https?:\/\//i.test(rawTarget) ? rawTarget : null;
+  const saveMode = !!campaign.save_to_profile || isSaveActionUrl(campaign.target_url);
+  const bannerInteractive = saveMode || !!httpLink;
+
+  const runBannerClick = async () => {
+    dismissSession(campaign.id);
+    setOpen(false);
+    if (saveMode) {
+      const res = await savePromotionToUser(campaign.id);
+      if (!res.ok) {
+        toast.error(res.error);
+      } else if (res.savedToProfile) {
+        toast.success("บันทึกโค้ดลงโปรไฟล์ของคุณแล้ว!");
+      } else {
+        mergeGuestSavedPromotion({
+          campaignId: campaign.id,
+          promo_code: campaign.promo_code,
+          name: campaign.name,
+          discount_type: campaign.discount_type,
+          discount_value: campaign.discount_value,
+        });
+        toast.success("บันทึกโค้ดแล้ว", { description: res.guestHint });
+      }
+    }
+    if (httpLink) {
+      window.open(httpLink, "_blank", "noopener,noreferrer");
+    }
+  };
 
   const imageBlock = (
     <div
       className={cn(
         "relative w-full bg-zinc-100",
-        target && "cursor-pointer"
+        bannerInteractive && "cursor-pointer"
       )}
       style={{ aspectRatio: `${w} / ${h}` }}
       onClick={() => {
-        if (target) {
-          dismissSession(campaign.id);
-          setOpen(false);
-          window.open(target, "_blank", "noopener,noreferrer");
-        }
+        if (bannerInteractive) void runBannerClick();
       }}
-      role={target ? "link" : undefined}
-      tabIndex={target ? 0 : undefined}
+      role={bannerInteractive ? "button" : undefined}
+      tabIndex={bannerInteractive ? 0 : undefined}
       onKeyDown={
-        target
+        bannerInteractive
           ? (e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                dismissSession(campaign.id);
-                setOpen(false);
-                window.open(target, "_blank", "noopener,noreferrer");
+                void runBannerClick();
               }
             }
           : undefined
@@ -168,10 +198,12 @@ export function PromotionBanner() {
           ? `ลด ${campaign.discount_value}%`
           : `ลด ฿${Number(campaign.discount_value).toLocaleString("th-TH")}`}
       </p>
-      {target ? (
-        <p className="text-[11px] text-zinc-400">
-          คลิกรูปเพื่อเปิดลิงก์
-        </p>
+      {saveMode && httpLink ? (
+        <p className="text-[11px] text-zinc-400">คลิกรูปเพื่อบันทึกโค้ดและเปิดลิงก์</p>
+      ) : saveMode ? (
+        <p className="text-[11px] text-zinc-400">คลิกรูปเพื่อบันทึกโค้ดลงโปรไฟล์</p>
+      ) : httpLink ? (
+        <p className="text-[11px] text-zinc-400">คลิกรูปเพื่อเปิดลิงก์</p>
       ) : null}
       <Button
         type="button"

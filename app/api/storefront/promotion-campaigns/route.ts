@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
       image_width: r.image_width,
       image_height: r.image_height,
       target_url: r.target_url,
+      save_to_profile: r.save_to_profile,
       display_delay_ms: r.display_delay_ms,
       display_mode: r.display_mode,
       probability: r.probability,

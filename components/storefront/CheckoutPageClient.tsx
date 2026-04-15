@@ -22,9 +22,48 @@ import { useLanguage, type Locale } from "@/context/LanguageContext";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
 import { createClient } from "@/lib/supabase/client";
 import { getURL } from "@/lib/get-url";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import type { PaymentSetting } from "@/lib/payment-settings-public";
 import { toast } from "sonner";
+import {
+  readSavedPromotionsFromLocal,
+  type SavedPromotionPayload,
+} from "@/lib/saved-promotion-local";
+
+type ApiSavedCoupon = {
+  campaign_id: string;
+  name: string;
+  promo_code: string;
+  discount_type: string;
+  discount_value: string;
+};
+
+function mergeSavedCoupons(
+  server: ApiSavedCoupon[],
+  local: SavedPromotionPayload[]
+): ApiSavedCoupon[] {
+  const seen = new Set<string>();
+  const out: ApiSavedCoupon[] = [];
+  for (const s of server) {
+    const k = s.promo_code.trim().toUpperCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(s);
+  }
+  for (const l of local) {
+    const k = l.promo_code.trim().toUpperCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({
+      campaign_id: l.campaignId,
+      name: l.name,
+      promo_code: l.promo_code,
+      discount_type: l.discount_type,
+      discount_value: l.discount_value,
+    });
+  }
+  return out;
+}
 
 const QR_IMAGE_SIZE = 220;
 
@@ -127,6 +166,7 @@ export function CheckoutPageClient({
   const [loginPromoMessage, setLoginPromoMessage] = useState("");
   const [loginPromoCode, setLoginPromoCode] = useState("");
   const [googleLoginLoading, setGoogleLoginLoading] = useState(false);
+  const [savedCoupons, setSavedCoupons] = useState<ApiSavedCoupon[]>([]);
 
   useEffect(() => {
     if (customer) {
@@ -172,6 +212,30 @@ export function CheckoutPageClient({
       cancelled = true;
     };
   }, [paymentSettings, paymentSettingsError, summary.total]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const local = readSavedPromotionsFromLocal();
+    if (!user) {
+      setSavedCoupons(mergeSavedCoupons([], local));
+      return () => {
+        cancelled = true;
+      };
+    }
+    void fetch("/api/storefront/saved-promotions")
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((data: { items?: ApiSavedCoupon[] }) => {
+        if (cancelled) return;
+        const items = Array.isArray(data.items) ? data.items : [];
+        setSavedCoupons(mergeSavedCoupons(items, local));
+      })
+      .catch(() => {
+        if (!cancelled) setSavedCoupons(mergeSavedCoupons([], local));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -415,6 +479,50 @@ export function CheckoutPageClient({
                   <Separator />
 
                   <DiscountProgressBar subtotal={summary.subtotal} rules={tieredDiscountRules} />
+
+                  {savedCoupons.length > 0 && (
+                    <div className="space-y-2 rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900/80">
+                        {t("คูปองที่เก็บไว้", "Available coupons")}
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {savedCoupons.map((c) => {
+                          const applied =
+                            promo.code?.code?.toUpperCase() === c.promo_code.toUpperCase();
+                          return (
+                            <button
+                              key={`${c.campaign_id}-${c.promo_code}`}
+                              type="button"
+                              disabled={applied || isValidatingPromo}
+                              onClick={() =>
+                                void applyPromoCode(
+                                  c.promo_code,
+                                  user?.email ?? null,
+                                  customer?.phone ?? null,
+                                  user?.id ?? null
+                                )
+                              }
+                              className={cn(
+                                "flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors",
+                                applied
+                                  ? "border-zinc-200 bg-zinc-100 text-zinc-500"
+                                  : "border-emerald-300/60 bg-white hover:border-emerald-400"
+                              )}
+                            >
+                              <span className="min-w-0 font-mono font-semibold text-emerald-900">
+                                {c.promo_code}
+                              </span>
+                              <span className="shrink-0 text-xs text-zinc-600">
+                                {applied
+                                  ? t("ใช้แล้ว", "Applied")
+                                  : t("แตะเพื่อใช้", "Tap to apply")}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {showWelcomeCoupon && !promo.code && (
                     <button

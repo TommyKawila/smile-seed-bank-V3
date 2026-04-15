@@ -11,15 +11,20 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const optionalUrl = z.union([z.literal(""), z.string().url()]);
+const optionalTargetUrl = z.union([
+  z.literal(""),
+  z.literal("action:save"),
+  z.string().url(),
+]);
 
 const PatchSchema = z.object({
   name: z.string().min(1).optional(),
   image_url_desktop: z.string().url().optional(),
-  image_url_mobile: optionalUrl.optional(),
+  image_url_mobile: z.union([z.literal(""), z.string().url()]).optional(),
   image_width: z.number().int().positive().nullable().optional(),
   image_height: z.number().int().positive().nullable().optional(),
-  target_url: optionalUrl.optional(),
+  target_url: optionalTargetUrl.optional(),
+  save_to_profile: z.boolean().optional(),
   display_delay_ms: z.number().int().min(0).max(600_000).optional(),
   display_mode: z.enum(["POPUP", "EASTER_EGG"]).optional(),
   probability: z.number().min(0).max(1).optional(),
@@ -100,6 +105,7 @@ export async function PATCH(
         ...(d.image_width !== undefined ? { image_width: d.image_width } : {}),
         ...(d.image_height !== undefined ? { image_height: d.image_height } : {}),
         ...(d.target_url !== undefined ? { target_url: d.target_url ?? "" } : {}),
+        ...(d.save_to_profile !== undefined ? { save_to_profile: d.save_to_profile } : {}),
         ...(d.display_delay_ms != null ? { display_delay_ms: d.display_delay_ms } : {}),
         ...(d.display_mode != null ? { display_mode: d.display_mode } : {}),
         ...(d.probability != null ? { probability: d.probability } : {}),

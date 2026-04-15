@@ -46,6 +46,7 @@ type Row = {
   image_width: number | null;
   image_height: number | null;
   target_url: string;
+  save_to_profile: boolean;
   display_delay_ms: number;
   display_mode: "POPUP" | "EASTER_EGG";
   probability: number;
@@ -91,6 +92,7 @@ export default function PromotionCampaignsPage() {
     image_width: "" as string,
     image_height: "" as string,
     target_url: "",
+    save_to_profile: false,
     display_mode: "POPUP" as "POPUP" | "EASTER_EGG",
     display_delay_ms: "3000",
     probability: 1,
@@ -132,6 +134,7 @@ export default function PromotionCampaignsPage() {
       image_width: "",
       image_height: "",
       target_url: "",
+      save_to_profile: false,
       display_mode: "POPUP",
       display_delay_ms: "3000",
       probability: 1,
@@ -159,6 +162,7 @@ export default function PromotionCampaignsPage() {
       image_width: r.image_width != null ? String(r.image_width) : "",
       image_height: r.image_height != null ? String(r.image_height) : "",
       target_url: r.target_url ?? "",
+      save_to_profile: !!r.save_to_profile,
       display_mode: r.display_mode === "EASTER_EGG" ? "EASTER_EGG" : "POPUP",
       display_delay_ms: String(r.display_delay_ms ?? 3000),
       probability: typeof r.probability === "number" ? r.probability : 1,
@@ -228,8 +232,8 @@ export default function PromotionCampaignsPage() {
       return;
     }
     const tgt = form.target_url.trim();
-    if (tgt && !/^https?:\/\//i.test(tgt)) {
-      toast({ title: "ลิงก์ปลายทางต้องเป็น http(s)", variant: "destructive" });
+    if (tgt && tgt.toLowerCase() !== "action:save" && !/^https?:\/\//i.test(tgt)) {
+      toast({ title: "ลิงก์ปลายทางต้องเป็น http(s) หรือ action:save", variant: "destructive" });
       return;
     }
 
@@ -242,6 +246,7 @@ export default function PromotionCampaignsPage() {
         image_width: iw,
         image_height: ih,
         target_url: tgt,
+        save_to_profile: form.save_to_profile,
         display_mode: form.display_mode,
         display_delay_ms: ddm,
         probability: form.probability,
@@ -509,12 +514,20 @@ export default function PromotionCampaignsPage() {
                 <Label className="text-zinc-700">ลิงก์เมื่อคลิกแบนเนอร์ (optional)</Label>
                 <Input
                   className="border-zinc-200"
-                  type="url"
-                  placeholder="https://"
+                  placeholder="https:// หรือ action:save"
                   value={form.target_url}
                   onChange={(e) => setForm((f) => ({ ...f, target_url: e.target.value }))}
                 />
               </div>
+              <label className="mt-3 flex items-center gap-2 text-sm text-zinc-700">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-zinc-300"
+                  checked={form.save_to_profile}
+                  onChange={(e) => setForm((f) => ({ ...f, save_to_profile: e.target.checked }))}
+                />
+                คลิกแล้วบันทึกโค้ดลงโปรไฟล์ (เก็บคูปอง)
+              </label>
             </div>
 
             <Separator className="bg-zinc-100" />
