@@ -85,6 +85,18 @@ export async function POST(req: NextRequest) {
           { status: 409 }
         );
       }
+      if (error === "CAMPAIGN_EXHAUSTED") {
+        return NextResponse.json(
+          { error: "โค้ดนี้ถูกใช้ครบโควตาแล้ว" },
+          { status: 400 }
+        );
+      }
+      if (error === "CAMPAIGN_INACTIVE") {
+        return NextResponse.json(
+          { error: "โค้ดนี้ไม่สามารถใช้ได้ในช่วงเวลานี้" },
+          { status: 400 }
+        );
+      }
       return NextResponse.json({ error: error ?? "สร้างคำสั่งซื้อไม่สำเร็จ" }, { status: 500 });
     }
 

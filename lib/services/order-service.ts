@@ -219,6 +219,23 @@ export async function createOrder(
           });
 
           if (promo_code_id) {
+            const campaign = await tx.promotion_campaigns.findUnique({
+              where: { promo_code_id: BigInt(promo_code_id) },
+            });
+            if (campaign) {
+              const now = new Date();
+              if (
+                !campaign.is_active ||
+                now < campaign.start_at ||
+                now > campaign.end_at
+              ) {
+                throw new Error("CAMPAIGN_INACTIVE");
+              }
+              if (campaign.total_limit > 0 && campaign.usage_count >= campaign.total_limit) {
+                throw new Error("CAMPAIGN_EXHAUSTED");
+              }
+            }
+
             await tx.promo_code_usages.create({
               data: {
                 promo_code_id: BigInt(promo_code_id),
@@ -239,6 +256,13 @@ export async function createOrder(
                 order_id: order.id,
               },
             });
+
+            if (campaign) {
+              await tx.promotion_campaigns.update({
+                where: { id: campaign.id },
+                data: { usage_count: { increment: 1 } },
+              });
+            }
           }
 
           return { orderId: Number(order.id) };

@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { Navbar } from "@/components/storefront/Navbar";
 import { Footer } from "@/components/storefront/Footer";
 import { OfferManager } from "@/components/storefront/OfferManager";
+import { PromotionBanner } from "@/components/storefront/PromotionBanner";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -15,6 +16,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         <Suspense fallback={null}>
           <PromoReturnHandler />
         </Suspense>
+        <PromotionBanner />
         <div className="flex min-h-screen flex-col">
           <Navbar />
           <main className="flex-1">{children}</main>

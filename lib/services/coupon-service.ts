@@ -3,6 +3,7 @@
  * Uses postgres driver via getSql() for cache-bypass.
  */
 import { getSql } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import type { DiscountType } from "@/types/supabase";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
@@ -33,6 +34,8 @@ export type ValidateCouponError =
   | { type: "EXPIRED" }
   | { type: "MIN_SPEND"; minSpend: number }
   | { type: "ALREADY_USED" }
+  | { type: "CAMPAIGN_EXHAUSTED" }
+  | { type: "CAMPAIGN_INACTIVE" }
   | { type: "SERVER_ERROR"; message: string };
 
 export interface ValidateCouponSuccess {
@@ -83,6 +86,19 @@ export async function validateCoupon(
     `;
     const promo = rows[0];
     if (!promo) return { ok: false, error: { type: "NOT_FOUND" } };
+
+    const campaign = await prisma.promotion_campaigns.findUnique({
+      where: { promo_code_id: BigInt(promo.id) },
+    });
+    if (campaign) {
+      const now = new Date();
+      if (!campaign.is_active || now < campaign.start_at || now > campaign.end_at) {
+        return { ok: false, error: { type: "CAMPAIGN_INACTIVE" } };
+      }
+      if (campaign.total_limit > 0 && campaign.usage_count >= campaign.total_limit) {
+        return { ok: false, error: { type: "CAMPAIGN_EXHAUSTED" } };
+      }
+    }
 
     // Auth check
     if (promo.requires_auth && !user_id) {

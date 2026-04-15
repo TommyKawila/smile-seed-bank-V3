@@ -64,6 +64,7 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 ### Advanced POS
 - **Auto-Promotion Engine** — DISCOUNT (min_spend → discount_value), BUY_X_GET_Y (target_breeder_id), FREEBIES (min_spend → gift eligible); promo badge, summary line, alerts
 - **Tiered Discounts → Promotion System** — Tiered (ยอดซื้อรวม) merged into PromotionRule type DISCOUNT; `/api/storefront/tiered-discounts` reads from `promotion_rules`; hierarchy: Promotion first, Coupon disabled when promotion active; POS labels: "ส่วนลดโปรโมชั่น" vs "ส่วนลดโค้ด"
+- **Dynamic campaign pop-up** — `promotion_campaigns` + FK to `promo_codes`; Admin `/admin/promotions/campaigns` (CRUD, `ImageUploadField` → `POST /api/admin/magazine/upload`); sync `lib/promotion-campaign-sync.ts`; storefront `PromotionBanner` + `GET /api/storefront/promotion-campaigns`; `validateCoupon` / `createOrder` enforce campaign dates, `usage_count` vs `total_limit`, increment usage on order; Server Action `validatePromotionCampaignCode` in `app/actions/promotion-campaign-actions.ts`.
 - **Real-time Tier Pricing** — Wholesale discount applied on add-to-cart; customer switch clears cart when tier changes
 - **Points Redemption UI** — Available points, max redeemable, balance after purchase; `promotion_rule_id` + `promotion_discount_amount` persisted
 

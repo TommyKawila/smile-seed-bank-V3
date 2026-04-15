@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, Pencil, Loader2, Tag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -392,6 +393,12 @@ export default function PromotionsPage() {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
+          <Link
+            href="/admin/promotions/campaigns"
+            className="mb-1 block text-sm font-medium text-primary hover:underline"
+          >
+            แคมเปญป๊อปอัพ (แบนเนอร์ + โค้ด) →
+          </Link>
           <h1 className="text-xl font-bold text-zinc-900">จัดการโปรโมชั่น</h1>
           <p className="text-sm text-zinc-500">กำหนดกฎส่วนลดและของแถม (สำหรับ Phase ถัดไป: นำไปใช้กับ POS)</p>
         </div>
