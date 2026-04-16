@@ -7,6 +7,10 @@ import { randomUUID } from "crypto";
 import { generateOrderNumber } from "@/lib/order-utils";
 import { sendLowStockAlert } from "@/services/line-messaging";
 
+/** Matches `orders.status` string values used by POS / claim (DB column is String, not Prisma enum). */
+const POS_ORDER_STATUS = ["PENDING", "PENDING_INFO", "COMPLETED", "CANCELLED"] as const;
+type PosOrderStatus = (typeof POS_ORDER_STATUS)[number];
+
 const CreateOrderSchema = z.object({
   items: z
     .array(
@@ -20,7 +24,7 @@ const CreateOrderSchema = z.object({
       })
     )
     .min(1),
-  status: z.enum(["PENDING", "COMPLETED", "CANCELLED"]).default("COMPLETED"),
+  status: z.enum(POS_ORDER_STATUS).default("COMPLETED"),
   totalAmount: z.number().nonnegative().optional(),
   points_redeemed: z.number().int().min(0).optional(),
   points_discount_amount: z.number().nonnegative().optional(),

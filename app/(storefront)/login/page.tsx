@@ -42,6 +42,7 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [resetSending, setResetSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -49,9 +50,56 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const e = new URLSearchParams(window.location.search).get("email");
+    const sp = new URLSearchParams(window.location.search);
+    const e = sp.get("email");
     if (e) setEmail(decodeURIComponent(e));
-  }, []);
+    if (sp.get("reset") === "success") {
+      setSuccess(
+        t(
+          "อัปเดตรหัสผ่านแล้ว — เข้าสู่ระบบด้วยรหัสใหม่",
+          "Password updated. Sign in with your new password.",
+        ),
+      );
+    }
+    const err = sp.get("error");
+    if (err === "access_denied") {
+      setError(
+        t(
+          "เซสชันไม่ถูกต้อง — ขอลิงก์รีเซ็ตใหม่จากอีเมล",
+          "Invalid session. Request a new reset link from your email.",
+        ),
+      );
+    } else if (err === "no_session") {
+      setError(t("ลิงก์หมดอายุหรือไม่ถูกต้อง", "Invalid or expired link."));
+    } else if (err === "recovery_link") {
+      setError(t("ไม่สามารถยืนยันลิงก์รีเซ็ตได้", "Could not verify reset link."));
+    }
+  }, [t]);
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setSuccess(null);
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError(t("กรอกอีเมลก่อน แล้วกดลืมรหัสผ่าน", "Enter your email, then tap Forgot password."));
+      return;
+    }
+    setResetSending(true);
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const { error: err } = await supabase.auth.resetPasswordForEmail(trimmed, {
+        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/update-password")}`,
+      });
+      if (err) throw new Error(err.message);
+      setSuccess(
+        t("ส่งลิงก์รีเซ็ตไปที่อีเมลแล้ว — ตรวจสอบกล่องจดหมาย", "Check your email for the reset link."),
+      );
+    } catch (err) {
+      setError(String(err).replace("Error: ", ""));
+    } finally {
+      setResetSending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,7 +247,19 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-zinc-600">{t("รหัสผ่าน", "Password")}</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-xs font-semibold text-zinc-600">{t("รหัสผ่าน", "Password")}</Label>
+                  {mode === "login" && (
+                    <button
+                      type="button"
+                      onClick={() => void handleForgotPassword()}
+                      disabled={resetSending}
+                      className="text-xs font-medium text-primary underline-offset-2 hover:underline disabled:opacity-50"
+                    >
+                      {resetSending ? t("กำลังส่ง…", "Sending…") : t("ลืมรหัสผ่าน?", "Forgot password?")}
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                   <Input

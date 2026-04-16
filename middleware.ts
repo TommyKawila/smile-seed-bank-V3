@@ -14,6 +14,9 @@ function copyCookies(from: NextResponse, to: NextResponse) {
 }
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const isDev = process.env.NODE_ENV === "development";
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(
@@ -39,9 +42,33 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
+  const isAuthCallback =
+    path === "/auth/callback" || path.startsWith("/auth/callback/");
+  const isUpdatePassword =
+    path === "/update-password" || path.startsWith("/update-password/");
+  /** Storefront order flows (claim / status / digital receipt) — public, no login. */
+  const isPublicOrderPage =
+    path.startsWith("/order/claim") ||
+    path.startsWith("/order/status") ||
+    path.startsWith("/order/receipt");
   const isAdminApi = path === "/api/admin" || path.startsWith("/api/admin/");
   const isAiApi = path === "/api/ai" || path.startsWith("/api/ai/");
+
+  /** PKCE callback + password page: unauthenticated users must reach these routes. */
+  if (isAuthCallback || isUpdatePassword || isPublicOrderPage) {
+    return supabaseResponse;
+  }
+
+  /** Local `next dev` only — never on Vercel production (NODE_ENV=production). */
+  if (
+    isDev &&
+    (path === "/admin" ||
+      path.startsWith("/admin/") ||
+      isAdminApi ||
+      isAiApi)
+  ) {
+    return supabaseResponse;
+  }
 
   if (isAdminApi || isAiApi) {
     if (!user || adminRoleFromMetadata(user) !== "ADMIN") {
@@ -81,5 +108,12 @@ export const config = {
     "/api/admin/:path*",
     "/api/ai",
     "/api/ai/:path*",
+    "/auth/callback",
+    "/auth/callback/:path*",
+    "/update-password",
+    "/update-password/:path*",
+    "/order/claim/:path*",
+    "/order/status/:path*",
+    "/order/receipt/:path*",
   ],
 };

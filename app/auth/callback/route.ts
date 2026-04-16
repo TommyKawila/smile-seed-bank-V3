@@ -5,6 +5,10 @@ import { cookies } from "next/headers";
 import type { Database } from "@/types/database.types";
 import { safeNextPath } from "@/lib/safe-redirect-path";
 
+/**
+ * OAuth + email recovery (PKCE): Supabase redirects here with `code`.
+ * Password reset emails should use redirectTo `/auth/callback?next=/update-password`.
+ */
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const origin = url.origin;

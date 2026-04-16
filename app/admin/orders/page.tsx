@@ -28,6 +28,11 @@ import {
 } from "@/lib/receipt-pdf";
 import { computeOrderReceiptFinancials } from "@/lib/order-receipt-math";
 import { getSiteOrigin } from "@/lib/get-url";
+import {
+  buildPromptPayIoQrUrl,
+  claimLinkToDigitalReceiptPageUrl,
+  generateOrderSummary,
+} from "@/lib/utils/format-order";
 import { carrierLabelFromCode, carrierTrackingUrl } from "@/lib/shipping-carriers";
 import { generateOrderFlexMessage } from "@/lib/line-flex";
 import { createReceiptDownloadQuery } from "@/lib/receipt-download-token";
@@ -60,6 +65,8 @@ const PAYMENT_LABELS: Record<string, string> = {
   TRANSFER: "โอนเงิน",
   COD: "COD",
   CREDIT_CARD: "บัตรเครดิต",
+  CASH: "เงินสด",
+  CRYPTO: "คริปโต",
 };
 
 function buildLineFlexJsonFromOrderDetail(d: {
@@ -191,11 +198,21 @@ function SlipThumb({ url, onClick }: { url: string; onClick: () => void }) {
 // ─── Order Card (Mobile) ───────────────────────────────────────────────────────
 
 function OrderCard({
-  order, onApprove, onReject, onShip, onVoid, onSlipClick, onDetailClick, onReceiptPdf, isUpdating,
+  order,
+  onApprove,
+  onReject,
+  onCancelPending,
+  onShip,
+  onVoid,
+  onSlipClick,
+  onDetailClick,
+  onReceiptPdf,
+  isUpdating,
 }: {
   order: AdminOrder;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
+  onCancelPending: (id: number) => void;
   onShip: (id: number) => void;
   onVoid: (id: number) => void;
   onSlipClick: (url: string) => void;
@@ -204,7 +221,8 @@ function OrderCard({
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
-  const canCancelPending = order.status === "PENDING";
+  const canCancelPending =
+    order.status === "PENDING" || order.status === "PENDING_INFO";
   const canShip = order.status === "PAID" || order.status === "COMPLETED";
   const canVoid = order.status === "COMPLETED" || order.status === "PAID";
   const canReceipt = isReceiptEligibleStatus(order.status);
@@ -311,9 +329,9 @@ function OrderCard({
           <div className="mt-3">
             <Button
               size="sm"
-              variant="outline"
-              className="w-full border-red-200 text-red-600 hover:bg-red-50 active:scale-[.97]"
-              onClick={() => onReject(order.id)}
+              variant="ghost"
+              className="w-full border border-red-200/80 text-red-600 hover:bg-red-50 active:scale-[.97]"
+              onClick={() => onCancelPending(order.id)}
               disabled={busy}
             >
               <XCircle className="mr-1.5 h-4 w-4" /> ยกเลิกออเดอร์
@@ -381,11 +399,21 @@ function OrderCard({
 // ─── Order Table Row (Desktop) ─────────────────────────────────────────────────
 
 function OrderTableRow({
-  order, onApprove, onReject, onShip, onVoid, onSlipClick, onDetailClick, onReceiptPdf, isUpdating,
+  order,
+  onApprove,
+  onReject,
+  onCancelPending,
+  onShip,
+  onVoid,
+  onSlipClick,
+  onDetailClick,
+  onReceiptPdf,
+  isUpdating,
 }: {
   order: AdminOrder;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
+  onCancelPending: (id: number) => void;
   onShip: (id: number) => void;
   onVoid: (id: number) => void;
   onSlipClick: (url: string) => void;
@@ -394,7 +422,8 @@ function OrderTableRow({
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
-  const canCancelPending = order.status === "PENDING";
+  const canCancelPending =
+    order.status === "PENDING" || order.status === "PENDING_INFO";
   const canShip = order.status === "PAID" || order.status === "COMPLETED";
   const canVoid = order.status === "COMPLETED" || order.status === "PAID";
   const canReceipt = isReceiptEligibleStatus(order.status);
@@ -485,9 +514,9 @@ function OrderTableRow({
               {canCancelPending && (
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="border-red-200 text-red-600 hover:bg-red-50"
-                  onClick={() => onReject(order.id)}
+                  variant="ghost"
+                  className="border border-red-200/80 text-red-600 hover:bg-red-50"
+                  onClick={() => onCancelPending(order.id)}
                   disabled={busy}
                 >
                   ยกเลิกออเดอร์
@@ -587,6 +616,7 @@ export default function AdminOrdersPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [rejectModal, setRejectModal] = useState<{ orderId: number } | null>(null);
   const [rejectNote, setRejectNote] = useState("");
+  const [cancelPendingModal, setCancelPendingModal] = useState<{ orderId: number } | null>(null);
   const [shipModal, setShipModal] = useState<{ orderId: number } | null>(null);
   const [voidModal, setVoidModal] = useState<{ orderId: number } | null>(null);
   const [voidReason, setVoidReason] = useState("");
@@ -594,6 +624,7 @@ export default function AdminOrdersPage() {
   const [shipProvider, setShipProvider] = useState(SHIPPING_PROVIDERS[1].value);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [receiptPreviewOrderId, setReceiptPreviewOrderId] = useState<number | null>(null);
+  const [summaryLang, setSummaryLang] = useState<"th" | "en">("th");
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
   const [storeSettings, setStoreSettings] = useState<{ storeName: string; contactEmail: string | null; supportPhone: string | null; address: string | null } | null>(null);
 
@@ -664,6 +695,37 @@ export default function AdminOrdersPage() {
       true
     );
     setRejectModal(null);
+  };
+
+  const handleCancelPendingOpen = (orderId: number) => {
+    setDetailModal((prev) => (prev?.id === orderId ? null : prev));
+    setCancelPendingModal({ orderId });
+  };
+
+  const handleCancelPendingConfirm = async () => {
+    if (!cancelPendingModal) return;
+    const id = cancelPendingModal.orderId;
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/cancel`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        pushToast(data?.error ?? "ยกเลิกออเดอร์ไม่สำเร็จ", "error");
+        return;
+      }
+      pushToast("ยกเลิกออเดอร์แล้ว (คืนสต็อกแล้ว)", "success");
+      setCancelPendingModal(null);
+      setDetailModal((prev) => (prev?.id === id ? null : prev));
+      await refetch();
+    } catch {
+      pushToast("เกิดข้อผิดพลาด", "error");
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const handleShipOpen = (orderId: number) => {
@@ -828,6 +890,71 @@ export default function AdminOrdersPage() {
     openReceiptPreview(detailModal.id);
   }, [detailModal, openReceiptPreview, pushToast]);
 
+  const handleCopySalesSummary = useCallback(async () => {
+    if (!detailModal) return;
+    try {
+      let pay: {
+        bank?: { name: string; accountNo: string; accountName: string } | null;
+        promptPay?: { identifier: string; qrUrl: string } | null;
+      } | null = null;
+      try {
+        const r = await fetch("/api/storefront/payment-settings");
+        pay = await r.json();
+      } catch {
+        pay = null;
+      }
+      const envPp =
+        typeof process !== "undefined" ? process.env.NEXT_PUBLIC_PROMPTPAY_ID?.trim() ?? "" : "";
+      const bankLines: string[] = [];
+      if (pay?.bank) {
+        bankLines.push(String(pay.bank.name));
+        bankLines.push(`${pay.bank.accountName} · ${pay.bank.accountNo}`);
+      }
+      const ppId = pay?.promptPay?.identifier?.trim() || envPp || null;
+      const claimLink = detailModal.claimToken
+        ? `${getSiteOrigin()}/order/claim/${detailModal.claimToken}`
+        : null;
+      const receiptBase = claimLink ? claimLinkToDigitalReceiptPageUrl(claimLink) : null;
+      const receiptPageUrl = receiptBase
+        ? `${receiptBase}${summaryLang === "en" ? "?lang=en" : ""}`
+        : null;
+      const promptPayQrUrl =
+        !receiptPageUrl && ppId && detailModal.totalAmount >= 0
+          ? buildPromptPayIoQrUrl(ppId, detailModal.totalAmount)
+          : null;
+      const pm = detailModal.paymentMethod
+        ? PAYMENT_LABELS[detailModal.paymentMethod] ?? detailModal.paymentMethod
+        : null;
+      const lineSubtotal = detailModal.items.reduce((s, i) => s + i.totalPrice, 0);
+      const text = generateOrderSummary({
+        lang: summaryLang,
+        orderNumber: detailModal.orderNumber,
+        orderId: detailModal.id,
+        items: detailModal.items.map((i) => ({
+          name: i.productName,
+          unitLabel: i.unitLabel,
+          quantity: i.quantity,
+          lineTotal: i.totalPrice,
+        })),
+        subtotal: lineSubtotal,
+        shippingFee: detailModal.shippingFee,
+        discountAmount: detailModal.discountAmount,
+        totalAmount: detailModal.totalAmount,
+        paymentMethodLabel: pm,
+        customerName: detailModal.customerName,
+        customerPhone: detailModal.customerPhone,
+        claimLink,
+        receiptPageUrl,
+        bankLines: bankLines.length ? bankLines : undefined,
+        promptPayQrUrl,
+      });
+      await navigator.clipboard.writeText(text);
+      pushToast(summaryLang === "th" ? "คัดลอกแล้ว" : "Copied to clipboard!", "success");
+    } catch (err) {
+      pushToast(String(err), "error");
+    }
+  }, [detailModal, pushToast, summaryLang]);
+
   const handleCopyLineFlexJson = useCallback(async () => {
     if (!detailModal) return;
     try {
@@ -954,6 +1081,7 @@ export default function AdminOrdersPage() {
                 order={order}
                 onApprove={handleApprove}
                 onReject={handleRejectOpen}
+                onCancelPending={handleCancelPendingOpen}
                 onShip={handleShipOpen}
                 onVoid={handleVoidOpen}
                 onSlipClick={setSlipModalUrl}
@@ -985,6 +1113,7 @@ export default function AdminOrdersPage() {
                     order={order}
                     onApprove={handleApprove}
                     onReject={handleRejectOpen}
+                    onCancelPending={handleCancelPendingOpen}
                     onShip={handleShipOpen}
                     onVoid={handleVoidOpen}
                     onSlipClick={setSlipModalUrl}
@@ -1038,6 +1167,35 @@ export default function AdminOrdersPage() {
                   <Copy className="mr-1.5 h-4 w-4" />
                   Copy Flex JSON
                 </Button>
+                <div className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50/80 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setSummaryLang("th")}
+                    className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                      summaryLang === "th" ? "bg-primary text-white" : "text-zinc-600 hover:bg-white"
+                    }`}
+                  >
+                    TH
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSummaryLang("en")}
+                    className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                      summaryLang === "en" ? "bg-primary text-white" : "text-zinc-600 hover:bg-white"
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-primary/30 text-primary hover:bg-accent"
+                  onClick={() => void handleCopySalesSummary()}
+                >
+                  <Copy className="mr-1.5 h-4 w-4" />
+                  Copy Sales Summary
+                </Button>
                 {detailModal.claimToken && detailModal.status === "PENDING_INFO" && (
                   <Button
                     size="sm"
@@ -1057,12 +1215,9 @@ export default function AdminOrdersPage() {
                 {(detailModal.status === "PENDING" || detailModal.status === "PENDING_INFO") && (
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="border-red-200 text-red-600 hover:bg-red-50"
-                    onClick={() => {
-                      setDetailModal(null);
-                      handleRejectOpen(detailModal.id);
-                    }}
+                    variant="ghost"
+                    className="border border-red-200/80 text-red-600 hover:bg-red-50"
+                    onClick={() => handleCancelPendingOpen(detailModal.id)}
                   >
                     <XCircle className="mr-1.5 h-4 w-4" />
                     ยกเลิกออเดอร์
@@ -1319,6 +1474,34 @@ export default function AdminOrdersPage() {
               disabled={updatingId !== null}
             >
               {updatingId !== null ? <Loader2 className="h-4 w-4 animate-spin" /> : "ยืนยันปฏิเสธ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Cancel pending order (restore stock) ── */}
+      <Dialog open={!!cancelPendingModal} onOpenChange={(o) => !o && setCancelPendingModal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-700">ยกเลิกออเดอร์?</DialogTitle>
+          </DialogHeader>
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            ยืนยันการยกเลิกออเดอร์นี้หรือไม่ ระบบจะคืนสต็อกสินค้าตามรายการในออเดอร์ให้อัตโนมัติ
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCancelPendingModal(null)}>
+              ไม่
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleCancelPendingConfirm()}
+              disabled={updatingId !== null}
+            >
+              {updatingId !== null ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "ยืนยันยกเลิก"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

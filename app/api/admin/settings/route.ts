@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isDevAdminBypassEnabled } from "@/lib/auth-utils";
 import { logger } from "@/lib/logger";
 import { getSiteSettingsRecordMap, upsertSiteSetting } from "@/services/setting-service";
 
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    logger.info(`Setting updated: ${body.key}`, { context: { user_id: user.id } });
+    logger.info(`Setting updated: ${body.key}`, { context: { user_id: user?.id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
     logger.error("Unexpected error in settings POST", { cause: err });

@@ -165,6 +165,44 @@ export async function rejectPayment(orderId: number, note: string): Promise<Serv
   }
 }
 
+/** Cancel only `PENDING` / `PENDING_INFO` (e.g. abandoned manual claim); restores variant stock. */
+export async function cancelPendingOrder(
+  orderId: number,
+  note?: string
+): Promise<ServiceResult<null>> {
+  try {
+    const oid = BigInt(orderId);
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.orders.findUnique({
+        where: { id: oid },
+        include: { order_items: true },
+      });
+      if (!order) throw new Error("Order not found");
+      if (order.status === "CANCELLED") throw new Error("Order is already cancelled");
+      const s = order.status ?? "";
+      if (s !== "PENDING" && s !== "PENDING_INFO") {
+        throw new Error(
+          `Cannot cancel: only PENDING or PENDING_INFO orders (current: ${s})`
+        );
+      }
+      await restoreVariantStockForOrderItems(tx, order.order_items);
+      const trimmed = (note ?? "").trim();
+      const rejectNote = trimmed
+        ? `${trimmed}${REJECT_STOCK_NOTE_SUFFIX}`
+        : `Cancelled by admin (pending order).${REJECT_STOCK_NOTE_SUFFIX}`;
+      await tx.orders.update({
+        where: { id: oid },
+        data: { status: "CANCELLED", reject_note: rejectNote },
+      });
+    });
+    return { data: null, error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[orders-service] cancelPendingOrder error:", msg);
+    return { data: null, error: msg };
+  }
+}
+
 export type MarkShippedResult = { quotationSynced: boolean };
 
 /** Mark order as SHIPPED with tracking number and carrier, then email customer. */

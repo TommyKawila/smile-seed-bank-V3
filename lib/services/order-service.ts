@@ -567,6 +567,64 @@ export interface OrderClaimPreview {
   status: string;
 }
 
+export interface OrderReceiptCardData {
+  order_number: string;
+  order_id: string;
+  status: string;
+  total_amount: number;
+  claim_token: string;
+  items: {
+    product_name: string;
+    unit_label: string | null;
+    quantity: number;
+    line_total: number;
+  }[];
+}
+
+export async function getOrderReceiptCardByClaimToken(
+  token: string
+): Promise<ServiceResult<OrderReceiptCardData>> {
+  const t = token?.trim();
+  if (!t) return { data: null, error: "Invalid link" };
+  try {
+    const order = await prisma.orders.findUnique({
+      where: { claim_token: t },
+      include: {
+        order_items: {
+          select: {
+            product_name: true,
+            unit_label: true,
+            quantity: true,
+            total_price: true,
+          },
+        },
+      },
+    });
+    if (!order) return { data: null, error: "Order not found" };
+    const items = (order.order_items ?? []).map((row) => ({
+      product_name: row.product_name,
+      unit_label: row.unit_label,
+      quantity: row.quantity,
+      line_total: Number(row.total_price ?? 0),
+    }));
+    return {
+      data: {
+        order_number: order.order_number,
+        order_id: String(order.id),
+        status: order.status ?? "",
+        total_amount: Number(order.total_amount),
+        claim_token: order.claim_token ?? t,
+        items,
+      },
+      error: null,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[order-service] getOrderReceiptCardByClaimToken error:", msg);
+    return { data: null, error: msg };
+  }
+}
+
 export async function getOrderClaimPreview(
   token: string
 ): Promise<ServiceResult<OrderClaimPreview>> {

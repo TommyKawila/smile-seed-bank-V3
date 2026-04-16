@@ -35,6 +35,25 @@ import {
   type PosMiniInvoiceLine,
 } from "@/components/admin/PosMiniInvoiceModal";
 import { getSiteOrigin } from "@/lib/get-url";
+import {
+  buildPromptPayIoQrUrl,
+  claimLinkToDigitalReceiptPageUrl,
+  generateOrderSummary,
+} from "@/lib/utils/format-order";
+
+type PosLastCopyPack = {
+  orderNumber: string;
+  orderId?: string;
+  claimLink: string | null;
+  items: { name: string; unitLabel: string; quantity: number; lineTotal: number }[];
+  subtotal: number;
+  shippingFee: number;
+  discountAmount: number;
+  totalAmount: number;
+  paymentMethodLabel: string;
+  customerName: string;
+  customerPhone: string;
+};
 
 function posPaymentMethodLabelTh(code: string): string {
   const m: Record<string, string> = {
@@ -102,7 +121,12 @@ export default function CreateOrderPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [miniInvoice, setMiniInvoice] = useState<PosMiniInvoiceData | null>(null);
-  const [lastClaimUrl, setLastClaimUrl] = useState<string | null>(null);
+  const [lastCopyPack, setLastCopyPack] = useState<PosLastCopyPack | null>(null);
+  const [payForCopy, setPayForCopy] = useState<{
+    bank: { name: string; accountNo: string; accountName: string } | null;
+    promptPay: { identifier: string; qrUrl: string } | null;
+  } | null>(null);
+  const [summaryLang, setSummaryLang] = useState<"th" | "en">("th");
 
   const [customer, setCustomer] = useState<CustomerInfo>({
     full_name: "",
@@ -114,6 +138,78 @@ export default function CreateOrderPage() {
 
   const setCustomerField = (field: keyof CustomerInfo, value: string) =>
     setCustomer((prev) => ({ ...prev, [field]: value }));
+
+  useEffect(() => {
+    void fetch("/api/storefront/payment-settings")
+      .then((r) => r.json())
+      .then(
+        (data: {
+          bank?: { name: string; accountNo: string; accountName: string } | null;
+          promptPay?: { identifier: string; qrUrl: string } | null;
+        }) => {
+          setPayForCopy({
+            bank: data.bank ?? null,
+            promptPay: data.promptPay ?? null,
+          });
+        }
+      )
+      .catch(() => setPayForCopy(null));
+  }, []);
+
+  const handleCopySalesSummary = useCallback(async () => {
+    if (!lastCopyPack) return;
+    const envPp =
+      typeof process !== "undefined"
+        ? process.env.NEXT_PUBLIC_PROMPTPAY_ID?.trim() ?? ""
+        : "";
+    const bankLines: string[] = [];
+    if (payForCopy?.bank) {
+      bankLines.push(String(payForCopy.bank.name));
+      bankLines.push(`${payForCopy.bank.accountName} · ${payForCopy.bank.accountNo}`);
+    }
+    const ppId =
+      payForCopy?.promptPay?.identifier?.trim() || envPp || null;
+    const receiptBase = lastCopyPack.claimLink
+      ? claimLinkToDigitalReceiptPageUrl(lastCopyPack.claimLink)
+      : null;
+    const receiptPageUrl = receiptBase
+      ? `${receiptBase}${summaryLang === "en" ? "?lang=en" : ""}`
+      : null;
+    const promptPayQrUrl =
+      !receiptPageUrl && ppId && lastCopyPack.totalAmount >= 0
+        ? buildPromptPayIoQrUrl(ppId, lastCopyPack.totalAmount)
+        : null;
+    const text = generateOrderSummary({
+      lang: summaryLang,
+      orderNumber: lastCopyPack.orderNumber,
+      orderId: lastCopyPack.orderId,
+      items: lastCopyPack.items.map((i) => ({
+        name: i.name,
+        unitLabel: i.unitLabel,
+        quantity: i.quantity,
+        lineTotal: i.lineTotal,
+      })),
+      subtotal: lastCopyPack.subtotal,
+      shippingFee: lastCopyPack.shippingFee,
+      discountAmount: lastCopyPack.discountAmount,
+      totalAmount: lastCopyPack.totalAmount,
+      paymentMethodLabel: lastCopyPack.paymentMethodLabel,
+      customerName: lastCopyPack.customerName || null,
+      customerPhone: lastCopyPack.customerPhone || null,
+      claimLink: lastCopyPack.claimLink,
+      receiptPageUrl,
+      bankLines: bankLines.length ? bankLines : undefined,
+      promptPayQrUrl,
+    });
+    await navigator.clipboard.writeText(text);
+    toast({
+      title: summaryLang === "th" ? "คัดลอกแล้ว" : "Copied to clipboard!",
+      description:
+        summaryLang === "th"
+          ? "พร้อมส่งให้ลูกค้า"
+          : "Ready to send to your customer.",
+    });
+  }, [lastCopyPack, payForCopy, summaryLang, toast]);
 
   const wholesaleDiscount = selectedCustomer?.tier === "Wholesale"
     ? (selectedCustomer.wholesale_discount_percent ?? 20)
@@ -316,7 +412,7 @@ export default function CreateOrderPage() {
     if (paidItems.length === 0) return;
     setIsSubmitting(true);
     setSubmitError(null);
-    setLastClaimUrl(null);
+    setLastCopyPack(null);
 
     try {
       const isClaim = mode === "claim";
@@ -363,7 +459,27 @@ export default function CreateOrderPage() {
 
       if (isClaim) {
         const ct = result.claimToken != null && result.claimToken !== "" ? String(result.claimToken) : "";
-        if (ct) setLastClaimUrl(`${getSiteOrigin()}/order/claim/${ct}`);
+        const claimLink = ct ? `${getSiteOrigin()}/order/claim/${ct}` : null;
+        const discountAmt =
+          summary.tierDiscount + summary.promoDiscount;
+        setLastCopyPack({
+          orderNumber,
+          orderId,
+          claimLink,
+          items: items.map((i) => ({
+            name: i.productName,
+            unitLabel: i.unitLabel,
+            quantity: i.quantity,
+            lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+          })),
+          subtotal: summary.subtotal,
+          shippingFee: summary.shipping,
+          discountAmount: discountAmt,
+          totalAmount: grandTotal,
+          paymentMethodLabel: posPaymentMethodLabelTh("TRANSFER"),
+          customerName: customer.full_name,
+          customerPhone: customer.phone,
+        });
         setSubmitSuccess(
           ct
             ? "สร้างออเดอร์แล้ว — คัดลอกลิงก์ด้านล่างส่งให้ลูกค้า (กรอกที่อยู่ + อัปโหลดสลิป)"
@@ -374,6 +490,29 @@ export default function CreateOrderPage() {
         setPointsToRedeem(0);
         setCustomer({ full_name: "", phone: "", address: "", payment_method: "CASH", note: "" });
         return;
+      }
+
+      {
+        const discountAmt =
+          summary.tierDiscount + summary.promoDiscount + pointsDiscountAmount;
+        setLastCopyPack({
+          orderNumber,
+          orderId,
+          claimLink: null,
+          items: items.map((i) => ({
+            name: i.productName,
+            unitLabel: i.unitLabel,
+            quantity: i.quantity,
+            lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+          })),
+          subtotal: summary.subtotal,
+          shippingFee: summary.shipping,
+          discountAmount: discountAmt,
+          totalAmount: grandTotal,
+          paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
+          customerName: customer.full_name,
+          customerPhone: customer.phone,
+        });
       }
 
       const miniLines: PosMiniInvoiceLine[] = items.map((i) => ({
@@ -944,24 +1083,68 @@ export default function CreateOrderPage() {
               {submitSuccess && (
                 <p className="rounded-lg bg-accent px-3 py-2 text-sm text-primary">{submitSuccess}</p>
               )}
-              {lastClaimUrl && (
+              {lastCopyPack && (
                 <div className="flex flex-col gap-2 rounded-lg border border-primary/25 bg-zinc-50 p-3">
-                  <p className="text-xs font-medium text-zinc-600">ลิงก์ให้ลูกค้ากรอกข้อมูล</p>
-                  <p className="break-all font-mono text-[11px] text-zinc-800">{lastClaimUrl}</p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="border-primary/30"
-                    onClick={() => {
-                      void navigator.clipboard.writeText(lastClaimUrl).then(() => {
-                        toast({ title: "คัดลอกลิงก์แล้ว" });
-                      });
-                    }}
-                  >
-                    <Copy className="mr-1.5 h-4 w-4" />
-                    Copy Claim Link
-                  </Button>
+                  <p className="text-xs font-medium text-zinc-600">
+                    ส่งให้ลูกค้า (ข้อความเดียวครบ)
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-zinc-500">ภาษา</span>
+                    <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setSummaryLang("th")}
+                        className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
+                          summaryLang === "th"
+                            ? "bg-primary text-white"
+                            : "text-zinc-600 hover:bg-zinc-50"
+                        }`}
+                      >
+                        TH
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSummaryLang("en")}
+                        className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
+                          summaryLang === "en"
+                            ? "bg-primary text-white"
+                            : "text-zinc-600 hover:bg-zinc-50"
+                        }`}
+                      >
+                        EN
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="bg-primary text-white hover:bg-primary/90"
+                      onClick={() => void handleCopySalesSummary()}
+                    >
+                      <Copy className="mr-1.5 h-4 w-4" />
+                      Copy Sales Summary
+                    </Button>
+                    {lastCopyPack.claimLink && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-primary/30"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(lastCopyPack.claimLink!).then(() => {
+                            toast({ title: "คัดลอกลิงก์แล้ว" });
+                          });
+                        }}
+                      >
+                        <Copy className="mr-1.5 h-4 w-4" />
+                        Copy Claim Link
+                      </Button>
+                    )}
+                  </div>
+                  {lastCopyPack.claimLink && (
+                    <p className="break-all font-mono text-[11px] text-zinc-800">{lastCopyPack.claimLink}</p>
+                  )}
                 </div>
               )}
               {submitError && (
