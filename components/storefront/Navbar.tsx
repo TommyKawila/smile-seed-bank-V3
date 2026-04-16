@@ -24,6 +24,10 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const isMagazineSection = pathname === "/blog" || pathname.startsWith("/blog/");
+  const isHomePage = pathname === "/";
+  const [scrolled, setScrolled] = useState(false);
+  /** White sticky bar: home (always), blog, or scrolled inner pages. */
+  const solidLightNav = isHomePage || isMagazineSection || scrolled;
   const { itemCount, isOpen, openCart, closeCart } = useCartContext();
   const { locale, toggle, t } = useLanguage();
   const { settings } = useSiteSettings();
@@ -34,7 +38,6 @@ export function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const [scrolled, setScrolled] = useState(false);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -74,12 +77,18 @@ export function Navbar() {
     { href: "/blog", label: t("บล็อก Smile Seed", "Smile Seed Blog") },
   ];
 
+  const navLinkClass = solidLightNav
+    ? "text-sm font-medium text-zinc-800 transition-colors hover:text-emerald-900"
+    : "text-sm font-medium text-zinc-600 transition-colors hover:text-primary";
+
+  const iconBtnClass = "rounded-full transition-colors hover:bg-zinc-100";
+
   return (
     <>
       <header
         className={`no-print fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-          isMagazineSection || scrolled
-            ? "border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur-md"
+          solidLightNav
+            ? "border-b border-gray-100 bg-white shadow-sm"
             : "bg-transparent"
         }`}
       >
@@ -97,7 +106,7 @@ export function Navbar() {
               />
             ) : (
               <>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-800">
                   <Leaf className="h-4 w-4 text-white" />
                 </div>
                 <span className="text-base font-bold tracking-tight text-zinc-900">
@@ -110,11 +119,7 @@ export function Navbar() {
           {/* Desktop Nav Links */}
           <nav className="hidden items-center gap-6 md:flex">
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-zinc-600 transition-colors hover:text-primary"
-              >
+              <Link key={link.href} href={link.href} className={navLinkClass}>
                 {link.label}
               </Link>
             ))}
@@ -125,14 +130,14 @@ export function Navbar() {
             {/* Language Toggle */}
             <button
               onClick={toggle}
-              className="flex items-center overflow-hidden rounded-full border border-zinc-200 bg-white text-xs font-bold transition-colors hover:border-primary"
+              className="flex items-center overflow-hidden rounded-full border border-zinc-200 bg-white text-xs font-bold text-zinc-700 transition-colors hover:border-emerald-600/40"
               aria-label="Switch language"
             >
               <span
                 className={`px-2.5 py-1 transition-colors ${
                   locale === "th"
-                    ? "bg-primary text-white"
-                    : "text-zinc-500 hover:text-zinc-800"
+                    ? "bg-emerald-700 text-white"
+                    : "text-zinc-500 hover:text-zinc-900"
                 }`}
               >
                 TH
@@ -140,8 +145,8 @@ export function Navbar() {
               <span
                 className={`px-2.5 py-1 transition-colors ${
                   locale === "en"
-                    ? "bg-primary text-white"
-                    : "text-zinc-500 hover:text-zinc-800"
+                    ? "bg-emerald-700 text-white"
+                    : "text-zinc-500 hover:text-zinc-900"
                 }`}
               >
                 EN
@@ -151,10 +156,10 @@ export function Navbar() {
             {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-zinc-100"
+              className={`relative flex h-10 w-10 items-center justify-center ${iconBtnClass}`}
               aria-label={t("ค้นหา", "Search")}
             >
-              <Search className="h-5 w-5 text-zinc-700" />
+              <Search className="h-5 w-5 text-zinc-800" />
             </button>
 
             {/* User — Avatar dropdown or Login link */}
@@ -163,7 +168,7 @@ export function Navbar() {
                 <>
                   <button
                     onClick={() => setUserMenuOpen((v) => !v)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary transition-colors hover:bg-primary/20"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-900 transition-colors hover:bg-emerald-100"
                     aria-label="Profile"
                   >
                     {(customer?.full_name ?? user.email ?? "U").charAt(0).toUpperCase()}
@@ -211,10 +216,10 @@ export function Navbar() {
               ) : (
                 <Link
                   href="/login"
-                  className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-zinc-100"
+                  className={`flex h-10 w-10 items-center justify-center ${iconBtnClass}`}
                   aria-label={t("เข้าสู่ระบบ", "Sign In")}
                 >
-                  <User className="h-5 w-5 text-zinc-700" />
+                  <User className="h-5 w-5 text-zinc-800" />
                 </Link>
               )}
             </div>
@@ -222,10 +227,10 @@ export function Navbar() {
             {/* Cart Button */}
             <button
               onClick={openCart}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-zinc-100"
+              className={`relative flex h-10 w-10 items-center justify-center ${iconBtnClass}`}
               aria-label={t("ตะกร้าสินค้า", "Cart")}
             >
-              <ShoppingCart className="h-5 w-5 text-zinc-700" />
+              <ShoppingCart className="h-5 w-5 text-zinc-800" />
               {itemCount > 0 && (
                 <motion.span
                   key={itemCount}
@@ -241,13 +246,13 @@ export function Navbar() {
             {/* Hamburger — Mobile only */}
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-zinc-100 md:hidden"
+              className={`flex h-10 w-10 items-center justify-center md:hidden ${iconBtnClass}`}
               aria-label={t("เมนู", "Menu")}
             >
               {menuOpen ? (
-                <X className="h-5 w-5 text-zinc-700" />
+                <X className="h-5 w-5 text-zinc-800" />
               ) : (
-                <Menu className="h-5 w-5 text-zinc-700" />
+                <Menu className="h-5 w-5 text-zinc-800" />
               )}
             </button>
           </div>
@@ -261,46 +266,58 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18 }}
-              className="border-t border-zinc-100 bg-white px-4 pb-4 pt-2 md:hidden"
+              className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden"
             >
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="block py-3 text-base font-medium text-zinc-700 hover:text-primary"
+                  className="block py-3 text-base font-medium text-zinc-800 hover:text-emerald-900"
                 >
                   {link.label}
                 </Link>
               ))}
               {/* Auth Links — Mobile */}
-              <div className="mt-3 border-t border-zinc-100 pt-3">
+              <div className="mt-3 border-t border-gray-100 pt-3">
                 {user ? (
                   <div className="flex items-center justify-between">
-                    <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 text-sm font-medium text-zinc-700">
-                      <User className="h-4 w-4 text-primary" />
+                    <Link
+                      href="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 text-sm font-medium text-zinc-800"
+                    >
+                      <User className="h-4 w-4 text-emerald-800" />
                       {t("โปรไฟล์ของฉัน", "My Profile")}
                     </Link>
-                    <button onClick={() => void signOut()} className="text-xs text-red-500">
+                    <button onClick={() => void signOut()} className="text-xs text-red-600">
                       {t("ออกจากระบบ", "Sign Out")}
                     </button>
                   </div>
                 ) : (
-                  <Link href="/login" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 text-sm font-medium text-primary">
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 text-sm font-medium text-emerald-800"
+                  >
                     <User className="h-4 w-4" />
                     {t("เข้าสู่ระบบ / สมัครสมาชิก", "Sign In / Register")}
                   </Link>
                 )}
               </div>
               {/* Language toggle inside mobile menu */}
-              <div className="mt-2 border-t border-zinc-100 pt-2">
+              <div className="mt-2 border-t border-gray-100 pt-2">
                 <button
                   onClick={toggle}
-                  className="flex items-center gap-2 text-sm font-medium text-zinc-500"
+                  className="flex items-center gap-2 text-sm font-medium text-zinc-600"
                 >
-                  <span className={locale === "th" ? "font-bold text-primary" : ""}>ภาษาไทย</span>
+                  <span className={locale === "th" ? "font-bold text-emerald-800" : ""}>
+                    ภาษาไทย
+                  </span>
                   <span className="text-zinc-300">|</span>
-                  <span className={locale === "en" ? "font-bold text-primary" : ""}>English</span>
+                  <span className={locale === "en" ? "font-bold text-emerald-800" : ""}>
+                    English
+                  </span>
                 </button>
               </div>
             </motion.div>

@@ -92,7 +92,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
             <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10 md:p-12">
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 {current.category && (
-                  <span className="inline-flex w-fit text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-900">
+                  <span className="inline-flex w-fit rounded-full border border-white/40 bg-white/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-950 shadow-sm backdrop-blur-md">
                     {current.category.name}
                   </span>
                 )}

@@ -311,9 +311,9 @@ function HomePageMain() {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
+    <div className="min-h-screen bg-white pt-20 text-zinc-900 sm:pt-28">
       <div className="bg-white">
-        <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 sm:pt-8">
+        <div className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 sm:pt-6">
           <div className="overflow-hidden rounded-3xl border border-zinc-200 shadow-[0_24px_64px_-18px_rgba(21,128,61,0.14)] ring-1 ring-zinc-200/80">
             <Hero />
           </div>

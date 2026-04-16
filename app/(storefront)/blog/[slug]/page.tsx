@@ -36,6 +36,7 @@ import { ShopTheStorySection } from "@/components/storefront/magazine/ShopTheSto
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
 import { isResearchCategory } from "@/lib/blog-research-category";
 import { getSiteOrigin } from "@/lib/get-url";
+import { BlogArticleBreederRibbon } from "@/components/storefront/magazine/BlogArticleBreederRibbon";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-magazine-serif" });
@@ -155,7 +156,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
 
   return (
     <div
-      className={`min-h-screen bg-white text-zinc-900 ${inter.variable} ${playfair.variable} font-sans antialiased`}
+      className={`min-h-screen overflow-x-hidden bg-white text-zinc-900 ${inter.variable} ${playfair.variable} font-sans antialiased`}
     >
       <MagazineArticleJsonLd
         title={post.title}
@@ -302,6 +303,15 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
             </ul>
           </section>
         )}
+
+        <section
+          className="relative left-1/2 right-1/2 mt-16 w-screen max-w-[100vw] -translate-x-1/2 border-t border-zinc-100 bg-white py-14 sm:py-16"
+          aria-labelledby="blog-post-breeders-heading"
+        >
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <BlogArticleBreederRibbon headingId="blog-post-breeders-heading" />
+          </div>
+        </section>
 
         <div className="mx-auto mt-16 max-w-[720px] space-y-10">
           <NewsletterBox />
