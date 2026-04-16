@@ -51,7 +51,7 @@ function BlogCard({ blog }: { blog: Blog }) {
             <time dateTime={blog.created_at}>{formatDate(blog.created_at)}</time>
           </div>
           <span className="text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
-            {t("อ่านต่อ →", "Read More →")}
+            {t("บทความแนะนำ →", "Read more →")}
           </span>
         </div>
       </div>
@@ -136,7 +136,7 @@ export function BlogListClient({ blogs }: { blogs: Blog[] }) {
                   <time dateTime={featured.created_at}>{formatDate(featured.created_at)}</time>
                 </div>
                 <span className="text-xs font-semibold text-primary">
-                  {t("อ่านต่อ →", "Read More →")}
+                  {t("บทความแนะนำ →", "Read more →")}
                 </span>
               </div>
             </div>

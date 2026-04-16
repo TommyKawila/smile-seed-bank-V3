@@ -6,7 +6,8 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
-import { isResearchCategory } from "@/lib/blog-research-category";
+import { isResearchCategory, magazineCategoryDisplayTh } from "@/lib/blog-research-category";
+import { useLanguage } from "@/context/LanguageContext";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
 
 type Props = { posts: MagazinePostPublic[] };
@@ -42,13 +43,14 @@ function HeroImage({
 }
 
 export function MagazineHeroCarousel({ posts }: Props) {
+  const { t } = useLanguage();
   const slides = posts.length ? posts : [];
   const [i, setI] = useState(0);
 
   useEffect(() => {
     if (slides.length <= 1) return;
-    const t = setInterval(() => setI((x) => (x + 1) % slides.length), 5000);
-    return () => clearInterval(t);
+    const intervalId = setInterval(() => setI((x) => (x + 1) % slides.length), 5000);
+    return () => clearInterval(intervalId);
   }, [slides.length]);
 
   if (slides.length === 0) {
@@ -93,7 +95,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 {current.category && (
                   <span className="inline-flex w-fit rounded-full border border-white/40 bg-white/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-950 shadow-sm backdrop-blur-md">
-                    {current.category.name}
+                    {magazineCategoryDisplayTh(current.category)}
                   </span>
                 )}
                 {research && <VerifiedResearchBadge />}
@@ -105,7 +107,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
                 href={`/blog/${current.slug}`}
                 className="mt-6 inline-flex w-fit items-center justify-center rounded-sm bg-emerald-800 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900"
               >
-                Read Article
+                {t("อ่านบทความ", "Read article")}
               </Link>
             </div>
           </div>

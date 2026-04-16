@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: CATALOG_PAGE_TITLE,
     description: CATALOG_PAGE_DESCRIPTION,
     type: "website",
-    url: "/shop",
+    url: "/seeds",
     siteName: "Smile Seed Bank",
   },
   twitter: {
@@ -20,10 +20,10 @@ export const metadata: Metadata = {
     description: CATALOG_PAGE_DESCRIPTION,
   },
   alternates: {
-    canonical: "/shop",
+    canonical: "/seeds",
   },
 };
 
-export default function ShopLayout({ children }: { children: React.ReactNode }) {
+export default function SeedsLayout({ children }: { children: React.ReactNode }) {
   return children;
 }

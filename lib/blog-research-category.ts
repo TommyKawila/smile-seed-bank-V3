@@ -1,3 +1,5 @@
+import { magazineCategoryLabel } from "./blog-category-labels";
+
 /** Heuristic: category represents research-backed editorial content. */
 export function isResearchCategory(
   cat: { name: string; slug: string } | null | undefined
@@ -28,6 +30,13 @@ export function isKnowledgeCategory(
     name.includes("ความรู้") ||
     name.includes("องค์ความรู้")
   );
+}
+
+/** Thai editorial label for storefront (article tags, SSR cards). See `magazineCategoryLabel` for EN. */
+export function magazineCategoryDisplayTh(
+  cat: { name: string; slug: string } | null | undefined
+): string {
+  return magazineCategoryLabel(cat, "th");
 }
 
 export function formatResearchRefId(

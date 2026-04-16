@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Check, Copy, Facebook, Link2 } from "lucide-react";
+import { Check, Facebook, Link2 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Props = { url: string; title?: string };
 
@@ -14,6 +15,7 @@ function LineIcon({ className }: { className?: string }) {
 }
 
 export function MagazineArticleShare({ url, title = "" }: Props) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   const onCopy = useCallback(() => {
@@ -30,10 +32,14 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
     <div
       className="border-t border-zinc-200 pt-10"
       role="group"
-      aria-label={title ? `Share: ${title}` : "Share article"}
+      aria-label={
+        title
+          ? `${t("แบ่งปันประสบการณ์", "Share")}: ${title}`
+          : t("แบ่งปันประสบการณ์", "Share article")
+      }
     >
       <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-        Share
+        {t("แบ่งปันประสบการณ์", "Share")}
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <a
@@ -41,7 +47,7 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
-          aria-label="Share on Facebook"
+          aria-label={t("แชร์บน Facebook", "Share on Facebook")}
         >
           <Facebook className="h-4 w-4" />
         </a>
@@ -50,7 +56,7 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
-          aria-label="Share on LINE"
+          aria-label={t("แชร์บน LINE", "Share on LINE")}
         >
           <LineIcon className="h-4 w-4" />
         </a>
@@ -58,10 +64,10 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
           type="button"
           onClick={onCopy}
           className="inline-flex h-10 items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 text-xs text-zinc-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
-          aria-label="Copy link"
+          aria-label={t("คัดลอกลิงก์", "Copy link")}
         >
           {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Link2 className="h-4 w-4" />}
-          {copied ? "Copied" : "Copy link"}
+          {copied ? t("คัดลอกแล้ว", "Copied") : t("คัดลอกลิงก์", "Copy link")}
         </button>
       </div>
     </div>

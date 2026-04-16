@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getProductBySlug } from "@/services/product-service";
+import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
 import ProductDetailClient from "./product-detail-client";
 
 export async function generateMetadata({
@@ -42,5 +43,10 @@ export default async function ProductPage({
   params: { slug: string };
 }) {
   const { data } = await getProductBySlug(params.slug);
-  return <ProductDetailClient key={params.slug} initialProduct={data} />;
+  return (
+    <>
+      {data ? <ProductJsonLd product={data} /> : null}
+      <ProductDetailClient key={params.slug} initialProduct={data} />
+    </>
+  );
 }

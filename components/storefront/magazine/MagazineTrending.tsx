@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { MagazinePostPublic } from "@/lib/blog-service";
+import { magazineCategoryDisplayTh } from "@/lib/blog-research-category";
 import { cn } from "@/lib/utils";
 
 const mono = "font-[family-name:var(--font-journal-mono)] tabular-nums";
@@ -45,7 +46,7 @@ export function MagazineTrending({ posts }: { posts: MagazinePostPublic[] }) {
                 <div className="mt-1 flex items-center justify-between gap-2">
                   {p.category && (
                     <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-800/85">
-                      {p.category.name}
+                      {magazineCategoryDisplayTh(p.category)}
                     </span>
                   )}
                   <span className={cn(mono, "ml-auto text-[10px] text-zinc-400")} title="Views">

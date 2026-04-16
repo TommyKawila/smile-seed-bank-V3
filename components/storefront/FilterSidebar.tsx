@@ -7,6 +7,7 @@ import { parseListParam, type ShopFilterOptionCounts, defaultFilterOptionCounts 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 
 type TFn = (th: string, en: string) => string;
 
@@ -167,33 +168,40 @@ export function FilterSidebarContent({
     [router, pathname, searchParams]
   );
 
+  const mono = "font-[family-name:var(--font-journal-product-mono)]";
+
   const checkboxClass =
-    "peer h-4 w-4 shrink-0 rounded border-primary/35 text-primary accent-primary focus:ring-2 focus:ring-primary/30 focus:ring-offset-0";
+    "peer h-3 w-3 shrink-0 rounded-sm border border-primary/55 text-primary accent-primary focus:ring-1 focus:ring-primary/35 focus:ring-offset-0";
 
   const rowClass = (on: boolean, isZero: boolean) =>
-    `flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-sm transition-colors ${
+    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2 py-1.5 text-sm transition-colors ${
       isZero ? "opacity-60" : ""
     } ${
       on
-        ? "border-primary/45 bg-secondary/50 text-secondary-foreground"
-        : "border-transparent bg-white/60 text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+        ? "border-primary/40 bg-primary/[0.06] text-zinc-900"
+        : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
     }`;
 
   const sexRowClass = (on: boolean, isFem: boolean, isZero: boolean) =>
-    `flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-sm transition-colors ${
+    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2 py-1.5 text-sm transition-colors ${
       isZero ? "opacity-60" : ""
     } ${
       on
         ? isFem
-          ? "border-secondary/50 bg-secondary/50 text-secondary-foreground"
-          : "border-primary/45 bg-primary/10 text-primary"
-        : "border-transparent bg-white/60 text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+          ? "border-zinc-300 bg-secondary/40 text-zinc-900"
+          : "border-primary/40 bg-primary/[0.06] text-primary"
+        : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
     }`;
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-4 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+      <p
+        className={`border-b border-zinc-200/90 pb-2 ${mono} text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500`}
+      >
+        {t("ห้องปฏิบัติการกรอง", "THE LAB")}
+      </p>
       <div>
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary/70">
+        <p className={`mb-1.5 ${mono} text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600`}>
           {t("พันธุกรรม", "Genetics")}
         </p>
         <div className="space-y-1">
@@ -221,16 +229,16 @@ export function FilterSidebarContent({
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span
                       className={cn(
-                        "font-medium leading-tight",
-                        on ? "text-primary" : "text-muted-foreground"
+                        `${mono} text-[11px] font-medium leading-tight tabular-nums tracking-wide`,
+                        on ? "text-primary" : "text-zinc-600"
                       )}
                     >
                       {t(labelTh, labelEn)}
                     </span>
                     <span
                       className={cn(
-                        "shrink-0 text-xs font-normal tabular-nums",
-                        cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                        `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                        cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                       )}
                     >
                       ({cnt})
@@ -244,10 +252,10 @@ export function FilterSidebarContent({
       </div>
 
       <div>
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary/70">
+        <p className={`mb-2 ${mono} text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600`}>
           {t("THC & CBD", "THC & CBD")}
         </p>
-        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <p className={`mb-1 ${mono} text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500`}>
           THC
         </p>
         <div className="mb-2 space-y-1">
@@ -263,11 +271,13 @@ export function FilterSidebarContent({
                   onChange={() => toggleT(slug)}
                 />
                 <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className="font-medium">{t(labelTh, labelEn)}</span>
+                  <span className={`${mono} text-[11px] font-medium tabular-nums tracking-wide text-zinc-700`}>
+                    {t(labelTh, labelEn)}
+                  </span>
                   <span
                     className={cn(
-                      "shrink-0 text-xs font-normal tabular-nums",
-                      cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                      `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                      cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                     )}
                   >
                     ({cnt})
@@ -277,7 +287,7 @@ export function FilterSidebarContent({
             );
           })}
         </div>
-        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <p className={`mb-1 ${mono} text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500`}>
           CBD
         </p>
         <div className="space-y-1">
@@ -293,11 +303,13 @@ export function FilterSidebarContent({
                   onChange={() => toggleC(slug)}
                 />
                 <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className="font-medium">{t(labelTh, labelEn)}</span>
+                  <span className={`${mono} text-[11px] font-medium tabular-nums tracking-wide text-zinc-700`}>
+                    {t(labelTh, labelEn)}
+                  </span>
                   <span
                     className={cn(
-                      "shrink-0 text-xs font-normal tabular-nums",
-                      cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                      `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                      cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                     )}
                   >
                     ({cnt})
@@ -310,7 +322,7 @@ export function FilterSidebarContent({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary/70">
+        <p className={`mb-1.5 ${mono} text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600`}>
           {t("ระดับความยาก", "Difficulty")}
         </p>
         <div className="space-y-1.5">
@@ -326,11 +338,13 @@ export function FilterSidebarContent({
                   onChange={() => toggleD(slug)}
                 />
                 <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className="font-medium">{t(labelTh, labelEn)}</span>
+                  <span className={`${mono} text-[11px] font-medium tabular-nums tracking-wide text-zinc-700`}>
+                    {t(labelTh, labelEn)}
+                  </span>
                   <span
                     className={cn(
-                      "shrink-0 text-xs font-normal tabular-nums",
-                      cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                      `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                      cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                     )}
                   >
                     ({cnt})
@@ -343,7 +357,7 @@ export function FilterSidebarContent({
       </div>
 
       <div>
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary/70">
+        <p className={`mb-1.5 ${mono} text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600`}>
           {t("ประเภทเพศเมล็ด", "Sex type")}
         </p>
         <div className="space-y-1">
@@ -365,11 +379,13 @@ export function FilterSidebarContent({
                     <Mars className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                   )}
                   <span className="flex min-w-0 items-center gap-1.5">
-                    <span className="font-medium">{t(labelTh, labelEn)}</span>
+                    <span className={`${mono} text-[11px] font-medium tabular-nums tracking-wide text-zinc-700`}>
+                      {t(labelTh, labelEn)}
+                    </span>
                     <span
                       className={cn(
-                        "shrink-0 text-xs font-normal tabular-nums",
-                        cnt === 0 ? "text-zinc-400" : "text-muted-foreground"
+                        `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                        cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                       )}
                     >
                       ({cnt})
@@ -390,7 +406,7 @@ export function FilterSidebar({ t, counts }: { t: TFn; counts: ShopFilterOptionC
   return (
     <div
       id="shop-filters-desktop"
-      className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-xl border border-zinc-200/80 bg-gradient-to-br from-accent/40 via-zinc-50/90 to-secondary/30 shadow-sm lg:top-[230px] lg:max-h-[calc(100vh-230px)]"
+      className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-sm border border-zinc-200/90 bg-white shadow-sm lg:top-[230px] lg:max-h-[calc(100vh-230px)]"
     >
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl px-3 pb-3 pt-4 [-webkit-overflow-scrolling:touch]">
         <FilterSidebarContent t={t} counts={counts} />
@@ -420,7 +436,7 @@ export function ShopFilterMobileSheet({
       <SheetContent
         id="shop-filters"
         side="right"
-        className="flex h-full max-h-[100dvh] w-full max-w-md flex-col gap-0 border-l border-zinc-200/80 bg-gradient-to-br from-accent/40 via-zinc-50/95 to-secondary/30 p-0 shadow-xl [&>button]:hidden"
+        className="flex h-full max-h-[100dvh] w-full max-w-md flex-col gap-0 border-l border-zinc-200/90 bg-white p-0 shadow-xl [&>button]:hidden"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/80 bg-white/90 px-4 py-3.5 backdrop-blur-md">
           <SheetTitle className="text-left text-base font-semibold text-primary">

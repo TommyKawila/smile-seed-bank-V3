@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
 import { ShopSkeleton } from "@/components/skeletons/ShopSkeleton";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,8 +30,9 @@ import { useTranslations } from "@/hooks/use-translations";
 import {
   breederSlugFromName,
   resolveBreederFromShopParam,
-  shopBreederHref,
+  seedsBreederHref,
 } from "@/lib/breeder-slug";
+import { parseSeedsBreederSlugFromPathname, isSeedsIndexPath } from "@/lib/catalog-navigation";
 import {
   catalogFloweringBucket,
   productMatchesCatalogFtParam,
@@ -47,8 +48,11 @@ import {
   productMatchesShopAttributeFilters,
 } from "@/lib/shop-attribute-filters";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
-import { ProductCard } from "@/components/storefront/ProductCard";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { ShopGeneticVaultHero } from "@/components/storefront/ShopGeneticVaultHero";
+import { GeneticVaultProductGrid } from "@/components/storefront/GeneticVaultProductGrid";
+import type { MagazinePostPublic } from "@/lib/blog-service";
+import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 
 const SHOP_PAGE_INITIAL = 30;
 const SHOP_PAGE_STEP = 24;
@@ -59,7 +63,30 @@ const BACK_TO_TOP_SCROLL_THRESHOLD = 400;
 function ShopContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const breederParam = searchParams.get("breeder");
+  const pathname = usePathname();
+  const seedsPathSlug = parseSeedsBreederSlugFromPathname(pathname);
+  const breederParam =
+    (seedsPathSlug ?? searchParams.get("breeder"))?.trim() || null;
+
+  const replaceCatalog = useCallback(
+    (mutate: (sp: URLSearchParams) => void) => {
+      const sp = new URLSearchParams(searchParams.toString());
+      mutate(sp);
+      const qs = sp.toString();
+      if (seedsPathSlug) {
+        router.replace(qs ? `/seeds/${seedsPathSlug}?${qs}` : `/seeds/${seedsPathSlug}`, {
+          scroll: false,
+        });
+        return;
+      }
+      if (isSeedsIndexPath(pathname)) {
+        router.replace(qs ? `/seeds?${qs}` : "/seeds", { scroll: false });
+        return;
+      }
+      router.replace(qs ? `/shop?${qs}` : "/shop", { scroll: false });
+    },
+    [pathname, router, searchParams, seedsPathSlug]
+  );
   const geneticsParam = searchParams.get("genetics") ?? "";
   const difficultyParam = searchParams.get("difficulty") ?? "";
   const thcParam = searchParams.get("thc") ?? "";
@@ -82,6 +109,10 @@ function ShopContent() {
   const [bannerExpanded, setBannerExpanded] = useState(false);
   const [visibleCount, setVisibleCount] = useState(SHOP_PAGE_INITIAL);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [researchPosts, setResearchPosts] = useState<MagazinePostPublic[]>([]);
+  const [finalArchiveSpotlights, setFinalArchiveSpotlights] = useState<ProductWithBreederAndVariants[]>(
+    []
+  );
 
   // Breeder selected via URL param — slug preferred; numeric id still supported
   const urlBreeder = useMemo(
@@ -93,15 +124,22 @@ function ShopContent() {
     if (!breederParam?.trim() || breedersLoading) return;
     const resolved = resolveBreederFromShopParam(allBreeders, breederParam);
     if (!resolved) {
-      router.replace("/shop", { scroll: false });
+      router.replace(seedsPathSlug ? "/seeds" : "/shop", { scroll: false });
       return;
     }
     if (/^\d+$/.test(breederParam.trim())) {
+      const slug = breederSlugFromName(resolved.name);
       const sp = new URLSearchParams(searchParams.toString());
-      sp.set("breeder", breederSlugFromName(resolved.name));
-      router.replace(`/shop?${sp.toString()}`, { scroll: false });
+      sp.delete("breeder");
+      const qs = sp.toString();
+      if (seedsPathSlug) {
+        router.replace(qs ? `/seeds/${slug}?${qs}` : `/seeds/${slug}`, { scroll: false });
+      } else {
+        sp.set("breeder", slug);
+        router.replace(`/shop?${sp.toString()}`, { scroll: false });
+      }
     }
-  }, [breederParam, allBreeders, breedersLoading, router, searchParams]);
+  }, [breederParam, allBreeders, breedersLoading, router, searchParams, seedsPathSlug]);
 
   useEffect(() => {
     setBannerExpanded(false);
@@ -109,10 +147,10 @@ function ShopContent() {
 
   useEffect(() => {
     if (!searchParams.get("type")) return;
-    const sp = new URLSearchParams(searchParams.toString());
-    sp.delete("type");
-    router.replace(sp.toString() ? `/shop?${sp.toString()}` : "/shop", { scroll: false });
-  }, [searchParams, router]);
+    replaceCatalog((sp) => {
+      sp.delete("type");
+    });
+  }, [searchParams, replaceCatalog]);
 
   const qNorm = searchTerm.trim().toLowerCase();
 
@@ -194,30 +232,29 @@ function ShopContent() {
     const key = floweringTypeToSlug(raw);
     const allowed = new Set(catalogFloweringPillOptions.map((o) => o.slug));
     if (key && allowed.size > 0 && !allowed.has(key)) {
-      const sp = new URLSearchParams(searchParams.toString());
-      sp.delete("ft");
-      router.replace(sp.toString() ? `/shop?${sp.toString()}` : "/shop", { scroll: false });
+      replaceCatalog((sp) => {
+        sp.delete("ft");
+      });
       return;
     }
     const ok = key === "auto" || key === "photo" || key === "photo-ff" || key === "photo-3n";
     if (ok) return;
-    const sp = new URLSearchParams(searchParams.toString());
-    sp.delete("ft");
-    router.replace(sp.toString() ? `/shop?${sp.toString()}` : "/shop", { scroll: false });
-  }, [ftParam, router, searchParams, catalogFloweringPillOptions]);
+    replaceCatalog((sp) => {
+      sp.delete("ft");
+    });
+  }, [ftParam, replaceCatalog, catalogFloweringPillOptions]);
 
   useEffect(() => {
     const tid = setTimeout(() => {
       const next = searchTerm.trim();
       if (next === qParam.trim()) return;
-      const sp = new URLSearchParams(searchParams.toString());
-      if (next) sp.set("q", next);
-      else sp.delete("q");
-      const qs = sp.toString();
-      router.replace(qs ? `/shop?${qs}` : "/shop", { scroll: false });
+      replaceCatalog((sp) => {
+        if (next) sp.set("q", next);
+        else sp.delete("q");
+      });
     }, 400);
     return () => clearTimeout(tid);
-  }, [searchTerm, qParam, router, searchParams]);
+  }, [searchTerm, qParam, replaceCatalog]);
 
   /** Breeder + search + flowering (ft) scope only — used for sidebar filter option counts. */
   const shopScopedProducts = useMemo(() => {
@@ -278,6 +315,14 @@ function ShopContent() {
     sexParam,
   ]);
 
+  const isEn = locale === "en";
+
+  const vaultHeroProduct = useMemo(() => {
+    if (filteredProducts.length === 0) return null;
+    const withImg = filteredProducts.find((p) => getListingThumbnailUrl(p));
+    return withImg ?? filteredProducts[0];
+  }, [filteredProducts]);
+
   const filteredIdsKey = useMemo(
     () => filteredProducts.map((p) => p.id).join(","),
     [filteredProducts]
@@ -303,6 +348,43 @@ function ShopContent() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/storefront/magazine/recent?take=2")
+      .then((r) => r.json())
+      .then((j: { posts?: MagazinePostPublic[] }) => {
+        if (cancelled || !Array.isArray(j?.posts)) return;
+        setResearchPosts(j.posts.slice(0, 2));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const ids = filteredProducts.map((p) => p.id);
+    if (ids.length === 0) {
+      setFinalArchiveSpotlights([]);
+      return;
+    }
+    const q = new URLSearchParams();
+    q.set("ids", ids.join(","));
+    fetch(`/api/storefront/low-stock-spotlight?${q.toString()}`)
+      .then((r) => r.json())
+      .then((j: { products?: ProductWithBreederAndVariants[] }) => {
+        if (cancelled || !Array.isArray(j?.products)) return;
+        setFinalArchiveSpotlights(j.products);
+      })
+      .catch(() => {
+        if (!cancelled) setFinalArchiveSpotlights([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filteredIdsKey]);
+
   const hasFilters =
     searchTerm.trim().length > 0 ||
     !!ftParam?.trim() ||
@@ -315,18 +397,20 @@ function ShopContent() {
   const clearFilters = () => {
     setSearchTerm("");
     if (breederParam && urlBreeder) {
-      router.replace(`/shop?breeder=${encodeURIComponent(breederSlugFromName(urlBreeder.name))}`, {
-        scroll: false,
-      });
+      const slug = breederSlugFromName(urlBreeder.name);
+      if (seedsPathSlug) {
+        router.replace(`/seeds/${slug}`, { scroll: false });
+      } else {
+        router.replace(`/shop?breeder=${encodeURIComponent(slug)}`, { scroll: false });
+      }
       return;
     }
-    router.push("/shop");
+    router.push(seedsPathSlug || isSeedsIndexPath(pathname) ? "/seeds" : "/shop");
   };
 
   const activeBreederSlug =
     urlBreeder && breederParam?.trim() ? breederSlugFromName(urlBreeder.name) : null;
 
-  const isEn = locale === "en";
   const fullDesc = urlBreeder
     ? (isEn ? (urlBreeder.description_en ?? urlBreeder.description) : (urlBreeder.description ?? urlBreeder.description_en))
     : null;
@@ -431,21 +515,27 @@ function ShopContent() {
             </div>
 
             <div className="shrink-0">
-              <Button variant="outline" size="sm" onClick={() => router.push("/shop")} className="gap-1.5 border-zinc-200 text-zinc-600 hover:border-primary hover:text-primary">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/seeds")}
+                className="gap-1.5 border-zinc-200 text-zinc-600 hover:border-primary hover:text-primary"
+              >
                 <ChevronLeft className="h-4 w-4" />
                 {tMsg("breeder.view_all_products", "View All Products")}
               </Button>
             </div>
           </div>
         </motion.div>
+      ) : vaultHeroProduct ? (
+        <ShopGeneticVaultHero product={vaultHeroProduct} isEn={isEn} t={t} />
       ) : (
-        /* Default Header */
         <div
           className={`border-b border-zinc-100 bg-white px-4 py-10 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
         >
           <div className="mx-auto max-w-7xl">
-            <p className="text-xs font-medium tracking-wide text-emerald-800">
-              {t("คลังพันธุกรรม", "Catalog")}
+            <p className="font-[family-name:var(--font-journal-product-mono)] text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500">
+              {t("คลังพันธุกรรม", "GENETIC_VAULT")}
             </p>
             <h1 className="mt-2 font-[family-name:var(--font-journal-product-serif)] text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
               {t("ร้านค้า", "Shop")}
@@ -456,8 +546,10 @@ function ShopContent() {
                 "Verified genetics—research-led picks for your grow."
               )}
             </p>
-            <p className="mt-2 text-xs tabular-nums text-zinc-500">
-              {isLoading ? t("กำลังโหลด...", "Loading...") : `${filteredProducts.length} ${t("รายการ", "items")}`}
+            <p className="mt-2 font-[family-name:var(--font-journal-product-mono)] text-xs tabular-nums text-zinc-500">
+              {isLoading
+                ? t("กำลังโหลด...", "Loading...")
+                : t(`${filteredProducts.length} รายการ`, `${filteredProducts.length} items`)}
             </p>
           </div>
         </div>
@@ -465,7 +557,9 @@ function ShopContent() {
 
       <div className="mx-auto max-w-7xl px-4 pb-8 pt-0 sm:px-6">
         {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
-        <div className="sticky top-20 z-40 -mx-4 mb-4 border-b border-zinc-200 bg-white px-4 pt-3 pb-2 sm:-mx-6 sm:top-28 sm:px-6">
+        <div
+          className={`sticky top-20 z-40 -mx-4 mb-4 border-b border-zinc-200 bg-white px-4 pt-3 pb-2 sm:-mx-6 sm:top-28 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+        >
           {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 && (
             <BreederTypeFilter
               options={catalogFloweringPillOptions}
@@ -478,7 +572,7 @@ function ShopContent() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <Input
-                placeholder={t("ค้นหาสินค้าหรือแบรนด์...", "Search products or brands...")}
+                placeholder={t("ค้นหาสายพันธุ์หรือแบรนด์...", "Search strains or brands...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full min-w-0 bg-white pl-9"
@@ -550,7 +644,7 @@ function ShopContent() {
                     return (
                       <Link
                         key={b.id}
-                        href={shopBreederHref(b)}
+                        href={seedsBreederHref(b)}
                         className="flex w-full max-w-md items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:w-auto"
                       >
                         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
@@ -579,7 +673,7 @@ function ShopContent() {
             )}
 
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {[...Array(12)].map((_, i) => (
                   <div key={i} className="overflow-hidden rounded-sm border border-zinc-50 shadow-sm">
                     <div className="aspect-square animate-pulse bg-zinc-100" />
@@ -603,18 +697,11 @@ function ShopContent() {
               </div>
             ) : (
               <>
-                <div className={JOURNAL_PRODUCT_FONT_VARS}>
-                  <motion.div
-                    initial="hidden"
-                    animate="show"
-                    variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
-                    className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3"
-                  >
-                    {visibleProducts.map((product) => (
-                      <ProductCard key={product.id} product={product} />
-                    ))}
-                  </motion.div>
-                </div>
+                <GeneticVaultProductGrid
+                  products={visibleProducts}
+                  researchPosts={researchPosts}
+                  finalArchiveProducts={finalArchiveSpotlights}
+                />
                 {totalFiltered > 0 && (
                   <p className="mt-6 text-center text-sm text-zinc-500">
                     {t("แสดง {current} จาก {total} สินค้า", "Showing {current} of {total} products")

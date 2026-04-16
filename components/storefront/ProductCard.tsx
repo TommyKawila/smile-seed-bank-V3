@@ -3,7 +3,6 @@
 import { motion, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -18,6 +17,7 @@ import {
   productCardFloweringChipLabel,
 } from "@/lib/seed-type-filter";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
+import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -126,9 +126,7 @@ export function ProductCard({
                   className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center">
-                  <Leaf className="h-10 w-10 text-zinc-300" />
-                </div>
+                <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />
               )}
             </Link>
             {product.breeders && (
@@ -214,9 +212,7 @@ export function ProductCard({
               className={`rounded-sm object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "opacity-50 grayscale" : ""}`}
             />
           ) : (
-            <div className="flex h-full items-center justify-center">
-              <Leaf className="h-10 w-10 text-zinc-200" />
-            </div>
+            <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />
           )}
 
           <div className="absolute left-2 top-2 flex flex-wrap gap-1.5">

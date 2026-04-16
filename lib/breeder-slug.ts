@@ -5,8 +5,14 @@ export function breederSlugFromName(name: string): string {
   return generateSlug(name);
 }
 
+/** Storefront catalog URL for a breeder (journal path). */
+export function seedsBreederHref(b: { name: string }): string {
+  return `/seeds/${breederSlugFromName(b.name)}`;
+}
+
+/** @deprecated Use seedsBreederHref — kept for gradual migration */
 export function shopBreederHref(b: { name: string }): string {
-  return `/shop?breeder=${encodeURIComponent(breederSlugFromName(b.name))}`;
+  return seedsBreederHref(b);
 }
 
 /**

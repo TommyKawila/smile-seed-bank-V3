@@ -14,9 +14,8 @@ export function Footer() {
   const { settings } = useSiteSettings();
 
   const quickLinks = [
-    { href: "/shop", label: t("ร้านค้า", "Shop") },
     { href: "/shop?category=Seeds", label: t("เมล็ดพันธุ์", "Seeds") },
-    { href: "/blog", label: t("Smile Seed Blog", "Smile Seed Blog") },
+    { href: "/blog", label: t("คลังความรู้สายเขียว", "Knowledge vault") },
     { href: "/profile", label: t("บัญชีของฉัน", "My Account") },
   ];
 

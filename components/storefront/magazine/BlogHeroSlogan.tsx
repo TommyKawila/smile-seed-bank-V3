@@ -5,8 +5,8 @@ import { useLanguage } from "@/context/LanguageContext";
 export function BlogHeroSlogan() {
   const { t, locale } = useLanguage();
   const text = t(
-    "ผสานศาสตร์ชีวภาพ สู่สายเขียวออแกนิค เพื่อรอยยิ้มที่ปลอดภัย",
-    "Bio-Ag Wisdom for Safe & Organic Smiles"
+    "เข้าสู่คลังความรู้สายเขียวจาก Smile Seed Bank: แหล่งรวมประสบการณ์จริงเกือบ 10 ปี เทคนิคการปลูก และเจาะลึกพันธุกรรมจากบรีดเดอร์ระดับโลกเพื่อนักปลูกคุณภาพ.",
+    "Enter the green knowledge vault: nearly ten years of field-tested grow science and breeder-grade genetics for serious cultivators."
   );
   return (
     <p

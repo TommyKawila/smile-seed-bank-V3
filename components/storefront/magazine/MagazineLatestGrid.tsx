@@ -7,6 +7,7 @@ import {
   isKnowledgeCategory,
   isResearchCategory,
   formatResearchRefId,
+  magazineCategoryDisplayTh,
 } from "@/lib/blog-research-category";
 import { estimateReadingMinutesFromExcerpt } from "@/lib/blog-reading-time";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
@@ -183,7 +184,7 @@ export function MagazineLatestGrid({ posts }: { posts: MagazinePostPublic[] }) {
   if (posts.length === 0) {
     return (
       <div className="rounded-sm border border-dashed border-[#f3f4f6] bg-white py-20 text-center text-zinc-500">
-        No articles to show yet.
+        ยังไม่มีบทความในขณะนี้
       </div>
     );
   }

@@ -297,8 +297,9 @@ function HomePageMain() {
               </p>
             </div>
             <Button asChild variant="ghost" size="sm" className="shrink-0 self-start text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900 sm:self-end">
-              <Link href="/shop">
-                {t("ดูทั้งหมด", "View All")} <ChevronRight className="ml-0.5 h-4 w-4" />
+              <Link href="/shop?category=Seeds">
+                {t("ไปที่คลังเมล็ดพันธุ์", "Seed vault")}{" "}
+                <ChevronRight className="ml-0.5 h-4 w-4" />
               </Link>
             </Button>
           </motion.div>

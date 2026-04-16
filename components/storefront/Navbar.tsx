@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BreederSeedsNav } from "@/components/storefront/BreederDropdownMenu";
 
 export function Navbar() {
   const router = useRouter();
@@ -31,10 +32,20 @@ export function Navbar() {
     pathname === "/profile" ||
     pathname.startsWith("/checkout") ||
     pathname.startsWith("/payment/");
+  const isCatalogPath =
+    pathname === "/shop" ||
+    pathname.startsWith("/shop") ||
+    pathname === "/seeds" ||
+    pathname.startsWith("/seeds/");
   const [scrolled, setScrolled] = useState(false);
-  /** White sticky bar: home, blog, product detail, commerce flows, or scrolled inner pages. */
+  /** White sticky bar: home, blog, product detail, commerce flows, catalog, or scrolled inner pages. */
   const solidLightNav =
-    isHomePage || isMagazineSection || isProductDetail || isJournalCommerce || scrolled;
+    isHomePage ||
+    isMagazineSection ||
+    isProductDetail ||
+    isJournalCommerce ||
+    isCatalogPath ||
+    scrolled;
   const { itemCount, isOpen, openCart, closeCart } = useCartContext();
   const { locale, toggle, t } = useLanguage();
   const { settings } = useSiteSettings();
@@ -77,12 +88,8 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const navLinks = [
-    { href: "/", label: t("หน้าแรก", "Home") },
-    { href: "/shop", label: t("ร้านค้า", "Shop") },
-    { href: "/shop?category=Seeds", label: t("เมล็ดพันธุ์", "Seeds") },
-    { href: "/blog", label: t("Smile Seed Blog", "Smile Seed Blog") },
-  ];
+  const homeLabel = t("หน้าแรก", "Home");
+  const blogLabel = t("คลังความรู้สายเขียว", "Knowledge vault");
 
   const navLinkClass = solidLightNav
     ? "text-sm font-normal tracking-[0.06em] text-zinc-800 transition-colors hover:text-emerald-900"
@@ -126,11 +133,17 @@ export function Navbar() {
 
           {/* Desktop Nav Links */}
           <nav className="hidden items-center gap-7 md:flex lg:gap-8">
-            {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className={navLinkClass}>
-                {link.label}
-              </Link>
-            ))}
+            <Link href="/" className={navLinkClass}>
+              {homeLabel}
+            </Link>
+            <BreederSeedsNav
+              navLinkClass={navLinkClass}
+              solidLightNav={solidLightNav}
+              mode="desktop"
+            />
+            <Link href="/blog" className={navLinkClass}>
+              {blogLabel}
+            </Link>
           </nav>
 
           {/* Right Side */}
@@ -278,16 +291,26 @@ export function Navbar() {
               transition={{ duration: 0.18 }}
               className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden"
             >
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="block py-3 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              <Link
+                href="/"
+                onClick={() => setMenuOpen(false)}
+                className="block py-3 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
+              >
+                {homeLabel}
+              </Link>
+              <BreederSeedsNav
+                navLinkClass={navLinkClass}
+                solidLightNav={solidLightNav}
+                mode="mobile"
+                onNavigate={() => setMenuOpen(false)}
+              />
+              <Link
+                href="/blog"
+                onClick={() => setMenuOpen(false)}
+                className="block py-3 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
+              >
+                {blogLabel}
+              </Link>
               {/* Auth Links — Mobile */}
               <div className="mt-3 border-t border-gray-100 pt-3">
                 {user ? (
@@ -352,7 +375,7 @@ export function Navbar() {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t("ค้นหาสินค้าหรือแบรนด์ที่คุณชอบ...", "Search products or brands you like...")}
+                placeholder={t("ค้นหาสายพันธุ์หรือแบรนด์...", "Search strains or brands...")}
                 className="pl-9 bg-white/80"
               />
             </div>

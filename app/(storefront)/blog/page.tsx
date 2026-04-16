@@ -14,6 +14,10 @@ import { MagazineLatestGrid } from "@/components/storefront/magazine/MagazineLat
 import { MagazineTrending } from "@/components/storefront/magazine/MagazineTrending";
 import { BlogHeroSlogan } from "@/components/storefront/magazine/BlogHeroSlogan";
 import { getSiteOrigin } from "@/lib/get-url";
+import {
+  BLOG_INDEX_DESCRIPTION,
+  BLOG_INDEX_TITLE,
+} from "@/lib/seo/blog-index-metadata";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-magazine-serif" });
@@ -23,23 +27,20 @@ const siteBase = getSiteOrigin();
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Smile Seed Blog — Bio-Ag Wisdom | Tommy Smile Seed",
+    absolute: BLOG_INDEX_TITLE,
   },
-  description:
-    "ผสานศาสตร์ชีวภาพ สู่สายเขียวออแกนิค เพื่อรอยยิ้มที่ปลอดภัย — Smile Seed Blog โดย Smile Seed Bank",
+  description: BLOG_INDEX_DESCRIPTION,
   openGraph: {
-    title: "Smile Seed Blog — Bio-Ag Wisdom | Tommy Smile Seed",
-    description:
-      "Bio-Ag Wisdom for Safe & Organic Smiles — cultivation knowledge from Smile Seed Bank.",
+    title: BLOG_INDEX_TITLE,
+    description: BLOG_INDEX_DESCRIPTION,
     type: "website",
     url: `${siteBase}/blog`,
-    siteName: "Smile Seed Blog",
+    siteName: "Smile Seed Bank",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Smile Seed Blog — Bio-Ag Wisdom | Tommy Smile Seed",
-    description:
-      "Bio-Ag Wisdom for Safe & Organic Smiles — cultivation knowledge from Smile Seed Bank.",
+    title: BLOG_INDEX_TITLE,
+    description: BLOG_INDEX_DESCRIPTION,
   },
   alternates: {
     canonical: "/blog",
@@ -96,7 +97,7 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
           </div>
 
           <div className="order-4 lg:order-none lg:col-start-2 lg:row-start-3">
-            <section aria-label="Smile Seed Blog articles">
+            <section aria-label="บทความคลังความรู้สายเขียว">
               <MagazineLatestGrid posts={gridPosts} />
             </section>
           </div>

@@ -34,7 +34,11 @@ import { BlogViewTracker } from "@/components/storefront/magazine/BlogViewTracke
 import { NewsletterBox } from "@/components/storefront/magazine/NewsletterBox";
 import { ShopTheStorySection } from "@/components/storefront/magazine/ShopTheStorySection";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
-import { formatResearchRefId, isResearchCategory } from "@/lib/blog-research-category";
+import {
+  formatResearchRefId,
+  isResearchCategory,
+  magazineCategoryDisplayTh,
+} from "@/lib/blog-research-category";
 import { getSiteOrigin } from "@/lib/get-url";
 import { cn } from "@/lib/utils";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
@@ -77,7 +81,7 @@ export async function generateMetadata({
   return {
     metadataBase: new URL(base),
     title: {
-      absolute: `${post.title} | Smile Seed Blog`,
+      absolute: `${post.title} | คลังความรู้สายเขียว - Smile Seed Bank`,
     },
     description,
     authors: [{ name: "Smile Seed Bank Editorial" }],
@@ -87,7 +91,7 @@ export async function generateMetadata({
       locale: "th_TH",
       type: "article",
       url: pageUrl,
-      siteName: "Smile Seed Blog",
+      siteName: "Smile Seed Bank",
       publishedTime: post.created_at,
       modifiedTime: post.updated_at,
       authors: ["Smile Seed Bank Editorial"],
@@ -184,7 +188,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           aria-label="Breadcrumb"
         >
           <Link href="/blog" className="transition hover:text-emerald-700">
-            Smile Seed Blog
+            คลังความรู้สายเขียว
           </Link>
           {post.category && (
             <>
@@ -193,7 +197,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                 href={`/blog?category=${encodeURIComponent(post.category.slug)}`}
                 className="transition hover:text-emerald-700"
               >
-                {post.category.name}
+                {magazineCategoryDisplayTh(post.category)}
               </Link>
             </>
           )}
@@ -210,7 +214,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                   "text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-900"
                 )}
               >
-                {post.category.name}
+                {magazineCategoryDisplayTh(post.category)}
               </span>
             )}
             {isResearchCategory(post.category) && <VerifiedResearchBadge />}
@@ -239,11 +243,11 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           )}
           <span className="inline-flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 text-zinc-400" aria-hidden />
-            {readMin} min read
+            อ่าน {readMin} นาที
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Eye className="h-3.5 w-3.5 text-zinc-400" aria-hidden />
-            {post.view_count.toLocaleString("th-TH")} views
+            {post.view_count.toLocaleString("th-TH")} ครั้ง
           </span>
         </div>
 
@@ -300,7 +304,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         {related.length > 0 && (
           <section className="mx-auto mt-20 max-w-[720px] border-t border-zinc-200 pt-16">
             <h2 className="font-[family-name:var(--font-magazine-serif)] text-2xl font-semibold text-emerald-950">
-              Read more
+              บทความแนะนำ
             </h2>
             <ul className="mt-8 grid gap-8 sm:grid-cols-2">
               {related.map((r) => (
@@ -328,7 +332,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                       <div className="flex flex-wrap items-center gap-2">
                         {r.category && (
                           <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-900">
-                            {r.category.name}
+                            {magazineCategoryDisplayTh(r.category)}
                           </span>
                         )}
                         {isResearchCategory(r.category) && <VerifiedResearchBadge />}
@@ -360,7 +364,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
             href="/blog"
             className="inline-flex text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
           >
-            ← Back to Smile Seed Blog
+            ← กลับสู่คลังความรู้
           </Link>
         </div>
       </article>
