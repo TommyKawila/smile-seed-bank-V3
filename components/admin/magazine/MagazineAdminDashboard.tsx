@@ -208,10 +208,10 @@ export function MagazineAdminDashboard() {
             </div>
             <div>
               <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-700">
-                Editorial
+                Blog CMS
               </p>
               <h1 className="text-2xl font-semibold tracking-tight text-emerald-950">
-                Smile Seed Blog CMS
+                Smile Seed Blog Manager
               </h1>
               <p className="mt-1 text-sm text-zinc-600">
                 Posts, carousel highlights, trending — same pipeline as storefront (

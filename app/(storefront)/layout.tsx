@@ -19,7 +19,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         <PromotionBanner />
         <div className="flex min-h-screen flex-col">
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 bg-white">{children}</main>
           <Footer />
           <OfferManager />
         </div>
