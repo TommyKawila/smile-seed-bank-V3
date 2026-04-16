@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, Menu, X, Leaf, Search, User, LogOut, Package } from "lucide-react";
 import { useCartContext } from "@/context/CartContext";
@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+  const isMagazineSection = pathname === "/blog" || pathname.startsWith("/blog/");
   const { itemCount, isOpen, openCart, closeCart } = useCartContext();
   const { locale, toggle, t } = useLanguage();
   const { settings } = useSiteSettings();
@@ -76,7 +78,7 @@ export function Navbar() {
     <>
       <header
         className={`no-print fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-          scrolled
+          isMagazineSection || scrolled
             ? "border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur-md"
             : "bg-transparent"
         }`}

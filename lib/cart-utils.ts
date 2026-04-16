@@ -6,32 +6,16 @@ import {
 } from "@/lib/order-financials";
 import { STOREFRONT_SHIPPING_CATEGORY } from "@/lib/storefront-shipping";
 import { formatPrice } from "@/lib/utils";
+import {
+  type TieredDiscountRule,
+  evaluateTieredDiscountBySpend,
+  evaluateDiscountTier,
+  resolveExclusiveCartDiscounts,
+  type PromoInfo as DiscountPromoInfo,
+} from "@/lib/discount-utils";
 
-export interface TieredDiscountRule {
-  min_spend: number;
-  discount_percent: number;
-}
-
-/** Evaluate best tier by subtotal (total spend). */
-export function evaluateTieredDiscountBySpend(
-  subtotal: number,
-  rules: TieredDiscountRule[]
-): { discountPercent: number; minSpend: number } | null {
-  const eligible = rules.filter((r) => subtotal >= r.min_spend);
-  if (eligible.length === 0) return null;
-  const best = eligible.reduce((a, b) =>
-    b.discount_percent > a.discount_percent ? b : a
-  );
-  return { discountPercent: best.discount_percent, minSpend: best.min_spend };
-}
-
-export function evaluateDiscountTier(subtotal: number, tiers: DiscountTier[]): DiscountTier | null {
-  const eligible = tiers.filter((t) => t.is_active && subtotal >= t.min_amount);
-  if (eligible.length === 0) return null;
-  return eligible.reduce((best, t) =>
-    t.discount_percentage > best.discount_percentage ? t : best
-  );
-}
+export type { TieredDiscountRule };
+export { evaluateTieredDiscountBySpend, evaluateDiscountTier };
 
 export function generateUpsellMessage(
   subtotal: number,
@@ -124,17 +108,14 @@ export function evaluateFreeGifts(
   });
 }
 
-export interface PromoInfo {
-  discount_type: "PERCENTAGE" | "FIXED";
-  discount_value: number;
-}
+export type PromoInfo = DiscountPromoInfo;
 
 export function calculateCartSummary(
   items: CartItem[],
   tiers: DiscountTier[],
   shippingRules: ShippingRule[],
   primaryCategory: string = STOREFRONT_SHIPPING_CATEGORY,
-  promoDiscount: number = 0,
+  _legacyPromoDiscount: number = 0,
   tieredRules?: TieredDiscountRule[],
   promoInfo?: PromoInfo | null
 ): CartSummary {
@@ -142,36 +123,31 @@ export function calculateCartSummary(
     .filter((i) => !i.isFreeGift)
     .reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  const tieredResult = tieredRules?.length
-    ? evaluateTieredDiscountBySpend(subtotal, tieredRules)
-    : null;
-  const appliedTier = evaluateDiscountTier(subtotal, tiers);
-  const tierPercent = Math.max(
-    tieredResult?.discountPercent ?? 0,
-    appliedTier?.discount_percentage ?? 0
-  );
+  const rules = tieredRules?.length ? tieredRules : [];
+  const exclusive = resolveExclusiveCartDiscounts({
+    subtotal,
+    tieredRules: rules,
+    discountTiers: tiers,
+    promoInfo: promoInfo ?? null,
+  });
 
-  const tierDiscount = Math.round(subtotal * (tierPercent / 100));
-  const amountAfterTier = subtotal - tierDiscount;
-  const isPercentage = promoInfo && String(promoInfo.discount_type).toUpperCase() === "PERCENTAGE";
-  const isFixed = promoInfo && String(promoInfo.discount_type).toUpperCase() === "FIXED";
-  const promoDiscountAmount = isPercentage
-    ? Math.round(amountAfterTier * (promoInfo!.discount_value / 100))
-    : isFixed
-      ? Math.min(promoInfo!.discount_value, amountAfterTier)
-      : promoDiscount;
+  const { tierDiscount, promoDiscount: promoDiscountAmount, eligibleTierPercent } = exclusive;
   const total = subtotal - tierDiscount - promoDiscountAmount;
   const shipping = calculateShipping(primaryCategory, total, shippingRules);
+
+  const appliedTier = evaluateDiscountTier(subtotal, tiers);
 
   return {
     subtotal,
     discount: tierDiscount + promoDiscountAmount,
-    discountPercent: tierPercent,
+    discountPercent: eligibleTierPercent,
     tierDiscount,
     promoDiscount: promoDiscountAmount,
     shipping,
     total: total + shipping,
     appliedTier: appliedTier ?? null,
     upsellMessage: generateUpsellMessage(subtotal, tiers, tieredRules),
+    usePromoForOrder: exclusive.usePromoForOrder,
+    promoSupersededByTier: exclusive.promoSupersededByTier,
   };
 }

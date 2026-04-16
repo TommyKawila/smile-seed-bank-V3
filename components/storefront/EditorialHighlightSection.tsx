@@ -29,7 +29,7 @@ function HeroImage({ src, alt }: { src: string | null; alt: string }) {
   const resolved = resolvePublicAssetUrl(src);
   if (!resolved) {
     return (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 via-zinc-900 to-black" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-white" />
     );
   }
   const unoptimized = !resolved.includes("supabase.co");
@@ -162,22 +162,22 @@ export function EditorialHighlightSection() {
       className="group/main relative block min-h-[380px] overflow-hidden rounded-2xl sm:min-h-[440px]"
     >
       <HeroImage src={main.featured_image} alt={main.title} />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/50 to-white/5" />
       <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-        <span className="mb-3 inline-flex rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white backdrop-blur-md">
+        <span className="mb-3 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
           #{badgeLabel(main)}
         </span>
         <motion.h3
-          className="font-serif text-2xl font-bold leading-tight text-white drop-shadow-sm sm:text-3xl lg:text-[1.85rem] lg:leading-snug"
-          whileHover={{ color: "rgb(167 243 208)" }}
+          className="font-serif text-2xl font-bold leading-tight text-emerald-950 sm:text-3xl lg:text-[1.85rem] lg:leading-snug"
+          whileHover={{ color: "rgb(5 46 22)" }}
           transition={{ duration: 0.35 }}
         >
           {main.title}
         </motion.h3>
         {main.excerpt ? (
-          <p className="mt-2 line-clamp-2 text-sm text-zinc-200/90">{main.excerpt}</p>
+          <p className="mt-2 line-clamp-2 text-sm text-zinc-600">{main.excerpt}</p>
         ) : null}
-        <p className="mt-4 flex items-center gap-1.5 text-xs font-medium text-zinc-300">
+        <p className="mt-4 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
           <Clock className="h-3.5 w-3.5 opacity-90" aria-hidden />
           {mainMins} {t("นาทีในการอ่าน", "min read")}
         </p>

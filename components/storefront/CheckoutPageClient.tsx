@@ -334,7 +334,7 @@ export function CheckoutPageClient({
           },
           payment_method: "TRANSFER" as const,
           customer_id: user?.id ?? null,
-          promo_code_id: promo.code?.id ?? null,
+          promo_code_id: summary.usePromoForOrder ? promo.code?.id ?? null : null,
           locale,
         }),
       });
@@ -480,6 +480,13 @@ export function CheckoutPageClient({
 
                   <DiscountProgressBar subtotal={summary.subtotal} rules={tieredDiscountRules} />
 
+                  <p className="text-[11px] leading-relaxed text-zinc-500">
+                    {t(
+                      "ส่วนลดขั้นบันไดกับโค้ดใช้ทีละอย่าง — ระบบเลือกข้อเสนอที่ยอดสุทธิต่ำสุดให้อัตโนมัติ",
+                      "Tier and promo discounts are exclusive — we apply whichever gives you the lower total."
+                    )}
+                  </p>
+
                   {savedCoupons.length > 0 && (
                     <div className="space-y-2 rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900/80">
@@ -565,14 +572,39 @@ export function CheckoutPageClient({
                   )}
 
                   {promo.code && (
-                    <div className="flex items-center justify-between gap-2 text-sm text-primary">
-                      <span>โค้ด: {promo.code.code} — {String(promo.code.discount_type || "").toUpperCase() === "PERCENTAGE" ? `ลด ${promo.code.discount_value}%` : `ลด ${formatPrice(promo.code.discount_value)}`}</span>
-                      <span className="flex items-center gap-2">
-                        -{formatPrice(summary.promoDiscount)}
-                        <button type="button" onClick={() => clearPromoCode()} className="text-xs text-zinc-400 hover:text-red-500">
-                          {t("ลบ", "Remove")}
-                        </button>
-                      </span>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2 text-sm text-primary">
+                        <span>
+                          โค้ด: {promo.code.code} —{" "}
+                          {String(promo.code.discount_type || "").toUpperCase() === "PERCENTAGE"
+                            ? `ลด ${promo.code.discount_value}%`
+                            : `ลด ${formatPrice(promo.code.discount_value)}`}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          {summary.promoDiscount > 0 ? (
+                            <>-{formatPrice(summary.promoDiscount)}</>
+                          ) : summary.promoSupersededByTier ? (
+                            <span className="text-xs font-normal text-zinc-500">
+                              {t("ไม่ใช้กับยอดนี้", "Not applied")}
+                            </span>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => clearPromoCode()}
+                            className="text-xs text-zinc-400 hover:text-red-500"
+                          >
+                            {t("ลบ", "Remove")}
+                          </button>
+                        </span>
+                      </div>
+                      {summary.promoSupersededByTier ? (
+                        <p className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+                          {t(
+                            "ส่วนลดอัตโนมัติจากยอดซื้อดีกว่าโค้ดนี้ — ใช้ส่วนลดขั้นบันไดแทน",
+                            "Your spend-based discount beats this code — the tier discount is used instead."
+                          )}
+                        </p>
+                      ) : null}
                     </div>
                   )}
 
@@ -584,7 +616,10 @@ export function CheckoutPageClient({
                     {summary.tierDiscount > 0 && (
                       <div className="flex justify-between gap-3 text-primary">
                         <span className="text-xs">
-                          {t(`ส่วนลดขั้นบันได (${summary.discountPercent}%)`, `Tier (${summary.discountPercent}%)`)}
+                          {t(
+                            `ส่วนลดอัตโนมัติ (${summary.discountPercent}%)`,
+                            `Auto discount (${summary.discountPercent}%)`
+                          )}
                         </span>
                         <span className="tabular-nums">-{formatPrice(summary.tierDiscount)}</span>
                       </div>
@@ -592,7 +627,7 @@ export function CheckoutPageClient({
                     {summary.promoDiscount > 0 && (
                       <div className="flex justify-between gap-3 text-primary">
                         <span className="text-xs">
-                          {t(`ส่วนลดโค้ด (${promo.code?.code ?? ""})`, `Promo (${promo.code?.code ?? ""})`)}
+                          {t(`ส่วนลดโค้ด (${promo.code?.code ?? ""})`, `Coupon (${promo.code?.code ?? ""})`)}
                         </span>
                         <span className="tabular-nums">-{formatPrice(summary.promoDiscount)}</span>
                       </div>

@@ -181,10 +181,6 @@ export default function CreateOrderPage() {
   const hasPromotionDiscount = summary.tierDiscount > 0;
 
   useEffect(() => {
-    if (hasPromotionDiscount && promo.code) clearPromoCode();
-  }, [hasPromotionDiscount, promo.code, clearPromoCode]);
-
-  useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       if (customerSearchRef.current && !customerSearchRef.current.contains(e.target as Node)) {
         setCustomerSearchOpen(false);

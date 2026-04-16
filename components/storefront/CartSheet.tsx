@@ -397,17 +397,27 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
             {/* Promo Code */}
             <div className="space-y-1.5">
               {promo.code ? (
-                <div className="flex items-center justify-between rounded-xl border border-primary/25 bg-accent px-3 py-2">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
-                    <Tag className="h-3.5 w-3.5" />
-                    {promo.code.code} — {t("ลด", "Off")}{" "}
-                    {String(promo.code.discount_type || "").toUpperCase() === "PERCENTAGE"
-                      ? `${promo.code.discount_value}%`
-                      : formatPrice(promo.code.discount_value ?? promo.discountAmount)}
-                  </span>
-                  <button onClick={handleClearPromo} className="text-xs text-primary underline">
-                    {t("ลบ", "Remove")}
-                  </button>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between rounded-xl border border-primary/25 bg-accent px-3 py-2">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                      <Tag className="h-3.5 w-3.5" />
+                      {promo.code.code} — {t("ลด", "Off")}{" "}
+                      {String(promo.code.discount_type || "").toUpperCase() === "PERCENTAGE"
+                        ? `${promo.code.discount_value}%`
+                        : formatPrice(promo.code.discount_value ?? promo.discountAmount)}
+                    </span>
+                    <button onClick={handleClearPromo} className="text-xs text-primary underline">
+                      {t("ลบ", "Remove")}
+                    </button>
+                  </div>
+                  {summary.promoSupersededByTier ? (
+                    <p className="text-[10px] leading-snug text-amber-800">
+                      {t(
+                        "ใช้ส่วนลดขั้นบันไดแทนโค้ด (ข้อเสนอดีกว่า)",
+                        "Tier discount applies instead (better deal)."
+                      )}
+                    </p>
+                  ) : null}
                 </div>
               ) : (
                 <div className="flex gap-2">
@@ -497,13 +507,13 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
               </div>
               {summary.tierDiscount > 0 && (
                 <div className="flex justify-between text-primary">
-                  <span>{t("ส่วนลดขั้นบันได", "Tier discount")} ({summary.discountPercent}%)</span>
+                  <span>{t("ส่วนลดอัตโนมัติ", "Auto discount")} ({summary.discountPercent}%)</span>
                   <span>-{formatPrice(summary.tierDiscount)}</span>
                 </div>
               )}
               {summary.promoDiscount > 0 && (
                 <div className="flex justify-between text-primary">
-                  <span>{t("ส่วนลดโค้ด", "Promo code")} ({promo.code?.code ?? ""})</span>
+                  <span>{t("ส่วนลดโค้ด", "Coupon")} ({promo.code?.code ?? ""})</span>
                   <span>-{formatPrice(summary.promoDiscount)}</span>
                 </div>
               )}

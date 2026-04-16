@@ -299,10 +299,10 @@ function HomePageMain() {
             <h3 className="text-xl font-bold text-white sm:text-2xl">
               {t("สมัครสมาชิกฟรี", "Join Free")}
             </h3>
-            <p className="mt-1 text-sm text-white/80">
+            <p className="mt-1 text-sm leading-relaxed text-white/80">
               {t(
-                "รับสิทธิพิเศษและข้อเสนอ Wholesale สำหรับลูกค้า VIP",
-                "Get exclusive deals and Wholesale offers for VIP members"
+                "รับสิทธิพิเศษสำหรับสมาชิก และข่าวสารเทคนิคการปลูกจากงานวิจัยล่าสุด",
+                "Member-exclusive benefits and the latest research-backed growing techniques"
               )}
             </p>
           </div>

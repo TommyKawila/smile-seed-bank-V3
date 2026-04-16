@@ -10,7 +10,7 @@ export function MagazineCategoryPills({ categories }: { categories: BlogCategory
 
   return (
     <nav
-      className="flex flex-wrap gap-2 border-b border-white/5 pb-8 pt-2"
+      className="flex flex-wrap gap-2 border-b border-zinc-200 pb-8 pt-2"
       aria-label="Categories"
     >
       <Link
@@ -18,8 +18,8 @@ export function MagazineCategoryPills({ categories }: { categories: BlogCategory
         scroll={false}
         className={`rounded-full px-4 py-2 text-xs font-medium transition ${
           !active
-            ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/35"
-            : "text-zinc-500 hover:text-zinc-200"
+            ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200"
+            : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
         }`}
       >
         All
@@ -31,8 +31,8 @@ export function MagazineCategoryPills({ categories }: { categories: BlogCategory
           scroll={false}
           className={`rounded-full px-4 py-2 text-xs font-medium transition ${
             active === c.slug
-              ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/35"
-              : "text-zinc-500 hover:text-zinc-200"
+              ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200"
+              : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
           }`}
         >
           {c.name}

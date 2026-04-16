@@ -6,7 +6,7 @@ import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 function CardImage({ src, alt }: { src: string | null; alt: string }) {
   if (!src) {
     return (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 to-black transition-transform duration-500 group-hover:scale-[1.02]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 to-zinc-200 transition-transform duration-500 group-hover:scale-[1.02]" />
     );
   }
   const unoptimized = !src.includes("supabase.co");
@@ -28,7 +28,7 @@ function CardImage({ src, alt }: { src: string | null; alt: string }) {
 export function MagazineLatestGrid({ posts }: { posts: MagazinePostPublic[] }) {
   if (posts.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/10 py-20 text-center text-zinc-500">
+      <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 py-20 text-center text-zinc-500">
         No articles to show yet.
       </div>
     );
@@ -40,23 +40,23 @@ export function MagazineLatestGrid({ posts }: { posts: MagazinePostPublic[] }) {
         <Link
           key={p.id}
           href={`/blog/${p.slug}`}
-          className="group block overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/30 transition hover:border-emerald-500/20 hover:shadow-[0_0_32px_-8px_rgba(16,185,129,0.15)]"
+          className="group block overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm transition hover:border-emerald-200 hover:shadow-md"
         >
           <div className="relative aspect-[16/10] overflow-hidden">
             <CardImage src={p.featured_image} alt={p.title} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80" />
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/25 via-transparent to-transparent opacity-90" />
           </div>
           <div className="space-y-2 p-5">
             {p.category && (
-              <span className="inline-block rounded-full border border-emerald-500/25 bg-emerald-950/30 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400/90">
+              <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-800">
                 {p.category.name}
               </span>
             )}
-            <h3 className="font-[family-name:var(--font-magazine-serif)] text-lg font-bold leading-snug text-white group-hover:text-emerald-100/95">
+            <h3 className="font-[family-name:var(--font-magazine-serif)] text-lg font-bold leading-snug text-zinc-900 group-hover:text-emerald-900">
               {p.title}
             </h3>
             {p.excerpt && (
-              <p className="line-clamp-2 text-sm text-zinc-500">{p.excerpt}</p>
+              <p className="line-clamp-2 text-sm text-zinc-600">{p.excerpt}</p>
             )}
           </div>
         </Link>

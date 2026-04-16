@@ -28,7 +28,7 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
 
   return (
     <div
-      className="border-t border-white/10 pt-10"
+      className="border-t border-zinc-200 pt-10"
       role="group"
       aria-label={title ? `Share: ${title}` : "Share article"}
     >
@@ -40,7 +40,7 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
           href={fbHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-zinc-400 transition hover:border-emerald-500/30 hover:text-emerald-400/90"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
           aria-label="Share on Facebook"
         >
           <Facebook className="h-4 w-4" />
@@ -49,7 +49,7 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
           href={lineHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-zinc-400 transition hover:border-emerald-500/30 hover:text-emerald-400/90"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
           aria-label="Share on LINE"
         >
           <LineIcon className="h-4 w-4" />
@@ -57,10 +57,10 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
         <button
           type="button"
           onClick={onCopy}
-          className="inline-flex h-10 items-center gap-2 rounded-full border border-white/10 px-3 text-xs text-zinc-400 transition hover:border-emerald-500/30 hover:text-emerald-400/90"
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 text-xs text-zinc-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
           aria-label="Copy link"
         >
-          {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Link2 className="h-4 w-4" />}
+          {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Link2 className="h-4 w-4" />}
           {copied ? "Copied" : "Copy link"}
         </button>
       </div>

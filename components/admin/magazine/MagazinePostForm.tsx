@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
@@ -11,8 +11,16 @@ import { RelatedProductsSection } from "./RelatedProductsSection";
 import {
   createMagazinePost,
   updateMagazinePost,
+  type MagazineEmailTemplateId,
   type MagazineSaveInput,
 } from "@/app/admin/magazine/actions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, ArrowLeft } from "lucide-react";
 
 type Category = { id: string; name: string };
@@ -71,6 +79,14 @@ function toSerializablePayload(raw: MagazineSaveInput): MagazineSaveInput {
           .filter((n) => Number.isFinite(n) && n > 0)
       ),
     ],
+    ...(raw.send_email
+      ? {
+          send_email: true as const,
+          email_template: raw.email_template ?? "research",
+          field_notes_creator_url: raw.field_notes_creator_url,
+          field_notes_bullets: raw.field_notes_bullets,
+        }
+      : {}),
   };
 }
 
@@ -117,6 +133,11 @@ export function MagazinePostForm({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
+  const [emailTemplate, setEmailTemplate] =
+    useState<MagazineEmailTemplateId>("research");
+  const [creatorLink, setCreatorLink] = useState("");
+  const [fieldBullets, setFieldBullets] = useState(["", "", ""]);
 
   const saveDisabled = pending || imageBusy;
 
@@ -133,6 +154,27 @@ export function MagazinePostForm({
     () => (initial?.id != null ? `post-${initial.id}` : "new"),
     [initial?.id]
   );
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("magazine_email_broadcast");
+      if (!raw) return;
+      sessionStorage.removeItem("magazine_email_broadcast");
+      const j = JSON.parse(raw) as { sent?: number; error?: string };
+      const parts: string[] = [];
+      if (typeof j.sent === "number") {
+        parts.push(
+          j.sent > 0
+            ? `Newsletter sent to ${j.sent} subscriber(s)`
+            : "Newsletter: no active subscribers"
+        );
+      }
+      if (j.error) parts.push(`Email: ${j.error}`);
+      if (parts.length) setFeedback(parts.join(" · "));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const buildPayload = useCallback((): MagazineSaveInput => {
     return {
@@ -163,13 +205,43 @@ export function MagazinePostForm({
       setError("รอให้อัปโหลดรูปเสร็จก่อน / Wait for image upload to finish.");
       return;
     }
+    if (
+      nextStatus === "PUBLISHED" &&
+      sendEmail &&
+      emailTemplate === "field_notes"
+    ) {
+      const u = creatorLink.trim();
+      try {
+        const parsed = new URL(u);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          throw new Error("protocol");
+        }
+      } catch {
+        setError("Field Notes: add a valid https:// link to the original creator.");
+        return;
+      }
+      if (fieldBullets.some((b) => !b.trim())) {
+        setError("Field Notes: fill all three highlight bullets.");
+        return;
+      }
+    }
     setStatus(nextStatus);
     setError(null);
     setFeedback(null);
-    const payload = toSerializablePayload({
-      ...buildPayload(),
+    const core = buildPayload();
+    const merged: MagazineSaveInput = {
+      ...core,
       status: nextStatus,
-    });
+      ...(nextStatus === "PUBLISHED" && sendEmail
+        ? {
+            send_email: true,
+            email_template: emailTemplate,
+            field_notes_creator_url: creatorLink.trim(),
+            field_notes_bullets: fieldBullets.map((b) => b.trim()),
+          }
+        : {}),
+    };
+    const payload = toSerializablePayload(merged);
     startTransition(async () => {
       if (isEdit && initial) {
         const r = await updateMagazinePost(initial.id, payload);
@@ -177,8 +249,17 @@ export function MagazinePostForm({
           setError(r.error ?? "Save failed");
           return;
         }
-        setFeedback("Saved");
-        setTimeout(() => setFeedback(null), 2500);
+        const extra: string[] = [];
+        if (r.emailSent != null) {
+          extra.push(
+            r.emailSent > 0
+              ? `Newsletter: ${r.emailSent} sent`
+              : "Newsletter: 0 active subscribers"
+          );
+        }
+        if (r.emailError) extra.push(`Email: ${r.emailError}`);
+        setFeedback(extra.length ? extra.join(" · ") : "Saved");
+        setTimeout(() => setFeedback(null), 8000);
         router.refresh();
         return;
       }
@@ -186,6 +267,19 @@ export function MagazinePostForm({
       if (!r.ok) {
         setError(r.error ?? "Create failed");
         return;
+      }
+      if (r.emailSent != null || r.emailError) {
+        try {
+          sessionStorage.setItem(
+            "magazine_email_broadcast",
+            JSON.stringify({
+              sent: r.emailSent,
+              error: r.emailError,
+            })
+          );
+        } catch {
+          /* ignore */
+        }
       }
       router.push(`/admin/magazine/${r.id}/edit`);
       router.refresh();
@@ -359,6 +453,85 @@ export function MagazinePostForm({
             className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
             placeholder="comma, separated, tags"
           />
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-5">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Newsletter (on publish)
+          </p>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={sendEmail}
+              onChange={(e) => setSendEmail(e.target.checked)}
+              className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-600 bg-zinc-900 text-emerald-600 focus:ring-emerald-600/40"
+            />
+            <span className="text-sm leading-relaxed text-zinc-300">
+              Send email to newsletter subscribers when you publish (uses{" "}
+              <span className="text-zinc-400">Resend</span>).
+            </span>
+          </label>
+          {sendEmail && (
+            <div className="space-y-3 pl-1">
+              <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Template type
+              </label>
+              <Select
+                value={emailTemplate}
+                onValueChange={(v) =>
+                  setEmailTemplate(v as MagazineEmailTemplateId)
+                }
+              >
+                <SelectTrigger className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 text-zinc-200 focus:ring-emerald-600/30 [&>span]:text-zinc-200">
+                  <SelectValue placeholder="Choose template" />
+                </SelectTrigger>
+                <SelectContent className="border-zinc-800 bg-zinc-950 text-zinc-200">
+                  <SelectItem value="research">
+                    Research Paper (Standard)
+                  </SelectItem>
+                  <SelectItem value="field_notes">
+                    Field Notes (YouTube / story summary)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {emailTemplate === "field_notes" && (
+                <div className="space-y-3 pt-1">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-zinc-500">
+                      Original creator link
+                    </label>
+                    <input
+                      type="url"
+                      value={creatorLink}
+                      onChange={(e) => setCreatorLink(e.target.value)}
+                      placeholder="https://…"
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-2.5 font-mono text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+                    />
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    3-bullet highlights (shown in the email)
+                  </p>
+                  {fieldBullets.map((h, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      value={h}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setFieldBullets((prev) => {
+                          const next = [...prev];
+                          next[i] = v;
+                          return next;
+                        });
+                      }}
+                      placeholder={`Highlight ${i + 1}`}
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">

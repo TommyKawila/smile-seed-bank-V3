@@ -25,9 +25,9 @@ export function AffiliateProductCard({
   const image = affiliate?.image_url ?? null;
 
   return (
-    <aside className="my-10 overflow-hidden rounded-2xl border border-emerald-500/25 bg-zinc-950/80 shadow-[0_0_40px_-12px_rgba(16,185,129,0.25)]">
+    <aside className="my-10 overflow-hidden rounded-2xl border border-emerald-200/80 bg-zinc-50 shadow-sm">
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-stretch sm:gap-6">
-        <div className="relative mx-auto h-36 w-full shrink-0 overflow-hidden rounded-xl bg-zinc-900 sm:h-auto sm:w-40">
+        <div className="relative mx-auto h-36 w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-auto sm:w-40">
           {image ? (
             <Image
               src={image}
@@ -38,16 +38,16 @@ export function AffiliateProductCard({
               unoptimized={!image.includes("supabase.co")}
             />
           ) : (
-            <div className="flex h-full min-h-[9rem] items-center justify-center bg-gradient-to-br from-zinc-900 to-black text-xs text-zinc-600">
+            <div className="flex h-full min-h-[9rem] items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-xs text-zinc-500">
               Curated pick
             </div>
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-500/90">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
             Recommended
           </p>
-          <h3 className="font-[family-name:var(--font-magazine-serif)] text-lg font-semibold leading-snug text-white">
+          <h3 className="font-[family-name:var(--font-magazine-serif)] text-lg font-semibold leading-snug text-zinc-900">
             {title}
           </h3>
           <p className="text-xs text-zinc-500">{platform}</p>
@@ -55,7 +55,7 @@ export function AffiliateProductCard({
             href={url}
             target="_blank"
             rel="noopener noreferrer sponsored"
-            className="inline-flex w-fit items-center justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500"
+            className="inline-flex w-fit items-center justify-center rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
           >
             {buttonLabel(platform)}
           </Link>

@@ -291,6 +291,10 @@ export interface CartSummary {
   total: number;
   appliedTier: DiscountTier | null;
   upsellMessage: string | null;
+  /** When a promo code is entered, true only if coupon beats auto tier (exclusive best deal). */
+  usePromoForOrder: boolean;
+  /** Promo applied in UI but auto tier gives equal or better total — coupon not applied at checkout. */
+  promoSupersededByTier?: boolean;
 }
 
 // ─── Database (Supabase CLI — single source of truth for clients) ────────────

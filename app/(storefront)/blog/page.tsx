@@ -63,17 +63,17 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
 
   return (
     <div
-      className={`min-h-screen bg-[#050505] text-white ${inter.variable} ${playfair.variable} font-sans antialiased`}
+      className={`min-h-screen bg-white text-zinc-900 ${inter.variable} ${playfair.variable} font-sans antialiased`}
     >
       <div className="mx-auto max-w-7xl px-4 pb-20 pt-24 sm:px-6 lg:px-8">
         <header className="mb-14 space-y-3 text-center lg:mb-16">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-emerald-500/80">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-emerald-700">
             Smile Seed Bank
           </p>
-          <h1 className="font-[family-name:var(--font-magazine-serif)] text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+          <h1 className="font-[family-name:var(--font-magazine-serif)] text-4xl font-bold tracking-tight text-emerald-950 md:text-5xl lg:text-6xl">
             Magazine
           </h1>
-          <p className="mx-auto max-w-lg text-sm text-zinc-500">
+          <p className="mx-auto max-w-lg text-sm text-zinc-600">
             Stories, knowledge, and cultivation — curated for growers.
           </p>
         </header>
@@ -85,7 +85,7 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
 
           <div className="order-2 lg:order-none lg:col-start-2 lg:row-start-2">
             <Suspense
-              fallback={<div className="h-14 animate-pulse rounded-xl bg-zinc-900/80" />}
+              fallback={<div className="h-14 animate-pulse rounded-xl bg-zinc-100" />}
             >
               <MagazineCategoryPills categories={categories} />
             </Suspense>

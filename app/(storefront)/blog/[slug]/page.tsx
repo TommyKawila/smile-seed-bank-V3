@@ -153,7 +153,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
 
   return (
     <div
-      className={`min-h-screen bg-[#050505] text-white ${inter.variable} ${playfair.variable} font-sans antialiased`}
+      className={`min-h-screen bg-white text-zinc-900 ${inter.variable} ${playfair.variable} font-sans antialiased`}
     >
       <MagazineArticleJsonLd
         title={post.title}
@@ -169,7 +169,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           className="mb-10 flex flex-wrap items-center gap-1 text-xs text-zinc-500"
           aria-label="Breadcrumb"
         >
-          <Link href="/blog" className="transition hover:text-emerald-400/90">
+          <Link href="/blog" className="transition hover:text-emerald-700">
             Magazine
           </Link>
           {post.category && (
@@ -177,7 +177,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
               <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
               <Link
                 href={`/blog?category=${encodeURIComponent(post.category.slug)}`}
-                className="transition hover:text-emerald-400/90"
+                className="transition hover:text-emerald-700"
               >
                 {post.category.name}
               </Link>
@@ -188,32 +188,32 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         </nav>
 
         {post.category && (
-          <span className="mb-4 inline-flex rounded-full border border-emerald-500/35 bg-emerald-950/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300/95">
+          <span className="mb-4 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
             [{post.category.name}]
           </span>
         )}
 
-        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-bold leading-[1.7] tracking-tight text-white sm:text-4xl md:text-5xl">
+        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-bold leading-[1.7] tracking-tight text-emerald-950 sm:text-4xl md:text-5xl">
           {post.title}
         </h1>
 
-        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/10 pb-8 text-sm text-zinc-500">
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-zinc-200 pb-8 text-sm text-zinc-600">
           <span>Smile Seed Bank Editorial</span>
           {post.published_at && (
             <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
           )}
           <span className="inline-flex items-center gap-1.5">
-            <Clock className="h-4 w-4 text-zinc-600" aria-hidden />
+            <Clock className="h-4 w-4 text-zinc-400" aria-hidden />
             {readMin} min read
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <Eye className="h-4 w-4 text-zinc-600" aria-hidden />
+            <Eye className="h-4 w-4 text-zinc-400" aria-hidden />
             {post.view_count.toLocaleString("th-TH")} views
           </span>
         </div>
 
         {post.featured_image && (
-          <div className="relative -mx-4 mt-10 aspect-[16/10] min-h-[260px] overflow-hidden rounded-2xl border border-white/5 sm:mx-0 md:min-h-[400px] lg:min-h-[520px]">
+          <div className="relative -mx-4 mt-10 aspect-[16/10] min-h-[260px] overflow-hidden rounded-2xl border border-zinc-200 shadow-sm sm:mx-0 md:min-h-[400px] lg:min-h-[520px]">
             <Image
               src={post.featured_image}
               alt=""
@@ -225,12 +225,12 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
               blurDataURL={SHIMMER_BLUR_DATA_URL}
               unoptimized={!post.featured_image.includes("supabase.co")}
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/20 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent" />
           </div>
         )}
 
         {post.excerpt && (
-          <p className="mt-10 border-l-2 border-emerald-500/40 pl-5 text-lg leading-relaxed text-zinc-400">
+          <p className="mt-10 border-l-2 border-emerald-600/35 pl-5 text-lg leading-relaxed text-zinc-600">
             {post.excerpt}
           </p>
         )}
@@ -252,8 +252,8 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         <ShopTheStorySection products={shopStoryProducts} />
 
         {related.length > 0 && (
-          <section className="mx-auto mt-20 max-w-[720px] border-t border-white/10 pt-16">
-            <h2 className="font-[family-name:var(--font-magazine-serif)] text-2xl font-semibold text-white">
+          <section className="mx-auto mt-20 max-w-[720px] border-t border-zinc-200 pt-16">
+            <h2 className="font-[family-name:var(--font-magazine-serif)] text-2xl font-semibold text-emerald-950">
               Read more
             </h2>
             <ul className="mt-8 grid gap-6 sm:grid-cols-2">
@@ -261,7 +261,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                 <li key={r.id}>
                   <Link
                     href={`/blog/${r.slug}`}
-                    className="group block overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/40 transition hover:border-emerald-500/25"
+                    className="group block overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm transition hover:border-emerald-300/60 hover:shadow-md"
                   >
                     {r.featured_image && (
                       <div className="relative aspect-[16/10] w-full overflow-hidden">
@@ -276,16 +276,16 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                           blurDataURL={SHIMMER_BLUR_DATA_URL}
                           unoptimized={!r.featured_image.includes("supabase.co")}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/15 to-transparent" />
                       </div>
                     )}
                     <div className="p-4">
                       {r.category && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500/90">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
                           {r.category.name}
                         </span>
                       )}
-                      <p className="mt-2 line-clamp-2 font-[family-name:var(--font-magazine-serif)] text-base font-semibold text-zinc-100 group-hover:text-emerald-100/95">
+                      <p className="mt-2 line-clamp-2 font-[family-name:var(--font-magazine-serif)] text-base font-semibold text-zinc-900 group-hover:text-emerald-800">
                         {r.title}
                       </p>
                     </div>
@@ -301,7 +301,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           <MagazineArticleShare url={pageUrl} title={post.title} />
           <Link
             href="/blog"
-            className="inline-flex text-sm font-medium text-emerald-400/90 transition hover:text-emerald-300"
+            className="inline-flex text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
           >
             ← Back to Magazine
           </Link>

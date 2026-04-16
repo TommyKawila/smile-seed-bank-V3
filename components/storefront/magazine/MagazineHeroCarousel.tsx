@@ -20,7 +20,7 @@ function HeroImage({
 }) {
   if (!src) {
     return (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-white" />
     );
   }
   const unoptimized = !src.includes("supabase.co");
@@ -51,12 +51,12 @@ export function MagazineHeroCarousel({ posts }: Props) {
 
   if (slides.length === 0) {
     return (
-      <div className="relative aspect-[21/9] min-h-[280px] w-full overflow-hidden rounded-3xl border border-white/5 bg-zinc-950">
+      <div className="relative aspect-[21/9] min-h-[280px] w-full overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-50 shadow-sm">
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-          <p className="font-[family-name:var(--font-magazine-serif)] text-2xl text-zinc-400">
+          <p className="font-[family-name:var(--font-magazine-serif)] text-2xl text-zinc-600">
             No highlights yet
           </p>
-          <p className="max-w-md text-sm text-zinc-600">
+          <p className="max-w-md text-sm text-zinc-500">
             Publish posts and mark them as highlight in Admin to fill this carousel.
           </p>
         </div>
@@ -67,7 +67,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
   const current = slides[i]!;
 
   return (
-    <div className="relative aspect-[21/9] min-h-[280px] w-full overflow-hidden rounded-3xl border border-white/5 bg-black shadow-2xl shadow-emerald-950/20">
+    <div className="relative aspect-[21/9] min-h-[280px] w-full overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-md shadow-zinc-200/50">
       <AnimatePresence mode="wait">
         <motion.div
           key={current.id}
@@ -83,19 +83,19 @@ export function MagazineHeroCarousel({ posts }: Props) {
               alt={current.title}
               priority={i === 0}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/15" />
+            <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/50 to-white/10" />
             <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10 md:p-12">
               {current.category && (
-                <span className="mb-3 inline-flex w-fit rounded-full border border-emerald-500/35 bg-emerald-950/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300/95">
+                <span className="mb-3 inline-flex w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
                   [{current.category.name}]
                 </span>
               )}
-              <h2 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-bold leading-[1.15] tracking-tight text-white sm:text-4xl md:text-5xl lg:max-w-3xl">
+              <h2 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-bold leading-[1.15] tracking-tight text-emerald-950 sm:text-4xl md:text-5xl lg:max-w-3xl">
                 {current.title}
               </h2>
               <Link
                 href={`/blog/${current.slug}`}
-                className="mt-6 inline-flex w-fit items-center justify-center rounded-full border border-white/15 bg-white/10 px-6 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition hover:border-emerald-400/45 hover:bg-emerald-950/50 hover:text-emerald-50 hover:shadow-[0_0_24px_-4px_rgba(16,185,129,0.35)]"
+                className="mt-6 inline-flex w-fit items-center justify-center rounded-full bg-emerald-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
               >
                 Read Article
               </Link>
@@ -112,7 +112,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
               aria-label={`Slide ${idx + 1}`}
               onClick={() => setI(idx)}
               className={`h-2 rounded-full transition-all duration-300 ${
-                idx === i ? "w-8 bg-emerald-500" : "w-2 bg-white/35 hover:bg-white/50"
+                idx === i ? "w-8 bg-emerald-600" : "w-2 bg-zinc-300 hover:bg-zinc-400"
               }`}
             />
           ))}
