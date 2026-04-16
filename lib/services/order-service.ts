@@ -15,6 +15,15 @@ import {
 } from "@/lib/order-inventory";
 import { sendAdminNotification } from "@/lib/admin-notification";
 import { generateOrderNumber } from "@/lib/order-utils";
+import {
+  linkOrderToCustomerAfterClaim,
+  type ClaimAssociateResult,
+} from "@/lib/claim-customer-associate";
+import {
+  carrierLabelFromCode,
+  carrierTrackingUrl,
+} from "@/lib/shipping-carriers";
+import { randomUUID } from "crypto";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
@@ -546,6 +555,213 @@ export async function uploadSlip(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[order-service] uploadSlip error:", msg);
+    return { data: null, error: msg };
+  }
+}
+
+// ─── Manual order claim (PENDING_INFO → AWAITING_VERIFICATION) ────────────────
+
+export interface OrderClaimPreview {
+  order_number: string;
+  total_amount: number;
+  status: string;
+}
+
+export async function getOrderClaimPreview(
+  token: string
+): Promise<ServiceResult<OrderClaimPreview>> {
+  const t = token?.trim();
+  if (!t) return { data: null, error: "Invalid link" };
+  try {
+    const order = await prisma.orders.findFirst({
+      where: { claim_token: t },
+      select: { order_number: true, status: true, total_amount: true },
+    });
+    if (!order) return { data: null, error: "Order not found" };
+    return {
+      data: {
+        order_number: order.order_number,
+        total_amount: Number(order.total_amount),
+        status: order.status ?? "",
+      },
+      error: null,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[order-service] getOrderClaimPreview error:", msg);
+    return { data: null, error: msg };
+  }
+}
+
+export interface PublicOrderTrackView {
+  order_number: string;
+  status: string;
+  tracking_number: string | null;
+  shipping_provider: string | null;
+  carrier_label: string;
+  tracking_url: string | null;
+}
+
+export async function getPublicOrderTrackByToken(
+  token: string
+): Promise<ServiceResult<PublicOrderTrackView>> {
+  const t = token?.trim();
+  if (!t) return { data: null, error: "Invalid link" };
+  try {
+    const order = await prisma.orders.findFirst({
+      where: { claim_token: t },
+      select: {
+        order_number: true,
+        status: true,
+        tracking_number: true,
+        shipping_provider: true,
+      },
+    });
+    if (!order) return { data: null, error: "Order not found" };
+    const tr = order.tracking_number?.trim() || null;
+    const sp = order.shipping_provider?.trim() || null;
+    const tracking_url =
+      tr && sp ? carrierTrackingUrl(tr, sp) : null;
+    return {
+      data: {
+        order_number: order.order_number,
+        status: order.status ?? "",
+        tracking_number: tr,
+        shipping_provider: sp,
+        carrier_label: carrierLabelFromCode(sp),
+        tracking_url,
+      },
+      error: null,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { data: null, error: msg };
+  }
+}
+
+export interface SubmitOrderClaimInput {
+  token: string;
+  shipping_name: string;
+  shipping_address: string;
+  shipping_phone: string;
+  /** Optional — for payment/shipping notification emails */
+  shipping_email?: string;
+  file: File;
+}
+
+export interface ClaimSubmitResult extends UploadSlipResult {
+  claim: ClaimAssociateResult;
+}
+
+export async function submitOrderClaim(
+  input: SubmitOrderClaimInput
+): Promise<ServiceResult<ClaimSubmitResult>> {
+  try {
+    const token = input.token?.trim();
+    const shipping_name = input.shipping_name?.trim() ?? "";
+    const shipping_address = input.shipping_address?.trim() ?? "";
+    const shipping_phone = input.shipping_phone?.trim() ?? "";
+    const shipping_email = input.shipping_email?.trim() ?? "";
+    const { file } = input;
+
+    if (!token) return { data: null, error: "Invalid link" };
+    if (!shipping_name || !shipping_address || !shipping_phone) {
+      return { data: null, error: "Name, address, and phone are required" };
+    }
+    if (shipping_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shipping_email)) {
+      return { data: null, error: "Invalid email address" };
+    }
+
+    const order = await prisma.orders.findFirst({
+      where: { claim_token: token },
+      select: {
+        id: true,
+        order_number: true,
+        status: true,
+        slip_url: true,
+        total_amount: true,
+      },
+    });
+    if (!order) return { data: null, error: "Order not found" };
+    if (order.status !== "PENDING_INFO") {
+      return { data: null, error: "Order already processed" };
+    }
+    if (order.slip_url) return { data: null, error: "Slip already uploaded" };
+
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    if (!ALLOWED_EXT.includes(ext)) {
+      return { data: null, error: "Allowed file types: jpg, png, webp, pdf" };
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return { data: null, error: "File too large (max 5MB)" };
+    }
+
+    const path = `claim-${order.order_number}-${randomUUID()}.${ext}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const contentType = file.type || (ext === "pdf" ? "application/pdf" : "image/jpeg");
+
+    const supabase = await createAdminClient();
+    const { error: uploadError } = await supabase.storage
+      .from(SLIP_BUCKET)
+      .upload(path, buffer, { cacheControl: "3600", upsert: true, contentType });
+
+    if (uploadError) {
+      console.error("[order-service] claim storage upload error:", uploadError.message);
+      return { data: null, error: uploadError.message };
+    }
+
+    const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
+    const slipUrl = data.publicUrl;
+
+    await prisma.orders.update({
+      where: { id: order.id },
+      data: {
+        shipping_name,
+        shipping_address,
+        shipping_phone,
+        shipping_email: shipping_email || null,
+        customer_name: shipping_name,
+        customer_phone: shipping_phone,
+        slip_url: slipUrl,
+        status: "AWAITING_VERIFICATION",
+      },
+    });
+
+    const displayName = shipping_name;
+    const totalFmt = Number(order.total_amount).toLocaleString("th-TH", {
+      maximumFractionDigits: 0,
+    });
+    void sendAdminNotification(
+      [
+        `💰 Claim submitted #${order.order_number}`,
+        `Customer: ${displayName}`,
+        `Total: ฿${totalFmt}`,
+        `Please verify in the Admin Dashboard.`,
+      ].join("\n")
+    );
+
+    let claim: ClaimAssociateResult = {
+      linked: false,
+      isExisting: false,
+      displayName: shipping_name,
+      showSetPasswordHint: false,
+    };
+    try {
+      claim = await linkOrderToCustomerAfterClaim({
+        orderId: order.id,
+        fullName: shipping_name,
+        address: shipping_address,
+        phone: shipping_phone,
+        email: shipping_email || null,
+      });
+    } catch (assocErr) {
+      console.error("[order-service] submitOrderClaim associate:", assocErr);
+    }
+
+    return { data: { slip_url: slipUrl, claim }, error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[order-service] submitOrderClaim error:", msg);
     return { data: null, error: msg };
   }
 }

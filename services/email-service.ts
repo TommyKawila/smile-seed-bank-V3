@@ -2,6 +2,7 @@
 // Handles transactional emails: order confirmation, tracking update
 
 import { getSiteOrigin } from "@/lib/get-url";
+import { CARRIER_LABELS, carrierTrackingUrl } from "@/lib/shipping-carriers";
 import {
   buildOrderConfirmationHtml,
   loadPaymentBlocksForEmail,
@@ -118,28 +119,87 @@ export async function sendOrderConfirmationEmail(opts: {
   }
 }
 
-// ─── Shipping Confirmation Email ──────────────────────────────────────────────
+// ─── Payment received (admin approved transfer) ───────────────────────────────
 
-const CARRIER_LABELS: Record<string, string> = {
-  THAILAND_POST: "ไปรษณีย์ไทย (Thailand Post)",
-  KERRY_EXPRESS: "Kerry Express",
-  FLASH_EXPRESS: "Flash Express",
-  "J&T_EXPRESS": "J&T Express",
-};
+export async function sendPaymentReceivedEmail(opts: {
+  toEmail: string;
+  customerName: string;
+  orderNumber: string;
+  orderId?: number;
+}): Promise<ServiceResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { success: false, error: "RESEND_API_KEY ไม่ได้ตั้งค่า" };
+  const to = opts.toEmail?.trim();
+  if (!to) return { success: false, error: "ไม่มีอีเมลลูกค้า" };
 
-function carrierTrackingUrl(trackingNumber: string, provider: string): string {
-  const t = encodeURIComponent(trackingNumber);
-  switch (provider) {
-    case "THAILAND_POST":
-      return `https://track.thailandpost.co.th/?trackNumber=${t}`;
-    case "FLASH_EXPRESS":
-      return `https://www.flashexpress.co.th/tracking/?se=${t}`;
-    case "J&T_EXPRESS":
-      return `https://www.jtexpress.co.th/trajectoryQuery?waybillNo=${t}`;
-    default:
-      return `https://th.kerryexpress.com/en/track/?track=${t}`;
+  const safeName = opts.customerName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const year = new Date().getFullYear();
+  const profileOrders =
+    opts.orderId != null
+      ? `${SITE_URL}/profile?tab=orders&open=${opts.orderId}`
+      : `${SITE_URL}/profile?tab=orders`;
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Helvetica Neue',Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:32px 16px">
+  <tr><td align="center">
+    <table width="100%" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(21,128,61,0.08)">
+      <tr>
+        <td style="background:linear-gradient(135deg,#15803d,#166534);padding:28px;text-align:center">
+          <h1 style="margin:0;color:#fff;font-size:20px;font-weight:800">Payment received</h1>
+          <p style="margin:8px 0 0;color:#bbf7d0;font-size:13px">ยอดชำระเงินได้รับแล้ว — เรากำลังเตรียมจัดส่งให้คุณ</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:28px">
+          <p style="margin:0 0 12px;color:#18181b;font-size:15px">Hi ${safeName},</p>
+          <p style="margin:0 0 20px;color:#52525b;font-size:14px;line-height:1.7">
+            <strong style="color:#15803d">Payment Received!</strong> Your order is being prepared for shipment.
+          </p>
+          <p style="margin:0 0 8px;color:#71717a;font-size:12px;font-weight:600;text-transform:uppercase">Order</p>
+          <p style="margin:0 0 24px;font-family:ui-monospace,monospace;font-size:18px;font-weight:700;color:#14532d">#${opts.orderNumber}</p>
+          <div style="text-align:center">
+            <a href="${profileOrders}" style="display:inline-block;background:#15803d;color:#fff;padding:12px 28px;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none">View order status</a>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#f0fdf4;padding:14px;text-align:center;border-top:1px solid #d1fae5">
+          <p style="margin:0;color:#6b7280;font-size:12px">Smile Seed Bank · © ${year}</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+
+  try {
+    const res = await fetch(RESEND_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [to],
+        subject: `Payment Received — Order #${opts.orderNumber} · Smile Seed Bank`,
+        html,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
+    }
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: String(err) };
   }
 }
+
+// ─── Shipping Confirmation Email ──────────────────────────────────────────────
 
 export interface ShippingEmailInput {
   toEmail: string;

@@ -4,6 +4,7 @@ import type { order_items } from "@prisma/client";
 /** Order statuses for which reject/cancel restores variant stock (guard in `rejectPayment`). */
 export const REJECT_STOCK_RESTORE_STATUSES = [
   "PENDING",
+  "PENDING_INFO",
   "AWAITING_VERIFICATION",
   "PAYMENT_REJECTED",
 ] as const;

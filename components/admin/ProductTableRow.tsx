@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, Package, PackageX, Pencil } from "lucide-react";
+import { AlertTriangle, Package, PackageX, Pencil, Star, StarOff } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
@@ -22,14 +23,28 @@ export interface ProductTableRowProps {
   product: ProductFull;
   onEdit: (product: ProductFull) => void;
   onStatusUpdated?: () => void;
+  /** Featured tab: show priority input + remove from featured */
+  featuredManage?: boolean;
 }
 
-export function ProductTableRow({ product, onEdit, onStatusUpdated }: ProductTableRowProps) {
+export function ProductTableRow({
+  product,
+  onEdit,
+  onStatusUpdated,
+  featuredManage = false,
+}: ProductTableRowProps) {
   const { toast } = useToast();
   const lowStock = isLowStock(product.stock);
   const [thumbLoaded, setThumbLoaded] = useState(false);
   const [active, setActive] = useState(Boolean(product.is_active));
   const [statusPending, setStatusPending] = useState(false);
+  const [priorityInput, setPriorityInput] = useState(String(product.featured_priority ?? 0));
+  const [priorityPending, setPriorityPending] = useState(false);
+  const [unfeaturePending, setUnfeaturePending] = useState(false);
+
+  useEffect(() => {
+    setPriorityInput(String(product.featured_priority ?? 0));
+  }, [product.id, product.featured_priority]);
 
   useEffect(() => {
     setActive(Boolean(product.is_active));
@@ -39,8 +54,66 @@ export function ProductTableRow({ product, onEdit, onStatusUpdated }: ProductTab
     setThumbLoaded(false);
   }, [product.image_url]);
 
+  const patchFeaturedFields = async (body: Record<string, unknown>) => {
+    const res = await fetch(`/api/admin/products/${product.id}/field`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) throw new Error(data.error ?? "อัปเดตไม่สำเร็จ");
+  };
+
+  const commitPriority = async () => {
+    const n = parseInt(priorityInput, 10);
+    if (Number.isNaN(n) || n < 0) {
+      setPriorityInput(String(product.featured_priority ?? 0));
+      return;
+    }
+    if (n === (product.featured_priority ?? 0)) return;
+    setPriorityPending(true);
+    try {
+      await patchFeaturedFields({ featured_priority: n });
+      toast({ title: "อัปเดตลำดับแล้ว", description: `Priority ${n}` });
+      onStatusUpdated?.();
+    } catch (e) {
+      setPriorityInput(String(product.featured_priority ?? 0));
+      toast({
+        variant: "destructive",
+        title: "ไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setPriorityPending(false);
+    }
+  };
+
+  const removeFromFeatured = async () => {
+    setUnfeaturePending(true);
+    try {
+      await patchFeaturedFields({ is_featured: false, featured_priority: null });
+      toast({ title: "นำออกจากแนะนำแล้ว", description: product.name });
+      onStatusUpdated?.();
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "ไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setUnfeaturePending(false);
+    }
+  };
+
+  const featuredHighlight = Boolean(product.is_featured);
+
   return (
-    <TableRow className="group transition-colors hover:bg-zinc-50/90">
+    <TableRow
+      className={cn(
+        "group transition-colors hover:bg-zinc-50/90",
+        featuredHighlight && "border-l-[3px] border-l-emerald-600 bg-emerald-50/40"
+      )}
+    >
       <TableCell className="align-middle">
         {product.image_url ? (
           <div
@@ -70,7 +143,38 @@ export function ProductTableRow({ product, onEdit, onStatusUpdated }: ProductTab
           </div>
         )}
       </TableCell>
-      <TableCell className="font-medium text-zinc-900">{product.name}</TableCell>
+      <TableCell className="font-medium text-zinc-900">
+        <div className="flex flex-wrap items-center gap-2">
+          <span>{product.name}</span>
+          {featuredHighlight && (
+            <Badge
+              variant="outline"
+              className="shrink-0 border-emerald-600/50 bg-emerald-50 text-[10px] font-semibold uppercase tracking-wide text-emerald-800"
+            >
+              <Star className="mr-0.5 h-3 w-3" aria-hidden />
+              Featured
+            </Badge>
+          )}
+        </div>
+      </TableCell>
+      {featuredManage && (
+        <TableCell className="w-[5.5rem]">
+          <Input
+            type="number"
+            min={0}
+            max={9999}
+            disabled={priorityPending}
+            value={priorityInput}
+            onChange={(e) => setPriorityInput(e.target.value)}
+            onBlur={() => void commitPriority()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            }}
+            className="h-8 w-[4.25rem] px-2 font-[family-name:var(--font-journal-product-mono)] text-sm tabular-nums"
+            aria-label="Featured priority"
+          />
+        </TableCell>
+      )}
       <TableCell>
         <Badge variant="outline" className="text-xs">
           {product.category ?? "—"}
@@ -158,14 +262,30 @@ export function ProductTableRow({ product, onEdit, onStatusUpdated }: ProductTab
         </div>
       </TableCell>
       <TableCell>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-zinc-500 hover:text-primary"
-          onClick={() => onEdit(product)}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          {featuredManage && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-amber-700 hover:bg-amber-50 hover:text-amber-900"
+              disabled={unfeaturePending}
+              title="นำออกจากแนะนำ"
+              aria-label="Remove from featured"
+              onClick={() => void removeFromFeatured()}
+            >
+              <StarOff className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-zinc-500 hover:text-primary"
+            onClick={() => onEdit(product)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );

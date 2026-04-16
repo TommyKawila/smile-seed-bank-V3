@@ -7,7 +7,10 @@ import {
   REJECT_STOCK_RESTORE_STATUSES,
   restoreVariantStockForOrderItems,
 } from "@/lib/order-inventory";
-import { sendShippingConfirmationEmail } from "@/services/email-service";
+import {
+  sendPaymentReceivedEmail,
+  sendShippingConfirmationEmail,
+} from "@/services/email-service";
 import { sendLineFlexNotification } from "@/lib/order-line-notifications";
 
 export interface AdminOrderRow {
@@ -68,14 +71,48 @@ export async function listOrders(opts?: {
 
 export async function approvePayment(orderId: number): Promise<ServiceResult<null>> {
   try {
-    const sql = getSql();
-    await sql`UPDATE orders SET status = 'PAID', reject_note = NULL WHERE id = ${orderId}`;
+    const oid = BigInt(orderId);
+    const before = await prisma.orders.findUnique({
+      where: { id: oid },
+      select: {
+        status: true,
+        order_number: true,
+        customer_name: true,
+        shipping_email: true,
+        customers: { select: { email: true, full_name: true } },
+      },
+    });
+    if (!before) {
+      return { data: null, error: "Order not found" };
+    }
+
+    await prisma.orders.update({
+      where: { id: oid },
+      data: { status: "PAID", reject_note: null },
+    });
 
     console.log("LOG: DB Updated, attempting LINE notification...");
     try {
       await sendLineFlexNotification(orderId, "PAYMENT_CONFIRMED");
     } catch (lineErr) {
       console.error("LOG: LINE Notification failed internally:", lineErr);
+    }
+
+    if (before.status === "AWAITING_VERIFICATION") {
+      const email =
+        before.customers?.email?.trim() || before.shipping_email?.trim() || null;
+      const name =
+        before.customer_name?.trim() ||
+        before.customers?.full_name?.trim() ||
+        "Customer";
+      if (email) {
+        void sendPaymentReceivedEmail({
+          toEmail: email,
+          customerName: name,
+          orderNumber: before.order_number,
+          orderId,
+        }).catch((e) => console.error("[approvePayment] email:", e));
+      }
     }
 
     return { data: null, error: null };
@@ -179,13 +216,15 @@ export async function markShipped(
         const rows = await sql<{
           email: string | null;
           full_name: string | null;
+          customer_name: string | null;
           order_number: string;
           order_line_uid: string | null;
           web_customer_line_uid: string | null;
           profile_line_id: string | null;
         }[]>`
-          SELECT c.email,
+          SELECT COALESCE(NULLIF(TRIM(c.email), ''), NULLIF(TRIM(o.shipping_email), '')) AS email,
                  c.full_name,
+                 o.customer_name,
                  o.order_number,
                  o.line_user_id AS order_line_uid,
                  c.line_user_id AS web_customer_line_uid,
@@ -199,7 +238,10 @@ export async function markShipped(
         const row = rows[0];
         if (!row) return;
 
-        const name = row.full_name ?? "คุณลูกค้า";
+        const name =
+          row.full_name?.trim() ||
+          row.customer_name?.trim() ||
+          "คุณลูกค้า";
         const orderNumber = row.order_number;
 
         // Email notification

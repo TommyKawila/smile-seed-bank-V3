@@ -36,6 +36,8 @@ interface UseProductsOptions {
   /** Admin product list: plain Photo / Photoperiod category vs FK-only vs Photo 3N sentinel */
   categoryFilterMode?: CategoryFilterMode;
   strain_dominance?: StrainDominance | null;
+  /** Admin: homepage carousel — only `is_featured` rows, ordered by priority */
+  featuredOnly?: boolean;
   limit?: number;
   autoFetch?: boolean;
   includeVariants?: boolean;
@@ -63,6 +65,7 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     categoryId,
     categoryFilterMode,
     strain_dominance,
+    featuredOnly,
     limit,
     autoFetch = true,
     includeVariants = false,
@@ -82,17 +85,15 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
       const supabase = createClient();
       // Branch select literals so PostgREST result types parse (no dynamic select string).
       let query = includeVariants
-        ? supabase
-            .from("products")
-            .select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
-            .order("id", { ascending: false })
-        : supabase
-            .from("products")
-            .select(PRODUCT_SELECT_WITH_BREEDER)
-            .order("id", { ascending: false });
+        ? supabase.from("products").select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
+        : supabase.from("products").select(PRODUCT_SELECT_WITH_BREEDER);
 
       if (!includeInactive) {
         query = query.eq("is_active", true);
+      }
+
+      if (featuredOnly) {
+        query = query.eq("is_featured", true);
       }
 
       if (category) query = query.eq("category", category);
@@ -114,6 +115,15 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
         }
       }
       if (strain_dominance) query = query.eq("strain_dominance", strain_dominance);
+
+      if (featuredOnly) {
+        query = query
+          .order("featured_priority", { ascending: true, nullsFirst: false })
+          .order("id", { ascending: false });
+      } else {
+        query = query.order("id", { ascending: false });
+      }
+
       if (limit) query = query.limit(limit);
 
       const { data, error: sbError } = await query;
@@ -130,6 +140,7 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     categoryId,
     categoryFilterMode,
     strain_dominance,
+    featuredOnly,
     limit,
     includeVariants,
     includeInactive,

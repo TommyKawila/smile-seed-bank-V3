@@ -27,13 +27,15 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProductModal } from "@/components/admin/ProductModal";
 import { ProductTableRow } from "@/components/admin/ProductTableRow";
+import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { useProducts } from "@/hooks/useProducts";
+import { cn } from "@/lib/utils";
 import type { ProductFull } from "@/types/supabase";
 import { CATEGORY_NAME_PLAIN_PHOTO, FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
 
 const STRAIN_DOMINANCE_OPTIONS = ["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"] as const;
 
-function ProductsTableSkeleton() {
+function ProductsTableSkeleton({ featuredMode }: { featuredMode: boolean }) {
   return (
     <>
       {Array.from({ length: 6 }).map((_, i) => (
@@ -44,6 +46,11 @@ function ProductsTableSkeleton() {
           <TableCell>
             <Skeleton className="h-4 w-[min(100%,12rem)] max-w-full rounded-md" />
           </TableCell>
+          {featuredMode && (
+            <TableCell>
+              <Skeleton className="h-8 w-14 rounded-md" />
+            </TableCell>
+          )}
           <TableCell>
             <Skeleton className="h-6 w-20 rounded-full" />
           </TableCell>
@@ -74,17 +81,31 @@ function ProductsTableSkeleton() {
   );
 }
 
-function ProductsEmptyState({ hasSearch }: { hasSearch: boolean }) {
+function ProductsEmptyState({
+  hasSearch,
+  featuredOnly,
+}: {
+  hasSearch: boolean;
+  featuredOnly: boolean;
+}) {
   return (
     <TableRow className="hover:bg-transparent">
-      <TableCell colSpan={10} className="p-0">
+      <TableCell colSpan={featuredOnly ? 11 : 10} className="p-0">
         <EmptyState
           icon={PackageX}
-          title={hasSearch ? "ไม่พบสินค้าที่ค้นหา" : "ยังไม่มีสินค้า"}
+          title={
+            hasSearch
+              ? "ไม่พบสินค้าที่ค้นหา"
+              : featuredOnly
+                ? "ยังไม่มีสินค้าแนะนำ"
+                : "ยังไม่มีสินค้า"
+          }
           description={
             hasSearch
               ? "ลองเปลี่ยนคำค้นหา หรือล้างตัวกรอง"
-              : "เริ่มต้นด้วยการเพิ่มสินค้าใหม่จากปุ่มด้านบน"
+              : featuredOnly
+                ? "เปิดแก้ไขสินค้าแล้วตั้งค่า Featured หรือสลับไปแท็บรายการทั้งหมด"
+                : "เริ่มต้นด้วยการเพิ่มสินค้าใหม่จากปุ่มด้านบน"
           }
         />
       </TableCell>
@@ -107,6 +128,8 @@ export default function ProductsPage() {
   const [breeders, setBreeders] = useState<{ id: number; name: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
+  const featuredOnly = searchParams.get("view") === "featured";
+
   const categoryFilterMode = useMemo(() => {
     if (!categoryId || categoryId === "all") return undefined;
     if (categoryId === FLOWERING_DB_PHOTO_3N) return "photo_3n" as const;
@@ -121,6 +144,7 @@ export default function ProductsPage() {
     autoFetch: true,
     includeVariants: true,
     includeInactive: true,
+    featuredOnly,
     breeder_id: breederId ? Number(breederId) : undefined,
     categoryId: categoryId && categoryId !== "all" ? categoryId : undefined,
     categoryFilterMode:
@@ -130,6 +154,17 @@ export default function ProductsPage() {
         ? (dominance as (typeof STRAIN_DOMINANCE_OPTIONS)[number])
         : undefined,
   });
+
+  const setListView = useCallback(
+    (mode: "all" | "featured") => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (mode === "featured") params.set("view", "featured");
+      else params.delete("view");
+      const q = params.toString();
+      router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<ProductFull | null>(null);
@@ -214,17 +249,43 @@ export default function ProductsPage() {
   }, [fetchBreeders, fetchCategories]);
 
   return (
-    <div className="space-y-5">
+    <div className={cn("space-y-5", JOURNAL_PRODUCT_FONT_VARS)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-zinc-900">จัดการสินค้า</h1>
           <p className="text-sm text-zinc-500">
             {filteredProducts.length} รายการ
             {products.length !== filteredProducts.length ? ` (จาก ${products.length})` : ""}
+            {featuredOnly ? (
+              <span className="ml-2 font-[family-name:var(--font-journal-product-mono)] text-xs text-emerald-800">
+                Featured view · reorder via Priority
+              </span>
+            ) : null}
           </p>
         </div>
         <Button onClick={openAdd} className="bg-primary text-white hover:bg-primary/90">
           <Plus className="mr-1.5 h-4 w-4" /> เพิ่มสินค้าใหม่
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant={!featuredOnly ? "default" : "outline"}
+          size="sm"
+          className={!featuredOnly ? "bg-emerald-800 hover:bg-emerald-900" : ""}
+          onClick={() => setListView("all")}
+        >
+          ทั้งหมด
+        </Button>
+        <Button
+          type="button"
+          variant={featuredOnly ? "default" : "outline"}
+          size="sm"
+          className={featuredOnly ? "bg-emerald-800 hover:bg-emerald-900" : ""}
+          onClick={() => setListView("featured")}
+        >
+          แนะนำ (Featured)
         </Button>
       </div>
 
@@ -313,6 +374,11 @@ export default function ProductsPage() {
               <TableRow className="bg-zinc-50">
                 <TableHead className="w-12"></TableHead>
                 <TableHead>ชื่อสินค้า</TableHead>
+                {featuredOnly && (
+                  <TableHead className="w-[5.5rem] font-[family-name:var(--font-journal-product-mono)] text-xs font-medium uppercase tracking-wide text-zinc-600">
+                    Priority
+                  </TableHead>
+                )}
                 <TableHead>หมวดหมู่</TableHead>
                 <TableHead>แบรนด์</TableHead>
                 <TableHead>ประเภทพันธุกรรม</TableHead>
@@ -325,9 +391,12 @@ export default function ProductsPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <ProductsTableSkeleton />
+                <ProductsTableSkeleton featuredMode={featuredOnly} />
               ) : filteredProducts.length === 0 ? (
-                <ProductsEmptyState hasSearch={Boolean(searchTerm.trim())} />
+                <ProductsEmptyState
+                  hasSearch={Boolean(searchTerm.trim())}
+                  featuredOnly={featuredOnly}
+                />
               ) : (
                 filteredProducts.map((product) => (
                   <ProductTableRow
@@ -335,6 +404,7 @@ export default function ProductsPage() {
                     product={product as ProductFull}
                     onEdit={openEdit}
                     onStatusUpdated={refetch}
+                    featuredManage={featuredOnly}
                   />
                 ))
               )}

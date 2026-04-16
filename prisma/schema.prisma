@@ -225,6 +225,12 @@ model orders {
   tracking_number     String?
   created_at          DateTime?           @default(now()) @db.Timestamptz(6)
   shipping_address    String?
+  shipping_name       String?
+  /** Optional email for transactional notifications (claim/manual when no web customer email). */
+  shipping_email      String?
+  shipping_phone      String?
+  /** Opaque token for customer self-service claim page (manual orders awaiting address + slip). */
+  claim_token         String?             @unique @db.VarChar(48)
   slip_url            String?
   reject_note         String?
   shipping_provider   String?

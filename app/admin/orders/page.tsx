@@ -28,6 +28,7 @@ import {
 } from "@/lib/receipt-pdf";
 import { computeOrderReceiptFinancials } from "@/lib/order-receipt-math";
 import { getSiteOrigin } from "@/lib/get-url";
+import { carrierLabelFromCode, carrierTrackingUrl } from "@/lib/shipping-carriers";
 import { generateOrderFlexMessage } from "@/lib/line-flex";
 import { createReceiptDownloadQuery } from "@/lib/receipt-download-token";
 import { fetchPdfSettings } from "@/lib/pdf-settings";
@@ -46,6 +47,7 @@ const SHIPPING_PROVIDERS = [
 const STATUS_TABS = [
   { value: "", label: "ทั้งหมด" },
   { value: "AWAITING_VERIFICATION", label: "รอตรวจสอบ" },
+  { value: "PENDING_INFO", label: "รอลูกค้ากรอก" },
   { value: "PENDING", label: "รอดำเนินการ" },
   { value: "PAID", label: "ชำระแล้ว" },
   { value: "COMPLETED", label: "เสร็จสิ้น" },
@@ -101,6 +103,7 @@ function buildLineFlexJsonFromOrderDetail(d: {
 
 function statusStyle(status: string): string {
   switch (status) {
+    case "PENDING_INFO":            return "bg-violet-100 text-violet-900 border-violet-200";
     case "AWAITING_VERIFICATION": return "bg-amber-100 text-amber-800 border-amber-200";
     case "PAID":
     case "COMPLETED":             return "bg-accent text-primary border-primary/25";
@@ -114,7 +117,7 @@ function statusStyle(status: string): string {
 
 function statusLabel(status: string): string {
   return (
-    { AWAITING_VERIFICATION: "รอตรวจสอบ", PENDING: "รอดำเนินการ",
+    { AWAITING_VERIFICATION: "รอตรวจสอบ", PENDING_INFO: "รอลูกค้ากรอกข้อมูล", PENDING: "รอดำเนินการ",
       PAID: "ชำระแล้ว", COMPLETED: "เสร็จสิ้น", SHIPPED: "จัดส่งแล้ว", DELIVERED: "ส่งถึงแล้ว",
       CANCELLED: "ยกเลิก", VOIDED: "ยกเลิก/คืน" }[status] ?? status
   );
@@ -555,6 +558,7 @@ function OrderTableRow({
 type OrderDetail = {
   id: number;
   orderNumber: string;
+  claimToken?: string | null;
   sourceQuotationNumber?: string | null;
   customerName: string | null;
   customerEmail: string | null;
@@ -1034,7 +1038,23 @@ export default function AdminOrdersPage() {
                   <Copy className="mr-1.5 h-4 w-4" />
                   Copy Flex JSON
                 </Button>
-                {detailModal.status === "PENDING" && (
+                {detailModal.claimToken && detailModal.status === "PENDING_INFO" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-emerald-200 text-emerald-800 hover:bg-emerald-50"
+                    onClick={() => {
+                      const url = `${getSiteOrigin()}/order/claim/${detailModal.claimToken}`;
+                      void navigator.clipboard.writeText(url).then(() => {
+                        pushToast("คัดลอกลิงก์รับออเดอร์แล้ว", "success");
+                      });
+                    }}
+                  >
+                    <Copy className="mr-1.5 h-4 w-4" />
+                    Copy Claim Link
+                  </Button>
+                )}
+                {(detailModal.status === "PENDING" || detailModal.status === "PENDING_INFO") && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -1133,9 +1153,100 @@ export default function AdminOrdersPage() {
                 <div className="space-y-1 rounded-lg border border-zinc-200 bg-zinc-50/50 p-3 text-sm">
                   <p><span className="text-zinc-500">ชื่อ:</span> {detailModal.customerName ?? "—"}</p>
                   <p><span className="text-zinc-500">โทร:</span> {detailModal.customerPhone ?? "—"}</p>
+                  <p><span className="text-zinc-500">อีเมล:</span> {detailModal.customerEmail ?? "—"}</p>
                   <p className="whitespace-pre-wrap"><span className="text-zinc-500">ที่อยู่:</span> {detailModal.shippingAddress ?? "—"}</p>
                 </div>
               </div>
+
+              {detailModal.status === "AWAITING_VERIFICATION" && (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90"
+                    disabled={updatingId !== null}
+                    onClick={() => {
+                      void callStatus(
+                        detailModal.id,
+                        { action: "approve" },
+                        "อนุมัติการชำระเงินสำเร็จ ✓"
+                      ).then(() => setDetailModal(null));
+                    }}
+                  >
+                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                    ยืนยันการชำระเงิน
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-red-200 text-red-600"
+                    disabled={updatingId !== null}
+                    onClick={() => {
+                      const id = detailModal.id;
+                      setDetailModal(null);
+                      handleRejectOpen(id);
+                    }}
+                  >
+                    <XCircle className="mr-1.5 h-4 w-4" />
+                    ปฏิเสธ
+                  </Button>
+                </div>
+              )}
+
+              {(detailModal.status === "PAID" || detailModal.status === "COMPLETED") && (
+                <Button
+                  size="sm"
+                  className="w-full bg-primary hover:bg-primary/90 sm:w-auto"
+                  disabled={updatingId !== null}
+                  onClick={() => {
+                    const id = detailModal.id;
+                    setDetailModal(null);
+                    handleShipOpen(id);
+                  }}
+                >
+                  <Truck className="mr-1.5 h-4 w-4" />
+                  เลขพัสดุ &amp; จัดส่ง
+                </Button>
+              )}
+
+              {(detailModal.trackingNumber ||
+                detailModal.shippingProvider ||
+                detailModal.status === "SHIPPED") && (
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-zinc-700">ขนส่ง / Courier</h4>
+                  <div className="space-y-2 rounded-lg border border-blue-100 bg-blue-50/60 p-3 text-sm">
+                    <p>
+                      <span className="text-zinc-500">ผู้ให้บริการ:</span>{" "}
+                      <span className="font-medium text-zinc-800">
+                        {carrierLabelFromCode(detailModal.shippingProvider)}
+                      </span>
+                    </p>
+                    {detailModal.trackingNumber ? (
+                      <p className="font-mono text-base font-semibold text-blue-950">
+                        <span className="text-zinc-500 font-sans text-sm font-normal">เลขพัสดุ: </span>
+                        {detailModal.trackingNumber}
+                      </p>
+                    ) : (
+                      <p className="text-zinc-500">ยังไม่มีเลขพัสดุ</p>
+                    )}
+                    {detailModal.trackingNumber &&
+                      detailModal.shippingProvider &&
+                      detailModal.status === "SHIPPED" && (
+                        <a
+                          href={carrierTrackingUrl(
+                            detailModal.trackingNumber,
+                            detailModal.shippingProvider
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex text-sm font-medium text-primary underline"
+                        >
+                          เปิดลิงก์ติดตามพัสดุ →
+                        </a>
+                      )}
+                  </div>
+                </div>
+              )}
+
               {detailModal.customerNote && (
                 <div>
                   <h4 className="mb-2 text-sm font-semibold text-zinc-700">หมายเหตุ</h4>
@@ -1147,12 +1258,6 @@ export default function AdminOrdersPage() {
               {detailModal.status === "VOIDED" && detailModal.voidReason && (
                 <div className="rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-600">
                   เหตุผลยกเลิก: {detailModal.voidReason}
-                </div>
-              )}
-              {detailModal.trackingNumber && (
-                <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700">
-                  <Truck className="h-4 w-4 shrink-0" />
-                  <span>{detailModal.shippingProvider?.replace("_", " ")} · {detailModal.trackingNumber}</span>
                 </div>
               )}
             </div>

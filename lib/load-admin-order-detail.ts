@@ -33,6 +33,7 @@ export type AdminOrderDetailPayload = {
   paymentMethod: string | null;
   createdAt: Date;
   lineUserId: string | null;
+  claimToken: string | null;
   items: {
     id: number;
     productName: string;
@@ -94,7 +95,10 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
 
   const customerName = order.customer_name ?? order.customers?.full_name ?? null;
   const customerPhone = order.customer_phone ?? order.customers?.phone ?? null;
-  const customerEmail = order.customers?.email ?? null;
+  const customerEmail =
+    order.customers?.email?.trim() ||
+    order.shipping_email?.trim() ||
+    null;
   const shippingAddress = order.shipping_address ?? order.customers?.address ?? null;
 
   const items = order.order_items.map((i) => {
@@ -142,6 +146,7 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
     paymentMethod: order.payment_method,
     createdAt: order.created_at,
     lineUserId: order.line_user_id?.trim() ? order.line_user_id.trim() : null,
+    claimToken: order.claim_token?.trim() ? order.claim_token.trim() : null,
     items,
   };
 }

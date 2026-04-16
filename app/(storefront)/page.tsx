@@ -27,8 +27,15 @@ import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { BlogHeroSlogan } from "@/components/storefront/magazine/BlogHeroSlogan";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
 import { isResearchCategory } from "@/lib/blog-research-category";
+import { magazineCategoryLabel } from "@/lib/blog-category-labels";
 
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-home-serif" });
+
+/** Homepage featured insight hero — editorial campaign headline (links to latest / pinned story via API order). */
+const INSIGHT_FEATURED_HEADLINE_TH =
+  "Auto vs. Photo vs. Fast Version: เลือกเมล็ดพันธุ์แบบไหนที่ใช่สำหรับพื้นที่ของคุณ? 🇹🇭";
+const INSIGHT_FEATURED_HEADLINE_EN =
+  "Auto vs. Photo vs. Fast Version: Which seed type fits your grow space?";
 
 const staggerContainer: Variants = {
   hidden: {},
@@ -40,8 +47,64 @@ const cardVariant: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
+function InsightGridCard({ post }: { post: MagazinePostPublic }) {
+  const { t, locale } = useLanguage();
+  const img = resolvePublicAssetUrl(post.featured_image);
+  const research = isResearchCategory(post.category);
+  return (
+    <article className="flex flex-col overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition hover:shadow-lg">
+      <Link href={`/blog/${post.slug}`} className="relative block aspect-video overflow-hidden bg-zinc-100">
+        {img ? (
+          <Image
+            src={img}
+            alt=""
+            fill
+            className="object-cover transition duration-500 hover:scale-[1.02]"
+            sizes="(max-width: 1024px) 100vw, 33vw"
+            placeholder="blur"
+            blurDataURL={SHIMMER_BLUR_DATA_URL}
+            unoptimized={!img.includes("supabase.co")}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">
+            <Leaf className="h-10 w-10 text-zinc-300" />
+          </div>
+        )}
+      </Link>
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          {post.category && (
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-900">
+              {magazineCategoryLabel(post.category, locale)}
+            </span>
+          )}
+          {research && <VerifiedResearchBadge />}
+        </div>
+        <h3 className="font-[family-name:var(--font-home-serif)] line-clamp-2 text-lg font-semibold leading-snug text-zinc-900">
+          <Link href={`/blog/${post.slug}`} className="hover:text-emerald-900">
+            {post.title}
+          </Link>
+        </h3>
+        {post.excerpt && (
+          <p className="mt-2 line-clamp-3 flex-1 text-sm text-zinc-600">{post.excerpt}</p>
+        )}
+        <Button
+          asChild
+          className="mt-4 w-full bg-emerald-800 font-semibold text-white hover:bg-emerald-900 sm:w-auto"
+        >
+          <Link href={`/blog/${post.slug}`}>{t("อ่านเพิ่มเติม", "Read article")}</Link>
+        </Button>
+      </div>
+    </article>
+  );
+}
+
 function InsightSection({ posts, loading }: { posts: MagazinePostPublic[]; loading: boolean }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const featured = posts[0];
+  const rest = posts.slice(1);
+  const featuredHeadline = locale === "en" ? INSIGHT_FEATURED_HEADLINE_EN : INSIGHT_FEATURED_HEADLINE_TH;
+  const featuredImg = featured ? resolvePublicAssetUrl(featured.featured_image) : null;
 
   return (
     <section className="border-b border-zinc-100 bg-white pt-20 pb-14 sm:pt-24 sm:pb-16">
@@ -52,7 +115,7 @@ function InsightSection({ posts, loading }: { posts: MagazinePostPublic[]; loadi
             {t("ข้อมูลเชิงลึก", "Insights")}
           </span>
           <h2 className="font-[family-name:var(--font-home-serif)] text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
-            Smile Seed Blog
+            {t("คลังความรู้สายเขียว", "Green knowledge vault")}
           </h2>
           <BlogHeroSlogan />
           <p className="mx-auto mt-1 max-w-2xl text-sm text-zinc-600">
@@ -64,78 +127,87 @@ function InsightSection({ posts, loading }: { posts: MagazinePostPublic[]; loadi
         </div>
 
         {loading ? (
-          <div className="grid gap-8 sm:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-[280px] animate-pulse rounded-sm border border-[#f3f4f6] bg-zinc-50"
-              />
-            ))}
+          <div className="space-y-8">
+            <div className="grid min-h-[320px] animate-pulse gap-0 overflow-hidden rounded-sm border border-zinc-100 bg-zinc-100 lg:grid-cols-2">
+              <div className="hidden bg-zinc-200 lg:block" />
+              <div className="min-h-[220px] bg-zinc-100 lg:min-h-0" />
+            </div>
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-[280px] animate-pulse rounded-sm border border-[#f3f4f6] bg-zinc-50"
+                />
+              ))}
+            </div>
           </div>
         ) : posts.length === 0 ? (
           <p className="text-center text-sm text-zinc-500">
             {t("ยังไม่มีบทความ", "No articles yet.")}{" "}
             <Link href="/blog" className="font-medium text-emerald-800 hover:underline">
-              {t("ไปที่ Smile Seed Blog", "Visit Smile Seed Blog")}
+              {t("ไปที่คลังความรู้สายเขียว", "Visit the knowledge vault")}
             </Link>
           </p>
         ) : (
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.map((p) => {
-              const img = resolvePublicAssetUrl(p.featured_image);
-              const research = isResearchCategory(p.category);
-              return (
-                <article
-                  key={p.id}
-                  className="flex flex-col overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition hover:shadow-lg"
-                >
-                  <Link href={`/blog/${p.slug}`} className="relative block aspect-video overflow-hidden bg-zinc-100">
-                    {img ? (
-                      <Image
-                        src={img}
-                        alt=""
-                        fill
-                        className="object-cover transition duration-500 hover:scale-[1.02]"
-                        sizes="(max-width: 1024px) 100vw, 33vw"
-                        placeholder="blur"
-                        blurDataURL={SHIMMER_BLUR_DATA_URL}
-                        unoptimized={!img.includes("supabase.co")}
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">
-                        <Leaf className="h-10 w-10 text-zinc-300" />
-                      </div>
-                    )}
-                  </Link>
-                  <div className="flex flex-1 flex-col p-5">
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      {p.category && (
-                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-900">
-                          {p.category.name}
-                        </span>
-                      )}
-                      {research && <VerifiedResearchBadge />}
-                    </div>
-                    <h3 className="font-[family-name:var(--font-home-serif)] line-clamp-2 text-lg font-semibold leading-snug text-zinc-900">
-                      <Link href={`/blog/${p.slug}`} className="hover:text-emerald-900">
-                        {p.title}
-                      </Link>
-                    </h3>
-                    {p.excerpt && (
-                      <p className="mt-2 line-clamp-3 flex-1 text-sm text-zinc-600">{p.excerpt}</p>
-                    )}
+          <div className="space-y-10">
+            {featured && (
+              <article className="group overflow-hidden rounded-sm border border-zinc-200/90 bg-zinc-50 shadow-[0_2px_28px_-6px_rgba(6,78,59,0.12)] lg:grid lg:min-h-[min(28rem,70vh)] lg:grid-cols-2 lg:items-stretch lg:gap-0">
+                <div className="order-1 flex flex-col justify-center border-zinc-100 px-6 py-10 sm:px-10 lg:order-1 lg:border-r lg:py-14 lg:pl-10 xl:pl-14">
+                  <span className="mb-4 inline-flex w-fit rounded-full border border-emerald-200/90 bg-white/80 px-3 py-1 font-[family-name:var(--font-home-serif)] text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
+                    {t("เกร็ดความรู้", "Knowledge")}
+                  </span>
+                  <h3 className="font-[family-name:var(--font-home-serif)] text-2xl font-bold leading-[1.25] tracking-tight text-emerald-800 sm:text-3xl md:text-[1.65rem] md:leading-snug">
+                    {featuredHeadline}
+                  </h3>
+                  {featured.excerpt && (
+                    <p className="mt-5 line-clamp-5 text-sm font-light leading-relaxed text-zinc-600 sm:text-base">
+                      {featured.excerpt}
+                    </p>
+                  )}
+                  <div className="mt-8">
                     <Button
                       asChild
-                      className="mt-4 w-full bg-emerald-800 font-semibold text-white hover:bg-emerald-900 sm:w-auto"
+                      size="lg"
+                      className="rounded-sm bg-emerald-800 px-8 font-semibold text-white shadow-none hover:bg-emerald-900"
                     >
-                      <Link href={`/blog/${p.slug}`}>
-                        {t("อ่านเพิ่มเติม", "Read article")}
-                      </Link>
+                      <Link href={`/blog/${featured.slug}`}>{t("อ่านบทความ", "Read article")}</Link>
                     </Button>
                   </div>
-                </article>
-              );
-            })}
+                </div>
+                <Link
+                  href={`/blog/${featured.slug}`}
+                  className="relative order-2 block min-h-[260px] w-full overflow-hidden bg-zinc-200 lg:min-h-full"
+                  aria-label={t("อ่านบทความ", "Read article")}
+                >
+                  {featuredImg ? (
+                    <Image
+                      src={featuredImg}
+                      alt=""
+                      fill
+                      className="object-cover transition duration-700 group-hover:scale-[1.03]"
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      priority
+                      placeholder="blur"
+                      blurDataURL={SHIMMER_BLUR_DATA_URL}
+                      unoptimized={!featuredImg.includes("supabase.co")}
+                    />
+                  ) : (
+                    <div className="flex h-full min-h-[260px] items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">
+                      <Leaf className="h-16 w-16 text-zinc-300" />
+                    </div>
+                  )}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-900/10 via-transparent to-transparent" />
+                </Link>
+              </article>
+            )}
+
+            {rest.length > 0 && (
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {rest.map((p) => (
+                  <InsightGridCard key={p.id} post={p} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -176,7 +248,7 @@ function HomePageMain() {
     (async () => {
       setInsightsLoading(true);
       try {
-        const res = await fetch("/api/storefront/magazine/recent?take=3");
+        const res = await fetch("/api/storefront/magazine/recent?take=4");
         const json = (await res.json()) as { posts?: MagazinePostPublic[] };
         if (!cancelled && res.ok && Array.isArray(json.posts)) {
           setInsights(json.posts);

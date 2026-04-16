@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
+import { randomUUID } from "crypto";
 import { generateOrderNumber } from "@/lib/order-utils";
 import { sendLowStockAlert } from "@/services/line-messaging";
 
@@ -52,6 +53,8 @@ export async function POST(req: NextRequest) {
 
     const { items, status, totalAmount: overrideTotal, points_redeemed = 0, points_discount_amount = 0, promotion_rule_id, promotion_discount_amount = 0, customer_profile_id, customer } = parsed.data;
     const totalAmount = overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0);
+    const claimToken = status === "PENDING_INFO" ? randomUUID() : null;
+    const deductStock = status === "COMPLETED" || status === "PENDING_INFO";
 
     const orderNumber = generateOrderNumber();
     let totalCostAcc = 0;
@@ -71,7 +74,8 @@ export async function POST(req: NextRequest) {
         points_discount_amount: new Prisma.Decimal(points_discount_amount),
         promotion_rule_id: promotion_rule_id ? BigInt(promotion_rule_id) : null,
         promotion_discount_amount: new Prisma.Decimal(promotion_discount_amount),
-        payment_method: customer?.payment_method ?? null,
+        payment_method: status === "PENDING_INFO" ? "TRANSFER" : customer?.payment_method ?? null,
+        claim_token: claimToken,
         shipping_address: customer?.address ?? null,
         customer_name: customer?.full_name ?? null,
         customer_phone: customer?.phone ?? null,
@@ -89,7 +93,7 @@ export async function POST(req: NextRequest) {
         });
         if (!variant) throw new Error(`Variant ${item.variantId} not found`);
         const currentStock = variant.stock ?? 0;
-        if (status === "COMPLETED" && currentStock < item.quantity) {
+        if (deductStock && currentStock < item.quantity) {
           throw new Error(
             `Insufficient stock for ${item.productName} (${item.unitLabel}): need ${item.quantity}, have ${currentStock}`
           );
@@ -99,7 +103,7 @@ export async function POST(req: NextRequest) {
         const costPrice = Number(variant.cost_price ?? 0);
         totalCostAcc += costPrice * item.quantity;
 
-        if (status === "COMPLETED") {
+        if (deductStock) {
           const afterStock = currentStock - item.quantity;
           const threshold = variant.low_stock_threshold ?? 5;
           if (afterStock <= threshold) {
@@ -125,7 +129,7 @@ export async function POST(req: NextRequest) {
         };
         await tx.order_items.create({ data: lineCreate });
 
-        if (status === "COMPLETED") {
+        if (deductStock) {
           await tx.product_variants.update({
             where: { id: BigInt(item.variantId) },
             data: { stock: { decrement: item.quantity } },
@@ -160,7 +164,7 @@ export async function POST(req: NextRequest) {
       return { orderId: order.id };
     });
 
-    if (status === "COMPLETED" && postDeductionLowStockAlerts.length > 0) {
+    if (deductStock && postDeductionLowStockAlerts.length > 0) {
       void (async () => {
         for (const v of postDeductionLowStockAlerts) {
           const r = await sendLowStockAlert({ productName: v.name, unitLabel: v.unitLabel, stock: v.stock });
@@ -170,7 +174,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      bigintToJson({ orderNumber, status, orderId: createdOrderId }),
+      bigintToJson({
+        orderNumber,
+        status,
+        orderId: createdOrderId,
+        claimToken: claimToken ?? undefined,
+      }),
       { status: 201 }
     );
   } catch (err) {

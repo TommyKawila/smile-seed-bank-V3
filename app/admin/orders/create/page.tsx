@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { Search, Plus, Minus, Trash2, ShoppingBag, Loader2, UserPlus, X, Gift } from "lucide-react";
+import {
+  Search, Plus, Minus, Trash2, ShoppingBag, Loader2, UserPlus, X, Gift, Copy,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +34,7 @@ import {
   type PosMiniInvoiceData,
   type PosMiniInvoiceLine,
 } from "@/components/admin/PosMiniInvoiceModal";
+import { getSiteOrigin } from "@/lib/get-url";
 
 function posPaymentMethodLabelTh(code: string): string {
   const m: Record<string, string> = {
@@ -99,6 +102,7 @@ export default function CreateOrderPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [miniInvoice, setMiniInvoice] = useState<PosMiniInvoiceData | null>(null);
+  const [lastClaimUrl, setLastClaimUrl] = useState<string | null>(null);
 
   const [customer, setCustomer] = useState<CustomerInfo>({
     full_name: "",
@@ -307,13 +311,15 @@ export default function CreateOrderPage() {
   }, [products, search, breederFilter, seedTypeFilter, dominanceFilter]);
 
   // ── Submit Manual Order (uses /api/admin/orders/simple with Prisma + stock deduction) ──
-  const handleSubmit = async () => {
+  const submitPosOrder = async (mode: "completed" | "claim") => {
     const paidItems = items.filter((i) => !i.isFreeGift);
     if (paidItems.length === 0) return;
     setIsSubmitting(true);
     setSubmitError(null);
+    setLastClaimUrl(null);
 
     try {
+      const isClaim = mode === "claim";
       const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -326,10 +332,10 @@ export default function CreateOrderPage() {
             quantity: i.quantity,
             price: i.price,
           })),
-          status: "COMPLETED",
+          status: isClaim ? "PENDING_INFO" : "COMPLETED",
           totalAmount: grandTotal,
-          points_redeemed: effectivePointsRedeemed,
-          points_discount_amount: pointsDiscountAmount,
+          points_redeemed: isClaim ? 0 : effectivePointsRedeemed,
+          points_discount_amount: isClaim ? 0 : pointsDiscountAmount,
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
@@ -354,6 +360,22 @@ export default function CreateOrderPage() {
         result.orderId != null && result.orderId !== ""
           ? String(result.orderId)
           : undefined;
+
+      if (isClaim) {
+        const ct = result.claimToken != null && result.claimToken !== "" ? String(result.claimToken) : "";
+        if (ct) setLastClaimUrl(`${getSiteOrigin()}/order/claim/${ct}`);
+        setSubmitSuccess(
+          ct
+            ? "สร้างออเดอร์แล้ว — คัดลอกลิงก์ด้านล่างส่งให้ลูกค้า (กรอกที่อยู่ + อัปโหลดสลิป)"
+            : "สร้างออเดอร์แล้ว — ไม่พบ claim token"
+        );
+        clearCart();
+        setSelectedCustomer(null);
+        setPointsToRedeem(0);
+        setCustomer({ full_name: "", phone: "", address: "", payment_method: "CASH", note: "" });
+        return;
+      }
+
       const miniLines: PosMiniInvoiceLine[] = items.map((i) => ({
         productName: i.productName,
         unitLabel: i.unitLabel,
@@ -922,12 +944,32 @@ export default function CreateOrderPage() {
               {submitSuccess && (
                 <p className="rounded-lg bg-accent px-3 py-2 text-sm text-primary">{submitSuccess}</p>
               )}
+              {lastClaimUrl && (
+                <div className="flex flex-col gap-2 rounded-lg border border-primary/25 bg-zinc-50 p-3">
+                  <p className="text-xs font-medium text-zinc-600">ลิงก์ให้ลูกค้ากรอกข้อมูล</p>
+                  <p className="break-all font-mono text-[11px] text-zinc-800">{lastClaimUrl}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="border-primary/30"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(lastClaimUrl).then(() => {
+                        toast({ title: "คัดลอกลิงก์แล้ว" });
+                      });
+                    }}
+                  >
+                    <Copy className="mr-1.5 h-4 w-4" />
+                    Copy Claim Link
+                  </Button>
+                </div>
+              )}
               {submitError && (
                 <p className="text-sm text-red-500">{submitError}</p>
               )}
 
               <Button
-                onClick={handleSubmit}
+                onClick={() => void submitPosOrder("completed")}
                 disabled={items.filter((i) => !i.isFreeGift).length === 0 || isSubmitting}
                 className="w-full bg-primary text-white hover:bg-primary/90"
               >
@@ -936,6 +978,15 @@ export default function CreateOrderPage() {
                 ) : (
                   <>ยืนยันออเดอร์ · {formatPrice(grandTotal)}</>
                 )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-emerald-700/30 text-emerald-800 hover:bg-emerald-50"
+                onClick={() => void submitPosOrder("claim")}
+                disabled={items.filter((i) => !i.isFreeGift).length === 0 || isSubmitting}
+              >
+                สร้าง + ลิงก์ให้ลูกค้ากรอก (ที่อยู่ / สลิป)
               </Button>
             </CardContent>
           </Card>

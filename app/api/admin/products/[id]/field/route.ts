@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/server";
 const FieldSchema = z.object({
   strain_dominance: z.enum(["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"]).nullable().optional(),
   image_url: z.string().url().nullable().optional(),
+  is_featured: z.boolean().optional(),
+  featured_priority: z.coerce.number().int().min(0).max(9999).nullable().optional(),
 });
 
 export async function PATCH(
