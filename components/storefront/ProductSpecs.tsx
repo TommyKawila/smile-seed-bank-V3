@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Mars, Venus } from "lucide-react";
 import type { Product } from "@/types/supabase";
+import { cn } from "@/lib/utils";
 
 /** Compact feminized chip — flat secondary (lavender) per Premium Eco-Clinical. */
 export function FeminizedSeedSpecChip({ className }: { className?: string }) {
@@ -11,7 +12,9 @@ export function FeminizedSeedSpecChip({ className }: { className?: string }) {
       className={`inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 ${className ?? ""}`}
     >
       <Venus className="h-6 w-6 shrink-0 text-secondary-foreground" aria-hidden />
-      <span className="text-xs font-semibold tracking-wide text-secondary-foreground">Fem</span>
+      <span className="font-[family-name:var(--font-journal-product-mono,ui-monospace),ui-monospace] text-xs font-medium tabular-nums tracking-wide text-secondary-foreground">
+        Fem
+      </span>
     </div>
   );
 }
@@ -23,7 +26,9 @@ export function RegularSeedSpecChip({ className }: { className?: string }) {
       className={`inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1.5 ${className ?? ""}`}
     >
       <Mars className="h-6 w-6 shrink-0 text-primary" aria-hidden />
-      <span className="text-xs font-semibold tracking-wide text-primary">Reg</span>
+      <span className="font-[family-name:var(--font-journal-product-mono,ui-monospace),ui-monospace] text-xs font-medium tabular-nums tracking-wide text-primary">
+        Reg
+      </span>
     </div>
   );
 }
@@ -33,7 +38,9 @@ export function FeminizedStatCard({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-border/40 bg-secondary p-4 text-center">
       <Venus className="mb-1.5 h-6 w-6 text-secondary-foreground" aria-hidden />
-      <span className="text-xl font-semibold tracking-tight text-secondary-foreground">Fem</span>
+      <span className="font-[family-name:var(--font-journal-product-mono,ui-monospace),ui-monospace] text-xl font-medium tabular-nums tracking-tight text-secondary-foreground">
+        Fem
+      </span>
       <span className="mt-0.5 text-xs font-medium uppercase tracking-wider text-secondary-foreground">
         {label}
       </span>
@@ -46,7 +53,9 @@ export function RegularStatCard({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-border/40 bg-muted/50 p-4 text-center">
       <Mars className="mb-1.5 h-6 w-6 text-primary" aria-hidden />
-      <span className="text-xl font-semibold tracking-tight text-primary">Reg</span>
+      <span className="font-[family-name:var(--font-journal-product-mono,ui-monospace),ui-monospace] text-xl font-medium tabular-nums tracking-tight text-primary">
+        Reg
+      </span>
       <span className="mt-0.5 text-xs font-medium uppercase tracking-wider text-primary">
         {label}
       </span>
@@ -82,10 +91,12 @@ export function GeneticRatioBar({
   product,
   variant = "card",
   t,
+  className,
 }: {
   product: Pick<Product, "sativa_percent" | "indica_percent" | "sativa_ratio" | "indica_ratio">;
   variant?: "compact" | "card";
   t: TFn;
+  className?: string;
 }) {
   const p = getGeneticPercents(product);
   if (!p) return null;
@@ -120,11 +131,11 @@ export function GeneticRatioBar({
   );
 
   if (variant === "compact") {
-    return <div className="space-y-1">{bar}</div>;
+    return <div className={cn("space-y-1", className)}>{bar}</div>;
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-muted/30 p-4">
+    <div className={cn("rounded-2xl border border-border bg-muted/30 p-4", className)}>
       <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
         {t("สัดส่วนพันธุกรรม", "Genetic ratio")}
       </p>

@@ -59,8 +59,8 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
     getTrendingPosts(8),
     getBlogCategories(),
     categorySlug
-      ? getPublishedPostsByCategorySlug(categorySlug, 12)
-      : getRecentPublishedPosts(9),
+      ? getPublishedPostsByCategorySlug(categorySlug, 15)
+      : getRecentPublishedPosts(15),
   ]);
 
   return (

@@ -286,29 +286,32 @@ export function MagazinePostForm({
     });
   };
 
+  const fieldClass =
+    "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:border-emerald-700/40 focus:outline-none focus:ring-1 focus:ring-emerald-700/25";
+
   return (
-    <div className="min-h-full bg-zinc-950 text-zinc-100">
-      <div className="sticky top-0 z-30 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
+    <div className="min-h-full bg-white text-zinc-900">
+      <div className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/admin/magazine"
-              className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-200"
+              className="rounded-lg p-2 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800/80">
                 Blog CMS
               </p>
-              <h1 className="truncate text-lg font-semibold tracking-tight text-white">
+              <h1 className="truncate text-lg font-semibold tracking-tight text-zinc-900">
                 {isEdit ? "Edit article" : "New article"}
               </h1>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {feedback && (
-              <span className="text-sm text-emerald-400/90">{feedback}</span>
+              <span className="text-sm text-emerald-800">{feedback}</span>
             )}
             {(pending || imageBusy) && (
               <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
@@ -317,7 +320,7 @@ export function MagazinePostForm({
               type="button"
               disabled={saveDisabled}
               onClick={() => save("DRAFT")}
-              className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 disabled:opacity-50"
+              className="rounded-lg border border-emerald-800/35 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50 disabled:opacity-50"
             >
               Save draft
             </button>
@@ -325,7 +328,7 @@ export function MagazinePostForm({
               type="button"
               disabled={saveDisabled}
               onClick={() => save("PUBLISHED")}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:opacity-50"
+              className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 disabled:opacity-50"
             >
               {isEdit ? "Update & publish" : "Publish"}
             </button>
@@ -335,27 +338,27 @@ export function MagazinePostForm({
 
       <div className="mx-auto max-w-4xl space-y-10 px-4 py-10">
         {error && (
-          <p className="rounded-lg border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+          <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
           </p>
         )}
 
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
             Title
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-base text-white placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+            className={`${fieldClass} text-base`}
             placeholder="Article title"
           />
         </div>
 
         <div className="space-y-2">
           <div className="flex flex-wrap items-end justify-between gap-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
               Slug
             </label>
             <button
@@ -364,7 +367,7 @@ export function MagazinePostForm({
                 setSlug(generateSlug(title));
                 setSlugDirty(false);
               }}
-              className="text-xs font-medium text-emerald-500/90 hover:text-emerald-400"
+              className="text-xs font-semibold text-emerald-800 hover:text-emerald-950"
             >
               Regenerate from title
             </button>
@@ -376,33 +379,33 @@ export function MagazinePostForm({
               setSlug(e.target.value);
               setSlugDirty(true);
             }}
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 font-mono text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+            className={`${fieldClass} font-mono text-[13px]`}
             placeholder="url-friendly-slug"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
             Excerpt
           </label>
           <textarea
             value={excerpt}
             onChange={(e) => setExcerpt(e.target.value)}
             rows={3}
-            className="w-full resize-y rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+            className={`${fieldClass} resize-y`}
             placeholder="Short summary for listings and SEO"
           />
         </div>
 
         <div className="grid gap-8 sm:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
               Category
             </label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-200 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+              className={fieldClass}
             >
               <option value="">— None —</option>
               {categories.map((c) => (
@@ -413,7 +416,7 @@ export function MagazinePostForm({
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
               Status
             </label>
             <select
@@ -421,7 +424,7 @@ export function MagazinePostForm({
               onChange={(e) =>
                 setStatus(e.target.value as "DRAFT" | "PUBLISHED")
               }
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-200 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+              className={fieldClass}
             >
               <option value="DRAFT">Draft</option>
               <option value="PUBLISHED">Published</option>
@@ -435,6 +438,8 @@ export function MagazinePostForm({
           onPhaseChange={(phase) => setImageBusy(phase !== "idle")}
           disabled={pending}
           label="Featured image"
+          variant="product"
+          uploadTarget="magazine"
         />
 
         <RelatedProductsSection
@@ -443,20 +448,20 @@ export function MagazinePostForm({
         />
 
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
             Tags
           </label>
           <input
             type="text"
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+            className={fieldClass}
             placeholder="comma, separated, tags"
           />
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <div className="space-y-4 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
             Newsletter (on publish)
           </p>
           <label className="flex cursor-pointer items-start gap-3">
@@ -464,16 +469,16 @@ export function MagazinePostForm({
               type="checkbox"
               checked={sendEmail}
               onChange={(e) => setSendEmail(e.target.checked)}
-              className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-600 bg-zinc-900 text-emerald-600 focus:ring-emerald-600/40"
+              className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-300 bg-white text-emerald-800 focus:ring-emerald-700/35"
             />
-            <span className="text-sm leading-relaxed text-zinc-300">
+            <span className="text-sm leading-relaxed text-zinc-700">
               Send email to newsletter subscribers when you publish (uses{" "}
-              <span className="text-zinc-400">Resend</span>).
+              <span className="font-medium text-zinc-800">Resend</span>).
             </span>
           </label>
           {sendEmail && (
             <div className="space-y-3 pl-1">
-              <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
                 Template type
               </label>
               <Select
@@ -482,10 +487,10 @@ export function MagazinePostForm({
                   setEmailTemplate(v as MagazineEmailTemplateId)
                 }
               >
-                <SelectTrigger className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 text-zinc-200 focus:ring-emerald-600/30 [&>span]:text-zinc-200">
+                <SelectTrigger className="w-full rounded-xl border-zinc-200 bg-white text-zinc-900 shadow-sm focus:ring-emerald-700/25 [&>span]:text-zinc-900">
                   <SelectValue placeholder="Choose template" />
                 </SelectTrigger>
-                <SelectContent className="border-zinc-800 bg-zinc-950 text-zinc-200">
+                <SelectContent className="border-zinc-200 bg-white text-zinc-900">
                   <SelectItem value="research">
                     Research Paper (Standard)
                   </SelectItem>
@@ -497,7 +502,7 @@ export function MagazinePostForm({
               {emailTemplate === "field_notes" && (
                 <div className="space-y-3 pt-1">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-zinc-500">
+                    <label className="text-xs font-medium text-zinc-600">
                       Original creator link
                     </label>
                     <input
@@ -505,7 +510,7 @@ export function MagazinePostForm({
                       value={creatorLink}
                       onChange={(e) => setCreatorLink(e.target.value)}
                       placeholder="https://…"
-                      className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-2.5 font-mono text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+                      className={`${fieldClass} py-2.5 font-mono text-[13px]`}
                     />
                   </div>
                   <p className="text-xs text-zinc-500">
@@ -525,7 +530,7 @@ export function MagazinePostForm({
                         });
                       }}
                       placeholder={`Highlight ${i + 1}`}
-                      className="w-full rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+                      className={fieldClass}
                     />
                   ))}
                 </div>
@@ -535,7 +540,7 @@ export function MagazinePostForm({
         </div>
 
         <div className="space-y-3">
-          <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
             Content
           </label>
           <MagazineTiptapEditor

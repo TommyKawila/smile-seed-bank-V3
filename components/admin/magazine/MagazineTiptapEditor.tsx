@@ -26,7 +26,7 @@ const EmojiPickerDynamic = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="flex h-[360px] w-[352px] items-center justify-center rounded-lg bg-zinc-900 text-xs text-zinc-500"
+        className="flex h-[360px] w-[352px] items-center justify-center rounded-lg bg-zinc-50 text-xs text-zinc-500"
         aria-hidden
       >
         Loading…
@@ -61,8 +61,8 @@ function ToolbarButton({
       onClick={onClick}
       className={`rounded-md px-2 py-1.5 text-xs font-medium transition ${
         active
-          ? "bg-emerald-500/25 text-emerald-200"
-          : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+          ? "bg-emerald-100 text-emerald-900"
+          : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
       }`}
     >
       {children}
@@ -78,13 +78,13 @@ function EmojiInsertPopover({ editor }: { editor: Editor }) {
         <button
           type="button"
           title="Insert emoji"
-          className="rounded-md px-2 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+          className="rounded-md px-2 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
         >
           <Smile className="h-4 w-4" />
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto border-zinc-700 bg-zinc-950 p-0 shadow-xl"
+        className="w-auto border-zinc-200 bg-white p-0 shadow-xl"
         align="start"
         sideOffset={6}
         onOpenAutoFocus={(e) => e.preventDefault()}
@@ -92,7 +92,7 @@ function EmojiInsertPopover({ editor }: { editor: Editor }) {
         <EmojiPickerDynamic
           width={352}
           height={400}
-          theme={Theme.DARK}
+          theme={Theme.LIGHT}
           onEmojiClick={(data: EmojiClickData) => {
             editor.chain().focus().insertContent(data.emoji).run();
             setOpen(false);
@@ -113,7 +113,7 @@ function MenuBar({
   if (!editor) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-zinc-800 bg-zinc-900/80 px-2 py-2">
+    <div className="flex flex-wrap items-center gap-0.5 border-b border-zinc-200 bg-zinc-50/90 px-2 py-2">
       <ToolbarButton
         title="Bold"
         active={editor.isActive("bold")}
@@ -129,7 +129,7 @@ function MenuBar({
         <Italic className="h-4 w-4" />
       </ToolbarButton>
       <EmojiInsertPopover editor={editor} />
-      <span className="mx-1 h-5 w-px bg-zinc-700" aria-hidden />
+      <span className="mx-1 h-5 w-px bg-zinc-200" aria-hidden />
       <ToolbarButton
         title="Heading 1"
         active={editor.isActive("heading", { level: 1 })}
@@ -151,7 +151,7 @@ function MenuBar({
       >
         <Heading3 className="h-4 w-4" />
       </ToolbarButton>
-      <span className="mx-1 h-5 w-px bg-zinc-700" aria-hidden />
+      <span className="mx-1 h-5 w-px bg-zinc-200" aria-hidden />
       <ToolbarButton
         title="Bullet list"
         active={editor.isActive("bulletList")}
@@ -173,7 +173,7 @@ function MenuBar({
       >
         <Minus className="h-4 w-4" />
       </ToolbarButton>
-      <span className="mx-1 h-5 w-px bg-zinc-700" aria-hidden />
+      <span className="mx-1 h-5 w-px bg-zinc-200" aria-hidden />
       <ToolbarButton
         title="Insert Product Card"
         active={false}
@@ -203,7 +203,7 @@ export function MagazineTiptapEditor({ content, onChange, placeholder }: Props) 
     editorProps: {
       attributes: {
         class:
-          "min-h-[420px] px-4 py-4 focus:outline-none prose prose-invert prose-sm max-w-none sm:prose-base [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_ul]:list-disc [&_ol]:list-decimal [&_li]:ml-4 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-500/50 [&_blockquote]:pl-4 [&_blockquote]:italic [&_hr]:border-zinc-700",
+          "min-h-[420px] bg-white px-4 py-4 text-zinc-900 focus:outline-none prose prose-zinc prose-sm max-w-none sm:prose-base [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_ul]:list-disc [&_ol]:list-decimal [&_li]:ml-4 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-600/40 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-zinc-700 [&_hr]:border-zinc-200",
       },
     },
     // Defer ProseMirror render until browser; avoids SSR/client HTML mismatch.
@@ -215,12 +215,12 @@ export function MagazineTiptapEditor({ content, onChange, placeholder }: Props) 
 
   if (!mounted || !editor) {
     return (
-      <div className="min-h-[420px] animate-pulse rounded-xl border border-zinc-800 bg-zinc-900/50" />
+      <div className="min-h-[420px] animate-pulse rounded-xl border border-zinc-200 bg-zinc-50" />
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
       <MenuBar editor={editor} onInsertProduct={() => setProductOpen(true)} />
       <EditorContent editor={editor} data-placeholder={placeholder} />
       <MagazineProductPickerDialog

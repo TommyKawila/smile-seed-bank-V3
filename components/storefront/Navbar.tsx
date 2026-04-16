@@ -19,15 +19,22 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const isMagazineSection = pathname === "/blog" || pathname.startsWith("/blog/");
+  const isProductDetail = pathname.startsWith("/product/");
   const isHomePage = pathname === "/";
+  const isJournalCommerce =
+    pathname === "/profile" ||
+    pathname.startsWith("/checkout") ||
+    pathname.startsWith("/payment/");
   const [scrolled, setScrolled] = useState(false);
-  /** White sticky bar: home (always), blog, or scrolled inner pages. */
-  const solidLightNav = isHomePage || isMagazineSection || scrolled;
+  /** White sticky bar: home, blog, product detail, commerce flows, or scrolled inner pages. */
+  const solidLightNav =
+    isHomePage || isMagazineSection || isProductDetail || isJournalCommerce || scrolled;
   const { itemCount, isOpen, openCart, closeCart } = useCartContext();
   const { locale, toggle, t } = useLanguage();
   const { settings } = useSiteSettings();
@@ -74,12 +81,12 @@ export function Navbar() {
     { href: "/", label: t("หน้าแรก", "Home") },
     { href: "/shop", label: t("ร้านค้า", "Shop") },
     { href: "/shop?category=Seeds", label: t("เมล็ดพันธุ์", "Seeds") },
-    { href: "/blog", label: t("บล็อก Smile Seed", "Smile Seed Blog") },
+    { href: "/blog", label: t("Smile Seed Blog", "Smile Seed Blog") },
   ];
 
   const navLinkClass = solidLightNav
-    ? "text-sm font-medium text-zinc-800 transition-colors hover:text-emerald-900"
-    : "text-sm font-medium text-zinc-600 transition-colors hover:text-primary";
+    ? "text-sm font-normal tracking-[0.06em] text-zinc-800 transition-colors hover:text-emerald-900"
+    : "text-sm font-normal tracking-[0.06em] text-zinc-600 transition-colors hover:text-primary";
 
   const iconBtnClass = "rounded-full transition-colors hover:bg-zinc-100";
 
@@ -92,17 +99,18 @@ export function Navbar() {
             : "bg-transparent"
         }`}
       >
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:h-28 sm:px-8">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:h-28 sm:px-8">
+          {/* Logo — aligned to nav link cap height */}
+          <Link href="/" className="flex shrink-0 items-center self-center leading-none">
             {settings.logo_main_url ? (
               <Image
                 src={settings.logo_main_url}
                 alt="Smile Seed Bank"
                 width={224}
                 height={77}
-                className="h-12 w-auto object-contain sm:h-16"
+                className="h-11 w-auto max-w-[200px] object-contain object-left sm:h-[3.5rem] sm:max-w-none"
                 unoptimized
+                priority
               />
             ) : (
               <>
@@ -117,7 +125,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden items-center gap-6 md:flex">
+          <nav className="hidden items-center gap-7 md:flex lg:gap-8">
             {navLinks.map((link) => (
               <Link key={link.href} href={link.href} className={navLinkClass}>
                 {link.label}
@@ -130,24 +138,26 @@ export function Navbar() {
             {/* Language Toggle */}
             <button
               onClick={toggle}
-              className="flex items-center overflow-hidden rounded-full border border-zinc-200 bg-white text-xs font-bold text-zinc-700 transition-colors hover:border-emerald-600/40"
+              className="flex items-center overflow-hidden rounded-sm border border-zinc-200/90 bg-white text-[11px] font-semibold text-zinc-700 shadow-sm transition-colors hover:border-emerald-300/80"
               aria-label="Switch language"
             >
               <span
-                className={`px-2.5 py-1 transition-colors ${
+                className={cn(
+                  "px-2.5 py-1.5 transition-colors",
                   locale === "th"
-                    ? "bg-emerald-700 text-white"
-                    : "text-zinc-500 hover:text-zinc-900"
-                }`}
+                    ? "bg-emerald-700/95 text-white"
+                    : "text-zinc-500 hover:text-zinc-800"
+                )}
               >
                 TH
               </span>
               <span
-                className={`px-2.5 py-1 transition-colors ${
+                className={cn(
+                  "px-2.5 py-1.5 transition-colors",
                   locale === "en"
-                    ? "bg-emerald-700 text-white"
-                    : "text-zinc-500 hover:text-zinc-900"
-                }`}
+                    ? "bg-emerald-700/95 text-white"
+                    : "text-zinc-500 hover:text-zinc-800"
+                )}
               >
                 EN
               </span>
@@ -273,7 +283,7 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="block py-3 text-base font-medium text-zinc-800 hover:text-emerald-900"
+                  className="block py-3 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
                 >
                   {link.label}
                 </Link>

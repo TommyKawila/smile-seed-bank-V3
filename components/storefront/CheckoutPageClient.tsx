@@ -29,6 +29,10 @@ import {
   readSavedPromotionsFromLocal,
   type SavedPromotionPayload,
 } from "@/lib/saved-promotion-local";
+import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+
+const serif = "font-[family-name:var(--font-journal-product-serif)]";
+const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
 
 type ApiSavedCoupon = {
   campaign_id: string;
@@ -96,7 +100,7 @@ function OrderItemRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
+      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-sm bg-zinc-100">
         {item.productImage ? (
           <Image src={item.productImage} alt={item.productName} fill className="object-cover" />
         ) : (
@@ -110,7 +114,9 @@ function OrderItemRow({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="min-w-0 break-words text-sm font-medium text-zinc-800">{item.productName}</p>
+          <p className={cn(serif, "min-w-0 break-words text-sm font-medium text-zinc-800")}>
+            {item.productName}
+          </p>
           {item.breederLogoUrl ? (
             <span className="inline-flex h-5 shrink-0 items-center self-center">
               <Image
@@ -123,11 +129,11 @@ function OrderItemRow({
             </span>
           ) : null}
         </div>
-        <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+        <p className={cn(mono, "mt-0.5 text-[11px] text-zinc-500")}>
           {cartItemPackDescription(item, locale, { includeLineQuantity: true })}
         </p>
       </div>
-      <span className="shrink-0 text-sm font-semibold tabular-nums text-zinc-900">
+      <span className={cn(mono, "shrink-0 text-sm font-medium text-zinc-900")}>
         {item.isFreeGift ? "ฟรี" : formatPrice(item.price * item.quantity)}
       </span>
     </div>
@@ -365,60 +371,74 @@ export function CheckoutPageClient({
 
   if (itemCount === 0 && !isSubmitting) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 pt-16 text-center px-4">
-        <ShoppingBag className="h-12 w-12 text-zinc-200" />
-        <p className="text-base font-semibold text-zinc-600">{t("ตะกร้าสินค้าว่างเปล่า", "Your cart is empty")}</p>
-        <Button asChild className="bg-primary text-white hover:bg-primary/90">
-          <Link href="/shop">{t("เลือกซื้อสินค้า", "Continue shopping")}</Link>
+      <div
+        className={`flex min-h-screen flex-col items-center justify-center gap-4 bg-white px-4 pt-16 text-center ${JOURNAL_PRODUCT_FONT_VARS}`}
+      >
+        <ShoppingBag className="h-10 w-10 text-zinc-200" strokeWidth={1} />
+        <p className={cn(serif, "text-lg font-medium text-zinc-800")}>
+          {t("ตะกร้าสินค้าว่างเปล่า", "Your cart is empty")}
+        </p>
+        <Button asChild variant="outline" className="rounded-sm border-zinc-200 tracking-wide">
+          <Link href="/shop">{t("สำรวจสายพันธุ์", "Explore genetics")}</Link>
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 pt-20">
+    <div className={`min-h-screen bg-white pt-20 ${JOURNAL_PRODUCT_FONT_VARS}`}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <div className="mb-5 flex items-center gap-3">
-          <Link href="/shop" className="text-zinc-500 hover:text-primary">
-            <ChevronLeft className="h-5 w-5" />
+          <Link href="/shop" className="text-zinc-500 hover:text-emerald-800">
+            <ChevronLeft className="h-5 w-5" strokeWidth={1.25} />
           </Link>
-          <h1 className="text-xl font-bold text-zinc-900">{t("ดำเนินการชำระเงิน", "Checkout")}</h1>
+          <h1 className={cn(serif, "text-2xl font-medium tracking-tight text-zinc-900")}>
+            {t("ดำเนินการชำระเงิน", "Checkout")}
+          </h1>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mx-auto max-w-3xl space-y-4">
               {user && (
-                <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm text-primary">
-                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                <div className="flex items-center gap-2 rounded-sm border border-zinc-100 bg-zinc-50/80 px-4 py-2.5 text-sm text-zinc-700">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-zinc-500" strokeWidth={1.25} />
                   {t("Auto-fill จากบัญชีของคุณ", "Auto-filled from your account")}
                 </div>
               )}
 
-              <Card className="border-zinc-200/80 shadow-sm">
-                <CardContent className="p-5 space-y-4">
-                  <h2 className="text-sm font-bold text-zinc-700">{t("ข้อมูลจัดส่ง", "Shipping details")}</h2>
+              <Card className="rounded-sm border-zinc-200 shadow-sm">
+                <CardContent className="space-y-4 p-5">
+                  <h2 className={cn(serif, "text-sm font-medium text-zinc-800")}>
+                    {t("ข้อมูลจัดส่ง", "Shipping details")}
+                  </h2>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1">
-                      <Label htmlFor="full_name">{t("ชื่อ-นามสกุล *", "Full name *")}</Label>
+                      <Label htmlFor="full_name" className="text-xs font-light text-zinc-600">
+                        {t("ชื่อ-นามสกุล *", "Full name *")}
+                      </Label>
                       <Input
                         id="full_name"
                         value={form.full_name}
                         onChange={(e) => setField("full_name", e.target.value)}
                         placeholder={t("ชื่อผู้รับ", "Recipient name")}
+                        className="rounded-sm border-zinc-200 bg-white"
                       />
                       {fieldErrors.full_name && (
                         <p className="text-xs text-red-500">{fieldErrors.full_name}</p>
                       )}
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="phone">{t("เบอร์โทร *", "Phone *")}</Label>
+                      <Label htmlFor="phone" className="text-xs font-light text-zinc-600">
+                        {t("เบอร์โทร *", "Phone *")}
+                      </Label>
                       <Input
                         id="phone"
                         value={form.phone}
                         onChange={(e) => setField("phone", e.target.value)}
                         placeholder="08x-xxx-xxxx"
                         type="tel"
+                        className="rounded-sm border-zinc-200 bg-white"
                       />
                       {fieldErrors.phone && (
                         <p className="text-xs text-red-500">{fieldErrors.phone}</p>
@@ -427,13 +447,16 @@ export function CheckoutPageClient({
                   </div>
 
                   <div className="space-y-1">
-                    <Label htmlFor="address">{t("ที่อยู่จัดส่ง *", "Shipping address *")}</Label>
+                    <Label htmlFor="address" className="text-xs font-light text-zinc-600">
+                      {t("ที่อยู่จัดส่ง *", "Shipping address *")}
+                    </Label>
                     <Textarea
                       id="address"
                       value={form.address}
                       onChange={(e) => setField("address", e.target.value)}
                       placeholder={t("บ้านเลขที่, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์", "Street, district, province, postal code")}
                       rows={3}
+                      className="rounded-sm border-zinc-200 bg-white"
                     />
                     {fieldErrors.address && (
                       <p className="text-xs text-red-500">{fieldErrors.address}</p>
@@ -441,7 +464,7 @@ export function CheckoutPageClient({
                   </div>
 
                   <div className="space-y-1">
-                    <Label htmlFor="order_note">
+                    <Label htmlFor="order_note" className="text-xs font-light text-zinc-600">
                       {t("หมายเหตุถึงผู้ขาย (ไม่บังคับ)", "Order note (optional)")}
                     </Label>
                     <Textarea
@@ -450,7 +473,7 @@ export function CheckoutPageClient({
                       onChange={(e) => setField("order_note", e.target.value)}
                       placeholder={t("เช่น วันเวลาที่สะดวกรับ", "e.g. preferred delivery time")}
                       rows={3}
-                      className="resize-none"
+                      className="resize-none rounded-sm border-zinc-200 bg-white"
                     />
                     {fieldErrors.order_note && (
                       <p className="text-xs text-red-500">{fieldErrors.order_note}</p>
@@ -459,13 +482,18 @@ export function CheckoutPageClient({
                 </CardContent>
               </Card>
 
-              <Card className="border-zinc-200/80 shadow-sm">
+              <Card className="rounded-sm border-zinc-200 shadow-sm">
                 <CardContent className="space-y-4 p-5">
                   <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3">
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    <h2 className={cn(serif, "text-xs font-medium text-zinc-700")}>
                       {t("สรุปรายการ", "Order summary")}
                     </h2>
-                    <span className="shrink-0 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium text-zinc-600">
+                    <span
+                      className={cn(
+                        mono,
+                        "shrink-0 rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-600"
+                      )}
+                    >
                       {t("รอชำระเงิน", "Pending")}
                     </span>
                   </div>
@@ -554,7 +582,7 @@ export function CheckoutPageClient({
                         value={promoInput}
                         onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
                         placeholder={t("รหัสส่วนลด", "Promo code")}
-                        className="font-mono text-sm"
+                        className={cn(mono, "rounded-sm border-zinc-200 bg-white text-sm")}
                       />
                       <Button
                         type="button"
@@ -562,6 +590,7 @@ export function CheckoutPageClient({
                         size="sm"
                         onClick={() => void handleApplyPromo()}
                         disabled={isValidatingPromo || !promoInput.trim()}
+                        className="rounded-sm border-zinc-200"
                       >
                         {isValidatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : t("ใช้", "Apply")}
                       </Button>
@@ -608,52 +637,60 @@ export function CheckoutPageClient({
                     </div>
                   )}
 
-                  <div className="space-y-1.5 text-sm">
+                  <div className="space-y-2 rounded-sm border border-zinc-100 bg-zinc-50/40 p-3 text-sm">
                     <div className="flex justify-between gap-3 text-zinc-600">
-                      <span className="text-xs text-zinc-500">{t("ยอดสินค้า", "Subtotal")}</span>
-                      <span className="tabular-nums text-zinc-800">{formatPrice(summary.subtotal)}</span>
+                      <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
+                        {t("ยอดสินค้า", "Subtotal")}
+                      </span>
+                      <span className={cn(mono, "font-medium text-zinc-900")}>{formatPrice(summary.subtotal)}</span>
                     </div>
                     {summary.tierDiscount > 0 && (
-                      <div className="flex justify-between gap-3 text-primary">
-                        <span className="text-xs">
+                      <div className="flex justify-between gap-3 text-emerald-800">
+                        <span className={cn(serif, "text-xs font-medium")}>
                           {t(
                             `ส่วนลดอัตโนมัติ (${summary.discountPercent}%)`,
                             `Auto discount (${summary.discountPercent}%)`
                           )}
                         </span>
-                        <span className="tabular-nums">-{formatPrice(summary.tierDiscount)}</span>
+                        <span className={cn(mono, "font-medium")}>-{formatPrice(summary.tierDiscount)}</span>
                       </div>
                     )}
                     {summary.promoDiscount > 0 && (
-                      <div className="flex justify-between gap-3 text-primary">
-                        <span className="text-xs">
+                      <div className="flex justify-between gap-3 text-emerald-800">
+                        <span className={cn(serif, "text-xs font-medium")}>
                           {t(`ส่วนลดโค้ด (${promo.code?.code ?? ""})`, `Coupon (${promo.code?.code ?? ""})`)}
                         </span>
-                        <span className="tabular-nums">-{formatPrice(summary.promoDiscount)}</span>
+                        <span className={cn(mono, "font-medium")}>-{formatPrice(summary.promoDiscount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between gap-3 text-zinc-600">
-                      <span className="text-xs text-zinc-500">{t("ค่าจัดส่ง", "Shipping")}</span>
-                      <span className="tabular-nums text-zinc-800">
+                      <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
+                        {t("ค่าจัดส่ง", "Shipping")}
+                      </span>
+                      <span className={cn(mono, "font-medium text-zinc-900")}>
                         {summary.shipping === 0 ? t("ฟรี", "Free") : formatPrice(summary.shipping)}
                       </span>
                     </div>
                     {summary.tierDiscount + summary.promoDiscount > 0 && (
-                      <div className="flex items-center justify-center gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-                        <Sparkles className="h-4 w-4 shrink-0" />
+                      <div className="flex items-center justify-center gap-2 rounded-sm border border-zinc-100 bg-white px-3 py-2.5 text-xs text-zinc-700">
+                        <Sparkles className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1} />
                         <span>
                           {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
-                          <strong>{formatPrice(summary.tierDiscount + summary.promoDiscount)}</strong>
+                          <strong className={cn(mono, "font-semibold")}>
+                            {formatPrice(summary.tierDiscount + summary.promoDiscount)}
+                          </strong>
                         </span>
                       </div>
                     )}
                     <Separator className="my-1 bg-zinc-100" />
-                    <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+                    <div className="rounded-sm border border-zinc-200 bg-white px-4 py-3">
                       <div className="flex items-center justify-between gap-3 text-zinc-900">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                        <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
                           {t("ยอดสุทธิ", "Net total")}
                         </span>
-                        <span className="text-xl font-bold tabular-nums text-primary">{formatPrice(summary.total)}</span>
+                        <span className={cn(mono, "text-xl font-semibold text-emerald-900")}>
+                          {formatPrice(summary.total)}
+                        </span>
                       </div>
                       <p className="mt-1 text-[11px] text-zinc-500">
                         {t("ยอดที่ต้องชำระ (โอน / พร้อมเพย์)", "Amount to pay (transfer / PromptPay)")}
@@ -663,9 +700,9 @@ export function CheckoutPageClient({
                 </CardContent>
               </Card>
 
-              <Card className="border-zinc-200/80 shadow-sm">
-                <CardContent className="p-5 space-y-3">
-                  <h2 className="text-sm font-bold text-zinc-700">
+              <Card className="rounded-sm border-zinc-200 shadow-sm">
+                <CardContent className="space-y-3 p-5">
+                  <h2 className={cn(serif, "text-sm font-medium text-zinc-800")}>
                     {t("ชำระเงินด้วยการโอนเงิน", "Bank transfer")}
                   </h2>
                   <p className="text-xs text-zinc-500">
@@ -687,7 +724,7 @@ export function CheckoutPageClient({
                         </p>
                       )}
                       {paymentSettings.map((pm) => (
-                        <Card key={`${pm.source}-${pm.id}`} className="border-primary/15 bg-white shadow-sm">
+                        <Card key={`${pm.source}-${pm.id}`} className="rounded-sm border-zinc-200 bg-white shadow-sm">
                           <CardHeader className="p-4 pb-2">
                             <CardTitle className="text-base text-primary">
                               {pm.source === "promptpay"
@@ -769,7 +806,7 @@ export function CheckoutPageClient({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-12 w-full bg-primary text-base font-bold text-white hover:bg-primary/90 active:scale-[0.98] transition-transform"
+                className="h-12 w-full rounded-sm bg-emerald-800 text-base font-semibold tracking-wide text-white shadow-none hover:bg-emerald-900 active:scale-[0.98]"
               >
                 {isSubmitting ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("กำลังสร้างออเดอร์...", "Placing order...")}</>

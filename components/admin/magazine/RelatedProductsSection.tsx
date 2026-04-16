@@ -48,7 +48,7 @@ export function RelatedProductsSection({
     <div className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
             Related products
           </label>
           <p className="mt-1 text-xs text-zinc-600">
@@ -58,7 +58,7 @@ export function RelatedProductsSection({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-emerald-600/50 hover:text-white"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-800/30 bg-white px-3 py-2 text-xs font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-50"
         >
           <Plus className="h-3.5 w-3.5" />
           Add products
@@ -70,13 +70,13 @@ export function RelatedProductsSection({
           {selectedIds.map((id) => (
             <li
               key={id}
-              className="inline-flex max-w-full items-center gap-1 rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1.5 text-xs text-zinc-200"
+              className="inline-flex max-w-full items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-800"
             >
               <span className="truncate">{labels.get(id) ?? `Product #${id}`}</span>
               <button
                 type="button"
                 onClick={() => remove(id)}
-                className="shrink-0 rounded-full p-0.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+                className="shrink-0 rounded-full p-0.5 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900"
                 aria-label="Remove"
               >
                 <X className="h-3.5 w-3.5" />

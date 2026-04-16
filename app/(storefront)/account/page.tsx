@@ -9,6 +9,8 @@ export default function AccountPage({
 }: {
   searchParams: { tab?: string };
 }) {
-  const tab = searchParams?.tab === "profile" ? "profile" : "orders";
+  const raw = searchParams?.tab;
+  const tab =
+    raw === "profile" || raw === "coupons" || raw === "membership" ? raw : "orders";
   redirect(`/profile?tab=${tab}`);
 }

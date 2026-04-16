@@ -1,47 +1,159 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import useEmblaCarousel from "embla-carousel-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Leaf } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Leaf } from "lucide-react";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { productDetailHref } from "@/lib/product-utils";
 import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { useLanguage } from "@/context/LanguageContext";
-
-function strainLine(product: ProductWithBreeder): string {
-  const sp = (product as { sativa_percent?: number | null }).sativa_percent;
-  const ip = (product as { indica_percent?: number | null }).indica_percent;
-  if (sp != null && ip != null) return `Sativa ${sp}% / Indica ${ip}%`;
-  const gr = product.genetic_ratio?.trim();
-  if (gr) return gr;
-  return product.strain_dominance?.trim() ?? "";
-}
+import { cn } from "@/lib/utils";
+import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 
 function stripHtmlLoose(s: string): string {
   return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function descriptionTeaser(product: ProductWithBreeder, locale: "th" | "en"): string {
+function strainExcerpt(
+  product: ProductWithBreeder,
+  locale: "th" | "en",
+  maxLen: number
+): string {
   const primary = locale === "th" ? product.description_th : product.description_en;
   const fallback = locale === "th" ? product.description_en : product.description_th;
+  const tag = product.featured_tagline?.trim();
+  if (tag) {
+    const plain = stripHtmlLoose(tag);
+    if (plain.length <= maxLen) return plain;
+    return plain.length > maxLen ? `${plain.slice(0, maxLen - 1)}…` : plain;
+  }
   const raw = (primary?.trim() ? primary : fallback) ?? "";
   if (!raw.trim()) return "";
   const plain = stripHtmlLoose(raw);
   if (!plain) return "";
-  return plain.length > 180 ? `${plain.slice(0, 177)}…` : plain;
+  return plain.length > maxLen ? `${plain.slice(0, maxLen - 1)}…` : plain;
 }
 
-function featuredCardHighlight(
-  product: ProductWithBreeder,
-  locale: "th" | "en"
-): string {
-  const tag = product.featured_tagline?.trim();
-  if (tag) return tag;
-  return descriptionTeaser(product, locale);
+function statsRefLine(product: ProductWithBreeder): string {
+  const parts: string[] = [];
+  if (product.thc_percent != null) parts.push(`THC ${product.thc_percent}%`);
+  const cbd = product.cbd_percent?.trim();
+  if (cbd) parts.push(`CBD ${cbd}`);
+  const sp = (product as { sativa_percent?: number | null }).sativa_percent;
+  const ip = (product as { indica_percent?: number | null }).indica_percent;
+  if (sp != null && ip != null) parts.push(`S/I ${sp}/${ip}`);
+  else {
+    const gr = product.genetic_ratio?.trim();
+    if (gr) parts.push(gr);
+    else if (product.strain_dominance?.trim())
+      parts.push(product.strain_dominance.trim());
+  }
+  return parts.join(" · ");
+}
+
+function FeatureGeneticsCard({
+  product,
+  variant,
+}: {
+  product: ProductWithBreeder;
+  variant: "hero" | "compact";
+}) {
+  const { t, locale } = useLanguage();
+  const img = getListingThumbnailUrl(product);
+  const stats = statsRefLine(product);
+  const excerpt =
+    strainExcerpt(product, locale, variant === "hero" ? 160 : 110) ||
+    t(
+      "สายพันธุ์คัดสรรจากแบรนด์พันธมิตร — โปรไฟล์ครบถ้วนหน้าสินค้า",
+      "Curated genetics — full profile on the strain page."
+    );
+
+  const isHero = variant === "hero";
+
+  return (
+    <Link
+      href={productDetailHref(product)}
+      className={cn(
+        "group flex h-full min-h-0 flex-col overflow-hidden rounded-sm border border-zinc-50 bg-white shadow-sm transition-shadow duration-300 hover:shadow-md"
+      )}
+    >
+      <div
+        className={cn(
+          "relative w-full shrink-0 overflow-hidden bg-zinc-100",
+          isHero ? "aspect-[16/10] sm:aspect-[16/9]" : "aspect-[4/3]"
+        )}
+      >
+        {img ? (
+          <Image
+            src={img}
+            alt={product.name}
+            fill
+            sizes={
+              isHero
+                ? "(max-width: 1024px) 100vw, 58vw"
+                : "(max-width: 1024px) 100vw, 20vw"
+            }
+            className="object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+            priority={isHero}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <Leaf className="h-10 w-10 text-zinc-300" />
+          </div>
+        )}
+      </div>
+
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col",
+          isHero ? "p-6 sm:p-8" : "p-5 sm:p-6"
+        )}
+      >
+        {product.breeders && (
+          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+            {product.breeders.name}
+          </p>
+        )}
+        <h3
+          className={cn(
+            "font-[family-name:var(--font-journal-product-serif)] font-medium leading-snug tracking-tight text-zinc-900",
+            isHero ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"
+          )}
+        >
+          {product.name}
+        </h3>
+
+        {stats ? (
+          <p
+            className={cn(
+              "mt-2.5 font-[family-name:var(--font-journal-product-mono)] text-[11px] leading-relaxed text-zinc-600 sm:text-xs",
+              "tabular-nums"
+            )}
+          >
+            {stats}
+          </p>
+        ) : null}
+
+        <p
+          className={cn(
+            "mt-3 flex-1 text-sm font-light leading-relaxed text-zinc-600",
+            isHero ? "line-clamp-5" : "line-clamp-3 min-h-[4.125rem]"
+          )}
+        >
+          {excerpt}
+        </p>
+
+        <span
+          className={cn(
+            "mt-5 inline-flex w-fit items-center justify-center rounded-sm border border-emerald-800 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-emerald-800 transition-colors group-hover:bg-emerald-50"
+          )}
+        >
+          {t("สำรวจสายพันธุ์", "Explore strain")}
+        </span>
+      </div>
+    </Link>
+  );
 }
 
 export function FeaturedProductsCarousel({
@@ -51,53 +163,43 @@ export function FeaturedProductsCarousel({
   products: ProductWithBreeder[];
   isLoading?: boolean;
 }) {
-  const { t, locale } = useLanguage();
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    loop: products.length > 1,
-    align: "start",
-    containScroll: "trimSnaps",
-    dragFree: false,
-  });
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
-  const syncCarouselUi = useCallback(() => {
-    if (!emblaApi) return;
-    setSelectedIndex(emblaApi.selectedScrollSnap());
-    setCanPrev(emblaApi.canScrollPrev());
-    setCanNext(emblaApi.canScrollNext());
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    syncCarouselUi();
-    emblaApi.on("reInit", syncCarouselUi);
-    emblaApi.on("select", syncCarouselUi);
-    return () => {
-      emblaApi.off("reInit", syncCarouselUi);
-      emblaApi.off("select", syncCarouselUi);
-    };
-  }, [emblaApi, syncCarouselUi]);
-
-  useEffect(() => {
-    emblaApi?.reInit();
-  }, [emblaApi, products]);
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
-      <section className="border-b border-zinc-100 bg-gradient-to-b from-zinc-50/90 to-white py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mb-8 h-8 w-48 animate-pulse rounded-lg bg-zinc-100" />
-          <div className="flex gap-4 overflow-hidden">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="min-w-0 shrink-0 flex-[0_0_88%] sm:flex-[0_0_46%] lg:flex-[0_0_31%]"
-              >
-                <div className="aspect-[4/5] animate-pulse rounded-2xl bg-zinc-100" />
+      <section className="border-b border-zinc-100 bg-white py-12 sm:py-16">
+        <div
+          className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+        >
+          <div className="mb-10 space-y-3">
+            <div className="h-3 w-24 animate-pulse rounded bg-zinc-100" />
+            <div className="h-9 max-w-md animate-pulse rounded bg-zinc-100" />
+            <div className="h-4 max-w-lg animate-pulse rounded bg-zinc-100" />
+          </div>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch">
+            <div className="lg:min-h-[28rem] lg:flex-[1.65]">
+              <div className="aspect-[16/10] animate-pulse rounded-sm bg-zinc-100" />
+              <div className="mt-4 space-y-2 p-1">
+                <div className="h-6 w-3/4 animate-pulse rounded bg-zinc-100" />
+                <div className="h-3 w-full animate-pulse rounded bg-zinc-100" />
               </div>
-            ))}
+            </div>
+            <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid lg:max-w-md lg:grid-rows-2 lg:gap-4">
+              <div className="flex min-h-[240px] flex-col overflow-hidden rounded-sm border border-zinc-50">
+                <div className="aspect-[4/3] animate-pulse bg-zinc-100" />
+                <div className="flex-1 space-y-2 p-4">
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-100" />
+                  <div className="h-3 w-full animate-pulse rounded bg-zinc-100" />
+                </div>
+              </div>
+              <div className="flex min-h-[240px] flex-col overflow-hidden rounded-sm border border-zinc-50">
+                <div className="aspect-[4/3] animate-pulse bg-zinc-100" />
+                <div className="flex-1 space-y-2 p-4">
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-100" />
+                  <div className="h-3 w-full animate-pulse rounded bg-zinc-100" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -106,155 +208,78 @@ export function FeaturedProductsCarousel({
 
   if (products.length === 0) return null;
 
+  const [hero, ...rest] = products;
+  const side = rest.slice(0, 2);
+  const more = rest.slice(2);
+
   return (
-    <section className="border-b border-zinc-100 bg-gradient-to-b from-zinc-50/90 to-white py-12 sm:py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-              {t("คัดพิเศษ", "Featured")}
-            </p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-              {t("สินค้าแนะนำ", "Featured picks")}
-            </h2>
-          </div>
-          <div className="hidden gap-2 sm:flex">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 rounded-full border-zinc-200 shadow-sm"
-              disabled={!canPrev}
-              onClick={() => emblaApi?.scrollPrev()}
-              aria-label={t("ก่อนหน้า", "Previous")}
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 rounded-full border-zinc-200 shadow-sm"
-              disabled={!canNext}
-              onClick={() => emblaApi?.scrollNext()}
-              aria-label={t("ถัดไป", "Next")}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
+    <section className="border-b border-zinc-100 bg-white py-12 sm:py-16">
+      <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+        <motion.header
+          className="mb-10 max-w-3xl space-y-3"
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.45 }}
+        >
+          <p className="text-xs font-medium tracking-wide text-emerald-800">
+            {t("สายพันธุ์คัดพิเศษ", "Curated selections")}
+          </p>
+          <h2 className="font-[family-name:var(--font-journal-product-serif)] text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.75rem]">
+            {t("สายพันธุ์แนะนำ", "Recommended strains")}
+          </h2>
+          <p className="text-sm font-light leading-relaxed text-zinc-600">
+            {t(
+              "คัดเลือกอย่างมีหลักการ — เน้นความชัดเจนของโปรไฟล์และความโปร่งใสทางวิทยาศาสตร์",
+              "Editorial picks with clear lab-style labeling—depth lives on each strain profile."
+            )}
+          </p>
+        </motion.header>
+
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-8">
+          <motion.div
+            className="flex min-h-0 min-w-0 flex-1 flex-col lg:max-w-none lg:flex-[1.65]"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-20px" }}
+            transition={{ duration: 0.45 }}
+          >
+            <FeatureGeneticsCard product={hero} variant="hero" />
+          </motion.div>
+
+          {side.length > 0 && (
+            <div className="flex min-h-0 w-full min-w-0 flex-col gap-4 lg:flex-1 lg:max-w-md lg:self-stretch">
+              {side.map((p, i) => (
+                <motion.div
+                  key={p.id}
+                  className="flex min-h-0 flex-1 basis-0 flex-col"
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-20px" }}
+                  transition={{ duration: 0.4, delay: 0.06 * (i + 1) }}
+                >
+                  <FeatureGeneticsCard product={p} variant="compact" />
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="overflow-hidden [-webkit-tap-highlight-color:transparent]" ref={emblaRef}>
-          <div className="flex touch-pan-y items-center py-5">
-            {products.map((product, slideIndex) => {
-              const img = getListingThumbnailUrl(product);
-              const line = strainLine(product);
-              const customTagline = product.featured_tagline?.trim();
-              const highlight = featuredCardHighlight(product, locale);
-              const isActive = slideIndex === selectedIndex;
-              const taglineClass =
-                "line-clamp-3 text-left text-xs font-medium leading-snug text-emerald-50/95 drop-shadow-md sm:text-sm";
-              return (
-                <div
-                  key={product.id}
-                  className="relative min-w-0 shrink-0 pl-3 first:pl-0 sm:pl-4 flex-[0_0_88%] sm:flex-[0_0_46%] lg:flex-[0_0_31%]"
-                >
-                  {isActive ? (
-                    <div
-                      className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[85%] w-[95%] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] bg-emerald-500/10 blur-3xl"
-                      aria-hidden
-                    />
-                  ) : null}
-                  <motion.div
-                    className="group relative z-0 flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-100/80 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-shadow duration-300 hover:shadow-[0_12px_40px_rgb(0,0,0,0.1)]"
-                    animate={{
-                      scale: isActive ? 1.05 : 0.95,
-                      opacity: isActive ? 1 : 0.5,
-                    }}
-                    transition={{ duration: 0.5, ease: "easeInOut" }}
-                    style={{ transformOrigin: "center center" }}
-                  >
-                    <Link
-                      href={productDetailHref(product)}
-                      className="relative block aspect-[4/5] overflow-hidden bg-zinc-50"
-                    >
-                      {img ? (
-                        <motion.div
-                          className="absolute inset-0"
-                          whileHover={{ scale: 1.1 }}
-                          transition={{ duration: 0.45, ease: "easeOut" }}
-                        >
-                          <Image
-                            src={img}
-                            alt={product.name}
-                            fill
-                            sizes="(max-width: 640px) 88vw, (max-width: 1024px) 46vw, 32vw"
-                            className="object-cover"
-                          />
-                        </motion.div>
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <Leaf className="h-12 w-12 text-zinc-200" />
-                        </div>
-                      )}
-                      {highlight ? (
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-3 pt-14">
-                          {customTagline ? (
-                            <motion.p
-                              className={taglineClass}
-                              style={{ textShadow: "0 1px 2px rgb(0 0 0 / 0.5)" }}
-                              initial={{ opacity: 0, y: 15 }}
-                              animate={
-                                isActive
-                                  ? {
-                                      opacity: 1,
-                                      y: 0,
-                                      transition: {
-                                        delay: 0.3,
-                                        duration: 0.5,
-                                        ease: "easeOut",
-                                      },
-                                    }
-                                  : { opacity: 0, y: 15, transition: { duration: 0.2 } }
-                              }
-                            >
-                              {highlight}
-                            </motion.p>
-                          ) : (
-                            <p
-                              className={taglineClass}
-                              style={{ textShadow: "0 1px 2px rgb(0 0 0 / 0.5)" }}
-                            >
-                              {highlight}
-                            </p>
-                          )}
-                        </div>
-                      ) : null}
-                    </Link>
-                    <div className="flex flex-1 flex-col gap-2 p-4 sm:p-5">
-                      <h3 className="line-clamp-2 text-base font-semibold leading-snug text-zinc-900">
-                        {product.name}
-                      </h3>
-                      {line ? (
-                        <p className="line-clamp-2 text-xs text-zinc-500">{line}</p>
-                      ) : null}
-                      <div className="mt-auto pt-2">
-                        <Button
-                          asChild
-                          className="w-full bg-primary font-semibold text-white shadow-sm transition-transform duration-200 hover:bg-primary/90 hover:shadow-md active:scale-[0.98]"
-                        >
-                          <Link href={productDetailHref(product)}>
-                            {t("ดูสินค้า", "View product")}
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              );
-            })}
+        {more.length > 0 && (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {more.map((p, i) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-20px" }}
+                transition={{ duration: 0.4, delay: 0.04 * i }}
+              >
+                <FeatureGeneticsCard product={p} variant="compact" />
+              </motion.div>
+            ))}
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

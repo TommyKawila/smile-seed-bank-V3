@@ -6,12 +6,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Variants } from "framer-motion";
 import {
   SlidersHorizontal,
   Search,
   X,
-  Leaf,
   PackageX,
   ChevronLeft,
   MapPin,
@@ -26,10 +24,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useBreeders } from "@/hooks/useBreeders";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
-import { formatPrice } from "@/lib/utils";
-import { productDetailHref } from "@/lib/product-utils";
 import { toast } from "sonner";
-import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTranslations } from "@/hooks/use-translations";
 import {
@@ -41,199 +36,23 @@ import {
   catalogFloweringBucket,
   productMatchesCatalogFtParam,
   floweringTypeToSlug,
-  labelForSeedTypeBadge,
-  productCardFloweringChipLabel,
   type CatalogFloweringBucket,
 } from "@/lib/seed-type-filter";
 import { BreederTypeFilter } from "@/components/storefront/BreederTypeFilter";
 import { FilterSidebar, ShopFilterMobileSheet } from "@/components/storefront/FilterSidebar";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { MicroGeneticsBar } from "@/components/storefront/MicroGeneticsBar";
 import {
   calculateFilterCounts,
   parseListParam,
   productMatchesShopAttributeFilters,
 } from "@/lib/shop-attribute-filters";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
+import { ProductCard } from "@/components/storefront/ProductCard";
+import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 
 const SHOP_PAGE_INITIAL = 30;
 const SHOP_PAGE_STEP = 24;
 const BACK_TO_TOP_SCROLL_THRESHOLD = 400;
-
-// ─── Product Card ─────────────────────────────────────────────────────────────
-
-const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-};
-
-const glassBadge =
-  "rounded-full border border-white/30 bg-white/20 px-2 py-0.5 text-[10px] font-medium backdrop-blur-md";
-const glassChip =
-  "rounded-full border border-zinc-200/70 bg-white/70 px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm";
-
-const compactSpecChip = `${glassChip} bg-muted/50 text-[9px] font-medium tracking-wide text-zinc-700`;
-const compactSpecChipThc = `${glassChip} bg-muted/50 text-[9px] font-medium tracking-wide text-primary`;
-
-function getPrimaryImage(product: {
-  image_urls?: unknown;
-  image_url?: string | null;
-  product_images?: unknown;
-}): string | null {
-  return getListingThumbnailUrl(product);
-}
-
-function getDefaultVariant(product: {
-  product_variants?: {
-    id: number;
-    price: number;
-    stock: number | null;
-    is_active: boolean | null;
-    unit_label: string;
-  }[];
-}) {
-  const variants =
-    product.product_variants?.filter((v) => v.is_active !== false && (v.stock ?? 0) > 0) ?? [];
-  return variants.sort((a, b) => a.price - b.price)[0] ?? null;
-}
-
-function ProductCard({ product }: { product: ReturnType<typeof useProducts>["products"][number] }) {
-  const { addToCart, openCart } = useCartContext();
-  const stock = product.stock ?? 0;
-  const lowStock = stock > 0 && stock <= 5;
-  const outOfStock = stock === 0;
-  const defaultVariant = getDefaultVariant(product);
-  const cardImage = getPrimaryImage(product);
-  const floweringLabel = productCardFloweringChipLabel(product);
-  const seedLabel = labelForSeedTypeBadge(product.seed_type);
-
-  const handleAdd = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (defaultVariant) {
-      const { error } = addToCart({
-        variantId: defaultVariant.id,
-        productId: product.id,
-        productName: product.name,
-        productImage: cardImage,
-        unitLabel: defaultVariant.unit_label,
-        price: defaultVariant.price,
-        quantity: 1,
-        stock_quantity: defaultVariant.stock ?? 0,
-        masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
-        breeder_id: product.breeder_id ?? null,
-        breederLogoUrl: product.breeders?.logo_url ?? null,
-      });
-      if (error) {
-        toast.error(error);
-        return;
-      }
-    } else {
-      openCart();
-    }
-  };
-
-  return (
-    <motion.div variants={cardVariants}>
-      <Link
-        href={productDetailHref(product)}
-        className="group block overflow-hidden rounded-2xl border border-zinc-100 bg-white transition-shadow hover:shadow-lg"
-      >
-        {/* Image */}
-        <div className="relative aspect-square overflow-hidden bg-zinc-50">
-          {cardImage ? (
-            <Image
-              src={cardImage}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className={`object-cover transition-transform duration-500 ease-out group-hover:scale-110 ${outOfStock ? "opacity-50 grayscale" : ""}`}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <Leaf className="h-10 w-10 text-zinc-200" />
-            </div>
-          )}
-
-          {/* Status Badges — glassmorphism, flex-wrap for mobile */}
-          <div className="absolute left-2 top-2 flex flex-wrap gap-1.5">
-            {outOfStock && (
-              <span className={`${glassBadge} text-zinc-800`}>หมด</span>
-            )}
-            {lowStock && !outOfStock && (
-              <span className={`${glassBadge} text-red-800`}>เหลือน้อย</span>
-            )}
-          </div>
-
-          {/* Breeder Logo — clickable link */}
-          {product.breeders && (
-            <Link
-              href={shopBreederHref(product.breeders)}
-              onClick={(e) => e.stopPropagation()}
-              className="absolute bottom-2 right-2 flex h-9 w-9 overflow-hidden rounded-full border border-white/30 bg-white/20 shadow-md backdrop-blur-md transition-transform hover:scale-110"
-            >
-              <BreederLogoImage
-                src={product.breeders.logo_url}
-                breederName={product.breeders.name}
-                width={36}
-                height={36}
-                className="rounded-full"
-                imgClassName="object-cover"
-                sizes="36px"
-              />
-            </Link>
-          )}
-        </div>
-
-        <MicroGeneticsBar product={product} />
-
-        {/* Card Body */}
-        <div className="flex flex-col gap-2 p-4">
-          {product.breeders && (
-            <Link
-              href={shopBreederHref(product.breeders)}
-              onClick={(e) => e.stopPropagation()}
-              className="inline-block max-w-fit text-xs font-semibold text-primary underline-offset-2 hover:underline"
-            >
-              {product.breeders.name}
-            </Link>
-          )}
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 sm:text-base">
-            {product.name}
-          </h3>
-
-          {/* Spec Chips — glassmorphism */}
-          <div className="flex flex-wrap gap-1.5">
-            {floweringLabel && (
-              <span className={compactSpecChip}>{floweringLabel}</span>
-            )}
-            {seedLabel && <span className={compactSpecChip}>{seedLabel}</span>}
-            {product.thc_percent != null && (
-              <span className={compactSpecChipThc}>THC {product.thc_percent}%</span>
-            )}
-          </div>
-
-          <div className="mt-2 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs text-zinc-400">เริ่มต้น</p>
-              <p className="text-base font-bold text-primary">
-                {(product.price ?? 0) > 0 ? formatPrice(product.price ?? 0) : "สอบถาม"}
-              </p>
-            </div>
-            <Button
-              size="sm"
-              disabled={outOfStock}
-              onClick={handleAdd}
-              className="h-8 bg-primary text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:bg-primary/90 disabled:opacity-50 active:scale-95"
-            >
-              {outOfStock ? "หมด" : "เพิ่ม"}
-            </Button>
-          </div>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
 
 // ─── Shop Page ────────────────────────────────────────────────────────────────
 
@@ -621,11 +440,24 @@ function ShopContent() {
         </motion.div>
       ) : (
         /* Default Header */
-        <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-8 sm:px-6">
+        <div
+          className={`border-b border-zinc-100 bg-white px-4 py-10 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+        >
           <div className="mx-auto max-w-7xl">
-            <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">ร้านค้า</h1>
-            <p className="mt-1 text-sm text-zinc-500">
-              {isLoading ? "กำลังโหลด..." : `${filteredProducts.length} รายการ`}
+            <p className="text-xs font-medium tracking-wide text-emerald-800">
+              {t("คลังพันธุกรรม", "Catalog")}
+            </p>
+            <h1 className="mt-2 font-[family-name:var(--font-journal-product-serif)] text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
+              {t("ร้านค้า", "Shop")}
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm font-light leading-relaxed text-zinc-600">
+              {t(
+                "สำรวจสายพันธุ์ที่ตรวจสอบแล้ว — จากงานวิจัยสู่การปลูกของคุณ",
+                "Verified genetics—research-led picks for your grow."
+              )}
+            </p>
+            <p className="mt-2 text-xs tabular-nums text-zinc-500">
+              {isLoading ? t("กำลังโหลด...", "Loading...") : `${filteredProducts.length} ${t("รายการ", "items")}`}
             </p>
           </div>
         </div>
@@ -749,7 +581,7 @@ function ShopContent() {
             {isLoading ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
                 {[...Array(12)].map((_, i) => (
-                  <div key={i} className="overflow-hidden rounded-2xl border border-zinc-100">
+                  <div key={i} className="overflow-hidden rounded-sm border border-zinc-50 shadow-sm">
                     <div className="aspect-square animate-pulse bg-zinc-100" />
                     <div className="space-y-2 p-4">
                       <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-100" />
@@ -771,16 +603,18 @@ function ShopContent() {
               </div>
             ) : (
               <>
-                <motion.div
-                  initial="hidden"
-                  animate="show"
-                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
-                  className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3"
-                >
-                  {visibleProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </motion.div>
+                <div className={JOURNAL_PRODUCT_FONT_VARS}>
+                  <motion.div
+                    initial="hidden"
+                    animate="show"
+                    variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
+                    className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3"
+                  >
+                    {visibleProducts.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </motion.div>
+                </div>
                 {totalFiltered > 0 && (
                   <p className="mt-6 text-center text-sm text-zinc-500">
                     {t("แสดง {current} จาก {total} สินค้า", "Showing {current} of {total} products")

@@ -16,7 +16,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useTranslations } from "@/hooks/use-translations";
 import { labelFloweringType } from "@/lib/cannabis-attributes";
 import { seedTypeDetailShort, sexTypeDetailShort } from "@/lib/seed-type-filter";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
+import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { shopBreederHref } from "@/lib/breeder-slug";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import {
@@ -31,6 +32,9 @@ import {
   buildDetailGalleryUrls,
   resolveDetailHeroUrl,
 } from "@/lib/product-gallery-utils";
+
+const journalSerif = "font-[family-name:var(--font-journal-product-serif)]";
+const journalMono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
 
 function fillN(template: string, n: number) {
   return template.replace(/\{n\}/g, String(n));
@@ -88,7 +92,7 @@ function ProductGallery({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className="relative aspect-square overflow-hidden rounded-2xl bg-zinc-50"
+        className="relative aspect-square overflow-hidden rounded-sm bg-zinc-50"
       >
         {current ? (
           <Image
@@ -104,13 +108,13 @@ function ProductGallery({
             <Leaf className="h-20 w-20 text-zinc-200" />
           </div>
         )}
-        <div className="absolute right-3 top-3 h-16 w-16 overflow-hidden rounded-2xl border border-white/60 bg-white/75 shadow-xl backdrop-blur-md transition-transform duration-200 hover:scale-110">
+        <div className="absolute right-3 top-3 h-16 w-16 overflow-hidden rounded-sm border border-white/60 bg-white/75 shadow-xl backdrop-blur-md transition-transform duration-200 hover:scale-110">
           <BreederLogoImage
             src={product.breeders?.logo_url}
             breederName={product.breeders?.name ?? "Breeder"}
             width={64}
             height={64}
-            className="rounded-2xl"
+            className="rounded-sm"
             imgClassName="object-contain p-1.5"
             sizes="64px"
           />
@@ -129,7 +133,7 @@ function ProductGallery({
               key={`${url}-${i}`}
               type="button"
               onClick={() => setSelected(i)}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
+              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-sm border-2 transition-all ${
                 i === selected
                   ? "border-primary shadow-md scale-105"
                   : "border-zinc-200 opacity-60 hover:opacity-100"
@@ -169,15 +173,17 @@ function shouldShowGeneticsRow(
   return normalizeSpecCompare(gr) !== normalizeSpecCompare(ln);
 }
 
-// Bold product name and technical terms (THC/CBD %) in description text
-function formatDescriptionWithBold(text: string, productName: string): React.ReactNode {
+/** Light journal body; subtle emphasis on names and THC/CBD tokens (no heavy bold). */
+function formatDescriptionJournal(text: string, productName: string): React.ReactNode {
   if (!productName.trim()) return text;
   const escaped = productName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(`(${escaped}|THC\\s*\\d+\\s*%|CBD\\s*\\d+\\s*%)`, "gi");
   const parts = text.split(regex);
   return parts.map((part, i) =>
     i % 2 === 1 ? (
-      <strong key={i} className="font-semibold text-zinc-900">{part}</strong>
+      <span key={i} className="font-normal text-zinc-800">
+        {part}
+      </span>
     ) : (
       part
     )
@@ -233,7 +239,15 @@ function StatCard({
   return (
     <div className={`${statCardShell} ${t.bg}`}>
       <Icon className={`mb-1.5 h-6 w-6 ${t.fg}`} />
-      <span className={`text-xl font-extrabold tracking-tight ${t.fg}`}>{value}</span>
+      <span
+        className={cn(
+          "text-xl font-medium tracking-tight",
+          journalMono,
+          t.fg
+        )}
+      >
+        {value}
+      </span>
       <span className={`mt-0.5 text-xs font-semibold uppercase tracking-wider ${t.labelFg}`}>
         {label}
       </span>
@@ -295,7 +309,13 @@ function SpecRow({
         {Icon && <Icon className="h-4 w-4 text-primary" />}
         {label}
       </span>
-      <span className={`text-right font-semibold ${isUnk ? "text-muted-foreground italic" : "text-zinc-800"}`}>
+      <span
+        className={cn(
+          "text-right text-sm font-medium",
+          journalMono,
+          isUnk ? "text-muted-foreground italic" : "text-zinc-800"
+        )}
+      >
         {display}
       </span>
     </div>
@@ -364,9 +384,14 @@ export default function ProductDetailClient({
 
   if (!product) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 pt-16 text-center">
+      <div
+        className={cn(
+          "flex min-h-screen flex-col items-center justify-center gap-4 pt-16 text-center",
+          JOURNAL_PRODUCT_FONT_VARS
+        )}
+      >
         <Leaf className="h-12 w-12 text-zinc-200" />
-        <p className="text-lg font-semibold text-zinc-700">ไม่พบสินค้า</p>
+        <p className={cn(journalSerif, "text-lg font-medium text-zinc-700")}>ไม่พบสินค้า</p>
         <Button asChild variant="outline">
           <Link href="/shop">{tMsg("common.back_to_shop", "Back to Shop")}</Link>
         </Button>
@@ -380,7 +405,7 @@ export default function ProductDetailClient({
   const outOfStock = !selectedVariant || selectedVariant.stock === 0;
 
   return (
-    <div className="min-h-screen bg-white pt-20">
+    <div className={cn("min-h-screen bg-white pt-20 sm:pt-28", JOURNAL_PRODUCT_FONT_VARS)}>
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         {/* Breadcrumb */}
         <Link
@@ -415,55 +440,84 @@ export default function ProductDetailClient({
             {product.breeders && (
               <Link
                 href={shopBreederHref(product.breeders)}
-                className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-primary shadow-sm transition-all hover:border-primary/40 hover:bg-primary/10 hover:shadow-md"
+                className="inline-flex max-w-full items-center gap-2 rounded-sm border border-zinc-200 bg-zinc-50/90 px-3 py-2 text-xs shadow-sm transition-colors hover:border-zinc-300 hover:bg-white"
               >
                 <BreederLogoImage
                   src={product.breeders.logo_url}
                   breederName={product.breeders.name}
                   width={24}
                   height={24}
-                  className="shrink-0 rounded-full border border-primary/20 bg-white"
+                  className="shrink-0 rounded-sm border border-zinc-200 bg-white"
                   imgClassName="object-contain p-0.5"
                   sizes="24px"
                 />
-                {product.breeders.name}
+                <span className={cn(journalMono, "truncate font-medium text-zinc-800")}>
+                  {product.breeders.name}
+                </span>
               </Link>
             )}
 
             {/* Title */}
-            <h1 className="text-2xl font-extrabold leading-tight text-zinc-900 sm:text-3xl">
+            <h1
+              className={cn(
+                journalSerif,
+                "text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl"
+              )}
+            >
               {product.name}
             </h1>
 
-            {/* Spec chips */}
+            {/* Spec chips — lab mono */}
             <div className="flex flex-wrap gap-2">
               {product.flowering_type && (
-                <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
+                <span
+                  className={cn(
+                    journalMono,
+                    "inline-flex items-center rounded-sm border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-800"
+                  )}
+                >
                   {labelFloweringType(product.flowering_type)}
-                </Badge>
+                </span>
               )}
               {product.seed_type === "FEMINIZED" && <FeminizedSeedSpecChip />}
               {product.seed_type === "REGULAR" && <RegularSeedSpecChip />}
-              {product.thc_percent && (
-                <Badge className="bg-accent text-primary hover:bg-accent">
+              {product.thc_percent != null && (
+                <span
+                  className={cn(
+                    journalMono,
+                    "inline-flex items-center rounded-sm border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-medium text-emerald-950"
+                  )}
+                >
                   THC {product.thc_percent}%
-                </Badge>
+                </span>
               )}
-              {product.cbd_percent && (
-                <Badge className="bg-secondary text-secondary-foreground hover:bg-secondary">
+              {product.cbd_percent ? (
+                <span
+                  className={cn(
+                    journalMono,
+                    "inline-flex items-center rounded-sm border border-violet-200/80 bg-violet-50/80 px-2.5 py-1 text-[11px] font-medium text-zinc-800"
+                  )}
+                >
                   CBD {formatCbdDisplay(product.cbd_percent)}
-                </Badge>
-              )}
+                </span>
+              ) : null}
             </div>
 
-            <GeneticRatioBar product={product} variant="compact" t={t} />
+            <GeneticRatioBar
+              product={product}
+              variant="compact"
+              t={t}
+              className={cn(journalMono, "text-[11px] sm:text-xs")}
+            />
 
             <Separator />
 
             {/* Variant Selector */}
             {activeVariants.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-zinc-700">{t("เลือกแพ็กเกจ", "Pack size")}</p>
+                <p className={cn(journalSerif, "text-sm font-medium text-zinc-800")}>
+                  {t("เลือกแพ็กเกจ", "Pack size")}
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {activeVariants.map((v) => {
                     const soldOut = (v.stock ?? 0) === 0;
@@ -473,16 +527,26 @@ export default function ProductDetailClient({
                         key={v.id}
                         onClick={() => !soldOut && setSelectedVariant(v)}
                         disabled={soldOut}
-                        className={`relative rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-all ${
+                        className={`relative rounded-sm border-2 px-4 py-2.5 text-left transition-all ${
                           isSelected
-                            ? "border-primary bg-primary text-white ring-2 ring-primary ring-offset-2 shadow-md scale-[1.02]"
+                            ? "border-emerald-800 bg-emerald-800 text-white ring-2 ring-emerald-800/30 ring-offset-2 shadow-sm"
                             : soldOut
                             ? "border-zinc-100 bg-zinc-50 text-zinc-300 line-through cursor-not-allowed"
-                            : "border-zinc-200 bg-white text-zinc-700 hover:border-primary/60 hover:text-primary"
+                            : "border-zinc-200 bg-white text-zinc-700 hover:border-emerald-700/50"
                         }`}
                       >
-                        <span className="block text-xs">{v.unit_label}</span>
-                        <span className="block font-bold">{formatPrice(v.price)}</span>
+                        <span className="block text-[11px] font-normal leading-tight text-inherit opacity-90">
+                          {v.unit_label}
+                        </span>
+                        <span
+                          className={cn(
+                            "block text-base font-medium",
+                            journalMono,
+                            isSelected ? "text-white" : "text-zinc-900"
+                          )}
+                        >
+                          {formatPrice(v.price)}
+                        </span>
                         {(v.stock ?? 0) <= 5 && (v.stock ?? 0) > 0 && (
                           <span className="block text-[10px] text-destructive">
                             {fillN(tMsg("product.stock_left_simple", "{n} left"), v.stock ?? 0)}
@@ -497,7 +561,7 @@ export default function ProductDetailClient({
 
             {/* Price + Add to Cart */}
             <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-zinc-900">
+              <span className={cn(journalMono, "text-2xl font-medium text-zinc-900 sm:text-3xl")}>
                 {selectedVariant ? formatPrice(selectedVariant.price) : "—"}
               </span>
               {selectedVariant &&
@@ -531,14 +595,32 @@ export default function ProductDetailClient({
         {/* ── Premium Specs Section ─────────────────────────────────────── */}
         <div className="mt-10">
           <Tabs defaultValue="specs">
-            <TabsList className="w-full sm:w-auto">
-              <TabsTrigger value="specs" className="flex-1 sm:flex-none">
+            <TabsList className="h-auto w-full flex-wrap gap-1 bg-zinc-100/90 p-1.5 sm:w-auto">
+              <TabsTrigger
+                value="specs"
+                className={cn(
+                  journalSerif,
+                  "flex-1 rounded-sm px-3 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
+                )}
+              >
                 🧬 {t("พันธุกรรม & สเปก", "Genetics & Specs")}
               </TabsTrigger>
-              <TabsTrigger value="effects" className="flex-1 sm:flex-none">
+              <TabsTrigger
+                value="effects"
+                className={cn(
+                  journalSerif,
+                  "flex-1 rounded-sm px-3 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
+                )}
+              >
                 ⚡ {t("ผล & รสชาติ", "Effects & Flavors")}
               </TabsTrigger>
-              <TabsTrigger value="description" className="flex-1 sm:flex-none">
+              <TabsTrigger
+                value="description"
+                className={cn(
+                  journalSerif,
+                  "flex-1 rounded-sm px-3 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
+                )}
+              >
                 📋 {t("คำบรรยาย", "Description")}
               </TabsTrigger>
             </TabsList>
@@ -610,7 +692,12 @@ export default function ProductDetailClient({
                   </div>
                 )}
 
-                <GeneticRatioBar product={product} variant="card" t={t} />
+                <GeneticRatioBar
+                  product={product}
+                  variant="card"
+                  t={t}
+                  className={cn(journalMono, "text-[11px] sm:text-xs")}
+                />
 
                 {/* Genetics Details Card */}
                 {(shouldShowGeneticsRow(product.genetic_ratio, product.lineage) ||
@@ -619,7 +706,12 @@ export default function ProductDetailClient({
                   product.flowering_type ||
                   product.yield_info) && (
                   <div className="rounded-2xl border border-white/50 bg-white/70 p-5 shadow-sm backdrop-blur-md">
-                    <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    <p
+                      className={cn(
+                        journalSerif,
+                        "mb-3 flex items-center gap-2 text-sm font-medium text-zinc-700"
+                      )}
+                    >
                       <Dna className="h-4 w-4 text-primary" /> {t("โปรไฟล์พันธุกรรม", "Genetic Profile")}
                     </p>
                     {shouldShowGeneticsRow(product.genetic_ratio, product.lineage) && (
@@ -741,8 +833,11 @@ export default function ProductDetailClient({
                       {text && (
                         <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-6">
                           {(text.match(/\n\n/) ? text.split(/\n\n+/) : [text]).map((para, i) => (
-                            <p key={i} className="mb-4 text-sm leading-relaxed text-zinc-700 last:mb-0 whitespace-pre-line">
-                              {formatDescriptionWithBold(para.trim(), product.name)}
+                            <p
+                              key={i}
+                              className="mb-4 text-sm font-light leading-relaxed text-zinc-600 last:mb-0 whitespace-pre-line"
+                            >
+                              {formatDescriptionJournal(para.trim(), product.name)}
                             </p>
                           ))}
                         </div>

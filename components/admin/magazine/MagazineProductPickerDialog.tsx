@@ -82,29 +82,29 @@ export function MagazineProductPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-hidden border-zinc-800 bg-zinc-950 p-0 text-zinc-100">
-        <DialogHeader className="border-b border-zinc-800 px-4 py-3">
-          <DialogTitle className="flex items-center gap-2 text-base font-semibold text-white">
-            <Package className="h-4 w-4 text-emerald-500/90" />
+      <DialogContent className="max-h-[85vh] max-w-lg overflow-hidden border-zinc-200 bg-white p-0 text-zinc-900 shadow-xl">
+        <DialogHeader className="border-b border-zinc-200 px-4 py-3">
+          <DialogTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900">
+            <Package className="h-4 w-4 text-emerald-800" />
             {title}
           </DialogTitle>
         </DialogHeader>
-        <div className="border-b border-zinc-800 px-4 py-2">
+        <div className="border-b border-zinc-200 px-4 py-2">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search name or slug…"
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-900 py-2.5 pl-9 pr-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-600/50 focus:outline-none focus:ring-1 focus:ring-emerald-600/30"
+              className="w-full rounded-lg border border-zinc-200 bg-white py-2.5 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-700/40 focus:outline-none focus:ring-1 focus:ring-emerald-700/25"
             />
           </div>
         </div>
         <div className="max-h-[55vh] overflow-y-auto px-2 pb-4">
           {loading && (
             <div className="flex justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+              <Loader2 className="h-6 w-6 animate-spin text-emerald-800/50" />
             </div>
           )}
           {!loading && list.length === 0 && (
@@ -128,11 +128,11 @@ export function MagazineProductPickerDialog({
                     }}
                     className={`flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition ${
                       multi && isOn
-                        ? "bg-emerald-500/15 ring-1 ring-emerald-500/40"
-                        : "hover:bg-zinc-900"
+                        ? "bg-emerald-50 ring-1 ring-emerald-700/30"
+                        : "hover:bg-zinc-50"
                     }`}
                   >
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-zinc-800">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-zinc-100">
                       {p.image_url ? (
                         <Image
                           src={p.image_url}
@@ -143,13 +143,13 @@ export function MagazineProductPickerDialog({
                           unoptimized={!p.image_url.includes("supabase.co")}
                         />
                       ) : (
-                        <div className="flex h-full items-center justify-center text-[10px] text-zinc-600">
+                        <div className="flex h-full items-center justify-center text-[10px] text-zinc-400">
                           —
                         </div>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-zinc-100">{p.name}</p>
+                      <p className="truncate text-sm font-medium text-zinc-900">{p.name}</p>
                       {p.breeder_name && (
                         <p className="truncate text-xs text-zinc-500">{p.breeder_name}</p>
                       )}
@@ -157,7 +157,7 @@ export function MagazineProductPickerDialog({
                     {multi && (
                       <span
                         className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          isOn ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-500"
+                          isOn ? "bg-emerald-800 text-white" : "bg-zinc-100 text-zinc-500"
                         }`}
                       >
                         {isOn ? "Added" : "Add"}

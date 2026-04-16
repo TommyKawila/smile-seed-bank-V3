@@ -4,13 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ChevronRight, Leaf, Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
+import { JetBrains_Mono, Playfair_Display } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { isHeroSvgMarkup, normalizeHeroSvgHtml } from "@/lib/hero-svg";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
+import { cn } from "@/lib/utils";
+
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-hero-display" });
+const heroMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-hero-mono" });
 
 function HeroSearchBar({ t }: { t: (th: string, en: string) => string }) {
   const router = useRouter();
@@ -28,7 +33,7 @@ function HeroSearchBar({ t }: { t: (th: string, en: string) => string }) {
       onSubmit={handleSubmit}
       className="mx-auto w-full max-w-xl"
     >
-      <div className="flex rounded-2xl border border-white/20 bg-white/10 shadow-xl backdrop-blur-md transition-all focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/20">
+      <div className="flex rounded-sm border border-white/25 bg-white/10 shadow-xl backdrop-blur-md transition-all focus-within:border-emerald-400/40 focus-within:ring-1 focus-within:ring-emerald-500/25">
         <span className="flex items-center pl-4 text-zinc-400">
           <Search className="h-5 w-5" />
         </span>
@@ -44,7 +49,7 @@ function HeroSearchBar({ t }: { t: (th: string, en: string) => string }) {
         />
         <button
           type="submit"
-          className="rounded-r-2xl bg-primary/90 px-4 font-semibold text-white transition-colors hover:bg-primary sm:px-5"
+          className="rounded-r-sm bg-emerald-800 px-4 text-sm font-medium text-white transition-colors hover:bg-emerald-900 sm:px-5"
         >
           {t("ค้นหา", "Search")}
         </button>
@@ -75,7 +80,13 @@ export function Hero() {
     resolvePublicAssetUrl(siteSettings.hero_static_image_url) ?? STATIC_HERO_FALLBACK;
 
   return (
-    <section className="relative flex min-h-[88vh] items-center justify-center overflow-hidden bg-zinc-900">
+    <section
+      className={cn(
+        "relative flex min-h-[88vh] items-center justify-center overflow-hidden bg-zinc-900",
+        playfair.variable,
+        heroMono.variable
+      )}
+    >
       {isLoading ? (
         <div className="absolute inset-0 z-0 bg-zinc-900">
           <Skeleton className="absolute inset-0 h-full w-full rounded-none bg-zinc-800" />
@@ -107,35 +118,36 @@ export function Hero() {
       <div className="absolute inset-0 z-[1] bg-gradient-to-b from-zinc-900/60 via-zinc-900/40 to-zinc-900/80" />
 
       <div className="relative z-10 mx-auto max-w-3xl px-5 text-center">
-        <div className="space-y-5">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
+        <div className="space-y-6 sm:space-y-7">
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            transition={{ duration: 0.55, ease: "easeOut" }}
+            className="font-[family-name:var(--font-hero-mono)] text-[10px] uppercase tracking-[0.22em] text-white/70 sm:text-[11px]"
           >
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
-              <Leaf className="h-3 w-3" />
-              {t("เมล็ดพันธุ์พรีเมียม", "Premium Cannabis Seeds")}
-            </span>
-          </motion.div>
+            {t(
+              "ที่ตั้ง: แม่สาย เชียงใหม่ | ก่อตั้ง ค.ศ. 2025",
+              "LOCATION: MAE SAO, CHIANG MAI | EST. 2025"
+            )}
+          </motion.p>
 
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-            className="flex flex-col gap-y-4 text-4xl font-extrabold leading-snug tracking-tight text-white sm:gap-y-5 sm:text-5xl lg:text-6xl"
+            transition={{ duration: 0.6, delay: 0.06, ease: "easeOut" }}
+            className="font-[family-name:var(--font-hero-display)] text-[2rem] font-medium leading-[1.12] tracking-tighter text-white sm:text-5xl lg:text-6xl"
           >
-            <span>{t("เมล็ดพันธุ์คุณภาพ", "Quality Seeds")}</span>
-            <span className="text-primary">
+            <span className="block">{t("เมล็ดพันธุ์คุณภาพ", "Quality Seeds")}</span>
+            <span className="mt-3 block text-white/88 sm:mt-4">
               {t("คัดสรรเพื่อคุณ", "Selected for You")}
             </span>
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-            className="mx-auto max-w-lg text-base leading-relaxed text-zinc-300 sm:text-lg"
+            transition={{ duration: 0.6, delay: 0.14, ease: "easeOut" }}
+            className="mx-auto max-w-lg text-base font-light leading-relaxed tracking-[0.02em] text-zinc-200 sm:text-lg sm:leading-[1.75]"
           >
             {t(
               "แหล่งรวมสายพันธุ์พรีเมียมจาก Breeder ชั้นนำทั่วโลก พร้อมส่งตรงถึงมือคุณด้วยความปลอดภัยและความใส่ใจ",
@@ -146,14 +158,14 @@ export function Hero() {
           <HeroSearchBar t={t} />
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
-            className="flex flex-col items-center justify-center gap-3 sm:flex-row"
+            transition={{ duration: 0.6, delay: 0.32, ease: "easeOut" }}
+            className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
           >
             <Button
               asChild
-              className="h-12 min-w-[160px] bg-primary px-6 text-base font-semibold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary/90 active:scale-95"
+              className="h-12 min-w-[168px] rounded-sm border-0 bg-emerald-800 px-6 text-base font-medium text-white shadow-md shadow-emerald-950/25 transition-colors hover:bg-emerald-900"
             >
               <Link href="/shop">
                 {t("ดูสินค้าทั้งหมด", "Shop Now")}
@@ -162,8 +174,8 @@ export function Hero() {
             </Button>
             <Button
               asChild
-              variant="outline"
-              className="h-12 min-w-[160px] border-white/30 bg-white/10 px-6 text-base font-medium text-white backdrop-blur hover:bg-white/20"
+              variant="ghost"
+              className="h-12 min-w-[168px] rounded-sm border border-white/55 bg-transparent px-6 text-base font-normal text-white shadow-none transition-colors hover:border-white/80 hover:bg-white/[0.06]"
             >
               <Link href="/blog">{t("อ่าน Smile Seed Blog", "Read Smile Seed Blog")}</Link>
             </Button>

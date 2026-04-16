@@ -34,8 +34,10 @@ import { BlogViewTracker } from "@/components/storefront/magazine/BlogViewTracke
 import { NewsletterBox } from "@/components/storefront/magazine/NewsletterBox";
 import { ShopTheStorySection } from "@/components/storefront/magazine/ShopTheStorySection";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
-import { isResearchCategory } from "@/lib/blog-research-category";
+import { formatResearchRefId, isResearchCategory } from "@/lib/blog-research-category";
 import { getSiteOrigin } from "@/lib/get-url";
+import { cn } from "@/lib/utils";
+import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { BlogArticleBreederRibbon } from "@/components/storefront/magazine/BlogArticleBreederRibbon";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
@@ -154,9 +156,18 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
     ? resolveAbsoluteUrl(siteUrl, rawFeatured)
     : defaultOgImageUrl(siteUrl);
 
+  const refLine = formatResearchRefId(post.id, post.published_at);
+  const metaMono =
+    "font-[family-name:var(--font-journal-product-mono)] text-xs tabular-nums tracking-wide text-zinc-600";
+
   return (
     <div
-      className={`min-h-screen overflow-x-hidden bg-white text-zinc-900 ${inter.variable} ${playfair.variable} font-sans antialiased`}
+      className={cn(
+        "min-h-screen overflow-x-hidden bg-white text-zinc-900 font-sans antialiased",
+        inter.variable,
+        playfair.variable,
+        JOURNAL_PRODUCT_FONT_VARS
+      )}
     >
       <MagazineArticleJsonLd
         title={post.title}
@@ -167,7 +178,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         url={pageUrl}
       />
       <BlogViewTracker postId={post.id} />
-      <article className="mx-auto max-w-3xl px-4 pb-24 pt-24 sm:px-6 lg:px-8">
+      <article className="mx-auto max-w-3xl px-4 pb-28 pt-24 sm:px-6 lg:px-8">
         <nav
           className="mb-10 flex flex-wrap items-center gap-1 text-xs text-zinc-500"
           aria-label="Breadcrumb"
@@ -190,36 +201,54 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           <span className="line-clamp-1 text-zinc-600">{post.title}</span>
         </nav>
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          {post.category && (
-            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-900">
-              {post.category.name}
-            </span>
-          )}
-          {isResearchCategory(post.category) && <VerifiedResearchBadge />}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+          <div className="flex flex-wrap items-center gap-2">
+            {post.category && (
+              <span
+                className={cn(
+                  metaMono,
+                  "text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-900"
+                )}
+              >
+                {post.category.name}
+              </span>
+            )}
+            {isResearchCategory(post.category) && <VerifiedResearchBadge />}
+          </div>
+          <span
+            className="shrink-0 font-[family-name:var(--font-journal-product-mono)] text-[11px] tabular-nums tracking-wide text-zinc-500 sm:pt-1"
+            title="Research reference"
+          >
+            {refLine}
+          </span>
         </div>
 
-        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-semibold leading-[1.7] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl">
+        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-medium leading-[1.25] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl">
           {post.title}
         </h1>
 
-        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-zinc-200 pb-8 text-sm text-zinc-600">
-          <span>Smile Seed Bank Editorial</span>
+        <div
+          className={cn(
+            "mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-zinc-200 pb-8",
+            metaMono
+          )}
+        >
+          <span className="text-zinc-500">Smile Seed Bank Editorial</span>
           {post.published_at && (
             <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
           )}
           <span className="inline-flex items-center gap-1.5">
-            <Clock className="h-4 w-4 text-zinc-400" aria-hidden />
+            <Clock className="h-3.5 w-3.5 text-zinc-400" aria-hidden />
             {readMin} min read
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <Eye className="h-4 w-4 text-zinc-400" aria-hidden />
+            <Eye className="h-3.5 w-3.5 text-zinc-400" aria-hidden />
             {post.view_count.toLocaleString("th-TH")} views
           </span>
         </div>
 
         {post.featured_image && (
-          <div className="relative -mx-4 mt-10 aspect-video min-h-[220px] overflow-hidden rounded-sm border border-[#f3f4f6] shadow-sm sm:mx-0 md:min-h-[360px] lg:min-h-[420px]">
+          <div className="relative -mx-4 mb-12 mt-10 aspect-video min-h-[220px] overflow-hidden rounded-sm border border-zinc-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:mx-0 md:min-h-[360px] lg:min-h-[420px]">
             <Image
               src={post.featured_image}
               alt=""
@@ -236,12 +265,23 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         )}
 
         {post.excerpt && (
-          <p className="mt-10 border-l-2 border-emerald-600/35 pl-5 text-lg leading-relaxed text-zinc-600">
+          <aside
+            className={cn(
+              "mb-10 rounded-sm border-l-4 border-emerald-600 bg-zinc-50 py-5 pl-5 pr-5 text-base font-light leading-relaxed tracking-[0.02em] text-zinc-700 sm:pl-6 sm:pr-6 sm:text-[1.05rem]",
+              !post.featured_image && "mt-10"
+            )}
+            aria-label="Abstract"
+          >
             {post.excerpt}
-          </p>
+          </aside>
         )}
 
-        <div className="mx-auto mt-12 max-w-[720px]">
+        <div
+          className={cn(
+            "mx-auto max-w-[720px]",
+            post.excerpt ? "mt-0" : post.featured_image ? "mt-12" : "mt-10"
+          )}
+        >
           <MagazineArticleBody
             segments={segmentsBefore}
             affiliateMap={affiliateMap}
@@ -305,7 +345,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         )}
 
         <section
-          className="relative left-1/2 right-1/2 mt-16 w-screen max-w-[100vw] -translate-x-1/2 border-t border-zinc-100 bg-white py-14 sm:py-16"
+          className="relative left-1/2 right-1/2 mt-20 w-screen max-w-[100vw] -translate-x-1/2 border-t border-zinc-100 bg-white py-20"
           aria-labelledby="blog-post-breeders-heading"
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

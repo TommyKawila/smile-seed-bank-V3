@@ -7,9 +7,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  User, Package, MapPin, Phone, Mail, ChevronRight,
+  User, MapPin, Phone, Mail, ChevronRight,
   Loader2, LogOut, Check, X, Leaf, ShoppingBag,
-  Truck, Clock, CheckCircle2, XCircle, Copy, Tag, BadgeCheck, Save,
+  Truck, Copy, Tag, BadgeCheck, Save,
   Link2, Link2Off, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,16 @@ import { formatPrice, cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Customer } from "@/types/supabase";
 import { OrderDetailDrawer, type OrderDetailRow } from "@/components/storefront/OrderDetailDrawer";
+import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { GenomeCirclePanel } from "@/components/storefront/GenomeCirclePanel";
+import { canViewMembershipProgram } from "@/lib/feature-flags";
+
+type ProfileTab = "orders" | "membership" | "coupons" | "profile";
+
+const serif = "font-[family-name:var(--font-journal-product-serif)]";
+const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
+const navMono =
+  "font-[family-name:var(--font-journal-product-mono)] text-[10px] font-medium uppercase tracking-widest";
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────
 interface ToastMsg { id: number; msg: string; type: "success" | "error" }
@@ -69,23 +79,26 @@ type OrderRow = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<string, { label: string; labelEn: string; icon: React.ComponentType<{className?:string}>; cls: string }> = {
-  PENDING:  { label: "รอดำเนินการ",  labelEn: "Pending",   icon: Clock,         cls: "bg-amber-100 text-amber-700" },
-  AWAITING_VERIFICATION: { label: "รอตรวจสอบสลิป", labelEn: "Verifying", icon: Clock, cls: "bg-sky-100 text-sky-800" },
-  PAID:     { label: "ชำระแล้ว",     labelEn: "Paid",      icon: CheckCircle2,  cls: "bg-blue-100 text-blue-700" },
-  COMPLETED:{ label: "เสร็จสมบูรณ์", labelEn: "Completed", icon: CheckCircle2,  cls: "bg-emerald-100 text-emerald-800" },
-  SHIPPED:  { label: "จัดส่งแล้ว",   labelEn: "Shipped",   icon: Truck,         cls: "bg-accent text-primary" },
-  DELIVERED:{ label: "ส่งถึงแล้ว",   labelEn: "Delivered", icon: Truck,         cls: "bg-emerald-100 text-emerald-800" },
-  CANCELLED:{ label: "ยกเลิกแล้ว",   labelEn: "Cancelled", icon: XCircle,       cls: "bg-red-100 text-red-600" },
-  VOIDED:   { label: "ยกเลิก·คืนสต็อก", labelEn: "Voided", icon: XCircle,       cls: "bg-zinc-200 text-zinc-700" },
+const STATUS_CONFIG: Record<string, { label: string; labelEn: string; cls: string }> = {
+  PENDING: { label: "รอดำเนินการ", labelEn: "Pending", cls: "bg-zinc-100 text-zinc-600" },
+  AWAITING_VERIFICATION: { label: "รอตรวจสอบสลิป", labelEn: "Verifying", cls: "bg-zinc-100 text-zinc-600" },
+  PAID: { label: "ชำระแล้ว", labelEn: "Paid", cls: "bg-emerald-50 text-emerald-800" },
+  COMPLETED: { label: "เสร็จสมบูรณ์", labelEn: "Completed", cls: "bg-emerald-50 text-emerald-800" },
+  SHIPPED: { label: "จัดส่งแล้ว", labelEn: "Shipped", cls: "bg-zinc-100 text-zinc-700" },
+  DELIVERED: { label: "ส่งถึงแล้ว", labelEn: "Delivered", cls: "bg-emerald-50 text-emerald-800" },
+  CANCELLED: { label: "ยกเลิกแล้ว", labelEn: "Cancelled", cls: "bg-zinc-100 text-zinc-500" },
+  VOIDED: { label: "ยกเลิก·คืนสต็อก", labelEn: "Voided", cls: "bg-zinc-100 text-zinc-600" },
 };
 
 function StatusBadge({ status, locale }: { status: string; locale: string }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING;
-  const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cfg.cls}`}>
-      <Icon className="h-3 w-3" />
+    <span
+      className={cn(
+        "inline-flex items-center rounded-sm px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+        cfg.cls
+      )}
+    >
       {locale === "en" ? cfg.labelEn : cfg.label}
     </span>
   );
@@ -100,14 +113,24 @@ function ProfileContent() {
   const { locale, t } = useLanguage();
 
   const tabParam = searchParams.get("tab");
-  const initialTab: "orders" | "profile" | "coupons" =
-    tabParam === "profile" || tabParam === "orders" || tabParam === "coupons"
-      ? tabParam
-      : "orders";
+  const isAdminUser = user?.user_metadata?.role === "ADMIN";
+  const showMembershipProgram = canViewMembershipProgram(isAdminUser);
+  const initialTab: ProfileTab = (() => {
+    if (tabParam === "membership" && !showMembershipProgram) return "orders";
+    if (
+      tabParam === "profile" ||
+      tabParam === "orders" ||
+      tabParam === "coupons" ||
+      tabParam === "membership"
+    ) {
+      return tabParam;
+    }
+    return "orders";
+  })();
 
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
-  const [tab, setTab] = useState<"orders" | "profile" | "coupons">(initialTab);
+  const [tab, setTab] = useState<ProfileTab>(initialTab);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
 
   const pushToast = useCallback((msg: string, type: "success" | "error") => {
@@ -119,8 +142,15 @@ function ProfileContent() {
   // Sync tab when URL ?tab= changes (e.g. from /account?tab=profile redirect)
   useEffect(() => {
     const p = searchParams.get("tab");
+    const admin = user?.user_metadata?.role === "ADMIN";
+    const showM = canViewMembershipProgram(!!admin);
     if (p === "profile" || p === "orders" || p === "coupons") setTab(p);
-  }, [searchParams]);
+    if (p === "membership" && showM) setTab("membership");
+  }, [searchParams, user]);
+
+  useEffect(() => {
+    if (!showMembershipProgram && tab === "membership") setTab("orders");
+  }, [showMembershipProgram, tab]);
 
   // Handle LINE OAuth callback result (?line_connected=1 or ?line_error=...)
   useEffect(() => {
@@ -248,7 +278,7 @@ function ProfileContent() {
   const displayCustomer = customer as Customer | null;
 
   return (
-    <div className="min-h-screen bg-zinc-50 pt-20">
+    <div className={`min-h-screen bg-white pt-20 ${JOURNAL_PRODUCT_FONT_VARS}`}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -265,7 +295,7 @@ function ProfileContent() {
             variant="outline"
             size="sm"
             onClick={() => { void signOut().then(() => router.push("/")); }}
-            className="gap-1.5 text-zinc-500"
+            className="gap-1.5 rounded-sm border-zinc-200 text-zinc-600"
           >
             <LogOut className="h-3.5 w-3.5" />
             {t("ออกจากระบบ", "Sign Out")}
@@ -273,23 +303,50 @@ function ProfileContent() {
         </div>
 
         {/* Tabs */}
-        <div className="mb-4 flex overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          {(["orders", "coupons", "profile"] as const).map((tb) => (
+        <div
+          className={cn(
+            "mb-4 grid gap-px overflow-hidden rounded-sm border border-zinc-200 bg-zinc-200",
+            showMembershipProgram ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"
+          )}
+        >
+          {(
+            [
+              ["orders", t("ประวัติออเดอร์", "Orders")] as const,
+              ...(showMembershipProgram
+                ? [["membership", t("วงจีโนม", "Genome")] as const]
+                : []),
+              ["coupons", t("คูปอง", "Coupons")] as const,
+              ["profile", t("โปรไฟล์", "Profile")] as const,
+            ] as const
+          ).map(([tb, label]) => (
             <button
               key={tb}
               type="button"
               onClick={() => setTab(tb)}
-              className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors ${
-                tab === tb ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800"
-              }`}
+              className={cn(
+                navMono,
+                "flex min-h-[2.75rem] items-center justify-center px-1 py-2.5 text-center transition-colors sm:min-h-0 sm:py-3.5",
+                tab === tb
+                  ? "bg-zinc-900 text-white"
+                  : "bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+              )}
             >
-              {tb === "orders" && <Package className="h-4 w-4" />}
-              {tb === "coupons" && <Tag className="h-4 w-4" />}
-              {tb === "profile" && <User className="h-4 w-4" />}
-              {tb === "orders" ? t("ประวัติออเดอร์", "My Orders") : tb === "coupons" ? t("คูปองของฉัน", "My Coupons") : t("ข้อมูลส่วนตัว", "Profile")}
+              {label}
             </button>
           ))}
         </div>
+
+        {/* ── GENOME CIRCLE (MEMBERSHIP) — gated by feature flag or admin preview ── */}
+        {showMembershipProgram && tab === "membership" && user ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+            <GenomeCirclePanel
+              orders={orders}
+              isWholesale={!!customer?.is_wholesale}
+              userId={user.id}
+              t={t}
+            />
+          </motion.div>
+        ) : null}
 
         {/* ── ORDERS TAB ──────────────────────────────────────────────────────── */}
         {tab === "orders" && (
@@ -299,11 +356,13 @@ function ProfileContent() {
                 <Loader2 className="h-7 w-7 animate-spin text-primary" />
               </div>
             ) : orders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-zinc-200 py-16 text-center">
-                <ShoppingBag className="h-10 w-10 text-zinc-200" />
-                <p className="text-sm font-medium text-zinc-500">{t("ยังไม่มีออเดอร์", "No orders yet")}</p>
-                <Button asChild className="bg-primary text-white hover:bg-primary/90">
-                  <Link href="/shop">{t("เริ่มช้อปปิ้ง", "Start Shopping")}</Link>
+              <div className="flex flex-col items-center justify-center gap-4 rounded-sm border border-dashed border-zinc-200 py-16 text-center">
+                <ShoppingBag className="h-10 w-10 text-zinc-200" strokeWidth={1} />
+                <p className={cn(serif, "text-lg font-medium text-zinc-800")}>
+                  {t("ยังไม่มีออเดอร์", "No orders yet")}
+                </p>
+                <Button asChild variant="outline" className="rounded-sm border-zinc-200 tracking-wide">
+                  <Link href="/shop">{t("สำรวจสายพันธุ์", "Explore genetics")}</Link>
                 </Button>
               </div>
             ) : (
@@ -321,11 +380,11 @@ function ProfileContent() {
                       onClick={() => setSelectedOrder(order as OrderDetailRow)}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="w-full overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm text-left active:scale-[.99] transition-transform"
+                      className="w-full overflow-hidden rounded-sm border border-zinc-100 bg-white text-left shadow-sm transition-transform active:scale-[.99]"
                     >
                       <div className="flex items-start gap-4 p-4">
                         {/* Item image */}
-                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-zinc-100">
                           {img ? (
                             <Image src={img} alt={itemName} fill className="object-cover" />
                           ) : (
@@ -338,11 +397,13 @@ function ProfileContent() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className="font-bold text-zinc-900">#{order.order_number}</p>
-                              <p className="mt-0.5 text-xs text-zinc-500">
+                              <p className={cn(mono, "text-sm font-medium text-zinc-900")}>
+                                #{order.order_number}
+                              </p>
+                              <p className={cn(serif, "mt-0.5 text-xs font-medium text-zinc-700")}>
                                 {itemName}{itemCount > 1 ? ` +${itemCount - 1} ${t("รายการ", "more")}` : ""}
                               </p>
-                              <p className="mt-0.5 text-xs text-zinc-400">
+                              <p className={cn(mono, "mt-0.5 text-[11px] text-zinc-500")}>
                                 {new Date(order.created_at).toLocaleDateString(
                                   locale === "th" ? "th-TH" : "en-US",
                                   { year: "numeric", month: "short", day: "numeric" }
@@ -358,24 +419,26 @@ function ProfileContent() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-primary/35 bg-white px-2 py-1 text-[11px] font-semibold text-primary shadow-sm hover:bg-emerald-50/60"
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] font-medium text-zinc-700 hover:bg-white"
                                   >
                                     <FileText className="h-3.5 w-3.5" />
                                     {locale === "en" ? "Receipt" : "ใบเสร็จ"}
                                   </a>
                                 ) : null}
                               </div>
-                              <p className="text-sm font-bold text-primary">{formatPrice(order.total_amount)}</p>
+                              <p className={cn(mono, "text-sm font-semibold text-emerald-900")}>
+                                {formatPrice(order.total_amount)}
+                              </p>
                             </div>
                           </div>
 
                           {/* Tracking */}
                           {order.tracking_number && (
-                            <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-primary/15 bg-accent px-3 py-2">
-                              <Truck className="h-4 w-4 shrink-0 text-primary" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">{t("เลขพัสดุ", "Tracking")}</p>
-                                <p className="font-mono text-sm font-bold text-primary">{order.tracking_number}</p>
+                            <div className="mt-2.5 flex items-center gap-2 rounded-sm border border-zinc-100 bg-zinc-50 px-3 py-2">
+                              <Truck className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1.25} />
+                              <div className="min-w-0 flex-1">
+                                <p className={cn(navMono, "text-[9px] text-zinc-500")}>{t("เลขพัสดุ", "Tracking")}</p>
+                                <p className={cn(mono, "text-sm font-medium text-zinc-800")}>{order.tracking_number}</p>
                               </div>
                               <span
                                 role="button"
@@ -411,7 +474,7 @@ function ProfileContent() {
         {tab === "coupons" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
             {orders.length === 0 ? (
-              <div className="overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/5 to-primary/10">
+              <div className="overflow-hidden rounded-sm border border-dashed border-zinc-200 bg-zinc-50/80">
                 <div className="p-6">
                   <div className="mb-4 flex items-center gap-2">
                     <Tag className="h-5 w-5 text-primary" />
@@ -432,7 +495,7 @@ function ProfileContent() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-zinc-200 py-16 text-center">
+              <div className="flex flex-col items-center justify-center gap-4 rounded-sm border border-dashed border-zinc-200 py-16 text-center">
                 <Tag className="h-10 w-10 text-zinc-300" />
                 <p className="text-sm font-medium text-zinc-500">
                   {t("ไม่มีคูปองที่ใช้ได้ในขณะนี้", "No available coupons at the moment")}
@@ -448,27 +511,36 @@ function ProfileContent() {
         {/* ── PROFILE TAB ─────────────────────────────────────────────────────── */}
         {tab === "profile" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm">
               <div className="border-b border-zinc-100 px-5 py-4">
-                <h2 className="font-bold text-zinc-800">{t("ข้อมูลส่วนตัว", "Personal Information")}</h2>
-                <p className="mt-0.5 text-xs text-zinc-400">{t("แก้ไขข้อมูลแล้วกดบันทึก", "Edit your info then tap Save")}</p>
+                <h2 className={cn(serif, "text-lg font-medium text-zinc-900")}>
+                  {t("ข้อมูลส่วนตัว", "Personal Information")}
+                </h2>
+                <p className="mt-0.5 text-xs font-light text-zinc-500">
+                  {t("แก้ไขข้อมูลแล้วกดบันทึก", "Edit your info then tap Save")}
+                </p>
               </div>
 
               <div className="space-y-5 p-5">
                 {/* Email (read-only) */}
                 <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500">
-                    <Mail className="h-3.5 w-3.5" />{t("อีเมล", "Email")}
+                  <Label className="flex items-center gap-1.5 text-xs font-light text-zinc-600">
+                    <Mail className="h-3.5 w-3.5" strokeWidth={1.25} />
+                    {t("อีเมล", "Email")}
                   </Label>
-                  <div className="flex min-h-[48px] items-center rounded-xl border border-zinc-200 bg-zinc-50 px-4 text-sm font-medium text-zinc-500">
+                  <div className="flex min-h-[48px] items-center rounded-sm border border-zinc-200 bg-white px-4 text-sm font-normal text-zinc-600">
                     {user.email}
                   </div>
                 </div>
 
                 {/* Full Name */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="full_name" className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500">
-                    <User className="h-3.5 w-3.5" />{t("ชื่อ-นามสกุล", "Full Name")}
+                  <Label
+                    htmlFor="full_name"
+                    className="flex items-center gap-1.5 text-xs font-light text-zinc-600"
+                  >
+                    <User className="h-3.5 w-3.5" strokeWidth={1.25} />
+                    {t("ชื่อ-นามสกุล", "Full Name")}
                   </Label>
                   <Input
                     id="full_name"
@@ -477,14 +549,18 @@ function ProfileContent() {
                     value={editForm.full_name}
                     onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))}
                     placeholder={t("ชื่อ-นามสกุล", "Full name")}
-                    className="min-h-[48px] rounded-xl text-sm"
+                    className="min-h-[48px] rounded-sm border-zinc-200 bg-white text-sm"
                   />
                 </div>
 
                 {/* Phone — type="tel" triggers numeric keypad on mobile */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500">
-                    <Phone className="h-3.5 w-3.5" />{t("เบอร์โทรศัพท์", "Phone")}
+                  <Label
+                    htmlFor="phone"
+                    className="flex items-center gap-1.5 text-xs font-light text-zinc-600"
+                  >
+                    <Phone className="h-3.5 w-3.5" strokeWidth={1.25} />
+                    {t("เบอร์โทรศัพท์", "Phone")}
                   </Label>
                   <Input
                     id="phone"
@@ -494,14 +570,18 @@ function ProfileContent() {
                     value={editForm.phone}
                     onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
                     placeholder="08x-xxx-xxxx"
-                    className="min-h-[48px] rounded-xl text-sm"
+                    className="min-h-[48px] rounded-sm border-zinc-200 bg-white text-sm"
                   />
                 </div>
 
                 {/* Address — scroll target from /profile#address */}
                 <div id="address" className="scroll-mt-24 space-y-1.5">
-                  <Label htmlFor="address" className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500">
-                    <MapPin className="h-3.5 w-3.5" />{t("ที่อยู่จัดส่ง", "Shipping Address")}
+                  <Label
+                    htmlFor="address"
+                    className="flex items-center gap-1.5 text-xs font-light text-zinc-600"
+                  >
+                    <MapPin className="h-3.5 w-3.5" strokeWidth={1.25} />
+                    {t("ที่อยู่จัดส่ง", "Shipping Address")}
                   </Label>
                   <Textarea
                     id="address"
@@ -510,7 +590,7 @@ function ProfileContent() {
                     onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))}
                     placeholder={t("บ้านเลขที่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์", "House no., Street, District, Province, Zip")}
                     rows={4}
-                    className="resize-none rounded-xl text-sm leading-relaxed"
+                    className="resize-none rounded-sm border-zinc-200 bg-white text-sm leading-relaxed"
                   />
                 </div>
 
@@ -518,7 +598,7 @@ function ProfileContent() {
                 <Button
                   onClick={() => void handleSaveProfile()}
                   disabled={saving}
-                  className="h-12 w-full gap-2 bg-primary text-base font-semibold text-white hover:bg-primary/90 active:scale-[.98]"
+                  className="h-12 w-full gap-2 rounded-sm bg-emerald-800 text-base font-semibold tracking-wide text-white shadow-none hover:bg-emerald-900 active:scale-[.98]"
                 >
                   {saving ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -532,10 +612,12 @@ function ProfileContent() {
             <Separator className="my-5" />
 
             {/* Social Connections */}
-            <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm">
               <div className="border-b border-zinc-100 px-5 py-4">
-                <h2 className="font-bold text-zinc-800">{t("การเชื่อมต่อบัญชี", "Social Connections")}</h2>
-                <p className="mt-0.5 text-xs text-zinc-400">
+                <h2 className={cn(serif, "text-lg font-medium text-zinc-900")}>
+                  {t("การเชื่อมต่อบัญชี", "Social Connections")}
+                </h2>
+                <p className="mt-0.5 text-xs font-light text-zinc-500">
                   {t("เชื่อมต่อ LINE เพื่อรับแจ้งเตือนการจัดส่งพัสดุ", "Connect LINE to receive shipping notifications")}
                 </p>
               </div>
@@ -606,7 +688,7 @@ function ProfileContent() {
             <Separator className="my-5" />
 
             {/* Quick Links */}
-            <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm">
               {[
                 { href: "/shop", label: t("เลือกซื้อสินค้า", "Browse Products"), icon: ShoppingBag },
                 { href: "/breeders", label: t("ดูข้อมูล Breeder", "Explore Breeders"), icon: Leaf },
@@ -614,13 +696,13 @@ function ProfileContent() {
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center justify-between px-5 py-3.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-zinc-100"
+                  className="flex items-center justify-between px-5 py-3.5 text-sm font-light text-zinc-700 hover:bg-zinc-50 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-zinc-100"
                 >
                   <span className="flex items-center gap-3">
-                    <Icon className="h-4 w-4 text-zinc-400" />
+                    <Icon className="h-4 w-4 text-zinc-400" strokeWidth={1.25} />
                     {label}
                   </span>
-                  <ChevronRight className="h-4 w-4 text-zinc-300" />
+                  <ChevronRight className="h-4 w-4 text-zinc-300" strokeWidth={1.25} />
                 </Link>
               ))}
             </div>

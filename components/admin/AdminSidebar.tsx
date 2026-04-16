@@ -49,7 +49,7 @@ const navItems = [
   { href: "/admin/promotions", label: "โปรโมชั่น", icon: Tag },
   { href: "/admin/promotions/campaigns", label: "แคมเปญป๊อปอัพ", icon: Sparkles },
   { href: "/admin/discounts", label: "ส่วนลด / คูปอง", icon: Percent },
-  { href: "/admin/magazine", label: "บล็อก Smile Seed", icon: Newspaper },
+  { href: "/admin/magazine", label: "Smile Seed Blog", icon: Newspaper },
 ];
 
 const bottomItems = [
@@ -75,9 +75,9 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
   }, []);
 
   return (
-    <aside className="flex h-full w-64 flex-col bg-zinc-900 text-zinc-100">
-      {/* Logo — same brand asset as storefront (`logo_main_url`) */}
-      <div className="flex items-start justify-between gap-2 px-5 py-5">
+    <aside className="flex h-full w-64 flex-col border-r border-zinc-200 bg-white text-zinc-800 shadow-sm">
+      {/* Logo — full-color brand asset as storefront (`logo_main_url`) */}
+      <div className="flex items-start justify-between gap-2 border-b border-zinc-100 px-5 py-5">
         <Link
           href="/admin/dashboard"
           className="flex min-w-0 flex-1 flex-col gap-1.5"
@@ -100,10 +100,10 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
           ) : (
             <>
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-800">
                   <Leaf className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-sm font-semibold leading-tight text-zinc-100">
+                <span className="text-sm font-semibold leading-tight text-zinc-900">
                   Smile Seed Bank
                 </span>
               </div>
@@ -117,7 +117,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded p-1 hover:bg-zinc-800 lg:hidden"
+            className="shrink-0 rounded p-1 text-zinc-600 hover:bg-zinc-100 lg:hidden"
             aria-label="Close menu"
           >
             <X className="h-4 w-4" />
@@ -125,7 +125,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
         )}
       </div>
 
-      <Separator className="bg-zinc-800" />
+      <Separator className="bg-zinc-200" />
 
       {/* Main Nav */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
@@ -141,8 +141,8 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 active
-                  ? "bg-primary text-white"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                  ? "bg-emerald-800 text-white shadow-sm"
+                  : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -157,14 +157,14 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
         })}
       </nav>
 
-      <Separator className="bg-zinc-800" />
+      <Separator className="bg-zinc-200" />
 
-      <div className="hidden border-t border-zinc-800 px-3 py-3 lg:block">
-        <UserNav triggerClassName="w-full justify-start border-zinc-600 text-zinc-100 hover:bg-zinc-800 hover:text-white data-[state=open]:bg-zinc-800" />
+      <div className="hidden border-t border-zinc-100 px-3 py-3 lg:block">
+        <UserNav triggerClassName="w-full justify-start border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 data-[state=open]:bg-zinc-50" />
       </div>
 
       {/* Bottom Nav */}
-      <div className="space-y-0.5 px-3 py-3">
+      <div className="space-y-0.5 border-t border-zinc-100 px-3 py-3">
         {bottomItems.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -176,8 +176,8 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 active
-                  ? "bg-primary text-white"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                  ? "bg-emerald-800 text-white shadow-sm"
+                  : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
