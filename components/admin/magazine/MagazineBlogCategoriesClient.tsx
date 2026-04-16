@@ -239,7 +239,7 @@ export function MagazineBlogCategoriesClient({
             </div>
             <div>
               <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-                Smile Seed Blog
+                Blog CMS
               </p>
               <h1 className="text-2xl font-semibold tracking-tight text-white">
                 Article categories

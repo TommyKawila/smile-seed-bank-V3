@@ -299,7 +299,7 @@ export function MagazinePostForm({
             </Link>
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-                Smile Seed Blog
+                Blog CMS
               </p>
               <h1 className="truncate text-lg font-semibold tracking-tight text-white">
                 {isEdit ? "Edit article" : "New article"}

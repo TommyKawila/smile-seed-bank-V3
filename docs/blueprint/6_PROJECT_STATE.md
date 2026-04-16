@@ -129,7 +129,7 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 - **`app/(storefront)/page.tsx`** — Join Free / Sign Up banner subtext TH/EN: member benefits + latest research-backed growing techniques (replaces wholesale/VIP wholesale pitch); `leading-relaxed` on subparagraph for mobile wrap.
 
 ### Homepage v2 (preview route)
-- **`app/(storefront)/page-v2/page.tsx`** — `/page-v2`: light minimalist shell; `Hero` in rounded framed container; **Insights** block fetches `GET /api/storefront/magazine/recent?take=3` (`blog_posts`); same featured carousel, breeders, bestsellers (`useProducts` limit 8), bottom CTA copy aligned with main home; `PromotionBanner` unchanged (layout-level).
+- **`app/(storefront)/page.tsx`** — light minimalist shell (merged from former `page-v2`); `Hero` in rounded framed container; **Smile Seed Blog** block + `BlogHeroSlogan` + journal cards (`GET /api/storefront/magazine/recent?take=3`); featured carousel, breeders, bestsellers; member CTA; root `body` + storefront `main` `bg-white`; `PromotionBanner` / `OfferManager` in layout.
 
 ### Storefront breeder logos
 - **`resolvePublicAssetUrl()`** — `lib/public-storage-url.ts` (relative storage paths → full public URL)
