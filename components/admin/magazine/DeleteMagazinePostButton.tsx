@@ -28,7 +28,7 @@ export function DeleteMagazinePostButton({ postId, onDeleted }: Props) {
           router.refresh();
         });
       }}
-      className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-400/90 transition hover:bg-red-950/50 hover:text-red-300 disabled:opacity-50"
+      className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
     >
       {pending ? "…" : "Delete"}
     </button>

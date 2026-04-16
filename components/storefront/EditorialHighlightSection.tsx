@@ -22,7 +22,7 @@ function badgeLabel(post: MagazinePostPublic): string {
   const c = post.category?.name?.trim();
   if (c) return c.replace(/^#/, "");
   const t = post.tags?.find((x) => x.trim());
-  return t?.replace(/^#/, "") ?? "Magazine";
+  return t?.replace(/^#/, "") ?? "Smile Seed Blog";
 }
 
 function HeroImage({ src, alt }: { src: string | null; alt: string }) {
@@ -144,7 +144,7 @@ export function EditorialHighlightSection() {
           {t("ความรู้ & เรื่องราว", "Knowledge & stories")}
         </p>
         <h2 className="mt-1 font-serif text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-          {t("จากนิตยสาร Smile Seed", "From the magazine")}
+          {t("จาก Smile Seed Blog", "From Smile Seed Blog")}
         </h2>
       </div>
       <Button asChild variant="ghost" size="sm" className="shrink-0 gap-1 text-primary hover:text-primary/90">

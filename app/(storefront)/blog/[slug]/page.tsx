@@ -33,6 +33,8 @@ import { SmartTieInStrip } from "@/components/storefront/magazine/SmartTieInStri
 import { BlogViewTracker } from "@/components/storefront/magazine/BlogViewTracker";
 import { NewsletterBox } from "@/components/storefront/magazine/NewsletterBox";
 import { ShopTheStorySection } from "@/components/storefront/magazine/ShopTheStorySection";
+import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
+import { isResearchCategory } from "@/lib/blog-research-category";
 import { getSiteOrigin } from "@/lib/get-url";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
@@ -72,7 +74,7 @@ export async function generateMetadata({
   return {
     metadataBase: new URL(base),
     title: {
-      absolute: `${post.title} | Tommy Smile Seed Magazine`,
+      absolute: `${post.title} | Smile Seed Blog`,
     },
     description,
     authors: [{ name: "Smile Seed Bank Editorial" }],
@@ -82,7 +84,7 @@ export async function generateMetadata({
       locale: "th_TH",
       type: "article",
       url: pageUrl,
-      siteName: "Tommy Smile Seed Magazine",
+      siteName: "Smile Seed Blog",
       publishedTime: post.created_at,
       modifiedTime: post.updated_at,
       authors: ["Smile Seed Bank Editorial"],
@@ -170,7 +172,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           aria-label="Breadcrumb"
         >
           <Link href="/blog" className="transition hover:text-emerald-700">
-            Magazine
+            Smile Seed Blog
           </Link>
           {post.category && (
             <>
@@ -187,13 +189,16 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           <span className="line-clamp-1 text-zinc-600">{post.title}</span>
         </nav>
 
-        {post.category && (
-          <span className="mb-4 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
-            [{post.category.name}]
-          </span>
-        )}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {post.category && (
+            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-900">
+              {post.category.name}
+            </span>
+          )}
+          {isResearchCategory(post.category) && <VerifiedResearchBadge />}
+        </div>
 
-        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-bold leading-[1.7] tracking-tight text-emerald-950 sm:text-4xl md:text-5xl">
+        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-semibold leading-[1.7] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl">
           {post.title}
         </h1>
 
@@ -213,7 +218,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         </div>
 
         {post.featured_image && (
-          <div className="relative -mx-4 mt-10 aspect-[16/10] min-h-[260px] overflow-hidden rounded-2xl border border-zinc-200 shadow-sm sm:mx-0 md:min-h-[400px] lg:min-h-[520px]">
+          <div className="relative -mx-4 mt-10 aspect-video min-h-[220px] overflow-hidden rounded-sm border border-[#f3f4f6] shadow-sm sm:mx-0 md:min-h-[360px] lg:min-h-[420px]">
             <Image
               src={post.featured_image}
               alt=""
@@ -256,35 +261,37 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
             <h2 className="font-[family-name:var(--font-magazine-serif)] text-2xl font-semibold text-emerald-950">
               Read more
             </h2>
-            <ul className="mt-8 grid gap-6 sm:grid-cols-2">
+            <ul className="mt-8 grid gap-8 sm:grid-cols-2">
               {related.map((r) => (
                 <li key={r.id}>
                   <Link
                     href={`/blog/${r.slug}`}
-                    className="group block overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm transition hover:border-emerald-300/60 hover:shadow-md"
+                    className="group block overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition hover:shadow-lg"
                   >
                     {r.featured_image && (
-                      <div className="relative aspect-[16/10] w-full overflow-hidden">
+                      <div className="relative aspect-video w-full overflow-hidden">
                         <Image
                           src={r.featured_image}
                           alt=""
                           fill
-                          className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                          className="object-cover transition duration-500 group-hover:scale-[1.02]"
                           sizes="(max-width: 640px) 100vw, 50vw"
                           loading="lazy"
                           placeholder="blur"
                           blurDataURL={SHIMMER_BLUR_DATA_URL}
                           unoptimized={!r.featured_image.includes("supabase.co")}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/15 to-transparent" />
                       </div>
                     )}
                     <div className="p-4">
-                      {r.category && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-                          {r.category.name}
-                        </span>
-                      )}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {r.category && (
+                          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-900">
+                            {r.category.name}
+                          </span>
+                        )}
+                        {isResearchCategory(r.category) && <VerifiedResearchBadge />}
+                      </div>
                       <p className="mt-2 line-clamp-2 font-[family-name:var(--font-magazine-serif)] text-base font-semibold text-zinc-900 group-hover:text-emerald-800">
                         {r.title}
                       </p>
@@ -303,7 +310,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
             href="/blog"
             className="inline-flex text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
           >
-            ← Back to Magazine
+            ← Back to Smile Seed Blog
           </Link>
         </div>
       </article>

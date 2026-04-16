@@ -165,7 +165,7 @@ export function Hero() {
               variant="outline"
               className="h-12 min-w-[160px] border-white/30 bg-white/10 px-6 text-base font-medium text-white backdrop-blur hover:bg-white/20"
             >
-              <Link href="/blog">{t("อ่านบทความ", "Read Blog")}</Link>
+              <Link href="/blog">{t("อ่าน Smile Seed Blog", "Read Smile Seed Blog")}</Link>
             </Button>
           </motion.div>
         </div>

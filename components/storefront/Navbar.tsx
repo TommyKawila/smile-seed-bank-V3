@@ -71,7 +71,7 @@ export function Navbar() {
     { href: "/", label: t("หน้าแรก", "Home") },
     { href: "/shop", label: t("ร้านค้า", "Shop") },
     { href: "/shop?category=Seeds", label: t("เมล็ดพันธุ์", "Seeds") },
-    { href: "/blog", label: t("บทความ", "Blog") },
+    { href: "/blog", label: t("บล็อก Smile Seed", "Smile Seed Blog") },
   ];
 
   return (

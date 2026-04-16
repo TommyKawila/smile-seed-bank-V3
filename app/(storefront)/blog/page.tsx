@@ -12,6 +12,7 @@ import { MagazineCategoryPills } from "@/components/storefront/magazine/Magazine
 import { MagazineHeroCarousel } from "@/components/storefront/magazine/MagazineHeroCarousel";
 import { MagazineLatestGrid } from "@/components/storefront/magazine/MagazineLatestGrid";
 import { MagazineTrending } from "@/components/storefront/magazine/MagazineTrending";
+import { BlogHeroSlogan } from "@/components/storefront/magazine/BlogHeroSlogan";
 import { getSiteOrigin } from "@/lib/get-url";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
@@ -21,23 +22,23 @@ const siteBase = getSiteOrigin();
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Digital Magazine & Cannabis Knowledge | Tommy Smile Seed",
+    absolute: "Smile Seed Blog — Bio-Ag Wisdom | Tommy Smile Seed",
   },
   description:
-    "แหล่งรวมความรู้เรื่องสายพันธุ์กัญชา, เกษตรอินทรีย์ และไลฟ์สไตล์จากเชียงใหม่ โดยทีมงาน Smile Seed Bank",
+    "ผสานศาสตร์ชีวภาพ สู่สายเขียวออแกนิค เพื่อรอยยิ้มที่ปลอดภัย — Smile Seed Blog โดย Smile Seed Bank",
   openGraph: {
-    title: "Digital Magazine & Cannabis Knowledge | Tommy Smile Seed",
+    title: "Smile Seed Blog — Bio-Ag Wisdom | Tommy Smile Seed",
     description:
-      "แหล่งรวมความรู้เรื่องสายพันธุ์กัญชา, เกษตรอินทรีย์ และไลฟ์สไตล์จากเชียงใหม่ โดยทีมงาน Smile Seed Bank",
+      "Bio-Ag Wisdom for Safe & Organic Smiles — cultivation knowledge from Smile Seed Bank.",
     type: "website",
     url: `${siteBase}/blog`,
-    siteName: "Tommy Smile Seed Magazine",
+    siteName: "Smile Seed Blog",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Digital Magazine & Cannabis Knowledge | Tommy Smile Seed",
+    title: "Smile Seed Blog — Bio-Ag Wisdom | Tommy Smile Seed",
     description:
-      "แหล่งรวมความรู้เรื่องสายพันธุ์กัญชา, เกษตรอินทรีย์ และไลฟ์สไตล์จากเชียงใหม่ โดยทีมงาน Smile Seed Bank",
+      "Bio-Ag Wisdom for Safe & Organic Smiles — cultivation knowledge from Smile Seed Bank.",
   },
   alternates: {
     canonical: "/blog",
@@ -65,20 +66,18 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
     <div
       className={`min-h-screen bg-white text-zinc-900 ${inter.variable} ${playfair.variable} font-sans antialiased`}
     >
-      <div className="mx-auto max-w-7xl px-4 pb-20 pt-24 sm:px-6 lg:px-8">
-        <header className="mb-14 space-y-3 text-center lg:mb-16">
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-24 sm:px-6 lg:px-8">
+        <header className="mb-16 space-y-4 text-center lg:mb-20">
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-emerald-700">
             Smile Seed Bank
           </p>
-          <h1 className="font-[family-name:var(--font-magazine-serif)] text-4xl font-bold tracking-tight text-emerald-950 md:text-5xl lg:text-6xl">
-            Magazine
+          <h1 className="font-[family-name:var(--font-magazine-serif)] text-4xl font-semibold tracking-tight text-zinc-900 md:text-5xl lg:text-6xl">
+            Smile Seed Blog
           </h1>
-          <p className="mx-auto max-w-lg text-sm text-zinc-600">
-            Stories, knowledge, and cultivation — curated for growers.
-          </p>
+          <BlogHeroSlogan />
         </header>
 
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:items-start lg:gap-12">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:items-start lg:gap-16">
           <div className="order-1 lg:order-none lg:col-start-2 lg:row-start-1">
             <MagazineHeroCarousel posts={highlights} />
           </div>
@@ -96,7 +95,7 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
           </div>
 
           <div className="order-4 lg:order-none lg:col-start-2 lg:row-start-3">
-            <section aria-label="Articles">
+            <section aria-label="Smile Seed Blog articles">
               <MagazineLatestGrid posts={gridPosts} />
             </section>
           </div>

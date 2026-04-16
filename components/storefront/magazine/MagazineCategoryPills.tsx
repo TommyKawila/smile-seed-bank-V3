@@ -10,7 +10,7 @@ export function MagazineCategoryPills({ categories }: { categories: BlogCategory
 
   return (
     <nav
-      className="flex flex-wrap gap-2 border-b border-zinc-200 pb-8 pt-2"
+      className="flex flex-wrap gap-3 border-b border-[#f3f4f6] pb-10 pt-2"
       aria-label="Categories"
     >
       <Link

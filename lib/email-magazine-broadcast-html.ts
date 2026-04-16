@@ -40,7 +40,7 @@ export function buildMagazineResearchEmailHtml(opts: {
   const badge = "Research Paper";
   const lead =
     opts.excerpt?.trim() ||
-    "A new article is available in the Smile Seed Bank magazine.";
+    "A new article is available on Smile Seed Blog.";
   const img =
     opts.imageUrl != null
       ? `<tr><td style="padding:0 0 20px"><img src="${esc(opts.imageUrl)}" width="560" alt="" style="display:block;width:100%;max-width:560px;height:auto;border:0;border-radius:0" /></td></tr>`

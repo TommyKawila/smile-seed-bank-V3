@@ -305,7 +305,7 @@ export default function PromotionCampaignsPage() {
           </Link>
           <h1 className="text-xl font-bold text-zinc-900">แคมเปญป๊อปอัพ</h1>
           <p className="text-sm text-zinc-500">
-            แบนเนอร์ + โค้ด — อัปโหลดผ่าน Magazine pipeline (watermark)
+            แบนเนอร์ + โค้ด — อัปโหลดผ่านระบบบล็อก (watermark)
           </p>
         </div>
         <Button onClick={openAdd} className="bg-primary text-primary-foreground">

@@ -24,7 +24,7 @@ function subjectFor(
   if (template === "field_notes") {
     return `🌿 Field Notes: ${t} — Smile Seed Bank`;
   }
-  return `📘 New guide: ${t} — Smile Seed Bank Magazine`;
+  return `📘 New guide: ${t} — Smile Seed Blog`;
 }
 
 export async function sendMagazineNewsletterBroadcast(opts: {

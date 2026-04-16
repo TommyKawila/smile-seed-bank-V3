@@ -49,7 +49,7 @@ const navItems = [
   { href: "/admin/promotions", label: "โปรโมชั่น", icon: Tag },
   { href: "/admin/promotions/campaigns", label: "แคมเปญป๊อปอัพ", icon: Sparkles },
   { href: "/admin/discounts", label: "ส่วนลด / คูปอง", icon: Percent },
-  { href: "/admin/magazine", label: "นิตยสาร", icon: Newspaper },
+  { href: "/admin/magazine", label: "บล็อก Smile Seed", icon: Newspaper },
 ];
 
 const bottomItems = [
