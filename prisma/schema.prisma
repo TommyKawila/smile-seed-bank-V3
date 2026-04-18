@@ -139,6 +139,8 @@ model customers {
   phone                      String?
   address                    String?
   line_user_id               String?
+  last_interaction_at        DateTime? @db.Timestamptz(6)
+  is_linked                  Boolean   @default(false)
   is_wholesale               Boolean?  @default(false)
   wholesale_discount_percent Decimal?  @default(0) @db.Decimal
   created_at                 DateTime? @default(now()) @db.Timestamptz(6)

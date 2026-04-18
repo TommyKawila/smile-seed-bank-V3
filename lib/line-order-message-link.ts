@@ -39,7 +39,11 @@ export async function linkLineUserFromOrderChatMessage(
     if (order.customer_id) {
       await tx.customers.update({
         where: { id: order.customer_id },
-        data: { line_user_id: uid },
+        data: {
+          line_user_id: uid,
+          is_linked: true,
+          last_interaction_at: new Date(),
+        },
       });
     }
     await tx.orders.update({

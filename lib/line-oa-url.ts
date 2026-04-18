@@ -61,7 +61,7 @@ export function lineOaUrlWithOrderHint(orderNumber: string): string {
   if (!n || n === "—") return base;
   if (/lin\.ee\//i.test(base)) return base;
 
-  const body = `แจ้งเลขออเดอร์ #${n}`;
+  const body = `Order #${n}`;
   if (/line\.me\/R\/oaMessage\//i.test(base)) {
     const pathOnly = base.split("?")[0];
     return `${pathOnly.replace(/\/?$/, "")}/?${encodeURIComponent(body)}`;

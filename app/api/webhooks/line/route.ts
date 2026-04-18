@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { verifyLineChannelWebhookSignature } from "@/lib/line-webhook-signature";
 import { linkLineUserFromOrderChatMessage } from "@/lib/line-order-message-link";
+import {
+  recordLineUserInteraction,
+  shouldSuppressLineOrderLinkPrompt,
+} from "@/lib/line-user-interaction";
 
 export const runtime = "nodejs";
 
@@ -51,17 +55,24 @@ export async function POST(req: Request) {
     if (!lineUserId || !text.trim()) continue;
 
     const result = await linkLineUserFromOrderChatMessage(lineUserId, text);
+
     if (result.ok && ev.replyToken) {
       await replyLineMessage(
         ev.replyToken,
-        "✅ เชื่อม LINE กับออเดอร์แล้ว — จะแจ้งสถานะอัตโนมัติ\nLINE linked for this order."
+        "ได้รับสลิปโอนเรียบร้อยแล้ว รอแอดมินตรวจสอบสักครู่\n\n" +
+          "EN: Linked to this order; slip received — pending admin review."
       );
     } else if (!result.ok && result.reason === "no_order_token" && ev.replyToken) {
-      await replyLineMessage(
-        ev.replyToken,
-        "ส่งรูปแบบ เช่น Order #เลขออเดอร์ เพื่อเชื่อม LINE\nSend e.g. Order #YOUR_ORDER_NUMBER"
-      );
+      const suppress = await shouldSuppressLineOrderLinkPrompt(lineUserId);
+      if (!suppress) {
+        await replyLineMessage(
+          ev.replyToken,
+          "ส่งรูปแบบ เช่น Order #เลขออเดอร์ เพื่อเชื่อม LINE\nSend e.g. Order #YOUR_ORDER_NUMBER"
+        );
+      }
     }
+
+    await recordLineUserInteraction(lineUserId);
   }
 
   return NextResponse.json({ ok: true });

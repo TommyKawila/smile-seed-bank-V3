@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { lineOaUrlWithOrderHint } from "@/lib/line-oa-url";
 
 const orderMono = JetBrains_Mono({ subsets: ["latin"] });
 
@@ -146,15 +147,41 @@ export function OrderClaimClient({ token }: { token: string }) {
         ? "เชื่อมบัญชีร้านค้าแล้ว — อัปเดตที่อยู่ในโปรไฟล์เรียบร้อย"
         : "เราได้รับที่อยู่และสลิปแล้ว — ทีมจะตรวจสอบและดำเนินการต่อไป";
     const loginEmail = shipping_email.trim();
+    const orderNo = preview?.order_number?.trim() ?? "";
+    const lineTrackHref = orderNo ? lineOaUrlWithOrderHint(orderNo) : "";
     return (
       <div className="mx-auto max-w-md space-y-5 rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-8 text-center shadow-sm">
         <div>
           <p className="text-base font-medium text-emerald-900">{headline}</p>
           <p className="mt-2 text-sm text-emerald-800/90">{subTh}</p>
         </div>
+        {lineTrackHref ? (
+          <div className="rounded-xl border border-[#06C755]/40 bg-white p-4 text-left shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#05804a]">
+              LINE · แจ้งเตือนพัสดุอัตโนมัติ
+            </p>
+            <p className="mt-2 text-sm text-zinc-700">
+              กดปุ่มด้านล่าง แล้วใน LINE ให้แตะ <span className="font-medium">ส่ง (Send)</span>{" "}
+              เพื่อเปิดใช้การแจ้งเตือนสถานะออเดอร์/พัสดุอัตโนมัติ
+            </p>
+            <p className="mt-1 text-xs text-zinc-500">
+              Click the button, then tap <span className="font-medium">Send</span> in LINE to activate
+              automated tracking notifications.
+            </p>
+            <Button
+              asChild
+              className="mt-4 h-12 w-full bg-[#06C755] text-white hover:bg-[#05b34c]"
+            >
+              <a href={lineTrackHref} target="_blank" rel="noopener noreferrer">
+                Track on LINE
+              </a>
+            </Button>
+          </div>
+        ) : null}
         <Button
           asChild
-          className="h-12 w-full bg-emerald-800 text-white hover:bg-emerald-800/90"
+          variant="outline"
+          className="h-12 w-full border-emerald-800/35 text-emerald-900 hover:bg-emerald-50"
         >
           <Link href={`/order/status/${encodeURIComponent(token)}`}>
             Check Order Status

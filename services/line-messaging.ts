@@ -4,6 +4,7 @@
 
 import { getSiteOrigin } from "@/lib/get-url";
 import { appendLineOpenExternalBrowserParam } from "@/lib/line-flex";
+import { recordLineUserInteraction } from "@/lib/line-user-interaction";
 
 const LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push";
 const LINE_BROADCAST_URL = "https://api.line.me/v2/bot/message/broadcast";
@@ -386,6 +387,7 @@ export async function sendCustomerShippingAlert(opts: {
       throw new Error(`LINE API error ${res.status}: ${JSON.stringify(body)}`);
     }
 
+    await recordLineUserInteraction(opts.lineUserId);
     return { success: true, error: null };
   } catch (err) {
     return { success: false, error: String(err) };
@@ -430,6 +432,7 @@ export async function pushFlexMessageToLineUser(
       };
     }
     console.log("LINE_SUCCESS:", data);
+    await recordLineUserInteraction(lineUserId);
     return { success: true, error: null };
   } catch (err) {
     console.error("LINE_FETCH_CRASH:", err);
@@ -463,6 +466,7 @@ export async function pushTextToLineUser(
       const body = await res.json().catch(() => ({}));
       throw new Error(`LINE API error ${res.status}: ${JSON.stringify(body)}`);
     }
+    await recordLineUserInteraction(lineUserId);
     return { success: true, error: null };
   } catch (err) {
     return { success: false, error: String(err) };

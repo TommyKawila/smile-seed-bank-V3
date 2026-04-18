@@ -12,6 +12,7 @@ import {
   sendShippingConfirmationEmail,
 } from "@/services/email-service";
 import { sendLineFlexNotification } from "@/lib/order-line-notifications";
+import { pushTextToLineUser } from "@/services/line-messaging";
 
 export interface AdminOrderRow {
   id: number;
@@ -29,6 +30,19 @@ export interface AdminOrderRow {
 }
 
 export type ServiceResult<T> = { data: T | null; error: string | null };
+
+export type ApprovePaymentResult = {
+  order: Exclude<Awaited<ReturnType<typeof prisma.orders.update>>, undefined>;
+  before: {
+    status: string | null;
+    order_number: string;
+    customer_name: string | null;
+    shipping_email: string | null;
+    line_user_id: string | null;
+    total_amount: unknown;
+    customers: { email: string | null; full_name: string | null } | null;
+  };
+};
 
 export async function listOrders(opts?: {
   status?: string;
@@ -69,33 +83,72 @@ export async function listOrders(opts?: {
   }
 }
 
-export async function approvePayment(orderId: number): Promise<ServiceResult<null>> {
+export async function approvePayment(
+  orderId: number
+): Promise<ServiceResult<ApprovePaymentResult>> {
   try {
     const oid = BigInt(orderId);
-    const before = await prisma.orders.findUnique({
-      where: { id: oid },
-      select: {
-        status: true,
-        order_number: true,
-        customer_name: true,
-        shipping_email: true,
-        customers: { select: { email: true, full_name: true } },
-      },
-    });
-    if (!before) {
-      return { data: null, error: "Order not found" };
-    }
 
-    await prisma.orders.update({
-      where: { id: oid },
-      data: { status: "PAID", reject_note: null },
+    const result = await prisma.$transaction(async (tx) => {
+      const before = await tx.orders.findUnique({
+        where: { id: oid },
+        select: {
+          status: true,
+          order_number: true,
+          customer_name: true,
+          shipping_email: true,
+          line_user_id: true,
+          total_amount: true,
+          source_quotation_number: true,
+          customers: { select: { email: true, full_name: true } },
+        },
+      });
+      if (!before) {
+        throw new Error("Order not found");
+      }
+
+      const order = await tx.orders.update({
+        where: { id: oid },
+        data: { status: "PAID", reject_note: null },
+      });
+
+      // TODO: Loyalty — accrue points from `order.total_amount` / tier rules when the loyalty engine is implemented (keep inside this transaction).
+
+      const qn = before.source_quotation_number?.trim();
+      let qTouch = await tx.quotations.updateMany({
+        where: { convertedOrderId: oid },
+        data: { updatedAt: new Date() },
+      });
+      if (qTouch.count === 0 && qn) {
+        qTouch = await tx.quotations.updateMany({
+          where: { quotationNumber: qn },
+          data: { updatedAt: new Date() },
+        });
+      }
+
+      return { before, order };
     });
 
-    console.log("LOG: DB Updated, attempting LINE notification...");
+    const { before, order } = result;
+
+    console.log("LOG: DB Updated (transaction OK), attempting LINE notification...");
     try {
       await sendLineFlexNotification(orderId, "PAYMENT_CONFIRMED");
     } catch (lineErr) {
       console.error("LOG: LINE Notification failed internally:", lineErr);
+    }
+
+    const lineUid = before.line_user_id?.trim();
+    if (lineUid) {
+      const totalStr = Number(before.total_amount).toLocaleString("th-TH", {
+        maximumFractionDigits: 0,
+      });
+      const th =
+        `ได้รับยอดโอนจำนวน ${totalStr} บาท เรียบร้อยแล้วครับ พรุ่งนี้เราจะจัดส่งของให้ และจะแจ้งเลขพัสดุ (tracking) ให้ทราบอัตโนมัติ ขอบคุณครับ 🙏`;
+      const en = `Payment of ${totalStr} THB received. We’ll ship tomorrow and send your tracking number here. Thank you! 🙏`;
+      void pushTextToLineUser(lineUid, `${th}\n\n${en}`).catch((e) =>
+        console.error("[approvePayment] LINE text push:", e)
+      );
     }
 
     if (before.status === "AWAITING_VERIFICATION") {
@@ -115,7 +168,7 @@ export async function approvePayment(orderId: number): Promise<ServiceResult<nul
       }
     }
 
-    return { data: null, error: null };
+    return { data: { order, before }, error: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("LOG: Main ApprovePayment process crashed:", err);

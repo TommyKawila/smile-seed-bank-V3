@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { bigintToJson } from "@/lib/bigint-json";
 import { revalidateAfterOrderStatusChange } from "@/lib/revalidate-storefront-order";
 import { approvePayment, rejectPayment, markShipped } from "@/services/orders-service";
 
@@ -36,10 +37,14 @@ export async function PATCH(
     const { action } = parsed.data;
 
     if (action === "approve") {
-      const { error } = await approvePayment(orderId);
+      const { data, error } = await approvePayment(orderId);
       if (error) return NextResponse.json({ error }, { status: 500 });
       await revalidateAfterOrderStatusChange(orderId);
-      return NextResponse.json({ success: true, status: "PAID" });
+      return NextResponse.json({
+        success: true,
+        status: "PAID",
+        order: data ? bigintToJson(data.order) : undefined,
+      });
     }
 
     if (action === "reject") {

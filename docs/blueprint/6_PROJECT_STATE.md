@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-04-17
+- **approvePayment atomic:** `services/orders-service.ts` — `prisma.$transaction`: อัปเดต `orders` → `PAID`, sync `quotations.updatedAt` เมื่อมี `convertedOrderId` / `source_quotation_number` + TODO loyalty; คืน `{ order, before }`; `sendLineFlexNotification` + `pushTextToLineUser` + email หลัง commit; `PATCH .../status` `approve` ส่ง `order` ใน JSON (`bigintToJson`)
+- **LINE post-link + ชำระเงินอนุมัติ:** `app/api/webhooks/line/route.ts` — หลังลิงก์ออเดอร์สำเร็จ ตอบไทย «ได้รับสลิปโอนเรียบร้อยแล้ว…» + EN สั้น; `approvePayment` ใน `services/orders-service.ts` — หลัง PAID ถ้ามี `line_user_id` ส่ง `pushTextToLineUser` (TH ยอด `toLocaleString("th-TH")` + EN) นอกเหนือจาก flex เดิม
+- **Order claim success → LINE tracking loop:** `components/storefront/OrderClaimClient.tsx` — หลังส่งฟอร์มสำเร็จ: คำแนะนำกด Send ใน LINE + ปุ่ม **Track on LINE** (`lineOaUrlWithOrderHint`); `lib/line-oa-url.ts` — prefill URL ใช้ข้อความ `Order #{orderNumber}` ให้ตรงกับ `linkLineUserFromOrderChatMessage`
+- **LINE Webhook — ตัด auto-reply loop:** `customers.last_interaction_at`, `customers.is_linked` (`prisma/schema.prisma` + migration `20260417120000_customers_line_interaction_and_linked`); `lib/line-user-interaction.ts` (`shouldSuppressLineOrderLinkPrompt`, `recordLineUserInteraction` + guest cooldown via `site_settings` key `line_ia_guest:*`); `app/api/webhooks/line/route.ts` — ไม่ส่ง Order # hint เมื่อเชื่อมออเดอร์แล้ว / ภายใน 24 ชม.; `lib/line-order-message-link.ts` — ตั้ง `is_linked` + `last_interaction_at` เมื่อลิงก์สำเร็จ; `services/line-messaging.ts` — อัปเดต `last_interaction_at` หลัง push/flex/text/shipping สำเร็จ
+
 ### บันทึกการทำงาน — 2026-04-16
 - **Admin — ยกเลิกออเดอร์ PENDING / PENDING_INFO + คืนสต็อก:** `PATCH /api/admin/orders/[id]/cancel` (`app/api/admin/orders/[id]/cancel/route.ts`), `cancelPendingOrder` ใน `services/orders-service.ts` (Prisma transaction + `restoreVariantStockForOrderItems`). UI `app/admin/orders/page.tsx`: ปุ่ม **ยกเลิกออเดอร์** (มือถือ/ตาราง + modal รายละเอียด), แสดงเฉพาะ `PENDING` | `PENDING_INFO`, สไตล์ ghost/outline แดง, Dialog ยืนยันก่อน PATCH (แยกจาก modal **ปฏิเสธ** สลิป `AWAITING_VERIFICATION`).
 - **สรุปรายการคัดลอก — ป้าย (ส่งฟรี):** `lib/utils/format-order.ts` `generateOrderSummary` แสดง `(ส่งฟรี)` / `(free shipping)` เฉพาะเมื่อ `shippingFee != null && Number(shippingFee) === 0` (ไม่ถือ `undefined` เป็นฟรี; ไม่อิงยอด subtotal อย่างเดียว).
