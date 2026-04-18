@@ -4,6 +4,34 @@ export const LINE_OA_FALLBACK_URL = "https://lin.ee/OcxDMjO";
 /** Fallback OA Basic ID if DB `line_id` is empty (oaMessage / add-friend). */
 export const DEFAULT_LINE_OA_MESSAGE_ID = "@smileseedbank";
 
+/** Extract `@basicId` or basic id from `https://line.me/R/oaMessage/{id}/...`. */
+export function parseLineOaMessageIdFromUrl(url: string): string | null {
+  const u = url.trim();
+  if (!u) return null;
+  try {
+    const m = u.match(/line\.me\/R\/oaMessage\/([^/?#]+)/i);
+    if (!m?.[1]) return null;
+    return decodeURIComponent(m[1]);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * LINE Basic ID for `line.me/R/oaMessage/...` prefill (required when base URL is lin.ee).
+ * Order: `NEXT_PUBLIC_LINE_OA_MESSAGE_ID` → parse `NEXT_PUBLIC_LINE_OA_URL` → default.
+ */
+export function getLineOaMessageIdForPrefill(): string {
+  const envId =
+    typeof process !== "undefined" ? process.env.NEXT_PUBLIC_LINE_OA_MESSAGE_ID?.trim() : "";
+  if (envId) return normalizeShopLineId(envId);
+  const raw =
+    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_LINE_OA_URL?.trim()) || "";
+  const parsed = raw ? parseLineOaMessageIdFromUrl(raw) : null;
+  if (parsed) return normalizeShopLineId(parsed);
+  return normalizeShopLineId(DEFAULT_LINE_OA_MESSAGE_ID);
+}
+
 /** True for LINE marketing home URLs (must not be used as OA entry). */
 export function isGenericLineMarketingUrl(url: string): boolean {
   const u = url.trim();
@@ -52,21 +80,17 @@ export function buildLineOaPrefillUrl(lineId: string | null | undefined, message
 }
 
 /**
- * Prefer opening the OA from env / fallback. For `line.me/R/oaMessage/...`, appends prefilled text.
- * `lin.ee` short links and non-oaMessage URLs are returned as-is (no reliable text param).
+ * Opens OA chat with prefilled `Order #{orderNumber}` (webhook parses the same pattern).
+ * Always uses `https://line.me/R/oaMessage/{LINE_ID}/?...` so prefill works even when
+ * `NEXT_PUBLIC_LINE_OA_URL` is a `lin.ee` short link — set `NEXT_PUBLIC_LINE_OA_MESSAGE_ID` or an oaMessage URL.
  */
 export function lineOaUrlWithOrderHint(orderNumber: string): string {
-  const base = getLineOaBaseUrl().replace(/\/$/, "");
   const n = orderNumber.trim();
-  if (!n || n === "—") return base;
-  if (/lin\.ee\//i.test(base)) return base;
+  if (!n || n === "—") return getLineOaBaseUrl().replace(/\/$/, "");
 
   const body = `Order #${n}`;
-  if (/line\.me\/R\/oaMessage\//i.test(base)) {
-    const pathOnly = base.split("?")[0];
-    return `${pathOnly.replace(/\/?$/, "")}/?${encodeURIComponent(body)}`;
-  }
-  return base;
+  const lineId = getLineOaMessageIdForPrefill();
+  return `https://line.me/R/oaMessage/${encodeURIComponent(lineId)}/?${encodeURIComponent(body)}`;
 }
 
 export function lineOaPrefillUrlForOrderSuccess(

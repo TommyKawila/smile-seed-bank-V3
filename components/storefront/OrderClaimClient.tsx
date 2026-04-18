@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { JetBrains_Mono } from "next/font/google";
 import { Loader2, Upload } from "lucide-react";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { lineOaUrlWithOrderHint } from "@/lib/line-oa-url";
 
@@ -62,6 +63,19 @@ export function OrderClaimClient({ token }: { token: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const isSuccess = done;
+  const successBlockRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isSuccess) return;
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        successBlockRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isSuccess]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,36 +155,39 @@ export function OrderClaimClient({ token }: { token: string }) {
         ? `Welcome back, ${name}`
         : claimInfo?.newAccount
           ? `Welcome, ${name}`
-          : "ส่งข้อมูลเรียบร้อย";
-    const subTh =
-      claimInfo?.linked
-        ? "เชื่อมบัญชีร้านค้าแล้ว — อัปเดตที่อยู่ในโปรไฟล์เรียบร้อย"
-        : "เราได้รับที่อยู่และสลิปแล้ว — ทีมจะตรวจสอบและดำเนินการต่อไป";
+          : "ส่งเรียบร้อย";
+    const subTh = claimInfo?.linked
+      ? "เชื่อมบัญชีแล้ว · อัปเดตที่อยู่ในโปรไฟล์"
+      : "รับที่อยู่และสลิปแล้ว · รอตรวจสอบ";
     const loginEmail = shipping_email.trim();
     const orderNo = preview?.order_number?.trim() ?? "";
     const lineTrackHref = orderNo ? lineOaUrlWithOrderHint(orderNo) : "";
     return (
-      <div className="mx-auto max-w-md space-y-5 rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-8 text-center shadow-sm">
-        <div>
+      <motion.div
+        ref={successBlockRef}
+        className="mx-auto max-w-md scroll-mt-4 space-y-4 rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-5 text-center shadow-sm sm:space-y-5 sm:p-7"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="space-y-1">
           <p className="text-base font-medium text-emerald-900">{headline}</p>
-          <p className="mt-2 text-sm text-emerald-800/90">{subTh}</p>
+          <p className="text-sm text-emerald-800/90">{subTh}</p>
         </div>
         {lineTrackHref ? (
-          <div className="rounded-xl border border-[#06C755]/40 bg-white p-4 text-left shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-[#05804a]">
-              LINE · แจ้งเตือนพัสดุอัตโนมัติ
+          <div className="rounded-xl border border-[#06C755]/40 bg-white p-3 text-left shadow-sm sm:p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#05804a]">
+              แจ้งเตือนผ่าน LINE
             </p>
-            <p className="mt-2 text-sm text-zinc-700">
-              กดปุ่มด้านล่าง แล้วใน LINE ให้แตะ <span className="font-medium">ส่ง (Send)</span>{" "}
-              เพื่อเปิดใช้การแจ้งเตือนสถานะออเดอร์/พัสดุอัตโนมัติ
+            <p className="mt-1.5 text-xs leading-snug text-zinc-700">
+              แตะปุ่มด้านล่าง แล้วกด <span className="font-medium">ส่ง</span> ใน LINE
             </p>
-            <p className="mt-1 text-xs text-zinc-500">
-              Click the button, then tap <span className="font-medium">Send</span> in LINE to activate
-              automated tracking notifications.
+            <p className="mt-0.5 text-[11px] leading-snug text-zinc-500">
+              Open chat, then tap <span className="font-medium">Send</span> to enable tracking.
             </p>
             <Button
               asChild
-              className="mt-4 h-12 w-full bg-[#06C755] text-white hover:bg-[#05b34c]"
+              className="mt-3 h-11 w-full bg-[#06C755] text-sm text-white hover:bg-[#05b34c] sm:h-12"
             >
               <a href={lineTrackHref} target="_blank" rel="noopener noreferrer">
                 Track on LINE
@@ -181,23 +198,23 @@ export function OrderClaimClient({ token }: { token: string }) {
         <Button
           asChild
           variant="outline"
-          className="h-12 w-full border-emerald-800/35 text-emerald-900 hover:bg-emerald-50"
+          className="h-11 w-full border-emerald-800/35 text-emerald-900 hover:bg-emerald-50 sm:h-12"
         >
           <Link href={`/order/status/${encodeURIComponent(token)}`}>
             Check Order Status
           </Link>
         </Button>
         {claimInfo?.showSetPassword && loginEmail ? (
-          <Button asChild variant="outline" className="h-11 w-full border-emerald-800/30 text-emerald-900">
+          <Button asChild variant="outline" className="h-10 w-full border-emerald-800/30 text-sm text-emerald-900">
             <Link href={`/login?email=${encodeURIComponent(loginEmail)}`}>
               ตั้งรหัสผ่าน (ไม่บังคับ)
             </Link>
           </Button>
         ) : null}
-        <p className="text-xs text-emerald-900/70">
-          บันทึกลิงก์สถานะออเดอร์เพื่อดูเลขพัสดุเมื่อจัดส่งแล้ว
+        <p className="text-[11px] text-emerald-900/70">
+          เก็บลิงก์สถานะไว้ดูเลขพัสดุภายหลัง
         </p>
-      </div>
+      </motion.div>
     );
   }
 
