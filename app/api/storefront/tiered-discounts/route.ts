@@ -3,10 +3,8 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-const FALLBACK: { min_spend: number; discount_percent: number }[] = [
-  { min_spend: 2000, discount_percent: 10 },
-  { min_spend: 4000, discount_percent: 20 },
-];
+/** No hardcoded discounts — empty when no matching `promotion_rules`. */
+const FALLBACK: { min_spend: number; discount_percent: number }[] = [];
 
 export async function GET() {
   try {

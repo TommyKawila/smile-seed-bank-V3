@@ -515,6 +515,21 @@ model shipping_rules {
   @@schema("public")
 }
 
+/// Homepage section order & visibility (storefront `/` renders by `sort_order`, `is_active`).
+model homepage_sections {
+  id         String   @id @default(cuid())
+  key        String   @unique
+  label_th   String
+  label_en   String
+  sort_order Int      @default(0)
+  is_active  Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@schema("public")
+  @@map("homepage_sections")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model site_settings {
   key        String    @id

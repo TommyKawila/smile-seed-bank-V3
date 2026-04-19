@@ -212,7 +212,7 @@ export default function CreateOrderPage() {
   }, [lastCopyPack, payForCopy, summaryLang, toast]);
 
   const wholesaleDiscount = selectedCustomer?.tier === "Wholesale"
-    ? (selectedCustomer.wholesale_discount_percent ?? 20)
+    ? (selectedCustomer.wholesale_discount_percent ?? 0)
     : 0;
 
   const availablePoints = selectedCustomer?.points ?? 0;
@@ -790,7 +790,7 @@ export default function CreateOrderPage() {
                       <p className="text-xs text-zinc-500">{selectedCustomer.phone}</p>
                       <Badge variant="outline" className="mt-0.5 text-[10px]">
                         {selectedCustomer.tier}
-                        {selectedCustomer.tier === "Wholesale" && ` -${selectedCustomer.wholesale_discount_percent ?? 20}%`}
+                        {selectedCustomer.tier === "Wholesale" && ` -${selectedCustomer.wholesale_discount_percent ?? 0}%`}
                       </Badge>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => selectCustomer(null)}>

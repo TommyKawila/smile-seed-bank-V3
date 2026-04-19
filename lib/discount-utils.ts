@@ -6,11 +6,8 @@ export interface TieredDiscountRule {
   discount_percent: number;
 }
 
-/** Default storefront tiers when API / DB has no active promotion_rules. */
-export const DEFAULT_TIERED_RULES: TieredDiscountRule[] = [
-  { min_spend: 2000, discount_percent: 10 },
-  { min_spend: 4000, discount_percent: 20 },
-];
+/** Empty by default — spend tiers come from `promotion_rules` via `/api/storefront/tiered-discounts` only. */
+export const DEFAULT_TIERED_RULES: TieredDiscountRule[] = [];
 
 export interface PromoInfo {
   discount_type: "PERCENTAGE" | "FIXED" | string;

@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
     }
 
     const discount = parsed.data.tier === "Wholesale"
-      ? (parsed.data.wholesale_discount_percent ?? 20)
+      ? (parsed.data.wholesale_discount_percent ?? 0)
       : 0;
 
     const created = await prisma.customer.create({

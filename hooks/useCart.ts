@@ -10,7 +10,6 @@ import {
   calculateCartSummary,
   type TieredDiscountRule,
 } from "@/lib/cart-utils";
-import { DEFAULT_TIERED_RULES } from "@/lib/discount-utils";
 import { applyWholesalePrice } from "@/lib/wholesale-utils";
 import type {
   CartItem,
@@ -89,7 +88,6 @@ export function useCart(): UseCartReturn {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [isLoadingRules, setIsLoadingRules] = useState(true);
 
-  const FALLBACK_TIERED_RULES = DEFAULT_TIERED_RULES;
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const [promo, setPromo] = useState<PromoState>({
     code: null,
@@ -142,19 +140,17 @@ export function useCart(): UseCartReturn {
             .order("min_amount", { ascending: true }),
           supabase.from("shipping_rules").select("*"),
           supabase.from("promotions").select("*").eq("is_active", true),
-          fetch("/api/storefront/tiered-discounts").then((r) => r.ok ? r.json() : FALLBACK_TIERED_RULES),
+          fetch("/api/storefront/tiered-discounts").then((r) => (r.ok ? r.json() : [])),
         ]);
 
         setDiscountTiers((tiersRes.data as DiscountTier[]) ?? []);
         setShippingRules((shippingRes.data as ShippingRule[]) ?? []);
         setPromotions((promoRes.data as Promotion[]) ?? []);
 
-        const tiered = Array.isArray(tieredRes) && tieredRes.length > 0
-          ? tieredRes
-          : FALLBACK_TIERED_RULES;
+        const tiered = Array.isArray(tieredRes) ? tieredRes : [];
         setTieredDiscountRules(tiered);
       } catch {
-        setTieredDiscountRules(FALLBACK_TIERED_RULES);
+        setTieredDiscountRules([]);
       } finally {
         setIsLoadingRules(false);
       }
@@ -174,7 +170,7 @@ export function useCart(): UseCartReturn {
 
   // ── Cart summary: auto tier vs coupon are exclusive (best deal in discount-utils) ───
   const summary = useMemo((): CartSummary => {
-    const rules = tieredDiscountRules.length > 0 ? tieredDiscountRules : FALLBACK_TIERED_RULES;
+    const rules = tieredDiscountRules;
     const promoInfo = promo.code?.discount_type && promo.code?.discount_value != null
       ? { discount_type: promo.code.discount_type, discount_value: promo.code.discount_value }
       : null;

@@ -20,6 +20,7 @@ import {
   CreditCard,
   Truck,
   LayoutGrid,
+  LayoutTemplate,
   BarChart2,
   FileText,
   Camera,
@@ -54,6 +55,7 @@ const navItems = [
 
 const bottomItems = [
   { href: "/admin/settings", label: "ตั้งค่าร้านค้า", icon: Settings },
+  { href: "/admin/settings/homepage", label: "หน้าแรก (ลำดับ)", icon: LayoutTemplate },
   { href: "/admin/settings/shipping", label: "ค่าจัดส่ง", icon: Truck },
   { href: "/admin/settings/payment", label: "ช่องทางชำระเงิน", icon: CreditCard },
 ];

@@ -10,6 +10,7 @@ import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { resolveSectionHeading, type SectionTitle } from "@/lib/homepage-section-title";
 
 function stripHtmlLoose(s: string): string {
   return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -159,11 +160,19 @@ function FeatureGeneticsCard({
 export function FeaturedProductsCarousel({
   products,
   isLoading,
+  sectionTitle,
 }: {
   products: ProductWithBreeder[];
   isLoading?: boolean;
+  sectionTitle?: SectionTitle;
 }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const mainHeading = resolveSectionHeading(
+    locale,
+    sectionTitle,
+    "สายพันธุ์แนะนำ",
+    "Recommended strains"
+  );
 
   if (isLoading) {
     return (
@@ -173,7 +182,9 @@ export function FeaturedProductsCarousel({
         >
           <div className="mb-10 space-y-3">
             <div className="h-3 w-24 animate-pulse rounded bg-zinc-100" />
-            <div className="h-9 max-w-md animate-pulse rounded bg-zinc-100" />
+            <h2 className="font-[family-name:var(--font-journal-product-serif)] text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.75rem]">
+              {mainHeading}
+            </h2>
             <div className="h-4 max-w-lg animate-pulse rounded bg-zinc-100" />
           </div>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch">
@@ -226,7 +237,7 @@ export function FeaturedProductsCarousel({
             {t("สายพันธุ์คัดพิเศษ", "Curated selections")}
           </p>
           <h2 className="font-[family-name:var(--font-journal-product-serif)] text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.75rem]">
-            {t("สายพันธุ์แนะนำ", "Recommended strains")}
+            {mainHeading}
           </h2>
           <p className="text-sm font-light leading-relaxed text-zinc-600">
             {t(
