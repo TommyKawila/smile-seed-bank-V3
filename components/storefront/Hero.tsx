@@ -34,12 +34,12 @@ function HeroMediaPanel({
   svgHtml: string;
 }) {
   if (isLoading) {
-    return <Skeleton className="h-full min-h-[44vh] w-full rounded-none bg-zinc-200 lg:min-h-0" />;
+    return <Skeleton className="h-full min-h-0 w-full rounded-none bg-zinc-200" />;
   }
   if (useAnimatedSvg) {
     return (
       <div
-        className="h-full min-h-[44vh] w-full bg-zinc-100 [&>svg]:pointer-events-none [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:min-h-full [&>svg]:object-cover lg:min-h-0"
+        className="h-full min-h-0 w-full bg-zinc-100 [&>svg]:pointer-events-none [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:min-h-full [&>svg]:object-cover"
         dangerouslySetInnerHTML={{ __html: normalizeHeroSvgHtml(svgHtml) }}
       />
     );
@@ -47,7 +47,7 @@ function HeroMediaPanel({
   if (useVideo && videoUrl) {
     return (
       <video
-        className="h-full min-h-[44vh] w-full object-cover lg:min-h-0"
+        className="h-full min-h-0 w-full object-cover"
         src={videoUrl}
         autoPlay
         loop
@@ -59,7 +59,7 @@ function HeroMediaPanel({
   }
   return (
     <div
-      className="h-full min-h-[44vh] w-full bg-cover bg-center animate-ken-burns lg:min-h-0"
+      className="h-full min-h-0 w-full bg-cover bg-center animate-ken-burns"
       style={{ backgroundImage: `url('${staticBgUrl}')` }}
     />
   );
@@ -84,19 +84,19 @@ export function Hero() {
   return (
     <section
       className={cn(
-        "relative overflow-hidden bg-zinc-50",
+        "relative flex min-h-0 w-full flex-col overflow-hidden rounded-none bg-zinc-50 max-lg:-mt-[4.5rem] max-lg:max-h-[100svh] max-lg:w-full lg:mt-0 lg:max-h-none",
         playfair.variable,
         heroMono.variable
       )}
     >
-      <div className="grid min-h-[88vh] lg:grid-cols-2 lg:items-stretch">
-        <div className="relative z-10 order-2 flex flex-col justify-center px-6 py-16 sm:px-10 sm:py-20 lg:order-1 lg:max-w-xl lg:justify-center lg:py-24 lg:pl-12 lg:pr-10 xl:pl-16 xl:pr-14">
-          <div className="space-y-7 sm:space-y-8">
+      <div className="flex min-h-0 flex-1 flex-col lg:grid lg:min-h-[88vh] lg:max-h-none lg:grid-cols-2 lg:items-stretch">
+        <div className="relative z-10 order-2 -mt-20 flex flex-col justify-end bg-gradient-to-t from-white from-0% via-white via-[88%] to-transparent to-100% px-4 pb-5 pt-5 sm:-mt-24 sm:px-8 sm:pb-8 lg:order-1 lg:mt-0 lg:max-w-xl lg:justify-center lg:bg-transparent lg:bg-none lg:px-10 lg:py-24 lg:pl-12 lg:pr-10 lg:pb-24 xl:pl-16 xl:pr-14">
+          <div className="space-y-3 sm:space-y-4 lg:space-y-7 xl:space-y-8">
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="font-[family-name:var(--font-hero-mono)] text-[9px] font-medium leading-relaxed tracking-[0.22em] text-zinc-500 sm:text-[10px] sm:leading-relaxed sm:tracking-[0.26em]"
+              className="font-[family-name:var(--font-hero-mono)] text-[9px] font-semibold leading-relaxed tracking-[0.2em] text-emerald-900/75 sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px] lg:font-medium lg:text-zinc-500"
             >
               {t(
                 "ก่อตั้ง ค.ศ. 2018 // ร้านเมล็ดพันธุ์แห่งรอยยิ้มยุคแรกของไทย",
@@ -108,7 +108,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.05, ease: "easeOut" }}
-              className="font-[family-name:var(--font-hero-display)] text-[1.85rem] font-medium leading-[1.35] tracking-tight text-zinc-900 sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]"
+              className="font-[family-name:var(--font-hero-display)] text-[1.65rem] font-medium leading-[1.3] tracking-tight text-zinc-900 sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]"
             >
               {t(
                 "คัดสรรพันธุกรรมระดับโลก สู่มือคุณ",
@@ -120,7 +120,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.12, ease: "easeOut" }}
-              className="max-w-md text-[15px] font-light leading-[1.85] tracking-wide text-zinc-600 sm:text-base sm:leading-[1.82]"
+              className="max-w-md text-sm font-light leading-[1.7] tracking-wide text-zinc-600 sm:text-[15px] sm:leading-[1.85] lg:text-base lg:leading-[1.82]"
             >
               {t(
                 "จากร้านขายเมล็ดพันธุ์ยุคใต้ดิน สู่คลังเมล็ดพันธุ์แท้ที่สายเขียวรุ่นเก๋าไว้วางใจที่สุด การันตีคุณภาพจากประสบการณ์จริงที่ยาวนานเกือบ 10 ปี",
@@ -132,7 +132,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.2, ease: "easeOut" }}
-              className="flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
+              className="flex flex-col gap-2.5 pt-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 sm:pt-2"
             >
               <Button
                 asChild
@@ -156,7 +156,7 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="relative order-1 min-h-[44vh] lg:order-2 lg:min-h-[88vh]">
+        <div className="relative order-1 h-[65svh] w-full flex-shrink-0 overflow-hidden lg:order-2 lg:h-auto lg:min-h-[88vh]">
           <HeroMediaPanel
             isLoading={isLoading}
             useAnimatedSvg={Boolean(useAnimatedSvg)}
@@ -165,8 +165,8 @@ export function Hero() {
             staticBgUrl={staticBgUrl}
             svgHtml={siteSettings.hero_svg_code ?? ""}
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-900/25 via-transparent to-zinc-900/10 lg:bg-gradient-to-l lg:from-transparent lg:via-transparent lg:to-zinc-50/90" />
-          <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-zinc-900/5" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-900/10 via-transparent to-zinc-900/5 max-lg:from-zinc-900/15 lg:bg-gradient-to-l lg:from-transparent lg:via-transparent lg:to-zinc-50/90" />
+          <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-zinc-900/5 max-lg:hidden" />
         </div>
       </div>
     </section>

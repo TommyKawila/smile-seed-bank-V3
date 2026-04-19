@@ -314,8 +314,8 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
       case "hero":
         return (
           <div key="hero" className="bg-white pb-10 sm:pb-14">
-            <div className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 sm:pt-6">
-              <div className="overflow-hidden rounded-3xl border border-zinc-200 shadow-[0_24px_64px_-18px_rgba(21,128,61,0.12)] ring-1 ring-zinc-200/80">
+            <div className="mx-auto max-w-7xl max-lg:px-0 max-lg:pt-0 px-4 pt-5 sm:px-6 sm:pt-6">
+              <div className="overflow-hidden rounded-3xl border border-zinc-200 shadow-[0_24px_64px_-18px_rgba(21,128,61,0.12)] ring-1 ring-zinc-200/80 max-lg:rounded-none max-lg:border-0 max-lg:shadow-none max-lg:ring-0">
                 <Hero />
               </div>
             </div>
