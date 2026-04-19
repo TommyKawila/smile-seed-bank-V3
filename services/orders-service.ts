@@ -356,6 +356,12 @@ export async function markShipped(
           row.customer_name?.trim() ||
           "คุณลูกค้า";
         const orderNumber = row.order_number;
+        const lineUid =
+          row.order_line_uid?.trim() ||
+          row.web_customer_line_uid?.trim() ||
+          row.profile_line_id?.trim() ||
+          "";
+        const tn = trackingNumber.trim();
 
         // Email notification
         if (row.email) {
@@ -373,17 +379,23 @@ export async function markShipped(
           }
         }
 
-        const orderLineOnly = row.order_line_uid?.trim();
-        if (orderLineOnly) {
+        if (tn && lineUid) {
           try {
-            await sendLineFlexNotification(orderId, "ORDER_SHIPPED", {
-              trackingNumber,
-              shippingProvider,
-            });
-          } catch (lineErr) {
-            console.error("[orders-service] markShipped LINE flex error:", lineErr);
+            console.log("Pushing Tracking to LINE:", lineUid);
+            const th = `ออเดอร์ ${orderNumber} จัดส่งแล้วครับ! 📦 เลขพัสดุของคุณคือ: ${tn} สามารถเช็คสถานะได้ในลิงก์ใบเสร็จครับ`;
+            const en = `Order ${orderNumber} has been shipped! 📦 Your tracking number is: ${tn}`;
+            void pushTextToLineUser(lineUid, `${th}\n\n${en}`)
+              .then((pushResult) => {
+                if (!pushResult.success) {
+                  console.error("[orders-service] markShipped LINE text push API:", pushResult.error);
+                }
+              })
+              .catch((e) => console.error("[orders-service] markShipped LINE text push exception:", e));
+          } catch (lineTextErr) {
+            console.error("[orders-service] markShipped LINE text push error:", lineTextErr);
           }
         }
+
       } catch (fetchErr) {
         console.error("[orders-service] markShipped notify error:", fetchErr);
       }

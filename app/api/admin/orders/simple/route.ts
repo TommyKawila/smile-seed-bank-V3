@@ -30,6 +30,8 @@ const CreateOrderSchema = z.object({
   points_discount_amount: z.number().nonnegative().optional(),
   promotion_rule_id: z.number().int().positive().optional().nullable(),
   promotion_discount_amount: z.number().nonnegative().optional(),
+  /** Manual POS discount (THB), e.g. VIP % off subtotal — stored in `orders.discount_amount` */
+  discount_amount: z.number().nonnegative().optional(),
   customer_profile_id: z.number().int().positive().optional().nullable(),
   customer: z
     .object({
@@ -55,7 +57,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { items, status, totalAmount: overrideTotal, points_redeemed = 0, points_discount_amount = 0, promotion_rule_id, promotion_discount_amount = 0, customer_profile_id, customer } = parsed.data;
+    const {
+      items,
+      status,
+      totalAmount: overrideTotal,
+      points_redeemed = 0,
+      points_discount_amount = 0,
+      promotion_rule_id,
+      promotion_discount_amount = 0,
+      discount_amount: manualDiscountAmount = 0,
+      customer_profile_id,
+      customer,
+    } = parsed.data;
     const totalAmount = overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0);
     const claimToken = status === "PENDING_INFO" ? randomUUID() : null;
     const deductStock = status === "COMPLETED" || status === "PENDING_INFO";
@@ -71,7 +84,7 @@ export async function POST(req: NextRequest) {
         total_amount: new Prisma.Decimal(totalAmount),
         total_cost: new Prisma.Decimal(0),
         shipping_fee: new Prisma.Decimal(0),
-        discount_amount: new Prisma.Decimal(0),
+        discount_amount: new Prisma.Decimal(manualDiscountAmount),
         status,
         order_origin: "MANUAL",
         points_redeemed: points_redeemed,

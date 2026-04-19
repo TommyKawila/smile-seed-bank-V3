@@ -51,7 +51,10 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
     where: { id: BigInt(orderId) },
     include: {
       order_items: true,
-      customers: { select: { full_name: true, email: true, phone: true, address: true } },
+      customers: {
+        select: { full_name: true, email: true, phone: true, address: true, line_user_id: true },
+      },
+      customer_profile: { select: { line_id: true } },
     },
   });
 
@@ -145,7 +148,12 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
     shippingProvider: order.shipping_provider,
     paymentMethod: order.payment_method,
     createdAt: order.created_at,
-    lineUserId: order.line_user_id?.trim() ? order.line_user_id.trim() : null,
+    lineUserId: (() => {
+      const o = order.line_user_id?.trim();
+      const c = order.customers?.line_user_id?.trim();
+      const p = order.customer_profile?.line_id?.trim();
+      return o || c || p || null;
+    })(),
     claimToken: order.claim_token?.trim() ? order.claim_token.trim() : null,
     items,
   };

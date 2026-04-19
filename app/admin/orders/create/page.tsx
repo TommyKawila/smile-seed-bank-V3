@@ -133,6 +133,7 @@ export default function CreateOrderPage() {
     promptPay: { identifier: string; qrUrl: string } | null;
   } | null>(null);
   const [summaryLang, setSummaryLang] = useState<"th" | "en">("th");
+  const [manualDiscountPercent, setManualDiscountPercent] = useState(0);
 
   const [customer, setCustomer] = useState<CustomerInfo>({
     full_name: "",
@@ -222,10 +223,16 @@ export default function CreateOrderPage() {
     : 0;
 
   const availablePoints = selectedCustomer?.points ?? 0;
-  const maxRedeemable = Math.min(availablePoints, Math.floor(summary.total));
-  const effectivePointsRedeemed = Math.min(pointsToRedeem, maxRedeemable, Math.floor(summary.total));
+  const manualDiscountPercentClamped = Math.min(100, Math.max(0, manualDiscountPercent));
+  const manualDiscountAmount = (summary.subtotal * manualDiscountPercentClamped) / 100;
+  const maxRedeemable = Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount));
+  const effectivePointsRedeemed = Math.min(
+    pointsToRedeem,
+    maxRedeemable,
+    Math.floor(Math.max(0, summary.total - manualDiscountAmount))
+  );
   const pointsDiscountAmount = effectivePointsRedeemed;
-  const grandTotal = Math.max(0, summary.total - pointsDiscountAmount);
+  const grandTotal = Math.max(0, summary.total - manualDiscountAmount - pointsDiscountAmount);
   const pointsToAdd = Math.floor(grandTotal / 100);
   const balanceAfterPurchase = availablePoints - effectivePointsRedeemed + pointsToAdd;
 
@@ -440,6 +447,7 @@ export default function CreateOrderPage() {
           points_discount_amount: isClaim ? 0 : pointsDiscountAmount,
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
+          discount_amount: manualDiscountAmount,
           customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
           customer: {
             full_name: customer.full_name,
@@ -467,7 +475,7 @@ export default function CreateOrderPage() {
         const ct = result.claimToken != null && result.claimToken !== "" ? String(result.claimToken) : "";
         const claimLink = ct ? `${getSiteOrigin()}/order/claim/${ct}` : null;
         const discountAmt =
-          summary.tierDiscount + summary.promoDiscount;
+          summary.tierDiscount + summary.promoDiscount + manualDiscountAmount;
         setLastCopyPack({
           orderNumber,
           orderId,
@@ -493,6 +501,7 @@ export default function CreateOrderPage() {
             : "สร้างออเดอร์แล้ว — ไม่พบ claim token"
         );
         clearCart();
+        setManualDiscountPercent(0);
         setSelectedCustomer(null);
         setPointsToRedeem(0);
         setCustomer({ full_name: "", phone: "", address: "", payment_method: "CASH", note: "" });
@@ -501,7 +510,7 @@ export default function CreateOrderPage() {
 
       {
         const discountAmt =
-          summary.tierDiscount + summary.promoDiscount + pointsDiscountAmount;
+          summary.tierDiscount + summary.promoDiscount + pointsDiscountAmount + manualDiscountAmount;
         setLastCopyPack({
           orderNumber,
           orderId,
@@ -538,6 +547,7 @@ export default function CreateOrderPage() {
         paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
       });
       clearCart();
+      setManualDiscountPercent(0);
       setSelectedCustomer(null);
       setPointsToRedeem(0);
       setCustomer({ full_name: "", phone: "", address: "", payment_method: "CASH", note: "" });
@@ -1056,6 +1066,29 @@ export default function CreateOrderPage() {
                     )}
                   </span>
                 </div>
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <Label htmlFor="manual-discount-pct" className="text-xs font-medium text-zinc-600 shrink-0">
+                    ส่วนลดพิเศษ (Manual) %
+                  </Label>
+                  <Input
+                    id="manual-discount-pct"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    inputMode="decimal"
+                    className="h-8 w-20 text-right text-sm"
+                    value={manualDiscountPercent}
+                    onChange={(e) => {
+                      const n = parseFloat(e.target.value);
+                      if (Number.isNaN(n)) {
+                        setManualDiscountPercent(0);
+                        return;
+                      }
+                      setManualDiscountPercent(Math.min(100, Math.max(0, n)));
+                    }}
+                  />
+                </div>
                 {summary.tierDiscount > 0 && (
                   <div className="flex justify-between text-primary">
                     <span>ส่วนลดโปรโมชั่น {summary.appliedTier ? `(${summary.appliedTier.discount_percentage}%)` : summary.discountPercent > 0 ? `(${summary.discountPercent}%)` : ""}</span>
@@ -1066,6 +1099,15 @@ export default function CreateOrderPage() {
                   <div className="flex justify-between text-primary">
                     <span>ส่วนลดโค้ด</span>
                     <span>-{formatPrice(summary.promoDiscount)}</span>
+                  </div>
+                )}
+                {manualDiscountAmount > 0 && (
+                  <div className="flex justify-between text-red-600">
+                    <span>
+                      ส่วนลดพิเศษ (Manual)
+                      {manualDiscountPercentClamped > 0 ? ` (${manualDiscountPercentClamped}%)` : ""}
+                    </span>
+                    <span>-{formatPrice(manualDiscountAmount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-zinc-600">
