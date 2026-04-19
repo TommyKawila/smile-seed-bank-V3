@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ShoppingCart, Loader2, CheckCircle2, XCircle,
   ImageIcon, User, RefreshCw, FileText, Clock, BadgeCheck,
-  Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy, MessageCircle, FileUp,
+  Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy, MessageCircle, FileUp, ChevronDown,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,12 @@ import { createReceiptDownloadQuery } from "@/lib/receipt-download-token";
 import { fetchPdfSettings } from "@/lib/pdf-settings";
 import { ReceiptPreviewModal } from "@/components/admin/ReceiptPreviewModal";
 import { Switch } from "@/components/ui/switch";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // ─── Shipping providers ────────────────────────────────────────────────────────
 const SHIPPING_PROVIDERS = [
@@ -1355,77 +1361,93 @@ export default function AdminOrdersPage() {
 
       {/* ── Order Detail Modal ── */}
       <Dialog open={!!detailModal || detailLoading} onOpenChange={(o) => !o && !detailLoading && setDetailModal(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader className="flex flex-row items-center justify-between gap-2 pr-10">
-            <DialogTitle className="flex items-center gap-2 text-primary">
-              <ShoppingCart className="h-5 w-5" />
-              รายละเอียดออเดอร์
-            </DialogTitle>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader className="space-y-4 pr-10 text-left sm:pr-12">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+              <DialogTitle className="flex min-w-0 items-center gap-2 text-primary sm:pt-0.5">
+                <ShoppingCart className="h-5 w-5 shrink-0" />
+                <span className="leading-snug">รายละเอียดออเดอร์</span>
+              </DialogTitle>
+              <div
+                className="inline-flex w-fit shrink-0 items-center gap-0.5 rounded-lg border border-zinc-200 bg-zinc-50/90 p-0.5 self-end sm:self-center sm:mr-0"
+                title="ภาษาข้อความสรุป / Copy summary"
+              >
+                <button
+                  type="button"
+                  onClick={() => setSummaryLang("th")}
+                  className={cn(
+                    "rounded-md px-2.5 py-1.5 text-[11px] font-semibold leading-none transition-colors",
+                    summaryLang === "th" ? "bg-primary text-white" : "text-zinc-600 hover:bg-white"
+                  )}
+                >
+                  TH
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSummaryLang("en")}
+                  className={cn(
+                    "rounded-md px-2.5 py-1.5 text-[11px] font-semibold leading-none transition-colors",
+                    summaryLang === "en" ? "bg-primary text-white" : "text-zinc-600 hover:bg-white"
+                  )}
+                >
+                  EN
+                </button>
+              </div>
+            </div>
             {detailModal && detailModal.id != null && (
-              <div className="flex flex-wrap gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4">
                 {isReceiptEligibleStatus(detailModal.status) && (
                   <Button
                     size="sm"
-                    className="bg-[#003366] hover:bg-[#00264d] text-white border-0"
+                    className="h-9 shrink-0 bg-[#003366] px-3 text-white hover:bg-[#00264d] border-0"
                     onClick={() => void handleReceiptPDF()}
                   >
-                    <Receipt className="mr-1.5 h-4 w-4" />
+                    <Receipt className="mr-1.5 h-4 w-4 shrink-0" />
                     ออกใบเสร็จ
                   </Button>
                 )}
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-primary/25 text-primary hover:bg-accent"
+                  className="h-9 shrink-0 border-primary/25 px-3 text-primary hover:bg-accent"
                   onClick={handlePrintPackingSlip}
                 >
-                  <Printer className="mr-1.5 h-4 w-4" />
+                  <Printer className="mr-1.5 h-4 w-4 shrink-0" />
                   พิมพ์ใบปะหน้า
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-zinc-600"
-                  title="Backup: copy Flex JSON if automated send fails"
-                  onClick={() => void handleCopyLineFlexJson()}
-                >
-                  <Copy className="mr-1.5 h-4 w-4" />
-                  Copy Flex JSON
-                </Button>
-                <div className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50/80 p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setSummaryLang("th")}
-                    className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                      summaryLang === "th" ? "bg-primary text-white" : "text-zinc-600 hover:bg-white"
-                    }`}
-                  >
-                    TH
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSummaryLang("en")}
-                    className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                      summaryLang === "en" ? "bg-primary text-white" : "text-zinc-600 hover:bg-white"
-                    }`}
-                  >
-                    EN
-                  </button>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-primary/30 text-primary hover:bg-accent"
-                  onClick={() => void handleCopySalesSummary()}
-                >
-                  <Copy className="mr-1.5 h-4 w-4" />
-                  Copy Sales Summary
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-9 shrink-0 gap-1 border-zinc-300 px-3"
+                      title="คัดลอก Flex JSON หรือ Sales Summary"
+                    >
+                      <Copy className="h-3.5 w-3.5 shrink-0" />
+                      <span className="max-[420px]:sr-only">คัดลอก…</span>
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem
+                      onClick={() => void handleCopyLineFlexJson()}
+                      title="Backup if automated send fails"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy Flex JSON
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => void handleCopySalesSummary()}>
+                      <Copy className="h-4 w-4" />
+                      Copy Sales Summary
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 {detailModal.claimToken && detailModal.status === "PENDING_INFO" && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-emerald-200 text-emerald-800 hover:bg-emerald-50"
+                    className="h-9 shrink-0 border-emerald-200 px-3 text-emerald-800 hover:bg-emerald-50"
                     onClick={() => {
                       const url = `${getSiteOrigin()}/order/claim/${detailModal.claimToken}`;
                       void navigator.clipboard.writeText(url).then(() => {
@@ -1433,7 +1455,7 @@ export default function AdminOrdersPage() {
                       });
                     }}
                   >
-                    <Copy className="mr-1.5 h-4 w-4" />
+                    <Copy className="mr-1.5 h-4 w-4 shrink-0" />
                     Copy Claim Link
                   </Button>
                 )}
@@ -1441,7 +1463,7 @@ export default function AdminOrdersPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-violet-200 text-violet-900 hover:bg-violet-50"
+                    className="h-9 shrink-0 border-violet-200 px-3 text-violet-900 hover:bg-violet-50"
                     onClick={() =>
                       handleAdminClaimOpen(detailModal.id, detailModal.orderNumber, {
                         name: detailModal.customerName,
@@ -1451,7 +1473,7 @@ export default function AdminOrdersPage() {
                       })
                     }
                   >
-                    <FileUp className="mr-1.5 h-4 w-4" />
+                    <FileUp className="mr-1.5 h-4 w-4 shrink-0" />
                     แอดมินจัดการแทน
                   </Button>
                 )}
@@ -1459,10 +1481,10 @@ export default function AdminOrdersPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="border border-red-200/80 text-red-600 hover:bg-red-50"
+                    className="h-9 shrink-0 border border-red-200/80 px-3 text-red-600 hover:bg-red-50"
                     onClick={() => handleCancelPendingOpen(detailModal.id)}
                   >
-                    <XCircle className="mr-1.5 h-4 w-4" />
+                    <XCircle className="mr-1.5 h-4 w-4 shrink-0" />
                     ยกเลิกออเดอร์
                   </Button>
                 )}
@@ -1470,14 +1492,15 @@ export default function AdminOrdersPage() {
                   <Button
                     size="sm"
                     variant={detailModal.status === "PAID" ? "outline" : "ghost"}
-                    className={
+                    className={cn(
+                      "h-9 shrink-0 px-3",
                       detailModal.status === "PAID"
                         ? "border-red-300 text-red-700 hover:bg-red-50"
                         : "text-red-600 hover:bg-red-50 hover:text-red-700"
-                    }
+                    )}
                     onClick={() => { setDetailModal(null); handleVoidOpen(detailModal.id); }}
                   >
-                    <RotateCcw className="mr-1.5 h-4 w-4" />
+                    <RotateCcw className="mr-1.5 h-4 w-4 shrink-0" />
                     {detailModal.status === "PAID" ? "ยกเลิกและคืนสต็อก" : "ยกเลิกออเดอร์"}
                   </Button>
                 )}
