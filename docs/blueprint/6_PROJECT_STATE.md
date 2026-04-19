@@ -4,9 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-04-19
+- **Order claim pre-linking:** `components/storefront/OrderClaimClient.tsx` — การ์ด **LINE Tracking Status** บนสุดฟอร์ม (โลโก้ LINE + ข้อความ TH/EN + ปุ่ม Track on LINE เล็ก `lineOaUrlWithOrderHint`); หมายเหตุใกล้ Submit ให้อยู่หน้าจอยืนยัน LINE; overlay ขณะ `submitting` (กำลังบันทึก / Saving… please don't close)
+
 ### บันทึกการทำงาน — 2026-04-17
 - **LINE prefill + approve push:** `lib/line-oa-url.ts` — `lineOaUrlWithOrderHint` สร้าง `https://line.me/R/oaMessage/{id}/?Order%23…` เสมอ (`getLineOaMessageIdForPrefill`: `NEXT_PUBLIC_LINE_OA_MESSAGE_ID` → parse `NEXT_PUBLIC_LINE_OA_URL` → default); `approvePayment` — `line_user_id` จาก order หรือ `customers.line_user_id`, `total_amount` จาก `order`/`before`, `console.log` + try/catch `pushTextToLineUser`
-- **approvePayment atomic:** `services/orders-service.ts` — `prisma.$transaction`: อัปเดต `orders` → `PAID`, sync `quotations.updatedAt` เมื่อมี `convertedOrderId` / `source_quotation_number` + TODO loyalty; คืน `{ order, before }`; `sendLineFlexNotification` + `pushTextToLineUser` + email หลัง commit; `PATCH .../status` `approve` ส่ง `order` ใน JSON (`bigintToJson`)
+- **approvePayment atomic:** `services/orders-service.ts` — `prisma.$transaction`: อัปเดต `orders` → `PAID`, sync `quotations` (`status: CONVERTED` + `updatedAt` เมื่อไม่ใช่ `SHIPPED`, ตาม `convertedOrderId` / `source_quotation_number`) + TODO loyalty; คืน `{ order, before }`; หลัง commit: `sendLineFlexNotification` + email; `pushTextToLineUser` fire-and-forget; `PATCH .../status` `approve` ส่ง `order` ใน JSON (`bigintToJson`)
 - **LINE post-link + ชำระเงินอนุมัติ:** `app/api/webhooks/line/route.ts` — หลังลิงก์ออเดอร์สำเร็จ ตอบไทย «ได้รับสลิปโอนเรียบร้อยแล้ว…» + EN สั้น; `approvePayment` ใน `services/orders-service.ts` — หลัง PAID ถ้ามี `line_user_id` ส่ง `pushTextToLineUser` (TH ยอด `toLocaleString("th-TH")` + EN) นอกเหนือจาก flex เดิม
 - **Order claim success UX:** `OrderClaimClient.tsx` — `isSuccess` → `scrollTo({ top: 0, smooth })`; success block `motion.div` (fade/slide); ข้อความ/ padding ย่อเพื่อให้ปุ่ม Track on LINE อยู่เหนือ fold บนมือถือ
 - **Order claim success → LINE tracking loop:** `components/storefront/OrderClaimClient.tsx` — หลังส่งฟอร์มสำเร็จ: คำแนะนำกด Send ใน LINE + ปุ่ม **Track on LINE** (`lineOaUrlWithOrderHint`); `lib/line-oa-url.ts` — prefill URL ใช้ข้อความ `Order #{orderNumber}` ให้ตรงกับ `linkLineUserFromOrderChatMessage`

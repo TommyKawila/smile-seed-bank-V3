@@ -14,6 +14,22 @@ import { lineOaUrlWithOrderHint } from "@/lib/line-oa-url";
 
 const orderMono = JetBrains_Mono({ subsets: ["latin"] });
 
+function LineBrandMark({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fill="currentColor"
+        d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.345.282-.63.63-.63.212 0 .392.091.511.25l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.63.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.269 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.086.766.062 1.08l-.02.194c-.028.317-.248.617-.59.723-.094.03-.198.042-.298.042-.146 0-.294-.03-.437-.088-5.615-2.024-9.576-7.19-9.576-12.75C0 5.445 5.373.572 12 .572S24 5.445 24 10.314"
+      />
+    </svg>
+  );
+}
+
 type Preview = {
   order_number: string;
   total_amount: number;
@@ -218,8 +234,30 @@ export function OrderClaimClient({ token }: { token: string }) {
     );
   }
 
+  const orderNo = preview?.order_number?.trim() ?? "";
+  const lineTrackHref = orderNo ? lineOaUrlWithOrderHint(orderNo) : "";
+
   return (
-    <div className="mx-auto max-w-lg px-1">
+    <div className="relative mx-auto max-w-lg px-1">
+      {submitting ? (
+        <div
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-3 bg-zinc-950/55 px-6 backdrop-blur-[2px]"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-white/20 bg-white px-6 py-8 text-center shadow-xl">
+            <Loader2 className="mx-auto h-10 w-10 animate-spin text-emerald-700" />
+            <p className="mt-4 text-base font-medium text-zinc-900">
+              กำลังบันทึกข้อมูล…
+            </p>
+            <p className="mt-1 text-sm text-zinc-600">
+              Saving your info… Please don&apos;t close, almost done!
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <header className="mb-8 text-center">
         <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-zinc-400">
           Genetic Vault
@@ -241,6 +279,36 @@ export function OrderClaimClient({ token }: { token: string }) {
         onSubmit={(e) => void onSubmit(e)}
         className="space-y-5 rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:p-7"
       >
+        {lineTrackHref ? (
+          <div className="rounded-xl border border-[#06C755]/35 bg-emerald-50/60 p-4 shadow-sm">
+            <div className="flex gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#06C755] text-white">
+                <LineBrandMark className="h-7 w-7" />
+              </div>
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#047857]">
+                  LINE Tracking Status
+                </p>
+                <p className="text-xs leading-snug text-zinc-800">
+                  รับแจ้งเลขพัสดุผ่าน LINE ทันทีเมื่อจัดส่ง
+                </p>
+                <p className="text-[11px] leading-snug text-zinc-500">
+                  Link LINE now to get tracking updates
+                </p>
+              </div>
+            </div>
+            <Button
+              asChild
+              size="sm"
+              className="mt-3 h-9 w-full bg-[#06C755] text-xs text-white hover:bg-[#05b34c] sm:h-10 sm:text-sm"
+            >
+              <a href={lineTrackHref} target="_blank" rel="noopener noreferrer">
+                Track on LINE
+              </a>
+            </Button>
+          </div>
+        ) : null}
+
         <div className="space-y-2">
           <Label htmlFor="shipping_name" className="text-zinc-700">
             ชื่อ-นามสกุล (ผู้รับ)
@@ -317,6 +385,15 @@ export function OrderClaimClient({ token }: { token: string }) {
         </div>
 
         {submitError && <p className="text-sm text-red-600">{submitError}</p>}
+
+        <p className="rounded-lg border border-zinc-200/80 bg-zinc-50/90 px-3 py-2 text-[11px] leading-relaxed text-zinc-500">
+          <span className="block text-zinc-600">
+            หลังกดส่ง กรุณาอยู่หน้านี้สักครู่เพื่อยืนยันการเชื่อม LINE
+          </span>
+          <span className="mt-0.5 block text-zinc-500">
+            After clicking submit, please stay on this page to confirm your LINE tracking link.
+          </span>
+        </p>
 
         <Button
           type="submit"

@@ -116,17 +116,21 @@ export async function approvePayment(
         data: { status: "PAID", reject_note: null },
       });
 
-      // TODO: Loyalty — accrue points from `order.total_amount` / tier rules when the loyalty engine is implemented (keep inside this transaction).
+      // TODO: Loyalty — accrue points from `order.total_amount` / tier rules (100 THB = 1 pt per blueprint); run inside this transaction when implemented.
 
       const qn = before.source_quotation_number?.trim();
+      const quotationPaidSync = {
+        status: "CONVERTED" as const,
+        updatedAt: new Date(),
+      };
       let qTouch = await tx.quotations.updateMany({
-        where: { convertedOrderId: oid },
-        data: { updatedAt: new Date() },
+        where: { convertedOrderId: oid, status: { not: "SHIPPED" } },
+        data: quotationPaidSync,
       });
       if (qTouch.count === 0 && qn) {
         qTouch = await tx.quotations.updateMany({
-          where: { quotationNumber: qn },
-          data: { updatedAt: new Date() },
+          where: { quotationNumber: qn, status: { not: "SHIPPED" } },
+          data: quotationPaidSync,
         });
       }
 
@@ -156,14 +160,13 @@ export async function approvePayment(
         `ได้รับยอดโอนจำนวน ${totalStr} บาท เรียบร้อยแล้วครับ พรุ่งนี้เราจะจัดส่งของให้ และจะแจ้งเลขพัสดุ (tracking) ให้ทราบอัตโนมัติ ขอบคุณครับ 🙏`;
       const en = `Payment of ${totalStr} THB received. We’ll ship tomorrow and send your tracking number here. Thank you! 🙏`;
       console.log("Pushing to LINE:", lineUid);
-      try {
-        const pushResult = await pushTextToLineUser(lineUid, `${th}\n\n${en}`);
-        if (!pushResult.success) {
-          console.error("[approvePayment] LINE text push API:", pushResult.error);
-        }
-      } catch (e) {
-        console.error("[approvePayment] LINE text push exception:", e);
-      }
+      void pushTextToLineUser(lineUid, `${th}\n\n${en}`)
+        .then((pushResult) => {
+          if (!pushResult.success) {
+            console.error("[approvePayment] LINE text push API:", pushResult.error);
+          }
+        })
+        .catch((e) => console.error("[approvePayment] LINE text push exception:", e));
     } else {
       console.log(
         "[approvePayment] skip LINE payment text: no line_user_id on order or web customer profile"
