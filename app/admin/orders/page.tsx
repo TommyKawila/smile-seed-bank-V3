@@ -142,6 +142,53 @@ function formatRelativeTime(iso: string): string {
     .format(new Date(iso));
 }
 
+/** LINE recent list: relative / HH:mm / date for last message activity */
+function formatLineRecentActivity(iso: string): string {
+  const d = new Date(iso);
+  const mins = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (mins < 1) return "เมื่อกี้";
+  if (mins < 60) return `${mins} นาทีที่แล้ว`;
+
+  const startToday = new Date();
+  startToday.setHours(0, 0, 0, 0);
+  const endToday = new Date(startToday);
+  endToday.setDate(endToday.getDate() + 1);
+  if (d >= startToday && d < endToday) {
+    return new Intl.DateTimeFormat("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(d);
+  }
+
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} ชม. ที่แล้ว`;
+
+  return new Intl.DateTimeFormat("th-TH", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d);
+}
+
+function shortLineUserId(id: string): string {
+  return id.length <= 14 ? id : `${id.slice(0, 12)}…`;
+}
+
+type LineRecentUserRow = {
+  line_user_id: string;
+  display_name: string | null;
+  last_active_at: string;
+  type: "guest" | "customer";
+};
+
+function lineRecentTag(u: LineRecentUserRow): string {
+  if (u.type === "guest") return "GUEST";
+  return u.display_name?.trim() || "ลูกค้า";
+}
+
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
 interface ToastMsg { id: number; msg: string; type: "success" | "error" }
@@ -658,9 +705,7 @@ export default function AdminOrdersPage() {
   const [summaryLang, setSummaryLang] = useState<"th" | "en">("th");
   const [linkLineOpen, setLinkLineOpen] = useState(false);
   const [linkLinePaste, setLinkLinePaste] = useState("");
-  const [recentLineUsers, setRecentLineUsers] = useState<
-    { lineUserId: string; label: string | null; source: string }[]
-  >([]);
+  const [recentLineUsers, setRecentLineUsers] = useState<LineRecentUserRow[]>([]);
   const [linkLineSaving, setLinkLineSaving] = useState(false);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
   const [storeSettings, setStoreSettings] = useState<{ storeName: string; contactEmail: string | null; supportPhone: string | null; address: string | null } | null>(null);
@@ -680,11 +725,7 @@ export default function AdminOrdersPage() {
     void fetch("/api/admin/line-recent-users")
       .then((r) => r.json())
       .then((d: { users?: unknown }) =>
-        setRecentLineUsers(
-          Array.isArray(d.users)
-            ? (d.users as { lineUserId: string; label: string | null; source: string }[])
-            : []
-        )
+        setRecentLineUsers(Array.isArray(d.users) ? (d.users as LineRecentUserRow[]) : [])
       )
       .catch(() => setRecentLineUsers([]));
   }, [linkLineOpen]);
@@ -1677,19 +1718,20 @@ export default function AdminOrdersPage() {
             {recentLineUsers.length > 0 && (
               <div className="space-y-1">
                 <p className="text-xs font-medium text-zinc-500">ล่าสุดจาก webhook / ลูกค้า</p>
-                <ul className="max-h-36 overflow-y-auto rounded border border-zinc-200 bg-white">
+                <ul className="max-h-44 overflow-y-auto rounded border border-zinc-200 bg-white">
                   {recentLineUsers.map((u) => (
-                    <li key={u.lineUserId}>
+                    <li key={u.line_user_id}>
                       <button
                         type="button"
-                        className="w-full px-2 py-1.5 text-left font-mono text-[11px] text-zinc-800 hover:bg-accent"
-                        onClick={() => setLinkLinePaste(u.lineUserId)}
+                        title={u.line_user_id}
+                        className="w-full px-2 py-1.5 text-left text-[11px] leading-snug text-zinc-800 hover:bg-accent"
+                        onClick={() => setLinkLinePaste(u.line_user_id)}
                       >
-                        {u.lineUserId}
-                        {u.label ? (
-                          <span className="ml-1 font-sans text-zinc-500">· {u.label}</span>
-                        ) : null}
-                        <span className="ml-1 text-[10px] uppercase text-zinc-400">{u.source}</span>
+                        <span className="text-zinc-500">{formatLineRecentActivity(u.last_active_at)}</span>
+                        <span className="mx-1 text-zinc-300">—</span>
+                        <span className="font-mono text-[10px]">{shortLineUserId(u.line_user_id)}</span>
+                        <span className="mx-1 text-zinc-300">—</span>
+                        <span className="font-sans text-zinc-700">{lineRecentTag(u)}</span>
                       </button>
                     </li>
                   ))}

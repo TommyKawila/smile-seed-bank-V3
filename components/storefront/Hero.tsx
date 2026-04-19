@@ -139,7 +139,7 @@ export function Hero() {
                 className="h-11 min-w-[200px] rounded-sm border border-primary bg-primary px-6 text-sm font-medium text-primary-foreground shadow-none transition-colors hover:bg-primary/90"
               >
                 <Link href="/seeds">
-                  {t("เข้าสู่คลังพันธุกรรม", "Enter the genetic vault")}
+                  {t("เลือกซื้อเมล็ดพันธุ์", "Shop Seeds")}
                   <ChevronRight className="ml-1 h-4 w-4 opacity-90" strokeWidth={1.75} />
                 </Link>
               </Button>
@@ -149,7 +149,7 @@ export function Hero() {
                 className="h-11 min-w-[200px] rounded-sm border border-zinc-300 bg-transparent px-6 text-sm font-normal text-zinc-800 shadow-none transition-colors hover:border-primary/40 hover:bg-zinc-50"
               >
                 <Link href="/blog">
-                  {t("เข้าสู่คลังความรู้สายเขียว", "Enter the grower's knowledge vault")}
+                  {t("บทความ/คลังความรู้", "Grower's Guide")}
                 </Link>
               </Button>
             </motion.div>
