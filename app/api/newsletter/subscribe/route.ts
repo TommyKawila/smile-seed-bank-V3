@@ -3,9 +3,11 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { rateLimitIp } from "@/lib/rate-limit-ip";
 import { upsertNewsletterEmail } from "@/lib/newsletter-subscribe";
+import { sendNewsletterWelcomeEmail } from "@/services/email-service";
 
 const BodySchema = z.object({
   email: z.string().trim().email().max(320),
+  locale: z.enum(["th", "en"]).optional(),
 });
 
 function clientIp(): string {
@@ -38,12 +40,25 @@ export async function POST(req: Request) {
   }
 
   const email = parsed.data.email.toLowerCase();
+  const locale = parsed.data.locale === "en" ? "en" : "th";
 
   try {
-    await upsertNewsletterEmail(email);
+    const { shouldSendWelcome } = await upsertNewsletterEmail(email);
+    let welcomeEmailSent = false;
+    if (shouldSendWelcome) {
+      const sent = await sendNewsletterWelcomeEmail({ toEmail: email, locale });
+      welcomeEmailSent = sent.success;
+      if (!sent.success) {
+        console.error("[newsletter welcome email]", sent.error);
+      }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      welcomeEmailSent,
+      alreadyActive: !shouldSendWelcome,
+    });
   } catch {
     return NextResponse.json({ ok: false, error: "Could not save" }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true, message: "Thanks — you're on the list." });
 }

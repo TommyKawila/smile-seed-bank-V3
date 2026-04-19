@@ -18,6 +18,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { Hero } from "@/components/storefront/Hero";
 import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { FeaturedProductsCarousel } from "@/components/storefront/FeaturedProductsCarousel";
+import { HomeNewsletterSection } from "@/components/storefront/HomeNewsletterSection";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { MagazinePostPublic } from "@/lib/blog-service";
@@ -374,21 +375,14 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
         );
       }
       case "trust": {
-        const trustHeading = resolveSectionHeading(
-          locale,
-          st,
-          "จุดเด่นร้าน",
-          "Trust highlights"
-        );
         return (
-          <section key="trust" className="border-t border-b border-zinc-100 bg-zinc-50/30 py-10 sm:py-12">
-            <div className={`mx-auto max-w-5xl ${JOURNAL_PRODUCT_FONT_VARS}`}>
-              <h2 className="mb-8 px-4 text-center font-[family-name:var(--font-journal-product-serif)] text-2xl font-medium tracking-tight text-zinc-900 sm:px-6 sm:text-3xl">
-                {trustHeading}
-              </h2>
-              <div className="grid grid-cols-1 divide-y divide-zinc-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <section key="trust" className="border-t border-b border-zinc-100 bg-zinc-50/30 py-12 sm:py-16">
+            <div
+              className={`mx-auto max-w-5xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+            >
+              <div className="grid grid-cols-1 divide-y divide-zinc-100 text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 {features.map((f) => (
-                  <div key={f.label} className="px-6 py-6 sm:py-8">
+                  <div key={f.label} className="px-6 py-7 sm:py-9">
                     <p className="font-[family-name:var(--font-journal-product-serif)] text-base font-medium text-zinc-800">
                       {f.label}
                     </p>
@@ -472,38 +466,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
         );
       }
       case "newsletter": {
-        const joinHeading = resolveSectionHeading(
-          locale,
-          st,
-          "สมัครสมาชิกฟรี",
-          "Join Free"
-        );
-        return (
-          <section
-            key="newsletter"
-            className={`mx-4 mb-14 overflow-hidden rounded-3xl border border-emerald-800/20 bg-emerald-800 sm:mx-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
-          >
-            <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-6 px-6 py-10 text-center sm:flex-row sm:text-left">
-              <div>
-                <h3 className="font-[family-name:var(--font-journal-product-serif)] text-xl font-medium text-white sm:text-2xl">
-                  {joinHeading}
-                </h3>
-                <p className="mt-2 text-sm font-light leading-relaxed text-white/90">
-                  {t(
-                    "รับสิทธิพิเศษสำหรับสมาชิก และข่าวสารเทคนิคการปลูกจากงานวิจัยล่าสุด",
-                    "Member-exclusive benefits and the latest research-backed growing techniques"
-                  )}
-                </p>
-              </div>
-              <Button
-                asChild
-                className="shrink-0 rounded-sm border-2 border-white bg-white px-6 py-2.5 text-sm font-semibold tracking-wide text-emerald-900 hover:bg-emerald-50"
-              >
-                <Link href="/profile">{t("สมัครสมาชิก", "Sign Up")}</Link>
-              </Button>
-            </div>
-          </section>
-        );
+        return <HomeNewsletterSection key="newsletter" />;
       }
       default:
         return null;

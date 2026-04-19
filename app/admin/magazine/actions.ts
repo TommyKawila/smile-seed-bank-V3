@@ -11,6 +11,7 @@ import {
 } from "@/lib/blog-service";
 import { assertAdmin } from "@/lib/auth-utils";
 import { sendMagazineNewsletterBroadcast } from "@/lib/magazine-email-broadcast";
+import { sendNewsletterWelcomeEmail } from "@/services/email-service";
 import type { MagazineEmailTemplateId } from "@/lib/email-magazine-broadcast-html";
 
 export type { MagazineEmailTemplateId };
@@ -264,7 +265,13 @@ export async function subscribeToNewsletter(email: string) {
     return { ok: false as const, error: "Invalid email" };
   }
   try {
-    await upsertNewsletterEmail(parsed.data);
+    const { shouldSendWelcome } = await upsertNewsletterEmail(parsed.data);
+    if (shouldSendWelcome) {
+      const r = await sendNewsletterWelcomeEmail({ toEmail: parsed.data, locale: "th" });
+      if (!r.success) {
+        console.error("[magazine newsletter welcome]", r.error);
+      }
+    }
     return { ok: true as const, message: "Thanks — you're on the list." };
   } catch {
     return { ok: false as const, error: "Could not save" };

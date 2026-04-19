@@ -2,6 +2,7 @@
 // Handles transactional emails: order confirmation, tracking update
 
 import { getSiteOrigin } from "@/lib/get-url";
+import { buildNewsletterWelcomeHtml } from "@/lib/email-newsletter-welcome-html";
 import { CARRIER_LABELS, carrierTrackingUrl } from "@/lib/shipping-carriers";
 import {
   buildOrderConfirmationHtml,
@@ -339,6 +340,44 @@ export async function sendShippingConfirmationEmail(
       }),
     });
 
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
+    }
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+/** Welcome + WELCOME10 code after newsletter signup (storefront). */
+export async function sendNewsletterWelcomeEmail(opts: {
+  toEmail: string;
+  locale?: "th" | "en";
+}): Promise<ServiceResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { success: false, error: "RESEND_API_KEY ไม่ได้ตั้งค่า" };
+  const locale = opts.locale === "en" ? "en" : "th";
+  const storeUrl = `${getSiteOrigin()}/shop`;
+  const subject =
+    locale === "en"
+      ? "Welcome! Here is your 10% discount code from Smile Seed Bank"
+      : "ยินดีต้อนรับ! นี่คือโค้ดส่วนลด 10% ของคุณจาก Smile Seed Bank 🌱";
+  const html = buildNewsletterWelcomeHtml(locale, storeUrl);
+  try {
+    const res = await fetch(RESEND_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [opts.toEmail],
+        subject,
+        html,
+      }),
+    });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
