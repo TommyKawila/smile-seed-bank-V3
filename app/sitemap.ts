@@ -31,6 +31,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/blog`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
     { url: `${base}/shop`, lastModified: now, changeFrequency: "daily", priority: 0.88 },
     { url: `${base}/breeders`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.35 },
+    { url: `${base}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.35 },
   ];
 
   const breederCatalogEntries: MetadataRoute.Sitemap = breeders.map((b) => ({

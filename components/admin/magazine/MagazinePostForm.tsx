@@ -11,6 +11,8 @@ import { RelatedProductsSection } from "./RelatedProductsSection";
 import {
   createMagazinePost,
   updateMagazinePost,
+  generateMagazineThAi,
+  generateMagazineEnAi,
   type MagazineEmailTemplateId,
   type MagazineSaveInput,
 } from "@/app/admin/magazine/actions";
@@ -21,21 +23,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Sparkles } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Category = { id: string; name: string };
 
 type InitialPost = {
   id: number;
   title: string;
+  title_en: string | null;
   slug: string;
   excerpt: string | null;
+  excerpt_en: string | null;
+  tagline: string | null;
+  tagline_en: string | null;
   content: object | null;
+  content_en: object | null;
   featured_image: string | null;
   tags: string[];
   status: string;
   category_id: string | null;
   related_products: number[];
+  raw_input: string | null;
+  ai_tone_mood: string | null;
+  ai_opening_closing: string | null;
+  ai_target_audience: string | null;
 };
 
 const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
@@ -62,9 +74,17 @@ function toSerializablePayload(raw: MagazineSaveInput): MagazineSaveInput {
 
   return {
     title: String(raw.title ?? "").trim(),
+    title_en: String(raw.title_en ?? "").trim(),
     slug: String(raw.slug ?? "").trim(),
     excerpt: String(raw.excerpt ?? ""),
+    excerpt_en: String(raw.excerpt_en ?? ""),
+    tagline: String(raw.tagline ?? ""),
+    tagline_en: String(raw.tagline_en ?? ""),
     content: toPlainContentJson(raw.content as object),
+    content_en:
+      raw.content_en != null
+        ? toPlainContentJson(raw.content_en as object)
+        : null,
     featured_image: featured,
     tags: (raw.tags ?? []).map((t) => String(t)),
     status: raw.status,
@@ -79,6 +99,10 @@ function toSerializablePayload(raw: MagazineSaveInput): MagazineSaveInput {
           .filter((n) => Number.isFinite(n) && n > 0)
       ),
     ],
+    raw_input: String(raw.raw_input ?? ""),
+    ai_tone_mood: String(raw.ai_tone_mood ?? ""),
+    ai_opening_closing: String(raw.ai_opening_closing ?? ""),
+    ai_target_audience: String(raw.ai_target_audience ?? ""),
     ...(raw.send_email
       ? {
           send_email: true as const,
@@ -112,8 +136,15 @@ export function MagazinePostForm({
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugDirty, setSlugDirty] = useState(isEdit);
   const [excerpt, setExcerpt] = useState(initial?.excerpt ?? "");
+  const [titleEn, setTitleEn] = useState(initial?.title_en ?? "");
+  const [excerptEn, setExcerptEn] = useState(initial?.excerpt_en ?? "");
+  const [tagline, setTagline] = useState(initial?.tagline ?? "");
+  const [taglineEn, setTaglineEn] = useState(initial?.tagline_en ?? "");
   const [contentJson, setContentJson] = useState<object>(
     (initial?.content as object) ?? emptyDoc
+  );
+  const [contentEnJson, setContentEnJson] = useState<object>(
+    (initial?.content_en as object) ?? emptyDoc
   );
   const [featuredImage, setFeaturedImage] = useState(
     initial?.featured_image ?? ""
@@ -138,8 +169,17 @@ export function MagazinePostForm({
     useState<MagazineEmailTemplateId>("research");
   const [creatorLink, setCreatorLink] = useState("");
   const [fieldBullets, setFieldBullets] = useState(["", "", ""]);
+  const [rawInput, setRawInput] = useState(initial?.raw_input ?? "");
+  const [toneMood, setToneMood] = useState(initial?.ai_tone_mood ?? "");
+  const [openingClosing, setOpeningClosing] = useState(
+    initial?.ai_opening_closing ?? ""
+  );
+  const [targetAudience, setTargetAudience] = useState(
+    initial?.ai_target_audience ?? ""
+  );
+  const [aiBusy, setAiBusy] = useState(false);
 
-  const saveDisabled = pending || imageBusy;
+  const saveDisabled = pending || imageBusy || aiBusy;
 
   const debouncedSlugFromTitle = useDebouncedCallback((t: string) => {
     if (!slugDirty) setSlug(generateSlug(t));
@@ -179,25 +219,43 @@ export function MagazinePostForm({
   const buildPayload = useCallback((): MagazineSaveInput => {
     return {
       title,
+      title_en: titleEn,
       slug,
       excerpt,
+      excerpt_en: excerptEn,
+      tagline,
+      tagline_en: taglineEn,
       content: contentJson,
+      content_en: contentEnJson,
       featured_image: featuredImage.trim() || null,
       tags: parseTags(tagsInput),
       status,
       category_id: categoryId ? Number(categoryId) : null,
       related_product_ids: relatedProductIds,
+      raw_input: rawInput,
+      ai_tone_mood: toneMood,
+      ai_opening_closing: openingClosing,
+      ai_target_audience: targetAudience,
     };
   }, [
     title,
+    titleEn,
     slug,
     excerpt,
+    excerptEn,
+    tagline,
+    taglineEn,
     contentJson,
+    contentEnJson,
     featuredImage,
     tagsInput,
     status,
     categoryId,
     relatedProductIds,
+    rawInput,
+    toneMood,
+    openingClosing,
+    targetAudience,
   ]);
 
   const save = (nextStatus: "DRAFT" | "PUBLISHED") => {
@@ -286,6 +344,61 @@ export function MagazinePostForm({
     });
   };
 
+  const runGenerateTh = async () => {
+    setAiBusy(true);
+    setError(null);
+    try {
+      const r = await generateMagazineThAi({
+        raw_input: rawInput,
+        tone_mood: toneMood,
+        opening_closing: openingClosing,
+        target_audience: targetAudience,
+      });
+      if (!r.ok) {
+        setError(r.error);
+        return;
+      }
+      setTitle(r.title);
+      setTagline(r.tagline);
+      setExcerpt(r.excerpt);
+      setContentJson(toPlainContentJson(r.content));
+      if (!slugDirty) setSlug(generateSlug(r.title));
+      setFeedback("Thai draft generated — review before publish.");
+      setTimeout(() => setFeedback(null), 6000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "AI failed");
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const runGenerateEn = async () => {
+    setAiBusy(true);
+    setError(null);
+    try {
+      const r = await generateMagazineEnAi({
+        raw_input: rawInput,
+        tone_mood: toneMood,
+        opening_closing: openingClosing,
+        target_audience: targetAudience,
+      });
+      if (!r.ok) {
+        setError(r.error);
+        return;
+      }
+      setTitleEn(r.title);
+      setTaglineEn(r.tagline);
+      setExcerptEn(r.excerpt);
+      setContentEnJson(toPlainContentJson(r.content));
+      setFeedback("English draft generated — review before publish.");
+      setTimeout(() => setFeedback(null), 6000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "AI failed");
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
   const fieldClass =
     "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:border-emerald-700/40 focus:outline-none focus:ring-1 focus:ring-emerald-700/25";
 
@@ -313,7 +426,7 @@ export function MagazinePostForm({
             {feedback && (
               <span className="text-sm text-emerald-800">{feedback}</span>
             )}
-            {(pending || imageBusy) && (
+            {(pending || imageBusy || aiBusy) && (
               <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
             )}
             <button
@@ -344,19 +457,6 @@ export function MagazinePostForm({
         )}
 
         <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-            Title
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            className={`${fieldClass} text-base`}
-            placeholder="Article title"
-          />
-        </div>
-
-        <div className="space-y-2">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
               Slug
@@ -369,7 +469,7 @@ export function MagazinePostForm({
               }}
               className="text-xs font-semibold text-emerald-800 hover:text-emerald-950"
             >
-              Regenerate from title
+              Regenerate from Thai title
             </button>
           </div>
           <input
@@ -384,18 +484,230 @@ export function MagazinePostForm({
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-            Excerpt
-          </label>
-          <textarea
-            value={excerpt}
-            onChange={(e) => setExcerpt(e.target.value)}
-            rows={3}
-            className={`${fieldClass} resize-y`}
-            placeholder="Short summary for listings and SEO"
-          />
-        </div>
+        <section
+          className="rounded-2xl border border-violet-200/80 bg-gradient-to-b from-violet-50/90 to-white p-5 shadow-sm sm:p-6"
+          aria-labelledby="magazine-ai-heading"
+        >
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <Sparkles className="h-5 w-5 text-violet-600" aria-hidden />
+            <h2
+              id="magazine-ai-heading"
+              className="text-sm font-semibold uppercase tracking-wide text-violet-900"
+            >
+              AI Writing Assistant
+            </h2>
+          </div>
+          <p className="mb-4 text-xs text-zinc-600">
+            วางข้อมูลดิบ / โน้ตวิจัย แล้วกำหนดโทนและสไตล์ — กดปุ่มเพื่อเติมฟิลด์ภาษาไทยหรืออังกฤษในคลิกเดียว
+          </p>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Raw Data / Research Notes
+              </label>
+              <p className="text-[11px] text-zinc-500">
+                สำหรับวางข้อมูลจาก Google LM / บันทึกย่อ / ลิงก์สรุป
+              </p>
+              <textarea
+                value={rawInput}
+                onChange={(e) => setRawInput(e.target.value)}
+                rows={8}
+                disabled={aiBusy}
+                className={`${fieldClass} min-h-[180px] resize-y font-mono text-[13px] leading-relaxed`}
+                placeholder="Paste bullets, outline, or pasted research…"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-1">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Tone &amp; Mood
+                </label>
+                <input
+                  type="text"
+                  value={toneMood}
+                  onChange={(e) => setToneMood(e.target.value)}
+                  disabled={aiBusy}
+                  className={fieldClass}
+                  placeholder="เช่น เป็นกันเองแบบเพื่อน, ทางการกึ่งวิชาการ, สนุกสนานแบบสายเขียว"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Opening / Closing logic
+                </label>
+                <input
+                  type="text"
+                  value={openingClosing}
+                  onChange={(e) => setOpeningClosing(e.target.value)}
+                  disabled={aiBusy}
+                  className={fieldClass}
+                  placeholder="เช่น เกริ่นนำด้วยคำถามกระตุ้นความสงสัย, ปิดท้ายชวนเลือกซื้อเมล็ดที่เกี่ยวข้อง"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                  Target audience
+                </label>
+                <input
+                  type="text"
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  disabled={aiBusy}
+                  className={fieldClass}
+                  placeholder="เช่น มือใหม่เริ่มปลูก, นักสะสมสายพันธุ์หายาก"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-1">
+              <button
+                type="button"
+                disabled={saveDisabled}
+                onClick={() => void runGenerateTh()}
+                className="inline-flex items-center gap-2 rounded-lg bg-violet-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-800 disabled:opacity-50"
+              >
+                {aiBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                Generate Thai
+              </button>
+              <button
+                type="button"
+                disabled={saveDisabled}
+                onClick={() => void runGenerateEn()}
+                className="inline-flex items-center gap-2 rounded-lg border border-violet-300 bg-white px-4 py-2.5 text-sm font-semibold text-violet-900 shadow-sm transition hover:bg-violet-50 disabled:opacity-50"
+              >
+                {aiBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                Refine / Rewrite English
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <Tabs defaultValue="th" className="w-full">
+          <TabsList className="inline-flex h-10 w-full max-w-md rounded-xl border border-zinc-200 bg-zinc-100/80 p-1 sm:w-auto">
+            <TabsTrigger
+              value="th"
+              className="flex-1 rounded-lg px-4 py-2 text-sm font-semibold data-[state=active]:bg-white data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm"
+            >
+              ไทย (TH)
+            </TabsTrigger>
+            <TabsTrigger
+              value="en"
+              className="flex-1 rounded-lg px-4 py-2 text-sm font-semibold data-[state=active]:bg-white data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm"
+            >
+              English (EN)
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="th" className="mt-6 space-y-6 outline-none">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Title (Thai)
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                className={`${fieldClass} text-base`}
+                placeholder="หัวข้อบทความ"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Tagline (Thai, optional)
+              </label>
+              <input
+                type="text"
+                value={tagline}
+                onChange={(e) => setTagline(e.target.value)}
+                className={fieldClass}
+                placeholder="บรรทัดรองใต้หัวข้อ"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Excerpt (Thai)
+              </label>
+              <textarea
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                rows={3}
+                className={`${fieldClass} resize-y`}
+                placeholder="สรุปสั้น ๆ สำหรับการ์ดและ SEO"
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Content (Thai)
+              </label>
+              <MagazineTiptapEditor
+                key={`${editorKey}-th`}
+                content={contentJson}
+                onChange={setContentJson}
+                placeholder="เขียนเนื้อหา…"
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="en" className="mt-6 space-y-6 outline-none">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Title (English)
+              </label>
+              <input
+                type="text"
+                value={titleEn}
+                onChange={(e) => setTitleEn(e.target.value)}
+                className={`${fieldClass} text-base`}
+                placeholder="Article title"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Tagline (English, optional)
+              </label>
+              <input
+                type="text"
+                value={taglineEn}
+                onChange={(e) => setTaglineEn(e.target.value)}
+                className={fieldClass}
+                placeholder="Subtitle under headline"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Excerpt (English)
+              </label>
+              <textarea
+                value={excerptEn}
+                onChange={(e) => setExcerptEn(e.target.value)}
+                rows={3}
+                className={`${fieldClass} resize-y`}
+                placeholder="Short summary for listings (EN)"
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                Content (English)
+              </label>
+              <MagazineTiptapEditor
+                key={`${editorKey}-en`}
+                content={contentEnJson}
+                onChange={setContentEnJson}
+                placeholder="Write the article…"
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <div className="grid gap-8 sm:grid-cols-2">
           <div className="space-y-2">
@@ -539,17 +851,6 @@ export function MagazinePostForm({
           )}
         </div>
 
-        <div className="space-y-3">
-          <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-            Content
-          </label>
-          <MagazineTiptapEditor
-            key={editorKey}
-            content={contentJson}
-            onChange={setContentJson}
-            placeholder="Write your story…"
-          />
-        </div>
       </div>
     </div>
   );

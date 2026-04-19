@@ -1,11 +1,19 @@
 import Link from "next/link";
 import type { MagazinePostPublic } from "@/lib/blog-service";
+import type { MagLocale } from "@/lib/magazine-bilingual";
+import { magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { magazineCategoryDisplayTh } from "@/lib/blog-research-category";
 import { cn } from "@/lib/utils";
 
 const mono = "font-[family-name:var(--font-journal-mono)] tabular-nums";
 
-export function MagazineTrending({ posts }: { posts: MagazinePostPublic[] }) {
+export function MagazineTrending({
+  posts,
+  locale = "th",
+}: {
+  posts: MagazinePostPublic[];
+  locale?: MagLocale;
+}) {
   if (posts.length === 0) {
     return (
       <aside className="rounded-sm border border-[#f3f4f6] bg-white p-5 shadow-sm">
@@ -41,7 +49,7 @@ export function MagazineTrending({ posts }: { posts: MagazinePostPublic[] }) {
                   href={`/blog/${p.slug}`}
                   className="line-clamp-2 text-[13px] font-medium leading-snug tracking-tight text-zinc-800 transition group-hover:text-emerald-900"
                 >
-                  {p.title}
+                  {magazineDisplayTitle(p, locale)}
                 </Link>
                 <div className="mt-1 flex items-center justify-between gap-2">
                   {p.category && (

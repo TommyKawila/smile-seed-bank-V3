@@ -8,12 +8,14 @@ import { OfferManager } from "@/components/storefront/OfferManager";
 import { PromotionBanner } from "@/components/storefront/PromotionBanner";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { Toaster } from "@/components/ui/sonner";
+import { AgeVerificationGate } from "@/components/storefront/age-verification-gate";
 
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
     <LanguageProvider>
       <CartProvider>
         <Toaster />
+        <AgeVerificationGate />
         <Suspense fallback={null}>
           <PromoReturnHandler />
         </Suspense>

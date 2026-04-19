@@ -32,14 +32,23 @@ export default async function AdminMagazineEditPage({ params }: Props) {
   const initial = {
     id: Number(row.id),
     title: row.title,
+    title_en: row.title_en,
     slug: row.slug,
     excerpt: row.excerpt,
+    excerpt_en: row.excerpt_en,
+    tagline: row.tagline,
+    tagline_en: row.tagline_en,
     content: (row.content as object | null) ?? null,
+    content_en: (row.content_en as object | null) ?? null,
     featured_image: row.featured_image,
     tags: row.tags ?? [],
     status: row.status,
     category_id: row.category_id != null ? String(row.category_id) : null,
     related_products: (row.related_products ?? []).map(Number),
+    raw_input: row.raw_input,
+    ai_tone_mood: row.ai_tone_mood,
+    ai_opening_closing: row.ai_opening_closing,
+    ai_target_audience: row.ai_target_audience,
   };
 
   return <MagazinePostForm categories={catOptions} initial={initial} />;

@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -43,6 +44,13 @@ import { getSiteOrigin } from "@/lib/get-url";
 import { cn } from "@/lib/utils";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { BlogArticleBreederRibbon } from "@/components/storefront/magazine/BlogArticleBreederRibbon";
+import {
+  magazineDisplayContentJson,
+  magazineDisplayExcerpt,
+  magazineDisplayTagline,
+  magazineDisplayTitle,
+  magazineLocaleFromCookie,
+} from "@/lib/magazine-bilingual";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-magazine-serif" });
@@ -67,28 +75,37 @@ export async function generateMetadata({
   const post = await getPublishedPostBySlug(params.slug);
   if (!post) return { title: "ไม่พบบทความ" };
 
+  const locale = magazineLocaleFromCookie(cookies().get("locale")?.value);
+  const displayTitle = magazineDisplayTitle(post, locale);
+  const displayExcerpt = magazineDisplayExcerpt(post, locale);
+  const contentJson = magazineDisplayContentJson(post, locale);
+  const contentHtml = tiptapJsonToHtml(contentJson);
+  const description = displayExcerpt?.trim()
+    ? truncateMetaDescription(displayExcerpt.trim())
+    : articleMetaDescription(null, contentHtml);
+
   const siteUrl = getSiteOrigin();
   const base = siteUrl;
-  const contentHtml = tiptapJsonToHtml(post.content);
-  const description = post.excerpt?.trim()
-    ? truncateMetaDescription(post.excerpt.trim())
-    : articleMetaDescription(null, contentHtml);
 
   const rawImage = post.featured_image?.trim();
   const ogImageUrl = rawImage ? resolveAbsoluteUrl(siteUrl, rawImage) : defaultOgImageUrl(siteUrl);
   const pageUrl = `${base}/blog/${post.slug}`;
+  const titleSuffix =
+    locale === "en"
+      ? "Green knowledge vault — Smile Seed Bank"
+      : "คลังความรู้สายเขียว - Smile Seed Bank";
 
   return {
     metadataBase: new URL(base),
     title: {
-      absolute: `${post.title} | คลังความรู้สายเขียว - Smile Seed Bank`,
+      absolute: `${displayTitle} | ${titleSuffix}`,
     },
     description,
     authors: [{ name: "Smile Seed Bank Editorial" }],
     openGraph: {
-      title: post.title,
+      title: displayTitle,
       description,
-      locale: "th_TH",
+      locale: locale === "en" ? "en_US" : "th_TH",
       type: "article",
       url: pageUrl,
       siteName: "Smile Seed Bank",
@@ -98,7 +115,7 @@ export async function generateMetadata({
       images: [
         {
           url: ogImageUrl,
-          alt: post.title,
+          alt: displayTitle,
           width: 1200,
           height: 630,
         },
@@ -106,7 +123,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: post.title,
+      title: displayTitle,
       description,
       images: [ogImageUrl],
     },
@@ -120,7 +137,12 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
   const post = await getPublishedPostBySlug(params.slug);
   if (!post) notFound();
 
-  const rawHtml = tiptapJsonToHtml(post.content);
+  const locale = magazineLocaleFromCookie(cookies().get("locale")?.value);
+  const displayTitle = magazineDisplayTitle(post, locale);
+  const displayExcerpt = magazineDisplayExcerpt(post, locale);
+  const displayTagline = magazineDisplayTagline(post, locale);
+  const contentJson = magazineDisplayContentJson(post, locale);
+  const rawHtml = tiptapJsonToHtml(contentJson);
   const [beforeTie, afterTie] = splitForSmartTieIn(rawHtml);
   const segmentsBefore = parseArticleSegments(beforeTie);
   const segmentsAfter = parseArticleSegments(afterTie);
@@ -154,7 +176,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
   const siteUrl = getSiteOrigin();
   const base = siteUrl;
   const pageUrl = `${base}/blog/${post.slug}`;
-  const metaDesc = articleMetaDescription(post.excerpt, rawHtml);
+  const metaDesc = articleMetaDescription(displayExcerpt, rawHtml);
   const rawFeatured = post.featured_image?.trim();
   const jsonLdImage = rawFeatured
     ? resolveAbsoluteUrl(siteUrl, rawFeatured)
@@ -174,7 +196,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
       )}
     >
       <MagazineArticleJsonLd
-        title={post.title}
+        title={displayTitle}
         description={metaDesc}
         imageUrls={[jsonLdImage]}
         datePublished={post.published_at ?? post.created_at}
@@ -202,7 +224,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
             </>
           )}
           <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
-          <span className="line-clamp-1 text-zinc-600">{post.title}</span>
+          <span className="line-clamp-1 text-zinc-600">{displayTitle}</span>
         </nav>
 
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
@@ -228,8 +250,14 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         </div>
 
         <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-medium leading-[1.25] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl">
-          {post.title}
+          {displayTitle}
         </h1>
+
+        {displayTagline && (
+          <p className="mt-4 max-w-3xl text-lg font-light leading-relaxed text-zinc-600">
+            {displayTagline}
+          </p>
+        )}
 
         <div
           className={cn(
@@ -268,7 +296,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           </div>
         )}
 
-        {post.excerpt && (
+        {displayExcerpt && (
           <aside
             className={cn(
               "mb-10 rounded-sm border-l-4 border-emerald-600 bg-zinc-50 py-5 pl-5 pr-5 text-base font-light leading-relaxed tracking-[0.02em] text-zinc-700 sm:pl-6 sm:pr-6 sm:text-[1.05rem]",
@@ -276,14 +304,14 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
             )}
             aria-label="Abstract"
           >
-            {post.excerpt}
+            {displayExcerpt}
           </aside>
         )}
 
         <div
           className={cn(
             "mx-auto max-w-[720px]",
-            post.excerpt ? "mt-0" : post.featured_image ? "mt-12" : "mt-10"
+            displayExcerpt ? "mt-0" : post.featured_image ? "mt-12" : "mt-10"
           )}
         >
           <MagazineArticleBody
@@ -338,7 +366,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                         {isResearchCategory(r.category) && <VerifiedResearchBadge />}
                       </div>
                       <p className="mt-2 line-clamp-2 font-[family-name:var(--font-magazine-serif)] text-base font-semibold text-zinc-900 group-hover:text-emerald-800">
-                        {r.title}
+                        {magazineDisplayTitle(r, locale)}
                       </p>
                     </div>
                   </Link>
@@ -359,7 +387,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
 
         <div className="mx-auto mt-16 max-w-[720px] space-y-10">
           <NewsletterBox />
-          <MagazineArticleShare url={pageUrl} title={post.title} />
+          <MagazineArticleShare url={pageUrl} title={displayTitle} />
           <Link
             href="/blog"
             className="inline-flex text-sm font-medium text-emerald-700 transition hover:text-emerald-800"

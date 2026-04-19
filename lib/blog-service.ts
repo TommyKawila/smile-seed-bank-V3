@@ -83,8 +83,12 @@ export async function getPublishedPostsByCategorySlug(
 export type MagazinePostPublic = {
   id: number;
   title: string;
+  title_en: string | null;
   slug: string;
   excerpt: string | null;
+  excerpt_en: string | null;
+  tagline: string | null;
+  tagline_en: string | null;
   featured_image: string | null;
   tags: string[];
   view_count: number;
@@ -95,8 +99,12 @@ export type MagazinePostPublic = {
 function serializePost(p: {
   id: bigint;
   title: string;
+  title_en: string | null;
   slug: string;
   excerpt: string | null;
+  excerpt_en: string | null;
+  tagline: string | null;
+  tagline_en: string | null;
   featured_image: string | null;
   tags: string[];
   view_count: number;
@@ -106,8 +114,12 @@ function serializePost(p: {
   return {
     id: Number(p.id),
     title: p.title,
+    title_en: p.title_en,
     slug: p.slug,
     excerpt: p.excerpt,
+    excerpt_en: p.excerpt_en,
+    tagline: p.tagline,
+    tagline_en: p.tagline_en,
     featured_image: p.featured_image,
     tags: p.tags ?? [],
     view_count: p.view_count,
@@ -159,6 +171,7 @@ export async function getTrendingPosts(
 
 export type MagazinePostDetail = MagazinePostPublic & {
   content: unknown;
+  content_en: unknown | null;
   author_id: string | null;
   updated_at: string;
   created_at: string;
@@ -183,6 +196,7 @@ export async function getPublishedPostBySlug(slug: string): Promise<MagazinePost
   return {
     ...serializePost(row),
     content: row.content,
+    content_en: row.content_en,
     author_id: row.author_id,
     updated_at: row.updated_at.toISOString(),
     created_at: row.created_at.toISOString(),

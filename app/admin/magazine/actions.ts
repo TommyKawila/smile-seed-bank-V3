@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { generateSlug } from "@/lib/product-utils";
 import { upsertNewsletterEmail } from "@/lib/newsletter-subscribe";
@@ -13,14 +14,33 @@ import { assertAdmin } from "@/lib/auth-utils";
 import { sendMagazineNewsletterBroadcast } from "@/lib/magazine-email-broadcast";
 import { sendNewsletterWelcomeEmail } from "@/services/email-service";
 import type { MagazineEmailTemplateId } from "@/lib/email-magazine-broadcast-html";
+import { isTiptapDocEmpty } from "@/lib/magazine-bilingual";
+import {
+  generateMagazineDraftEn,
+  generateMagazineDraftTh,
+  type MagazineAiWriterParams,
+} from "@/lib/magazine-ai-writer";
 
 export type { MagazineEmailTemplateId };
+export type { MagazineAiWriterParams };
+
+function normalizeContentEn(
+  v: object | null | undefined
+): object | null {
+  if (v == null || isTiptapDocEmpty(v)) return null;
+  return v;
+}
 
 export type MagazineSaveInput = {
   title: string;
+  title_en?: string;
   slug: string;
   excerpt: string;
+  excerpt_en?: string;
   content: object;
+  content_en?: object | null;
+  tagline?: string;
+  tagline_en?: string;
   featured_image: string | null;
   tags: string[];
   status: "DRAFT" | "PUBLISHED";
@@ -32,7 +52,29 @@ export type MagazineSaveInput = {
   email_template?: MagazineEmailTemplateId;
   field_notes_creator_url?: string;
   field_notes_bullets?: string[];
+  raw_input?: string;
+  ai_tone_mood?: string;
+  ai_opening_closing?: string;
+  ai_target_audience?: string;
 };
+
+export async function generateMagazineThAi(input: MagazineAiWriterParams) {
+  try {
+    await assertAdmin();
+  } catch {
+    return { ok: false as const, error: "Unauthorized" };
+  }
+  return generateMagazineDraftTh(input);
+}
+
+export async function generateMagazineEnAi(input: MagazineAiWriterParams) {
+  try {
+    await assertAdmin();
+  } catch {
+    return { ok: false as const, error: "Unauthorized" };
+  }
+  return generateMagazineDraftEn(input);
+}
 
 function validateMagazineEmailOptions(
   input: MagazineSaveInput
@@ -133,12 +175,28 @@ export async function createMagazinePost(input: MagazineSaveInput) {
     ),
   ].map((n) => BigInt(n));
 
+  const contentEn = normalizeContentEn(
+    input.content_en as object | null | undefined
+  );
+
   const created = await prisma.blog_posts.create({
     data: {
       title,
+      title_en: input.title_en?.trim() || null,
       slug,
       excerpt: input.excerpt?.trim() || null,
-      content: input.content as object,
+      excerpt_en: input.excerpt_en?.trim() || null,
+      content: input.content as Prisma.InputJsonValue,
+      content_en:
+        contentEn === null
+          ? Prisma.DbNull
+          : (contentEn as Prisma.InputJsonValue),
+      tagline: input.tagline?.trim() || null,
+      tagline_en: input.tagline_en?.trim() || null,
+      raw_input: input.raw_input?.trim() || null,
+      ai_tone_mood: input.ai_tone_mood?.trim() || null,
+      ai_opening_closing: input.ai_opening_closing?.trim() || null,
+      ai_target_audience: input.ai_target_audience?.trim() || null,
       featured_image: input.featured_image?.trim() || null,
       tags: input.tags,
       status: input.status,
@@ -190,13 +248,29 @@ export async function updateMagazinePost(id: number, input: MagazineSaveInput) {
     ),
   ].map((n) => BigInt(n));
 
+  const contentEn = normalizeContentEn(
+    input.content_en as object | null | undefined
+  );
+
   const row = await prisma.blog_posts.update({
     where: { id: bid },
     data: {
       title,
+      title_en: input.title_en?.trim() || null,
       slug,
       excerpt: input.excerpt?.trim() || null,
-      content: input.content as object,
+      excerpt_en: input.excerpt_en?.trim() || null,
+      content: input.content as Prisma.InputJsonValue,
+      content_en:
+        contentEn === null
+          ? Prisma.DbNull
+          : (contentEn as Prisma.InputJsonValue),
+      tagline: input.tagline?.trim() || null,
+      tagline_en: input.tagline_en?.trim() || null,
+      raw_input: input.raw_input?.trim() || null,
+      ai_tone_mood: input.ai_tone_mood?.trim() || null,
+      ai_opening_closing: input.ai_opening_closing?.trim() || null,
+      ai_target_audience: input.ai_target_audience?.trim() || null,
       featured_image: input.featured_image?.trim() || null,
       tags: input.tags,
       status: input.status,

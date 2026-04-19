@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { MagazinePostPublic } from "@/lib/blog-service";
+import type { MagLocale } from "@/lib/magazine-bilingual";
+import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import {
   isKnowledgeCategory,
@@ -110,13 +112,17 @@ function RefTag({ children }: { children: ReactNode }) {
 function BentoPostCard({
   post,
   variant,
+  locale,
 }: {
   post: MagazinePostPublic;
   variant: CardVariant;
+  locale: MagLocale;
 }) {
   const research = isResearchCategory(post.category);
   const knowledge = isKnowledgeCategory(post.category);
-  const readMin = estimateReadingMinutesFromExcerpt(post.title, post.excerpt);
+  const cardTitle = magazineDisplayTitle(post, locale);
+  const cardExcerpt = magazineDisplayExcerpt(post, locale);
+  const readMin = estimateReadingMinutesFromExcerpt(cardTitle, cardExcerpt);
   const refId = formatResearchRefId(post.id, post.published_at);
   const showRef = knowledge || research;
 
@@ -140,7 +146,7 @@ function BentoPostCard({
           variant === "standard" && "aspect-video shrink-0"
         )}
       >
-        <CardImage src={post.featured_image} alt={post.title} />
+        <CardImage src={post.featured_image} alt={cardTitle} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-900/50 via-transparent to-transparent opacity-80 transition group-hover:opacity-90" />
         <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end gap-2 p-3 sm:p-4">
           {post.category && <GlassTag>{post.category.name}</GlassTag>}
@@ -161,9 +167,9 @@ function BentoPostCard({
             variant === "standard" && "text-base sm:text-lg"
           )}
         >
-          {post.title}
+          {cardTitle}
         </h3>
-        {post.excerpt && (
+        {cardExcerpt && (
           <p
             className={cn(
               "line-clamp-3 text-sm font-light leading-relaxed text-zinc-600",
@@ -171,7 +177,7 @@ function BentoPostCard({
               isMedium && "line-clamp-3"
             )}
           >
-            {post.excerpt}
+            {cardExcerpt}
           </p>
         )}
         <CardMetaFooter publishedAt={post.published_at} readMin={readMin} />
@@ -180,7 +186,13 @@ function BentoPostCard({
   );
 }
 
-export function MagazineLatestGrid({ posts }: { posts: MagazinePostPublic[] }) {
+export function MagazineLatestGrid({
+  posts,
+  locale = "th",
+}: {
+  posts: MagazinePostPublic[];
+  locale?: MagLocale;
+}) {
   if (posts.length === 0) {
     return (
       <div className="rounded-sm border border-dashed border-[#f3f4f6] bg-white py-20 text-center text-zinc-500">
@@ -192,7 +204,7 @@ export function MagazineLatestGrid({ posts }: { posts: MagazinePostPublic[] }) {
   if (posts.length === 1) {
     return (
       <div className="max-w-4xl">
-        <BentoPostCard post={posts[0]!} variant="featured" />
+        <BentoPostCard post={posts[0]!} variant="featured" locale={locale} />
       </div>
     );
   }
@@ -203,10 +215,10 @@ export function MagazineLatestGrid({ posts }: { posts: MagazinePostPublic[] }) {
     return (
       <div className="grid gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-8">
         <div className="flex min-h-0 lg:col-span-7">
-          <BentoPostCard post={featured!} variant="featured" />
+          <BentoPostCard post={featured!} variant="featured" locale={locale} />
         </div>
         <div className="flex min-h-0 lg:col-span-5">
-          <BentoPostCard post={rest[0]!} variant="compact" />
+          <BentoPostCard post={rest[0]!} variant="compact" locale={locale} />
         </div>
       </div>
     );
@@ -224,17 +236,17 @@ export function MagazineLatestGrid({ posts }: { posts: MagazinePostPublic[] }) {
       {/* Row 1: 7/12 + 5/12 stacked — equal height on lg */}
       <div className="grid gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-8">
         <div className="flex min-h-0 lg:col-span-7">
-          <BentoPostCard post={featured!} variant="featured" />
+          <BentoPostCard post={featured!} variant="featured" locale={locale} />
         </div>
         <div className="flex min-h-0 flex-col gap-4 lg:col-span-5 lg:h-full lg:min-h-[320px]">
           {compactA && (
             <div className="flex min-h-0 flex-1 basis-0 flex-col">
-              <BentoPostCard post={compactA} variant="compact" />
+              <BentoPostCard post={compactA} variant="compact" locale={locale} />
             </div>
           )}
           {compactB && (
             <div className="flex min-h-0 flex-1 basis-0 flex-col">
-              <BentoPostCard post={compactB} variant="compact" />
+              <BentoPostCard post={compactB} variant="compact" locale={locale} />
             </div>
           )}
         </div>
@@ -245,12 +257,12 @@ export function MagazineLatestGrid({ posts }: { posts: MagazinePostPublic[] }) {
         <div className="grid gap-8 sm:grid-cols-2 lg:gap-10">
           {mediumA && (
             <div className="min-h-0">
-              <BentoPostCard post={mediumA} variant="medium" />
+              <BentoPostCard post={mediumA} variant="medium" locale={locale} />
             </div>
           )}
           {mediumB && (
             <div className="min-h-0">
-              <BentoPostCard post={mediumB} variant="medium" />
+              <BentoPostCard post={mediumB} variant="medium" locale={locale} />
             </div>
           )}
         </div>
@@ -260,7 +272,7 @@ export function MagazineLatestGrid({ posts }: { posts: MagazinePostPublic[] }) {
       {standardRest.length > 0 && (
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
           {standardRest.map((p) => (
-            <BentoPostCard key={p.id} post={p} variant="standard" />
+            <BentoPostCard key={p.id} post={p} variant="standard" locale={locale} />
           ))}
         </div>
       )}

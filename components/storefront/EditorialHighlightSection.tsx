@@ -9,6 +9,7 @@ import type { MagazinePostPublic } from "@/lib/blog-service";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { useLanguage } from "@/context/LanguageContext";
+import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { Button } from "@/components/ui/button";
 
 function estimateReadingMinutes(excerpt: string | null, title: string): number {
@@ -87,7 +88,7 @@ const sideItemVariants = {
 };
 
 export function EditorialHighlightSection() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [posts, setPosts] = useState<MagazinePostPublic[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -135,7 +136,9 @@ export function EditorialHighlightSection() {
 
   const main = posts[0]!;
   const side = posts.slice(1, 4);
-  const mainMins = estimateReadingMinutes(main.excerpt, main.title);
+  const mainTitle = magazineDisplayTitle(main, locale);
+  const mainExcerpt = magazineDisplayExcerpt(main, locale);
+  const mainMins = estimateReadingMinutes(mainExcerpt, mainTitle);
 
   const headerBlock = (
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -161,7 +164,7 @@ export function EditorialHighlightSection() {
       href={`/blog/${main.slug}`}
       className="group/main relative block min-h-[380px] overflow-hidden rounded-2xl sm:min-h-[440px]"
     >
-      <HeroImage src={main.featured_image} alt={main.title} />
+      <HeroImage src={main.featured_image} alt={mainTitle} />
       <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/50 to-white/5" />
       <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
         <span className="mb-3 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
@@ -172,10 +175,10 @@ export function EditorialHighlightSection() {
           whileHover={{ color: "rgb(5 46 22)" }}
           transition={{ duration: 0.35 }}
         >
-          {main.title}
+          {mainTitle}
         </motion.h3>
-        {main.excerpt ? (
-          <p className="mt-2 line-clamp-2 text-sm text-zinc-600">{main.excerpt}</p>
+        {mainExcerpt ? (
+          <p className="mt-2 line-clamp-2 text-sm text-zinc-600">{mainExcerpt}</p>
         ) : null}
         <p className="mt-4 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
           <Clock className="h-3.5 w-3.5 opacity-90" aria-hidden />
@@ -228,7 +231,9 @@ export function EditorialHighlightSection() {
             viewport={{ once: true, margin: "-40px" }}
           >
             {side.map((post) => {
-              const mins = estimateReadingMinutes(post.excerpt, post.title);
+              const sideTitle = magazineDisplayTitle(post, locale);
+              const sideExcerpt = magazineDisplayExcerpt(post, locale);
+              const mins = estimateReadingMinutes(sideExcerpt, sideTitle);
               return (
                 <motion.div key={post.id} variants={sideItemVariants}>
                   <Link
@@ -236,7 +241,7 @@ export function EditorialHighlightSection() {
                     className="group/side flex gap-4 overflow-hidden rounded-xl border border-zinc-200/80 bg-white p-3 shadow-sm transition-shadow duration-300 hover:border-primary/25 hover:shadow-md"
                   >
                     <div className="relative h-24 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
-                      <ThumbImage src={post.featured_image} alt={post.title} />
+                      <ThumbImage src={post.featured_image} alt={sideTitle} />
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-0.5">
                       <span className="inline-flex w-fit rounded-full border border-emerald-700/15 bg-emerald-700/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary backdrop-blur-sm">
@@ -247,7 +252,7 @@ export function EditorialHighlightSection() {
                         whileHover={{ color: "rgb(4 120 87)" }}
                         transition={{ duration: 0.3 }}
                       >
-                        {post.title}
+                        {sideTitle}
                       </motion.h4>
                       <p className="flex items-center gap-1 text-[11px] text-zinc-500">
                         <Clock className="h-3 w-3 shrink-0" aria-hidden />

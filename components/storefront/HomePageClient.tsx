@@ -22,6 +22,7 @@ import { HomeNewsletterSection } from "@/components/storefront/HomeNewsletterSec
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { MagazinePostPublic } from "@/lib/blog-service";
+import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { BlogHeroSlogan } from "@/components/storefront/magazine/BlogHeroSlogan";
@@ -55,6 +56,8 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
   const { t, locale } = useLanguage();
   const img = resolvePublicAssetUrl(post.featured_image);
   const research = isResearchCategory(post.category);
+  const cardTitle = magazineDisplayTitle(post, locale);
+  const cardExcerpt = magazineDisplayExcerpt(post, locale);
   return (
     <article className="flex flex-col overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition hover:shadow-lg">
       <Link href={`/blog/${post.slug}`} className="relative block aspect-video overflow-hidden bg-zinc-100">
@@ -86,11 +89,11 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
         </div>
         <h3 className="font-[family-name:var(--font-home-serif)] line-clamp-2 text-lg font-semibold leading-snug text-zinc-900">
           <Link href={`/blog/${post.slug}`} className="hover:text-emerald-900">
-            {post.title}
+            {cardTitle}
           </Link>
         </h3>
-        {post.excerpt && (
-          <p className="mt-2 line-clamp-3 flex-1 text-sm text-zinc-600">{post.excerpt}</p>
+        {cardExcerpt && (
+          <p className="mt-2 line-clamp-3 flex-1 text-sm text-zinc-600">{cardExcerpt}</p>
         )}
         <Button
           asChild
@@ -116,6 +119,9 @@ function InsightSection({
   const featured = posts[0];
   const rest = posts.slice(1);
   const featuredHeadline = locale === "en" ? INSIGHT_FEATURED_HEADLINE_EN : INSIGHT_FEATURED_HEADLINE_TH;
+  const featuredExcerpt = featured
+    ? magazineDisplayExcerpt(featured, locale)
+    : null;
   const featuredImg = featured ? resolvePublicAssetUrl(featured.featured_image) : null;
   const mainHeading = resolveSectionHeading(
     locale,
@@ -177,9 +183,9 @@ function InsightSection({
                   <h3 className="font-[family-name:var(--font-home-serif)] text-2xl font-bold leading-[1.25] tracking-tight text-emerald-800 sm:text-3xl md:text-[1.65rem] md:leading-snug">
                     {featuredHeadline}
                   </h3>
-                  {featured.excerpt && (
+                  {featuredExcerpt && (
                     <p className="mt-5 line-clamp-5 text-sm font-light leading-relaxed text-zinc-600 sm:text-base">
-                      {featured.excerpt}
+                      {featuredExcerpt}
                     </p>
                   )}
                   <div className="mt-8">

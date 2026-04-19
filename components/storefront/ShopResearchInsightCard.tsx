@@ -5,6 +5,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { MagazinePostPublic } from "@/lib/blog-service";
+import { useLanguage } from "@/context/LanguageContext";
+import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { cn } from "@/lib/utils";
 
 const serif = "font-[family-name:var(--font-journal-product-serif)]";
@@ -17,6 +19,9 @@ export function ShopResearchInsightCard({
   post: MagazinePostPublic;
   variants?: import("framer-motion").Variants;
 }) {
+  const { locale } = useLanguage();
+  const cardTitle = magazineDisplayTitle(post, locale);
+  const cardExcerpt = magazineDisplayExcerpt(post, locale);
   return (
     <motion.article
       variants={variants}
@@ -42,11 +47,11 @@ export function ShopResearchInsightCard({
             RESEARCH_INSIGHT
           </p>
           <h3 className={cn(serif, "mt-2 text-lg font-medium leading-snug text-zinc-900 sm:text-xl")}>
-            {post.title}
+            {cardTitle}
           </h3>
-          {post.excerpt && (
+          {cardExcerpt && (
             <p className="mt-2 line-clamp-2 text-sm font-light leading-relaxed text-zinc-600">
-              {post.excerpt}
+              {cardExcerpt}
             </p>
           )}
           <span className={cn(mono, "mt-3 inline-block text-[11px] text-primary")}>

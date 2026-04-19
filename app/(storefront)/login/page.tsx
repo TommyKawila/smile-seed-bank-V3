@@ -299,7 +299,12 @@ export default function LoginPage() {
 
             <p className="text-center text-xs text-zinc-400">
               {t("โดยการสมัครสมาชิก คุณยอมรับ", "By signing up you agree to our")}{" "}
-              <Link href="/shop" className="text-primary underline-offset-2 hover:underline">
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline-offset-2 hover:underline"
+              >
                 {t("เงื่อนไขการใช้งาน", "Terms of Service")}
               </Link>
             </p>

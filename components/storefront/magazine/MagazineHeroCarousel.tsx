@@ -8,6 +8,7 @@ import type { MagazinePostPublic } from "@/lib/blog-service";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { isResearchCategory, magazineCategoryDisplayTh } from "@/lib/blog-research-category";
 import { useLanguage } from "@/context/LanguageContext";
+import { magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
 
 type Props = { posts: MagazinePostPublic[] };
@@ -43,7 +44,7 @@ function HeroImage({
 }
 
 export function MagazineHeroCarousel({ posts }: Props) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const slides = posts.length ? posts : [];
   const [i, setI] = useState(0);
 
@@ -70,6 +71,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
 
   const current = slides[i]!;
   const research = isResearchCategory(current.category);
+  const heroTitle = magazineDisplayTitle(current, locale);
 
   return (
     <div className="relative aspect-video min-h-[260px] w-full overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -86,7 +88,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
             <div className="absolute inset-0 overflow-hidden rounded-sm">
               <HeroImage
                 src={current.featured_image}
-                alt={current.title}
+                alt={heroTitle}
                 priority={i === 0}
               />
             </div>
@@ -101,7 +103,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
                 {research && <VerifiedResearchBadge />}
               </div>
               <h2 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-semibold leading-[1.15] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl lg:max-w-3xl">
-                {current.title}
+                {heroTitle}
               </h2>
               <Link
                 href={`/blog/${current.slug}`}

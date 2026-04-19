@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { Metadata } from "next";
 import { Inter, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import {
@@ -18,6 +19,7 @@ import {
   BLOG_INDEX_DESCRIPTION,
   BLOG_INDEX_TITLE,
 } from "@/lib/seo/blog-index-metadata";
+import { magazineLocaleFromCookie } from "@/lib/magazine-bilingual";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-magazine-serif" });
@@ -54,6 +56,7 @@ type PageProps = { searchParams: Record<string, string | string[] | undefined> }
 export default async function BlogMagazinePage({ searchParams }: PageProps) {
   const raw = searchParams.category;
   const categorySlug = typeof raw === "string" ? raw : undefined;
+  const locale = magazineLocaleFromCookie(cookies().get("locale")?.value);
 
   const [highlights, trending, categories, gridPosts] = await Promise.all([
     getHighlightPosts(24, 5),
@@ -93,12 +96,12 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
           </div>
 
           <div className="order-3 lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-28 lg:self-start">
-            <MagazineTrending posts={trending} />
+            <MagazineTrending posts={trending} locale={locale} />
           </div>
 
           <div className="order-4 lg:order-none lg:col-start-2 lg:row-start-3">
             <section aria-label="บทความคลังความรู้สายเขียว">
-              <MagazineLatestGrid posts={gridPosts} />
+              <MagazineLatestGrid posts={gridPosts} locale={locale} />
             </section>
           </div>
         </div>

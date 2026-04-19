@@ -63,10 +63,20 @@ model newsletter_subscribers {
 model blog_posts {
   id               BigInt           @id @default(autoincrement())
   title            String
+  title_en         String?          @db.Text
   slug             String           @unique
   /// TipTap JSON document; UTF-8 (emoji-safe in PostgreSQL `jsonb`)
   content          Json?            @db.Json
+  content_en       Json?            @db.Json
   excerpt          String?          @db.Text
+  excerpt_en       String?          @db.Text
+  tagline          String?          @db.Text
+  tagline_en       String?          @db.Text
+  /// Research notes / pasted source material for AI writer
+  raw_input              String?  @db.Text
+  ai_tone_mood           String?  @db.Text
+  ai_opening_closing     String?  @db.Text
+  ai_target_audience     String?  @db.Text
   featured_image   String?
   author_id        String?          @db.Uuid
   status           String           @default("DRAFT") @db.VarChar(20)
