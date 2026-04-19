@@ -24,6 +24,12 @@ import {
 export type { MagazineEmailTemplateId };
 export type { MagazineAiWriterParams };
 
+function plainSerializable<T>(data: T): T {
+  return JSON.parse(
+    JSON.stringify(data, (_k, v) => (v === undefined ? null : v))
+  ) as T;
+}
+
 function normalizeContentEn(
   v: object | null | undefined
 ): object | null {
@@ -62,18 +68,20 @@ export async function generateMagazineThAi(input: MagazineAiWriterParams) {
   try {
     await assertAdmin();
   } catch {
-    return { ok: false as const, error: "Unauthorized" };
+    return plainSerializable({ ok: false as const, error: "Unauthorized" });
   }
-  return generateMagazineDraftTh(input);
+  const result = await generateMagazineDraftTh(input);
+  return plainSerializable(result);
 }
 
 export async function generateMagazineEnAi(input: MagazineAiWriterParams) {
   try {
     await assertAdmin();
   } catch {
-    return { ok: false as const, error: "Unauthorized" };
+    return plainSerializable({ ok: false as const, error: "Unauthorized" });
   }
-  return generateMagazineDraftEn(input);
+  const result = await generateMagazineDraftEn(input);
+  return plainSerializable(result);
 }
 
 function validateMagazineEmailOptions(
