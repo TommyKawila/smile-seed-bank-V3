@@ -824,6 +824,126 @@ export async function submitOrderClaim(
   }
 }
 
+export interface SubmitAdminClaimOnBehalfInput {
+  shipping_name: string;
+  shipping_address: string;
+  shipping_phone: string;
+  shipping_email?: string;
+  file: File;
+}
+
+/** Admin fills claim + slip for `PENDING_INFO` orders (e.g. details sent via LINE). */
+export async function submitAdminClaimOnBehalf(
+  orderId: number,
+  input: SubmitAdminClaimOnBehalfInput
+): Promise<ServiceResult<ClaimSubmitResult>> {
+  try {
+    const shipping_name = input.shipping_name?.trim() ?? "";
+    const shipping_address = input.shipping_address?.trim() ?? "";
+    const shipping_phone = input.shipping_phone?.trim() ?? "";
+    const shipping_email = input.shipping_email?.trim() ?? "";
+    const { file } = input;
+
+    if (!shipping_name || !shipping_address || !shipping_phone) {
+      return { data: null, error: "Name, address, and phone are required" };
+    }
+    if (shipping_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shipping_email)) {
+      return { data: null, error: "Invalid email address" };
+    }
+
+    const order = await prisma.orders.findUnique({
+      where: { id: BigInt(orderId) },
+      select: {
+        id: true,
+        order_number: true,
+        status: true,
+        slip_url: true,
+        total_amount: true,
+      },
+    });
+    if (!order) return { data: null, error: "Order not found" };
+    if (order.status !== "PENDING_INFO") {
+      return { data: null, error: "Order is not awaiting customer claim (PENDING_INFO)" };
+    }
+    if (order.slip_url) return { data: null, error: "Slip already uploaded" };
+
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    if (!ALLOWED_EXT.includes(ext)) {
+      return { data: null, error: "Allowed file types: jpg, png, webp, pdf" };
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return { data: null, error: "File too large (max 5MB)" };
+    }
+
+    const path = `claim-admin-${order.order_number}-${randomUUID()}.${ext}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const contentType = file.type || (ext === "pdf" ? "application/pdf" : "image/jpeg");
+
+    const supabase = await createAdminClient();
+    const { error: uploadError } = await supabase.storage
+      .from(SLIP_BUCKET)
+      .upload(path, buffer, { cacheControl: "3600", upsert: true, contentType });
+
+    if (uploadError) {
+      console.error("[order-service] admin claim storage upload error:", uploadError.message);
+      return { data: null, error: uploadError.message };
+    }
+
+    const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
+    const slipUrl = data.publicUrl;
+
+    await prisma.orders.update({
+      where: { id: order.id },
+      data: {
+        shipping_name,
+        shipping_address,
+        shipping_phone,
+        shipping_email: shipping_email || null,
+        customer_name: shipping_name,
+        customer_phone: shipping_phone,
+        slip_url: slipUrl,
+        status: "AWAITING_VERIFICATION",
+      },
+    });
+
+    const totalFmt = Number(order.total_amount).toLocaleString("th-TH", {
+      maximumFractionDigits: 0,
+    });
+    void sendAdminNotification(
+      [
+        `💰 Admin filled claim #${order.order_number}`,
+        `Customer: ${shipping_name}`,
+        `Total: ฿${totalFmt}`,
+        `Status: awaiting verification (or approve next step).`,
+      ].join("\n")
+    );
+
+    let claim: ClaimAssociateResult = {
+      linked: false,
+      isExisting: false,
+      displayName: shipping_name,
+      showSetPasswordHint: false,
+    };
+    try {
+      claim = await linkOrderToCustomerAfterClaim({
+        orderId: order.id,
+        fullName: shipping_name,
+        address: shipping_address,
+        phone: shipping_phone,
+        email: shipping_email || null,
+      });
+    } catch (assocErr) {
+      console.error("[order-service] submitAdminClaimOnBehalf associate:", assocErr);
+    }
+
+    return { data: { slip_url: slipUrl, claim }, error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[order-service] submitAdminClaimOnBehalf error:", msg);
+    return { data: null, error: msg };
+  }
+}
+
 // ─── fetchEmailItems ──────────────────────────────────────────────────────────
 
 export interface EmailItem {

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ShoppingCart, Loader2, CheckCircle2, XCircle,
   ImageIcon, User, RefreshCw, FileText, Clock, BadgeCheck,
-  Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy, MessageCircle,
+  Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy, MessageCircle, FileUp,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import { generateOrderFlexMessage } from "@/lib/line-flex";
 import { createReceiptDownloadQuery } from "@/lib/receipt-download-token";
 import { fetchPdfSettings } from "@/lib/pdf-settings";
 import { ReceiptPreviewModal } from "@/components/admin/ReceiptPreviewModal";
+import { Switch } from "@/components/ui/switch";
 
 // ─── Shipping providers ────────────────────────────────────────────────────────
 const SHIPPING_PROVIDERS = [
@@ -207,6 +208,7 @@ function OrderCard({
   onSlipClick,
   onDetailClick,
   onReceiptPdf,
+  onAdminClaim,
   isUpdating,
 }: {
   order: AdminOrder;
@@ -218,6 +220,7 @@ function OrderCard({
   onSlipClick: (url: string) => void;
   onDetailClick: (id: number) => void;
   onReceiptPdf: (id: number) => void;
+  onAdminClaim: (id: number, orderNumber: string) => void;
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
@@ -325,6 +328,20 @@ function OrderCard({
             </Button>
           </div>
         )}
+        {order.status === "PENDING_INFO" && (
+          <div className="mt-3">
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full border-violet-200 text-violet-900 hover:bg-violet-50 active:scale-[.97]"
+              onClick={() => onAdminClaim(order.id, order.order_number)}
+              disabled={busy}
+            >
+              <FileUp className="mr-1.5 h-4 w-4" />
+              แอดมินจัดการแทน
+            </Button>
+          </div>
+        )}
         {canCancelPending && (
           <div className="mt-3">
             <Button
@@ -408,6 +425,7 @@ function OrderTableRow({
   onSlipClick,
   onDetailClick,
   onReceiptPdf,
+  onAdminClaim,
   isUpdating,
 }: {
   order: AdminOrder;
@@ -419,6 +437,7 @@ function OrderTableRow({
   onSlipClick: (url: string) => void;
   onDetailClick: (id: number) => void;
   onReceiptPdf: (id: number) => void;
+  onAdminClaim: (id: number, orderNumber: string) => void;
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
@@ -511,6 +530,18 @@ function OrderTableRow({
         ) : (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap gap-1.5">
+              {order.status === "PENDING_INFO" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-violet-200 text-violet-900 hover:bg-violet-50"
+                  onClick={() => onAdminClaim(order.id, order.order_number)}
+                  disabled={busy}
+                >
+                  <FileUp className="mr-1 h-3.5 w-3.5" />
+                  แอดมินจัดการแทน
+                </Button>
+              )}
               {canCancelPending && (
                 <Button
                   size="sm"
@@ -633,6 +664,14 @@ export default function AdminOrdersPage() {
   const [linkLineSaving, setLinkLineSaving] = useState(false);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
   const [storeSettings, setStoreSettings] = useState<{ storeName: string; contactEmail: string | null; supportPhone: string | null; address: string | null } | null>(null);
+  const adminClaimFileRef = useRef<HTMLInputElement>(null);
+  const [adminClaimModal, setAdminClaimModal] = useState<{ orderId: number; orderNumber: string } | null>(null);
+  const [adminClaimName, setAdminClaimName] = useState("");
+  const [adminClaimPhone, setAdminClaimPhone] = useState("");
+  const [adminClaimAddress, setAdminClaimAddress] = useState("");
+  const [adminClaimEmail, setAdminClaimEmail] = useState("");
+  const [adminClaimApproveNow, setAdminClaimApproveNow] = useState(false);
+  const [adminClaimSubmitting, setAdminClaimSubmitting] = useState(false);
 
   const { orders, isLoading, error, refetch } = useAdminOrders(statusFilter || undefined);
 
@@ -882,6 +921,99 @@ export default function AdminOrdersPage() {
       setDetailLoading(false);
     }
   }, [pushToast]);
+
+  const handleAdminClaimOpen = useCallback(
+    (
+      orderId: number,
+      orderNumber: string,
+      prefill?: {
+        name: string | null;
+        phone: string | null;
+        address: string | null;
+        email: string | null;
+      }
+    ) => {
+      setAdminClaimModal({ orderId, orderNumber });
+      setAdminClaimName(prefill?.name ?? "");
+      setAdminClaimPhone(prefill?.phone ?? "");
+      setAdminClaimAddress(prefill?.address ?? "");
+      setAdminClaimEmail(prefill?.email ?? "");
+      setAdminClaimApproveNow(false);
+      if (adminClaimFileRef.current) adminClaimFileRef.current.value = "";
+    },
+    []
+  );
+
+  const handleAdminClaimSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      if (!adminClaimModal) return;
+      const file = adminClaimFileRef.current?.files?.[0];
+      if (!file?.size) {
+        pushToast("แนบรูปสลิปโอนเงิน", "error");
+        return;
+      }
+      const name = adminClaimName.trim();
+      const phone = adminClaimPhone.trim();
+      const addr = adminClaimAddress.trim();
+      if (!name || !phone || !addr) {
+        pushToast("กรอกชื่อ เบอร์ และที่อยู่ที่จัดส่ง", "error");
+        return;
+      }
+      const orderId = adminClaimModal.orderId;
+      setAdminClaimSubmitting(true);
+      try {
+        const fd = new FormData();
+        fd.append("shipping_name", name);
+        fd.append("shipping_phone", phone);
+        fd.append("shipping_address", addr);
+        const em = adminClaimEmail.trim();
+        if (em) fd.append("shipping_email", em);
+        fd.append("file", file);
+        if (adminClaimApproveNow) fd.append("approve_immediately", "true");
+
+        const res = await fetch(`/api/admin/orders/${orderId}/claim-manual`, {
+          method: "POST",
+          body: fd,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          pushToast((data as { error?: string }).error ?? "บันทึกไม่สำเร็จ", "error");
+          return;
+        }
+        const d = data as { approved?: boolean; warning?: string };
+        if (d.warning) {
+          pushToast(d.warning, "error");
+        } else {
+          pushToast(
+            d.approved === true ? "บันทึกและอนุมัติสำเร็จ" : "บันทึกข้อมูลแล้ว (รอตรวจสอบ)",
+            "success"
+          );
+        }
+        setAdminClaimModal(null);
+        await refetch();
+        if (detailModal?.id === orderId) {
+          void handleDetailClick(orderId);
+        }
+      } catch {
+        pushToast("เกิดข้อผิดพลาด", "error");
+      } finally {
+        setAdminClaimSubmitting(false);
+      }
+    },
+    [
+      adminClaimModal,
+      adminClaimName,
+      adminClaimPhone,
+      adminClaimAddress,
+      adminClaimEmail,
+      adminClaimApproveNow,
+      detailModal,
+      pushToast,
+      refetch,
+      handleDetailClick,
+    ]
+  );
 
   const submitLinkLine = useCallback(async () => {
     if (!detailModal) return;
@@ -1137,6 +1269,7 @@ export default function AdminOrdersPage() {
                 onSlipClick={setSlipModalUrl}
                 onDetailClick={handleDetailClick}
                 onReceiptPdf={openReceiptPreview}
+                onAdminClaim={handleAdminClaimOpen}
                 isUpdating={updatingId}
               />
             ))}
@@ -1169,6 +1302,7 @@ export default function AdminOrdersPage() {
                     onSlipClick={setSlipModalUrl}
                     onDetailClick={handleDetailClick}
                     onReceiptPdf={openReceiptPreview}
+                    onAdminClaim={handleAdminClaimOpen}
                     isUpdating={updatingId}
                   />
                 ))}
@@ -1260,6 +1394,24 @@ export default function AdminOrdersPage() {
                   >
                     <Copy className="mr-1.5 h-4 w-4" />
                     Copy Claim Link
+                  </Button>
+                )}
+                {detailModal.status === "PENDING_INFO" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-violet-200 text-violet-900 hover:bg-violet-50"
+                    onClick={() =>
+                      handleAdminClaimOpen(detailModal.id, detailModal.orderNumber, {
+                        name: detailModal.customerName,
+                        phone: detailModal.customerPhone,
+                        address: detailModal.shippingAddress,
+                        email: detailModal.customerEmail,
+                      })
+                    }
+                  >
+                    <FileUp className="mr-1.5 h-4 w-4" />
+                    แอดมินจัดการแทน
                   </Button>
                 )}
                 {(detailModal.status === "PENDING" || detailModal.status === "PENDING_INFO") && (
@@ -1735,6 +1887,98 @@ export default function AdminOrdersPage() {
               {updatingId !== null ? <Loader2 className="h-4 w-4 animate-spin" /> : "บันทึกการจัดส่ง"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!adminClaimModal}
+        onOpenChange={(o) => {
+          if (!o) setAdminClaimModal(null);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <form onSubmit={handleAdminClaimSubmit}>
+            <DialogHeader>
+              <DialogTitle className="text-primary">
+                แอดมินจัดการแทน · #{adminClaimModal?.orderNumber}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-claim-name">ชื่อผู้รับ</Label>
+                <Input
+                  id="admin-claim-name"
+                  value={adminClaimName}
+                  onChange={(e) => setAdminClaimName(e.target.value)}
+                  autoComplete="name"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-claim-phone">เบอร์โทร</Label>
+                <Input
+                  id="admin-claim-phone"
+                  value={adminClaimPhone}
+                  onChange={(e) => setAdminClaimPhone(e.target.value)}
+                  inputMode="tel"
+                  autoComplete="tel"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-claim-addr">ที่อยู่จัดส่ง</Label>
+                <Textarea
+                  id="admin-claim-addr"
+                  value={adminClaimAddress}
+                  onChange={(e) => setAdminClaimAddress(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-claim-email">อีเมล (ไม่บังคับ)</Label>
+                <Input
+                  id="admin-claim-email"
+                  type="email"
+                  value={adminClaimEmail}
+                  onChange={(e) => setAdminClaimEmail(e.target.value)}
+                  autoComplete="email"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-claim-slip">รูปสลิปโอนเงิน</Label>
+                <Input
+                  id="admin-claim-slip"
+                  ref={adminClaimFileRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="cursor-pointer"
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2">
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-sm font-medium text-zinc-800">ยืนยันและอนุมัติทันที</p>
+                  <p className="text-xs text-zinc-500">ข้ามขั้นตรวจสอบ → ชำระแล้ว</p>
+                </div>
+                <Switch
+                  checked={adminClaimApproveNow}
+                  onCheckedChange={setAdminClaimApproveNow}
+                  disabled={adminClaimSubmitting}
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAdminClaimModal(null)}
+                disabled={adminClaimSubmitting}
+              >
+                ยกเลิก
+              </Button>
+              <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={adminClaimSubmitting}>
+                {adminClaimSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "บันทึก"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
