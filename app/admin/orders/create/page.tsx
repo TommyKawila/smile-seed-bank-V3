@@ -45,7 +45,13 @@ type PosLastCopyPack = {
   orderNumber: string;
   orderId?: string;
   claimLink: string | null;
-  items: { name: string; unitLabel: string; quantity: number; lineTotal: number }[];
+  items: {
+    name: string;
+    unitLabel: string;
+    quantity: number;
+    lineTotal: number;
+    breederName?: string | null;
+  }[];
   subtotal: number;
   shippingFee: number;
   discountAmount: number;
@@ -182,12 +188,12 @@ export default function CreateOrderPage() {
     const text = generateOrderSummary({
       lang: summaryLang,
       orderNumber: lastCopyPack.orderNumber,
-      orderId: lastCopyPack.orderId,
       items: lastCopyPack.items.map((i) => ({
         name: i.name,
         unitLabel: i.unitLabel,
         quantity: i.quantity,
         lineTotal: i.lineTotal,
+        breederName: i.breederName,
       })),
       subtotal: lastCopyPack.subtotal,
       shippingFee: lastCopyPack.shippingFee,
@@ -471,6 +477,7 @@ export default function CreateOrderPage() {
             unitLabel: i.unitLabel,
             quantity: i.quantity,
             lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+            breederName: i.breederName ?? null,
           })),
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
@@ -504,6 +511,7 @@ export default function CreateOrderPage() {
             unitLabel: i.unitLabel,
             quantity: i.quantity,
             lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+            breederName: i.breederName ?? null,
           })),
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
@@ -687,6 +695,7 @@ export default function CreateOrderPage() {
                                   masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
                                   breeder_id: (prod as ProductWithBreeder).breeder_id ?? null,
                                   breederLogoUrl: (prod as ProductWithBreeder).breeders?.logo_url ?? null,
+                                  breederName: breederName || null,
                                 })
                               }
                               className="flex w-full items-center justify-between px-3 py-2 text-left transition-colors hover:bg-accent"

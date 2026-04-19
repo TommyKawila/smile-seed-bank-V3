@@ -7,12 +7,13 @@ export type OrderSummaryLine = {
   unitLabel?: string | null;
   quantity: number;
   lineTotal?: number;
+  /** When set, line shows as `Breeder - Product (unit) × qty` */
+  breederName?: string | null;
 };
 
 export type GenerateOrderSummaryInput = {
   lang?: OrderSummaryLang;
   orderNumber: string;
-  orderId?: string | number | bigint | null;
   items: OrderSummaryLine[];
   subtotal?: number;
   shippingFee?: number;
@@ -28,6 +29,17 @@ export type GenerateOrderSummaryInput = {
 };
 
 const RULE = "━━━━━━━━━━━━━━━━━━━━";
+
+/** Single closing block — avoid repeating brand lines in header + footer. */
+const ORDER_SUMMARY_FOOTER_TH = `ขอบคุณที่ร่วมปลูกไปกับเราครับ 🙏✨
+
+Smile Seed Bank — Premium Cannabis Seeds
+แหล่งรวมเมล็ดพันธุ์กัญชาคุณภาพพรีเมียม จากแบรนด์ชั้นนำทั่วโลก`;
+
+const ORDER_SUMMARY_FOOTER_EN = `Thanks for growing with us! 🙏✨
+
+Smile Seed Bank — Premium Cannabis Seeds
+Premium cannabis seed bank. Curated from the world's best breeders, delivered with care every step of the way.`;
 
 /** `https://promptpay.io/{id}/{amount}.png` (amount in THB). */
 export function buildPromptPayIoQrUrl(promptPayId: string, amountBaht: number): string {
@@ -58,28 +70,21 @@ export function generateOrderSummary(input: GenerateOrderSummaryInput): string {
   const lang: OrderSummaryLang = input.lang ?? "th";
   const lines: string[] = [];
 
-  lines.push(
-    L(
-      lang,
-      "🌱 **สรุปรายการสั่งซื้อ — Smile Seed Bank**",
-      "🌱 **Order summary — Smile Seed Bank**",
-    ),
-  );
+  lines.push(L(lang, "🌱 **สรุปรายการสั่งซื้อ**", "🌱 **Order summary**"));
   lines.push(RULE);
   lines.push("");
   lines.push(`${L(lang, "📦 **เลขออเดอร์:**", "📦 **Order #:**")} ${input.orderNumber}`);
-  if (input.orderId != null && String(input.orderId).length > 0) {
-    lines.push(`${L(lang, "🆔 **รหัสออเดอร์:**", "🆔 **Order ID:**")} ${String(input.orderId)}`);
-  }
   lines.push("");
   lines.push(L(lang, "🛒 **รายการสินค้า:**", "🛒 **Line items:**"));
   for (const row of input.items) {
+    const breeder = row.breederName?.trim();
+    const namePart = breeder ? `${breeder} - ${row.name}` : row.name;
     const unit = row.unitLabel ? ` (${row.unitLabel})` : "";
     const pricePart =
       row.lineTotal != null && Number.isFinite(row.lineTotal)
         ? ` — ${formatPrice(row.lineTotal)}`
         : "";
-    lines.push(`  • ${row.name}${unit} × ${row.quantity}${pricePart}`);
+    lines.push(`  • ${namePart}${unit} × ${row.quantity}${pricePart}`);
   }
   lines.push("");
   lines.push(RULE);
@@ -120,7 +125,7 @@ export function generateOrderSummary(input: GenerateOrderSummaryInput): string {
     lines.push(
       L(
         lang,
-        "📱 **บัตรใบเสร็จดิจิทัล (สแกน QR & แจ้งโอน):**",
+        "📱 **สแกน QR เพื่อโอนเงิน คลิ๊กที่ link นี้:**",
         "📱 **Digital receipt (scan QR & pay):**",
       ),
     );
@@ -148,12 +153,6 @@ export function generateOrderSummary(input: GenerateOrderSummaryInput): string {
     lines.push(`  ${input.claimLink}`);
   }
   lines.push("");
-  lines.push(
-    L(
-      lang,
-      "ขอบคุณที่ร่วมปลูกไปกับเราครับ 🙏✨",
-      "Thanks for growing with us — Smile Seed Bank 🙏✨",
-    ),
-  );
+  lines.push(lang === "en" ? ORDER_SUMMARY_FOOTER_EN : ORDER_SUMMARY_FOOTER_TH);
   return lines.join("\n");
 }

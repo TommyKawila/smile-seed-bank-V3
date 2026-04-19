@@ -929,12 +929,12 @@ export default function AdminOrdersPage() {
       const text = generateOrderSummary({
         lang: summaryLang,
         orderNumber: detailModal.orderNumber,
-        orderId: detailModal.id,
         items: detailModal.items.map((i) => ({
           name: i.productName,
           unitLabel: i.unitLabel,
           quantity: i.quantity,
           lineTotal: i.totalPrice,
+          breederName: i.breederName,
         })),
         subtotal: lineSubtotal,
         shippingFee: detailModal.shippingFee,

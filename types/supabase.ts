@@ -279,6 +279,8 @@ export interface CartItem {
   breeder_id?: number | null; // For promotion rules (BUY_X_GET_Y)
   /** From `breeders.logo_url` when item was added */
   breederLogoUrl?: string | null;
+  /** From `breeders.name` when item was added (order share / receipts) */
+  breederName?: string | null;
 }
 
 export interface CartSummary {
