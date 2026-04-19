@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ShoppingCart, Loader2, CheckCircle2, XCircle,
   ImageIcon, User, RefreshCw, FileText, Clock, BadgeCheck,
-  Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy,
+  Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy, MessageCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -625,10 +625,30 @@ export default function AdminOrdersPage() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [receiptPreviewOrderId, setReceiptPreviewOrderId] = useState<number | null>(null);
   const [summaryLang, setSummaryLang] = useState<"th" | "en">("th");
+  const [linkLineOpen, setLinkLineOpen] = useState(false);
+  const [linkLinePaste, setLinkLinePaste] = useState("");
+  const [recentLineUsers, setRecentLineUsers] = useState<
+    { lineUserId: string; label: string | null; source: string }[]
+  >([]);
+  const [linkLineSaving, setLinkLineSaving] = useState(false);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
   const [storeSettings, setStoreSettings] = useState<{ storeName: string; contactEmail: string | null; supportPhone: string | null; address: string | null } | null>(null);
 
   const { orders, isLoading, error, refetch } = useAdminOrders(statusFilter || undefined);
+
+  useEffect(() => {
+    if (!linkLineOpen) return;
+    void fetch("/api/admin/line-recent-users")
+      .then((r) => r.json())
+      .then((d: { users?: unknown }) =>
+        setRecentLineUsers(
+          Array.isArray(d.users)
+            ? (d.users as { lineUserId: string; label: string | null; source: string }[])
+            : []
+        )
+      )
+      .catch(() => setRecentLineUsers([]));
+  }, [linkLineOpen]);
 
   const loadStoreSettings = useCallback(async () => {
     try {
@@ -862,6 +882,36 @@ export default function AdminOrdersPage() {
       setDetailLoading(false);
     }
   }, [pushToast]);
+
+  const submitLinkLine = useCallback(async () => {
+    if (!detailModal) return;
+    const uid = linkLinePaste.trim();
+    if (!/^U[a-fA-F0-9]{32}$/.test(uid)) {
+      pushToast("รูปแบบ LINE user id ไม่ถูกต้อง (U + 32 ตัว hex)", "error");
+      return;
+    }
+    setLinkLineSaving(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${detailModal.id}/link-line`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lineUserId: uid }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "บันทึกไม่สำเร็จ");
+      setDetailModal((prev) =>
+        prev ? { ...prev, lineUserId: (data.lineUserId as string) ?? uid } : null
+      );
+      setLinkLineOpen(false);
+      setLinkLinePaste("");
+      pushToast("ผูก LINE แล้ว", "success");
+      await refetch();
+    } catch (e) {
+      pushToast(String(e), "error");
+    } finally {
+      setLinkLineSaving(false);
+    }
+  }, [detailModal, linkLinePaste, pushToast, refetch]);
 
   useEffect(() => {
     if (openedOrderFromQuery.current) return;
@@ -1313,6 +1363,35 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
+              <div>
+                <h4 className="mb-2 text-sm font-semibold text-zinc-700">LINE Account Linking</h4>
+                <div className="space-y-2 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3 text-sm">
+                  {detailModal.lineUserId ? (
+                    <p className="break-all font-mono text-xs text-zinc-800">
+                      <span className="font-sans text-zinc-500">เชื่อมแล้ว: </span>
+                      {detailModal.lineUserId}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-xs text-zinc-600">ยังไม่มี LINE ผูกกับออเดอร์นี้</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-emerald-600/40 text-emerald-800"
+                        onClick={() => {
+                          setLinkLinePaste("");
+                          setLinkLineOpen(true);
+                        }}
+                      >
+                        <MessageCircle className="mr-1.5 h-4 w-4" />
+                        Manually Link LINE Account
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
               {detailModal.status === "AWAITING_VERIFICATION" && (
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -1417,6 +1496,68 @@ export default function AdminOrdersPage() {
               )}
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={linkLineOpen}
+        onOpenChange={(o) => {
+          setLinkLineOpen(o);
+          if (!o) setLinkLinePaste("");
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>ผูก LINE กับออเดอร์</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-line-uid">line_user_id</Label>
+              <Input
+                id="admin-line-uid"
+                placeholder="U + 32 ตัว (จาก LINE Developers / webhook)"
+                className="font-mono text-xs"
+                value={linkLinePaste}
+                onChange={(e) => setLinkLinePaste(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+            {recentLineUsers.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-zinc-500">ล่าสุดจาก webhook / ลูกค้า</p>
+                <ul className="max-h-36 overflow-y-auto rounded border border-zinc-200 bg-white">
+                  {recentLineUsers.map((u) => (
+                    <li key={u.lineUserId}>
+                      <button
+                        type="button"
+                        className="w-full px-2 py-1.5 text-left font-mono text-[11px] text-zinc-800 hover:bg-accent"
+                        onClick={() => setLinkLinePaste(u.lineUserId)}
+                      >
+                        {u.lineUserId}
+                        {u.label ? (
+                          <span className="ml-1 font-sans text-zinc-500">· {u.label}</span>
+                        ) : null}
+                        <span className="ml-1 text-[10px] uppercase text-zinc-400">{u.source}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={() => setLinkLineOpen(false)}>
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              className="bg-primary hover:bg-primary/90"
+              disabled={linkLineSaving || !detailModal}
+              onClick={() => void submitLinkLine()}
+            >
+              {linkLineSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "บันทึก"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

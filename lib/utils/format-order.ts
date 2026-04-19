@@ -1,4 +1,5 @@
 import { formatPrice } from "@/lib/utils";
+import { lineOaUrlWithOrderHint } from "@/lib/line-oa-url";
 
 export type OrderSummaryLang = "th" | "en";
 
@@ -30,16 +31,14 @@ export type GenerateOrderSummaryInput = {
 
 const RULE = "━━━━━━━━━━━━━━━━━━━━";
 
-/** Single closing block — avoid repeating brand lines in header + footer. */
+/** Single closing block (one brand paragraph). */
 const ORDER_SUMMARY_FOOTER_TH = `ขอบคุณที่ร่วมปลูกไปกับเราครับ 🙏✨
 
-Smile Seed Bank — Premium Cannabis Seeds
-แหล่งรวมเมล็ดพันธุ์กัญชาคุณภาพพรีเมียม จากแบรนด์ชั้นนำทั่วโลก`;
+Smile Seed Bank — Premium Cannabis Seeds · แหล่งรวมเมล็ดพันธุ์กัญชาคุณภาพพรีเมียม จากแบรนด์ชั้นนำทั่วโลก`;
 
 const ORDER_SUMMARY_FOOTER_EN = `Thanks for growing with us! 🙏✨
 
-Smile Seed Bank — Premium Cannabis Seeds
-Premium cannabis seed bank. Curated from the world's best breeders, delivered with care every step of the way.`;
+Smile Seed Bank — Premium Cannabis Seeds · Curated premium genetics from the world’s best breeders.`;
 
 /** `https://promptpay.io/{id}/{amount}.png` (amount in THB). */
 export function buildPromptPayIoQrUrl(promptPayId: string, amountBaht: number): string {
@@ -151,6 +150,17 @@ export function generateOrderSummary(input: GenerateOrderSummaryInput): string {
       ),
     );
     lines.push(`  ${input.claimLink}`);
+  }
+  {
+    const trackUrl = lineOaUrlWithOrderHint(input.orderNumber);
+    lines.push("");
+    lines.push(
+      L(
+        lang,
+        `🔗 กดลิงก์นี้เพื่อรับเลขพัสดุอัตโนมัติ: ${trackUrl}`,
+        `🔗 Track on LINE (parcel updates): ${trackUrl}`,
+      ),
+    );
   }
   lines.push("");
   lines.push(lang === "en" ? ORDER_SUMMARY_FOOTER_EN : ORDER_SUMMARY_FOOTER_TH);

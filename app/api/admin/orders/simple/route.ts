@@ -78,108 +78,146 @@ export async function POST(req: NextRequest) {
     /** Collected inside the transaction; LINE alerts run after commit (must be in outer scope). */
     const postDeductionLowStockAlerts: { name: string; unitLabel: string; stock: number }[] = [];
 
-    const { orderId: createdOrderId } = await prisma.$transaction(async (tx) => {
-      const orderCreate: Prisma.ordersCreateInput = {
-        order_number: orderNumber,
-        total_amount: new Prisma.Decimal(totalAmount),
-        total_cost: new Prisma.Decimal(0),
-        shipping_fee: new Prisma.Decimal(0),
-        discount_amount: new Prisma.Decimal(manualDiscountAmount),
-        status,
-        order_origin: "MANUAL",
-        points_redeemed: points_redeemed,
-        points_discount_amount: new Prisma.Decimal(points_discount_amount),
-        promotion_rule_id: promotion_rule_id ? BigInt(promotion_rule_id) : null,
-        promotion_discount_amount: new Prisma.Decimal(promotion_discount_amount),
-        payment_method: status === "PENDING_INFO" ? "TRANSFER" : customer?.payment_method ?? null,
-        claim_token: claimToken,
-        shipping_address: customer?.address ?? null,
-        customer_name: customer?.full_name ?? null,
-        customer_phone: customer?.phone ?? null,
-        customer_note: customer?.note ?? null,
-      };
-      if (customer_profile_id) {
-        orderCreate.customer_profile = { connect: { id: BigInt(customer_profile_id) } };
-      }
-      const order = await tx.orders.create({ data: orderCreate });
+    const { orderId: createdOrderId } = await prisma.$transaction(
+      async (tx) => {
+        const orderCreate: Prisma.ordersCreateInput = {
+          order_number: orderNumber,
+          total_amount: new Prisma.Decimal(totalAmount),
+          total_cost: new Prisma.Decimal(0),
+          shipping_fee: new Prisma.Decimal(0),
+          discount_amount: new Prisma.Decimal(manualDiscountAmount),
+          status,
+          order_origin: "MANUAL",
+          points_redeemed: points_redeemed,
+          points_discount_amount: new Prisma.Decimal(points_discount_amount),
+          promotion_rule_id: promotion_rule_id ? BigInt(promotion_rule_id) : null,
+          promotion_discount_amount: new Prisma.Decimal(promotion_discount_amount),
+          payment_method: status === "PENDING_INFO" ? "TRANSFER" : customer?.payment_method ?? null,
+          claim_token: claimToken,
+          shipping_address: customer?.address ?? null,
+          customer_name: customer?.full_name ?? null,
+          customer_phone: customer?.phone ?? null,
+          customer_note: customer?.note ?? null,
+        };
+        if (customer_profile_id) {
+          orderCreate.customer_profile = { connect: { id: BigInt(customer_profile_id) } };
+        }
+        const order = await tx.orders.create({ data: orderCreate });
 
-      for (const item of items) {
-        const variant = await tx.product_variants.findUnique({
-          where: { id: BigInt(item.variantId) },
-          select: { stock: true, cost_price: true, unit_label: true, low_stock_threshold: true, products: { select: { name: true } } },
+        const uniqueVariantIds = [...new Set(items.map((i) => i.variantId))];
+        const variants = await tx.product_variants.findMany({
+          where: { id: { in: uniqueVariantIds.map((id) => BigInt(id)) } },
+          select: {
+            id: true,
+            stock: true,
+            cost_price: true,
+            unit_label: true,
+            low_stock_threshold: true,
+            products: { select: { name: true } },
+          },
         });
-        if (!variant) throw new Error(`Variant ${item.variantId} not found`);
-        const currentStock = variant.stock ?? 0;
-        if (deductStock && currentStock < item.quantity) {
-          throw new Error(
-            `Insufficient stock for ${item.productName} (${item.unitLabel}): need ${item.quantity}, have ${currentStock}`
-          );
+        const variantById = new Map(
+          variants.map((v) => [Number(v.id), v] as const)
+        );
+        for (const id of uniqueVariantIds) {
+          if (!variantById.has(id)) {
+            throw new Error(`Variant ${id} not found`);
+          }
         }
 
-        const lineTotal = item.price * item.quantity;
-        const costPrice = Number(variant.cost_price ?? 0);
-        totalCostAcc += costPrice * item.quantity;
+        const runningStock = new Map<number, number>();
+        for (const v of variants) {
+          runningStock.set(Number(v.id), v.stock ?? 0);
+        }
+
+        const linesToCreate: Prisma.order_itemsCreateManyInput[] = [];
+        const decrementByVariant = new Map<number, number>();
+
+        for (const item of items) {
+          const variant = variantById.get(item.variantId)!;
+          const currentStock = runningStock.get(item.variantId) ?? 0;
+          if (deductStock && currentStock < item.quantity) {
+            throw new Error(
+              `Insufficient stock for ${item.productName} (${item.unitLabel}): need ${item.quantity}, have ${currentStock}`
+            );
+          }
+
+          const lineTotal = item.price * item.quantity;
+          const costPrice = Number(variant.cost_price ?? 0);
+          totalCostAcc += costPrice * item.quantity;
+
+          if (deductStock) {
+            const afterStock = currentStock - item.quantity;
+            runningStock.set(item.variantId, afterStock);
+            const threshold = variant.low_stock_threshold ?? 5;
+            if (afterStock <= threshold) {
+              postDeductionLowStockAlerts.push({
+                name: (variant.products as { name?: string })?.name ?? item.productName,
+                unitLabel: variant.unit_label,
+                stock: afterStock,
+              });
+            }
+            decrementByVariant.set(
+              item.variantId,
+              (decrementByVariant.get(item.variantId) ?? 0) + item.quantity
+            );
+          }
+
+          linesToCreate.push({
+            order_id: order.id,
+            variant_id: BigInt(item.variantId),
+            product_id: BigInt(item.productId),
+            product_name: item.productName,
+            unit_label: item.unitLabel ?? null,
+            quantity: item.quantity,
+            unit_price: new Prisma.Decimal(item.price),
+            unit_cost: new Prisma.Decimal(costPrice),
+            total_price: new Prisma.Decimal(lineTotal),
+            subtotal: new Prisma.Decimal(lineTotal),
+          });
+        }
+
+        if (linesToCreate.length > 0) {
+          await tx.order_items.createMany({ data: linesToCreate });
+        }
 
         if (deductStock) {
-          const afterStock = currentStock - item.quantity;
-          const threshold = variant.low_stock_threshold ?? 5;
-          if (afterStock <= threshold) {
-            postDeductionLowStockAlerts.push({
-              name: (variant.products as { name?: string })?.name ?? item.productName,
-              unitLabel: variant.unit_label,
-              stock: afterStock,
+          for (const [vid, qty] of decrementByVariant) {
+            await tx.product_variants.update({
+              where: { id: BigInt(vid) },
+              data: { stock: { decrement: qty } },
             });
           }
         }
 
-        const lineCreate: Prisma.order_itemsCreateInput = {
-          orders: { connect: { id: order.id } },
-          variant_id: BigInt(item.variantId),
-          product_id: BigInt(item.productId),
-          product_name: item.productName,
-          unit_label: item.unitLabel ?? null,
-          quantity: item.quantity,
-          unit_price: new Prisma.Decimal(item.price),
-          unit_cost: new Prisma.Decimal(costPrice),
-          total_price: new Prisma.Decimal(lineTotal),
-          subtotal: new Prisma.Decimal(lineTotal),
-        };
-        await tx.order_items.create({ data: lineCreate });
+        await tx.orders.update({
+          where: { id: order.id },
+          data: { total_cost: new Prisma.Decimal(totalCostAcc) },
+        });
 
-        if (deductStock) {
-          await tx.product_variants.update({
-            where: { id: BigInt(item.variantId) },
-            data: { stock: { decrement: item.quantity } },
+        if (status === "COMPLETED" && customer_profile_id) {
+          const ptsRedeemed = points_redeemed ?? 0;
+          const pointsToAdd = Math.floor(totalAmount / 100);
+          const cust = await tx.customer.findUnique({
+            where: { id: BigInt(customer_profile_id) },
+            select: { points: true },
+          });
+          if (cust && ptsRedeemed > 0 && (cust.points ?? 0) < ptsRedeemed) {
+            throw new Error("Insufficient customer points");
+          }
+          await tx.customer.update({
+            where: { id: BigInt(customer_profile_id) },
+            data: {
+              points: { increment: pointsToAdd - ptsRedeemed },
+              total_spend: { increment: new Prisma.Decimal(totalAmount) },
+            },
           });
         }
-      }
 
-      await tx.orders.update({
-        where: { id: order.id },
-        data: { total_cost: new Prisma.Decimal(totalCostAcc) },
-      });
-
-      if (status === "COMPLETED" && customer_profile_id) {
-        const ptsRedeemed = points_redeemed ?? 0;
-        const pointsToAdd = Math.floor(totalAmount / 100);
-        const cust = await tx.customer.findUnique({
-          where: { id: BigInt(customer_profile_id) },
-          select: { points: true },
-        });
-        if (cust && ptsRedeemed > 0 && (cust.points ?? 0) < ptsRedeemed) {
-          throw new Error("Insufficient customer points");
-        }
-        await tx.customer.update({
-          where: { id: BigInt(customer_profile_id) },
-          data: {
-            points: { increment: pointsToAdd - ptsRedeemed },
-            total_spend: { increment: new Prisma.Decimal(totalAmount) },
-          },
-        });
-      }
-
-      return { orderId: order.id };
-    });
+        return { orderId: order.id };
+      },
+      { timeout: 15_000 }
+    );
 
     if (deductStock && postDeductionLowStockAlerts.length > 0) {
       void (async () => {
