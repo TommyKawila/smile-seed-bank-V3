@@ -106,7 +106,7 @@ export function Navbar() {
             : "bg-transparent"
         }`}
       >
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:h-28 sm:px-8">
+        <div className="mx-auto flex max-w-7xl min-h-20 items-center justify-between gap-4 px-6 py-4 sm:min-h-28 sm:px-8 lg:h-28 lg:px-8 lg:py-0">
           {/* Logo — aligned to nav link cap height */}
           <Link href="/" className="flex shrink-0 items-center self-center leading-none">
             {settings.logo_main_url ? (
@@ -289,7 +289,7 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18 }}
-              className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden"
+              className="border-t border-gray-100 bg-white px-6 pb-4 pt-2 md:hidden"
             >
               <Link
                 href="/"

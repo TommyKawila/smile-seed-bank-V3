@@ -120,11 +120,11 @@ export function Hero() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.12, ease: "easeOut" }}
-              className="max-w-md text-sm font-light leading-[1.7] tracking-wide text-zinc-600 sm:text-[15px] sm:leading-[1.85] lg:text-base lg:leading-[1.82]"
+              className="max-w-md text-sm font-light leading-relaxed tracking-wide text-zinc-500/90 sm:text-[15px] lg:text-base"
             >
               {t(
-                "จากร้านขายเมล็ดพันธุ์ยุคใต้ดิน สู่คลังเมล็ดพันธุ์แท้ที่สายเขียวรุ่นเก๋าไว้วางใจที่สุด การันตีคุณภาพจากประสบการณ์จริงที่ยาวนานเกือบ 10 ปี",
-                "From an underground-era seed shop to a vault of authentic genetics trusted by seasoned growers — quality backed by nearly ten years of real experience."
+                "จากร้านลับสู่คลังเมล็ดพันธุ์แท้ที่มือโปรวางใจ การันตีคุณภาพจากประสบการณ์จริงเกือบ 10 ปี",
+                "From underground roots to a vault of authentic genetics. Quality backed by a decade of real experience."
               )}
             </motion.p>
 
