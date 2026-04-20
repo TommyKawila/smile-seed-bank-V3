@@ -30,11 +30,11 @@ export function FinalArchiveSpotlightCard({
   return (
     <motion.div
       variants={variants}
-      className={cn("col-span-2 w-full min-w-0", JOURNAL_PRODUCT_FONT_VARS)}
+      className={cn("col-span-2 flex h-full min-h-0 w-full min-w-0 flex-col", JOURNAL_PRODUCT_FONT_VARS)}
     >
       <div
         className={cn(
-          "relative overflow-hidden rounded-sm border border-amber-500/25 bg-white shadow-sm",
+          "relative flex h-full min-h-0 flex-col overflow-hidden rounded-sm border border-amber-500/25 bg-white shadow-sm",
           "ring-1 ring-amber-500/15"
         )}
       >

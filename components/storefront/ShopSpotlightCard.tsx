@@ -32,10 +32,13 @@ export function ShopSpotlightCard({
   const ex = excerpt(product);
 
   return (
-    <motion.div variants={variants} className={cn("col-span-2", JOURNAL_PRODUCT_FONT_VARS)}>
+    <motion.div
+      variants={variants}
+      className={cn("col-span-2 flex h-full min-h-0 flex-col", JOURNAL_PRODUCT_FONT_VARS)}
+    >
       <Link
         href={productDetailHref(product)}
-        className="group flex min-h-[200px] flex-col overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm transition-shadow hover:shadow-md sm:min-h-[220px] sm:flex-row"
+        className="group flex h-full min-h-[200px] flex-col overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm transition-shadow hover:shadow-md sm:min-h-[220px] sm:flex-row"
       >
         <div className="relative aspect-[4/3] w-full shrink-0 sm:aspect-auto sm:h-auto sm:w-[42%] sm:max-w-md">
           {img ? (

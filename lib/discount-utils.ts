@@ -14,6 +14,23 @@ export interface PromoInfo {
   discount_value: number;
 }
 
+/** DB may store mixed case; align with computeCouponDiscountOnSubtotal. */
+export function isCouponPercentageType(discountType: string | null | undefined): boolean {
+  const dt = String(discountType ?? "").trim().toUpperCase();
+  return dt === "PERCENTAGE" || dt === "PERCENT";
+}
+
+export function formatCouponValueDisplay(
+  discountType: string | null | undefined,
+  discountValue: number | null | undefined
+): string {
+  const v = Number(discountValue ?? 0);
+  if (isCouponPercentageType(discountType)) {
+    return `${v}%`;
+  }
+  return `฿${v.toLocaleString("th-TH")}`;
+}
+
 export function evaluateTieredDiscountBySpend(
   subtotal: number,
   rules: TieredDiscountRule[]
@@ -36,8 +53,7 @@ export function evaluateDiscountTier(subtotal: number, tiers: DiscountTier[]): D
 
 /** Matches `lib/services/coupon-service` (percentage on subtotal; fixed capped). */
 export function computeCouponDiscountOnSubtotal(subtotal: number, promoInfo: PromoInfo): number {
-  const dt = String(promoInfo.discount_type).toUpperCase();
-  if (dt === "PERCENTAGE") {
+  if (isCouponPercentageType(promoInfo.discount_type)) {
     return Math.round((subtotal * promoInfo.discount_value) / 100);
   }
   return Math.min(promoInfo.discount_value, subtotal);

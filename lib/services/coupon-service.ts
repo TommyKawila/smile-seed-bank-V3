@@ -4,6 +4,7 @@
  */
 import { getSql } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
+import { isCouponPercentageType } from "@/lib/discount-utils";
 import type { DiscountType } from "@/types/supabase";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
@@ -138,10 +139,9 @@ export async function validateCoupon(
       if (usedCount >= limit) return { ok: false, error: { type: "ALREADY_USED" } };
     }
 
-    const discountAmount =
-      promo.discount_type === "PERCENTAGE"
-        ? Math.round((subtotal * promo.discount_value) / 100)
-        : promo.discount_value;
+    const discountAmount = isCouponPercentageType(promo.discount_type)
+      ? Math.round((subtotal * promo.discount_value) / 100)
+      : promo.discount_value;
 
     return {
       ok: true,

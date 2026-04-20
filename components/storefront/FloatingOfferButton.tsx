@@ -4,6 +4,10 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tag, X, Copy, Check, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  formatCouponValueDisplay,
+  isCouponPercentageType,
+} from "@/lib/discount-utils";
 import type { EligibleCoupon } from "@/lib/services/coupon-service";
 
 // Re-export the type so OfferManager can import from one place
@@ -14,7 +18,7 @@ interface Props {
 }
 
 function discountLabel(c: EligibleCoupon): string {
-  return c.discount_type === "PERCENTAGE"
+  return isCouponPercentageType(c.discount_type)
     ? `ลด ${c.discount_value}%`
     : `ลด ฿${c.discount_value.toLocaleString("th-TH")}`;
 }
@@ -61,7 +65,7 @@ function CouponCard({ coupon }: { coupon: EligibleCoupon }) {
         isWelcome ? "bg-primary text-white" : "bg-zinc-800 text-white"
       )}>
         <span className="text-xs font-bold leading-none">
-          {coupon.discount_type === "PERCENTAGE" ? `${coupon.discount_value}%` : `฿${coupon.discount_value}`}
+          {formatCouponValueDisplay(coupon.discount_type, coupon.discount_value)}
         </span>
         <span className="mt-0.5 text-[10px] opacity-80">OFF</span>
       </div>

@@ -677,7 +677,7 @@ function ShopContent() {
             )}
 
             {isLoading ? (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {[...Array(12)].map((_, i) => (
                   <div key={i} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
                     <div className="aspect-square animate-pulse bg-zinc-200" />

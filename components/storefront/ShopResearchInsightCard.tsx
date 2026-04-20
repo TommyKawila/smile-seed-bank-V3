@@ -25,11 +25,11 @@ export function ShopResearchInsightCard({
   return (
     <motion.article
       variants={variants}
-      className={cn("col-span-2", JOURNAL_PRODUCT_FONT_VARS)}
+      className={cn("col-span-2 flex h-full min-h-0 flex-col", JOURNAL_PRODUCT_FONT_VARS)}
     >
       <Link
         href={`/blog/${post.slug}`}
-        className="flex min-h-[160px] flex-col overflow-hidden rounded-sm border border-zinc-200/90 bg-white p-5 shadow-sm transition-colors hover:border-primary/30 hover:shadow-md sm:flex-row sm:gap-6 sm:p-6"
+        className="flex h-full min-h-[160px] flex-col overflow-hidden rounded-sm border border-zinc-200/90 bg-white p-5 shadow-sm transition-colors hover:border-primary/30 hover:shadow-md sm:flex-row sm:gap-6 sm:p-6"
       >
         {post.featured_image && (
           <div className="relative mb-4 aspect-[16/10] w-full shrink-0 overflow-hidden rounded-sm bg-zinc-50 sm:mb-0 sm:aspect-auto sm:h-[120px] sm:w-[160px]">

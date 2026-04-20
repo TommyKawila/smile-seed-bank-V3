@@ -6,6 +6,7 @@ import {
   evaluateFreeGifts,
   calculateCartSummary,
 } from "@/lib/cart-utils";
+import { isCouponPercentageType } from "@/lib/discount-utils";
 import type { CartItem, CartSummary, DiscountTier, ShippingRule, Promotion, PromoCode } from "@/types/supabase";
 
 export { evaluateDiscountTier, generateUpsellMessage, calculateShipping, evaluateFreeGifts, calculateCartSummary };
@@ -93,10 +94,9 @@ export async function validatePromoCode(
       }
     }
 
-    const discountAmount =
-      promoCode.discount_type === "PERCENTAGE"
-        ? Math.round((subtotal * promoCode.discount_value) / 100)
-        : promoCode.discount_value;
+    const discountAmount = isCouponPercentageType(promoCode.discount_type)
+      ? Math.round((subtotal * promoCode.discount_value) / 100)
+      : promoCode.discount_value;
 
     return { data: { promoCode, discountAmount }, error: null };
   } catch (err) {

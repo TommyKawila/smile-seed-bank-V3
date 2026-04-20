@@ -31,6 +31,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  formatCouponValueDisplay,
+  isCouponPercentageType,
+} from "@/lib/discount-utils";
 
 type CouponRow = {
   id: number;
@@ -285,9 +289,11 @@ export default function AdminDiscountsPage() {
                             <Badge className="ml-2 bg-primary text-xs">ลูกค้าใหม่</Badge>
                           )}
                         </TableCell>
-                        <TableCell>{row.discount_type === "PERCENTAGE" ? "%" : "บาท"}</TableCell>
                         <TableCell>
-                          {row.discount_type === "PERCENTAGE" ? `${row.discount_value}%` : `฿${row.discount_value}`}
+                          {isCouponPercentageType(row.discount_type) ? "%" : "บาท"}
+                        </TableCell>
+                        <TableCell>
+                          {formatCouponValueDisplay(row.discount_type, row.discount_value)}
                         </TableCell>
                         <TableCell>{row.min_spend != null ? row.min_spend.toLocaleString("th-TH") : "—"}</TableCell>
                         <TableCell className="text-sm text-zinc-600">
