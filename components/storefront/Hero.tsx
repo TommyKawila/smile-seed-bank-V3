@@ -65,7 +65,7 @@ function HeroMediaPanel({
   );
 }
 
-export function Hero() {
+export default function Hero() {
   const { t } = useLanguage();
   const { settings: siteSettings, isLoading } = useSiteSettings();
 
@@ -120,7 +120,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.12, ease: "easeOut" }}
-              className="max-w-md text-sm font-light leading-relaxed tracking-wide text-zinc-500/90 sm:text-[15px] lg:text-base"
+              className="max-w-md text-sm font-light leading-relaxed tracking-wide text-zinc-500 opacity-90 sm:text-[15px] lg:text-base"
             >
               {t(
                 "จากร้านลับสู่คลังเมล็ดพันธุ์แท้ที่มือโปรวางใจ การันตีคุณภาพจากประสบการณ์จริงเกือบ 10 ปี",

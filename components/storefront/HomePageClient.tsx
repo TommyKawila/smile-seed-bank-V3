@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useProducts } from "@/hooks/useProducts";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { useLanguage } from "@/context/LanguageContext";
-import { Hero } from "@/components/storefront/Hero";
+import Hero from "@/components/storefront/Hero";
 import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { FeaturedProductsCarousel } from "@/components/storefront/FeaturedProductsCarousel";
 import { HomeNewsletterSection } from "@/components/storefront/HomeNewsletterSection";

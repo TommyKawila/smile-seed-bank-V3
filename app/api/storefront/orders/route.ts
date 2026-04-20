@@ -13,23 +13,25 @@ const CheckoutSchema = z.object({
   items: z
     .array(
       z.object({
-        variantId: z.number().int().positive(),
-        quantity: z.number().int().positive(),
-        price: z.number().nonnegative(),
+        variantId: z.coerce.number().int().positive(),
+        quantity: z.coerce.number().int().positive(),
+        price: z.coerce.number().nonnegative(),
         isFreeGift: z.boolean().optional(),
         productName: z.string().min(1, "product name required"),
       })
     )
     .min(1, "ต้องมีสินค้าอย่างน้อย 1 รายการ"),
   summary: z.object({
-    subtotal: z.number(),
-    discount: z.number(),
-    shipping: z.number(),
-    total: z.number(),
+    subtotal: z.coerce.number(),
+    discount: z.coerce.number(),
+    shipping: z.coerce.number(),
+    total: z.coerce.number(),
   }),
   payment_method: z.string().min(1),
   customer_id: z.string().uuid().nullable().optional(),
-  promo_code_id: z.number().int().nullable().optional(),
+  promo_code_id: z
+    .union([z.coerce.number().int(), z.null()])
+    .optional(),
   locale: z.enum(["th", "en"]).optional().default("th"),
   order_note: z.string().max(2000).optional().nullable(),
 });

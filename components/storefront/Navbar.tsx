@@ -106,16 +106,16 @@ export function Navbar() {
             : "bg-transparent"
         }`}
       >
-        <div className="mx-auto flex max-w-7xl min-h-20 items-center justify-between gap-4 px-6 py-4 sm:min-h-28 sm:px-8 lg:h-28 lg:px-8 lg:py-0">
+        <div className="mx-auto flex h-20 w-full min-w-0 max-w-7xl flex-row flex-nowrap items-center justify-between gap-2 px-4 sm:h-28 sm:gap-3 sm:px-5 lg:gap-4 lg:px-8">
           {/* Logo — aligned to nav link cap height */}
-          <Link href="/" className="flex shrink-0 items-center self-center leading-none">
+          <Link href="/" className="flex min-w-0 shrink items-center self-center leading-none">
             {settings.logo_main_url ? (
               <Image
                 src={settings.logo_main_url}
                 alt="Smile Seed Bank"
                 width={224}
                 height={77}
-                className="h-11 w-auto max-w-[200px] object-contain object-left sm:h-[3.5rem] sm:max-w-none"
+                className="h-11 w-auto max-w-[min(152px,46vw)] object-contain object-left sm:max-w-[200px] sm:h-[3.5rem] lg:max-w-none"
                 unoptimized
                 priority
               />
@@ -124,7 +124,7 @@ export function Navbar() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-800">
                   <Leaf className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-base font-bold tracking-tight text-zinc-900">
+                <span className="max-w-[9rem] truncate text-base font-bold tracking-tight text-zinc-900 sm:max-w-none">
                   Smile Seed Bank
                 </span>
               </>
@@ -147,7 +147,7 @@ export function Navbar() {
           </nav>
 
           {/* Right Side */}
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
             {/* Language Toggle */}
             <button
               onClick={toggle}
@@ -289,7 +289,7 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18 }}
-              className="border-t border-gray-100 bg-white px-6 pb-4 pt-2 md:hidden"
+              className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 sm:px-6 md:hidden"
             >
               <Link
                 href="/"

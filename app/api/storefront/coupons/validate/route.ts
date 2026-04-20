@@ -4,7 +4,7 @@ import { validateCoupon } from "@/lib/services/coupon-service";
 
 const BodySchema = z.object({
   code: z.string().min(1).trim().toUpperCase(),
-  subtotal: z.number().min(0),
+  subtotal: z.coerce.number().min(0),
   email: z.string().email().nullable().optional(),
   phone: z.string().nullable().optional(),
   user_id: z.string().uuid().nullable().optional(),
