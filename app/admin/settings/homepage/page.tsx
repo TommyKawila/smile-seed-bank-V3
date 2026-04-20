@@ -47,6 +47,7 @@ type HomepageSectionRow = {
 /** Placeholder previews (picsum seeds) — swap for real screenshots in `public/` later. */
 const HOMEPAGE_SECTION_PREVIEW_IMAGES: Record<string, string> = {
   hero: "https://picsum.photos/seed/ssb-home-hero/96/64",
+  categories: "https://picsum.photos/seed/ssb-home-categories/96/64",
   blog: "https://picsum.photos/seed/ssb-home-blog/96/64",
   featured: "https://picsum.photos/seed/ssb-home-featured/96/64",
   breeders: "https://picsum.photos/seed/ssb-home-breeders/96/64",

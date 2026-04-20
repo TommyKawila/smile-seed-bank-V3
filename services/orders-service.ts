@@ -12,6 +12,7 @@ import {
   sendShippingConfirmationEmail,
 } from "@/services/email-service";
 import { sendLineFlexNotification } from "@/lib/order-line-notifications";
+import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import { pushTextToLineUser } from "@/services/line-messaging";
 
 export interface AdminOrderRow {
@@ -382,8 +383,11 @@ export async function markShipped(
         if (tn && lineUid) {
           try {
             console.log("Pushing Tracking to LINE:", lineUid);
-            const th = `ออเดอร์ ${orderNumber} จัดส่งแล้วครับ! 📦 เลขพัสดุของคุณคือ: ${tn} สามารถเช็คสถานะได้ในลิงก์ใบเสร็จครับ`;
-            const en = `Order ${orderNumber} has been shipped! 📦 Your tracking number is: ${tn}`;
+            const trackUrl =
+              getTrackingUrl(shippingProvider, tn) ??
+              `https://track.thailandpost.co.th/?trackNumber=${encodeURIComponent(tn)}`;
+            const th = `ออเดอร์ ${orderNumber} จัดส่งแล้วครับ! 📦 เลขพัสดุของคุณคือ: ${tn}\nเช็คสถานะพัสดุได้ที่นี่เลยครับ: ${trackUrl}`;
+            const en = `Order ${orderNumber} has been shipped! 📦 Your tracking number is: ${tn}\nTrack your package here: ${trackUrl}`;
             void pushTextToLineUser(lineUid, `${th}\n\n${en}`)
               .then((pushResult) => {
                 if (!pushResult.success) {

@@ -93,6 +93,18 @@ export function productMatchesSexFilter(
   return false;
 }
 
+/** Quick nav / URL `yield=high` — matches free-text yield_info (EN/TH hints). */
+export function productMatchesYieldQuickParam(
+  yieldInfo: string | null | undefined,
+  param: string | null | undefined
+): boolean {
+  const want = param?.trim().toLowerCase();
+  if (!want) return true;
+  if (want !== "high") return true;
+  const s = (yieldInfo ?? "").toLowerCase();
+  return /high|xl|xxl|heavy|massive|monster|abundant|bumper|ผล|สูง|มาก|เยอะ|ใหญ่|yield/.test(s);
+}
+
 export function productMatchesShopAttributeFilters(
   p: {
     strain_dominance?: string | null;
@@ -100,19 +112,22 @@ export function productMatchesShopAttributeFilters(
     thc_percent?: number | null;
     cbd_percent?: string | null;
     seed_type?: string | null;
+    yield_info?: string | null;
   },
   genetics: string[],
   difficulty: string[],
   thc: string[],
   cbd: string[],
-  sex: string[]
+  sex: string[],
+  yieldQuick?: string | null
 ): boolean {
   return (
     productMatchesGeneticsFilter(p.strain_dominance, genetics) &&
     productMatchesDifficultyFilter(p.growing_difficulty, difficulty) &&
     productMatchesThcFilter(p.thc_percent, thc) &&
     productMatchesCbdFilter(p.cbd_percent, cbd) &&
-    productMatchesSexFilter(p.seed_type, sex)
+    productMatchesSexFilter(p.seed_type, sex) &&
+    productMatchesYieldQuickParam(p.yield_info, yieldQuick)
   );
 }
 
@@ -217,11 +232,12 @@ export function productMatchesBreederAttributeFilters(
   thc: string[]
 ): boolean {
   return productMatchesShopAttributeFilters(
-    { ...p, cbd_percent: null, seed_type: null },
+    { ...p, cbd_percent: null, seed_type: null, yield_info: null },
     genetics,
     difficulty,
     thc,
     [],
-    []
+    [],
+    null
   );
 }

@@ -11,6 +11,10 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { isHeroSvgMarkup, normalizeHeroSvgHtml } from "@/lib/hero-svg";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import { cn } from "@/lib/utils";
+import {
+  resolveSectionHeading,
+  type SectionTitle,
+} from "@/lib/homepage-section-title";
 
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-hero-display" });
 const heroMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-hero-mono" });
@@ -65,8 +69,14 @@ function HeroMediaPanel({
   );
 }
 
-export default function Hero() {
-  const { t } = useLanguage();
+export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) {
+  const { t, locale } = useLanguage();
+  const headline = resolveSectionHeading(
+    locale,
+    sectionTitle,
+    "คัดสรรพันธุกรรมระดับโลก สู่มือคุณ",
+    "World-class genetics, curated for you"
+  );
   const { settings: siteSettings, isLoading } = useSiteSettings();
 
   const useAnimatedSvg =
@@ -110,10 +120,7 @@ export default function Hero() {
               transition={{ duration: 0.55, delay: 0.05, ease: "easeOut" }}
               className="font-[family-name:var(--font-hero-display)] text-[1.65rem] font-medium leading-[1.3] tracking-tight text-zinc-900 sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]"
             >
-              {t(
-                "คัดสรรพันธุกรรมระดับโลก สู่มือคุณ",
-                "World-class genetics, curated for you"
-              )}
+              {headline}
             </motion.h1>
 
             <motion.p

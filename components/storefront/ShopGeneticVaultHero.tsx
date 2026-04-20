@@ -65,7 +65,7 @@ export function ShopGeneticVaultHero({
         </Link>
 
         <div className="flex min-w-0 flex-col justify-center">
-          <p className={cn(mono, "text-[10px] font-medium uppercase tracking-[0.28em] text-zinc-400")}>
+          <p className={cn(mono, "text-[10px] font-medium uppercase tracking-[0.28em] text-zinc-500")}>
             {t("สายพันธุ์เด่น", "FEATURED_STRAIN")}
           </p>
           <h1

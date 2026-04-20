@@ -15,20 +15,8 @@ import { sendMagazineNewsletterBroadcast } from "@/lib/magazine-email-broadcast"
 import { sendNewsletterWelcomeEmail } from "@/services/email-service";
 import type { MagazineEmailTemplateId } from "@/lib/email-magazine-broadcast-html";
 import { isTiptapDocEmpty } from "@/lib/magazine-bilingual";
-import {
-  generateMagazineDraftEn,
-  generateMagazineDraftTh,
-  type MagazineAiWriterParams,
-} from "@/lib/magazine-ai-writer";
 
 export type { MagazineEmailTemplateId };
-export type { MagazineAiWriterParams };
-
-function plainSerializable<T>(data: T): T {
-  return JSON.parse(
-    JSON.stringify(data, (_k, v) => (v === undefined ? null : v))
-  ) as T;
-}
 
 function normalizeContentEn(
   v: object | null | undefined
@@ -63,26 +51,6 @@ export type MagazineSaveInput = {
   ai_opening_closing?: string;
   ai_target_audience?: string;
 };
-
-export async function generateMagazineThAi(input: MagazineAiWriterParams) {
-  try {
-    await assertAdmin();
-  } catch {
-    return plainSerializable({ ok: false as const, error: "Unauthorized" });
-  }
-  const result = await generateMagazineDraftTh(input);
-  return plainSerializable(result);
-}
-
-export async function generateMagazineEnAi(input: MagazineAiWriterParams) {
-  try {
-    await assertAdmin();
-  } catch {
-    return plainSerializable({ ok: false as const, error: "Unauthorized" });
-  }
-  const result = await generateMagazineDraftEn(input);
-  return plainSerializable(result);
-}
 
 function validateMagazineEmailOptions(
   input: MagazineSaveInput

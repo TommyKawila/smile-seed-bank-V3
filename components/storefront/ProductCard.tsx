@@ -8,18 +8,13 @@ import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useProducts } from "@/hooks/useProducts";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
-import { MicroGeneticsBar } from "@/components/storefront/MicroGeneticsBar";
+import { getGeneticPercents } from "@/components/storefront/ProductSpecs";
 import { formatPrice } from "@/lib/utils";
 import { productDetailHref } from "@/lib/product-utils";
 import { shopBreederHref } from "@/lib/breeder-slug";
-import {
-  labelForSeedTypeBadge,
-  productCardFloweringChipLabel,
-} from "@/lib/seed-type-filter";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 const shopCardVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -59,13 +54,72 @@ function getDefaultVariant(product: {
   return variants.sort((a, b) => a.price - b.price)[0] ?? null;
 }
 
-type Product = ReturnType<typeof useProducts>["products"][number];
+const NEW_ARRIVAL_MS = 35 * 24 * 60 * 60 * 1000;
+
+function isNewArrivalProduct(createdAt: string | null | undefined): boolean {
+  if (!createdAt) return false;
+  const t = new Date(createdAt).getTime();
+  if (Number.isNaN(t)) return false;
+  return Date.now() - t < NEW_ARRIVAL_MS;
+}
+
+type ProductListItem = ReturnType<typeof useProducts>["products"][number];
+
+/** Indica / Sativa / Hybrid for card spec row */
+function cardStrainTypeLabel(p: ProductListItem): string | null {
+  const sd = (p.strain_dominance ?? "").trim();
+  if (sd) {
+    const lower = sd.toLowerCase();
+    if (lower.includes("hybrid") || lower.includes("50/50")) return "Hybrid";
+    if (lower.includes("mostly sativa") || /^sativa/i.test(sd)) return "Sativa";
+    if (lower.includes("mostly indica") || /^indica/i.test(sd)) return "Indica";
+  }
+  const g = getGeneticPercents(p);
+  if (g) {
+    if (g.sativa >= 58) return "Sativa";
+    if (g.indica >= 58) return "Indica";
+    return "Hybrid";
+  }
+  return null;
+}
+
+/** Single letter for compact genetics pill (I / S / H) */
+function cardGeneticsLetter(p: ProductListItem): string {
+  const label = cardStrainTypeLabel(p);
+  if (!label) return "—";
+  if (label === "Indica") return "I";
+  if (label === "Sativa") return "S";
+  if (label === "Hybrid") return "H";
+  return label.slice(0, 1).toUpperCase();
+}
+
+type ProductWithMeta = ProductListItem & { created_at?: string | null };
+
+function ProductImageBadges({ product, t }: { product: ProductWithMeta; t: (th: string, en: string) => string }) {
+  const showBest = Boolean(product.is_featured);
+  const showNew = isNewArrivalProduct(product.created_at);
+  if (!showBest && !showNew) return null;
+  return (
+    <div className="absolute right-2 top-2 z-20 flex max-w-[min(55%,calc(100%-3.5rem))] flex-col items-end gap-1">
+      {showBest && (
+        <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/30">
+          {t("ขายดี", "Best Seller")}
+        </span>
+      )}
+      {showNew && (
+        <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/30">
+          {t("ใหม่", "New Arrival")}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export function ProductCard({
   product,
   variant = "shop",
 }: {
-  product: Product;
+  product: ProductListItem;
   variant?: "shop" | "showcase";
 }) {
   const { addToCart, openCart } = useCartContext();
@@ -75,12 +129,15 @@ export function ProductCard({
   const outOfStock = stock === 0;
   const defaultVariant = getDefaultVariant(product);
   const cardImage = getPrimaryImage(product);
-  const floweringLabel = productCardFloweringChipLabel(product);
-  const seedLabel = labelForSeedTypeBadge(product.seed_type);
+  const pm = product as ProductWithMeta;
 
-  const handleAdd = (e: React.MouseEvent) => {
+  const stopNavBubble = (e: React.SyntheticEvent) => {
     e.preventDefault();
     e.stopPropagation();
+  };
+
+  const handleAdd = (e: React.MouseEvent) => {
+    stopNavBubble(e);
     if (defaultVariant) {
       const { error } = addToCart({
         variantId: defaultVariant.id,
@@ -104,123 +161,40 @@ export function ProductCard({
     }
   };
 
-  const outlineBtn =
-    "h-8 border-emerald-800 bg-white text-xs font-semibold text-emerald-800 shadow-none transition-colors hover:bg-emerald-50";
-
-  if (variant === "showcase") {
-    return (
-      <motion.div variants={showcaseCardVariant}>
-        <div
-          className={cn(
-            "group flex h-full flex-col overflow-hidden rounded-sm border border-zinc-50 bg-white shadow-sm transition-shadow hover:shadow-md"
-          )}
-        >
-          <div className="relative aspect-square overflow-hidden bg-zinc-50">
-            <Link href={productDetailHref(product)} className="absolute inset-0 block">
-              {cardImage ? (
-                <Image
-                  src={cardImage}
-                  alt={product.name}
-                  fill
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-                />
-              ) : (
-                <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />
-              )}
-            </Link>
-            {product.breeders && (
-              <Link
-                href={shopBreederHref(product.breeders)}
-                className="absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm transition-transform hover:scale-105"
-              >
-                <BreederLogoImage
-                  src={product.breeders.logo_url}
-                  breederName={product.breeders.name}
-                  width={40}
-                  height={40}
-                  className="rounded-sm"
-                  imgClassName="object-contain p-1"
-                  sizes="40px"
-                />
-              </Link>
-            )}
-            {(product.stock ?? 0) <= 5 && (product.stock ?? 0) > 0 && (
-              <span className="absolute left-2 top-2 z-10 rounded-full border border-red-100 bg-red-50/95 px-2 py-0.5 text-[10px] font-medium text-red-800">
-                {t("เหลือน้อย", "Low Stock")}
-              </span>
-            )}
-          </div>
-
-          <div className="flex flex-1 flex-col gap-2 p-4 sm:p-5">
-            {product.breeders && (
-              <Link
-                href={shopBreederHref(product.breeders)}
-                className="inline-block max-w-fit text-[11px] font-medium uppercase tracking-wider text-zinc-500 hover:text-zinc-700"
-              >
-                {product.breeders.name}
-              </Link>
-            )}
-            <Link href={productDetailHref(product)} className="block min-w-0">
-              <h3 className="line-clamp-2 font-[family-name:var(--font-journal-product-serif)] text-base font-medium leading-relaxed tracking-tight text-zinc-900">
-                {product.name}
-              </h3>
-            </Link>
-            <div className="flex flex-wrap gap-1.5">
-              {floweringLabel && <span className={journalChip}>{floweringLabel}</span>}
-              {seedLabel && <span className={journalChip}>{seedLabel}</span>}
-              {product.thc_percent != null && (
-                <span
-                  className={cn(
-                    journalChip,
-                    "font-[family-name:var(--font-journal-product-mono)] tabular-nums text-zinc-600"
-                  )}
-                >
-                  THC {product.thc_percent}%
-                </span>
-              )}
-            </div>
-            <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-              <p className="font-[family-name:var(--font-journal-product-mono)] text-base font-medium tabular-nums text-zinc-800">
-                {(product.price ?? 0) > 0
-                  ? `${formatPrice(product.price ?? 0)}+`
-                  : t("สอบถาม", "Inquire")}
-              </p>
-              <Button size="sm" variant="outline" className={outlineBtn} asChild>
-                <Link href={productDetailHref(product)}>{t("ดูสินค้า", "View")}</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
+  const motionVariants = variant === "showcase" ? showcaseCardVariant : shopCardVariants;
+  const thcPill =
+    product.thc_percent != null && Number.isFinite(Number(product.thc_percent))
+      ? `${Math.round(Number(product.thc_percent))}%`
+      : "—";
+  const genLetter = cardGeneticsLetter(product);
+  const typePill = cardStrainTypeLabel(product) ?? genLetter;
 
   return (
-    <motion.div variants={shopCardVariants}>
-      <Link
-        href={productDetailHref(product)}
-        className="group block overflow-hidden rounded-sm border border-zinc-50 bg-white shadow-sm transition-shadow hover:shadow-md"
-      >
+    <motion.div variants={motionVariants}>
+      <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:border-zinc-200 hover:shadow-md">
         <div className="relative aspect-square overflow-hidden bg-zinc-50">
-          {cardImage ? (
-            <Image
-              src={cardImage}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className={`rounded-sm object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "opacity-50 grayscale" : ""}`}
-            />
-          ) : (
-            <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />
-          )}
+          <Link href={productDetailHref(product)} className="absolute inset-0 block">
+            {cardImage ? (
+              <Image
+                src={cardImage}
+                alt={product.name}
+                fill
+                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                className={`object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "opacity-45 grayscale" : ""}`}
+              />
+            ) : (
+              <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />
+            )}
+          </Link>
 
-          <div className="absolute left-2 top-2 flex flex-wrap gap-1.5">
+          <ProductImageBadges product={pm} t={t} />
+
+          <div className="absolute bottom-2 left-2 z-10 flex max-w-[min(100%,11rem)] flex-wrap gap-1">
             {outOfStock && (
-              <span className={`${glassBadge} text-zinc-800`}>หมด</span>
+              <span className={`${glassBadge} text-zinc-800`}>{t("หมด", "Out")}</span>
             )}
             {lowStock && !outOfStock && (
-              <span className={`${glassBadge} text-red-800`}>เหลือน้อย</span>
+              <span className={`${glassBadge} text-red-800`}>{t("เหลือน้อย", "Low")}</span>
             )}
           </div>
 
@@ -228,73 +202,67 @@ export function ProductCard({
             <Link
               href={shopBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
-              className="absolute bottom-2 right-2 flex h-9 w-9 overflow-hidden rounded-sm border border-white/40 bg-white/25 shadow-md backdrop-blur-md transition-transform hover:scale-110"
+              className="absolute left-2 top-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-white shadow-md ring-2 ring-white transition-transform hover:scale-105"
+              aria-label={product.breeders.name}
             >
               <BreederLogoImage
                 src={product.breeders.logo_url}
                 breederName={product.breeders.name}
-                width={36}
-                height={36}
-                className="rounded-sm"
+                width={32}
+                height={32}
+                className="rounded-full"
                 imgClassName="object-cover"
-                sizes="36px"
+                sizes="32px"
               />
             </Link>
           )}
         </div>
 
-        <MicroGeneticsBar product={product} />
+        <div className="flex flex-1 flex-col gap-1.5 px-2.5 pb-2.5 pt-2">
+          <div className="flex items-center justify-center">
+            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-bold tabular-nums text-zinc-800 ring-1 ring-zinc-200/80">
+              <span className="text-emerald-800">THC {thcPill}</span>
+              <span className="text-zinc-400">·</span>
+              <span className="truncate">{typePill}</span>
+            </span>
+          </div>
 
-        <div className="flex flex-col gap-2.5 p-4 sm:p-5">
           {product.breeders && (
             <Link
               href={shopBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
-              className="inline-block max-w-fit text-[11px] font-medium uppercase tracking-wider text-zinc-500"
+              className="line-clamp-1 text-center text-[11px] font-medium text-emerald-600 hover:text-emerald-700"
             >
               {product.breeders.name}
             </Link>
           )}
-          <h3 className="line-clamp-2 font-[family-name:var(--font-journal-product-serif)] text-sm font-medium leading-relaxed tracking-tight text-zinc-900 sm:text-base">
-            {product.name}
-          </h3>
 
-          <div className="flex flex-wrap gap-1.5">
-            {floweringLabel && <span className={journalChip}>{floweringLabel}</span>}
-            {seedLabel && <span className={journalChip}>{seedLabel}</span>}
-            {product.thc_percent != null && (
-              <span
-                className={cn(
-                  journalChip,
-                  "font-[family-name:var(--font-journal-product-mono)] tabular-nums text-zinc-600"
-                )}
-              >
-                THC {product.thc_percent}%
-              </span>
-            )}
-          </div>
+          <Link href={productDetailHref(product)} className="min-h-0 flex-1">
+            <h3 className="line-clamp-2 text-center font-sans text-[14px] font-bold leading-snug tracking-tight text-zinc-900">
+              {product.name}
+            </h3>
+          </Link>
 
-          <div className="mt-1 flex items-end justify-between gap-3 border-t border-zinc-50 pt-3">
-            <div>
-              <p className="text-[10px] font-normal uppercase tracking-wide text-zinc-400">
-                {t("เริ่มต้น", "From")}
-              </p>
-              <p className="font-[family-name:var(--font-journal-product-mono)] text-base font-medium tabular-nums text-zinc-800">
-                {(product.price ?? 0) > 0 ? formatPrice(product.price ?? 0) : t("สอบถาม", "Inquire")}
-              </p>
-            </div>
+          <div className="mt-auto flex items-end justify-between gap-2 border-t border-zinc-100 pt-2">
+            <p className="min-w-0 text-[15px] font-bold tabular-nums text-zinc-900">
+              {(product.price ?? 0) > 0 ? formatPrice(product.price ?? 0) : t("สอบถาม", "Inquire")}
+            </p>
             <Button
-              size="sm"
-              variant="outline"
-              disabled={outOfStock}
+              type="button"
+              size="icon"
+              disabled={outOfStock || !defaultVariant}
               onClick={handleAdd}
-              className={cn(outlineBtn, "disabled:opacity-40")}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+              }}
+              aria-label={t("เพิ่มลงตะกร้า", "Add to cart")}
+              className="relative z-20 h-8 w-8 shrink-0 rounded-full border-0 bg-primary text-lg font-bold leading-none text-primary-foreground shadow-sm transition-transform hover:scale-110 hover:bg-primary/90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
             >
-              {outOfStock ? t("หมด", "Out") : t("เพิ่ม", "Add")}
+              +
             </Button>
           </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 }

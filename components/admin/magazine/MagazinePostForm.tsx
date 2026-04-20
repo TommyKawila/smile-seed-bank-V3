@@ -11,8 +11,6 @@ import { RelatedProductsSection } from "./RelatedProductsSection";
 import {
   createMagazinePost,
   updateMagazinePost,
-  generateMagazineThAi,
-  generateMagazineEnAi,
   type MagazineEmailTemplateId,
   type MagazineSaveInput,
 } from "@/app/admin/magazine/actions";
@@ -23,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowLeft, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft, ClipboardList } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Category = { id: string; name: string };
@@ -177,9 +175,7 @@ export function MagazinePostForm({
   const [targetAudience, setTargetAudience] = useState(
     initial?.ai_target_audience ?? ""
   );
-  const [aiBusy, setAiBusy] = useState(false);
-
-  const saveDisabled = pending || imageBusy || aiBusy;
+  const saveDisabled = pending || imageBusy;
 
   const debouncedSlugFromTitle = useDebouncedCallback((t: string) => {
     if (!slugDirty) setSlug(generateSlug(t));
@@ -344,61 +340,6 @@ export function MagazinePostForm({
     });
   };
 
-  const runGenerateTh = async () => {
-    setAiBusy(true);
-    setError(null);
-    try {
-      const r = await generateMagazineThAi({
-        raw_input: rawInput,
-        tone_mood: toneMood,
-        opening_closing: openingClosing,
-        target_audience: targetAudience,
-      });
-      if (!r.ok) {
-        setError(r.error);
-        return;
-      }
-      setTitle(r.title);
-      setTagline(r.tagline);
-      setExcerpt(r.excerpt);
-      setContentJson(toPlainContentJson(r.content));
-      if (!slugDirty) setSlug(generateSlug(r.title));
-      setFeedback("Thai draft generated — review before publish.");
-      setTimeout(() => setFeedback(null), 6000);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "AI failed");
-    } finally {
-      setAiBusy(false);
-    }
-  };
-
-  const runGenerateEn = async () => {
-    setAiBusy(true);
-    setError(null);
-    try {
-      const r = await generateMagazineEnAi({
-        raw_input: rawInput,
-        tone_mood: toneMood,
-        opening_closing: openingClosing,
-        target_audience: targetAudience,
-      });
-      if (!r.ok) {
-        setError(r.error);
-        return;
-      }
-      setTitleEn(r.title);
-      setTaglineEn(r.tagline);
-      setExcerptEn(r.excerpt);
-      setContentEnJson(toPlainContentJson(r.content));
-      setFeedback("English draft generated — review before publish.");
-      setTimeout(() => setFeedback(null), 6000);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "AI failed");
-    } finally {
-      setAiBusy(false);
-    }
-  };
-
   const fieldClass =
     "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:border-emerald-700/40 focus:outline-none focus:ring-1 focus:ring-emerald-700/25";
 
@@ -426,7 +367,7 @@ export function MagazinePostForm({
             {feedback && (
               <span className="text-sm text-emerald-800">{feedback}</span>
             )}
-            {(pending || imageBusy || aiBusy) && (
+            {(pending || imageBusy) && (
               <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
             )}
             <button
@@ -485,65 +426,62 @@ export function MagazinePostForm({
         </div>
 
         <section
-          className="rounded-2xl border border-violet-200/80 bg-gradient-to-b from-violet-50/90 to-white p-5 shadow-sm sm:p-6"
-          aria-labelledby="magazine-ai-heading"
+          className="rounded-2xl border border-emerald-200/70 bg-gradient-to-b from-emerald-50/60 to-white p-5 shadow-sm sm:p-6"
+          aria-labelledby="magazine-style-hints-heading"
         >
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <Sparkles className="h-5 w-5 text-violet-600" aria-hidden />
+            <ClipboardList className="h-5 w-5 text-emerald-800/80" aria-hidden />
             <h2
-              id="magazine-ai-heading"
-              className="text-sm font-semibold uppercase tracking-wide text-violet-900"
+              id="magazine-style-hints-heading"
+              className="text-sm font-semibold uppercase tracking-wide text-emerald-950/90"
             >
-              AI Writing Assistant
+              Style hints (internal)
             </h2>
           </div>
           <p className="mb-4 text-xs text-zinc-600">
-            วางข้อมูลดิบ / โน้ตวิจัย แล้วกำหนดโทนและสไตล์ — กดปุ่มเพื่อเติมฟิลด์ภาษาไทยหรืออังกฤษในคลิกเดียว
+            Optional notes for your team — not shown on the public article. Use when planning tone and structure before writing Thai and English below.
           </p>
 
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                Raw Data / Research Notes
+                Raw data / research notes
               </label>
               <p className="text-[11px] text-zinc-500">
-                สำหรับวางข้อมูลจาก Google LM / บันทึกย่อ / ลิงก์สรุป
+                Bullets, outline, links, or pasted research.
               </p>
               <textarea
                 value={rawInput}
                 onChange={(e) => setRawInput(e.target.value)}
                 rows={8}
-                disabled={aiBusy}
                 className={`${fieldClass} min-h-[180px] resize-y font-mono text-[13px] leading-relaxed`}
-                placeholder="Paste bullets, outline, or pasted research…"
+                placeholder="Paste bullets, outline, or research…"
               />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-1">
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  Tone &amp; Mood
+                  Tone &amp; mood
                 </label>
                 <input
                   type="text"
                   value={toneMood}
                   onChange={(e) => setToneMood(e.target.value)}
-                  disabled={aiBusy}
                   className={fieldClass}
-                  placeholder="เช่น เป็นกันเองแบบเพื่อน, ทางการกึ่งวิชาการ, สนุกสนานแบบสายเขียว"
+                  placeholder="e.g. friendly, academic, playful"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  Opening / Closing logic
+                  Opening / closing logic
                 </label>
                 <input
                   type="text"
                   value={openingClosing}
                   onChange={(e) => setOpeningClosing(e.target.value)}
-                  disabled={aiBusy}
                   className={fieldClass}
-                  placeholder="เช่น เกริ่นนำด้วยคำถามกระตุ้นความสงสัย, ปิดท้ายชวนเลือกซื้อเมล็ดที่เกี่ยวข้อง"
+                  placeholder="e.g. start with a question; end with a product tie-in"
                 />
               </div>
               <div className="space-y-2">
@@ -554,40 +492,10 @@ export function MagazinePostForm({
                   type="text"
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
-                  disabled={aiBusy}
                   className={fieldClass}
-                  placeholder="เช่น มือใหม่เริ่มปลูก, นักสะสมสายพันธุ์หายาก"
+                  placeholder="e.g. first-time growers, collectors"
                 />
               </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3 pt-1">
-              <button
-                type="button"
-                disabled={saveDisabled}
-                onClick={() => void runGenerateTh()}
-                className="inline-flex items-center gap-2 rounded-lg bg-violet-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-800 disabled:opacity-50"
-              >
-                {aiBusy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                Generate Thai
-              </button>
-              <button
-                type="button"
-                disabled={saveDisabled}
-                onClick={() => void runGenerateEn()}
-                className="inline-flex items-center gap-2 rounded-lg border border-violet-300 bg-white px-4 py-2.5 text-sm font-semibold text-violet-900 shadow-sm transition hover:bg-violet-50 disabled:opacity-50"
-              >
-                {aiBusy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                Refine / Rewrite English
-              </button>
             </div>
           </div>
         </section>

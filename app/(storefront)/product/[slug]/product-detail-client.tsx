@@ -17,7 +17,6 @@ import { useTranslations } from "@/hooks/use-translations";
 import { labelFloweringType } from "@/lib/cannabis-attributes";
 import { seedTypeDetailShort, sexTypeDetailShort } from "@/lib/seed-type-filter";
 import { cn, formatPrice } from "@/lib/utils";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { shopBreederHref } from "@/lib/breeder-slug";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import {
@@ -33,8 +32,8 @@ import {
   resolveDetailHeroUrl,
 } from "@/lib/product-gallery-utils";
 
-const journalSerif = "font-[family-name:var(--font-journal-product-serif)]";
-const journalMono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
+/** Sans + tabular figures for prices and spec values (same family as nav). */
+const fontSansTabular = "font-sans tabular-nums";
 
 function fillN(template: string, n: number) {
   return template.replace(/\{n\}/g, String(n));
@@ -173,7 +172,7 @@ function shouldShowGeneticsRow(
   return normalizeSpecCompare(gr) !== normalizeSpecCompare(ln);
 }
 
-/** Light journal body; subtle emphasis on names and THC/CBD tokens (no heavy bold). */
+/** Description body; subtle emphasis on names and THC/CBD tokens (no heavy bold). */
 function formatDescriptionJournal(text: string, productName: string): React.ReactNode {
   if (!productName.trim()) return text;
   const escaped = productName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -190,67 +189,26 @@ function formatDescriptionJournal(text: string, productName: string): React.Reac
   );
 }
 
-const glassSpec = "rounded-2xl border border-white/50 bg-white/70 p-4 shadow-sm backdrop-blur-md";
-
 const statCardShell =
-  "flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-border/40 p-4 text-center";
+  "flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center";
 
-type StatCardTone = "thc" | "cbd" | "difficulty" | "sexNeutral";
-
-const STAT_TONE: Record<
-  StatCardTone,
-  { bg: string; fg: string; labelFg: string }
-> = {
-  thc: {
-    bg: "bg-[hsl(158_95%_45%_/_0.08)]",
-    fg: "text-primary",
-    labelFg: "text-primary",
-  },
-  cbd: {
-    bg: "bg-[hsl(180_50%_50%_/_0.08)]",
-    fg: "text-primary",
-    labelFg: "text-primary",
-  },
-  difficulty: {
-    bg: "bg-muted/50",
-    fg: "text-muted-foreground",
-    labelFg: "text-muted-foreground",
-  },
-  sexNeutral: {
-    bg: "bg-muted/40",
-    fg: "text-primary",
-    labelFg: "text-primary",
-  },
-};
-
-// Stat card — soft pastel lab palette
+// Stat card — unified light surface + emerald icon accent
 function StatCard({
   value,
   label,
   icon: Icon,
-  tone,
 }: {
   value: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  tone: StatCardTone;
 }) {
-  const t = STAT_TONE[tone];
   return (
-    <div className={`${statCardShell} ${t.bg}`}>
-      <Icon className={`mb-1.5 h-6 w-6 ${t.fg}`} />
-      <span
-        className={cn(
-          "text-xl font-medium tracking-tight",
-          journalMono,
-          t.fg
-        )}
-      >
+    <div className={statCardShell}>
+      <Icon className="mb-1.5 h-6 w-6 text-primary" aria-hidden />
+      <span className={cn("text-xl font-semibold tracking-tight text-zinc-900", fontSansTabular)}>
         {value}
       </span>
-      <span className={`mt-0.5 text-xs font-semibold uppercase tracking-wider ${t.labelFg}`}>
-        {label}
-      </span>
+      <span className="mt-0.5 text-xs font-bold uppercase tracking-wider text-zinc-500">{label}</span>
     </div>
   );
 }
@@ -312,7 +270,7 @@ function SpecRow({
       <span
         className={cn(
           "text-right text-sm font-medium",
-          journalMono,
+          fontSansTabular,
           isUnk ? "text-muted-foreground italic" : "text-zinc-800"
         )}
       >
@@ -384,14 +342,9 @@ export default function ProductDetailClient({
 
   if (!product) {
     return (
-      <div
-        className={cn(
-          "flex min-h-screen flex-col items-center justify-center gap-4 pt-16 text-center",
-          JOURNAL_PRODUCT_FONT_VARS
-        )}
-      >
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 pt-16 text-center font-sans">
         <Leaf className="h-12 w-12 text-zinc-200" />
-        <p className={cn(journalSerif, "text-lg font-medium text-zinc-700")}>ไม่พบสินค้า</p>
+        <p className={cn("font-sans", "text-lg font-medium text-zinc-700")}>ไม่พบสินค้า</p>
         <Button asChild variant="outline">
           <Link href="/shop">{tMsg("common.back_to_shop", "Back to Shop")}</Link>
         </Button>
@@ -405,7 +358,7 @@ export default function ProductDetailClient({
   const outOfStock = !selectedVariant || selectedVariant.stock === 0;
 
   return (
-    <div className={cn("min-h-screen bg-white pt-20 sm:pt-28", JOURNAL_PRODUCT_FONT_VARS)}>
+    <div className="min-h-screen bg-white pt-20 font-sans sm:pt-28">
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         {/* Breadcrumb */}
         <Link
@@ -451,28 +404,23 @@ export default function ProductDetailClient({
                   imgClassName="object-contain p-0.5"
                   sizes="24px"
                 />
-                <span className={cn(journalMono, "truncate font-medium text-zinc-800")}>
+                <span className={cn(fontSansTabular, "truncate font-medium text-zinc-800")}>
                   {product.breeders.name}
                 </span>
               </Link>
             )}
 
-            {/* Title */}
-            <h1
-              className={cn(
-                journalSerif,
-                "text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl"
-              )}
-            >
+            {/* Title — sans to match global nav / UI */}
+            <h1 className="font-sans text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
               {product.name}
             </h1>
 
-            {/* Spec chips — lab mono */}
+            {/* Spec chips */}
             <div className="flex flex-wrap gap-2">
               {product.flowering_type && (
                 <span
                   className={cn(
-                    journalMono,
+                    fontSansTabular,
                     "inline-flex items-center rounded-sm border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-800"
                   )}
                 >
@@ -484,7 +432,7 @@ export default function ProductDetailClient({
               {product.thc_percent != null && (
                 <span
                   className={cn(
-                    journalMono,
+                    fontSansTabular,
                     "inline-flex items-center rounded-sm border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-medium text-emerald-950"
                   )}
                 >
@@ -494,7 +442,7 @@ export default function ProductDetailClient({
               {product.cbd_percent ? (
                 <span
                   className={cn(
-                    journalMono,
+                    fontSansTabular,
                     "inline-flex items-center rounded-sm border border-violet-200/80 bg-violet-50/80 px-2.5 py-1 text-[11px] font-medium text-zinc-800"
                   )}
                 >
@@ -507,7 +455,7 @@ export default function ProductDetailClient({
               product={product}
               variant="compact"
               t={t}
-              className={cn(journalMono, "text-[11px] sm:text-xs")}
+              className={cn(fontSansTabular, "text-[11px] sm:text-xs")}
             />
 
             <Separator />
@@ -515,9 +463,7 @@ export default function ProductDetailClient({
             {/* Variant Selector */}
             {activeVariants.length > 0 && (
               <div className="space-y-2">
-                <p className={cn(journalSerif, "text-sm font-medium text-zinc-800")}>
-                  {t("เลือกแพ็กเกจ", "Pack size")}
-                </p>
+                <p className="font-sans text-sm font-bold text-zinc-900">{t("เลือกแพ็กเกจ", "Pack size")}</p>
                 <div className="flex flex-wrap gap-2">
                   {activeVariants.map((v) => {
                     const soldOut = (v.stock ?? 0) === 0;
@@ -527,12 +473,12 @@ export default function ProductDetailClient({
                         key={v.id}
                         onClick={() => !soldOut && setSelectedVariant(v)}
                         disabled={soldOut}
-                        className={`relative rounded-sm border-2 px-4 py-2.5 text-left transition-all ${
+                        className={`relative rounded-lg border-2 px-4 py-2.5 text-left transition-all ${
                           isSelected
-                            ? "border-emerald-800 bg-emerald-800 text-white ring-2 ring-emerald-800/30 ring-offset-2 shadow-sm"
+                            ? "border-primary bg-primary/10 text-zinc-900 shadow-sm ring-1 ring-primary/25"
                             : soldOut
                             ? "border-zinc-100 bg-zinc-50 text-zinc-300 line-through cursor-not-allowed"
-                            : "border-zinc-200 bg-white text-zinc-700 hover:border-emerald-700/50"
+                            : "border-zinc-200 bg-white text-zinc-700 hover:border-primary/40"
                         }`}
                       >
                         <span className="block text-[11px] font-normal leading-tight text-inherit opacity-90">
@@ -540,9 +486,9 @@ export default function ProductDetailClient({
                         </span>
                         <span
                           className={cn(
-                            "block text-base font-medium",
-                            journalMono,
-                            isSelected ? "text-white" : "text-zinc-900"
+                            "block text-base font-semibold",
+                            fontSansTabular,
+                            isSelected ? "text-primary" : "text-zinc-900"
                           )}
                         >
                           {formatPrice(v.price)}
@@ -561,7 +507,7 @@ export default function ProductDetailClient({
 
             {/* Price + Add to Cart */}
             <div className="flex items-center gap-3">
-              <span className={cn(journalMono, "text-2xl font-medium text-zinc-900 sm:text-3xl")}>
+              <span className={cn(fontSansTabular, "text-2xl font-bold text-zinc-900 sm:text-3xl")}>
                 {selectedVariant ? formatPrice(selectedVariant.price) : "—"}
               </span>
               {selectedVariant &&
@@ -576,11 +522,7 @@ export default function ProductDetailClient({
             <Button
               onClick={handleAddToCart}
               disabled={outOfStock || !selectedVariant}
-              className={`h-12 w-full text-base font-semibold transition-all ${
-                added
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90"
-              } active:scale-[0.98]`}
+              className="h-12 w-full bg-primary text-base font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
             >
               <ShoppingCart className="mr-2 h-5 w-5" />
               {outOfStock
@@ -599,8 +541,8 @@ export default function ProductDetailClient({
               <TabsTrigger
                 value="specs"
                 className={cn(
-                  journalSerif,
-                  "flex-1 rounded-sm px-3 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
+                  "font-sans",
+                  "flex-1 rounded-sm px-3 py-2 text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
                 )}
               >
                 🧬 {t("พันธุกรรม & สเปก", "Genetics & Specs")}
@@ -608,8 +550,8 @@ export default function ProductDetailClient({
               <TabsTrigger
                 value="effects"
                 className={cn(
-                  journalSerif,
-                  "flex-1 rounded-sm px-3 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
+                  "font-sans",
+                  "flex-1 rounded-sm px-3 py-2 text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
                 )}
               >
                 ⚡ {t("ผล & รสชาติ", "Effects & Flavors")}
@@ -617,8 +559,8 @@ export default function ProductDetailClient({
               <TabsTrigger
                 value="description"
                 className={cn(
-                  journalSerif,
-                  "flex-1 rounded-sm px-3 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
+                  "font-sans",
+                  "flex-1 rounded-sm px-3 py-2 text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
                 )}
               >
                 📋 {t("คำบรรยาย", "Description")}
@@ -638,14 +580,13 @@ export default function ProductDetailClient({
                   product.seed_type === "REGULAR") && (
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {product.thc_percent != null && (
-                      <StatCard value={`${product.thc_percent}%`} label="THC" icon={FlaskConical} tone="thc" />
+                      <StatCard value={`${product.thc_percent}%`} label="THC" icon={FlaskConical} />
                     )}
                     {product.cbd_percent != null && product.cbd_percent !== "" && (
                       <StatCard
                         value={formatCbdDisplay(product.cbd_percent)}
                         label="CBD"
                         icon={TestTube2}
-                        tone="cbd"
                       />
                     )}
                     {(product.flowering_type ??
@@ -674,12 +615,7 @@ export default function ProductDetailClient({
                               : null) ??
                             "—";
                           return (
-                            <StatCard
-                              value={v}
-                              label={t("ประเภทเพศ", "Sex Type")}
-                              icon={Flower2}
-                              tone="sexNeutral"
-                            />
+                            <StatCard value={v} label={t("ประเภทเพศ", "Sex Type")} icon={Flower2} />
                           );
                         })()
                       : null}
@@ -687,7 +623,6 @@ export default function ProductDetailClient({
                       value={product.growing_difficulty ?? "Unknown"}
                       label={t("ความยาก", "Difficulty")}
                       icon={Gauge}
-                      tone="difficulty"
                     />
                   </div>
                 )}
@@ -696,7 +631,7 @@ export default function ProductDetailClient({
                   product={product}
                   variant="card"
                   t={t}
-                  className={cn(journalMono, "text-[11px] sm:text-xs")}
+                  className={cn(fontSansTabular, "text-[11px] sm:text-xs")}
                 />
 
                 {/* Genetics Details Card */}
@@ -705,13 +640,8 @@ export default function ProductDetailClient({
                   product.seed_type ||
                   product.flowering_type ||
                   product.yield_info) && (
-                  <div className="rounded-2xl border border-white/50 bg-white/70 p-5 shadow-sm backdrop-blur-md">
-                    <p
-                      className={cn(
-                        journalSerif,
-                        "mb-3 flex items-center gap-2 text-sm font-medium text-zinc-700"
-                      )}
-                    >
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 p-5 shadow-sm">
+                    <p className="mb-3 flex items-center gap-2 font-sans text-sm font-bold text-zinc-900">
                       <Dna className="h-4 w-4 text-primary" /> {t("โปรไฟล์พันธุกรรม", "Genetic Profile")}
                     </p>
                     {shouldShowGeneticsRow(product.genetic_ratio, product.lineage) && (
@@ -734,12 +664,12 @@ export default function ProductDetailClient({
 
                 {/* Terpene Profile */}
                 {toArray(product.terpenes).length > 0 && (
-                  <div className="rounded-2xl border border-secondary-foreground/15 bg-secondary p-5">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
                     <ChipRow
                       emoji="🫙"
                       label={t("เทอร์พีน", "Terpene Profile")}
                       data={product.terpenes}
-                      chipClass="bg-secondary text-secondary-foreground"
+                      chipClass="border border-violet-200/80 bg-white text-violet-800"
                     />
                   </div>
                 )}
@@ -761,34 +691,34 @@ export default function ProductDetailClient({
               <div className="grid gap-4 sm:grid-cols-2">
 
                 {toArray(product.effects).length > 0 && (
-                  <div className="rounded-2xl border border-primary/15 bg-accent p-5">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
                     <ChipRow
                       emoji="⚡"
                       label={t("อาการ / ความรู้สึก", "Effects")}
                       data={product.effects}
-                      chipClass="bg-accent text-primary"
+                      chipClass="border border-zinc-200 bg-white text-zinc-800"
                     />
                   </div>
                 )}
 
                 {toArray(product.flavors).length > 0 && (
-                  <div className="rounded-2xl border border-border bg-secondary p-5">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
                     <ChipRow
                       emoji="🍋"
                       label={t("รสชาติ & กลิ่น", "Flavors & Aroma")}
                       data={product.flavors}
-                      chipClass="bg-secondary text-secondary-foreground"
+                      chipClass="border border-zinc-200 bg-white text-zinc-800"
                     />
                   </div>
                 )}
 
                 {toArray(product.medical_benefits).length > 0 && (
-                  <div className="rounded-2xl border border-border bg-muted/40 p-5 sm:col-span-2">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 sm:col-span-2">
                     <ChipRow
                       emoji="💊"
                       label={t("สรรพคุณทางยา", "Medical Benefits")}
                       data={product.medical_benefits}
-                      chipClass="bg-secondary text-secondary-foreground"
+                      chipClass="border border-zinc-200 bg-white text-zinc-800"
                     />
                   </div>
                 )}
@@ -894,6 +824,12 @@ export default function ProductDetailClient({
               </div>
             </TabsContent>
           </Tabs>
+          {(product.master_sku ?? "").trim() !== "" && (
+            <p className="mt-8 border-t border-zinc-100 pt-6 font-sans text-xs text-zinc-500">
+              {t("รหัสสินค้า", "SKU")}:{" "}
+              <span className="font-medium tabular-nums text-zinc-600">{product.master_sku}</span>
+            </p>
+          )}
         </div>
       </div>
     </div>

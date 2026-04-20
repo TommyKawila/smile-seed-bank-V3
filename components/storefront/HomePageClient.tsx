@@ -16,6 +16,8 @@ import { useProducts } from "@/hooks/useProducts";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { useLanguage } from "@/context/LanguageContext";
 import Hero from "@/components/storefront/Hero";
+import QuickCategoryNav from "@/components/storefront/QuickCategoryNav";
+import BreederShowcase from "@/components/storefront/BreederShowcase";
 import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { FeaturedProductsCarousel } from "@/components/storefront/FeaturedProductsCarousel";
 import { HomeNewsletterSection } from "@/components/storefront/HomeNewsletterSection";
@@ -36,11 +38,6 @@ import {
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
 
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-home-serif" });
-
-const INSIGHT_FEATURED_HEADLINE_TH =
-  "Auto vs. Photo vs. Fast Version: เลือกเมล็ดพันธุ์แบบไหนที่ใช่สำหรับพื้นที่ของคุณ? 🇹🇭";
-const INSIGHT_FEATURED_HEADLINE_EN =
-  "Auto vs. Photo vs. Fast Version: Which seed type fits your grow space?";
 
 const staggerContainer: Variants = {
   hidden: {},
@@ -118,7 +115,9 @@ function InsightSection({
   const { t, locale } = useLanguage();
   const featured = posts[0];
   const rest = posts.slice(1);
-  const featuredHeadline = locale === "en" ? INSIGHT_FEATURED_HEADLINE_EN : INSIGHT_FEATURED_HEADLINE_TH;
+  const featuredTitle = featured
+    ? magazineDisplayTitle(featured, locale)
+    : "";
   const featuredExcerpt = featured
     ? magazineDisplayExcerpt(featured, locale)
     : null;
@@ -181,7 +180,7 @@ function InsightSection({
                     {t("เกร็ดความรู้", "Knowledge")}
                   </span>
                   <h3 className="font-[family-name:var(--font-home-serif)] text-2xl font-bold leading-[1.25] tracking-tight text-emerald-800 sm:text-3xl md:text-[1.65rem] md:leading-snug">
-                    {featuredHeadline}
+                    {featuredTitle}
                   </h3>
                   {featuredExcerpt && (
                     <p className="mt-5 line-clamp-5 text-sm font-light leading-relaxed text-zinc-600 sm:text-base">
@@ -240,7 +239,7 @@ function InsightSection({
 }
 
 function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
-  const { products, isLoading } = useProducts({ limit: 8, autoFetch: true });
+  const { products, isLoading } = useProducts({ limit: 8, autoFetch: true, includeVariants: true });
   const { t, locale } = useLanguage();
   const [featuredProducts, setFeaturedProducts] = useState<ProductWithBreeder[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
@@ -311,16 +310,29 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
   const renderSection = (section: HomePageSectionPayload): ReactNode => {
     const st = sectionTitle(section);
     switch (section.key) {
-      case "hero":
+      case "hero": {
+        const categoriesSec = sections.find((s) => s.key === "categories");
+        const breedersSec = sections.find((s) => s.key === "breeders");
         return (
           <div key="hero" className="bg-white pb-10 sm:pb-14">
             <div className="mx-auto max-w-7xl max-lg:px-0 max-lg:pt-0 px-4 pt-5 sm:px-6 sm:pt-6">
               <div className="overflow-hidden rounded-3xl border border-zinc-200 shadow-[0_24px_64px_-18px_rgba(21,128,61,0.12)] ring-1 ring-zinc-200/80 max-lg:rounded-none max-lg:border-0 max-lg:shadow-none max-lg:ring-0">
-                <Hero />
+                <Hero sectionTitle={st} />
               </div>
+            </div>
+            <QuickCategoryNav
+              sectionTitle={categoriesSec ? sectionTitle(categoriesSec) : undefined}
+            />
+            <div className={playfair.variable}>
+              <BreederShowcase
+                sectionTitle={breedersSec ? sectionTitle(breedersSec) : undefined}
+              />
             </div>
           </div>
         );
+      }
+      case "categories":
+        return null;
       case "blog":
         return (
           <InsightSection
@@ -443,12 +455,16 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
               {isLoading ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                   {[...Array(8)].map((_, i) => (
-                    <div key={i} className="overflow-hidden rounded-sm border border-zinc-50 shadow-sm">
+                    <div key={i} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
                       <div className="aspect-square animate-pulse bg-zinc-100" />
-                      <div className="space-y-2 p-4">
+                      <div className="space-y-2 px-2.5 pb-2.5 pt-2">
+                        <div className="mx-auto h-6 w-28 animate-pulse rounded-full bg-zinc-100" />
                         <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
                         <div className="h-4 animate-pulse rounded bg-zinc-100" />
-                        <div className="h-8 animate-pulse rounded bg-zinc-100" />
+                        <div className="flex justify-between pt-2">
+                          <div className="h-5 w-16 animate-pulse rounded bg-zinc-100" />
+                          <div className="h-8 w-8 animate-pulse rounded-full bg-zinc-100" />
+                        </div>
                       </div>
                     </div>
                   ))}

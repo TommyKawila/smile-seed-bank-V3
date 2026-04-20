@@ -94,6 +94,7 @@ function ShopContent() {
   const sexParam = searchParams.get("sex") ?? "";
   const ftParam = searchParams.get("ft") ?? "";
   const qParam = searchParams.get("q") ?? "";
+  const yieldQuickParam = searchParams.get("yield") ?? "";
 
   /** Full catalog client-side (~90 items): no server limit — instant filter in memory */
   const { products, isLoading } = useProducts({ autoFetch: true, includeVariants: true });
@@ -298,12 +299,14 @@ function ShopContent() {
           thc_percent: p.thc_percent,
           cbd_percent: p.cbd_percent ?? null,
           seed_type: p.seed_type ?? null,
+          yield_info: (p as { yield_info?: string | null }).yield_info ?? null,
         },
         geneticsSel,
         difficultySel,
         thcSel,
         cbdSel,
-        sexSel
+        sexSel,
+        yieldQuickParam.trim() || null
       )
     );
   }, [
@@ -313,6 +316,7 @@ function ShopContent() {
     thcParam,
     cbdParam,
     sexParam,
+    yieldQuickParam,
   ]);
 
   const isEn = locale === "en";
@@ -479,7 +483,7 @@ function ShopContent() {
                       {fullDesc && <p className="text-sm leading-relaxed text-zinc-500">{fullDesc}</p>}
                       {highlightRows.length > 0 && (
                         <>
-                          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">{t("Key Highlights", "Key Highlights")}</p>
+                          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("Key Highlights", "Key Highlights")}</p>
                           <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {highlightRows.map(({ icon: Icon, label, value }) => (
                               <li key={label} className="flex items-start gap-2 rounded-xl bg-primary/5 px-3 py-2.5">
@@ -555,10 +559,10 @@ function ShopContent() {
         </div>
       )}
 
-      <div className="mx-auto max-w-7xl px-4 pb-8 pt-0 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-0 sm:px-6 lg:pb-8">
         {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
         <div
-          className={`sticky top-20 z-40 -mx-4 mb-4 border-b border-zinc-200 bg-white px-4 pt-3 pb-2 sm:-mx-6 sm:top-28 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+          className={`sticky top-20 z-40 -mx-4 mb-4 border-b border-zinc-100 bg-white/95 px-4 pt-3 pb-2 backdrop-blur-md sm:-mx-6 sm:top-28 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
         >
           {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 && (
             <BreederTypeFilter
@@ -575,7 +579,7 @@ function ShopContent() {
                 placeholder={t("ค้นหาสายพันธุ์หรือแบรนด์...", "Search strains or brands...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full min-w-0 bg-white pl-9"
+                className="w-full min-w-0 border-zinc-200 bg-white pl-9 text-zinc-900 placeholder:text-zinc-400"
               />
               {searchTerm && (
                 <button
@@ -589,7 +593,7 @@ function ShopContent() {
             </div>
             <Button
               variant="outline"
-              className={`shrink-0 bg-white lg:hidden ${showFilter ? "border-primary bg-primary/5 text-primary" : ""}`}
+              className={`hidden shrink-0 border-zinc-200 bg-white text-zinc-700 lg:inline-flex ${showFilter ? "border-primary bg-primary/10 text-primary" : ""}`}
               onClick={() => setShowFilter((v) => !v)}
               aria-expanded={showFilter}
               aria-controls="shop-filters"
@@ -645,7 +649,7 @@ function ShopContent() {
                       <Link
                         key={b.id}
                         href={seedsBreederHref(b)}
-                        className="flex w-full max-w-md items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:w-auto"
+                        className="flex w-full max-w-md items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:border-primary/25 sm:w-auto"
                       >
                         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
                           <BreederLogoImage
@@ -661,7 +665,7 @@ function ShopContent() {
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-zinc-900">{b.name}</p>
                           <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500">{summary.slice(0, 120)}{summary.length > 120 ? "…" : ""}</p>
-                          <span className="mt-1.5 inline-block text-xs font-medium text-primary">
+                          <span className="mt-1.5 inline-block text-xs font-medium text-emerald-600">
                             {t("ดูสายพันธุ์", "View genetics")} →
                           </span>
                         </div>
@@ -673,22 +677,22 @@ function ShopContent() {
             )}
 
             {isLoading ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
                 {[...Array(12)].map((_, i) => (
-                  <div key={i} className="overflow-hidden rounded-sm border border-zinc-50 shadow-sm">
-                    <div className="aspect-square animate-pulse bg-zinc-100" />
-                    <div className="space-y-2 p-4">
-                      <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-100" />
-                      <div className="h-4 animate-pulse rounded bg-zinc-100" />
-                      <div className="h-8 animate-pulse rounded bg-zinc-100" />
+                  <div key={i} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+                    <div className="aspect-square animate-pulse bg-zinc-200" />
+                    <div className="space-y-2 p-3">
+                      <div className="mx-auto h-5 w-24 animate-pulse rounded-full bg-zinc-200" />
+                      <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-200" />
+                      <div className="h-10 animate-pulse rounded bg-zinc-200" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 px-4 py-20 text-center">
-                <PackageX className="h-12 w-12 text-zinc-200" />
-                <p className="text-base font-medium text-zinc-500">
+                <PackageX className="h-12 w-12 text-zinc-600" />
+                <p className="text-base font-medium text-zinc-600">
                   {t("ไม่พบสินค้าที่ตรงกับการค้นหา", "No results found")}
                 </p>
                 <Button variant="outline" size="sm" onClick={clearFilters}>
@@ -729,12 +733,22 @@ function ShopContent() {
         </div>
       </div>
 
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
+        <Button
+          type="button"
+          className="pointer-events-auto h-12 rounded-full border border-primary/30 bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-lg ring-2 ring-primary/15 hover:bg-primary/90"
+          onClick={() => setShowFilter(true)}
+        >
+          {t("ตัวกรอง", "Filters")} 🔍
+        </Button>
+      </div>
+
       {showBackToTop && (
         <button
           type="button"
           aria-label={t("กลับขึ้นด้านบน", "Back to top")}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-primary/80 text-white shadow-md backdrop-blur-md transition hover:bg-primary sm:bottom-8 sm:right-8"
+          className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-md transition hover:bg-zinc-50 sm:bottom-24 sm:right-8 lg:bottom-8"
         >
           <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </button>

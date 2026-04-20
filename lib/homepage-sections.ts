@@ -1,6 +1,7 @@
 /** Keys must match `homepage_sections.key` and `HomePageClient` section map. */
 export const DEFAULT_HOME_SECTION_KEYS = [
   "hero",
+  "categories",
   "blog",
   "featured",
   "breeders",

@@ -11,16 +11,10 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth } from "@/hooks/use-auth";
 import { CartSheet } from "./CartSheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BreederSeedsNav } from "@/components/storefront/BreederDropdownMenu";
+import { NavbarSearchPanel } from "@/components/storefront/NavbarSearchPanel";
 
 export function Navbar() {
   const router = useRouter();
@@ -52,9 +46,7 @@ export function Navbar() {
   const { user, customer, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close user menu on outside click
@@ -67,20 +59,6 @@ export function Navbar() {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchQuery.trim();
-    setSearchOpen(false);
-    setSearchQuery("");
-    router.push(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
-  };
-
-  useEffect(() => {
-    if (searchOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 80);
-    }
-  }, [searchOpen]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -361,30 +339,7 @@ export function Navbar() {
       {/* CartSheet */}
       <CartSheet open={isOpen} onClose={closeCart} />
 
-      {/* Search overlay */}
-      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <DialogContent className="max-w-md border-zinc-200 bg-white/95 shadow-xl backdrop-blur-md">
-          <DialogHeader>
-            <DialogTitle className="sr-only">{t("ค้นหา", "Search")}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSearchSubmit} className="flex gap-2 pt-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-              <Input
-                ref={searchInputRef}
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t("ค้นหาสายพันธุ์หรือแบรนด์...", "Search strains or brands...")}
-                className="pl-9 bg-white/80"
-              />
-            </div>
-            <Button type="submit" className="bg-primary text-white hover:bg-primary/90">
-              {t("ค้นหา", "Search")}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <NavbarSearchPanel open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );
 }
