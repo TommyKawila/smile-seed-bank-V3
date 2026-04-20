@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter } from "next/font/google";
 import { ChevronRight, Clock, Eye } from "lucide-react";
 import type { MagazineProductPublic } from "@/lib/blog-service";
 import {
@@ -53,7 +53,6 @@ import {
 } from "@/lib/magazine-bilingual";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-magazine-serif" });
 
 export const revalidate = 120;
 
@@ -191,7 +190,6 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
       className={cn(
         "min-h-screen overflow-x-hidden bg-white text-zinc-900 font-sans antialiased",
         inter.variable,
-        playfair.variable,
         JOURNAL_PRODUCT_FONT_VARS
       )}
     >
@@ -249,7 +247,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           </span>
         </div>
 
-        <h1 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-medium leading-[1.25] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl">
+        <h1 className="font-sans text-3xl font-medium leading-[1.25] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl">
           {displayTitle}
         </h1>
 
@@ -331,7 +329,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
 
         {related.length > 0 && (
           <section className="mx-auto mt-20 max-w-[720px] border-t border-zinc-200 pt-16">
-            <h2 className="font-[family-name:var(--font-magazine-serif)] text-2xl font-semibold text-emerald-950">
+            <h2 className="font-sans text-2xl font-semibold text-emerald-950">
               บทความแนะนำ
             </h2>
             <ul className="mt-8 grid gap-8 sm:grid-cols-2">
@@ -365,7 +363,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                         )}
                         {isResearchCategory(r.category) && <VerifiedResearchBadge />}
                       </div>
-                      <p className="mt-2 line-clamp-2 font-[family-name:var(--font-magazine-serif)] text-base font-semibold text-zinc-900 group-hover:text-emerald-800">
+                      <p className="mt-2 line-clamp-2 font-sans text-base font-semibold text-zinc-900 group-hover:text-emerald-800">
                         {magazineDisplayTitle(r, locale)}
                       </p>
                     </div>

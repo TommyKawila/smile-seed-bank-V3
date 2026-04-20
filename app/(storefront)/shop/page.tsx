@@ -541,10 +541,10 @@ function ShopContent() {
             <p className="font-[family-name:var(--font-journal-product-mono)] text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500">
               {t("คลังพันธุกรรม", "GENETIC_VAULT")}
             </p>
-            <h1 className="mt-2 font-[family-name:var(--font-journal-product-serif)] text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
+            <h1 className="mt-2 font-sans text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
               {t("ร้านค้า", "Shop")}
             </h1>
-            <p className="mt-3 max-w-2xl text-sm font-light leading-relaxed text-zinc-600">
+            <p className="mt-3 max-w-2xl text-sm font-normal leading-relaxed text-zinc-600">
               {t(
                 "สำรวจสายพันธุ์ที่ตรวจสอบแล้ว — จากงานวิจัยสู่การปลูกของคุณ",
                 "Verified genetics—research-led picks for your grow."

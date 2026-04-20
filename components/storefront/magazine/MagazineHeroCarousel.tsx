@@ -58,7 +58,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
     return (
       <div className="relative aspect-video min-h-[240px] w-full overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm">
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-          <p className="font-[family-name:var(--font-magazine-serif)] text-2xl text-zinc-600">
+          <p className="font-sans text-2xl text-zinc-600">
             No highlights yet
           </p>
           <p className="max-w-md text-sm text-zinc-500">
@@ -102,7 +102,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
                 )}
                 {research && <VerifiedResearchBadge />}
               </div>
-              <h2 className="font-[family-name:var(--font-magazine-serif)] text-3xl font-semibold leading-[1.15] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl lg:max-w-3xl">
+              <h2 className="font-sans text-3xl font-semibold leading-[1.15] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl lg:max-w-3xl">
                 {heroTitle}
               </h2>
               <Link

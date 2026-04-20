@@ -83,7 +83,7 @@ function FeaturedProductInsightCard({
             {product.breeders.name}
           </span>
         ) : null}
-        <h3 className="font-[family-name:var(--font-journal-product-serif)] line-clamp-1 text-lg font-bold leading-snug text-zinc-900">
+        <h3 className="font-sans line-clamp-1 text-lg font-bold leading-snug text-zinc-900">
           <Link href={href} className="hover:text-emerald-900">
             {product.name}
           </Link>
@@ -123,7 +123,7 @@ export function FeaturedProductsCarousel({
         <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
           <div className="mb-10 space-y-3">
             <div className="h-3 w-24 animate-pulse rounded bg-zinc-100" />
-            <h2 className="font-[family-name:var(--font-journal-product-serif)] text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.75rem]">
+            <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.75rem]">
               {mainHeading}
             </h2>
             <div className="h-4 max-w-lg animate-pulse rounded bg-zinc-100" />
@@ -165,7 +165,7 @@ export function FeaturedProductsCarousel({
           <p className="text-xs font-medium tracking-wide text-emerald-800">
             {t("สายพันธุ์คัดพิเศษ", "Curated selections")}
           </p>
-          <h2 className="font-[family-name:var(--font-journal-product-serif)] text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.75rem]">
+          <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.75rem]">
             {mainHeading}
           </h2>
           <p className="text-sm font-light leading-relaxed text-zinc-600">

@@ -31,7 +31,7 @@ import {
 } from "@/lib/saved-promotion-local";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 
-const serif = "font-[family-name:var(--font-journal-product-serif)]";
+const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
 
 type ApiSavedCoupon = {

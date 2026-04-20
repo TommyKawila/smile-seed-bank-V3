@@ -2,7 +2,7 @@
 
 import { BookOpen, FlaskConical, MessageSquare, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-const serif = "font-[family-name:var(--font-journal-product-serif)]";
+const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
 
 type Translate = (th: string, en: string) => string;

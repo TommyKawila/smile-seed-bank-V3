@@ -9,7 +9,7 @@ export function SmartTieInStrip({ products }: { products: SmartProductPreview[] 
   return (
     <aside className="my-12 rounded-2xl border border-zinc-200 bg-gradient-to-b from-emerald-50/50 to-zinc-50 p-6 shadow-sm">
       <div className="mb-5 flex items-baseline justify-between gap-3">
-        <h3 className="font-[family-name:var(--font-magazine-serif)] text-lg font-semibold text-emerald-950">
+        <h3 className="font-sans text-lg font-semibold text-emerald-950">
           Editor&apos;s pick
         </h3>
         <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-emerald-700">

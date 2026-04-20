@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export type BreederTypeOption = { slug: string; label: string; count: number };
 
-const serif = "font-[family-name:var(--font-journal-product-serif)]";
+const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)]";
 
 function filterIcon(slug: string): LucideIcon {

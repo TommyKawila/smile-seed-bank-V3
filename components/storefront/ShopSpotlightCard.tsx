@@ -8,12 +8,7 @@ import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePla
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { productDetailHref } from "@/lib/product-utils";
 import { plainTextFromHtml, truncateMetaDescription } from "@/lib/magazine-seo";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { ProductWithBreeder } from "@/lib/supabase/types";
-import { cn } from "@/lib/utils";
-
-const serif = "font-[family-name:var(--font-journal-product-serif)]";
-const mono = "font-[family-name:var(--font-journal-product-mono)]";
 
 function excerpt(product: ProductWithBreeder): string {
   const raw = product.description_th ?? product.description_en ?? product.description ?? "";
@@ -34,11 +29,11 @@ export function ShopSpotlightCard({
   return (
     <motion.div
       variants={variants}
-      className={cn("col-span-2 flex h-full min-h-0 flex-col", JOURNAL_PRODUCT_FONT_VARS)}
+      className="col-span-2 flex h-full min-h-0 flex-col font-sans"
     >
       <Link
         href={productDetailHref(product)}
-        className="group flex h-full min-h-[200px] flex-col overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm transition-shadow hover:shadow-md sm:min-h-[220px] sm:flex-row"
+        className="group flex h-full min-h-[200px] flex-col overflow-hidden rounded-sm border border-zinc-100 bg-white font-sans shadow-sm transition-shadow hover:shadow-md sm:min-h-[220px] sm:flex-row"
       >
         <div className="relative aspect-[4/3] w-full shrink-0 sm:aspect-auto sm:h-auto sm:w-[42%] sm:max-w-md">
           {img ? (
@@ -54,24 +49,19 @@ export function ShopSpotlightCard({
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center p-5 sm:p-6">
-          <p className={cn(mono, "text-[9px] font-medium uppercase tracking-[0.24em] text-zinc-400")}>
+          <p className="text-[9px] font-medium uppercase tracking-[0.24em] text-zinc-400">
             SPOTLIGHT
           </p>
-          <h3 className={cn(serif, "mt-2 text-xl font-medium leading-snug text-zinc-900 sm:text-2xl")}>
+          <h3 className="mt-2 text-xl font-bold leading-snug tracking-tight text-zinc-900 sm:text-2xl">
             {product.name}
           </h3>
           <div className="mt-3 w-full min-w-0">
             <MicroGeneticsBar product={product} />
           </div>
           {ex && (
-            <p className="mt-4 line-clamp-3 text-sm font-light leading-relaxed text-zinc-600">{ex}</p>
+            <p className="mt-4 line-clamp-3 text-sm font-normal leading-relaxed text-zinc-600">{ex}</p>
           )}
-          <span
-            className={cn(
-              mono,
-              "mt-4 inline-flex text-[11px] font-medium tabular-nums text-primary"
-            )}
-          >
+          <span className="mt-4 inline-flex text-[11px] font-medium tabular-nums text-primary">
             View dossier →
           </span>
         </div>

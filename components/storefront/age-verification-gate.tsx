@@ -132,10 +132,10 @@ export function AgeVerificationGate() {
 
           <DialogPrimitive.Title asChild>
             <div className="flex flex-col gap-1.5 text-center">
-              <span className="font-serif text-lg font-semibold leading-snug text-zinc-900 sm:text-xl">
+              <span className="font-sans text-lg font-semibold leading-snug text-zinc-900 sm:text-xl">
                 {TITLE_TH}
               </span>
-              <span className="font-serif text-base font-medium leading-snug text-zinc-500 sm:text-lg">
+              <span className="font-sans text-base font-medium leading-snug text-zinc-500 sm:text-lg">
                 {TITLE_EN}
               </span>
             </div>

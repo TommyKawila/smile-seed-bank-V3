@@ -15,7 +15,7 @@ export function MagazineCategoryPills({ categories }: { categories: BlogCategory
 
   const pill = (isOn: boolean) =>
     cn(
-      "font-[family-name:var(--font-journal-product-serif)] rounded-sm border px-3.5 py-2 text-sm font-normal tracking-tight transition-colors",
+      "font-sans rounded-sm border px-3.5 py-2 text-sm font-normal tracking-tight transition-colors",
       isOn
         ? "border-emerald-800 bg-emerald-800 text-white shadow-sm hover:bg-emerald-900"
         : "border-zinc-200/90 bg-zinc-50/90 text-zinc-800 hover:border-zinc-300 hover:bg-white"

@@ -9,7 +9,7 @@ export function BlogArticleBreederRibbon({ headingId }: { headingId?: string }) 
     <>
       <h2
         id={headingId}
-        className="mb-10 text-left font-[family-name:var(--font-magazine-serif)] text-2xl font-medium tracking-tight text-zinc-900 sm:mb-12 sm:text-3xl md:text-[2rem]"
+        className="mb-10 text-left font-sans text-2xl font-medium tracking-tight text-zinc-900 sm:mb-12 sm:text-3xl md:text-[2rem]"
       >
         {t(
           "เลือกชมสายพันธุ์จาก Breeder ชั้นนำที่เราคัดสรร",

@@ -10,7 +10,7 @@ import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePla
 import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
-const serif = "font-[family-name:var(--font-journal-product-serif)]";
+const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)]";
 
 function productNote(product: ProductWithBreeder, isEn: boolean): string {
@@ -71,7 +71,7 @@ export function ShopGeneticVaultHero({
           <h1
             className={cn(
               serif,
-              "mt-3 text-3xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-4xl md:text-[2.35rem]"
+              "mt-3 text-3xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-4xl md:text-[2.35rem]"
             )}
           >
             <Link href={productDetailHref(product)} className="hover:text-primary">

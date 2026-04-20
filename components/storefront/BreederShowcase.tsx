@@ -73,7 +73,7 @@ export default function BreederShowcase({
     >
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
         <div className="mb-8 text-center md:mb-10">
-          <h2 className="font-[family-name:var(--font-home-serif)] text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+          <h2 className="font-sans text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
             {mainHeading}
           </h2>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-zinc-600 sm:text-base">{networkLabel}</p>

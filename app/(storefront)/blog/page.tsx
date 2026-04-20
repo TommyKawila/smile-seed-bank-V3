@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { Metadata } from "next";
-import { Inter, JetBrains_Mono, Playfair_Display } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import {
   getBlogCategories,
   getHighlightPosts,
@@ -22,7 +22,6 @@ import {
 import { magazineLocaleFromCookie } from "@/lib/magazine-bilingual";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-magazine" });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-magazine-serif" });
 const journalMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-journal-mono" });
 
 const siteBase = getSiteOrigin();
@@ -69,14 +68,14 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
 
   return (
     <div
-      className={`min-h-screen bg-white text-zinc-900 ${inter.variable} ${playfair.variable} ${journalMono.variable} font-sans antialiased`}
+      className={`min-h-screen bg-white text-zinc-900 ${inter.variable} ${journalMono.variable} font-sans antialiased`}
     >
       <div className="mx-auto max-w-7xl px-4 pb-28 pt-24 sm:px-6 lg:px-8">
         <header className="mb-20 space-y-6 text-center lg:mb-28 lg:space-y-7">
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-emerald-700">
             Smile Seed Bank
           </p>
-          <h1 className="font-[family-name:var(--font-magazine-serif)] text-4xl font-semibold tracking-[-0.03em] text-zinc-900 md:text-5xl lg:text-6xl">
+          <h1 className="font-sans text-4xl font-semibold tracking-[-0.03em] text-zinc-900 md:text-5xl lg:text-6xl">
             Smile Seed Blog
           </h1>
           <BlogHeroSlogan />

@@ -62,7 +62,7 @@ export function MagazineProductStoryCard({
           Smile Seed Bank
         </p>
         <h3
-          className={`font-[family-name:var(--font-magazine-serif)] font-semibold leading-snug text-zinc-900 group-hover:text-emerald-900 ${
+          className={`font-sans font-semibold leading-snug text-zinc-900 group-hover:text-emerald-900 ${
             isGrid ? "line-clamp-2 text-base" : "text-lg"
           }`}
         >

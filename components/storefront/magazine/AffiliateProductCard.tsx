@@ -47,7 +47,7 @@ export function AffiliateProductCard({
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
             Recommended
           </p>
-          <h3 className="font-[family-name:var(--font-magazine-serif)] text-lg font-semibold leading-snug text-zinc-900">
+          <h3 className="font-sans text-lg font-semibold leading-snug text-zinc-900">
             {title}
           </h3>
           <p className="text-xs text-zinc-500">{platform}</p>

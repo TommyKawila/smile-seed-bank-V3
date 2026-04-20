@@ -60,6 +60,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["Inter", "Prompt", "Noto Sans Thai", "sans-serif"],
+        /** Alias to sans so legacy `font-serif` never selects a transitional serif stack */
+        serif: ["Inter", "Prompt", "Noto Sans Thai", "sans-serif"],
         thai: ["Prompt", "Noto Sans Thai", "sans-serif"],
       },
       keyframes: {

@@ -146,7 +146,7 @@ export function EditorialHighlightSection() {
         <p className="text-xs font-semibold uppercase tracking-widest text-primary">
           {t("ความรู้ & เรื่องราว", "Knowledge & stories")}
         </p>
-        <h2 className="mt-1 font-serif text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+        <h2 className="mt-1 font-sans text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
           {t("จาก Smile Seed Blog", "From Smile Seed Blog")}
         </h2>
       </div>
@@ -171,7 +171,7 @@ export function EditorialHighlightSection() {
           #{badgeLabel(main)}
         </span>
         <motion.h3
-          className="font-serif text-2xl font-bold leading-tight text-emerald-950 sm:text-3xl lg:text-[1.85rem] lg:leading-snug"
+          className="font-sans text-2xl font-bold leading-tight text-emerald-950 sm:text-3xl lg:text-[1.85rem] lg:leading-snug"
           whileHover={{ color: "rgb(5 46 22)" }}
           transition={{ duration: 0.35 }}
         >

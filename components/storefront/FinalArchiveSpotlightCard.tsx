@@ -7,14 +7,9 @@ import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePla
 import { MicroGeneticsBar } from "@/components/storefront/MicroGeneticsBar";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { productDetailHref } from "@/lib/product-utils";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import type { Product } from "@/types/supabase";
-import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
-
-const serif = "font-[family-name:var(--font-journal-product-serif)]";
-const mono = "font-[family-name:var(--font-journal-product-mono)]";
 
 export function FinalArchiveSpotlightCard({
   product,
@@ -30,14 +25,9 @@ export function FinalArchiveSpotlightCard({
   return (
     <motion.div
       variants={variants}
-      className={cn("col-span-2 flex h-full min-h-0 w-full min-w-0 flex-col", JOURNAL_PRODUCT_FONT_VARS)}
+      className="col-span-2 flex h-full min-h-0 w-full min-w-0 flex-col font-sans"
     >
-      <div
-        className={cn(
-          "relative flex h-full min-h-0 flex-col overflow-hidden rounded-sm border border-amber-500/25 bg-white shadow-sm",
-          "ring-1 ring-amber-500/15"
-        )}
-      >
+      <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-sm border border-amber-500/25 bg-white shadow-sm ring-1 ring-amber-500/15">
         <motion.div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 z-10 h-[2px] bg-gradient-to-r from-transparent via-amber-400/50 to-transparent"
@@ -49,7 +39,7 @@ export function FinalArchiveSpotlightCard({
 
         <Link
           href={productDetailHref(product)}
-          className="group relative z-[2] flex min-h-[200px] flex-col sm:min-h-[220px] sm:flex-row"
+          className="group relative z-[2] flex min-h-[200px] flex-col font-sans sm:min-h-[220px] sm:flex-row"
         >
           <div className="relative aspect-[4/3] w-full shrink-0 sm:aspect-auto sm:h-auto sm:w-[40%] sm:max-w-sm">
             {img ? (
@@ -65,34 +55,17 @@ export function FinalArchiveSpotlightCard({
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-center border-t border-amber-500/10 p-5 sm:border-l sm:border-t-0 sm:p-6">
-            <h3
-              className={cn(
-                serif,
-                "text-xl font-semibold leading-snug tracking-tight text-zinc-900 sm:text-2xl"
-              )}
-            >
+            <h3 className="text-xl font-bold leading-snug tracking-tight text-zinc-900 sm:text-2xl">
               {t("สินค้าเหลือชิ้นสุดท้าย", "Last items in stock")}
             </h3>
-            <p className={cn(mono, "mt-1 text-xs font-medium tabular-nums text-zinc-500")}>
-              {product.name}
-            </p>
-            <p
-              className={cn(
-                mono,
-                "mt-3 text-[10px] font-medium uppercase tracking-[0.12em] text-amber-700/95 sm:text-[11px]"
-              )}
-            >
+            <p className="mt-1 text-xs font-normal text-zinc-600">{product.name}</p>
+            <p className="mt-3 text-[10px] font-medium tabular-nums uppercase tracking-[0.12em] text-amber-700/95 sm:text-[11px]">
               STATUS: LOW_STOCK_ALERT // {units} UNITS LEFT
             </p>
             <div className="mt-4 w-full min-w-0 max-w-md">
               <MicroGeneticsBar product={product as Product} />
             </div>
-            <span
-              className={cn(
-                mono,
-                "mt-5 inline-flex w-fit items-center rounded-sm border border-primary/35 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary transition-colors group-hover:bg-primary/5"
-              )}
-            >
+            <span className="mt-5 inline-flex w-fit items-center rounded-sm border border-primary/35 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary transition-colors group-hover:bg-primary/5">
               {t("สั่งซื้อก่อนหมด", "ORDER BEFORE SOLD OUT")}
             </span>
           </div>

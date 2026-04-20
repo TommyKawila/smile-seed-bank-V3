@@ -9,7 +9,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
-import { Playfair_Display } from "next/font/google";
 import { ChevronRight, Leaf, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProducts } from "@/hooks/useProducts";
@@ -36,8 +35,6 @@ import {
   type SectionTitle,
 } from "@/lib/homepage-section-title";
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
-
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-home-serif" });
 
 const staggerContainer: Variants = {
   hidden: {},
@@ -84,7 +81,7 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
           )}
           {research && <VerifiedResearchBadge />}
         </div>
-        <h3 className="font-[family-name:var(--font-home-serif)] line-clamp-2 text-lg font-semibold leading-snug text-zinc-900">
+        <h3 className="font-sans line-clamp-2 text-lg font-semibold leading-snug text-zinc-900">
           <Link href={`/blog/${post.slug}`} className="hover:text-emerald-900">
             {cardTitle}
           </Link>
@@ -131,13 +128,13 @@ function InsightSection({
 
   return (
     <section className="border-b border-zinc-100 bg-white pt-20 pb-14 sm:pt-24 sm:pb-16">
-      <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${playfair.variable}`}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="mb-10 space-y-4 text-center sm:mb-12">
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-800">
             <BookOpen className="h-3.5 w-3.5" />
             {t("ข้อมูลเชิงลึก", "Insights")}
           </span>
-          <h2 className="font-[family-name:var(--font-home-serif)] text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
+          <h2 className="font-sans text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
             {mainHeading}
           </h2>
           <BlogHeroSlogan />
@@ -176,10 +173,10 @@ function InsightSection({
             {featured && (
               <article className="group overflow-hidden rounded-sm border border-zinc-200/90 bg-zinc-50 shadow-[0_2px_28px_-6px_rgba(6,78,59,0.12)] lg:grid lg:min-h-[min(28rem,70vh)] lg:grid-cols-2 lg:items-stretch lg:gap-0">
                 <div className="order-1 flex flex-col justify-center border-zinc-100 px-6 py-10 sm:px-10 lg:order-1 lg:border-r lg:py-14 lg:pl-10 xl:pl-14">
-                  <span className="mb-4 inline-flex w-fit rounded-full border border-emerald-200/90 bg-white/80 px-3 py-1 font-[family-name:var(--font-home-serif)] text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
+                  <span className="mb-4 inline-flex w-fit rounded-full border border-emerald-200/90 bg-white/80 px-3 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
                     {t("เกร็ดความรู้", "Knowledge")}
                   </span>
-                  <h3 className="font-[family-name:var(--font-home-serif)] text-2xl font-bold leading-[1.25] tracking-tight text-emerald-800 sm:text-3xl md:text-[1.65rem] md:leading-snug">
+                  <h3 className="font-sans text-2xl font-bold leading-[1.25] tracking-tight text-emerald-800 sm:text-3xl md:text-[1.65rem] md:leading-snug">
                     {featuredTitle}
                   </h3>
                   {featuredExcerpt && (
@@ -323,11 +320,9 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
             <QuickCategoryNav
               sectionTitle={categoriesSec ? sectionTitle(categoriesSec) : undefined}
             />
-            <div className={playfair.variable}>
-              <BreederShowcase
-                sectionTitle={breedersSec ? sectionTitle(breedersSec) : undefined}
-              />
-            </div>
+            <BreederShowcase
+              sectionTitle={breedersSec ? sectionTitle(breedersSec) : undefined}
+            />
           </div>
         );
       }
@@ -367,7 +362,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
                   <span className="mb-2 inline-flex items-center rounded-full border border-zinc-100 bg-zinc-50/50 px-3 py-1 font-[family-name:var(--font-journal-product-mono)] text-[11px] font-medium uppercase tracking-widest text-zinc-500">
                     {t("แบรนด์ชั้นนำ", "World-Class Breeders")}
                   </span>
-                  <h2 className="font-[family-name:var(--font-journal-product-serif)] text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl">
+                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl">
                     {breederMain}
                   </h2>
                 </div>
@@ -401,7 +396,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
               <div className="grid grid-cols-1 divide-y divide-zinc-100 text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 {features.map((f) => (
                   <div key={f.label} className="px-6 py-7 sm:py-9">
-                    <p className="font-[family-name:var(--font-journal-product-serif)] text-base font-medium text-zinc-800">
+                    <p className="font-sans text-base font-medium text-zinc-800">
                       {f.label}
                     </p>
                     <p className="mt-1.5 font-[family-name:var(--font-journal-product-mono)] text-xs font-normal leading-relaxed text-zinc-500">
@@ -434,7 +429,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
                   <p className="font-[family-name:var(--font-journal-product-mono)] text-[11px] font-medium uppercase tracking-widest text-emerald-800">
                     NEW ARRIVALS
                   </p>
-                  <h2 className="font-[family-name:var(--font-journal-product-serif)] text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
+                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
                     {newArrivalsHeading}
                   </h2>
                   <p className="text-sm font-light leading-relaxed text-zinc-600">

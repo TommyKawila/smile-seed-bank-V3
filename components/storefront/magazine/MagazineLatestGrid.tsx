@@ -160,7 +160,7 @@ function BentoPostCard({
       <div className="flex min-h-0 flex-1 flex-col gap-2 p-4 sm:p-5">
         <h3
           className={cn(
-            "font-[family-name:var(--font-magazine-serif)] font-semibold leading-snug tracking-[-0.02em] text-zinc-900 group-hover:text-emerald-950",
+            "font-sans font-semibold leading-snug tracking-[-0.02em] text-zinc-900 group-hover:text-emerald-950",
             isFeatured && "text-xl sm:text-2xl lg:text-[1.65rem]",
             isCompact && "text-base sm:text-[1.05rem]",
             isMedium && "text-lg sm:text-xl",

@@ -28,7 +28,7 @@ import { canViewMembershipProgram } from "@/lib/feature-flags";
 
 type ProfileTab = "orders" | "membership" | "coupons" | "profile";
 
-const serif = "font-[family-name:var(--font-journal-product-serif)]";
+const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
 const navMono =
   "font-[family-name:var(--font-journal-product-mono)] text-[10px] font-medium uppercase tracking-widest";

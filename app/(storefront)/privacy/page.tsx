@@ -7,7 +7,7 @@ export default function PrivacyPolicyPage() {
 
   return (
     <article className="mx-auto max-w-3xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-32">
-      <h1 className="font-serif text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+      <h1 className="font-sans text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
         {t("นโยบายความเป็นส่วนตัว (Privacy Policy)", "Privacy Policy")}
       </h1>
       <p className="mt-3 text-sm text-zinc-500">

@@ -83,7 +83,7 @@ export function HomeNewsletterSection() {
     >
       <div className="mx-auto flex max-w-4xl flex-col items-stretch justify-between gap-8 px-6 py-10 sm:flex-row sm:items-center sm:gap-10">
         <div className="min-w-0 flex-1 text-center sm:text-left">
-          <h3 className="font-[family-name:var(--font-journal-product-serif)] text-xl font-medium leading-snug text-white sm:text-2xl">
+          <h3 className="font-sans text-xl font-medium leading-snug text-white sm:text-2xl">
             {t(
               "รับส่วนลด 10% สำหรับออเดอร์แรกของคุณ",
               "Get 10% off your first order"

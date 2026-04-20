@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
-import { JetBrains_Mono, Playfair_Display } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useLanguage } from "@/context/LanguageContext";
@@ -16,7 +16,6 @@ import {
   type SectionTitle,
 } from "@/lib/homepage-section-title";
 
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-hero-display" });
 const heroMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-hero-mono" });
 
 const STATIC_HERO_FALLBACK =
@@ -95,7 +94,6 @@ export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) 
     <section
       className={cn(
         "relative flex min-h-0 w-full flex-col overflow-hidden rounded-none bg-zinc-50 max-lg:-mt-[4.5rem] max-lg:max-h-[100svh] max-lg:w-full lg:mt-0 lg:max-h-none",
-        playfair.variable,
         heroMono.variable
       )}
     >
@@ -118,7 +116,7 @@ export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) 
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.05, ease: "easeOut" }}
-              className="font-[family-name:var(--font-hero-display)] text-[1.65rem] font-medium leading-[1.3] tracking-tight text-zinc-900 sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]"
+              className="font-sans text-[1.65rem] font-bold leading-[1.3] tracking-tight text-zinc-900 sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]"
             >
               {headline}
             </motion.h1>

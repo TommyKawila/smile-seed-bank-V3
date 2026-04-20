@@ -3,14 +3,14 @@ import type { ArticleSegment } from "@/lib/magazine-article-segments";
 import { AffiliateProductCard } from "./AffiliateProductCard";
 import { MagazineProductStoryCard } from "./MagazineProductStoryCard";
 
-/** TipTap HTML — journal body: relaxed leading, Playfair headings, emerald-tinted emphasis. */
+/** TipTap HTML — relaxed leading, sans headings, emerald-tinted emphasis. */
 const magazineArticleHtml =
   "max-w-none text-base font-light leading-relaxed tracking-[0.015em] text-zinc-700 sm:text-[1.0625rem] " +
   "[&_p]:mb-6 [&_p:last-child]:mb-0 [&_p]:leading-relaxed [&_p]:tracking-[0.015em] " +
-  "[&_h1]:mb-5 [&_h1]:mt-16 [&_h1]:font-[family-name:var(--font-magazine-serif)] [&_h1]:text-3xl [&_h1]:font-medium [&_h1]:tracking-tight [&_h1]:text-emerald-950 " +
-  "[&_h2]:mb-4 [&_h2]:mt-14 [&_h2]:font-[family-name:var(--font-magazine-serif)] [&_h2]:text-2xl [&_h2]:font-medium [&_h2]:tracking-tight [&_h2]:text-emerald-950 " +
-  "[&_h3]:mb-3 [&_h3]:mt-12 [&_h3]:font-[family-name:var(--font-magazine-serif)] [&_h3]:text-xl [&_h3]:font-medium [&_h3]:tracking-tight [&_h3]:text-emerald-950 " +
-  "[&_h4]:mb-2 [&_h4]:mt-8 [&_h4]:font-[family-name:var(--font-magazine-serif)] [&_h4]:font-medium [&_h4]:text-zinc-900 " +
+  "[&_h1]:mb-5 [&_h1]:mt-16 [&_h1]:font-sans [&_h1]:text-3xl [&_h1]:font-medium [&_h1]:tracking-tight [&_h1]:text-emerald-950 " +
+  "[&_h2]:mb-4 [&_h2]:mt-14 [&_h2]:font-sans [&_h2]:text-2xl [&_h2]:font-medium [&_h2]:tracking-tight [&_h2]:text-emerald-950 " +
+  "[&_h3]:mb-3 [&_h3]:mt-12 [&_h3]:font-sans [&_h3]:text-xl [&_h3]:font-medium [&_h3]:tracking-tight [&_h3]:text-emerald-950 " +
+  "[&_h4]:mb-2 [&_h4]:mt-8 [&_h4]:font-sans [&_h4]:font-medium [&_h4]:text-zinc-900 " +
   "[&_ul]:my-6 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-6 [&_ol]:list-decimal [&_ol]:pl-6 " +
   "[&_li]:mb-2 [&_li]:leading-relaxed [&_li]:text-zinc-700 [&_li]:marker:text-emerald-600 " +
   "[&_blockquote]:my-8 [&_blockquote]:border-l-2 [&_blockquote]:border-emerald-500/45 [&_blockquote]:pl-5 [&_blockquote]:italic [&_blockquote]:text-zinc-600 " +
