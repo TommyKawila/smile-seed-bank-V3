@@ -47,9 +47,9 @@ import {
   parseListParam,
   productMatchesShopAttributeFilters,
 } from "@/lib/shop-attribute-filters";
-import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { ShopGeneticVaultHero } from "@/components/storefront/ShopGeneticVaultHero";
+import { selectVaultFeaturedProducts } from "@/lib/vault-featured-products";
 import { GeneticVaultProductGrid } from "@/components/storefront/GeneticVaultProductGrid";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
@@ -321,11 +321,10 @@ function ShopContent() {
 
   const isEn = locale === "en";
 
-  const vaultHeroProduct = useMemo(() => {
-    if (filteredProducts.length === 0) return null;
-    const withImg = filteredProducts.find((p) => getListingThumbnailUrl(p));
-    return withImg ?? filteredProducts[0];
-  }, [filteredProducts]);
+  const vaultHeroProducts = useMemo(
+    () => selectVaultFeaturedProducts(filteredProducts),
+    [filteredProducts]
+  );
 
   const filteredIdsKey = useMemo(
     () => filteredProducts.map((p) => p.id).join(","),
@@ -531,8 +530,8 @@ function ShopContent() {
             </div>
           </div>
         </motion.div>
-      ) : vaultHeroProduct ? (
-        <ShopGeneticVaultHero product={vaultHeroProduct} isEn={isEn} t={t} />
+      ) : vaultHeroProducts.length > 0 ? (
+        <ShopGeneticVaultHero key={filteredIdsKey} products={vaultHeroProducts} isEn={isEn} t={t} />
       ) : (
         <div
           className={`border-b border-zinc-100 bg-white px-4 py-10 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
