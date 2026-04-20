@@ -23,7 +23,9 @@ export type CategoryFilterMode = "fk" | "photo_3n" | "plain_photo";
 // Re-export so existing component imports keep working
 export { ProductSchema, VariantSchema, type ProductFormData };
 
-type ProductListItem = ProductWithBreeder & { product_variants?: ProductVariantRow[] };
+export type ProductListItem = ProductWithBreeder & {
+  product_variants?: ProductVariantRow[];
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

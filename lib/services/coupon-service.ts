@@ -118,9 +118,12 @@ export async function validateCoupon(
       if (hasOrder) return { ok: false, error: { type: "FIRST_ORDER_ONLY" } };
     }
 
-    // Expiry check
-    if (promo.expiry_date && new Date() >= new Date(promo.expiry_date)) {
-      return { ok: false, error: { type: "EXPIRED" } };
+    // Expiry check (invalid when current time is after expiry_date)
+    if (promo.expiry_date) {
+      const expMs = new Date(promo.expiry_date).getTime();
+      if (Number.isFinite(expMs) && Date.now() > expMs) {
+        return { ok: false, error: { type: "EXPIRED" } };
+      }
     }
 
     // Min spend check

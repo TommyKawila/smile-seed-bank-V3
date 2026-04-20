@@ -7,18 +7,89 @@ import {
   ProductSchema,
   deriveProductIsActiveForCatalog,
 } from "@/lib/validations/product";
+import { prisma } from "@/lib/prisma";
+import {
+  adminProductsOrderBy,
+  buildAdminProductsWhere,
+} from "@/lib/admin-products-list-query";
+import {
+  adminProductListInclude,
+  serializeAdminProductForList,
+} from "@/lib/serialize-admin-product-list";
+
 type ProductInsert = Omit<Product, "id" | "price" | "stock">;
 type VariantInsert = Omit<ProductVariant, "id" | "product_id">;
 
-export async function GET() {
-  const supabase = await createAdminClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, breeder_id")
-    .eq("is_active", true)
-    .order("name");
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data ?? []);
+export const dynamic = "force-dynamic";
+
+export async function GET(req: NextRequest) {
+  const sp = req.nextUrl.searchParams;
+
+  try {
+    if (sp.get("idsOnly") === "1") {
+      const where = await buildAdminProductsWhere(prisma, sp);
+      const featured = sp.get("view") === "featured" || sp.get("featured") === "1";
+      const orderBy = adminProductsOrderBy(featured);
+      const [totalCount, rows] = await Promise.all([
+        prisma.products.count({ where }),
+        prisma.products.findMany({
+          where,
+          orderBy,
+          select: { id: true },
+        }),
+      ]);
+      return NextResponse.json({
+        ids: rows.map((r) => Number(r.id)),
+        totalCount,
+      });
+    }
+
+    const legacyMinimal =
+      sp.get("minimal") === "1" || [...sp.keys()].length === 0;
+    if (legacyMinimal) {
+      const supabase = await createAdminClient();
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, breeder_id")
+        .eq("is_active", true)
+        .order("name");
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(data ?? []);
+    }
+
+    const pageRaw = parseInt(sp.get("page") ?? "1", 10);
+    const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
+    const limitRaw = parseInt(sp.get("limit") ?? "50", 10);
+    const limit = Math.min(100, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 50));
+
+    const where = await buildAdminProductsWhere(prisma, sp);
+    const featured = sp.get("view") === "featured" || sp.get("featured") === "1";
+    const orderBy = adminProductsOrderBy(featured);
+
+    const totalCount = await prisma.products.count({ where });
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+    const currentPage = Math.min(page, totalPages);
+    const skip = (currentPage - 1) * limit;
+
+    const rows = await prisma.products.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
+      include: adminProductListInclude,
+    });
+
+    return NextResponse.json({
+      products: rows.map(serializeAdminProductForList),
+      totalCount,
+      totalPages,
+      currentPage,
+      pageSize: limit,
+    });
+  } catch (err) {
+    console.error("[GET /api/admin/products]", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

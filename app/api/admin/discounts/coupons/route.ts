@@ -3,11 +3,22 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { PromoCode } from "@/types/supabase";
 
+/** Empty / missing → null (no expiry). */
+const createExpiry = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((val) => {
+    if (val == null || val === "") return null;
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  });
+
 const CreateCouponSchema = z.object({
   code: z.string().min(1).max(50).transform((s) => s.trim().toUpperCase()),
   discount_type: z.enum(["PERCENTAGE", "FIXED"]),
   discount_value: z.number().min(0),
   min_spend: z.number().min(0).nullable().optional(),
+  expiry_date: createExpiry,
   is_active: z.boolean().optional().default(true),
   usage_limit_per_user: z.number().int().min(1).max(999).optional().default(1),
   requires_auth: z.boolean().optional().default(false),
@@ -52,6 +63,7 @@ export async function POST(req: NextRequest) {
       discount_type: parsed.data.discount_type,
       discount_value: parsed.data.discount_value,
       min_spend: parsed.data.min_spend ?? null,
+      expiry_date: parsed.data.expiry_date ?? null,
       is_active: parsed.data.is_active ?? true,
       usage_limit_per_user: parsed.data.usage_limit_per_user ?? 1,
       requires_auth: parsed.data.requires_auth ?? false,

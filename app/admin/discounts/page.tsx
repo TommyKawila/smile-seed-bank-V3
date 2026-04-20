@@ -38,12 +38,35 @@ type CouponRow = {
   discount_type: string;
   discount_value: number;
   min_spend: number | null;
+  expiry_date?: string | null;
   is_active: boolean;
   used_count: number;
   usage_limit_per_user?: number | null;
   requires_auth?: boolean | null;
   first_order_only?: boolean | null;
 };
+
+function isoToDatetimeLocal(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const z = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+}
+
+function formatExpiryTable(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" });
+}
+
+function expiryBadge(iso: string | null | undefined): "none" | "active" | "expired" {
+  if (!iso) return "none";
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return "none";
+  return Date.now() > t ? "expired" : "active";
+}
 
 export default function AdminDiscountsPage() {
   const [coupons, setCoupons] = useState<CouponRow[]>([]);
@@ -58,6 +81,7 @@ export default function AdminDiscountsPage() {
     discount_type: "PERCENTAGE" as const,
     discount_value: 10,
     min_spend: "" as string | number,
+    expiry_datetime: "",
     is_active: true,
     usage_limit_per_user: 1,
     requires_auth: false,
@@ -67,6 +91,7 @@ export default function AdminDiscountsPage() {
     code: "",
     discount_value: 10,
     min_spend: "" as string | number,
+    expiry_datetime: "",
     is_active: true,
     usage_limit_per_user: 1,
     requires_auth: false,
@@ -104,6 +129,9 @@ export default function AdminDiscountsPage() {
           discount_type: addForm.discount_type,
           discount_value: addForm.discount_value,
           min_spend: addForm.min_spend === "" ? null : Number(addForm.min_spend),
+          expiry_date: addForm.expiry_datetime.trim()
+            ? new Date(addForm.expiry_datetime).toISOString()
+            : null,
           is_active: addForm.is_active,
           usage_limit_per_user: addForm.usage_limit_per_user ?? 1,
           requires_auth: addForm.requires_auth ?? false,
@@ -113,7 +141,17 @@ export default function AdminDiscountsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed");
       setAddOpen(false);
-      setAddForm({ code: "", discount_type: "PERCENTAGE", discount_value: 10, min_spend: "", is_active: true, usage_limit_per_user: 1, requires_auth: false, first_order_only: false });
+      setAddForm({
+        code: "",
+        discount_type: "PERCENTAGE",
+        discount_value: 10,
+        min_spend: "",
+        expiry_datetime: "",
+        is_active: true,
+        usage_limit_per_user: 1,
+        requires_auth: false,
+        first_order_only: false,
+      });
       await fetchAll();
     } catch (e) {
       setError(String(e).replace("Error: ", ""));
@@ -134,6 +172,9 @@ export default function AdminDiscountsPage() {
           code: editForm.code.trim().toUpperCase(),
           discount_value: editForm.discount_value,
           min_spend: editForm.min_spend === "" ? null : Number(editForm.min_spend),
+          expiry_date: editForm.expiry_datetime.trim()
+            ? new Date(editForm.expiry_datetime).toISOString()
+            : null,
           is_active: editForm.is_active,
           usage_limit_per_user: editForm.usage_limit_per_user ?? 1,
           requires_auth: editForm.requires_auth ?? false,
@@ -173,6 +214,7 @@ export default function AdminDiscountsPage() {
       code: row.code,
       discount_value: row.discount_value,
       min_spend: row.min_spend ?? "",
+      expiry_datetime: isoToDatetimeLocal(row.expiry_date),
       is_active: row.is_active,
       usage_limit_per_user: row.usage_limit_per_user ?? 1,
       requires_auth: row.requires_auth ?? false,
@@ -218,6 +260,7 @@ export default function AdminDiscountsPage() {
                     <TableHead>ประเภท</TableHead>
                     <TableHead>มูลค่า</TableHead>
                     <TableHead>ขั้นต่ำ (฿)</TableHead>
+                    <TableHead>หมดอายุ</TableHead>
                     <TableHead className="text-center">ใช้แล้ว</TableHead>
                     <TableHead className="text-center">สถานะ</TableHead>
                     <TableHead className="w-24">จัดการ</TableHead>
@@ -226,7 +269,7 @@ export default function AdminDiscountsPage() {
                 <TableBody>
                   {coupons.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-zinc-500 py-8">
+                      <TableCell colSpan={8} className="text-center text-zinc-500 py-8">
                         ยังไม่มีโค้ดส่วนลด
                       </TableCell>
                     </TableRow>
@@ -247,6 +290,21 @@ export default function AdminDiscountsPage() {
                           {row.discount_type === "PERCENTAGE" ? `${row.discount_value}%` : `฿${row.discount_value}`}
                         </TableCell>
                         <TableCell>{row.min_spend != null ? row.min_spend.toLocaleString("th-TH") : "—"}</TableCell>
+                        <TableCell className="text-sm text-zinc-600">
+                          <div className="flex flex-col gap-1">
+                            <span>{formatExpiryTable(row.expiry_date)}</span>
+                            {expiryBadge(row.expiry_date) === "expired" && (
+                              <Badge variant="secondary" className="w-fit bg-zinc-200 text-zinc-700">
+                                หมดอายุ
+                              </Badge>
+                            )}
+                            {expiryBadge(row.expiry_date) === "active" && row.expiry_date && (
+                              <Badge variant="secondary" className="w-fit border-primary/30 bg-primary/10 text-primary">
+                                ยังใช้ได้
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-center text-zinc-500">{row.used_count}</TableCell>
                         <TableCell className="text-center">
                           <span className={row.is_active ? "text-primary font-medium" : "text-zinc-400"}>
@@ -317,6 +375,16 @@ export default function AdminDiscountsPage() {
                 onChange={(e) => setAddForm((p) => ({ ...p, min_spend: e.target.value }))}
                 placeholder="0"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>วันหมดอายุ (ว่างได้)</Label>
+              <Input
+                type="datetime-local"
+                value={addForm.expiry_datetime}
+                onChange={(e) => setAddForm((p) => ({ ...p, expiry_datetime: e.target.value }))}
+                className="rounded-md border-zinc-200"
+              />
+              <p className="text-xs text-zinc-500">เวลาหมดอายุตามเครื่องของคุณ — ว่างไว้ถ้าไม่จำกัด</p>
             </div>
             <div className="space-y-2">
               <Label>จำกัดต่อคน (ครั้ง)</Label>
@@ -409,6 +477,15 @@ export default function AdminDiscountsPage() {
                 value={editForm.min_spend}
                 onChange={(e) => setEditForm((p) => ({ ...p, min_spend: e.target.value }))}
                 placeholder="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>วันหมดอายุ (ว่างได้)</Label>
+              <Input
+                type="datetime-local"
+                value={editForm.expiry_datetime}
+                onChange={(e) => setEditForm((p) => ({ ...p, expiry_datetime: e.target.value }))}
+                className="rounded-md border-zinc-200"
               />
             </div>
             <div className="space-y-2">

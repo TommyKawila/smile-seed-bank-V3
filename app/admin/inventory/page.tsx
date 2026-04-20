@@ -190,7 +190,7 @@ function AdminInventoryContent() {
   const fetchMeta = useCallback(async () => {
     const [invRes, prodsRes, breedRes, catRes] = await Promise.all([
       fetch("/api/admin/inventory", { cache: "no-store" }),
-      fetch("/api/admin/products"),
+      fetch("/api/admin/products?minimal=1"),
       fetch("/api/admin/breeders"),
       fetch("/api/admin/categories"),
     ]);

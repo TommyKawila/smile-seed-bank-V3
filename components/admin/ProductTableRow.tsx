@@ -25,6 +25,11 @@ export interface ProductTableRowProps {
   onStatusUpdated?: () => void;
   /** Featured tab: show priority input + remove from featured */
   featuredManage?: boolean;
+  /** Bulk selection (first column checkbox) */
+  bulkSelect?: {
+    checked: boolean;
+    onToggle: () => void;
+  };
 }
 
 export function ProductTableRow({
@@ -32,6 +37,7 @@ export function ProductTableRow({
   onEdit,
   onStatusUpdated,
   featuredManage = false,
+  bulkSelect,
 }: ProductTableRowProps) {
   const { toast } = useToast();
   const lowStock = isLowStock(product.stock);
@@ -114,6 +120,17 @@ export function ProductTableRow({
         featuredHighlight && "border-l-[3px] border-l-emerald-600 bg-emerald-50/40"
       )}
     >
+      {bulkSelect && (
+        <TableCell className="w-10 align-middle pr-0">
+          <input
+            type="checkbox"
+            checked={bulkSelect.checked}
+            onChange={() => bulkSelect.onToggle()}
+            className="h-4 w-4 rounded border-zinc-300 text-primary focus:ring-primary"
+            aria-label={`เลือก ${product.name}`}
+          />
+        </TableCell>
+      )}
       <TableCell className="align-middle">
         {product.image_url ? (
           <div

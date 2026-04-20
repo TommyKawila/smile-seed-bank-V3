@@ -45,7 +45,10 @@ export async function POST(req: NextRequest) {
             { status: 400 }
           );
         case "EXPIRED":
-          return NextResponse.json({ error: "โค้ดหมดอายุแล้ว" }, { status: 400 });
+          return NextResponse.json(
+            { error: "ขออภัย โค้ดส่วนลดนี้หมดอายุแล้ว" },
+            { status: 400 }
+          );
         case "MIN_SPEND":
           return NextResponse.json(
             {
