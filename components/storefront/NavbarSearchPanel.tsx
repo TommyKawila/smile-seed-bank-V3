@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 type ProductHit = {
   id: number;
@@ -241,7 +242,7 @@ export function NavbarSearchPanel({
                 >
                   <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200/80">
                     {p.thumb ? (
-                      <Image src={p.thumb} alt="" fill className="object-cover" sizes="48px" unoptimized={!p.thumb.includes("supabase.co")} />
+                      <Image src={p.thumb} alt="" fill className="object-cover" sizes="48px" unoptimized={shouldOffloadImageOptimization(p.thumb)} />
                     ) : (
                       <span className="flex h-full w-full items-center justify-center text-zinc-300">
                         <Leaf className="h-6 w-6" aria-hidden />
@@ -271,7 +272,7 @@ export function NavbarSearchPanel({
               >
                 <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200/80">
                   {b.logoUrl ? (
-                    <Image src={b.logoUrl} alt="" width={48} height={48} className="object-contain p-1" unoptimized={!b.logoUrl.includes("supabase.co")} />
+                    <Image src={b.logoUrl} alt="" width={48} height={48} className="object-contain p-1" unoptimized={shouldOffloadImageOptimization(b.logoUrl)} />
                   ) : (
                     <Leaf className="h-6 w-6 text-zinc-300" aria-hidden />
                   )}

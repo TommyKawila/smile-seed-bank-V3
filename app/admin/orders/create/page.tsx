@@ -24,6 +24,7 @@ import { useCart } from "@/hooks/useCart";
 import { formatPrice, cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
 import { applyWholesalePrice } from "@/lib/wholesale-utils";
 import type { ProductWithBreeder, ProductWithBreederMaybeVariants } from "@/types/supabase";
@@ -667,7 +668,14 @@ export default function CreateOrderPage() {
                               const p = product as { image_urls?: string[]; image_url?: string | null };
                               const src = Array.isArray(p.image_urls) && p.image_urls[0] ? p.image_urls[0] : p.image_url ?? null;
                               return src ? (
-                                <Image src={src} alt="" width={40} height={40} className="h-10 w-10 object-cover" unoptimized={!src.includes("supabase.co")} />
+                                <Image
+                                src={src}
+                                alt=""
+                                width={40}
+                                height={40}
+                                className="h-10 w-10 object-cover"
+                                unoptimized={shouldOffloadImageOptimization(src)}
+                              />
                               ) : (
                                 <div className="h-10 w-10 bg-zinc-100" />
                               );

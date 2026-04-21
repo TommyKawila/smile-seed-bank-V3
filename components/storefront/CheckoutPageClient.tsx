@@ -30,6 +30,7 @@ import {
   type SavedPromotionPayload,
 } from "@/lib/saved-promotion-local";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
@@ -71,17 +72,6 @@ function mergeSavedCoupons(
 
 const QR_IMAGE_SIZE = 220;
 
-/** Use Next.js optimization for Supabase Storage; unoptimize unknown hosts / data URLs. */
-function qrSrcNeedsUnoptimized(src: string): boolean {
-  try {
-    const u = new URL(src);
-    if (u.protocol === "data:") return true;
-    return !u.hostname.endsWith("supabase.co");
-  } catch {
-    return true;
-  }
-}
-
 const CheckoutFormSchema = z.object({
   full_name: z.string().min(2, "กรุณาระบุชื่อ-นามสกุล"),
   phone: z.string().min(9, "เบอร์โทรศัพท์ไม่ถูกต้อง").max(15),
@@ -102,7 +92,13 @@ function OrderItemRow({
     <div className="flex items-start gap-3">
       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-sm bg-zinc-100">
         {item.productImage ? (
-          <Image src={item.productImage} alt={item.productName} fill className="object-cover" />
+          <Image
+            src={item.productImage}
+            alt={item.productName}
+            fill
+            className="object-cover"
+            unoptimized={shouldOffloadImageOptimization(item.productImage)}
+          />
         ) : (
           <div className="flex h-full items-center justify-center">
             <ShoppingBag className="h-5 w-5 text-zinc-300" />
@@ -125,6 +121,7 @@ function OrderItemRow({
                 width={96}
                 height={20}
                 className="h-5 w-auto max-w-[7rem] object-contain object-left"
+                unoptimized={shouldOffloadImageOptimization(item.breederLogoUrl)}
               />
             </span>
           ) : null}
@@ -788,7 +785,7 @@ export function CheckoutPageClient({
                                   height={QR_IMAGE_SIZE}
                                   className="h-[220px] w-[220px] max-w-full object-contain"
                                   sizes="220px"
-                                  unoptimized={qrSrcNeedsUnoptimized(pm.qr_code_url)}
+                                  unoptimized={shouldOffloadImageOptimization(pm.qr_code_url)}
                                 />
                               </div>
                             ) : null}

@@ -10,6 +10,7 @@ import { isResearchCategory, magazineCategoryDisplayTh } from "@/lib/blog-resear
 import { useLanguage } from "@/context/LanguageContext";
 import { magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 type Props = { posts: MagazinePostPublic[] };
 
@@ -27,7 +28,6 @@ function HeroImage({
       <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-white" />
     );
   }
-  const unoptimized = !src.includes("supabase.co");
   return (
     <Image
       src={src}
@@ -38,7 +38,7 @@ function HeroImage({
       priority={priority}
       placeholder="blur"
       blurDataURL={SHIMMER_BLUR_DATA_URL}
-      unoptimized={unoptimized}
+      unoptimized={shouldOffloadImageOptimization(src)}
     />
   );
 }

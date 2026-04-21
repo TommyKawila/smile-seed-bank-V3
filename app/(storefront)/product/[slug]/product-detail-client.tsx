@@ -31,6 +31,7 @@ import {
   buildDetailGalleryUrls,
   resolveDetailHeroUrl,
 } from "@/lib/product-gallery-utils";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 /** Sans + tabular figures for prices and spec values (same family as nav). */
 const fontSansTabular = "font-sans tabular-nums";
@@ -101,6 +102,7 @@ function ProductGallery({
             priority={selected === 0}
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover"
+            unoptimized={shouldOffloadImageOptimization(current)}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
@@ -138,7 +140,14 @@ function ProductGallery({
                   : "border-zinc-200 opacity-60 hover:opacity-100"
               }`}
             >
-              <Image src={url} alt={`thumb-${i + 1}`} fill sizes="64px" className="object-cover" />
+              <Image
+                src={url}
+                alt={`thumb-${i + 1}`}
+                fill
+                sizes="64px"
+                className="object-cover"
+                unoptimized={shouldOffloadImageOptimization(url)}
+              />
             </button>
           ))}
         </div>

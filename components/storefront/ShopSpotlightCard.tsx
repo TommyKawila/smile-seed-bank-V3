@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { MicroGeneticsBar } from "@/components/storefront/MicroGeneticsBar";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { productDetailHref } from "@/lib/product-utils";
 import { plainTextFromHtml, truncateMetaDescription } from "@/lib/magazine-seo";
 import type { ProductWithBreeder } from "@/lib/supabase/types";
@@ -43,6 +44,7 @@ export function ShopSpotlightCard({
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
               sizes="(max-width: 640px) 100vw, 40vw"
+              unoptimized={shouldOffloadImageOptimization(img)}
             />
           ) : (
             <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />

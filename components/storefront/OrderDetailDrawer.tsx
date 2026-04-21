@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { cn, formatPrice } from "@/lib/utils";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -146,7 +147,13 @@ function ItemRow({ item }: { item: OrderDetailRow["order_items"][number] }) {
       {/* Thumbnail */}
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
         {product?.image_url ? (
-          <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+          <Image
+            src={product.image_url}
+            alt={product.name}
+            fill
+            className="object-cover"
+            unoptimized={shouldOffloadImageOptimization(product.image_url)}
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Leaf className="h-5 w-5 text-zinc-300" />

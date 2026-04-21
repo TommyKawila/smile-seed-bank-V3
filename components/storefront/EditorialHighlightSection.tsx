@@ -8,6 +8,7 @@ import { ChevronRight, Clock } from "lucide-react";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { useLanguage } from "@/context/LanguageContext";
 import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,6 @@ function HeroImage({ src, alt }: { src: string | null; alt: string }) {
       <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-white" />
     );
   }
-  const unoptimized = !resolved.includes("supabase.co");
   return (
     <Image
       src={resolved}
@@ -44,7 +44,7 @@ function HeroImage({ src, alt }: { src: string | null; alt: string }) {
       priority
       placeholder="blur"
       blurDataURL={SHIMMER_BLUR_DATA_URL}
-      unoptimized={unoptimized}
+      unoptimized={shouldOffloadImageOptimization(resolved)}
     />
   );
 }
@@ -56,7 +56,6 @@ function ThumbImage({ src, alt }: { src: string | null; alt: string }) {
       <div className="h-full w-full bg-gradient-to-br from-zinc-200 to-zinc-300" />
     );
   }
-  const unoptimized = !resolved.includes("supabase.co");
   return (
     <Image
       src={resolved}
@@ -66,7 +65,7 @@ function ThumbImage({ src, alt }: { src: string | null; alt: string }) {
       sizes="120px"
       placeholder="blur"
       blurDataURL={SHIMMER_BLUR_DATA_URL}
-      unoptimized={unoptimized}
+      unoptimized={shouldOffloadImageOptimization(resolved)}
     />
   );
 }

@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 export type MagazineProductRow = {
   id: number;
@@ -140,7 +141,7 @@ export function MagazineProductPickerDialog({
                           fill
                           className="object-cover"
                           sizes="48px"
-                          unoptimized={!p.image_url.includes("supabase.co")}
+                          unoptimized={shouldOffloadImageOptimization(p.image_url)}
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-[10px] text-zinc-400">

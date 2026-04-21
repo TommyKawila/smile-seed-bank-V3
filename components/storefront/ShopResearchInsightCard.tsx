@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import { useLanguage } from "@/context/LanguageContext";
 import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bilingual";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 export function ShopResearchInsightCard({
   post,
@@ -34,6 +35,7 @@ export function ShopResearchInsightCard({
               fill
               className="object-cover"
               sizes="160px"
+              unoptimized={shouldOffloadImageOptimization(post.featured_image)}
             />
           </div>
         )}

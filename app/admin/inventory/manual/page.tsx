@@ -26,6 +26,7 @@ import {
 import { Fragment } from "react";
 import { toBreederPrefix, toProductPart } from "@/lib/sku-utils";
 import { processAndUploadImages } from "@/lib/supabase/storage-utils";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { toPng } from "html-to-image";
 import { pdf } from "@react-pdf/renderer";
 import QRCode from "qrcode";
@@ -2025,7 +2026,7 @@ export default function ManualInventoryPage() {
                                 width={40}
                                 height={40}
                                 className="h-10 w-10 object-cover rounded-lg"
-                                unoptimized={!row.imageUrl.includes("supabase.co")}
+                                unoptimized={shouldOffloadImageOptimization(row.imageUrl)}
                                 onError={(e) => {
                                   e.currentTarget.style.display = "none";
                                   (e.currentTarget.nextElementSibling as HTMLElement)?.classList.remove("hidden");

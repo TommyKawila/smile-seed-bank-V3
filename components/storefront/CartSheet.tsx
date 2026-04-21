@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
@@ -280,6 +281,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                         alt={item.productName}
                         fill
                         className="object-cover"
+                        unoptimized={shouldOffloadImageOptimization(item.productImage)}
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">
@@ -313,6 +315,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                               width={96}
                               height={20}
                               className="h-5 w-auto max-w-[7rem] object-contain object-left"
+                              unoptimized={shouldOffloadImageOptimization(item.breederLogoUrl)}
                             />
                           </span>
                         ) : null}

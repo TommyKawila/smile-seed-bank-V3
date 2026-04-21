@@ -26,6 +26,7 @@ import {
   truncateMetaDescription,
 } from "@/lib/magazine-seo";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { formatDate } from "@/lib/utils";
 import { MagazineArticleBody } from "@/components/storefront/magazine/MagazineArticleBody";
 import { MagazineArticleJsonLd } from "@/components/storefront/magazine/MagazineArticleJsonLd";
@@ -288,7 +289,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
               priority
               placeholder="blur"
               blurDataURL={SHIMMER_BLUR_DATA_URL}
-              unoptimized={!post.featured_image.includes("supabase.co")}
+              unoptimized={shouldOffloadImageOptimization(post.featured_image)}
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent" />
           </div>
@@ -350,7 +351,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                           loading="lazy"
                           placeholder="blur"
                           blurDataURL={SHIMMER_BLUR_DATA_URL}
-                          unoptimized={!r.featured_image.includes("supabase.co")}
+                          unoptimized={shouldOffloadImageOptimization(r.featured_image)}
                         />
                       </div>
                     )}

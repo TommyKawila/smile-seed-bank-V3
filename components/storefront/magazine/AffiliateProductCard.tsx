@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { AffiliatePublic } from "@/lib/blog-service";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 type Inline = { title: string; platform: string; url: string };
 
@@ -35,7 +36,7 @@ export function AffiliateProductCard({
               fill
               className="object-cover"
               sizes="160px"
-              unoptimized={!image.includes("supabase.co")}
+              unoptimized={shouldOffloadImageOptimization(image)}
             />
           ) : (
             <div className="flex h-full min-h-[9rem] items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-xs text-zinc-500">

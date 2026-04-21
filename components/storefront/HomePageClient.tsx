@@ -26,6 +26,7 @@ import type { MagazinePostPublic } from "@/lib/blog-service";
 import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { BlogHeroSlogan } from "@/components/storefront/magazine/BlogHeroSlogan";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
 import { isResearchCategory } from "@/lib/blog-research-category";
@@ -64,7 +65,7 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
             sizes="(max-width: 1024px) 100vw, 33vw"
             placeholder="blur"
             blurDataURL={SHIMMER_BLUR_DATA_URL}
-            unoptimized={!img.includes("supabase.co")}
+            unoptimized={shouldOffloadImageOptimization(img)}
           />
         ) : (
           <div className="flex h-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">
@@ -209,7 +210,7 @@ function InsightSection({
                       priority
                       placeholder="blur"
                       blurDataURL={SHIMMER_BLUR_DATA_URL}
-                      unoptimized={!featuredImg.includes("supabase.co")}
+                      unoptimized={shouldOffloadImageOptimization(featuredImg)}
                     />
                   ) : (
                     <div className="flex h-full min-h-[260px] items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">

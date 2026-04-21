@@ -26,6 +26,7 @@ import {
   type QuotationDuplicateLine,
 } from "@/lib/quotation-grid-handoff";
 import { cn } from "@/lib/utils";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 type ProductRow = {
   productId: number;
@@ -717,7 +718,14 @@ export default function QuotationsNewPage() {
                   <div key={row.productId} className="flex gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50/50">
                     <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100">
                       {row.imageUrl ? (
-                        <Image src={row.imageUrl} alt="" width={56} height={56} className="h-full w-full object-cover" unoptimized={!row.imageUrl.includes("supabase")} />
+                        <Image
+                          src={row.imageUrl}
+                          alt=""
+                          width={56}
+                          height={56}
+                          className="h-full w-full object-cover"
+                          unoptimized={shouldOffloadImageOptimization(row.imageUrl)}
+                        />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-zinc-400 text-xs">—</div>
                       )}

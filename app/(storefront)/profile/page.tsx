@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { formatPrice, cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Customer } from "@/types/supabase";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { OrderDetailDrawer, type OrderDetailRow } from "@/components/storefront/OrderDetailDrawer";
 import { CouponCard } from "@/components/storefront/FloatingOfferButton";
 import type { EligibleCoupon } from "@/components/storefront/FloatingOfferButton";
@@ -408,7 +409,13 @@ function ProfileContent() {
                         {/* Item image */}
                         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-zinc-100">
                           {img ? (
-                            <Image src={img} alt={itemName} fill className="object-cover" />
+                            <Image
+                              src={img}
+                              alt={itemName}
+                              fill
+                              className="object-cover"
+                              unoptimized={shouldOffloadImageOptimization(img)}
+                            />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center">
                               <Leaf className="h-5 w-5 text-zinc-300" />

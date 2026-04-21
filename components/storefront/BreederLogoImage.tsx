@@ -4,14 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import { cn } from "@/lib/utils";
-
-function isSupabasePublicHost(url: string): boolean {
-  try {
-    return new URL(url).hostname.endsWith("supabase.co");
-  } catch {
-    return false;
-  }
-}
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 export function BreederLogoImage({
   src,
@@ -65,7 +58,7 @@ export function BreederLogoImage({
         className={cn("object-contain", imgClassName)}
         sizes={sizes ?? `${width}px`}
         onError={onError}
-        unoptimized={!isSupabasePublicHost(resolved)}
+        unoptimized={shouldOffloadImageOptimization(resolved)}
       />
     </div>
   );

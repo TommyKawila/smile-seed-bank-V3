@@ -10,6 +10,7 @@ import { productDetailHref } from "@/lib/product-utils";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import type { Product } from "@/types/supabase";
 import { useLanguage } from "@/context/LanguageContext";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 export function FinalArchiveSpotlightCard({
   product,
@@ -49,6 +50,7 @@ export function FinalArchiveSpotlightCard({
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                 sizes="(max-width: 640px) 100vw, 38vw"
+                unoptimized={shouldOffloadImageOptimization(img)}
               />
             ) : (
               <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />

@@ -10,6 +10,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { getGeneticPercents } from "@/components/storefront/ProductSpecs";
 import { formatPrice } from "@/lib/utils";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { productDetailHref } from "@/lib/product-utils";
 import { shopBreederHref } from "@/lib/breeder-slug";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
@@ -181,6 +182,7 @@ export function ProductCard({
                 fill
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 className={`object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "opacity-45 grayscale" : ""}`}
+                unoptimized={shouldOffloadImageOptimization(cardImage)}
               />
             ) : (
               <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />

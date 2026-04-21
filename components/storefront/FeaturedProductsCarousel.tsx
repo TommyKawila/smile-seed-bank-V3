@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { resolveSectionHeading, type SectionTitle } from "@/lib/homepage-section-title";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 function stripHtmlLoose(s: string): string {
   return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -69,7 +70,7 @@ function FeaturedProductInsightCard({
             priority={priority}
             placeholder="blur"
             blurDataURL={SHIMMER_BLUR_DATA_URL}
-            unoptimized={!img.includes("supabase.co")}
+            unoptimized={shouldOffloadImageOptimization(img)}
           />
         ) : (
           <div className="flex h-full min-h-[8rem] items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">

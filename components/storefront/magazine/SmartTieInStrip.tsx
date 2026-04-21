@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { SmartProductPreview } from "@/lib/blog-service";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 export function SmartTieInStrip({ products }: { products: SmartProductPreview[] }) {
   if (products.length === 0) return null;
@@ -34,7 +35,7 @@ export function SmartTieInStrip({ products }: { products: SmartProductPreview[] 
                     loading="lazy"
                     placeholder="blur"
                     blurDataURL={SHIMMER_BLUR_DATA_URL}
-                    unoptimized={!p.image_url.includes("supabase.co")}
+                    unoptimized={shouldOffloadImageOptimization(p.image_url)}
                   />
                 ) : (
                   <div className="h-full w-full bg-zinc-200" />

@@ -14,6 +14,7 @@ import {
 import { estimateReadingMinutesFromExcerpt } from "@/lib/blog-reading-time";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
 import { cn } from "@/lib/utils";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const mono = "font-[family-name:var(--font-journal-mono)] tabular-nums";
 
@@ -41,7 +42,6 @@ function CardImage({ src, alt, className }: { src: string | null; alt: string; c
       />
     );
   }
-  const unoptimized = !src.includes("supabase.co");
   return (
     <Image
       src={src}
@@ -52,7 +52,7 @@ function CardImage({ src, alt, className }: { src: string | null; alt: string; c
       loading="lazy"
       placeholder="blur"
       blurDataURL={SHIMMER_BLUR_DATA_URL}
-      unoptimized={unoptimized}
+      unoptimized={shouldOffloadImageOptimization(src)}
     />
   );
 }

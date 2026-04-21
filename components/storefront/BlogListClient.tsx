@@ -6,6 +6,7 @@ import { BookOpen, Calendar, Tag } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatDate } from "@/lib/utils";
 import type { Blog } from "@/types/supabase";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 function BlogCard({ blog }: { blog: Blog }) {
   const { t, locale } = useLanguage();
@@ -25,6 +26,7 @@ function BlogCard({ blog }: { blog: Blog }) {
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            unoptimized={shouldOffloadImageOptimization(blog.image_url)}
           />
         ) : (
           <div className="flex h-full items-center justify-center bg-primary/5">
@@ -105,6 +107,7 @@ export function BlogListClient({ blogs }: { blogs: Blog[] }) {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 640px) 100vw, 384px"
                   priority
+                  unoptimized={shouldOffloadImageOptimization(featured.image_url)}
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-primary/10">

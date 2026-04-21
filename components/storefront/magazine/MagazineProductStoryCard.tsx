@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { MagazineProductPublic } from "@/lib/blog-service";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 function formatThb(n: number): string {
   return new Intl.NumberFormat("th-TH", {
@@ -44,7 +45,7 @@ export function MagazineProductStoryCard({
             loading="lazy"
             placeholder="blur"
             blurDataURL={SHIMMER_BLUR_DATA_URL}
-            unoptimized={!img.includes("supabase.co")}
+            unoptimized={shouldOffloadImageOptimization(img)}
           />
         ) : (
           <div className="flex h-full min-h-[10rem] items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-xs text-zinc-500">

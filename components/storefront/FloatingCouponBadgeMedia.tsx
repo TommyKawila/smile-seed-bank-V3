@@ -7,6 +7,7 @@ import {
   DEFAULT_COUPON_FLOAT_BADGE,
   type FloatingBadgeAsset,
 } from "@/lib/coupon-floating-badge";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
@@ -62,7 +63,7 @@ export function FloatingCouponBadgeMedia({ asset }: { asset: FloatingBadgeAsset 
       alt=""
       width={36}
       height={36}
-      unoptimized={asset.src.endsWith(".svg") || asset.src.startsWith("http")}
+      unoptimized={shouldOffloadImageOptimization(asset.src)}
       className="h-9 w-9 shrink-0 object-contain drop-shadow-sm"
       priority
     />

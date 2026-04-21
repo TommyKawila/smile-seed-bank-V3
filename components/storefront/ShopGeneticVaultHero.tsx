@@ -12,6 +12,7 @@ import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-produ
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const mono = "font-[family-name:var(--font-journal-product-mono)]";
 const AUTOPLAY_MS = 5500;
@@ -58,6 +59,7 @@ function VaultHeroSlide({
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
               sizes="(max-width: 768px) 100vw, 50vw"
               priority={priorityImage}
+              unoptimized={shouldOffloadImageOptimization(img)}
             />
           ) : (
             <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />
