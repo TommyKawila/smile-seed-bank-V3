@@ -36,6 +36,30 @@ export async function GET() {
       },
     });
 
+    const redemptions = await prisma.coupon_redemptions.findMany({
+      where: { user_id: user.id, coupon_id: { not: null } },
+      select: { coupon_id: true, order_id: true },
+    });
+    const activeOrderIds = redemptions
+      .map((r) => r.order_id)
+      .filter((v): v is bigint => v != null);
+    const activeOrders = activeOrderIds.length
+      ? await prisma.orders.findMany({
+          where: { id: { in: activeOrderIds }, status: { notIn: ["CANCELLED", "VOID", "REJECTED"] } },
+          select: { id: true },
+        })
+      : [];
+    const activeOrderIdSet = new Set(activeOrders.map((o) => o.id.toString()));
+    const usedCouponIds = new Set(
+      redemptions
+        .filter(
+          (r) =>
+            r.coupon_id != null &&
+            (r.order_id == null || activeOrderIdSet.has(r.order_id.toString()))
+        )
+        .map((r) => r.coupon_id!.toString())
+    );
+
     const coupons = rows
       .map((r) => r.promo_codes)
       .filter((p): p is NonNullable<typeof p> => p != null)
@@ -50,6 +74,7 @@ export async function GET() {
         is_active: p.is_active !== false,
         badge_url: p.badge_url?.trim() ? String(p.badge_url) : null,
         badge_lottie_url: p.badge_lottie_url?.trim() ? String(p.badge_lottie_url) : null,
+        used: usedCouponIds.has(p.id.toString()),
       }));
 
     return NextResponse.json(bigintToJson({ coupons }));

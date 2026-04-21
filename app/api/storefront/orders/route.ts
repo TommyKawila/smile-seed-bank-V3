@@ -58,6 +58,13 @@ export async function POST(req: NextRequest) {
       order_note,
     } = parsed.data;
 
+    if (promo_code_id != null && !customer_id) {
+      return NextResponse.json(
+        { error: "กรุณาเข้าสู่ระบบเพื่อใช้โค้ดส่วนลด" },
+        { status: 403 }
+      );
+    }
+
     const { data, error } = await createOrder({
       customer: {
         full_name: customer.full_name,
@@ -81,6 +88,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (error || !data) {
+      if (error === "PROMO_REQUIRES_ACCOUNT") {
+        return NextResponse.json(
+          { error: "กรุณาเข้าสู่ระบบเพื่อใช้โค้ดส่วนลด" },
+          { status: 403 }
+        );
+      }
       if (error === "INSUFFICIENT_STOCK") {
         return NextResponse.json(
           { code: "INSUFFICIENT_STOCK", error: "INSUFFICIENT_STOCK" },
@@ -96,6 +109,18 @@ export async function POST(req: NextRequest) {
       if (error === "CAMPAIGN_INACTIVE") {
         return NextResponse.json(
           { error: "โค้ดนี้ไม่สามารถใช้ได้ในช่วงเวลานี้" },
+          { status: 400 }
+        );
+      }
+      if (error === "PROMO_REQUIRES_PHONE") {
+        return NextResponse.json(
+          { error: "กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด" },
+          { status: 400 }
+        );
+      }
+      if (error === "PROMO_PHONE_ALREADY_USED") {
+        return NextResponse.json(
+          { error: "สิทธิ์นี้ถูกใช้งานไปแล้วสำหรับเบอร์โทรศัพท์นี้" },
           { status: 400 }
         );
       }

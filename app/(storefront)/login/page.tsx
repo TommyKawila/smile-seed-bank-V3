@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/context/LanguageContext";
 import { getURL } from "@/lib/get-url";
 import { safeNextPath } from "@/lib/safe-redirect-path";
+import { signIn as nextAuthSignIn } from "next-auth/react";
 
 function nextParamFromWindow(): string | null {
   if (typeof window === "undefined") return null;
@@ -42,6 +43,8 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [lineLoading, setLineLoading] = useState(false);
+  const [collectCouponHint, setCollectCouponHint] = useState(false);
   const [resetSending, setResetSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -51,6 +54,16 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sp = new URLSearchParams(window.location.search);
+    if (sp.get("reason") === "collect_coupon") {
+      setCollectCouponHint(true);
+      sp.delete("reason");
+      const q = sp.toString();
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.pathname}${q ? `?${q}` : ""}${window.location.hash}`,
+      );
+    }
     const e = sp.get("email");
     if (e) setEmail(decodeURIComponent(e));
     if (sp.get("reset") === "success") {
@@ -128,13 +141,15 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogle = async () => {
-    setGoogleLoading(true);
+  const oauthRedirectTo = () => {
     const next = nextParamFromWindow();
     const callbackBase = `${getURL()}auth/callback`;
-    const redirectTo = next
-      ? `${callbackBase}?next=${encodeURIComponent(next)}`
-      : callbackBase;
+    return next ? `${callbackBase}?next=${encodeURIComponent(next)}` : callbackBase;
+  };
+
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
+    const redirectTo = oauthRedirectTo();
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },
@@ -142,6 +157,18 @@ export default function LoginPage() {
     if (err) {
       setError(err.message);
       setGoogleLoading(false);
+    }
+  };
+
+  const handleLine = async () => {
+    setLineLoading(true);
+    try {
+      const next = nextParamFromWindow();
+      const callbackUrl = `/auth/line-bridge${next ? `?next=${encodeURIComponent(next)}` : ""}`;
+      await nextAuthSignIn("line", { callbackUrl });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setLineLoading(false);
     }
   };
 
@@ -159,6 +186,14 @@ export default function LoginPage() {
             <Leaf className="h-6 w-6 text-white" />
           </div>
           <h1 className="text-xl font-extrabold text-zinc-900">Smile Seed Bank</h1>
+          {collectCouponHint && (
+            <p className="max-w-sm rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+              {t(
+                "กรุณาเข้าสู่ระบบเพื่อบันทึกส่วนลดไปที่โปรไฟล์ของคุณ",
+                "Please log in to save this discount to your profile.",
+              )}
+            </p>
+          )}
           <p className="text-sm text-zinc-500">
             {mode === "login"
               ? t("เข้าสู่ระบบเพื่อดูออเดอร์และจัดการโปรไฟล์", "Sign in to manage your orders & profile")
@@ -190,11 +225,32 @@ export default function LoginPage() {
               variant="outline"
               className="w-full gap-2.5 font-semibold"
               onClick={handleGoogle}
-              disabled={googleLoading}
+              disabled={googleLoading || lineLoading}
             >
               {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
               {t("ดำเนินการต่อด้วย Google", "Continue with Google")}
             </Button>
+
+            <Button
+              type="button"
+              className="w-full gap-2.5 bg-[#06C755] font-semibold text-white hover:bg-[#05b34c]"
+              onClick={handleLine}
+              disabled={googleLoading || lineLoading}
+            >
+              {lineLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {t("ดำเนินการต่อด้วย LINE", "Continue with LINE")}
+            </Button>
+            <a
+              href={process.env.NEXT_PUBLIC_LINE_OA_URL ?? "https://page.line.me/smileseedsbank"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="-mt-1 flex items-center justify-center gap-1 text-[11px] font-medium text-[#06C755] hover:underline"
+            >
+              {t(
+                "เพิ่มเพื่อนกับเราเพื่อรับแจ้งเตือนสถานะออเดอร์ทาง LINE",
+                "Add us as a friend to receive order updates on LINE",
+              )}
+            </a>
 
             <div className="flex items-center gap-3">
               <Separator className="flex-1" />

@@ -26,6 +26,8 @@ export interface ValidateCouponInput {
   subtotal: number;
   email: string | null;
   user_id: string | null;
+  /** Customer phone (raw). Used for cross-account single-use fraud check. */
+  phone?: string | null;
 }
 
 export type ValidateCouponError =
@@ -35,6 +37,7 @@ export type ValidateCouponError =
   | { type: "EXPIRED" }
   | { type: "MIN_SPEND"; minSpend: number }
   | { type: "ALREADY_USED" }
+  | { type: "PHONE_ALREADY_USED" }
   | { type: "CAMPAIGN_EXHAUSTED" }
   | { type: "CAMPAIGN_INACTIVE" }
   | { type: "SERVER_ERROR"; message: string };
@@ -75,11 +78,26 @@ export interface EligibleCoupon {
 
 // ─── validateCoupon ───────────────────────────────────────────────────────────
 
+const REQUIRE_LOGIN_MSG =
+  "สมัครสมาชิกหรือเข้าสู่ระบบเพื่อใช้โค้ดส่วนลด (Google, อีเมล หรือ LINE)";
+
 export async function validateCoupon(
   input: ValidateCouponInput
 ): Promise<ValidateCouponResult> {
   try {
     const { code, subtotal, email, user_id } = input;
+
+    if (!user_id) {
+      return {
+        ok: false,
+        error: {
+          type: "REQUIRE_LOGIN",
+          message: REQUIRE_LOGIN_MSG,
+          requireLogin: true,
+        },
+      };
+    }
+
     const sql = getSql();
 
     // Fetch promo code
@@ -142,6 +160,18 @@ export async function validateCoupon(
       const usedCount = await _getUsageCount(sql, promo.id, user_id, email);
       const limit = promo.usage_limit_per_user ?? 1;
       if (usedCount >= limit) return { ok: false, error: { type: "ALREADY_USED" } };
+    }
+
+    // ── Phone-based cross-account fraud check ───────────────────────────────
+    // For single-use codes, block if ANY past order with this coupon used the
+    // same phone (normalized digits only), even under a different account.
+    const limit = promo.usage_limit_per_user ?? 1;
+    if (limit <= 1) {
+      const phoneDigits = _normalizePhone(input.phone);
+      if (phoneDigits.length >= 9) {
+        const usedByPhone = await _hasOrderUsingPromoByPhone(sql, promo.id, phoneDigits);
+        if (usedByPhone) return { ok: false, error: { type: "PHONE_ALREADY_USED" } };
+      }
     }
 
     const discountAmount = isCouponPercentageType(promo.discount_type)
@@ -311,6 +341,37 @@ export async function hasUserUsedWelcomeCoupon(userId: string): Promise<boolean>
     console.error("[coupon-service] hasUserUsedWelcomeCoupon error:", err);
     return false;
   }
+}
+
+function _normalizePhone(phone: string | null | undefined): string {
+  return String(phone ?? "").replace(/\D/g, "");
+}
+
+/**
+ * Returns true if any non-cancelled order by this phone has already redeemed the given coupon.
+ * Matches phone against `orders.shipping_phone`, `orders.customer_phone`, and `customers.phone`
+ * (via `orders.customer_id`), comparing digit-only normalized forms.
+ */
+async function _hasOrderUsingPromoByPhone(
+  sql: SqlClient,
+  couponId: number,
+  phoneDigits: string
+): Promise<boolean> {
+  const rows = await sql`
+    SELECT 1
+    FROM coupon_redemptions cr
+    JOIN orders o ON o.id = cr.order_id
+    LEFT JOIN customers c ON c.id = o.customer_id
+    WHERE cr.coupon_id = ${couponId}
+      AND o.status NOT IN ('CANCELLED', 'VOID', 'REJECTED')
+      AND (
+        regexp_replace(COALESCE(o.shipping_phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
+        OR regexp_replace(COALESCE(o.customer_phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
+        OR regexp_replace(COALESCE(c.phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
+      )
+    LIMIT 1
+  `;
+  return rows.length > 0;
 }
 
 async function _getUsageCount(

@@ -14,6 +14,7 @@ import {
   type CheckoutStockLine,
 } from "@/lib/order-inventory";
 import { sendAdminNotification } from "@/lib/admin-notification";
+import { sendLineFlexNotification } from "@/lib/order-line-notifications";
 import { generateOrderNumber } from "@/lib/order-utils";
 import {
   linkOrderToCustomerAfterClaim,
@@ -124,6 +125,35 @@ export async function createOrder(
       input;
     const noteTrimmed = order_note?.trim() ?? "";
     const resolvedCustomerId = customer_id ?? null;
+
+    if (promo_code_id != null && !resolvedCustomerId) {
+      return { data: null, error: "PROMO_REQUIRES_ACCOUNT" };
+    }
+
+    if (promo_code_id != null) {
+      const phoneDigits = String(customer.phone ?? "").replace(/\D/g, "");
+      if (phoneDigits.length < 9) {
+        return { data: null, error: "PROMO_REQUIRES_PHONE" };
+      }
+      const dup = await prisma.$queryRaw<Array<{ exists: boolean }>>`
+        SELECT EXISTS (
+          SELECT 1
+          FROM coupon_redemptions cr
+          JOIN orders o ON o.id = cr.order_id
+          LEFT JOIN customers c ON c.id = o.customer_id
+          WHERE cr.coupon_id = ${BigInt(promo_code_id)}
+            AND o.status NOT IN ('CANCELLED', 'VOID', 'REJECTED')
+            AND (
+              regexp_replace(COALESCE(o.shipping_phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
+              OR regexp_replace(COALESCE(o.customer_phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
+              OR regexp_replace(COALESCE(c.phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
+            )
+        ) AS "exists"
+      `;
+      if (dup[0]?.exists) {
+        return { data: null, error: "PROMO_PHONE_ALREADY_USED" };
+      }
+    }
 
     const variantIds = [...new Set(items.map((i) => i.variantId))];
     const variantRows = await prisma.product_variants.findMany({
@@ -287,6 +317,10 @@ export async function createOrder(
             `Total: ฿${totalFmt}`,
             `Status: PENDING`,
           ].join("\n")
+        );
+
+        void sendLineFlexNotification(result.orderId, "ORDER_PLACED").catch((e) =>
+          console.error("[order-service] createOrder ORDER_PLACED flex:", e)
         );
 
         return { data: { orderNumber, orderId: result.orderId }, error: null };

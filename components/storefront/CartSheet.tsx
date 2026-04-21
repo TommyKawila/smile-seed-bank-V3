@@ -148,7 +148,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
   const [loginPromoOpen, setLoginPromoOpen] = useState(false);
   const [loginPromoMessage, setLoginPromoMessage] = useState("");
   const [loginPromoCode, setLoginPromoCode] = useState("");
-  const [googleLoginLoading, setGoogleLoginLoading] = useState(false);
+  const [promoOauthLoading, setPromoOauthLoading] = useState<null | "google" | "line">(null);
 
   const fetchAvailableCoupons = useCallback(async () => {
     setLoadingCoupons(true);
@@ -164,6 +164,17 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
   }, [summary.subtotal, user?.email]);
 
   const handleOpenCoupons = () => {
+    if (!user) {
+      setLoginPromoMessage(
+        t(
+          "สมัครสมาชิกหรือเข้าสู่ระบบเพื่อดูและใช้โค้ดส่วนลด",
+          "Sign up or log in to view and apply promo codes.",
+        ),
+      );
+      setLoginPromoCode("");
+      setLoginPromoOpen(true);
+      return;
+    }
     setCouponsOpen(true);
     void fetchAvailableCoupons();
   };
@@ -198,15 +209,31 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
     }
   };
 
-  const handleLoginForPromo = async () => {
-    setGoogleLoginLoading(true);
-    const supabase = createClient();
-    const redirectTo = `${getURL()}?promo=${encodeURIComponent(loginPromoCode)}`;
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-    setGoogleLoginLoading(false);
+  const runCartPromoOAuth = async (provider: "google" | "line") => {
+    setPromoOauthLoading(provider);
+    try {
+      if (provider === "line") {
+        const next = loginPromoCode
+          ? `/?promo=${encodeURIComponent(loginPromoCode)}`
+          : "/";
+        const { signIn: nextAuthSignIn } = await import("next-auth/react");
+        await nextAuthSignIn("line", {
+          callbackUrl: `/auth/line-bridge?next=${encodeURIComponent(next)}`,
+        });
+        return;
+      }
+      const supabase = createClient();
+      const redirectTo = loginPromoCode
+        ? `${getURL()}?promo=${encodeURIComponent(loginPromoCode)}`
+        : getURL();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      });
+      if (error) toast.error(error.message);
+    } finally {
+      setPromoOauthLoading(null);
+    }
   };
 
   const handleClearPromo = () => {
@@ -424,7 +451,15 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
 
             {/* Promo Code */}
             <div className="space-y-1.5">
-              {promo.code ? (
+              {!user && (
+                <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] leading-relaxed text-zinc-600">
+                  {t(
+                    "สมัครสมาชิกเพื่อรับส่วนลดโปรโมชั่น (Google, Email หรือ LINE)",
+                    "Sign up or log in to use promo codes (Google, Email, or LINE).",
+                  )}
+                </p>
+              )}
+              {user && promo.code ? (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between rounded-sm border border-zinc-200 bg-zinc-50/80 px-3 py-2">
                     <span className={cn(mono, "flex items-center gap-1.5 text-[11px] font-medium text-zinc-700")}>
@@ -447,7 +482,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                     </p>
                   ) : null}
                 </div>
-              ) : (
+              ) : user ? (
                 <div className="flex gap-2">
                   <Input
                     placeholder={t("โค้ดส่วนลด", "Promo code")}
@@ -470,8 +505,8 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                     )}
                   </Button>
                 </div>
-              )}
-              {promo.error && (
+              ) : null}
+              {user && promo.error && (
                 <p className="text-xs text-red-500">{promo.error}</p>
               )}
               <Button
@@ -490,9 +525,10 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
               open={loginPromoOpen}
               onOpenChange={setLoginPromoOpen}
               message={loginPromoMessage}
-              promoCode={loginPromoCode}
-              onLogin={handleLoginForPromo}
-              isLoading={googleLoginLoading}
+              onGoogleLogin={() => runCartPromoOAuth("google")}
+              onLineLogin={() => runCartPromoOAuth("line")}
+              emailLoginHref={`/login?next=${encodeURIComponent(loginPromoCode ? `/?promo=${encodeURIComponent(loginPromoCode)}` : "/")}`}
+              oauthLoading={promoOauthLoading}
               t={t}
             />
 

@@ -193,7 +193,7 @@ function ProfileContent() {
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", address: "" });
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderDetailRow | null>(null);
-  const [collectedCoupons, setCollectedCoupons] = useState<EligibleCoupon[]>([]);
+  const [collectedCoupons, setCollectedCoupons] = useState<(EligibleCoupon & { used?: boolean })[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
 
   // Pre-fill form when customer loads
@@ -231,7 +231,7 @@ function ProfileContent() {
     try {
       const res = await fetch("/api/storefront/coupons/collected", { cache: "no-store" });
       if (res.ok) {
-        const j = (await res.json()) as { coupons: EligibleCoupon[] };
+        const j = (await res.json()) as { coupons: (EligibleCoupon & { used?: boolean })[] };
         setCollectedCoupons(j.coupons ?? []);
       }
     } finally {
@@ -523,20 +523,48 @@ function ProfileContent() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
-                <p className={cn(serif, "mb-3 text-sm text-zinc-600")}>
-                  {t("โค้ดที่คุณเก็บไว้", "Your collected codes")}
-                </p>
-                {collectedCoupons.map((c) => (
-                  <CouponCard
-                    key={c.id}
-                    coupon={c}
-                    showCollect={false}
-                    collected={false}
-                    collecting={false}
-                  />
-                ))}
-              </div>
+              (() => {
+                const available = collectedCoupons.filter((c) => !c.used);
+                const used = collectedCoupons.filter((c) => c.used);
+                return (
+                  <div className="space-y-6">
+                    {available.length > 0 && (
+                      <div className="space-y-2">
+                        <p className={cn(serif, "mb-3 text-sm text-zinc-600")}>
+                          {t("โค้ดที่ใช้ได้", "Available codes")}
+                        </p>
+                        {available.map((c) => (
+                          <CouponCard
+                            key={c.id}
+                            coupon={c}
+                            showCollect={false}
+                            collected={false}
+                            collecting={false}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {used.length > 0 && (
+                      <div className="space-y-2">
+                        <p className={cn(serif, "mb-3 text-sm text-zinc-400")}>
+                          {t("ใช้แล้ว / หมดอายุ", "Used / Expired")}
+                        </p>
+                        {used.map((c) => (
+                          <CouponCard
+                            key={c.id}
+                            coupon={c}
+                            showCollect={false}
+                            collected={false}
+                            collecting={false}
+                            used
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {available.length === 0 && used.length === 0 && null}
+                  </div>
+                );
+              })()
             )}
           </motion.div>
         )}

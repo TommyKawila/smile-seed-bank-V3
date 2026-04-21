@@ -1,6 +1,7 @@
 import { loadAdminOrderDetail } from "@/lib/load-admin-order-detail";
 import { getSiteOrigin } from "@/lib/get-url";
 import {
+  generateOrderPlacedFlexMessage,
   generateOrderShippedFlexMessage,
   generatePaymentConfirmedFlexMessage,
   type OrderFlexMessageInput,
@@ -51,7 +52,7 @@ function detailToFlexInput(detail: NonNullable<Awaited<ReturnType<typeof loadAdm
  */
 export async function sendLineFlexNotification(
   orderId: number,
-  kind: "PAYMENT_CONFIRMED" | "ORDER_SHIPPED",
+  kind: "ORDER_PLACED" | "PAYMENT_CONFIRMED" | "ORDER_SHIPPED",
   ship?: { trackingNumber: string; shippingProvider: string }
 ): Promise<void> {
   try {
@@ -73,6 +74,21 @@ export async function sendLineFlexNotification(
 
     const origin = getSiteOrigin();
     const detailUrl = `${origin}/order-success/${encodeURIComponent(detail.orderNumber)}`;
+
+    if (kind === "ORDER_PLACED") {
+      const paymentUrl = `${origin}/payment/${encodeURIComponent(detail.orderNumber)}`;
+      const flex = generateOrderPlacedFlexMessage({
+        ...detailToFlexInput(detail),
+        paymentUrl,
+      });
+      const result = await pushFlexMessageToLineUser(lineUid, flex);
+      if (result.success) {
+        console.log(`[LINE flex notify] orderId=${orderId} kind=ORDER_PLACED ok`);
+      } else {
+        console.error(`[LINE flex notify] orderId=${orderId} kind=ORDER_PLACED fail:`, result.error);
+      }
+      return;
+    }
 
     if (kind === "PAYMENT_CONFIRMED") {
       const flex = generatePaymentConfirmedFlexMessage(detailToFlexInput(detail));

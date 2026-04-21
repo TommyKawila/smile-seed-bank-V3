@@ -528,3 +528,120 @@ export function generateOrderShippedFlexMessage(input: ShippedFlexInput): {
     },
   };
 }
+
+/**
+ * Order just placed (PENDING) — thank-you + reminder to pay & upload slip.
+ * `paymentUrl` should deep-link to the storefront payment page for this order.
+ */
+export function generateOrderPlacedFlexMessage(
+  order: OrderFlexMessageInput & { paymentUrl?: string | null }
+): {
+  type: "flex";
+  altText: string;
+  contents: Record<string, unknown>;
+} {
+  const p = buildMiniReceiptFlexParts(order);
+  const altText = `ได้รับออเดอร์ #${p.orderNum} — ${formatBaht(p.grandTotal)}`;
+  const paymentUrl = order.paymentUrl?.trim()
+    ? appendLineOpenExternalBrowserParam(order.paymentUrl.trim())
+    : null;
+
+  return {
+    type: "flex",
+    altText,
+    contents: {
+      type: "bubble",
+      size: "mega",
+      header: {
+        type: "box",
+        layout: "vertical",
+        paddingAll: "16px",
+        backgroundColor: "#166534",
+        contents: [
+          {
+            type: "text",
+            text: "ขอบคุณสำหรับคำสั่งซื้อ! 🌿",
+            color: "#ffffff",
+            size: "lg",
+            weight: "bold",
+            wrap: true,
+          },
+          {
+            type: "text",
+            text: "Thank you for your order",
+            color: "#bbf7d0",
+            size: "xs",
+            margin: "sm",
+            wrap: true,
+          },
+          {
+            type: "text",
+            text: `Order #${p.orderNum}`,
+            color: "#ffffff",
+            size: "sm",
+            weight: "bold",
+            margin: "md",
+            wrap: true,
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "md",
+            backgroundColor: "#fbbf24",
+            cornerRadius: "6px",
+            paddingAll: "6px",
+            contents: [
+              {
+                type: "text",
+                text: "⏳ รอชำระเงิน / Awaiting payment",
+                color: "#78350f",
+                size: "xxs",
+                weight: "bold",
+                align: "center",
+              },
+            ],
+          },
+        ],
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        paddingAll: "14px",
+        spacing: "sm",
+        contents: p.bodyContents,
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        paddingAll: "12px",
+        spacing: "sm",
+        contents: [
+          ...(paymentUrl
+            ? [
+                {
+                  type: "button" as const,
+                  style: "primary" as const,
+                  color: "#166534",
+                  action: {
+                    type: "uri" as const,
+                    label: "ชำระเงิน / Pay now",
+                    uri: paymentUrl,
+                  },
+                },
+              ]
+            : []),
+          {
+            type: "button",
+            style: paymentUrl ? "secondary" : "primary",
+            color: paymentUrl ? "#64748b" : "#166534",
+            action: {
+              type: "uri",
+              label: "ดูรายละเอียด / View order",
+              uri: p.detailUrl,
+            },
+          },
+        ],
+      },
+    },
+  };
+}

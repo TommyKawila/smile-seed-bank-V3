@@ -1027,7 +1027,14 @@ export default function CreateOrderPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => applyPromoCode(promoInput, null, customer.phone)}
+                      onClick={() =>
+                        applyPromoCode(
+                          promoInput,
+                          null,
+                          selectedCustomer?.phone ?? null,
+                          selectedCustomer?.id ?? null,
+                        )
+                      }
                       disabled={isValidatingPromo || !promoInput || hasPromotionDiscount}
                     >
                     {isValidatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "ใช้"}

@@ -338,6 +338,18 @@ export function useCart(): UseCartReturn {
         return { success: false };
       }
 
+      if (!customerUserId?.trim()) {
+        setPromo({ code: null, discountAmount: 0, error: null });
+        setIsValidatingPromo(false);
+        return {
+          success: false,
+          requireLogin: true,
+          attemptedCode: parsed.data,
+          message:
+            "สมัครสมาชิกหรือเข้าสู่ระบบเพื่อใช้โค้ดส่วนลด (Google, อีเมล หรือ LINE)",
+        };
+      }
+
       const subtotal = items
         .filter((i) => !i.isFreeGift)
         .reduce((s, i) => s + i.price * i.quantity, 0);

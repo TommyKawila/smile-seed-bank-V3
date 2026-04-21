@@ -54,12 +54,14 @@ export function CouponCard({
   showCollect,
   collected,
   collecting,
+  used = false,
   onCollect,
 }: {
   coupon: EligibleCoupon;
   showCollect: boolean;
   collected: boolean;
   collecting: boolean;
+  used?: boolean;
   onCollect?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -77,13 +79,17 @@ export function CouponCard({
     <div
       className={cn(
         "flex items-center gap-3 rounded-2xl border p-3 transition-colors",
-        isWelcome ? "border-primary/25 bg-accent" : "border-zinc-100 bg-white"
+        used
+          ? "border-zinc-200 bg-zinc-50 opacity-60 grayscale"
+          : isWelcome
+            ? "border-primary/25 bg-accent"
+            : "border-zinc-100 bg-white"
       )}
     >
       <div
         className={cn(
           "flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl text-center",
-          isWelcome ? "bg-primary text-white" : "bg-zinc-800 text-white"
+          used ? "bg-zinc-400 text-white" : isWelcome ? "bg-primary text-white" : "bg-zinc-800 text-white"
         )}
       >
         <span className="text-xs font-bold leading-none">
@@ -93,16 +99,25 @@ export function CouponCard({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="font-mono text-sm font-bold text-zinc-900">{coupon.code}</p>
+        <div className="flex items-center gap-1.5">
+          <p className={cn("font-mono text-sm font-bold", used ? "text-zinc-500 line-through" : "text-zinc-900")}>
+            {coupon.code}
+          </p>
+          {used && (
+            <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-zinc-600">
+              ใช้แล้ว
+            </span>
+          )}
+        </div>
         <p className="text-xs text-zinc-500">{discountLabel(coupon)}</p>
         {minSpend && <p className="text-[11px] text-zinc-400">{minSpend}</p>}
-        {expiry && (
+        {expiry && !used && (
           <p className="mt-0.5 text-[11px] font-medium text-orange-500">{expiry}</p>
         )}
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5">
-        {showCollect && (
+        {!used && showCollect && (
           <button
             type="button"
             disabled={collected || collecting}
@@ -118,17 +133,19 @@ export function CouponCard({
             {collected ? "เก็บแล้ว" : "เก็บโค้ด"}
           </button>
         )}
-        <button
-          type="button"
-          onClick={copy}
-          className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
-            copied ? "bg-accent text-primary" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-          )}
-          aria-label="คัดลอก"
-        >
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-        </button>
+        {!used && (
+          <button
+            type="button"
+            onClick={copy}
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
+              copied ? "bg-accent text-primary" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+            )}
+            aria-label="คัดลอก"
+          >
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -151,7 +168,9 @@ export function FloatingOfferButton({
         typeof window !== "undefined"
           ? `${window.location.pathname}${window.location.search}`
           : "/";
-      router.push(`/login?next=${encodeURIComponent(next)}`);
+      router.push(
+        `/login?next=${encodeURIComponent(next)}&reason=${encodeURIComponent("collect_coupon")}`,
+      );
       return;
     }
     setCollectingId(promoCodeId);

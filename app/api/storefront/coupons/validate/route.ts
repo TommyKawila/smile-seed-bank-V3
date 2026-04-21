@@ -21,12 +21,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { code, subtotal, email, user_id } = parsed.data;
+    const { code, subtotal, email, phone, user_id } = parsed.data;
     const result = await validateCoupon({
       code,
       subtotal,
       email: email ?? null,
       user_id: user_id ?? null,
+      phone: phone ?? null,
     });
 
     if (!result.ok) {
@@ -58,6 +59,11 @@ export async function POST(req: NextRequest) {
           );
         case "ALREADY_USED":
           return NextResponse.json({ error: "Used" }, { status: 400 });
+        case "PHONE_ALREADY_USED":
+          return NextResponse.json(
+            { error: "สิทธิ์นี้ถูกใช้งานไปแล้วสำหรับเบอร์โทรศัพท์นี้" },
+            { status: 400 }
+          );
         case "CAMPAIGN_EXHAUSTED":
           return NextResponse.json(
             { error: "โค้ดนี้ถูกใช้ครบโควตาแล้ว" },

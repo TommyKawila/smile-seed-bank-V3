@@ -76,6 +76,7 @@ const CheckoutFormSchema = z.object({
   full_name: z.string().min(2, "กรุณาระบุชื่อ-นามสกุล"),
   phone: z.string().min(9, "เบอร์โทรศัพท์ไม่ถูกต้อง").max(15),
   address: z.string().min(10, "กรุณาระบุที่อยู่จัดส่ง (อย่างน้อย 10 ตัวอักษร)"),
+  guest_email: z.string().optional().default(""),
   order_note: z.string().max(2000).optional().default(""),
 });
 
@@ -148,7 +149,7 @@ export function CheckoutPageClient({
 }: CheckoutPageClientProps) {
   const router = useRouter();
   const { items, summary, promo, tieredDiscountRules, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount } = useCartContext();
-  const { user, customer } = useAuth();
+  const { user, customer, isLoading: authLoading } = useAuth();
   const { locale, t } = useLanguage();
 
   const [ordersCount, setOrdersCount] = useState<number | null>(null);
@@ -159,6 +160,7 @@ export function CheckoutPageClient({
     full_name: "",
     phone: "",
     address: "",
+    guest_email: "",
     order_note: "",
   });
   const [promptPayQrDataUrl, setPromptPayQrDataUrl] = useState<string | null>(null);
@@ -168,7 +170,7 @@ export function CheckoutPageClient({
   const [loginPromoOpen, setLoginPromoOpen] = useState(false);
   const [loginPromoMessage, setLoginPromoMessage] = useState("");
   const [loginPromoCode, setLoginPromoCode] = useState("");
-  const [googleLoginLoading, setGoogleLoginLoading] = useState(false);
+  const [promoOauthLoading, setPromoOauthLoading] = useState<null | "google" | "line">(null);
   const [savedCoupons, setSavedCoupons] = useState<ApiSavedCoupon[]>([]);
 
   useEffect(() => {
@@ -241,6 +243,11 @@ export function CheckoutPageClient({
   }, [user]);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) clearPromoCode();
+  }, [authLoading, user, clearPromoCode]);
+
+  useEffect(() => {
     if (!user) {
       setOrdersCount(null);
       return;
@@ -257,7 +264,13 @@ export function CheckoutPageClient({
 
   const handleApplyPromo = async () => {
     if (!promoInput.trim()) return;
-    const result = await applyPromoCode(promoInput.trim(), user?.email ?? null, customer?.phone ?? null, user?.id ?? null);
+    const phoneForPromo = (form.phone || customer?.phone || "").trim();
+    if (!phoneForPromo || phoneForPromo.replace(/\D/g, "").length < 9) {
+      setFieldErrors((p) => ({ ...p, phone: "กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด" }));
+      toast.error("กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด");
+      return;
+    }
+    const result = await applyPromoCode(promoInput.trim(), user?.email ?? null, phoneForPromo, user?.id ?? null);
     if (result.success) setPromoInput("");
     else if (result.requireLogin && result.attemptedCode) {
       setLoginPromoMessage(result.message ?? "กรุณาเข้าสู่ระบบเพื่อใช้โค้ด WELCOME10 และรับส่วนลดสมาชิกใหม่ 10%");
@@ -267,8 +280,14 @@ export function CheckoutPageClient({
   };
 
   const handleApplyWelcome10 = async () => {
+    const phoneForPromo = (form.phone || customer?.phone || "").trim();
+    if (!phoneForPromo || phoneForPromo.replace(/\D/g, "").length < 9) {
+      setFieldErrors((p) => ({ ...p, phone: "กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด" }));
+      toast.error("กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด");
+      return;
+    }
     setPromoInput("WELCOME10");
-    const result = await applyPromoCode("WELCOME10", user?.email ?? null, customer?.phone ?? null, user?.id ?? null);
+    const result = await applyPromoCode("WELCOME10", user?.email ?? null, phoneForPromo, user?.id ?? null);
     if (result.requireLogin && result.attemptedCode) {
       setLoginPromoMessage(result.message ?? "กรุณาเข้าสู่ระบบเพื่อใช้โค้ด WELCOME10 และรับส่วนลดสมาชิกใหม่ 10%");
       setLoginPromoCode(result.attemptedCode);
@@ -276,12 +295,27 @@ export function CheckoutPageClient({
     }
   };
 
-  const handleLoginForPromo = async () => {
-    setGoogleLoginLoading(true);
-    const supabase = createClient();
-    const redirectTo = `${getURL()}checkout?promo=${encodeURIComponent(loginPromoCode)}`;
-    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
-    setGoogleLoginLoading(false);
+  const runCheckoutPromoOAuth = async (provider: "google" | "line") => {
+    setPromoOauthLoading(provider);
+    try {
+      if (provider === "line") {
+        const next = `/checkout?promo=${encodeURIComponent(loginPromoCode)}`;
+        const { signIn: nextAuthSignIn } = await import("next-auth/react");
+        await nextAuthSignIn("line", {
+          callbackUrl: `/auth/line-bridge?next=${encodeURIComponent(next)}`,
+        });
+        return;
+      }
+      const supabase = createClient();
+      const redirectTo = `${getURL()}checkout?promo=${encodeURIComponent(loginPromoCode)}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      });
+      if (error) toast.error(error.message);
+    } finally {
+      setPromoOauthLoading(null);
+    }
   };
 
   const setField = <K extends keyof CheckoutForm>(key: K, value: CheckoutForm[K]) => {
@@ -304,6 +338,19 @@ export function CheckoutPageClient({
       return;
     }
 
+    let orderEmail: string | null = user?.email ?? null;
+    if (!user) {
+      const ge = parsed.data.guest_email?.trim() ?? "";
+      const ok = z.string().email().safeParse(ge);
+      if (!ok.success) {
+        setFieldErrors({
+          guest_email: t("กรุณากรอกอีเมลให้ถูกต้อง", "Please enter a valid email address"),
+        });
+        return;
+      }
+      orderEmail = ge;
+    }
+
     if (items.length === 0) {
       setSubmitError(locale === "en" ? "Your cart is empty" : "ตะกร้าสินค้าว่างเปล่า");
       return;
@@ -319,7 +366,7 @@ export function CheckoutPageClient({
             full_name: parsed.data.full_name,
             phone: parsed.data.phone,
             address: parsed.data.address,
-            email: user?.email ?? null,
+            email: orderEmail,
           },
           order_note: parsed.data.order_note?.trim() || null,
           items: items.map((i) => ({
@@ -443,6 +490,26 @@ export function CheckoutPageClient({
                     </div>
                   </div>
 
+                  {!user && (
+                    <div className="space-y-1">
+                      <Label htmlFor="guest_email" className="text-xs font-light text-zinc-600">
+                        {t("อีเมล *", "Email *")}
+                      </Label>
+                      <Input
+                        id="guest_email"
+                        type="email"
+                        value={form.guest_email}
+                        onChange={(e) => setField("guest_email", e.target.value)}
+                        placeholder="your@email.com"
+                        autoComplete="email"
+                        className="rounded-sm border-zinc-200 bg-white"
+                      />
+                      {fieldErrors.guest_email && (
+                        <p className="text-xs text-red-500">{fieldErrors.guest_email}</p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="space-y-1">
                     <Label htmlFor="address" className="text-xs font-light text-zinc-600">
                       {t("ที่อยู่จัดส่ง *", "Shipping address *")}
@@ -512,7 +579,7 @@ export function CheckoutPageClient({
                     )}
                   </p>
 
-                  {savedCoupons.length > 0 && (
+                  {user && savedCoupons.length > 0 && (
                     <div className="space-y-2 rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900/80">
                         {t("คูปองที่เก็บไว้", "Available coupons")}
@@ -526,14 +593,20 @@ export function CheckoutPageClient({
                               key={`${c.campaign_id}-${c.promo_code}`}
                               type="button"
                               disabled={applied || isValidatingPromo}
-                              onClick={() =>
+                              onClick={() => {
+                                const phoneForPromo = (form.phone || customer?.phone || "").trim();
+                                if (!phoneForPromo || phoneForPromo.replace(/\D/g, "").length < 9) {
+                                  setFieldErrors((p) => ({ ...p, phone: "กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด" }));
+                                  toast.error("กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด");
+                                  return;
+                                }
                                 void applyPromoCode(
                                   c.promo_code,
                                   user?.email ?? null,
-                                  customer?.phone ?? null,
+                                  phoneForPromo,
                                   user?.id ?? null
-                                )
-                              }
+                                );
+                              }}
                               className={cn(
                                 "flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors",
                                 applied
@@ -556,7 +629,16 @@ export function CheckoutPageClient({
                     </div>
                   )}
 
-                  {showWelcomeCoupon && !promo.code && (
+                  {!user && (
+                    <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-[11px] leading-relaxed text-zinc-600">
+                      {t(
+                        "สมัครสมาชิกเพื่อรับส่วนลดโปรโมชั่น (Google, Email หรือ LINE)",
+                        "Sign up or log in to use promo codes (Google, Email, or LINE)."
+                      )}
+                    </p>
+                  )}
+
+                  {user && showWelcomeCoupon && !promo.code && (
                     <button
                       type="button"
                       onClick={handleApplyWelcome10}
@@ -573,7 +655,7 @@ export function CheckoutPageClient({
                     </button>
                   )}
 
-                  {!promo.code ? (
+                  {user && !promo.code ? (
                     <div className="flex gap-2">
                       <Input
                         value={promoInput}
@@ -593,11 +675,11 @@ export function CheckoutPageClient({
                       </Button>
                     </div>
                   ) : null}
-                  {promo.error && (
+                  {user && promo.error && (
                     <p className="text-xs text-red-500">{promo.error}</p>
                   )}
 
-                  {promo.code && (
+                  {user && promo.code && (
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2 text-sm text-primary">
                         <span>
@@ -800,6 +882,19 @@ export function CheckoutPageClient({
                 <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{submitError}</p>
               )}
 
+              <a
+                href={process.env.NEXT_PUBLIC_LINE_OA_URL ?? "https://page.line.me/smileseedsbank"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-lg border border-[#06C755]/30 bg-[#06C755]/10 px-3 py-2.5 text-[11px] font-medium text-[#06C755] hover:bg-[#06C755]/15"
+              >
+                <span className="text-base leading-none">💬</span>
+                {t(
+                  "อย่าลืมเพิ่มเพื่อน @smileseedsbank เพื่อรับเลขพัสดุอัตโนมัติทาง LINE",
+                  "Add @smileseedsbank as a friend to receive tracking updates on LINE",
+                )}
+              </a>
+
               <Button
                 type="submit"
                 disabled={isSubmitting}
@@ -823,9 +918,10 @@ export function CheckoutPageClient({
         open={loginPromoOpen}
         onOpenChange={setLoginPromoOpen}
         message={loginPromoMessage}
-        promoCode={loginPromoCode}
-        onLogin={handleLoginForPromo}
-        isLoading={googleLoginLoading}
+        onGoogleLogin={() => runCheckoutPromoOAuth("google")}
+        onLineLogin={() => runCheckoutPromoOAuth("line")}
+        emailLoginHref={`/login?next=${encodeURIComponent(`/checkout?promo=${encodeURIComponent(loginPromoCode)}`)}`}
+        oauthLoading={promoOauthLoading}
         t={t}
       />
     </div>
