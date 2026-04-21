@@ -20,7 +20,18 @@ export async function GET() {
         o.tracking_number,
         o.shipping_provider,
         o.shipping_address,
-        o.created_at
+        o.created_at,
+        o.shipping_fee,
+        o.discount_amount,
+        o.promotion_discount_amount,
+        o.points_discount_amount,
+        (
+          SELECT c.code
+          FROM promo_code_usages u
+          INNER JOIN promo_codes c ON c.id = u.promo_code_id
+          WHERE u.order_id = o.id
+          LIMIT 1
+        ) AS promo_code
       FROM orders o
       WHERE o.customer_id = ${user.id}
       ORDER BY o.created_at DESC
@@ -72,11 +83,21 @@ export async function GET() {
       payment_method: string; tracking_number: string | null;
       shipping_provider: string | null;
       shipping_address: string | null; created_at: string;
+      shipping_fee: unknown;
+      discount_amount: unknown;
+      promotion_discount_amount: unknown;
+      points_discount_amount: unknown;
+      promo_code: string | null;
     }[]).map((order) => ({
       id: order.id,
       order_number: order.order_number,
       status: order.status,
       total_amount: Number(order.total_amount),
+      shipping_fee: Number(order.shipping_fee ?? 0),
+      discount_amount: Number(order.discount_amount ?? 0),
+      promotion_discount_amount: Number(order.promotion_discount_amount ?? 0),
+      points_discount_amount: Number(order.points_discount_amount ?? 0),
+      promo_code: order.promo_code?.trim() || null,
       payment_method: order.payment_method,
       tracking_number: order.tracking_number,
       shipping_provider: order.shipping_provider,

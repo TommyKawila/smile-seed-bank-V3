@@ -19,6 +19,11 @@ export type OrderDetailRow = {
   order_number: string;
   status: string;
   total_amount: number;
+  shipping_fee?: number;
+  discount_amount?: number;
+  promotion_discount_amount?: number;
+  points_discount_amount?: number;
+  promo_code?: string | null;
   payment_method: string | null;
   tracking_number: string | null;
   shipping_provider: string | null;
@@ -189,10 +194,11 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
   const subtotal = order
     ? order.order_items.reduce((s, i) => s + i.unit_price * i.quantity, 0)
     : 0;
-  const discount =
-    subtotal > Number(order?.total_amount ?? 0)
-      ? Math.round(subtotal - Number(order?.total_amount ?? 0))
-      : 0;
+  const shippingFee = order ? Number(order.shipping_fee ?? 0) : 0;
+  const discPrimary = order ? Number(order.discount_amount ?? 0) : 0;
+  const discPromotion = order ? Number(order.promotion_discount_amount ?? 0) : 0;
+  const discPoints = order ? Number(order.points_discount_amount ?? 0) : 0;
+  const promoCode = order?.promo_code?.trim() || null;
 
   const rawStatus = (order?.status ?? "").trim();
   const statusInfo = STATUS_MAP[rawStatus] ?? STATUS_MAP.PENDING;
@@ -350,23 +356,54 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
 
               {/* ── Price Breakdown ── */}
               <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white">
-                {subtotal !== Number(order.total_amount) && (
-                  <div className="flex items-center justify-between px-4 py-3 text-sm">
-                    <span className="text-zinc-500">ยอดรวมสินค้า</span>
-                    <span className="text-zinc-700">{formatPrice(subtotal)}</span>
-                  </div>
-                )}
-                {discount > 0 && (
-                  <div className="flex items-center justify-between border-t border-zinc-50 px-4 py-3 text-sm">
-                    <span className="text-primary">🏷 ส่วนลด</span>
-                    <span className="font-semibold text-primary">
-                      − {formatPrice(discount)}
+                <div className="divide-y divide-zinc-50">
+                  <div className="flex items-baseline justify-between gap-4 px-4 py-3 text-sm">
+                    <span className="text-zinc-600">ยอดรวมสินค้า</span>
+                    <span className="shrink-0 tabular-nums font-medium text-zinc-900">
+                      {formatPrice(subtotal)}
                     </span>
                   </div>
-                )}
-                <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50 px-4 py-3.5">
-                  <span className="font-bold text-zinc-900">ยอดสุทธิ</span>
-                  <span className="text-lg font-extrabold text-primary">
+                  {discPrimary > 0 && (
+                    <div className="flex items-baseline justify-between gap-4 px-4 py-3 text-sm">
+                      <span className="text-zinc-600">
+                        {promoCode ? `ส่วนลด (${promoCode})` : "ส่วนลด"}
+                      </span>
+                      <span className="shrink-0 tabular-nums font-medium text-red-500">
+                        −{formatPrice(discPrimary)}
+                      </span>
+                    </div>
+                  )}
+                  {discPromotion > 0 && (
+                    <div className="flex items-baseline justify-between gap-4 px-4 py-3 text-sm">
+                      <span className="text-zinc-600">ส่วนลดโปรโมชั่น</span>
+                      <span className="shrink-0 tabular-nums font-medium text-red-500">
+                        −{formatPrice(discPromotion)}
+                      </span>
+                    </div>
+                  )}
+                  {discPoints > 0 && (
+                    <div className="flex items-baseline justify-between gap-4 px-4 py-3 text-sm">
+                      <span className="text-zinc-600">ส่วนลดคะแนน</span>
+                      <span className="shrink-0 tabular-nums font-medium text-red-500">
+                        −{formatPrice(discPoints)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="px-4 py-3 text-sm">
+                    <div className="flex items-baseline justify-between gap-4">
+                      <span className="text-zinc-600">ค่าจัดส่ง</span>
+                      <span className="shrink-0 tabular-nums font-medium text-zinc-900">
+                        {shippingFee <= 0 ? "ฟรี" : formatPrice(shippingFee)}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-[11px] leading-snug text-zinc-400">
+                      ส่งฟรีเมื่อสั่งซื้อสุทธิครบ {formatPrice(1000)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-baseline justify-between border-t border-zinc-100 bg-zinc-50 px-4 py-4">
+                  <span className="text-base font-bold text-zinc-900">ยอดชำระทั้งสิ้น</span>
+                  <span className="text-xl font-extrabold tabular-nums text-primary">
                     {formatPrice(Number(order.total_amount))}
                   </span>
                 </div>
