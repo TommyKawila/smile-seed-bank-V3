@@ -17,6 +17,11 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isDev = process.env.NODE_ENV === "development";
 
+  /** Public storefront APIs (guest checkout, order helpers) — never redirect to /login. */
+  if (path === "/api/storefront" || path.startsWith("/api/storefront/")) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(
@@ -106,6 +111,8 @@ export const config = {
     "/admin/:path*",
     "/api/admin",
     "/api/admin/:path*",
+    "/api/storefront",
+    "/api/storefront/:path*",
     "/api/ai",
     "/api/ai/:path*",
     "/auth/callback",

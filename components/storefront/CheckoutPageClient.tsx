@@ -384,7 +384,8 @@ export function CheckoutPageClient({
           },
           payment_method: "TRANSFER" as const,
           customer_id: user?.id ?? null,
-          promo_code_id: summary.usePromoForOrder ? promo.code?.id ?? null : null,
+          promo_code_id:
+            user && summary.usePromoForOrder ? promo.code?.id ?? null : null,
           locale,
         }),
       });

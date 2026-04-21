@@ -98,31 +98,35 @@ export async function handleLineMessagingWebhookPost(req: Request): Promise<Resp
 
   const events = body.events ?? [];
   for (const ev of events) {
-    if (ev.type !== "message" || ev.message?.type !== "text") continue;
-    const lineUserId = ev.source?.userId?.trim();
-    const text = ev.message?.text ?? "";
-    if (!lineUserId || !text.trim()) continue;
+    try {
+      if (ev.type !== "message" || ev.message?.type !== "text") continue;
+      const lineUserId = ev.source?.userId?.trim();
+      const text = ev.message?.text ?? "";
+      if (!lineUserId || !text.trim()) continue;
 
-    const result = await linkLineUserFromOrderChatMessage(lineUserId, text);
-    const rt = ev.replyToken;
+      const result = await linkLineUserFromOrderChatMessage(lineUserId, text);
+      const rt = ev.replyToken;
 
-    if (result.outcome === "no_token") {
-      const suppress = await shouldSuppressLineOrderLinkPrompt(lineUserId);
-      if (!suppress && rt) {
-        await replyLineText(
-          rt,
-          "ส่งรูปแบบ เช่น Order #เลขออเดอร์ หรือ #SSB-12345 เพื่อเชื่อม LINE\nSend e.g. Order #YOUR_ORDER_NUMBER or #SSB-12345"
-        );
+      if (result.outcome === "no_token") {
+        const suppress = await shouldSuppressLineOrderLinkPrompt(lineUserId);
+        if (!suppress && rt) {
+          await replyLineText(
+            rt,
+            "ส่งรูปแบบ เช่น Order #เลขออเดอร์ หรือ #SSB-12345 เพื่อเชื่อม LINE\nSend e.g. Order #YOUR_ORDER_NUMBER or #SSB-12345"
+          );
+        }
+      } else if (result.outcome === "linked" && rt && result.orderNumber) {
+        const flex = buildOrderLineLinkSuccessFlex(result.orderNumber);
+        await replyLineFlex(rt, flex);
+      } else if (rt) {
+        const msg = replyTextForOutcome(result.outcome, result.orderNumber);
+        if (msg) await replyLineText(rt, msg);
       }
-    } else if (result.outcome === "linked" && rt && result.orderNumber) {
-      const flex = buildOrderLineLinkSuccessFlex(result.orderNumber);
-      await replyLineFlex(rt, flex);
-    } else if (rt) {
-      const msg = replyTextForOutcome(result.outcome, result.orderNumber);
-      if (msg) await replyLineText(rt, msg);
-    }
 
-    await recordLineUserInteraction(lineUserId);
+      await recordLineUserInteraction(lineUserId);
+    } catch (e) {
+      console.error("[line webhook] event handler:", e);
+    }
   }
 
   return NextResponse.json({ ok: true });

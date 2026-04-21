@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Leaf, Loader2, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { Loader2, Eye, EyeOff, Mail, Lock, User, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -178,32 +178,25 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-sm"
+        className="w-full max-w-md"
       >
-        {/* Logo */}
-        <div className="mb-7 flex flex-col items-center gap-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary">
-            <Leaf className="h-6 w-6 text-white" />
-          </div>
-          <h1 className="text-xl font-extrabold text-zinc-900">Smile Seed Bank</h1>
-          {collectCouponHint && (
-            <p className="max-w-sm rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
-              {t(
-                "กรุณาเข้าสู่ระบบเพื่อบันทึกส่วนลดไปที่โปรไฟล์ของคุณ",
-                "Please log in to save this discount to your profile.",
-              )}
-            </p>
-          )}
-          <p className="text-sm text-zinc-500">
-            {mode === "login"
-              ? t("เข้าสู่ระบบเพื่อดูออเดอร์และจัดการโปรไฟล์", "Sign in to manage your orders & profile")
-              : t("สมัครสมาชิกเพื่อซื้อง่ายขึ้น", "Create account for a faster checkout")}
-          </p>
-        </div>
-
         <div className="overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
+          <div className="px-6 pb-5 pt-8 text-center sm:px-7 sm:pt-9">
+            <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900">
+              {t("เริ่มต้นการสั่งซื้อ", "Start your order")}
+            </h1>
+            {collectCouponHint ? (
+              <p className="mx-auto mt-3 max-w-sm rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+                {t(
+                  "กรุณาเข้าสู่ระบบเพื่อบันทึกส่วนลดไปที่โปรไฟล์ของคุณ",
+                  "Please log in to save this discount to your profile.",
+                )}
+              </p>
+            ) : null}
+          </div>
+
           {/* Tab Toggle */}
-          <div className="grid grid-cols-2 border-b border-zinc-100">
+          <div className="grid grid-cols-2 border-b border-t border-zinc-100">
             {(["login", "register"] as const).map((m) => (
               <button
                 key={m}
@@ -218,48 +211,102 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <div className="p-6 space-y-4">
-            {/* Google OAuth */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full gap-2.5 font-semibold"
-              onClick={handleGoogle}
-              disabled={googleLoading || lineLoading}
-            >
-              {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-              {t("ดำเนินการต่อด้วย Google", "Continue with Google")}
-            </Button>
-
-            <Button
-              type="button"
-              className="w-full gap-2.5 bg-[#06C755] font-semibold text-white hover:bg-[#05b34c]"
-              onClick={handleLine}
-              disabled={googleLoading || lineLoading}
-            >
-              {lineLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {t("ดำเนินการต่อด้วย LINE", "Continue with LINE")}
-            </Button>
-            <a
-              href={process.env.NEXT_PUBLIC_LINE_OA_URL ?? "https://page.line.me/smileseedsbank"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="-mt-1 flex items-center justify-center gap-1 text-[11px] font-medium text-[#06C755] hover:underline"
-            >
-              {t(
-                "เพิ่มเพื่อนกับเราเพื่อรับแจ้งเตือนสถานะออเดอร์ทาง LINE",
-                "Add us as a friend to receive order updates on LINE",
-              )}
-            </a>
-
-            <div className="flex items-center gap-3">
-              <Separator className="flex-1" />
-              <span className="text-xs text-zinc-400">{t("หรือ", "or")}</span>
-              <Separator className="flex-1" />
+          <div className="space-y-8 px-6 pb-8 pt-7 sm:px-7 sm:pb-9">
+            {/* Member benefits */}
+            <div className="rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-3.5 py-3.5 text-left shadow-sm">
+              <p className="text-[13px] font-medium leading-snug text-emerald-950">
+                {t(
+                  "💡 สมัครสมาชิก รับส่วนลด 10% สำหรับออเดอร์แรก และรับแจ้งเตือนผ่าน LINE อัตโนมัติ",
+                  "💡 Sign up for 10% off your first order and automatic updates on LINE.",
+                )}
+              </p>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div className="space-y-3">
+              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                {t("เข้าสู่ระบบด้วย", "Sign in with")}
+              </p>
+              <div className="flex flex-col gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full gap-2.5 border-zinc-200 font-semibold shadow-sm"
+                  onClick={handleGoogle}
+                  disabled={googleLoading || lineLoading}
+                >
+                  {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                  {t("ดำเนินการต่อด้วย Google", "Continue with Google")}
+                </Button>
+
+                <Button
+                  type="button"
+                  className="h-11 w-full gap-2.5 bg-[#06C755] font-semibold text-white shadow-sm hover:bg-[#05b34c]"
+                  onClick={handleLine}
+                  disabled={googleLoading || lineLoading}
+                >
+                  {lineLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {t("ดำเนินการต่อด้วย LINE", "Continue with LINE")}
+                </Button>
+              </div>
+              <a
+                href={process.env.NEXT_PUBLIC_LINE_OA_URL ?? "https://page.line.me/smileseedsbank"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 flex items-center justify-center gap-1 text-[11px] font-medium text-[#06C755] hover:underline"
+              >
+                {t(
+                  "เพิ่มเพื่อนกับเราเพื่อรับแจ้งเตือนสถานะออเดอร์ทาง LINE",
+                  "Add us as a friend to receive order updates on LINE",
+                )}
+              </a>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <Separator className="flex-1 bg-zinc-200" />
+              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                {t("หรือ", "or")}
+              </span>
+              <Separator className="flex-1 bg-zinc-200" />
+            </div>
+
+            {/* Guest checkout — equal prominence */}
+            <div className="space-y-3">
+              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                {t("สั่งซื้อแบบไม่สมัครสมาชิก", "Checkout without an account")}
+              </p>
+              <Button
+                asChild
+                variant="outline"
+                className="h-auto min-h-[3rem] w-full flex-col gap-1 border-2 border-zinc-200 bg-zinc-50/80 py-3 text-zinc-800 shadow-sm transition-colors hover:border-emerald-300/80 hover:bg-emerald-50/50"
+              >
+                <Link href="/checkout" className="flex w-full flex-col items-center gap-1 px-2">
+                  <span className="flex items-center gap-2 text-sm font-bold">
+                    <ShoppingBag className="h-4 w-4 shrink-0 text-emerald-700" />
+                    {t(
+                      "สั่งซื้อโดยไม่สมัครสมาชิก (ซื้อทันที)",
+                      "Checkout as a guest (buy now)",
+                    )}
+                  </span>
+                  <span className="text-center text-[11px] font-normal leading-snug text-zinc-600">
+                    {t("รวดเร็ว ไม่ต้องใช้รหัสผ่าน", "Fast checkout — no password needed")}
+                  </span>
+                </Link>
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <Separator className="flex-1 bg-zinc-200" />
+              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                {t("หรือ", "or")}
+              </span>
+              <Separator className="flex-1 bg-zinc-200" />
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                {t("หรือใช้อีเมลของคุณ", "Or use your email")}
+              </p>
+              <form onSubmit={handleSubmit} className="space-y-3.5">
               <AnimatePresence>
                 {mode === "register" && (
                   <motion.div
@@ -346,23 +393,17 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="h-11 w-full gap-2 bg-primary text-base font-semibold text-white hover:bg-primary/90"
+                className="h-11 w-full gap-2 bg-primary text-base font-semibold text-white shadow-sm hover:bg-primary/90"
               >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {mode === "login" ? t("เข้าสู่ระบบ", "Sign In") : t("สมัครสมาชิก", "Create Account")}
+                {mode === "login"
+                  ? t("เข้าสู่ระบบด้วยอีเมล", "Sign in with email")
+                  : t("สร้างบัญชีด้วยอีเมล", "Create account with email")}
               </Button>
             </form>
+            </div>
 
-            <Button asChild variant="ghost" className="h-auto w-full py-2 text-xs font-normal text-zinc-500 hover:bg-transparent hover:text-zinc-800">
-              <Link href="/checkout">
-                {t(
-                  "สั่งซื้อโดยไม่สมัครสมาชิก (ซื้อทันที)",
-                  "Checkout as a guest (buy without signing up)",
-                )}
-              </Link>
-            </Button>
-
-            <p className="text-center text-xs text-zinc-400">
+            <p className="pt-2 text-center text-xs leading-relaxed text-zinc-400">
               {t("โดยการสมัครสมาชิก คุณยอมรับ", "By signing up you agree to our")}{" "}
               <Link
                 href="/terms"

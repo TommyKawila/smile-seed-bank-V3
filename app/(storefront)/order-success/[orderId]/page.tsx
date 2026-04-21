@@ -643,6 +643,8 @@ export default function OrderSuccessDynamicPage() {
               <LineOaResponsiveCta
                 href={lineHrefDefault}
                 orderNumber={displayNo}
+                lineId={lineOaId}
+                desktopAddFriend
                 className="gap-2 px-3 py-3.5 text-sm leading-snug"
               >
                 {t(
@@ -893,6 +895,8 @@ export default function OrderSuccessDynamicPage() {
                 <LineOaResponsiveCta
                   href={lineHrefDefault}
                   orderNumber={displayNo}
+                  lineId={lineOaId}
+                  desktopAddFriend
                   className="gap-2 px-3 py-3.5 text-sm leading-snug sm:gap-2.5 sm:py-4 sm:text-base"
                 >
                   {lineLinked

@@ -2,7 +2,7 @@
 export const LINE_OA_FALLBACK_URL = "https://lin.ee/OcxDMjO";
 
 /** Fallback OA Basic ID if DB `line_id` is empty (oaMessage / add-friend). */
-export const DEFAULT_LINE_OA_MESSAGE_ID = "@smileseedbank";
+export const DEFAULT_LINE_OA_MESSAGE_ID = "@smileseedsbank";
 
 /** Extract `@basicId` or basic id from `https://line.me/R/oaMessage/{id}/...`. */
 export function parseLineOaMessageIdFromUrl(url: string): string | null {

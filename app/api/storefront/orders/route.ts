@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate";
 import { createOrder, fetchEmailItems } from "@/lib/services/order-service";
 import { sendOrderConfirmationEmail } from "@/services/email-service";
 
@@ -58,11 +60,34 @@ export async function POST(req: NextRequest) {
       order_note,
     } = parsed.data;
 
-    if (promo_code_id != null && !customer_id) {
-      return NextResponse.json(
-        { error: "กรุณาเข้าสู่ระบบเพื่อใช้โค้ดส่วนลด" },
-        { status: 403 }
-      );
+    const resolvedCustomerId = customer_id ?? null;
+    /** Guests never apply promo server-side (avoids 403 if client sends stale promo_id). */
+    const resolvedPromoId =
+      resolvedCustomerId == null ? null : (promo_code_id ?? null);
+
+    if (resolvedCustomerId) {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || user.id !== resolvedCustomerId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
+    const priced = await validateStorefrontCheckoutTotals({
+      items: items.map((i) => ({
+        variantId: i.variantId,
+        quantity: i.quantity,
+        price: i.price,
+        isFreeGift: i.isFreeGift,
+        productName: i.productName,
+      })),
+      summary,
+      promo_code_id: resolvedPromoId,
+    });
+    if (!priced.ok) {
+      return NextResponse.json({ error: priced.error }, { status: 400 });
     }
 
     const { data, error } = await createOrder({
@@ -73,17 +98,17 @@ export async function POST(req: NextRequest) {
         email: customer.email ?? null,
         line_user_id: null,
       },
-      items: items.map((i) => ({
+      items: priced.resolvedItems.map((i) => ({
         variantId: i.variantId,
         quantity: i.quantity,
         price: i.price,
         productName: i.productName,
         isFreeGift: i.isFreeGift,
       })),
-      summary,
+      summary: priced.resolvedSummary,
       payment_method,
-      customer_id: customer_id ?? null,
-      promo_code_id: promo_code_id ?? null,
+      customer_id: resolvedCustomerId,
+      promo_code_id: resolvedPromoId,
       order_note: order_note?.trim() || null,
     });
 
@@ -124,11 +149,12 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      return NextResponse.json({ error: error ?? "สร้างคำสั่งซื้อไม่สำเร็จ" }, { status: 500 });
+      console.error("POST /api/storefront/orders createOrder:", error);
+      return NextResponse.json({ error: "สร้างคำสั่งซื้อไม่สำเร็จ" }, { status: 500 });
     }
 
     // Fire-and-forget: enrich item names from DB then send email
-    const paidItems = items.filter((i) => !i.isFreeGift);
+    const paidItems = priced.resolvedItems.filter((i) => !i.isFreeGift);
     void (async () => {
       const emailItems = await fetchEmailItems(
         paidItems.map((i) => ({
@@ -145,11 +171,11 @@ export async function POST(req: NextRequest) {
         paymentMethod: payment_method,
         orderStatus: "PENDING",
         items: emailItems,
-        freeGiftCount: items.filter((i) => i.isFreeGift).length,
-        subtotal: summary.subtotal,
-        discount: summary.discount,
-        shipping: summary.shipping,
-        total: summary.total,
+        freeGiftCount: priced.resolvedItems.filter((i) => i.isFreeGift).length,
+        subtotal: priced.resolvedSummary.subtotal,
+        discount: priced.resolvedSummary.discount,
+        shipping: priced.resolvedSummary.shipping,
+        total: priced.resolvedSummary.total,
         shippingAddress: customer.address,
         locale,
       });
@@ -162,6 +188,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("POST /api/storefront/orders error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "สร้างคำสั่งซื้อไม่สำเร็จ" }, { status: 500 });
   }
 }
