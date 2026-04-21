@@ -6,7 +6,6 @@ import { Leaf } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { lineMeAddFriendUrl } from "@/lib/line-oa-url";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 
 export function Footer() {
@@ -61,7 +60,7 @@ export function Footer() {
             {/* Social Icons */}
             <div className="mt-4 flex items-center gap-2.5">
               <a
-                href={lineMeAddFriendUrl(null)}
+                href="https://page.line.me/smileseedsbank"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200/90 bg-white text-zinc-500 transition-colors hover:border-zinc-300 hover:text-zinc-700"
@@ -72,7 +71,7 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href="https://facebook.com"
+                href="https://www.facebook.com/smileseedbank"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200/90 bg-white text-zinc-500 transition-colors hover:border-zinc-300 hover:text-zinc-700"
@@ -83,7 +82,7 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/smileseedbank"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200/90 bg-white text-zinc-500 transition-colors hover:border-zinc-300 hover:text-zinc-700"
@@ -121,8 +120,9 @@ export function Footer() {
               {t("ติดต่อเรา", "Contact Us")}
             </h4>
             <ul className="space-y-4 text-sm font-light text-zinc-600">
-              <li>Line: @smileseedbank</li>
-              <li>Facebook: Smile Seed Bank</li>
+              <li>Line: @smileseedsbank</li>
+              <li>Facebook: smileseedbank</li>
+              <li>Instagram: @smileseedbank</li>
               <li>{t("เปิด: ทุกวัน 9:00–21:00", "Open: Daily 9:00–21:00")}</li>
             </ul>
           </div>
