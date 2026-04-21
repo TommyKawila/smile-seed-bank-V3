@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { WelcomeModal } from "@/components/storefront/WelcomeModal";
 import { FloatingOfferButton } from "@/components/storefront/FloatingOfferButton";
 import type { EligibleCoupon } from "@/components/storefront/FloatingOfferButton";
+import {
+  isCouponCollectableForFloating,
+  pickFloatingBadgeAsset,
+} from "@/lib/coupon-floating-badge";
 
 /**
  * OfferManager — single entry point for all discount UI.
@@ -18,49 +22,63 @@ import type { EligibleCoupon } from "@/components/storefront/FloatingOfferButton
 export function OfferManager() {
   const { user } = useAuth();
   const [floatingCoupons, setFloatingCoupons] = useState<EligibleCoupon[]>([]);
+  const [claimedPromoIds, setClaimedPromoIds] = useState<number[]>([]);
 
-  const fetchEligible = useCallback(async (userId: string, email: string | null) => {
-    try {
-      const params = new URLSearchParams({ userId });
-      if (email) params.set("email", email);
-      const res = await fetch(`/api/storefront/coupons/eligible?${params.toString()}`, {
-        cache: "no-store",
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as { coupons: EligibleCoupon[] };
-
-      // WELCOME10 is handled by WelcomeModal — exclude it from the floating drawer
-      setFloatingCoupons(
-        (data.coupons ?? []).filter((c) => c.code !== "WELCOME10")
-      );
-    } catch {
-      // silent fail — non-critical feature
-    }
-  }, []);
-
-  useEffect(() => {
+  const refreshOffers = useCallback(async () => {
     if (!user) {
       setFloatingCoupons([]);
+      setClaimedPromoIds([]);
       return;
     }
-    void fetchEligible(user.id, user.email ?? null);
-  }, [user, fetchEligible]);
+    try {
+      const params = new URLSearchParams({ userId: user.id });
+      if (user.email) params.set("email", user.email);
 
-  // Re-fetch when tab regains focus (user may have just placed an order)
+      const [eligRes, collRes] = await Promise.all([
+        fetch(`/api/storefront/coupons/eligible?${params.toString()}`, { cache: "no-store" }),
+        fetch("/api/storefront/coupons/collected", { cache: "no-store" }),
+      ]);
+
+      if (eligRes.ok) {
+        const data = (await eligRes.json()) as { coupons: EligibleCoupon[] };
+        const list = (data.coupons ?? []).filter((c) => c.code !== "WELCOME10");
+        setFloatingCoupons(list.filter(isCouponCollectableForFloating));
+      }
+      if (collRes.ok) {
+        const cj = (await collRes.json()) as { coupons: { id: number }[] };
+        setClaimedPromoIds((cj.coupons ?? []).map((c) => c.id));
+      }
+    } catch {
+      // non-critical
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void refreshOffers();
+  }, [refreshOffers]);
+
   useEffect(() => {
     if (!user) return;
-    const onFocus = () => void fetchEligible(user.id, user.email ?? null);
+    const onFocus = () => void refreshOffers();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [user, fetchEligible]);
+  }, [user, refreshOffers]);
+
+  const floatingBadge = useMemo(
+    () => pickFloatingBadgeAsset(floatingCoupons),
+    [floatingCoupons]
+  );
 
   return (
     <>
-      {/* WelcomeModal is always mounted — it manages its own WELCOME10 visibility */}
       <WelcomeModal />
 
-      {/* FloatingOfferButton only shows when there are non-WELCOME10 coupons */}
-      <FloatingOfferButton coupons={floatingCoupons} />
+      <FloatingOfferButton
+        coupons={floatingCoupons}
+        claimedPromoIds={claimedPromoIds}
+        onClaimed={() => void refreshOffers()}
+        floatingBadge={floatingBadge}
+      />
     </>
   );
 }

@@ -1,20 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tag, X, Copy, Check, ChevronRight } from "lucide-react";
+import { X, Copy, Check, ChevronRight, Bookmark } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   formatCouponValueDisplay,
   isCouponPercentageType,
 } from "@/lib/discount-utils";
 import type { EligibleCoupon } from "@/lib/services/coupon-service";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  DEFAULT_COUPON_FLOAT_BADGE,
+  type FloatingBadgeAsset,
+} from "@/lib/coupon-floating-badge";
+import { FloatingCouponBadgeMedia } from "@/components/storefront/FloatingCouponBadgeMedia";
 
-// Re-export the type so OfferManager can import from one place
-export type { EligibleCoupon };
+export type { EligibleCoupon, FloatingBadgeAsset };
 
 interface Props {
   coupons: EligibleCoupon[];
+  claimedPromoIds: number[];
+  onClaimed: () => void;
+  /** Resolved Lottie, image URL, or default SVG. */
+  floatingBadge: FloatingBadgeAsset;
 }
 
 function discountLabel(c: EligibleCoupon): string {
@@ -35,12 +46,22 @@ function expiryLabel(c: EligibleCoupon): string | null {
   if (days <= 0) return null;
   if (days === 1) return "หมดอายุวันนี้";
   if (days <= 7) return `หมดอายุใน ${days} วัน`;
-  return null; // Don't show if far away
+  return null;
 }
 
-// ─── Coupon Card ──────────────────────────────────────────────────────────────
-
-function CouponCard({ coupon }: { coupon: EligibleCoupon }) {
+export function CouponCard({
+  coupon,
+  showCollect,
+  collected,
+  collecting,
+  onCollect,
+}: {
+  coupon: EligibleCoupon;
+  showCollect: boolean;
+  collected: boolean;
+  collecting: boolean;
+  onCollect?: () => void;
+}) {
   const [copied, setCopied] = useState(false);
   const expiry = expiryLabel(coupon);
   const minSpend = minSpendLabel(coupon);
@@ -53,24 +74,24 @@ function CouponCard({ coupon }: { coupon: EligibleCoupon }) {
   };
 
   return (
-    <div className={cn(
-      "flex items-center gap-3 rounded-2xl border p-3 transition-colors",
-      isWelcome
-        ? "border-primary/25 bg-accent"
-        : "border-zinc-100 bg-white"
-    )}>
-      {/* Discount pill */}
-      <div className={cn(
-        "flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl text-center",
-        isWelcome ? "bg-primary text-white" : "bg-zinc-800 text-white"
-      )}>
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-2xl border p-3 transition-colors",
+        isWelcome ? "border-primary/25 bg-accent" : "border-zinc-100 bg-white"
+      )}
+    >
+      <div
+        className={cn(
+          "flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl text-center",
+          isWelcome ? "bg-primary text-white" : "bg-zinc-800 text-white"
+        )}
+      >
         <span className="text-xs font-bold leading-none">
           {formatCouponValueDisplay(coupon.discount_type, coupon.discount_value)}
         </span>
         <span className="mt-0.5 text-[10px] opacity-80">OFF</span>
       </div>
 
-      {/* Info */}
       <div className="min-w-0 flex-1">
         <p className="font-mono text-sm font-bold text-zinc-900">{coupon.code}</p>
         <p className="text-xs text-zinc-500">{discountLabel(coupon)}</p>
@@ -80,34 +101,90 @@ function CouponCard({ coupon }: { coupon: EligibleCoupon }) {
         )}
       </div>
 
-      {/* Copy button */}
-      <button
-        type="button"
-        onClick={copy}
-        className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
-          copied
-            ? "bg-accent text-primary"
-            : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+      <div className="flex shrink-0 items-center gap-1.5">
+        {showCollect && (
+          <button
+            type="button"
+            disabled={collected || collecting}
+            onClick={() => onCollect?.()}
+            className={cn(
+              "flex min-h-9 min-w-[5.5rem] items-center justify-center gap-1 rounded-xl px-2 text-xs font-semibold transition-colors",
+              collected
+                ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
+                : "bg-primary/10 text-primary hover:bg-primary/15"
+            )}
+          >
+            <Bookmark className="h-3.5 w-3.5 shrink-0" />
+            {collected ? "เก็บแล้ว" : "เก็บโค้ด"}
+          </button>
         )}
-        aria-label="คัดลอก"
-      >
-        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-      </button>
+        <button
+          type="button"
+          onClick={copy}
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
+            copied ? "bg-accent text-primary" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+          )}
+          aria-label="คัดลอก"
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        </button>
+      </div>
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-export function FloatingOfferButton({ coupons }: Props) {
+export function FloatingOfferButton({
+  coupons,
+  claimedPromoIds,
+  onClaimed,
+  floatingBadge = { kind: "default", src: DEFAULT_COUPON_FLOAT_BADGE },
+}: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collectingId, setCollectingId] = useState<number | null>(null);
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const claim = async (promoCodeId: number) => {
+    if (!user) {
+      const next =
+        typeof window !== "undefined"
+          ? `${window.location.pathname}${window.location.search}`
+          : "/";
+      router.push(`/login?next=${encodeURIComponent(next)}`);
+      return;
+    }
+    setCollectingId(promoCodeId);
+    try {
+      const res = await fetch("/api/storefront/coupons/collect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ promo_code_id: promoCodeId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        alreadyCollected?: boolean;
+        error?: string;
+      };
+      if (!res.ok) {
+        toast.error(data.error ?? "Could not save coupon");
+        return;
+      }
+      toast.success("Saved to your profile!");
+      onClaimed();
+    } catch {
+      toast.error("Could not save coupon");
+    } finally {
+      setCollectingId(null);
+    }
+  };
 
   if (coupons.length === 0) return null;
 
+  const claimedSet = new Set(claimedPromoIds);
+
   return (
     <>
-      {/* Floating pill button */}
       <AnimatePresence>
         {!drawerOpen && (
           <motion.button
@@ -117,9 +194,9 @@ export function FloatingOfferButton({ coupons }: Props) {
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             onClick={() => setDrawerOpen(true)}
-            className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-white shadow-lg hover:bg-primary/90 active:scale-95 transition-transform"
+            className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-3 py-2.5 text-white shadow-lg transition-transform duration-200 hover:scale-105 active:scale-95"
           >
-            <Tag className="h-4 w-4" />
+            <FloatingCouponBadgeMedia asset={floatingBadge} />
             <span className="text-sm font-semibold">
               {coupons.length === 1 ? "1 ส่วนลด" : `${coupons.length} ส่วนลด`}
             </span>
@@ -130,11 +207,9 @@ export function FloatingOfferButton({ coupons }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Bottom Drawer */}
       <AnimatePresence>
         {drawerOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -144,7 +219,6 @@ export function FloatingOfferButton({ coupons }: Props) {
               onClick={() => setDrawerOpen(false)}
             />
 
-            {/* Drawer panel */}
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
@@ -152,15 +226,13 @@ export function FloatingOfferButton({ coupons }: Props) {
               transition={{ type: "spring", stiffness: 350, damping: 30 }}
               className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-white px-4 pb-8 pt-4 shadow-2xl"
             >
-              {/* Handle */}
               <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-zinc-200" />
 
-              {/* Header */}
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-bold text-zinc-900">ส่วนลดของคุณ</h3>
                   <p className="text-xs text-zinc-500">
-                    {coupons.length} โค้ดที่ยังใช้ได้ · คลิกคัดลอกเพื่อใช้งาน
+                    {coupons.length} โค้ดที่ยังใช้ได้ · เก็บโค้ดหรือคัดลอกไปใช้ที่ตะกร้า
                   </p>
                 </div>
                 <button
@@ -172,14 +244,19 @@ export function FloatingOfferButton({ coupons }: Props) {
                 </button>
               </div>
 
-              {/* Coupon list */}
               <div className="max-h-[55vh] space-y-2 overflow-y-auto pb-2">
                 {coupons.map((c) => (
-                  <CouponCard key={c.id} coupon={c} />
+                  <CouponCard
+                    key={c.id}
+                    coupon={c}
+                    showCollect
+                    collected={claimedSet.has(c.id)}
+                    collecting={collectingId === c.id}
+                    onCollect={() => void claim(c.id)}
+                  />
                 ))}
               </div>
 
-              {/* Footer hint */}
               <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-zinc-400">
                 <ChevronRight className="h-3 w-3" />
                 คัดลอกโค้ด แล้วใส่ในหน้าตะกร้าสินค้า

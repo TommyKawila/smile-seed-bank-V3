@@ -23,6 +23,8 @@ const CreateCouponSchema = z.object({
   usage_limit_per_user: z.number().int().min(1).max(999).optional().default(1),
   requires_auth: z.boolean().optional().default(false),
   first_order_only: z.boolean().optional().default(false),
+  badge_url: z.union([z.string().url(), z.null()]).optional(),
+  badge_lottie_url: z.union([z.string().url(), z.null()]).optional(),
 });
 
 export async function GET() {
@@ -68,6 +70,10 @@ export async function POST(req: NextRequest) {
       usage_limit_per_user: parsed.data.usage_limit_per_user ?? 1,
       requires_auth: parsed.data.requires_auth ?? false,
       first_order_only: parsed.data.first_order_only ?? false,
+      ...(parsed.data.badge_url !== undefined ? { badge_url: parsed.data.badge_url } : {}),
+      ...(parsed.data.badge_lottie_url !== undefined
+        ? { badge_lottie_url: parsed.data.badge_lottie_url }
+        : {}),
     })
     .select()
     .single();

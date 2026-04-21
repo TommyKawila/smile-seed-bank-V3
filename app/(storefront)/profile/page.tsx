@@ -22,6 +22,8 @@ import { formatPrice, cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Customer } from "@/types/supabase";
 import { OrderDetailDrawer, type OrderDetailRow } from "@/components/storefront/OrderDetailDrawer";
+import { CouponCard } from "@/components/storefront/FloatingOfferButton";
+import type { EligibleCoupon } from "@/components/storefront/FloatingOfferButton";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { GenomeCirclePanel } from "@/components/storefront/GenomeCirclePanel";
 import { canViewMembershipProgram } from "@/lib/feature-flags";
@@ -190,6 +192,8 @@ function ProfileContent() {
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", address: "" });
   const [copied, setCopied] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderDetailRow | null>(null);
+  const [collectedCoupons, setCollectedCoupons] = useState<EligibleCoupon[]>([]);
+  const [couponsLoading, setCouponsLoading] = useState(false);
 
   // Pre-fill form when customer loads
   useEffect(() => {
@@ -219,6 +223,24 @@ function ProfileContent() {
   useEffect(() => {
     if (user) void fetchOrders();
   }, [user, fetchOrders]);
+
+  const fetchCollectedCoupons = useCallback(async () => {
+    if (!user) return;
+    setCouponsLoading(true);
+    try {
+      const res = await fetch("/api/storefront/coupons/collected", { cache: "no-store" });
+      if (res.ok) {
+        const j = (await res.json()) as { coupons: EligibleCoupon[] };
+        setCollectedCoupons(j.coupons ?? []);
+      }
+    } finally {
+      setCouponsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user && tab === "coupons") void fetchCollectedCoupons();
+  }, [user, tab, fetchCollectedCoupons]);
 
   // Auto-open drawer for ?open={orderId} deep links (e.g. from email CTA)
   useEffect(() => {
@@ -470,39 +492,43 @@ function ProfileContent() {
           </motion.div>
         )}
 
-        {/* ── MY COUPONS TAB ──────────────────────────────────────────────────── */}
+        {/* ── MY COUPONS TAB (collected codes only) ───────────────────────────── */}
         {tab === "coupons" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            {orders.length === 0 ? (
-              <div className="overflow-hidden rounded-sm border border-dashed border-zinc-200 bg-zinc-50/80">
-                <div className="p-6">
-                  <div className="mb-4 flex items-center gap-2">
-                    <Tag className="h-5 w-5 text-primary" />
-                    <span className="text-sm font-bold uppercase tracking-wider text-primary">
-                      {t("ลูกค้าใหม่", "New Customer")}
-                    </span>
-                  </div>
-                  <p className="font-mono text-2xl font-extrabold tracking-wider text-zinc-900">WELCOME10</p>
-                  <p className="mt-1 text-sm font-semibold text-primary">
-                    {t("ส่วนลด 10% สำหรับออเดอร์แรก", "10% off your first order")}
-                  </p>
-                  <p className="mt-2 text-xs text-zinc-500">
-                    {t("ใช้ที่หน้า Checkout เมื่อพร้อมสั่งซื้อ", "Use at Checkout when you're ready to order")}
-                  </p>
-                  <Button asChild className="mt-4 bg-primary text-white hover:bg-primary/90">
-                    <Link href="/checkout">{t("ไปชำระเงิน", "Go to Checkout")}</Link>
-                  </Button>
-                </div>
+            {couponsLoading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-7 w-7 animate-spin text-primary" />
               </div>
-            ) : (
+            ) : collectedCoupons.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 rounded-sm border border-dashed border-zinc-200 py-16 text-center">
                 <Tag className="h-10 w-10 text-zinc-300" />
                 <p className="text-sm font-medium text-zinc-500">
-                  {t("ไม่มีคูปองที่ใช้ได้ในขณะนี้", "No available coupons at the moment")}
+                  {t("ยังไม่มีโค้ดที่เก็บไว้", "No saved coupons yet")}
                 </p>
-                <p className="text-xs text-zinc-400">
-                  {t("คูปองพิเศษจะแสดงเมื่อมี", "Special coupons will appear here when available")}
+                <p className="max-w-sm text-xs text-zinc-400">
+                  {t(
+                    "กด «เก็บโค้ด» จากปุ่มส่วนลดมุมขวาล่างเมื่อมีโค้ด — โค้ดจะแสดงที่นี่",
+                    "Tap “Collect code” on the discount button (bottom-right) when offers appear — saved codes show here."
+                  )}
                 </p>
+                <Button asChild variant="outline" className="rounded-sm border-zinc-200">
+                  <Link href="/shop">{t("ไปเลือกสินค้า", "Browse shop")}</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className={cn(serif, "mb-3 text-sm text-zinc-600")}>
+                  {t("โค้ดที่คุณเก็บไว้", "Your collected codes")}
+                </p>
+                {collectedCoupons.map((c) => (
+                  <CouponCard
+                    key={c.id}
+                    coupon={c}
+                    showCollect={false}
+                    collected={false}
+                    collecting={false}
+                  />
+                ))}
               </div>
             )}
           </motion.div>

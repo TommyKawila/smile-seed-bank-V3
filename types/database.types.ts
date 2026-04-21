@@ -982,6 +982,8 @@ export type Database = {
       }
       promo_codes: {
         Row: {
+          badge_lottie_url: string | null
+          badge_url: string | null
           code: string
           discount_type: string | null
           discount_value: number | null
@@ -995,6 +997,8 @@ export type Database = {
           usage_limit_per_user: number | null
         }
         Insert: {
+          badge_lottie_url?: string | null
+          badge_url?: string | null
           code: string
           discount_type?: string | null
           discount_value?: number | null
@@ -1008,6 +1012,8 @@ export type Database = {
           usage_limit_per_user?: number | null
         }
         Update: {
+          badge_lottie_url?: string | null
+          badge_url?: string | null
           code?: string
           discount_type?: string | null
           discount_value?: number | null

@@ -23,6 +23,8 @@ const UpdateCouponSchema = z.object({
   usage_limit_per_user: z.number().int().min(1).max(999).optional(),
   requires_auth: z.boolean().optional(),
   first_order_only: z.boolean().optional(),
+  badge_url: z.union([z.string().url(), z.null()]).optional(),
+  badge_lottie_url: z.union([z.string().url(), z.null()]).optional(),
 });
 
 export async function PATCH(

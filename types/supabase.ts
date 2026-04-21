@@ -154,6 +154,9 @@ export interface PromoCode {
   expiry_date?: string | null;
   requires_auth?: boolean | null;
   first_order_only?: boolean | null;
+  /** Public image URL for storefront floating badge */
+  badge_url?: string | null;
+  badge_lottie_url?: string | null;
 }
 
 export interface PromoCodeUsage {

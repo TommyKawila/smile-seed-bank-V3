@@ -66,6 +66,11 @@ export interface EligibleCoupon {
   min_spend: number | null;
   expiry_date: string | null;
   first_order_only: boolean | null;
+  is_active: boolean;
+  /** Public badge image URL; fallback when no Lottie */
+  badge_url: string | null;
+  /** Public Lottie JSON URL; preferred for floating badge when set */
+  badge_lottie_url: string | null;
 }
 
 // ─── validateCoupon ───────────────────────────────────────────────────────────
@@ -213,7 +218,8 @@ export async function getEligibleCoupons(
     // Fetch all active, non-expired, non-fully-used coupons for this user
     const rows = await sql<EligibleCoupon[]>`
       SELECT p.id, p.code, p.discount_type, p.discount_value,
-             p.min_spend, p.expiry_date, p.first_order_only
+             p.min_spend, p.expiry_date, p.first_order_only,
+             p.is_active, p.badge_url, p.badge_lottie_url
       FROM promo_codes p
       WHERE p.is_active = true
         AND (p.expiry_date IS NULL OR p.expiry_date > now())
@@ -230,7 +236,20 @@ export async function getEligibleCoupons(
 
     // Post-filter: remove first_order_only coupons when user has a completed order
     const hasOrder = await _hasCompletedOrder(sql, userId, email);
-    return rows.filter((c) => !(c.first_order_only && hasOrder));
+    return rows
+      .filter((c) => !(c.first_order_only && hasOrder))
+      .map((c) => ({
+        ...c,
+        is_active: c.is_active !== false,
+        badge_url:
+          c.badge_url != null && String(c.badge_url).trim() !== ""
+            ? String(c.badge_url)
+            : null,
+        badge_lottie_url:
+          c.badge_lottie_url != null && String(c.badge_lottie_url).trim() !== ""
+            ? String(c.badge_lottie_url)
+            : null,
+      }));
   } catch (err) {
     console.error("[coupon-service] getEligibleCoupons error:", err);
     return [];

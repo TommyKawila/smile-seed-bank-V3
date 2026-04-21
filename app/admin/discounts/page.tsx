@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Loader2,
@@ -36,6 +37,20 @@ import {
   isCouponPercentageType,
 } from "@/lib/discount-utils";
 
+async function postCouponBadgeUpload(
+  file: File,
+  assetType: "image" | "lottie" = "image"
+): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("assetType", assetType);
+  const res = await fetch("/api/admin/discounts/coupons/upload-badge", { method: "POST", body: form });
+  const data = (await res.json()) as { url?: string; error?: string };
+  if (!res.ok) throw new Error(data.error ?? "อัปโหลดไม่สำเร็จ");
+  if (!data.url) throw new Error("Invalid upload response");
+  return data.url;
+}
+
 type CouponRow = {
   id: number;
   code: string;
@@ -48,6 +63,8 @@ type CouponRow = {
   usage_limit_per_user?: number | null;
   requires_auth?: boolean | null;
   first_order_only?: boolean | null;
+  badge_url?: string | null;
+  badge_lottie_url?: string | null;
 };
 
 function isoToDatetimeLocal(iso: string | null | undefined): string {
@@ -104,6 +121,27 @@ export default function AdminDiscountsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [addBadgeFile, setAddBadgeFile] = useState<File | null>(null);
+  const [addBadgePreview, setAddBadgePreview] = useState<string | null>(null);
+  const [addLottieFile, setAddLottieFile] = useState<File | null>(null);
+  const [editBadgeFile, setEditBadgeFile] = useState<File | null>(null);
+  const [editBadgePreview, setEditBadgePreview] = useState<string | null>(null);
+  const [editLottieFile, setEditLottieFile] = useState<File | null>(null);
+  const [editClearBadge, setEditClearBadge] = useState(false);
+  const [editClearLottie, setEditClearLottie] = useState(false);
+  const addFileInputRef = useRef<HTMLInputElement>(null);
+  const addLottieInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const editLottieInputRef = useRef<HTMLInputElement>(null);
+
+  const setAddBadgeFromFile = (f: File | null) => {
+    setAddBadgeFile(f);
+    setAddBadgePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return f ? URL.createObjectURL(f) : null;
+    });
+  };
+
   const fetchAll = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     setError(null);
@@ -125,6 +163,14 @@ export default function AdminDiscountsPage() {
     setError(null);
     setSaving(true);
     try {
+      let badge_url: string | undefined;
+      if (addBadgeFile) {
+        badge_url = await postCouponBadgeUpload(addBadgeFile, "image");
+      }
+      let badge_lottie_url: string | undefined;
+      if (addLottieFile) {
+        badge_lottie_url = await postCouponBadgeUpload(addLottieFile, "lottie");
+      }
       const res = await fetch("/api/admin/discounts/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -140,6 +186,8 @@ export default function AdminDiscountsPage() {
           usage_limit_per_user: addForm.usage_limit_per_user ?? 1,
           requires_auth: addForm.requires_auth ?? false,
           first_order_only: addForm.first_order_only ?? false,
+          ...(badge_url ? { badge_url } : {}),
+          ...(badge_lottie_url ? { badge_lottie_url } : {}),
         }),
       });
       const data = await res.json();
@@ -156,6 +204,10 @@ export default function AdminDiscountsPage() {
         requires_auth: false,
         first_order_only: false,
       });
+      setAddBadgeFromFile(null);
+      setAddLottieFile(null);
+      if (addFileInputRef.current) addFileInputRef.current.value = "";
+      if (addLottieInputRef.current) addLottieInputRef.current.value = "";
       await fetchAll();
     } catch (e) {
       setError(String(e).replace("Error: ", ""));
@@ -169,6 +221,17 @@ export default function AdminDiscountsPage() {
     setError(null);
     setSaving(true);
     try {
+      let badgePatch: Record<string, string | null> = {};
+      if (editBadgeFile) {
+        badgePatch.badge_url = await postCouponBadgeUpload(editBadgeFile, "image");
+      } else if (editClearBadge && editCoupon.badge_url) {
+        badgePatch.badge_url = null;
+      }
+      if (editLottieFile) {
+        badgePatch.badge_lottie_url = await postCouponBadgeUpload(editLottieFile, "lottie");
+      } else if (editClearLottie && editCoupon.badge_lottie_url) {
+        badgePatch.badge_lottie_url = null;
+      }
       const res = await fetch(`/api/admin/discounts/coupons/${editCoupon.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -183,11 +246,20 @@ export default function AdminDiscountsPage() {
           usage_limit_per_user: editForm.usage_limit_per_user ?? 1,
           requires_auth: editForm.requires_auth ?? false,
           first_order_only: editForm.first_order_only ?? false,
+          ...badgePatch,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed");
       setEditCoupon(null);
+      setEditBadgeFile(null);
+      if (editBadgePreview) URL.revokeObjectURL(editBadgePreview);
+      setEditBadgePreview(null);
+      setEditClearBadge(false);
+      setEditLottieFile(null);
+      setEditClearLottie(false);
+      if (editFileInputRef.current) editFileInputRef.current.value = "";
+      if (editLottieInputRef.current) editLottieInputRef.current.value = "";
       await fetchAll();
     } catch (e) {
       setError(String(e).replace("Error: ", ""));
@@ -224,6 +296,15 @@ export default function AdminDiscountsPage() {
       requires_auth: row.requires_auth ?? false,
       first_order_only: row.first_order_only ?? false,
     });
+    setEditBadgeFile(null);
+    setEditBadgePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setEditClearBadge(false);
+    setEditLottieFile(null);
+    setEditClearLottie(false);
+    if (editLottieInputRef.current) editLottieInputRef.current.value = "";
     setError(null);
   };
 
@@ -393,6 +474,34 @@ export default function AdminDiscountsPage() {
               <p className="text-xs text-zinc-500">เวลาหมดอายุตามเครื่องของคุณ — ว่างไว้ถ้าไม่จำกัด</p>
             </div>
             <div className="space-y-2">
+              <Label>รูป Badge คูปอง (ลอยมุมจอ) — ไม่บังคับ</Label>
+              <input
+                ref={addFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
+                className="block w-full text-sm text-zinc-600 file:mr-2 file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-3 file:py-1.5 file:text-sm"
+                onChange={(e) => setAddBadgeFromFile(e.target.files?.[0] ?? null)}
+              />
+              {addBadgePreview && (
+                <div className="relative mt-2 h-24 w-24 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
+                  <Image src={addBadgePreview} alt="" fill className="object-contain p-1" unoptimized />
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Lottie Badge (.json) — ไม่บังคับ · แสดงแทนรูปเมื่อมี</Label>
+              <input
+                ref={addLottieInputRef}
+                type="file"
+                accept=".json,application/json"
+                className="block w-full text-sm text-zinc-600 file:mr-2 file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-3 file:py-1.5 file:text-sm"
+                onChange={(e) => setAddLottieFile(e.target.files?.[0] ?? null)}
+              />
+              {addLottieFile && (
+                <p className="text-xs text-zinc-500">เลือกแล้ว: {addLottieFile.name}</p>
+              )}
+            </div>
+            <div className="space-y-2">
               <Label>จำกัดต่อคน (ครั้ง)</Label>
               <Input
                 type="number"
@@ -494,6 +603,95 @@ export default function AdminDiscountsPage() {
                 className="rounded-md border-zinc-200"
               />
             </div>
+            {editCoupon && (
+              <div className="space-y-2">
+                <Label>รูป Badge คูปอง (ลอยมุมจอ)</Label>
+                <input
+                  ref={editFileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
+                  className="block w-full text-sm text-zinc-600 file:mr-2 file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-3 file:py-1.5 file:text-sm"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setEditClearBadge(false);
+                    setEditBadgeFile(f);
+                    setEditBadgePreview((prev) => {
+                      if (prev) URL.revokeObjectURL(prev);
+                      return f ? URL.createObjectURL(f) : null;
+                    });
+                  }}
+                />
+                {(editBadgePreview || (!editClearBadge && editCoupon.badge_url)) && (
+                  <div className="mt-2 flex items-start gap-3">
+                    <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
+                      <Image
+                        src={editBadgePreview ?? editCoupon.badge_url ?? ""}
+                        alt=""
+                        fill
+                        className="object-contain p-1"
+                        unoptimized
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => {
+                        setEditBadgeFile(null);
+                        setEditBadgePreview((prev) => {
+                          if (prev) URL.revokeObjectURL(prev);
+                          return null;
+                        });
+                        setEditClearBadge(!!editCoupon.badge_url);
+                        if (editFileInputRef.current) editFileInputRef.current.value = "";
+                      }}
+                    >
+                      ลบรูป
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            {editCoupon && (
+              <div className="space-y-2">
+                <Label>Lottie Badge (.json)</Label>
+                <input
+                  ref={editLottieInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  className="block w-full text-sm text-zinc-600 file:mr-2 file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-3 file:py-1.5 file:text-sm"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setEditClearLottie(false);
+                    setEditLottieFile(f);
+                  }}
+                />
+                {(editLottieFile || (!editClearLottie && editCoupon.badge_lottie_url)) && (
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <p className="max-w-[220px] break-all text-xs text-zinc-600">
+                      {editLottieFile
+                        ? `ไฟล์ใหม่: ${editLottieFile.name}`
+                        : editCoupon.badge_lottie_url
+                          ? `URL: ${editCoupon.badge_lottie_url.length > 64 ? `${editCoupon.badge_lottie_url.slice(0, 64)}…` : editCoupon.badge_lottie_url}`
+                          : ""}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditLottieFile(null);
+                        setEditClearLottie(!!editCoupon.badge_lottie_url);
+                        if (editLottieInputRef.current) editLottieInputRef.current.value = "";
+                      }}
+                    >
+                      ลบ Lottie
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               <Label>จำกัดต่อคน (ครั้ง)</Label>
               <Input
