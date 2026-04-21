@@ -1,7 +1,19 @@
 import { prisma } from "@/lib/prisma";
 
-/** Parse user text e.g. "Order #ABC123", "order#ABC123", "ออเดอร์ #ABC123". */
-export function extractOrderNumberFromLineMessage(text: string): string | null {
+export type LinkOrderChatOutcome =
+  | "linked"
+  | "already_linked_you"
+  | "already_linked_other"
+  | "order_not_found"
+  | "no_token";
+
+export type LinkOrderChatResult = {
+  outcome: LinkOrderChatOutcome;
+  orderNumber?: string;
+};
+
+/** Legacy patterns: "Order #ABC123", "ออเดอร์ #…", standalone #TOKEN */
+function extractOrderNumberToken(text: string): string | null {
   const t = text.trim();
   if (!t) return null;
   const patterns = [
@@ -17,23 +29,79 @@ export function extractOrderNumberFromLineMessage(text: string): string | null {
 }
 
 /**
- * Webhook: user sends order ref → save `line_user_id` on `customers` (profile) and `orders`.
+ * Resolve order reference from chat: #SSB-12345, Order #XXX, digits-only order_number or DB id.
+ */
+export function extractOrderRefFromLineMessage(text: string): string | null {
+  const t = text.trim();
+  if (!t) return null;
+
+  const ssb = t.match(/#?(SSB-\d+)/i);
+  if (ssb?.[1]) return ssb[1].toUpperCase();
+
+  if (/^\d{1,18}$/.test(t)) return t;
+
+  return extractOrderNumberToken(text);
+}
+
+/** @deprecated use extractOrderRefFromLineMessage */
+export function extractOrderNumberFromLineMessage(text: string): string | null {
+  return extractOrderRefFromLineMessage(text);
+}
+
+async function findOrderByToken(token: string) {
+  let order = await prisma.orders.findFirst({
+    where: { order_number: token },
+    select: { id: true, customer_id: true, line_user_id: true, order_number: true },
+  });
+  if (order) return order;
+
+  if (/^SSB-\d+$/i.test(token)) {
+    const digits = token.replace(/^SSB-/i, "");
+    order = await prisma.orders.findFirst({
+      where: { order_number: digits },
+      select: { id: true, customer_id: true, line_user_id: true, order_number: true },
+    });
+    if (order) return order;
+  }
+
+  if (/^\d{1,18}$/.test(token)) {
+    try {
+      order = await prisma.orders.findUnique({
+        where: { id: BigInt(token) },
+        select: { id: true, customer_id: true, line_user_id: true, order_number: true },
+      });
+    } catch {
+      /* invalid id */
+    }
+  }
+
+  return order;
+}
+
+/**
+ * Webhook: user sends order ref → save `line_user_id` on `customers` (if any) and `orders`
+ * when `orders.line_user_id` is still empty.
  */
 export async function linkLineUserFromOrderChatMessage(
   lineUserId: string,
   messageText: string
-): Promise<{ ok: boolean; orderNumber?: string; reason?: string }> {
+): Promise<LinkOrderChatResult> {
   const uid = lineUserId.trim();
-  if (!uid) return { ok: false, reason: "no_line_user" };
+  if (!uid) return { outcome: "no_token" };
 
-  const orderNum = extractOrderNumberFromLineMessage(messageText);
-  if (!orderNum) return { ok: false, reason: "no_order_token" };
+  const token = extractOrderRefFromLineMessage(messageText);
+  if (!token) return { outcome: "no_token" };
 
-  const order = await prisma.orders.findFirst({
-    where: { order_number: orderNum },
-    select: { id: true, customer_id: true, line_user_id: true },
-  });
-  if (!order) return { ok: false, reason: "order_not_found" };
+  const order = await findOrderByToken(token);
+  if (!order) return { outcome: "order_not_found" };
+
+  const existing = order.line_user_id?.trim() || null;
+  if (existing) {
+    if (existing === uid) {
+      return { outcome: "already_linked_you", orderNumber: order.order_number };
+    }
+    return { outcome: "already_linked_other" };
+  }
 
   await prisma.$transaction(async (tx) => {
     if (order.customer_id) {
@@ -52,5 +120,5 @@ export async function linkLineUserFromOrderChatMessage(
     });
   });
 
-  return { ok: true, orderNumber: orderNum };
+  return { outcome: "linked", orderNumber: order.order_number };
 }

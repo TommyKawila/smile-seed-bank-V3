@@ -441,6 +441,29 @@ export function CheckoutPageClient({
           </h1>
         </div>
 
+        {!user && !authLoading && (
+          <div className="mx-auto mb-4 max-w-3xl rounded-lg border border-amber-200/90 bg-amber-50/95 px-4 py-3 text-[12px] leading-relaxed text-amber-950 shadow-sm">
+            <p>
+              {t(
+                "การสั่งซื้อในฐานะบุคคลทั่วไปจะไม่สามารถใช้โค้ดส่วนลดสมาชิก (เช่น 420DAY) ได้",
+                "Guest checkout cannot use member promo codes (e.g. 420DAY).",
+              )}
+            </p>
+            <p className="mt-2 text-[11px] text-amber-900/90">
+              {t(
+                "สมัครหรือเข้าสู่ระบบเพื่อใช้โค้ดและสะสมสิทธิประโยชน์",
+                "Sign up or log in to apply codes and unlock member benefits.",
+              )}{" "}
+              <Link
+                href="/login?next=/checkout"
+                className="font-semibold text-amber-950 underline underline-offset-2 hover:text-amber-900"
+              >
+                {t("เข้าสู่ระบบ / สมัครสมาชิก", "Log in / Register")}
+              </Link>
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="mx-auto max-w-3xl space-y-4">
               {user && (
@@ -632,8 +655,8 @@ export function CheckoutPageClient({
                   {!user && (
                     <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-[11px] leading-relaxed text-zinc-600">
                       {t(
-                        "สมัครสมาชิกเพื่อรับส่วนลดโปรโมชั่น (Google, Email หรือ LINE)",
-                        "Sign up or log in to use promo codes (Google, Email, or LINE)."
+                        "โค้ดส่วนลดใช้ได้เมื่อเข้าสู่ระบบเท่านั้น — Google, อีเมล หรือ LINE",
+                        "Promo codes require an account — Google, Email, or LINE.",
                       )}
                     </p>
                   )}

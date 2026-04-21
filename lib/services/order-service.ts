@@ -101,6 +101,8 @@ export interface OrderSuccessView {
   items: OrderSuccessItemRow[];
   /** True when `orders.line_user_id` is set (e.g. auto-linked from customer profile). */
   line_linked: boolean;
+  /** Guest storefront order (`customer_id` null). */
+  is_guest: boolean;
 }
 
 export type OrderSuccessViewError =
@@ -234,6 +236,8 @@ export async function createOrder(
               order_origin: "WEB",
               payment_method: payment_method,
               shipping_address: customer.address,
+              shipping_phone: customer.phone ?? null,
+              shipping_email: customer.email?.trim() || null,
               customer_name: customer.full_name,
               customer_phone: customer.phone ?? null,
               shipping_fee: new Prisma.Decimal(summary.shipping),
@@ -459,6 +463,7 @@ export async function getOrderForSuccessView(
         points_discount_amount: Number(order.points_discount_amount ?? 0),
         items,
         line_linked: Boolean(order.line_user_id?.trim()),
+        is_guest: order.customer_id == null,
       },
       error: null,
     };

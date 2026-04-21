@@ -353,6 +353,15 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            <Button asChild variant="ghost" className="h-auto w-full py-2 text-xs font-normal text-zinc-500 hover:bg-transparent hover:text-zinc-800">
+              <Link href="/checkout">
+                {t(
+                  "สั่งซื้อโดยไม่สมัครสมาชิก (ซื้อทันที)",
+                  "Checkout as a guest (buy without signing up)",
+                )}
+              </Link>
+            </Button>
+
             <p className="text-center text-xs text-zinc-400">
               {t("โดยการสมัครสมาชิก คุณยอมรับ", "By signing up you agree to our")}{" "}
               <Link

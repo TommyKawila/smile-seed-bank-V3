@@ -100,16 +100,24 @@ async function syncLineUserToSupabase(params: {
   }
 }
 
-export const authOptions: NextAuthOptions = {
+/** Align Vercel env names with LINE Developers / docs (some dashboards use LINE_CLIENT_*). */
+const lineClientId =
+  process.env.LINE_LOGIN_CHANNEL_ID ?? process.env.LINE_CLIENT_ID ?? "";
+const lineClientSecret =
+  process.env.LINE_LOGIN_CHANNEL_SECRET ?? process.env.LINE_CLIENT_SECRET ?? "";
+
+/** trustHost: forwarded by Auth.js-based builds; safe to keep for future upgrades. Host trust on v4 also uses VERCEL / AUTH_TRUST_HOST (see next-auth/utils/detect-origin.js). */
+export const authOptions: NextAuthOptions & { trustHost?: boolean } = {
+  trustHost: true,
   providers: [
     LineProvider({
-      clientId: process.env.LINE_LOGIN_CHANNEL_ID!,
-      clientSecret: process.env.LINE_LOGIN_CHANNEL_SECRET!,
+      clientId: lineClientId,
+      clientSecret: lineClientSecret,
       authorization: { params: { bot_prompt: "normal" } },
     }),
   ],
   session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
   callbacks: {
     async signIn({ account, profile }) {
       if (account?.provider !== "line") return true;

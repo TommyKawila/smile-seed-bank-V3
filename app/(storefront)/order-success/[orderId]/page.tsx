@@ -339,6 +339,7 @@ export default function OrderSuccessDynamicPage() {
 
   const displayNo = order.order_number;
   const lineLinked = order.line_linked === true;
+  const isGuestOrder = order.is_guest === true;
   const isCancelled = order.status === "CANCELLED";
   const isVoided = order.status === "VOIDED";
   const isShipped = order.status === "SHIPPED";
@@ -495,7 +496,7 @@ export default function OrderSuccessDynamicPage() {
                   {t("เลขออเดอร์", "Order no.")}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
-                  <p className="min-w-0 truncate font-mono text-sm font-semibold text-zinc-900">
+                  <p className="min-w-0 truncate font-mono text-lg font-bold tabular-nums text-zinc-900 sm:text-xl">
                     #{displayNo}
                   </p>
                   <button
@@ -630,6 +631,27 @@ export default function OrderSuccessDynamicPage() {
               )}
             </Button>
           </div>
+
+          {isGuestOrder && !lineLinked ? (
+            <div className="space-y-2">
+              <p className="text-center text-[11px] text-zinc-500">
+                {t(
+                  "แอด LINE แล้วส่งเลขออเดอร์ในแชท — ระบบจะเชื่อมเพื่อแจ้งเตือนสถานะ",
+                  "Add LINE and send your order number in chat to enable status alerts.",
+                )}
+              </p>
+              <LineOaResponsiveCta
+                href={lineHrefDefault}
+                orderNumber={displayNo}
+                className="gap-2 px-3 py-3.5 text-sm leading-snug"
+              >
+                {t(
+                  "รับแจ้งเตือนสถานะผ่าน LINE (คลิกเพื่อแอดไลน์แล้วส่งเลขที่ออเดอร์มาให้เรา)",
+                  "LINE updates: add us and send your order number in chat",
+                )}
+              </LineOaResponsiveCta>
+            </div>
+          ) : null}
 
           <div className="flex justify-center pb-4">
             <Button asChild variant="outline" className="h-10">
@@ -875,10 +897,15 @@ export default function OrderSuccessDynamicPage() {
                 >
                   {lineLinked
                     ? t("สอบถามสถานะผ่าน LINE", "Get updates via LINE (Active ✓)")
-                    : t(
-                        "รับแจ้งเลขพัสดุผ่าน LINE (อัตโนมัติ)",
-                        "Track Order on LINE"
-                      )}
+                    : isGuestOrder
+                      ? t(
+                          "รับแจ้งเตือนสถานะผ่าน LINE (คลิกเพื่อแอดไลน์แล้วส่งเลขที่ออเดอร์มาให้เรา)",
+                          "LINE updates: add us and send your order number in chat",
+                        )
+                      : t(
+                          "รับแจ้งเลขพัสดุผ่าน LINE (อัตโนมัติ)",
+                          "Track Order on LINE"
+                        )}
                 </LineOaResponsiveCta>
                 <p className="text-center text-[11px] leading-relaxed text-zinc-500">
                   {lineLinked
