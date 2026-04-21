@@ -15,7 +15,6 @@ export async function GET(request: Request) {
 
   try {
     const session = await getServerSession(authOptions);
-    console.log("[line-bridge] session", JSON.stringify(session));
 
     const user = session?.user as
       | {
@@ -26,17 +25,14 @@ export async function GET(request: Request) {
       | undefined;
 
     if (!session) {
-      console.error("[line-bridge] getServerSession returned null");
       return NextResponse.redirect(`${origin}/login?error=line_bridge_no_session`);
     }
     if (!user?.supabaseUserId) {
-      console.error("[line-bridge] missing supabaseUserId on session", user);
       return NextResponse.redirect(`${origin}/login?error=line_bridge_no_uid`);
     }
 
     const email = user.supabaseEmail ?? user.email ?? null;
     if (!email) {
-      console.error("[line-bridge] missing email on session", user);
       return NextResponse.redirect(`${origin}/login?error=line_bridge_no_email`);
     }
 
@@ -46,35 +42,28 @@ export async function GET(request: Request) {
       email,
     });
     if (linkErr) {
-      console.error("[line-bridge] generateLink error:", linkErr);
+      console.error("[line-bridge] generateLink failed");
       return NextResponse.redirect(`${origin}/login?error=line_bridge_link`);
     }
     const tokenHash = link?.properties?.hashed_token;
-    console.log(
-      "[line-bridge] generateLink ok, hashed_token?",
-      !!tokenHash,
-      "email",
-      email
-    );
     if (!tokenHash) {
-      console.error("[line-bridge] generateLink: missing hashed_token", link);
+      console.error("[line-bridge] generateLink: missing hashed_token");
       return NextResponse.redirect(`${origin}/login?error=line_bridge_link_empty`);
     }
 
     const supabase = await createClient();
-    const { data: otpData, error: otpErr } = await supabase.auth.verifyOtp({
+    const { error: otpErr } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: "magiclink",
     });
     if (otpErr) {
-      console.error("[line-bridge] verifyOtp error:", otpErr);
+      console.error("[line-bridge] verifyOtp failed");
       return NextResponse.redirect(`${origin}/login?error=line_bridge_otp`);
     }
-    console.log("[line-bridge] verifyOtp ok, user:", otpData?.user?.id);
 
     return NextResponse.redirect(`${origin}${next}`);
-  } catch (err) {
-    console.error("[line-bridge] unexpected error:", err);
+  } catch {
+    console.error("[line-bridge] unexpected error");
     return NextResponse.redirect(`${origin}/login?error=line_bridge_exception`);
   }
 }

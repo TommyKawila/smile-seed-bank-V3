@@ -57,7 +57,7 @@ async function syncLineUserToSupabase(params: {
         },
       });
       if (createErr || !created?.user) {
-        console.error("[line-auth] admin.createUser failed", createErr);
+        console.error("[line-auth] admin.createUser failed");
         return null;
       }
       authUser = created.user;
@@ -90,12 +90,12 @@ async function syncLineUserToSupabase(params: {
       { onConflict: "id" }
     );
     if (upsertErr) {
-      console.error("[line-auth] customers upsert failed", upsertErr);
+      console.error("[line-auth] customers upsert failed");
     }
 
     return { supabaseUserId, email: resolvedEmail };
-  } catch (err) {
-    console.error("[line-auth] syncLineUserToSupabase threw", err);
+  } catch {
+    console.error("[line-auth] syncLineUserToSupabase threw");
     return null;
   }
 }
@@ -146,12 +146,6 @@ export const authOptions: NextAuthOptions = {
           if (synced) {
             token.supabaseUserId = synced.supabaseUserId;
             token.supabaseEmail = synced.email;
-            console.log(
-              "[line-auth] jwt: stamped supabaseUserId",
-              synced.supabaseUserId,
-              "email",
-              synced.email
-            );
           } else {
             console.error("[line-auth] jwt: sync returned null");
           }
