@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import {
   MAGAZINE_BUCKET,
+  buildCampaignStoragePath,
   buildMagazineStoragePath,
   validateMagazineImageFile,
 } from "@/lib/supabase-upload";
-import { applyWatermark, storagePathAsWebp } from "@/lib/watermark";
+import {
+  applyWatermark,
+  prepareCampaignImageForStorage,
+  storagePathAsWebp,
+} from "@/lib/watermark";
 
 /**
  * POST /api/admin/magazine/upload
@@ -24,14 +29,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: err }, { status: 400 });
     }
 
+    const uploadContext = String(form.get("upload_context") ?? "");
+    const isCampaign =
+      uploadContext === "campaign" ||
+      req.headers.get("x-upload-type")?.toLowerCase() === "campaign";
+
     const raw = Buffer.from(await file.arrayBuffer());
-    const { buffer, watermarked } = await applyWatermark(raw);
-    const objectPath = watermarked
-      ? storagePathAsWebp(buildMagazineStoragePath(file.name))
-      : buildMagazineStoragePath(file.name);
-    const contentType = watermarked
-      ? "image/webp"
-      : file.type || "application/octet-stream";
+    let buffer: Buffer;
+    let objectPath: string;
+    let contentType: string;
+
+    if (isCampaign) {
+      const prep = await prepareCampaignImageForStorage(raw, file.type || "");
+      buffer = prep.buffer;
+      objectPath = buildCampaignStoragePath(file.name);
+      contentType = prep.contentType;
+    } else {
+      const wm = await applyWatermark(raw);
+      buffer = wm.buffer;
+      objectPath = wm.watermarked
+        ? storagePathAsWebp(buildMagazineStoragePath(file.name))
+        : buildMagazineStoragePath(file.name);
+      contentType = wm.watermarked
+        ? "image/webp"
+        : file.type || "application/octet-stream";
+    }
 
     const supabase = createServiceRoleClient();
 

@@ -48,12 +48,20 @@ type HomepageSectionRow = {
 const HOMEPAGE_SECTION_PREVIEW_IMAGES: Record<string, string> = {
   hero: "https://picsum.photos/seed/ssb-home-hero/96/64",
   categories: "https://picsum.photos/seed/ssb-home-categories/96/64",
+  breeder_showcase: "https://picsum.photos/seed/ssb-home-breeder-grid/96/64",
   blog: "https://picsum.photos/seed/ssb-home-blog/96/64",
   featured: "https://picsum.photos/seed/ssb-home-featured/96/64",
-  breeders: "https://picsum.photos/seed/ssb-home-breeders/96/64",
+  breeders: "https://picsum.photos/seed/ssb-home-breeders-ribbon/96/64",
   trust: "https://picsum.photos/seed/ssb-home-trust/96/64",
   new_strains: "https://picsum.photos/seed/ssb-home-new/96/64",
   newsletter: "https://picsum.photos/seed/ssb-home-newsletter/96/64",
+};
+
+/** Short hint under the technical `key` in admin list (not stored in DB). */
+const HOMEPAGE_SECTION_KEY_HINTS: Record<string, string> = {
+  breeder_showcase: "Icon grid · BreederShowcase",
+  breeders: "Horizontal slider · BreederRibbon",
+  categories: "Quick pills · QuickCategoryNav",
 };
 
 function sectionPreviewSrc(key: string): string {
@@ -117,12 +125,20 @@ function SortableRow({
             <p className="text-sm font-semibold leading-snug text-zinc-900">{row.label_th || "—"}</p>
             <p className="text-xs leading-snug text-zinc-500">{row.label_en || "—"}</p>
             <p className="font-mono text-[10px] text-zinc-400">{row.key}</p>
+            {HOMEPAGE_SECTION_KEY_HINTS[row.key] ? (
+              <p className="text-[10px] leading-snug text-zinc-500">{HOMEPAGE_SECTION_KEY_HINTS[row.key]}</p>
+            ) : null}
           </div>
         ) : (
           <>
             <p className="truncate text-sm font-medium text-zinc-900">{row.label_th}</p>
             <p className="truncate text-xs text-zinc-500">
               {row.label_en} · <span className="font-mono text-[10px] text-zinc-400">{row.key}</span>
+              {HOMEPAGE_SECTION_KEY_HINTS[row.key] ? (
+                <span className="mt-0.5 block text-[10px] text-zinc-400">
+                  {HOMEPAGE_SECTION_KEY_HINTS[row.key]}
+                </span>
+              ) : null}
             </p>
           </>
         )}

@@ -307,32 +307,34 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
 
   const renderSection = (section: HomePageSectionPayload): ReactNode => {
     const st = sectionTitle(section);
+    const sk = section.key;
     switch (section.key) {
-      case "hero": {
-        const categoriesSec = sections.find((s) => s.key === "categories");
-        const breedersSec = sections.find((s) => s.key === "breeders");
+      case "hero":
         return (
-          <div key="hero" className="bg-white pb-10 sm:pb-14">
+          <div key={sk} className="bg-white pb-6 sm:pb-8">
             <div className="mx-auto max-w-7xl max-lg:px-0 max-lg:pt-0 px-4 pt-5 sm:px-6 sm:pt-6">
               <div className="overflow-hidden rounded-3xl border border-zinc-200 shadow-[0_24px_64px_-18px_rgba(21,128,61,0.12)] ring-1 ring-zinc-200/80 max-lg:rounded-none max-lg:border-0 max-lg:shadow-none max-lg:ring-0">
                 <Hero sectionTitle={st} />
               </div>
             </div>
-            <QuickCategoryNav
-              sectionTitle={categoriesSec ? sectionTitle(categoriesSec) : undefined}
-            />
-            <BreederShowcase
-              sectionTitle={breedersSec ? sectionTitle(breedersSec) : undefined}
-            />
           </div>
         );
-      }
       case "categories":
-        return null;
+        return (
+          <div key={sk} className="bg-white pb-6 sm:pb-8">
+            <QuickCategoryNav sectionTitle={st} />
+          </div>
+        );
+      case "breeder_showcase":
+        return (
+          <div key={sk} className="bg-white pb-6 sm:pb-10">
+            <BreederShowcase sectionTitle={st} />
+          </div>
+        );
       case "blog":
         return (
           <InsightSection
-            key="blog"
+            key={sk}
             posts={insights}
             loading={insightsLoading}
             sectionTitle={st}
@@ -340,7 +342,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
         );
       case "featured":
         return (
-          <div key="featured" className="bg-zinc-50/50">
+          <div key={sk} className="bg-zinc-50/50">
             <FeaturedProductsCarousel
               products={featuredProducts}
               isLoading={featuredLoading}
@@ -356,7 +358,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
           "Choose seeds from leading breeders"
         );
         return (
-          <section key="breeders" className="border-b border-zinc-100 bg-white py-12 sm:py-16">
+          <section key={sk} className="border-b border-zinc-100 bg-white py-12 sm:py-16">
             <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
               <div className="mb-8 flex items-end justify-between">
                 <div>
@@ -390,7 +392,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
       }
       case "trust": {
         return (
-          <section key="trust" className="border-t border-b border-zinc-100 bg-zinc-50/30 py-12 sm:py-16">
+          <section key={sk} className="border-t border-b border-zinc-100 bg-zinc-50/30 py-12 sm:py-16">
             <div
               className={`mx-auto max-w-5xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
             >
@@ -418,7 +420,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
           "New Arrivals"
         );
         return (
-          <section key="new_strains" className={`mx-auto max-w-7xl px-4 py-14 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+          <section key={sk} className={`mx-auto max-w-7xl px-4 py-14 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
             <motion.div
               initial="hidden"
               whileInView="show"
@@ -484,7 +486,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
         );
       }
       case "newsletter": {
-        return <HomeNewsletterSection key="newsletter" />;
+        return <HomeNewsletterSection key={sk} />;
       }
       default:
         return null;

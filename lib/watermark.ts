@@ -194,3 +194,20 @@ export function storagePathAsWebp(objectPath: string): string {
   const trimmed = objectPath.replace(/\.[^/.]+$/, "");
   return `${trimmed}.webp`;
 }
+
+/** Campaign / promotion assets: no watermark, WebP with alpha preserved (lossless when needed). */
+export async function prepareCampaignImageForStorage(
+  imageBuffer: Buffer,
+  mimeHint: string
+): Promise<{ buffer: Buffer; contentType: string }> {
+  const pipeline = sharp(imageBuffer).rotate();
+  const meta = await pipeline.metadata();
+  const useLossless =
+    mimeHint === "image/png" ||
+    mimeHint === "image/webp" ||
+    !!meta.hasAlpha;
+  const buffer = useLossless
+    ? await pipeline.webp({ lossless: true, effort: 4 }).toBuffer()
+    : await pipeline.webp({ quality: 88, effort: 4 }).toBuffer();
+  return { buffer, contentType: "image/webp" };
+}

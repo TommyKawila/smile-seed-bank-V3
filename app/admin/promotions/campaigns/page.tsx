@@ -305,7 +305,7 @@ export default function PromotionCampaignsPage() {
           </Link>
           <h1 className="text-xl font-bold text-zinc-900">แคมเปญป๊อปอัพ</h1>
           <p className="text-sm text-zinc-500">
-            แบนเนอร์ + โค้ด — อัปโหลดผ่านระบบบล็อก (watermark)
+            แบนเนอร์ + โค้ด — รูปแคมเปญไม่มีลายน้ำ รองรับ PNG โปร่งใส
           </p>
         </div>
         <Button onClick={openAdd} className="bg-primary text-primary-foreground">
@@ -412,12 +412,14 @@ export default function PromotionCampaignsPage() {
                   value={form.image_url_desktop}
                   onChange={(url) => setForm((f) => ({ ...f, image_url_desktop: url }))}
                   onPhaseChange={setPhaseD}
+                  campaignTransparency
                 />
                 <ImageUploadField
                   label="Mobile (optional)"
                   value={form.image_url_mobile}
                   onChange={(url) => setForm((f) => ({ ...f, image_url_mobile: url }))}
                   onPhaseChange={setPhaseM}
+                  campaignTransparency
                 />
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3">

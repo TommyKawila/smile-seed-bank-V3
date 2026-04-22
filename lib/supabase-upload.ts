@@ -25,6 +25,12 @@ export function buildMagazineStoragePath(originalName: string): string {
   return `posts/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${safe}`;
 }
 
+/** Promotion pop-up images — always `.webp` after server encode. */
+export function buildCampaignStoragePath(originalName: string): string {
+  const stem = sanitizeOriginalFilename(originalName.replace(/\.[^/.]+$/, "") || originalName);
+  return `promotions/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${stem}.webp`;
+}
+
 /** Object key under bucket `product-images` (Smile pipeline: optimized, lightweight). */
 export function buildProductStoragePath(originalName: string): string {
   const safe = sanitizeOriginalFilename(originalName);
@@ -59,17 +65,27 @@ export function validateMagazineImageFile(file: File): string | null {
  * Upload from the browser (admin session via cookie; `/api/admin/*` is protected).
  */
 export async function uploadMagazineImage(
-  file: File
+  file: File,
+  options?: { campaign?: boolean }
 ): Promise<{ url: string } | { error: string }> {
   const v = validateMagazineImageFile(file);
   if (v) return { error: v };
 
   const form = new FormData();
   form.append("file", file);
+  if (options?.campaign) {
+    form.append("upload_context", "campaign");
+  }
+
+  const headers: HeadersInit = {};
+  if (options?.campaign) {
+    headers["X-Upload-Type"] = "campaign";
+  }
 
   const res = await fetch("/api/admin/magazine/upload", {
     method: "POST",
     body: form,
+    headers,
   });
 
   const data = (await res.json().catch(() => ({}))) as { error?: string; url?: string };

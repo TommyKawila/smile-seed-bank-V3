@@ -36,3 +36,25 @@ export async function compressImageForMagazineUpload(
   const bytesAfter = out.size;
   return { file: out, bytesBefore, bytesAfter };
 }
+
+/** Keeps PNG/WebP alpha; JPEG unchanged. */
+export async function compressImageForCampaignUpload(
+  file: File
+): Promise<MagazineCompressResult> {
+  const bytesBefore = file.size;
+  const fileType =
+    file.type === "image/png"
+      ? ("image/png" as const)
+      : file.type === "image/webp"
+        ? ("image/webp" as const)
+        : undefined;
+  const out = await imageCompression(file, {
+    maxSizeMB: MAGAZINE_IMAGE_COMPRESSION.maxSizeMB,
+    maxWidthOrHeight: MAGAZINE_IMAGE_COMPRESSION.maxWidthOrHeight,
+    initialQuality: MAGAZINE_IMAGE_COMPRESSION.initialQuality,
+    useWebWorker: MAGAZINE_IMAGE_COMPRESSION.useWebWorker,
+    ...(fileType ? { fileType } : {}),
+  });
+  const bytesAfter = out.size;
+  return { file: out, bytesBefore, bytesAfter };
+}

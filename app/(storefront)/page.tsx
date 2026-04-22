@@ -1,30 +1,44 @@
 import { Suspense } from "react";
+import { unstable_cache } from "next/cache";
 import { Loader2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { HomePageClient } from "@/components/storefront/HomePageClient";
-import { DEFAULT_HOME_SECTION_KEYS, type HomePageSectionPayload } from "@/lib/homepage-sections";
+import {
+  DEFAULT_HOME_SECTION_KEYS,
+  DEFAULT_SECTION_FALLBACK_LABELS,
+  type HomePageSectionPayload,
+} from "@/lib/homepage-sections";
 
-export const revalidate = 0;
+const getSectionsCached = unstable_cache(
+  async (): Promise<HomePageSectionPayload[]> => {
+    const count = await prisma.homepage_sections.count();
+    if (count === 0) {
+      return DEFAULT_HOME_SECTION_KEYS.map((key) => {
+        const fb = DEFAULT_SECTION_FALLBACK_LABELS[key];
+        return {
+          key,
+          label_th: fb?.label_th ?? "—",
+          label_en: fb?.label_en ?? "—",
+        };
+      });
+    }
+    const rows = await prisma.homepage_sections.findMany({
+      where: { is_active: true },
+      orderBy: [{ sort_order: "asc" }, { key: "asc" }],
+      select: { key: true, label_th: true, label_en: true },
+    });
+    return rows.map((r) => ({
+      key: r.key,
+      label_th: r.label_th,
+      label_en: r.label_en,
+    }));
+  },
+  ["storefront-homepage-sections"],
+  { tags: ["home-layout"] }
+);
 
 async function getSections(): Promise<HomePageSectionPayload[]> {
-  const count = await prisma.homepage_sections.count();
-  if (count === 0) {
-    return DEFAULT_HOME_SECTION_KEYS.map((key) => ({
-      key,
-      label_th: "—",
-      label_en: "—",
-    }));
-  }
-  const rows = await prisma.homepage_sections.findMany({
-    where: { is_active: true },
-    orderBy: { sort_order: "asc" },
-    select: { key: true, label_th: true, label_en: true },
-  });
-  return rows.map((r) => ({
-    key: r.key,
-    label_th: r.label_th,
-    label_en: r.label_en,
-  }));
+  return getSectionsCached();
 }
 
 export default async function HomePage() {

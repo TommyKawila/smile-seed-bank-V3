@@ -155,7 +155,7 @@ export function PromotionBanner() {
   const imageBlock = (
     <div
       className={cn(
-        "relative w-full bg-zinc-100",
+        "relative w-full bg-transparent",
         bannerInteractive && "cursor-pointer"
       )}
       style={{ aspectRatio: `${w} / ${h}` }}
@@ -223,7 +223,7 @@ export function PromotionBanner() {
   if (isEgg) {
     return (
       <div
-        className="fixed bottom-6 right-4 z-[100] w-[min(100vw-2rem,20rem)] overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-xl"
+        className="fixed bottom-6 right-4 z-[100] w-[min(100vw-2rem,20rem)] overflow-hidden rounded-xl border-0 bg-transparent shadow-none"
         role="dialog"
         aria-modal="true"
         aria-labelledby="promo-egg-title"
@@ -256,7 +256,7 @@ export function PromotionBanner() {
         if (!v) dismissSession(campaign.id);
       }}
     >
-      <DialogContent className="max-w-lg border-zinc-200 p-0 gap-0 overflow-hidden sm:max-w-lg">
+      <DialogContent className="max-w-lg border-0 bg-transparent p-0 shadow-none gap-0 overflow-visible sm:max-w-lg [&>button:last-child]:hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>{campaign.name}</DialogTitle>
         </DialogHeader>

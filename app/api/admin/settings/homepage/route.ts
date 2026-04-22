@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { assertAdmin } from "@/lib/auth-utils";
 import { logger } from "@/lib/logger";
@@ -59,6 +59,7 @@ export async function PATCH(req: Request) {
     );
 
     revalidatePath("/");
+    revalidateTag("home-layout");
     return NextResponse.json({ ok: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

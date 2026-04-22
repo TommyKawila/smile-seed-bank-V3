@@ -10,6 +10,7 @@ import {
   MAGAZINE_ORIGINAL_MAX_BYTES,
 } from "@/lib/supabase-upload";
 import {
+  compressImageForCampaignUpload,
   compressImageForMagazineUpload,
   formatImageBytes,
 } from "@/lib/image-optimizer";
@@ -35,6 +36,8 @@ export type ImageUploadFieldProps = {
   toastOnSuccess?: boolean;
   /** Slightly smaller drop zone */
   compact?: boolean;
+  /** Promotion/campaign: no watermark server-side; compress with alpha preserved; preview shows transparency. */
+  campaignTransparency?: boolean;
 };
 
 export function ImageUploadField({
@@ -46,6 +49,7 @@ export function ImageUploadField({
   variant = "magazine",
   toastOnSuccess = true,
   compact = false,
+  campaignTransparency = false,
   onPhaseChange,
 }: ImageUploadFieldProps) {
   const { toast } = useToast();
@@ -79,7 +83,9 @@ export function ImageUploadField({
       let bytesBefore: number;
       let bytesAfter: number;
       try {
-        const r = await compressImageForMagazineUpload(file);
+        const r = campaignTransparency
+          ? await compressImageForCampaignUpload(file)
+          : await compressImageForMagazineUpload(file);
         compressed = r.file;
         bytesBefore = r.bytesBefore;
         bytesAfter = r.bytesAfter;
@@ -104,7 +110,9 @@ export function ImageUploadField({
         const res =
           uploadTarget === "product"
             ? await uploadProductImage(compressed)
-            : await uploadMagazineImage(compressed);
+            : await uploadMagazineImage(compressed, {
+                campaign: campaignTransparency,
+              });
         if ("error" in res) {
           setLastCompressLine(null);
           setLocalError(res.error);
@@ -121,7 +129,7 @@ export function ImageUploadField({
         setPhase("idle");
       }
     },
-    [disabled, onChange, toast, toastOnSuccess, uploadTarget]
+    [campaignTransparency, disabled, onChange, toast, toastOnSuccess, uploadTarget]
   );
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,14 +285,19 @@ export function ImageUploadField({
         <div
           className={cn(
             "relative mt-3 overflow-hidden rounded-xl border",
-            isProductUi ? "border-zinc-200 bg-white" : "border-zinc-800 bg-zinc-900"
+            isProductUi ? "border-zinc-200 bg-white" : "border-zinc-800 bg-zinc-900",
+            campaignTransparency &&
+              "border-zinc-200 bg-slate-100 [background-image:repeating-conic-gradient(#f1f5f9_0%_25%,#e2e8f0_0%_50%)] [background-size:16px_16px]"
           )}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={trimmed}
             alt=""
-            className="max-h-56 w-full object-cover"
+            className={cn(
+              "max-h-56 w-full",
+              campaignTransparency ? "object-contain" : "object-cover"
+            )}
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";
             }}
