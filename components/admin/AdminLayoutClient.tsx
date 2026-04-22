@@ -1,13 +1,44 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Menu } from "lucide-react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { UserNav } from "@/components/admin/user-nav";
 import { Toaster } from "@/components/ui/toaster";
-
 export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isMobileDash = pathname === "/admin/m" || pathname?.startsWith("/admin/m/");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  if (isMobileDash) {
+    return (
+      <div className="min-h-dvh min-h-screen bg-zinc-950 text-zinc-100">
+        <Toaster />
+        <div className="mx-auto w-full min-h-dvh min-h-screen max-w-[600px] border-x border-zinc-800/80">
+          <header className="sticky top-0 z-40 flex items-center justify-between gap-2 border-b border-zinc-800 bg-zinc-950/90 px-3 py-2.5 backdrop-blur-md">
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-bold tracking-tight text-zinc-100">Quick orders</h1>
+              <p className="truncate text-[10px] text-zinc-500">/admin/m</p>
+            </div>
+            <UserNav
+              triggerClassName="h-9 gap-2 rounded-full border border-zinc-600 bg-zinc-900 px-1.5 pr-2 text-zinc-100 hover:bg-zinc-800"
+            />
+          </header>
+          <div className="px-2 pb-4 pt-1 sm:px-3">{children}</div>
+          <p className="px-3 pb-6 text-center text-[10px] leading-relaxed text-zinc-600">
+            <Link href="/admin/orders" className="text-emerald-500/90 underline-offset-2 hover:underline">
+              Full admin → Orders
+            </Link>
+            <span className="mt-1 block text-zinc-500">
+              Session refreshes in the background; you stay signed in on this device.
+            </span>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50">

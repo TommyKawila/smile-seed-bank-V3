@@ -7,6 +7,7 @@ import {
   ShoppingCart, Loader2, CheckCircle2, XCircle,
   ImageIcon, User, RefreshCw, FileText, Clock, BadgeCheck,
   Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy, MessageCircle, FileUp, ChevronDown,
+  Send, ScrollText,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -67,6 +69,36 @@ const STATUS_TABS = [
   { value: "CANCELLED", label: "ยกเลิก" },
   { value: "VOIDED", label: "ยกเลิก/คืน" },
 ];
+
+const ORDER_QUICK_MESSAGE_PRESETS = [
+  {
+    key: "oos",
+    label: "Item out of stock — choose replacement",
+    body: "สินค้าบางรายการหมดสต็อกชั่วคราว รบกวนแจ้งกลับมาเพื่อเลือกสินค้าทดแทน หรือรอเติมสต็อก — ขอบคุณครับ 🌿\n\nSome items are temporarily out of stock. Please reply to choose a replacement or wait for restock. Thank you! 🌿",
+  },
+  {
+    key: "addr",
+    label: "Address incomplete — need details",
+    body: "ที่อยู่จัดส่งยังไม่ครบถ้วน รบกวนแจ้งบ้านเลขที่ ถนน ตำบล/อำเภอ จังหวัด และรหัสไปรษณีย์ให้ครบนะครับ 📍\n\nYour shipping address looks incomplete. Please send your full address (no., street, district, province, postal code). 📍",
+  },
+] as const;
+
+function orderLogActionLabel(action: string): string {
+  switch (action) {
+    case "MESSAGE_SENT":
+      return "ข้อความ (ส่งเอง)";
+    case "AUTO_LINE_FLEX":
+      return "LINE Flex อัตโนมัติ";
+    case "AUTO_LINE_TEXT":
+      return "ข้อความ LINE อัตโนมัติ";
+    case "STATUS_UPDATED":
+      return "แจ้งเตือน / สถานะ";
+    case "MOBILE_DASH":
+      return "มือถือ (Quick)";
+    default:
+      return action;
+  }
+}
 
 const PAYMENT_LABELS: Record<string, string> = {
   TRANSFER: "โอนเงิน",
@@ -689,6 +721,13 @@ type OrderDetail = {
   createdAt: string;
   lineUserId?: string | null;
   items: { productName: string; unitLabel: string; breederName: string | null; quantity: number; unitPrice: number; totalPrice: number }[];
+  activityLogs?: {
+    id: string;
+    orderId: number;
+    action: string;
+    messageContent: string | null;
+    createdAt: string;
+  }[];
 };
 
 export default function AdminOrdersPage() {
@@ -723,6 +762,9 @@ export default function AdminOrdersPage() {
   const [adminClaimEmail, setAdminClaimEmail] = useState("");
   const [adminClaimApproveNow, setAdminClaimApproveNow] = useState(false);
   const [adminClaimSubmitting, setAdminClaimSubmitting] = useState(false);
+  const [quickMessageOpen, setQuickMessageOpen] = useState(false);
+  const [quickMessageBody, setQuickMessageBody] = useState("");
+  const [quickMessageSending, setQuickMessageSending] = useState(false);
 
   const { orders, isLoading, error, refetch } = useAdminOrders(statusFilter || undefined);
 
@@ -968,6 +1010,49 @@ export default function AdminOrdersPage() {
       setDetailLoading(false);
     }
   }, [pushToast]);
+
+  const refreshOrderDetailOnly = useCallback(
+    async (orderId: number) => {
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "โหลดไม่สำเร็จ");
+        setDetailModal(data);
+      } catch (err) {
+        pushToast(String(err), "error");
+      }
+    },
+    [pushToast]
+  );
+
+  const sendQuickMessage = useCallback(
+    async (orderId: number) => {
+      const trimmed = quickMessageBody.trim();
+      if (!trimmed) {
+        pushToast("กรุณาใส่ข้อความ", "error");
+        return;
+      }
+      setQuickMessageSending(true);
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}/message`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: trimmed }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? "ส่งไม่สำเร็จ");
+        pushToast("ส่งข้อความ LINE แล้ว", "success");
+        setQuickMessageOpen(false);
+        setQuickMessageBody("");
+        await refreshOrderDetailOnly(orderId);
+      } catch (err) {
+        pushToast(String(err), "error");
+      } finally {
+        setQuickMessageSending(false);
+      }
+    },
+    [quickMessageBody, pushToast, refreshOrderDetailOnly]
+  );
 
   const handleAdminClaimOpen = useCallback(
     (
@@ -1570,7 +1655,58 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
               <div>
-                <h4 className="mb-2 text-sm font-semibold text-zinc-700">ข้อมูลลูกค้า</h4>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-sm font-semibold text-zinc-700">ข้อมูลลูกค้า</h4>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 gap-1.5 border-primary/30 text-primary"
+                        disabled={!detailModal.lineUserId}
+                        title={
+                          detailModal.lineUserId
+                            ? "ส่งข้อความ LINE ถึงลูกค้า"
+                            : "ผูก LINE ก่อน จึงจะส่งข้อความได้"
+                        }
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        Send message
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                      {ORDER_QUICK_MESSAGE_PRESETS.map((p) => (
+                        <DropdownMenuItem
+                          key={p.key}
+                          className="cursor-pointer text-xs leading-snug"
+                          onSelect={() => {
+                            setQuickMessageBody(p.body);
+                            setQuickMessageOpen(true);
+                          }}
+                        >
+                          {p.label}
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer text-xs font-medium"
+                        onSelect={() => {
+                          setQuickMessageBody("");
+                          setQuickMessageOpen(true);
+                        }}
+                      >
+                        Custom message…
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                {!detailModal.lineUserId ? (
+                  <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
+                    <span className="font-semibold">LINE messaging unavailable.</span> Customer has not
+                    linked LINE account. Please contact via Email or Phone.
+                  </p>
+                ) : null}
                 <div className="space-y-1 rounded-lg border border-zinc-200 bg-zinc-50/50 p-3 text-sm">
                   <p><span className="text-zinc-500">ชื่อ:</span> {detailModal.customerName ?? "—"}</p>
                   <p><span className="text-zinc-500">โทร:</span> {detailModal.customerPhone ?? "—"}</p>
@@ -1710,8 +1846,97 @@ export default function AdminOrdersPage() {
                   เหตุผลยกเลิก: {detailModal.voidReason}
                 </div>
               )}
+
+              <div>
+                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-zinc-700">
+                  <ScrollText className="h-4 w-4 text-zinc-500" />
+                  Activity history
+                </h4>
+                {detailModal.activityLogs && detailModal.activityLogs.length > 0 ? (
+                  <ul className="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-2 text-sm">
+                    {detailModal.activityLogs.map((log) => (
+                      <li
+                        key={log.id}
+                        className="border-b border-zinc-100 pb-2 last:border-0 last:pb-0"
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                          <span className="text-xs font-semibold text-primary">
+                            {orderLogActionLabel(log.action)}
+                          </span>
+                          <time
+                            className="text-[10px] text-zinc-400"
+                            dateTime={log.createdAt}
+                          >
+                            {new Date(log.createdAt).toLocaleString("th-TH", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </time>
+                        </div>
+                        {log.messageContent ? (
+                          <p className="mt-1 whitespace-pre-wrap break-words text-xs text-zinc-600">
+                            {log.messageContent}
+                          </p>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50 px-3 py-2 text-xs text-zinc-500">
+                    ยังไม่มีกิจกรรม — การอนุมัติ/จัดส่งและข้อความ LINE จะบันทึกที่นี่
+                  </p>
+                )}
+              </div>
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={quickMessageOpen}
+        onOpenChange={(o) => {
+          setQuickMessageOpen(o);
+          if (!o) setQuickMessageBody("");
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Quick message (LINE push)</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-zinc-500">
+            ส่งเป็นข้อความธรรมดาไปยังลูกค้าผ่าน LINE Official — ต้องมี line_user_id บนออเดอร์
+          </p>
+          <Textarea
+            className="min-h-[120px] text-sm"
+            placeholder="พิมพ์ข้อความ…"
+            value={quickMessageBody}
+            onChange={(e) => setQuickMessageBody(e.target.value)}
+            disabled={quickMessageSending}
+          />
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setQuickMessageOpen(false);
+                setQuickMessageBody("");
+              }}
+              disabled={quickMessageSending}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="button"
+              className="bg-primary hover:bg-primary/90"
+              disabled={quickMessageSending || !detailModal}
+              onClick={() => {
+                if (detailModal) void sendQuickMessage(detailModal.id);
+              }}
+            >
+              {quickMessageSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="mr-1.5 h-4 w-4" />}
+              ส่ง
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

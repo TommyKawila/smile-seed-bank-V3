@@ -1,4 +1,5 @@
 import { loadAdminOrderDetail } from "@/lib/load-admin-order-detail";
+import { createOrderLog } from "@/lib/order-logs";
 import { getSiteOrigin } from "@/lib/get-url";
 import {
   generateOrderPlacedFlexMessage,
@@ -69,6 +70,11 @@ export async function sendLineFlexNotification(
     const lineUid = detail.lineUserId?.trim();
     if (!lineUid) {
       console.warn(`[LINE flex notify] orderId=${orderId} kind=${kind} skipped: no line_user_id`);
+      await createOrderLog({
+        orderId,
+        action: "STATUS_UPDATED",
+        messageContent: `LINE auto (${kind}): not sent — no line_user_id on order`,
+      });
       return;
     }
 
@@ -83,6 +89,11 @@ export async function sendLineFlexNotification(
       });
       const result = await pushFlexMessageToLineUser(lineUid, flex);
       if (result.success) {
+        await createOrderLog({
+          orderId,
+          action: "AUTO_LINE_FLEX",
+          messageContent: `ORDER_PLACED · ${flex.altText}`,
+        });
         console.log(`[LINE flex notify] orderId=${orderId} kind=ORDER_PLACED ok`);
       } else {
         console.error(`[LINE flex notify] orderId=${orderId} kind=ORDER_PLACED fail:`, result.error);
@@ -94,6 +105,11 @@ export async function sendLineFlexNotification(
       const flex = generatePaymentConfirmedFlexMessage(detailToFlexInput(detail));
       const result = await pushFlexMessageToLineUser(lineUid, flex);
       if (result.success) {
+        await createOrderLog({
+          orderId,
+          action: "AUTO_LINE_FLEX",
+          messageContent: `PAYMENT_CONFIRMED · ${flex.altText}`,
+        });
         console.log(`[LINE flex notify] orderId=${orderId} kind=PAYMENT_CONFIRMED ok`);
       } else {
         console.error(`[LINE flex notify] orderId=${orderId} kind=PAYMENT_CONFIRMED fail:`, result.error);
@@ -119,6 +135,11 @@ export async function sendLineFlexNotification(
       });
       const result = await pushFlexMessageToLineUser(lineUid, flex);
       if (result.success) {
+        await createOrderLog({
+          orderId,
+          action: "AUTO_LINE_FLEX",
+          messageContent: `ORDER_SHIPPED · ${flex.altText} · ${label} ${tn}`,
+        });
         console.log(`[LINE flex notify] orderId=${orderId} kind=ORDER_SHIPPED ok`);
       } else {
         console.error(`[LINE flex notify] orderId=${orderId} kind=ORDER_SHIPPED fail:`, result.error);

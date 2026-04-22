@@ -18,6 +18,7 @@ import {
   Check,
   RotateCcw,
   FileText,
+  MessageCircle,
 } from "lucide-react";
 import generatePayload from "promptpay-qr";
 import QRCode from "qrcode";
@@ -125,6 +126,46 @@ function ShippingRecipientBlock({ order, t }: { order: OrderSuccessView; t: TFn 
       {order.shipping_address ? (
         <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-700">{order.shipping_address}</p>
       ) : null}
+    </div>
+  );
+}
+
+function LineOrderUpdatesPromo({
+  t,
+  href,
+  lineId,
+  orderNo,
+}: {
+  t: TFn;
+  href: string;
+  lineId: string | null;
+  orderNo: string;
+}) {
+  return (
+    <div className="rounded-2xl border-2 border-[#06C755] bg-gradient-to-br from-[#ecfdf5] from-40% via-white to-white p-4 shadow-md ring-1 ring-[#06C755]/15">
+      <div className="mb-1.5 flex items-center justify-center gap-2">
+        <MessageCircle className="h-7 w-7 shrink-0 text-[#06C755]" aria-hidden />
+        <span className="text-center text-base font-extrabold leading-tight text-[#047857] sm:text-lg">
+          {t("รับอัปเดตออเดอร์ทาง LINE", "Get order updates on LINE")}
+        </span>
+      </div>
+      <p className="text-center text-[11px] leading-relaxed text-zinc-600">
+        {t(
+          "ยืนยันชำระ / เลขพัสดุ — แอด LINE แล้วส่งเลขออเดอร์ (รองรับอีเมลหากยังไม่เชื่อม)",
+          "Payment & shipping alerts — add LINE and send your order #. Email is used if LINE is not linked.",
+        )}
+      </p>
+      <div className="mt-3">
+        <LineOaResponsiveCta
+          href={href}
+          orderNumber={orderNo}
+          lineId={lineId}
+          desktopAddFriend
+          className="h-12 gap-2 py-0 text-base font-extrabold"
+        >
+          {t("รับอัปเดตออเดอร์บน LINE", "Get updates on LINE")}
+        </LineOaResponsiveCta>
+      </div>
     </div>
   );
 }
@@ -343,6 +384,7 @@ export default function OrderSuccessDynamicPage() {
   const isCancelled = order.status === "CANCELLED";
   const isVoided = order.status === "VOIDED";
   const isShipped = order.status === "SHIPPED";
+  const showLineConversionHook = !lineLinked && !isVoided;
 
   const showTransferPayFlow =
     order.status === "PENDING" &&
@@ -489,6 +531,14 @@ export default function OrderSuccessDynamicPage() {
     return (
       <div className="min-h-screen bg-zinc-50 pt-20 pb-14">
         <div className="mx-auto max-w-lg space-y-5 px-4 sm:px-6">
+          {showLineConversionHook ? (
+            <LineOrderUpdatesPromo
+              t={t}
+              href={lineHrefDefault}
+              lineId={lineOaId}
+              orderNo={displayNo}
+            />
+          ) : null}
           <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -732,6 +782,14 @@ export default function OrderSuccessDynamicPage() {
           )}
 
           <CardContent className="space-y-5 p-5 sm:p-6">
+            {showLineConversionHook ? (
+              <LineOrderUpdatesPromo
+                t={t}
+                href={lineHrefDefault}
+                lineId={lineOaId}
+                orderNo={displayNo}
+              />
+            ) : null}
             <div className="rounded-lg border border-zinc-100 bg-zinc-50/90 px-3 py-2.5">
               <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
                 {t("เลขออเดอร์", "Order no.")}

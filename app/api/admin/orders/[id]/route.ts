@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadAdminOrderDetail } from "@/lib/load-admin-order-detail";
+import { listOrderLogs } from "@/lib/order-logs";
 import { bigintToJson } from "@/lib/bigint-json";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,10 @@ export async function GET(
       return NextResponse.json({ error: "Invalid order id" }, { status: 400 });
     }
 
-    const detail = await loadAdminOrderDetail(orderId);
+    const [detail, activityLogs] = await Promise.all([
+      loadAdminOrderDetail(orderId),
+      listOrderLogs(orderId),
+    ]);
     if (!detail) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
@@ -25,6 +29,7 @@ export async function GET(
       bigintToJson({
         ...rest,
         lineUserId,
+        activityLogs,
       })
     );
   } catch (err) {

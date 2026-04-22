@@ -13,6 +13,7 @@ import {
 } from "@/services/email-service";
 import { sendLineFlexNotification } from "@/lib/order-line-notifications";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
+import { createOrderLog } from "@/lib/order-logs";
 import { pushTextToLineUser } from "@/services/line-messaging";
 
 export interface AdminOrderRow {
@@ -28,6 +29,8 @@ export interface AdminOrderRow {
   shipping_provider: string | null;
   created_at: string;
   line_user_id: string | null;
+  customer_phone: string | null;
+  shipping_address: string | null;
 }
 
 export type ServiceResult<T> = { data: T | null; error: string | null };
@@ -160,35 +163,41 @@ export async function approvePayment(
       const th =
         `ได้รับยอดโอนจำนวน ${totalStr} บาท เรียบร้อยแล้วครับ พรุ่งนี้เราจะจัดส่งของให้ และจะแจ้งเลขพัสดุ (tracking) ให้ทราบอัตโนมัติ ขอบคุณครับ 🙏`;
       const en = `Payment of ${totalStr} THB received. We’ll ship tomorrow and send your tracking number here. Thank you! 🙏`;
+      const textBody = `${th}\n\n${en}`;
       console.log("Pushing to LINE:", lineUid);
-      void pushTextToLineUser(lineUid, `${th}\n\n${en}`)
-        .then((pushResult) => {
-          if (!pushResult.success) {
-            console.error("[approvePayment] LINE text push API:", pushResult.error);
-          }
-        })
-        .catch((e) => console.error("[approvePayment] LINE text push exception:", e));
+      try {
+        const pushResult = await pushTextToLineUser(lineUid, textBody);
+        if (pushResult.success) {
+          await createOrderLog({
+            orderId,
+            action: "AUTO_LINE_TEXT",
+            messageContent: textBody,
+          });
+        } else {
+          console.error("[approvePayment] LINE text push API:", pushResult.error);
+        }
+      } catch (e) {
+        console.error("[approvePayment] LINE text push exception:", e);
+      }
     } else {
       console.log(
         "[approvePayment] skip LINE payment text: no line_user_id on order or web customer profile"
       );
     }
 
-    if (before.status === "AWAITING_VERIFICATION") {
-      const email =
-        before.customers?.email?.trim() || before.shipping_email?.trim() || null;
-      const name =
-        before.customer_name?.trim() ||
-        before.customers?.full_name?.trim() ||
-        "Customer";
-      if (email) {
-        void sendPaymentReceivedEmail({
-          toEmail: email,
-          customerName: name,
-          orderNumber: before.order_number,
-          orderId,
-        }).catch((e) => console.error("[approvePayment] email:", e));
-      }
+    const email =
+      before.customers?.email?.trim() || before.shipping_email?.trim() || null;
+    const name =
+      before.customer_name?.trim() || before.customers?.full_name?.trim() || "Customer";
+    const sendPaymentEmail =
+      !!email && (!lineUid || before.status === "AWAITING_VERIFICATION");
+    if (sendPaymentEmail && email) {
+      void sendPaymentReceivedEmail({
+        toEmail: email,
+        customerName: name,
+        orderNumber: before.order_number,
+        orderId,
+      }).catch((e) => console.error("[approvePayment] email:", e));
     }
 
     return { data: { order, before }, error: null };
@@ -364,7 +373,6 @@ export async function markShipped(
           "";
         const tn = trackingNumber.trim();
 
-        // Email notification
         if (row.email) {
           try {
             await sendShippingConfirmationEmail({
@@ -378,6 +386,10 @@ export async function markShipped(
           } catch (emailErr) {
             console.error("[orders-service] markShipped email error:", emailErr);
           }
+        } else if (!lineUid) {
+          console.warn(
+            `[markShipped] order ${orderId}: no email and no LINE id — cannot notify customer of shipment`
+          );
         }
 
         if (tn && lineUid) {

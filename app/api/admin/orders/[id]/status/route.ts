@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { bigintToJson } from "@/lib/bigint-json";
+import { createOrderLog } from "@/lib/order-logs";
 import { revalidateAfterOrderStatusChange } from "@/lib/revalidate-storefront-order";
 import { approvePayment, rejectPayment, markShipped } from "@/services/orders-service";
+
+function isMobileAdminUi(req: NextRequest): boolean {
+  return req.headers.get("x-admin-ui") === "m";
+}
 
 const StatusSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("approve") }),
@@ -39,6 +44,13 @@ export async function PATCH(
     if (action === "approve") {
       const { data, error } = await approvePayment(orderId);
       if (error) return NextResponse.json({ error }, { status: 500 });
+      if (isMobileAdminUi(req)) {
+        await createOrderLog({
+          orderId,
+          action: "MOBILE_DASH",
+          messageContent: "Mobile Quick: payment approved (Confirm)",
+        });
+      }
       await revalidateAfterOrderStatusChange(orderId);
       return NextResponse.json({
         success: true,
@@ -59,6 +71,13 @@ export async function PATCH(
       const { trackingNumber, shippingProvider } = parsed.data;
       const { data, error } = await markShipped(orderId, trackingNumber.trim(), shippingProvider);
       if (error) return NextResponse.json({ error }, { status: 500 });
+      if (isMobileAdminUi(req)) {
+        await createOrderLog({
+          orderId,
+          action: "MOBILE_DASH",
+          messageContent: `Mobile Quick: shipped · ${shippingProvider} · ${trackingNumber.trim()}`,
+        });
+      }
       await revalidateAfterOrderStatusChange(orderId);
       return NextResponse.json({
         success: true,

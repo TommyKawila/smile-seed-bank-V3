@@ -27,6 +27,7 @@ import {
   Camera,
   Sparkles,
   Newspaper,
+  Smartphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -45,6 +46,7 @@ const navItems = [
   { href: "/admin/breeders", label: "แบรนด์ / Breeders", icon: Leaf },
   { href: "/admin/categories", label: "หมวดหมู่ / Categories", icon: FolderTree },
   { href: "/admin/orders", label: "ออเดอร์", icon: ShoppingCart },
+  { href: "/admin/m", label: "Orders (Mobile)", icon: Smartphone },
   { href: "/admin/quotations", label: "ใบเสนอราคา", icon: FileText },
   { href: "/admin/orders/create", label: "สร้างออเดอร์ (POS)", icon: PlusSquare },
   { href: "/admin/reports/daily", label: "รายงานยอดขาย", icon: FileText },

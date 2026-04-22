@@ -14,6 +14,8 @@ export interface AdminOrder {
   created_at: string;
   /** LINE Messaging API user id — required to push Flex from admin */
   line_user_id: string | null;
+  customer_phone: string | null;
+  shipping_address: string | null;
 }
 
 export function useAdminOrders(statusFilter?: string) {
