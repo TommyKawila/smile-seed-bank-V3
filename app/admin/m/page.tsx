@@ -1,13 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Package, Printer, RefreshCw, Truck } from "lucide-react";
+import { Calendar, Loader2, Package, Printer, RefreshCw, Truck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +45,36 @@ const CARRIERS: { value: string; label: string }[] = [
   { value: "J&T_EXPRESS", label: "J&T" },
 ];
 
-function sortOrders(orders: AdminOrder[]): AdminOrder[] {
+type StatusTab = "waiting" | "shipped" | "completed" | "cancelled" | "void";
+type DateRangeFilter = "week" | "month" | "year" | "all";
+
+const STATUS_TABS: { id: StatusTab; label: string }[] = [
+  { id: "waiting", label: "Waiting" },
+  { id: "shipped", label: "Shipped" },
+  { id: "completed", label: "Completed" },
+  { id: "cancelled", label: "Cancelled" },
+  { id: "void", label: "Void" },
+];
+
+function formatOrderDateBangkok(iso: string): string {
+  const d = new Date(iso);
+  const dateStr = new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok",
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
+    calendar: "buddhist",
+  }).format(d);
+  const timeStr = new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d);
+  return `${dateStr} - ${timeStr}`;
+}
+
+function sortWaitingQueue(orders: AdminOrder[]): AdminOrder[] {
   const rank = (s: string) => {
     if (s === "AWAITING_VERIFICATION") return 0;
     if (s === "PAID" || s === "COMPLETED") return 1;
@@ -49,6 +85,13 @@ function sortOrders(orders: AdminOrder[]): AdminOrder[] {
     if (d !== 0) return d;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
+}
+
+function sortOrdersForTab(orders: AdminOrder[], tab: StatusTab): AdminOrder[] {
+  if (tab === "waiting") return sortWaitingQueue(orders);
+  return [...orders].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 }
 
 function statusBadgeClass(status: string): string {
@@ -87,6 +130,8 @@ function isLikelyImage(url: string): boolean {
 
 export default function AdminMobileOrdersPage() {
   const { toast } = useToast();
+  const [statusTab, setStatusTab] = useState<StatusTab>("waiting");
+  const [dateRange, setDateRange] = useState<DateRangeFilter>("month");
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [slipView, setSlipView] = useState<string | null>(null);
@@ -100,7 +145,10 @@ export default function AdminMobileOrdersPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/orders", { cache: "no-store" });
+      const params = new URLSearchParams();
+      params.set("statusTab", statusTab);
+      params.set("dateRange", dateRange);
+      const res = await fetch(`/api/admin/orders?${params.toString()}`, { cache: "no-store" });
       const data = (await res.json()) as { orders?: AdminOrder[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Load failed");
       setOrders(data.orders ?? []);
@@ -110,7 +158,7 @@ export default function AdminMobileOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, statusTab, dateRange]);
 
   useEffect(() => {
     void load();
@@ -133,7 +181,10 @@ export default function AdminMobileOrdersPage() {
     };
   }, []);
 
-  const sorted = useMemo(() => sortOrders(orders), [orders]);
+  const sorted = useMemo(
+    () => sortOrdersForTab(orders, statusTab),
+    [orders, statusTab]
+  );
 
   const toLabelPayload = useCallback((o: AdminOrder): LabelPrintPayload => {
     return {
@@ -232,22 +283,76 @@ export default function AdminMobileOrdersPage() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2 py-1">
-        <p className="text-[11px] text-zinc-500">Tap slip to verify · newest first within queue</p>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-8 border-zinc-600 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
-          onClick={() => void load()}
-          disabled={loading}
-        >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-        </Button>
+      <div className="sticky top-0 z-30 -mx-2 space-y-2 bg-zinc-950/95 px-2 pb-2 pt-1 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {STATUS_TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setStatusTab(t.id)}
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  statusTab === t.id
+                    ? "border-emerald-500/70 bg-emerald-950/50 text-emerald-100"
+                    : "border-zinc-700 bg-zinc-900/80 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 shrink-0 border-zinc-600 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
+            onClick={() => void load()}
+            disabled={loading}
+            aria-label="Refresh"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Calendar className="h-3.5 w-3.5 shrink-0 text-zinc-500" aria-hidden />
+          <Select
+            value={dateRange}
+            onValueChange={(v) => setDateRange(v as DateRangeFilter)}
+          >
+            <SelectTrigger className="h-9 max-w-[200px] border-zinc-600 bg-zinc-900 text-xs text-zinc-100">
+              <SelectValue placeholder="Range" />
+            </SelectTrigger>
+            <SelectContent className="border-zinc-700 bg-zinc-900 text-zinc-100">
+              <SelectItem value="week" className="focus:bg-zinc-800 focus:text-zinc-100">
+                This week (7 days)
+              </SelectItem>
+              <SelectItem value="month" className="focus:bg-zinc-800 focus:text-zinc-100">
+                This month (30 days)
+              </SelectItem>
+              <SelectItem value="year" className="focus:bg-zinc-800 focus:text-zinc-100">
+                This year
+              </SelectItem>
+              <SelectItem value="all" className="focus:bg-zinc-800 focus:text-zinc-100">
+                All time
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {statusTab === "waiting" ? (
+          <p className="text-[10px] leading-snug text-zinc-500">
+            Tap slip to verify · queue order: verify first
+          </p>
+        ) : null}
       </div>
 
       {sorted.length === 0 ? (
-        <p className="py-8 text-center text-sm text-zinc-500">No orders</p>
+        <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/30 py-14 text-center">
+          <Package className="h-12 w-12 text-zinc-600 opacity-50" aria-hidden />
+          <p className="text-sm font-medium text-zinc-400">ไม่มีออเดอร์ในแท็บนี้</p>
+          <p className="max-w-[260px] text-xs text-zinc-500">
+            No orders for this status and date range — try All time or another tab.
+          </p>
+        </div>
       ) : (
         sorted.map((o) => (
           <div
@@ -257,6 +362,11 @@ export default function AdminMobileOrdersPage() {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="font-mono text-sm font-bold text-zinc-100">#{o.order_number}</p>
+                <p className="mt-0.5 text-[11px] text-zinc-500">
+                  {formatOrderDateBangkok(o.created_at)}
+                  <span className="text-zinc-600"> · </span>
+                  <span className="font-mono text-zinc-400">ID {o.id}</span>
+                </p>
                 <p className="truncate text-sm text-zinc-300">
                   {o.customer_name?.trim() || "—"}
                 </p>
@@ -371,7 +481,9 @@ export default function AdminMobileOrdersPage() {
               </div>
             ) : null}
 
-            {(o.status === "PAID" || o.status === "SHIPPED") && (
+            {(o.status === "PAID" ||
+              o.status === "SHIPPED" ||
+              o.status === "COMPLETED") && (
               <Button
                 type="button"
                 variant="outline"

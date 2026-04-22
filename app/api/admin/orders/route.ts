@@ -34,7 +34,9 @@ const ManualOrderSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const status = req.nextUrl.searchParams.get("status") ?? undefined;
-    const { data, error } = await listOrders({ status });
+    const statusTab = req.nextUrl.searchParams.get("statusTab") ?? undefined;
+    const dateRange = req.nextUrl.searchParams.get("dateRange") ?? undefined;
+    const { data, error } = await listOrders({ status, statusTab, dateRange });
     if (error) return NextResponse.json({ error }, { status: 500 });
     return NextResponse.json({ orders: data ?? [] });
   } catch (err) {

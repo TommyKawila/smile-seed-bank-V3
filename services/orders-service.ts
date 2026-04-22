@@ -35,6 +35,37 @@ export interface AdminOrderRow {
 
 export type ServiceResult<T> = { data: T | null; error: string | null };
 
+/** Mobile /admin/m status tabs → DB `orders.status` values */
+export const ADMIN_ORDER_STATUS_TAB = {
+  waiting: ["PENDING", "PENDING_INFO", "AWAITING_VERIFICATION", "PAID"],
+  shipped: ["SHIPPED", "DELIVERED"],
+  completed: ["COMPLETED"],
+  cancelled: ["CANCELLED"],
+  void: ["VOIDED", "VOID"],
+} as const;
+
+export type AdminOrderStatusTab = keyof typeof ADMIN_ORDER_STATUS_TAB;
+
+export type AdminOrderDateRange = "week" | "month" | "year" | "all";
+
+function lowerBoundForDateRange(range: AdminOrderDateRange): Date | null {
+  if (range === "all") return null;
+  const now = Date.now();
+  if (range === "week") return new Date(now - 7 * 86400000);
+  if (range === "month") return new Date(now - 30 * 86400000);
+  if (range === "year") {
+    const ymd = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const year = ymd.slice(0, 4);
+    return new Date(`${year}-01-01T00:00:00+07:00`);
+  }
+  return null;
+}
+
 export type ApprovePaymentResult = {
   order: Exclude<Awaited<ReturnType<typeof prisma.orders.update>>, undefined>;
   before: {
@@ -54,11 +85,39 @@ export type ApprovePaymentResult = {
 
 export async function listOrders(opts?: {
   status?: string;
+  /** Mobile dashboard: maps to multiple `orders.status` values */
+  statusTab?: AdminOrderStatusTab | string;
+  /** When set, filters `created_at >=` lower bound (Asia/Bangkok year for `year`) */
+  dateRange?: AdminOrderDateRange | string;
 }): Promise<ServiceResult<AdminOrderRow[]>> {
   try {
     const sql = getSql();
-    const rows = opts?.status
-      ? await sql<AdminOrderRow[]>`
+    const tabRaw = opts?.statusTab?.trim();
+    const tab =
+      tabRaw && tabRaw in ADMIN_ORDER_STATUS_TAB
+        ? (tabRaw as AdminOrderStatusTab)
+        : undefined;
+    const legacyStatus = opts?.status?.trim();
+
+    let statuses: string[] | null = null;
+    if (tab) {
+      statuses = [...ADMIN_ORDER_STATUS_TAB[tab]];
+    } else if (legacyStatus) {
+      statuses = [legacyStatus];
+    }
+
+    const drRaw = opts?.dateRange?.trim();
+    const hasDateRangeParam = opts?.dateRange !== undefined && opts?.dateRange !== "";
+    const dr: AdminOrderDateRange =
+      drRaw === "week" || drRaw === "month" || drRaw === "year" || drRaw === "all"
+        ? drRaw
+        : "all";
+    const from = hasDateRangeParam ? lowerBoundForDateRange(dr) : null;
+
+    let rows: AdminOrderRow[];
+
+    if (statuses?.length && from) {
+      rows = await sql<AdminOrderRow[]>`
           SELECT o.id, o.order_number,
                  COALESCE(c.full_name, o.customer_name) AS customer_name,
                  o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
@@ -67,11 +126,41 @@ export async function listOrders(opts?: {
                  o.line_user_id
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
-          WHERE o.status = ${opts.status}
+          WHERE o.status IN ${sql(statuses)}
+            AND o.created_at >= ${from.toISOString()}::timestamptz
           ORDER BY o.created_at DESC
-          LIMIT 200
-        `
-      : await sql<AdminOrderRow[]>`
+          LIMIT 500
+        `;
+    } else if (statuses?.length) {
+      rows = await sql<AdminOrderRow[]>`
+          SELECT o.id, o.order_number,
+                 COALESCE(c.full_name, o.customer_name) AS customer_name,
+                 o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
+                 o.tracking_number, o.shipping_provider, o.created_at,
+                 o.customer_phone, o.shipping_address, o.customer_note,
+                 o.line_user_id
+          FROM orders o
+          LEFT JOIN customers c ON c.id = o.customer_id
+          WHERE o.status IN ${sql(statuses)}
+          ORDER BY o.created_at DESC
+          LIMIT 500
+        `;
+    } else if (from) {
+      rows = await sql<AdminOrderRow[]>`
+          SELECT o.id, o.order_number,
+                 COALESCE(c.full_name, o.customer_name) AS customer_name,
+                 o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
+                 o.tracking_number, o.shipping_provider, o.created_at,
+                 o.customer_phone, o.shipping_address, o.customer_note,
+                 o.line_user_id
+          FROM orders o
+          LEFT JOIN customers c ON c.id = o.customer_id
+          WHERE o.created_at >= ${from.toISOString()}::timestamptz
+          ORDER BY o.created_at DESC
+          LIMIT 500
+        `;
+    } else {
+      rows = await sql<AdminOrderRow[]>`
           SELECT o.id, o.order_number,
                  COALESCE(c.full_name, o.customer_name) AS customer_name,
                  o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
@@ -83,6 +172,8 @@ export async function listOrders(opts?: {
           ORDER BY o.created_at DESC
           LIMIT 200
         `;
+    }
+
     return { data: rows, error: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
