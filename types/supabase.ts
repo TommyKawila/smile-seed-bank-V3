@@ -64,6 +64,9 @@ export interface Product {
   is_featured?: boolean | null;
   featured_priority?: number | null;
   featured_tagline?: string | null;
+  /** Clearance: sale applies to listing price; packs scale from starting variant. */
+  is_clearance?: boolean | null;
+  sale_price?: number | null;
   image_url: string | null;
   image_url_2: string | null;
   image_url_3: string | null;

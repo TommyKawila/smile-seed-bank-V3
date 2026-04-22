@@ -697,6 +697,7 @@ export type Database = {
           image_urls: Json | null
           indica_ratio: number | null
           is_active: boolean | null
+          is_clearance: boolean | null
           is_featured: boolean | null
           lineage: string | null
           master_sku: string | null
@@ -704,6 +705,7 @@ export type Database = {
           name: string
           slug: string | null
           price: number | null
+          sale_price: number | null
           sativa_ratio: number | null
           seed_type: string | null
           seo_meta: Json | null
@@ -740,6 +742,7 @@ export type Database = {
           image_urls?: Json | null
           indica_ratio?: number | null
           is_active?: boolean | null
+          is_clearance?: boolean | null
           is_featured?: boolean | null
           lineage?: string | null
           master_sku?: string | null
@@ -747,6 +750,7 @@ export type Database = {
           name: string
           slug?: string | null
           price?: number | null
+          sale_price?: number | null
           sativa_ratio?: number | null
           seed_type?: string | null
           seo_meta?: Json | null
@@ -783,6 +787,7 @@ export type Database = {
           image_urls?: Json | null
           indica_ratio?: number | null
           is_active?: boolean | null
+          is_clearance?: boolean | null
           is_featured?: boolean | null
           lineage?: string | null
           master_sku?: string | null
@@ -790,6 +795,7 @@ export type Database = {
           name?: string
           slug?: string | null
           price?: number | null
+          sale_price?: number | null
           sativa_ratio?: number | null
           seed_type?: string | null
           seo_meta?: Json | null

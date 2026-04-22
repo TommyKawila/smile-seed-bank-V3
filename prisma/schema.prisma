@@ -397,6 +397,9 @@ model products {
   is_featured       Boolean? @default(false)
   featured_priority Int?     @default(0)
   featured_tagline  String?  @db.Text
+  /// Clearance: flat sale aligns to starting (lowest in-stock) variant; other packs scale by ratio.
+  sale_price   Decimal? @db.Decimal
+  is_clearance Boolean? @default(false)
   product_variants   product_variants[]
   product_images     product_images[]
   breeders           breeders?           @relation(fields: [breeder_id], references: [id], onUpdate: NoAction)

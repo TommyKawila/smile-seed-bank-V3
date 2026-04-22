@@ -1,5 +1,7 @@
 /** Comma-separated multi-select query params for breeder-context shop filters */
 
+import { parsePackFromUnitLabel } from "@/lib/sku-utils";
+
 export function parseListParam(param: string | null | undefined): string[] {
   if (!param?.trim()) return [];
   return param
@@ -105,6 +107,67 @@ export function productMatchesYieldQuickParam(
   return /high|xl|xxl|heavy|massive|monster|abundant|bumper|ผล|สูง|มาก|เยอะ|ใหญ่|yield/.test(s);
 }
 
+/** URL slugs for pack filters; `other` = counts in 1–10 that are not 1,2,3,5,10; `gt10` = >10. */
+export const SEED_PACK_FILTER_SLUGS = [
+  "1",
+  "2",
+  "3",
+  "5",
+  "10",
+  "gt10",
+  "other",
+] as const;
+export type SeedPackFilterSlug = (typeof SEED_PACK_FILTER_SLUGS)[number];
+
+const EXPLICIT_SINGLE_DIGIT_PACKS = new Set([1, 2, 3, 5, 10]);
+
+/** Packs like 4, 6, 7, 8, 9 (anything 1–10 except the explicit size filters). */
+export function seedPackMatchesOtherBucket(n: number): boolean {
+  return Number.isInteger(n) && n >= 1 && n <= 10 && !EXPLICIT_SINGLE_DIGIT_PACKS.has(n);
+}
+
+export function productMatchesSeedsPackFilter(
+  variants:
+    | { unit_label: string; is_active?: boolean | null }[]
+    | null
+    | undefined,
+  selectedSlugs: string[]
+): boolean {
+  if (selectedSlugs.length === 0) return true;
+  const active = (variants ?? []).filter((v) => v.is_active !== false);
+  for (const v of active) {
+    const n = parsePackFromUnitLabel(v.unit_label);
+    for (const s of selectedSlugs) {
+      if (s === "1" && n === 1) return true;
+      if (s === "2" && n === 2) return true;
+      if (s === "3" && n === 3) return true;
+      if (s === "5" && n === 5) return true;
+      if (s === "10" && n === 10) return true;
+      if (s === "gt10" && n > 10) return true;
+      if (s === "other" && seedPackMatchesOtherBucket(n)) return true;
+    }
+  }
+  return false;
+}
+
+function seedPackBucketsForVariants(
+  variants: { unit_label: string; is_active?: boolean | null }[] | null | undefined
+): Set<string> {
+  const out = new Set<string>();
+  const active = (variants ?? []).filter((v) => v.is_active !== false);
+  for (const v of active) {
+    const n = parsePackFromUnitLabel(v.unit_label);
+    if (n === 1) out.add("1");
+    if (n === 2) out.add("2");
+    if (n === 3) out.add("3");
+    if (n === 5) out.add("5");
+    if (n === 10) out.add("10");
+    if (n > 10) out.add("gt10");
+    if (seedPackMatchesOtherBucket(n)) out.add("other");
+  }
+  return out;
+}
+
 export function productMatchesShopAttributeFilters(
   p: {
     strain_dominance?: string | null;
@@ -113,13 +176,15 @@ export function productMatchesShopAttributeFilters(
     cbd_percent?: string | null;
     seed_type?: string | null;
     yield_info?: string | null;
+    product_variants?: { unit_label: string; is_active?: boolean | null }[] | null;
   },
   genetics: string[],
   difficulty: string[],
   thc: string[],
   cbd: string[],
   sex: string[],
-  yieldQuick?: string | null
+  yieldQuick?: string | null,
+  seeds?: string[]
 ): boolean {
   return (
     productMatchesGeneticsFilter(p.strain_dominance, genetics) &&
@@ -127,7 +192,8 @@ export function productMatchesShopAttributeFilters(
     productMatchesThcFilter(p.thc_percent, thc) &&
     productMatchesCbdFilter(p.cbd_percent, cbd) &&
     productMatchesSexFilter(p.seed_type, sex) &&
-    productMatchesYieldQuickParam(p.yield_info, yieldQuick)
+    productMatchesYieldQuickParam(p.yield_info, yieldQuick) &&
+    productMatchesSeedsPackFilter(p.product_variants ?? null, seeds ?? [])
   );
 }
 
@@ -137,6 +203,7 @@ export type ShopFilterCountProduct = {
   thc_percent?: number | null;
   cbd_percent?: string | null;
   seed_type?: string | null;
+  product_variants?: { unit_label: string; is_active?: boolean | null }[] | null;
 };
 
 export type ShopFilterOptionCounts = {
@@ -145,6 +212,7 @@ export type ShopFilterOptionCounts = {
   cbd: Record<string, number>;
   difficulty: Record<string, number>;
   sex: Record<string, number>;
+  seeds: Record<string, number>;
 };
 
 export function defaultFilterOptionCounts(): ShopFilterOptionCounts {
@@ -154,6 +222,7 @@ export function defaultFilterOptionCounts(): ShopFilterOptionCounts {
     cbd: { high: 0, mid: 0, low: 0 },
     difficulty: { easy: 0, moderate: 0, hard: 0 },
     sex: { feminized: 0, regular: 0 },
+    seeds: { "1": 0, "2": 0, "3": 0, "5": 0, "10": 0, gt10: 0, other: 0 },
   };
 }
 
@@ -216,6 +285,10 @@ export function calculateFilterCounts(products: ShopFilterCountProduct[]): ShopF
 
     const s = classifySexSlug(p.seed_type ?? null);
     if (s && s in c.sex) c.sex[s] += 1;
+
+    for (const bucket of seedPackBucketsForVariants(p.product_variants ?? null)) {
+      if (bucket in c.seeds) c.seeds[bucket] += 1;
+    }
   }
   return c;
 }
@@ -232,12 +305,13 @@ export function productMatchesBreederAttributeFilters(
   thc: string[]
 ): boolean {
   return productMatchesShopAttributeFilters(
-    { ...p, cbd_percent: null, seed_type: null, yield_info: null },
+    { ...p, cbd_percent: null, seed_type: null, yield_info: null, product_variants: null },
     genetics,
     difficulty,
     thc,
     [],
     [],
-    null
+    null,
+    []
   );
 }

@@ -6,7 +6,14 @@ import { motion } from "framer-motion";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { MicroGeneticsBar } from "@/components/storefront/MicroGeneticsBar";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
-import { productDetailHref } from "@/lib/product-utils";
+import {
+  productDetailHref,
+  computeStartingPrice,
+  getClearancePercentOff,
+  getEffectiveListingPrice,
+  getStartingVariantLabel,
+} from "@/lib/product-utils";
+import { formatPrice } from "@/lib/utils";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import type { Product } from "@/types/supabase";
 import { useLanguage } from "@/context/LanguageContext";
@@ -19,24 +26,23 @@ export function FinalArchiveSpotlightCard({
   product: ProductWithBreederAndVariants;
   variants?: import("framer-motion").Variants;
 }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const img = getListingThumbnailUrl(product);
   const units = Math.max(0, Math.floor(product.stock ?? 0));
+  const listFrom = getEffectiveListingPrice(product);
+  const listRegular = computeStartingPrice(product.product_variants);
+  const clearancePct = getClearancePercentOff(product);
+  const showStrike = clearancePct != null && listRegular > listFrom;
+  const seedsPackLabel = getStartingVariantLabel(product.product_variants, locale);
+  const barPct = Math.min(100, Math.max(8, (units / 24) * 100));
 
   return (
     <motion.div
       variants={variants}
       className="col-span-2 flex h-full min-h-0 w-full min-w-0 flex-col font-sans"
     >
-      <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-sm border border-amber-500/25 bg-white shadow-sm ring-1 ring-amber-500/15">
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 z-10 h-[2px] bg-gradient-to-r from-transparent via-amber-400/50 to-transparent"
-          initial={{ top: "0%" }}
-          animate={{ top: ["0%", "100%", "0%"] }}
-          transition={{ duration: 3.8, repeat: Infinity, ease: "linear" }}
-        />
-        <div className="pointer-events-none absolute inset-0 z-[1] animate-pulse bg-gradient-to-br from-amber-500/[0.04] via-transparent to-transparent opacity-60" />
+      <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm ring-1 ring-zinc-100">
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-br from-emerald-500/[0.04] via-transparent to-transparent" />
 
         <Link
           href={productDetailHref(product)}
@@ -56,19 +62,43 @@ export function FinalArchiveSpotlightCard({
               <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />
             )}
           </div>
-          <div className="flex min-w-0 flex-1 flex-col justify-center border-t border-amber-500/10 p-5 sm:border-l sm:border-t-0 sm:p-6">
-            <h3 className="text-xl font-bold leading-snug tracking-tight text-zinc-900 sm:text-2xl">
+          <div className="flex min-w-0 flex-1 flex-col justify-center border-t border-zinc-100 p-5 sm:border-l sm:border-t-0 sm:p-6">
+            <h3 className="font-sans text-xl font-bold leading-snug tracking-tight text-zinc-900 sm:text-2xl">
               {t("สินค้าเหลือชิ้นสุดท้าย", "Last items in stock")}
             </h3>
-            <p className="mt-1 text-xs font-normal text-zinc-600">{product.name}</p>
-            <p className="mt-3 text-[10px] font-medium tabular-nums uppercase tracking-[0.12em] text-amber-700/95 sm:text-[11px]">
-              STATUS: LOW_STOCK_ALERT // {units} UNITS LEFT
+            <p className="mt-1 font-sans text-sm font-medium text-zinc-800">{product.name}</p>
+            <p className="mt-3 font-sans text-xs font-semibold leading-snug text-emerald-800">
+              {t("รีบเลย! เหลือเพียง {n} ชิ้นสุดท้าย", "Hurry! Only {n} left").replace(
+                /\{n\}/g,
+                String(units)
+              )}
             </p>
+            <div className="mt-2 h-2 w-full max-w-md overflow-hidden rounded-full bg-zinc-200">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-500"
+                style={{ width: `${barPct}%` }}
+              />
+            </div>
             <div className="mt-4 w-full min-w-0 max-w-md">
               <MicroGeneticsBar product={product as Product} />
             </div>
-            <span className="mt-5 inline-flex w-fit items-center rounded-sm border border-primary/35 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary transition-colors group-hover:bg-primary/5">
-              {t("สั่งซื้อก่อนหมด", "ORDER BEFORE SOLD OUT")}
+            <div className="mt-4 min-w-0 max-w-md border-t border-zinc-100 pt-3">
+              {seedsPackLabel ? (
+                <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
+                  {seedsPackLabel}
+                </p>
+              ) : null}
+              {showStrike && (
+                <p className="font-sans text-xs tabular-nums text-zinc-400 line-through">
+                  {formatPrice(listRegular)}
+                </p>
+              )}
+              <p className="font-sans text-[15px] font-bold tabular-nums text-zinc-900">
+                {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
+              </p>
+            </div>
+            <span className="mt-5 inline-flex w-fit items-center rounded-full border border-emerald-700 bg-emerald-700 px-4 py-2 font-sans text-xs font-semibold text-white shadow-sm transition-colors group-hover:bg-emerald-800">
+              {t("สั่งซื้อก่อนหมด", "Order before sold out")}
             </span>
           </div>
         </Link>

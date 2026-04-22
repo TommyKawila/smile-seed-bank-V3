@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { savePromotionToUser } from "@/app/actions/promotion-campaign-actions";
@@ -180,42 +179,26 @@ export function PromotionBanner() {
         alt={campaign.name}
         fill
         className="object-contain"
-        sizes="(max-width: 640px) 100vw, 512px"
+        sizes="(max-width: 640px) 90vw, min(512px, 90vw)"
         unoptimized
         priority
       />
     </div>
   );
 
-  const footer = (
-    <div className="space-y-2 border-t border-zinc-100 bg-white p-4">
-      <p className="text-sm font-medium text-zinc-800">{campaign.name}</p>
-      <p className="text-xs text-zinc-500">
-        โค้ด:{" "}
-        <span className="font-mono font-semibold text-primary">{campaign.promo_code}</span>
-        {" · "}
-        {String(campaign.discount_type).toUpperCase() === "PERCENTAGE"
-          ? `ลด ${campaign.discount_value}%`
-          : `ลด ฿${Number(campaign.discount_value).toLocaleString("th-TH")}`}
-      </p>
-      {saveMode && httpLink ? (
-        <p className="text-[11px] text-zinc-400">คลิกรูปเพื่อบันทึกโค้ดและเปิดลิงก์</p>
-      ) : saveMode ? (
-        <p className="text-[11px] text-zinc-400">คลิกรูปเพื่อบันทึกโค้ดลงโปรไฟล์</p>
-      ) : httpLink ? (
-        <p className="text-[11px] text-zinc-400">คลิกรูปเพื่อเปิดลิงก์</p>
-      ) : null}
-      <Button
-        type="button"
-        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-        onClick={() => {
-          dismissSession(campaign.id);
-          setOpen(false);
-        }}
-      >
-        รับทราบ
-      </Button>
-    </div>
+  const closeBtn = (
+    <button
+      type="button"
+      className="absolute -right-1 -top-1 z-30 rounded-full bg-black/55 p-1.5 text-white shadow-md ring-2 ring-black/20 hover:bg-black/75 sm:-right-2 sm:-top-2"
+      aria-label="Close"
+      onClick={(e) => {
+        e.stopPropagation();
+        dismissSession(campaign.id);
+        setOpen(false);
+      }}
+    >
+      <X className="h-4 w-4" />
+    </button>
   );
 
   if (!open) return null;
@@ -223,27 +206,18 @@ export function PromotionBanner() {
   if (isEgg) {
     return (
       <div
-        className="fixed bottom-6 right-4 z-[100] w-[min(100vw-2rem,20rem)] overflow-hidden rounded-xl border-0 bg-transparent shadow-none"
+        className="fixed bottom-6 right-4 z-[100] w-[min(90vw,20rem)] overflow-visible border-0 bg-transparent shadow-none"
         role="dialog"
         aria-modal="true"
         aria-labelledby="promo-egg-title"
       >
-        <button
-          type="button"
-          className="absolute right-2 top-2 z-20 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"
-          aria-label="Close"
-          onClick={() => {
-            dismissSession(campaign.id);
-            setOpen(false);
-          }}
-        >
-          <X className="h-4 w-4" />
-        </button>
         <h2 id="promo-egg-title" className="sr-only">
           {campaign.name}
         </h2>
-        {imageBlock}
-        {footer}
+        <div className="relative w-full">
+          {closeBtn}
+          {imageBlock}
+        </div>
       </div>
     );
   }
@@ -256,23 +230,14 @@ export function PromotionBanner() {
         if (!v) dismissSession(campaign.id);
       }}
     >
-      <DialogContent className="max-w-lg border-0 bg-transparent p-0 shadow-none gap-0 overflow-visible sm:max-w-lg [&>button:last-child]:hidden">
+      <DialogContent className="flex max-h-[90dvh] w-full max-w-none items-center justify-center border-0 bg-transparent p-0 shadow-none ring-0 gap-0 overflow-visible sm:rounded-none [&>button:last-child]:hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>{campaign.name}</DialogTitle>
         </DialogHeader>
-        <button
-          type="button"
-          className="absolute right-2 top-2 z-20 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"
-          aria-label="Close"
-          onClick={() => {
-            dismissSession(campaign.id);
-            setOpen(false);
-          }}
-        >
-          <X className="h-4 w-4" />
-        </button>
-        {imageBlock}
-        {footer}
+        <div className="relative mx-auto w-[min(90vw,42rem)] shrink-0">
+          {closeBtn}
+          {imageBlock}
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -17,8 +17,9 @@ import { useLanguage } from "@/context/LanguageContext";
 import Hero from "@/components/storefront/Hero";
 import QuickCategoryNav from "@/components/storefront/QuickCategoryNav";
 import BreederShowcase from "@/components/storefront/BreederShowcase";
-import type { ProductWithBreeder } from "@/lib/supabase/types";
-import { FeaturedProductsCarousel } from "@/components/storefront/FeaturedProductsCarousel";
+import { ClearanceSection } from "@/components/storefront/ClearanceSection";
+import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/supabase/types";
+import { FeaturedProductHero } from "@/components/storefront/FeaturedProductHero";
 import { HomeNewsletterSection } from "@/components/storefront/HomeNewsletterSection";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
@@ -243,6 +244,8 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [insights, setInsights] = useState<MagazinePostPublic[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(true);
+  const [clearanceProducts, setClearanceProducts] = useState<ProductWithBreederAndVariants[]>([]);
+  const [clearanceLoading, setClearanceLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -278,6 +281,26 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
         if (!cancelled) setInsights([]);
       } finally {
         if (!cancelled) setInsightsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/storefront/clearance-products");
+        const json = (await res.json()) as { products?: ProductWithBreederAndVariants[] };
+        if (!cancelled && res.ok && Array.isArray(json.products)) {
+          setClearanceProducts(json.products);
+        }
+      } catch {
+        if (!cancelled) setClearanceProducts([]);
+      } finally {
+        if (!cancelled) setClearanceLoading(false);
       }
     })();
     return () => {
@@ -331,6 +354,15 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
             <BreederShowcase sectionTitle={st} />
           </div>
         );
+      case "clearance":
+        return (
+          <ClearanceSection
+            key={sk}
+            products={clearanceProducts}
+            isLoading={clearanceLoading}
+            sectionTitle={st}
+          />
+        );
       case "blog":
         return (
           <InsightSection
@@ -342,13 +374,12 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
         );
       case "featured":
         return (
-          <div key={sk} className="bg-zinc-50/50">
-            <FeaturedProductsCarousel
-              products={featuredProducts}
-              isLoading={featuredLoading}
-              sectionTitle={st}
-            />
-          </div>
+          <FeaturedProductHero
+            key={sk}
+            products={featuredProducts}
+            isLoading={featuredLoading}
+            sectionTitle={st}
+          />
         );
       case "breeders": {
         const breederMain = resolveSectionHeading(

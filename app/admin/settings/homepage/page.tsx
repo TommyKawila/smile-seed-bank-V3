@@ -55,6 +55,7 @@ const HOMEPAGE_SECTION_PREVIEW_IMAGES: Record<string, string> = {
   trust: "https://picsum.photos/seed/ssb-home-trust/96/64",
   new_strains: "https://picsum.photos/seed/ssb-home-new/96/64",
   newsletter: "https://picsum.photos/seed/ssb-home-newsletter/96/64",
+  clearance: "https://picsum.photos/seed/ssb-home-clearance/96/64",
 };
 
 /** Short hint under the technical `key` in admin list (not stored in DB). */
@@ -62,6 +63,8 @@ const HOMEPAGE_SECTION_KEY_HINTS: Record<string, string> = {
   breeder_showcase: "Icon grid · BreederShowcase",
   breeders: "Horizontal slider · BreederRibbon",
   categories: "Quick pills · QuickCategoryNav",
+  clearance: "Dark rail · ClearanceSection (carousel / grid)",
+  featured: "Hero carousel · FeaturedProductHero (DB featured products)",
 };
 
 function sectionPreviewSrc(key: string): string {

@@ -27,4 +27,27 @@
 
 ---
 
-*อัปเดต: มีนาคม 2026*
+## Storefront — Shop / catalog UI (22 เม.ย. 2026)
+
+### Control center (search + งบประมาณ)
+
+- `app/(storefront)/shop/page.tsx`: ห่อช่องค้นหา + ปุ่ม Filters + แถวชิปราคาในกล่องเดียว (`rounded-2xl`, `border-zinc-200/60`, `bg-white`, `shadow-sm`); ปรับ `Input` / ปุ่มเป็น `rounded-xl`
+- `components/storefront/ShopPriceFilter.tsx`: ชิป `rounded-lg`, สี idle/selected แบบ emerald อ่อน, label “งบประมาณ” + divider (desktop), เลื่อนแนวนอน + fade ขอบ; แท็ก “กำหนดเอง” ให้เข้าชุด
+
+### Compact controls — 2 แถว
+
+- แถว 1: ค้นหา + Filters (กระชับ `h-9`, padding กล่องลดลง)
+- แถว 2: `overflow-x-auto` รวม **ประเภทเมล็ด** (`BreederTypeFilter` `appearance="chips"`) + เส้นแบ่ง `w-px h-6` + **ชิปราคา** (`ShopPriceChipsRow` `compact` + `showBahtGlyph` แทนป้ายงบ)
+- `components/storefront/BreederTypeFilter.tsx`: โหมด `chips` — ปุ่มเล็กสไตล์เดียวกับชิปราคา, ไม่มีไอคอน, `display: contents` ให้อยู่แถวเลื่อนเดียวกัน
+- `ShopPriceChipsRow`: props `compact` / `showBahtGlyph`; ขนาด `chipBaseCompact` สำหรับแถวรวม
+
+### Header แคตตาล็อก (fallback ไม่มี vault hero)
+
+- `shop/page.tsx`: ตัด eyebrow “คลังพันธุกรรม” และคำอธิบายยาว; หัวข้อเดียว **“คลังเมล็ดพันธุ์รวมทุกค่าย”** (EN: *Seed vault — all breeders*) + จำนวน inline `(n รายการ)` สี `text-zinc-400` `text-sm`; ลด `py` หัวข้อ `text-xl` / `sm:text-2xl` `font-sans` `font-bold`
+- หน้า `/seeds` ยัง re-export `shop/page.tsx` — ได้การเปลี่ยนแปลงเดียวกัน
+
+งานอื่นใน repo วันเดียวกัน (เช่น clearance, homepage, prisma, locales) ให้ดูสรุปจาก `git status` / diff ประกอบ
+
+---
+
+*อัปเดต: 22 เม.ย. 2026*

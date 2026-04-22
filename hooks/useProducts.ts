@@ -9,7 +9,14 @@ import {
   type ProductVariantRow,
   type ProductWithBreeder,
 } from "@/lib/supabase/types";
-import { computeStartingPrice, computeTotalStock, isLowStock } from "@/lib/product-utils";
+import {
+  computeStartingPrice,
+  computeTotalStock,
+  getClearancePercentOff,
+  getEffectiveListingPrice,
+  getEffectiveVariantPrice,
+  isLowStock,
+} from "@/lib/product-utils";
 import type { ProductFull } from "@/types/supabase";
 import {
   ProductSchema,
@@ -242,4 +249,11 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
 }
 
 // ─── Derived helpers (re-exported for components) ─────────────────────────────
-export { computeStartingPrice, computeTotalStock, isLowStock };
+export {
+  computeStartingPrice,
+  computeTotalStock,
+  getClearancePercentOff,
+  getEffectiveListingPrice,
+  getEffectiveVariantPrice,
+  isLowStock,
+};

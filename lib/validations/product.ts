@@ -96,6 +96,19 @@ export const ProductSchema = z.object({
       z.string().max(400).nullable()
     )
     .optional(),
+  is_clearance: z.boolean().default(false).optional(),
+  sale_price: z.number().min(0).nullable().optional(),
+}).superRefine((data, ctx) => {
+  if (data.is_clearance === true) {
+    const s = data.sale_price ?? 0;
+    if (s <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "ตั้งราคาเซลเมื่อเปิดโหมดล้างสต็อก / Set a sale price when clearance is on",
+        path: ["sale_price"],
+      });
+    }
+  }
 });
 
 /** Storefront visibility: no packages or zero total stock → not listed as available */

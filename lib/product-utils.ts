@@ -3,6 +3,8 @@
  */
 
 import type { ProductVariant } from "@/types/supabase";
+import { getMessage } from "@/lib/i18n-messages";
+import { parsePackFromUnitLabel } from "@/lib/sku-utils";
 
 /** Deterministic fallback when name has no Latin letters (e.g. Thai-only). */
 function slugFallbackFromName(name: string): string {
@@ -116,20 +118,91 @@ export function computeTotalStock(
 /**
  * Lowest retail price among in-stock variants; if none in stock, lowest price among priced variants.
  */
-export function computeStartingPrice(
-  variants: Pick<ProductVariant, "price" | "stock" | "is_active">[] | null | undefined
-): number {
-  if (!variants?.length) return 0;
+type StartingVariantPick = Pick<
+  ProductVariant,
+  "price" | "stock" | "is_active" | "unit_label"
+>;
+
+/**
+ * Variant that determines `computeStartingPrice` (in-stock priced tiers preferred;
+ * tie-break: smallest pack count from `unit_label`).
+ */
+export function getStartingVariant<T extends StartingVariantPick>(
+  variants: T[] | null | undefined
+): T | null {
+  if (!variants?.length) return null;
   const active = variants.filter((v) => v.is_active !== false);
-  const priced = active.map((v) => ({
+  type Row = { v: T; price: number; stock: number };
+  const rows: Row[] = active.map((v) => ({
+    v,
     price: Number(v.price ?? 0),
     stock: Number(v.stock ?? 0),
   }));
-  const withPrice = priced.filter((v) => v.price > 0);
-  if (withPrice.length === 0) return 0;
-  const inStock = withPrice.filter((v) => v.stock > 0);
-  const pool = inStock.length > 0 ? inStock : withPrice;
-  return Math.min(...pool.map((v) => v.price));
+  const priced = rows.filter((r) => r.price > 0);
+  if (priced.length === 0) return null;
+  const inStock = priced.filter((r) => r.stock > 0);
+  const pool = inStock.length > 0 ? inStock : priced;
+  const minPrice = Math.min(...pool.map((r) => r.price));
+  const tied = pool.filter((r) => r.price === minPrice);
+  tied.sort(
+    (a, b) =>
+      parsePackFromUnitLabel(a.v.unit_label) - parsePackFromUnitLabel(b.v.unit_label)
+  );
+  return tied[0]?.v ?? null;
+}
+
+export function computeStartingPrice(
+  variants: Pick<ProductVariant, "price" | "stock" | "is_active">[] | null | undefined
+): number {
+  const v = getStartingVariant(
+    variants as StartingVariantPick[] | null | undefined
+  );
+  if (!v) return 0;
+  return Number(v.price ?? 0);
+}
+
+type ClearanceProductSlice = {
+  is_clearance?: boolean | null;
+  sale_price?: unknown;
+  product_variants?: Pick<ProductVariant, "price" | "stock" | "is_active">[] | null;
+  price?: number | null;
+};
+
+/** Storefront “from” price: clearance sale replaces starting variant price when set. */
+export function getEffectiveListingPrice(product: ClearanceProductSlice): number {
+  const regular = computeStartingPrice(product.product_variants);
+  if (product.is_clearance === true) {
+    const sale = Number(product.sale_price ?? 0);
+    if (sale > 0) return sale;
+  }
+  if (regular > 0) return regular;
+  const p = Number(product.price ?? 0);
+  return Number.isFinite(p) ? p : 0;
+}
+
+/**
+ * Per-pack price when clearance: scales each variant list price by sale / starting price
+ * so multi-pack tiers keep the same discount ratio.
+ */
+export function getEffectiveVariantPrice(
+  product: ClearanceProductSlice,
+  variantListPrice: number
+): number {
+  if (product.is_clearance !== true) return variantListPrice;
+  const sale = Number(product.sale_price ?? 0);
+  if (sale <= 0) return variantListPrice;
+  const base = computeStartingPrice(product.product_variants);
+  if (base <= 0) return Math.min(variantListPrice, sale);
+  return Math.max(1, Math.round(sale * (variantListPrice / base)));
+}
+
+export function getClearancePercentOff(product: ClearanceProductSlice): number | null {
+  if (product.is_clearance !== true) return null;
+  const sale = Number(product.sale_price ?? 0);
+  if (sale <= 0) return null;
+  const regular = computeStartingPrice(product.product_variants);
+  if (regular <= sale) return null;
+  return Math.round((1 - sale / regular) * 100);
 }
 
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
@@ -142,4 +215,18 @@ export function isLowStock(
   const n = stock == null ? 0 : Number(stock);
   if (!Number.isFinite(n) || n < 0) return false;
   return n <= threshold;
+}
+
+/** Card / listing line for the starting-price pack (TH/EN via `locales`). */
+export function getStartingVariantLabel(
+  variants: StartingVariantPick[] | null | undefined,
+  locale: "th" | "en"
+): string | null {
+  const v = getStartingVariant(variants);
+  if (!v) return null;
+  const n = parsePackFromUnitLabel(v.unit_label);
+  const template =
+    getMessage(locale, "product.card_seeds_pack") ??
+    (locale === "th" ? "แพ็กเกจ {n} เมล็ด" : "{n} Seeds Pack");
+  return template.replace(/\{n\}/g, String(n));
 }

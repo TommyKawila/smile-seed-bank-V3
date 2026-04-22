@@ -27,12 +27,20 @@ function filterIcon(slug: string): LucideIcon {
 
 const iconClass = "h-3.5 w-3.5 shrink-0";
 
+const chipBase =
+  "inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border px-2.5 py-1.5 font-sans text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800/25 focus-visible:ring-offset-2";
+const chipOff =
+  "border-transparent bg-zinc-100/50 text-zinc-600 hover:bg-zinc-200/50";
+const chipOn =
+  "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80";
+
 export function BreederTypeFilter({
   options,
   allLabel,
   paramKey = "ft",
   ariaLabel,
   variant = "default",
+  appearance = "tabs",
 }: {
   options: BreederTypeOption[];
   allLabel: string;
@@ -40,6 +48,8 @@ export function BreederTypeFilter({
   ariaLabel?: string;
   /** Kept for API compatibility; styling is unified lab index tabs. */
   variant?: "default" | "journal";
+  /** `chips`: compact pills for merged shop control strip (no icons). */
+  appearance?: "tabs" | "chips";
 }) {
   void variant;
   const router = useRouter();
@@ -66,6 +76,46 @@ export function BreederTypeFilter({
   const inactive =
     "border-zinc-200/90 bg-zinc-50/90 text-zinc-800 hover:border-zinc-300 hover:bg-white";
   const activeStyle = "border-emerald-800/90 bg-emerald-800 text-white shadow-sm";
+
+  if (appearance === "chips") {
+    return (
+      <div className="contents">
+        <button
+          type="button"
+          aria-pressed={!active}
+          aria-label={`${allLabel} — ${ariaLabel ?? "Flowering type"}`}
+          onClick={() => setType(null)}
+          className={cn(chipBase, !active ? chipOn : chipOff)}
+        >
+          {allLabel}
+        </button>
+        {options.map(({ slug, label, count }) => {
+          const isOn = active === slug;
+          return (
+            <button
+              key={slug}
+              type="button"
+              aria-pressed={isOn}
+              aria-label={`${label} (${count})`}
+              onClick={() => setType(slug)}
+              className={cn(chipBase, isOn ? chipOn : chipOff)}
+            >
+              <span>{label}</span>
+              <span
+                className={cn(
+                  mono,
+                  "ml-1 text-[10px] font-medium tabular-nums text-zinc-400",
+                  isOn && "text-emerald-600/90"
+                )}
+              >
+                ({count})
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="mb-4 -mx-1 px-1">

@@ -10,6 +10,14 @@ import { useProducts } from "@/hooks/useProducts";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { getGeneticPercents } from "@/components/storefront/ProductSpecs";
 import { formatPrice } from "@/lib/utils";
+import {
+  computeStartingPrice,
+  getClearancePercentOff,
+  getEffectiveListingPrice,
+  getEffectiveVariantPrice,
+  getStartingVariant,
+  getStartingVariantLabel,
+} from "@/lib/product-utils";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { productDetailHref } from "@/lib/product-utils";
 import { shopBreederHref } from "@/lib/breeder-slug";
@@ -50,9 +58,11 @@ function getDefaultVariant(product: {
     unit_label: string;
   }[];
 }) {
-  const variants =
-    product.product_variants?.filter((v) => v.is_active !== false && (v.stock ?? 0) > 0) ?? [];
-  return variants.sort((a, b) => a.price - b.price)[0] ?? null;
+  const inStock =
+    product.product_variants?.filter(
+      (v) => v.is_active !== false && (v.stock ?? 0) > 0
+    ) ?? [];
+  return getStartingVariant(inStock);
 }
 
 const NEW_ARRIVAL_MS = 35 * 24 * 60 * 60 * 1000;
@@ -124,7 +134,7 @@ export function ProductCard({
   variant?: "shop" | "showcase";
 }) {
   const { addToCart, openCart } = useCartContext();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const stock = product.stock ?? 0;
   const lowStock = stock > 0 && stock <= 5;
   const outOfStock = stock === 0;
@@ -140,13 +150,14 @@ export function ProductCard({
   const handleAdd = (e: React.MouseEvent) => {
     stopNavBubble(e);
     if (defaultVariant) {
+      const unit = getEffectiveVariantPrice(product, Number(defaultVariant.price));
       const { error } = addToCart({
         variantId: defaultVariant.id,
         productId: product.id,
         productName: product.name,
         productImage: cardImage,
         unitLabel: defaultVariant.unit_label,
-        price: defaultVariant.price,
+        price: unit,
         quantity: 1,
         stock_quantity: defaultVariant.stock ?? 0,
         masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
@@ -169,6 +180,11 @@ export function ProductCard({
       : "—";
   const genLetter = cardGeneticsLetter(product);
   const typePill = cardStrainTypeLabel(product) ?? genLetter;
+  const listFrom = getEffectiveListingPrice(product);
+  const listRegular = computeStartingPrice(product.product_variants);
+  const clearancePct = getClearancePercentOff(product);
+  const showStrike = clearancePct != null && listRegular > listFrom;
+  const seedsPackLabel = getStartingVariantLabel(product.product_variants, locale);
 
   return (
     <motion.div variants={motionVariants}>
@@ -190,6 +206,11 @@ export function ProductCard({
           </Link>
 
           <ProductImageBadges product={pm} t={t} />
+          {clearancePct != null && clearancePct > 0 && (
+            <span className="absolute right-2 top-12 z-20 rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-bold tabular-nums text-white shadow-sm">
+              −{clearancePct}%
+            </span>
+          )}
 
           <div className="absolute bottom-2 left-2 z-10 flex max-w-[min(100%,11rem)] flex-wrap gap-1">
             {outOfStock && (
@@ -246,9 +267,21 @@ export function ProductCard({
           </Link>
 
           <div className="mt-auto flex items-end justify-between gap-2 border-t border-zinc-100 pt-2">
-            <p className="min-w-0 text-[15px] font-bold tabular-nums text-zinc-900">
-              {(product.price ?? 0) > 0 ? formatPrice(product.price ?? 0) : t("สอบถาม", "Inquire")}
-            </p>
+            <div className="min-w-0">
+              {seedsPackLabel ? (
+                <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
+                  {seedsPackLabel}
+                </p>
+              ) : null}
+              {showStrike && (
+                <p className="text-xs tabular-nums text-zinc-400 line-through">
+                  {formatPrice(listRegular)}
+                </p>
+              )}
+              <p className="text-[15px] font-bold tabular-nums text-zinc-900">
+                {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
+              </p>
+            </div>
             <Button
               type="button"
               size="icon"

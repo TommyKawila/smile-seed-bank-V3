@@ -17,6 +17,7 @@ import { useTranslations } from "@/hooks/use-translations";
 import { labelFloweringType } from "@/lib/cannabis-attributes";
 import { seedTypeDetailShort, sexTypeDetailShort } from "@/lib/seed-type-filter";
 import { cn, formatPrice } from "@/lib/utils";
+import { getClearancePercentOff, getEffectiveVariantPrice } from "@/lib/product-utils";
 import { shopBreederHref } from "@/lib/breeder-slug";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import {
@@ -327,13 +328,14 @@ export default function ProductDetailClient({
 
   const handleAddToCart = () => {
     if (!product || !selectedVariant) return;
+    const unit = getEffectiveVariantPrice(product, Number(selectedVariant.price));
     const { error } = addToCart({
       variantId: selectedVariant.id,
       productId: product.id,
       productName: product.name,
       productImage: resolveDetailHeroUrl(product, selectedVariant.id),
       unitLabel: selectedVariant.unit_label,
-      price: selectedVariant.price,
+      price: unit,
       quantity: 1,
       stock_quantity: selectedVariant.stock ?? 0,
       masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
@@ -365,6 +367,10 @@ export default function ProductDetailClient({
     product.product_variants?.filter((v) => v.is_active !== false) ?? []
   );
   const outOfStock = !selectedVariant || selectedVariant.stock === 0;
+  const clearancePct = getClearancePercentOff(product);
+  const selectedEff =
+    selectedVariant != null ? getEffectiveVariantPrice(product, Number(selectedVariant.price)) : 0;
+  const selectedList = selectedVariant != null ? Number(selectedVariant.price) : 0;
 
   return (
     <div className="min-h-screen bg-white pt-20 font-sans sm:pt-28">
@@ -500,7 +506,7 @@ export default function ProductDetailClient({
                             isSelected ? "text-primary" : "text-zinc-900"
                           )}
                         >
-                          {formatPrice(v.price)}
+                          {formatPrice(getEffectiveVariantPrice(product, Number(v.price)))}
                         </span>
                         {(v.stock ?? 0) <= 5 && (v.stock ?? 0) > 0 && (
                           <span className="block text-[10px] text-destructive">
@@ -515,10 +521,27 @@ export default function ProductDetailClient({
             )}
 
             {/* Price + Add to Cart */}
-            <div className="flex items-center gap-3">
-              <span className={cn(fontSansTabular, "text-2xl font-bold text-zinc-900 sm:text-3xl")}>
-                {selectedVariant ? formatPrice(selectedVariant.price) : "—"}
-              </span>
+            <div className="flex flex-wrap items-center gap-3">
+              {clearancePct != null && clearancePct > 0 && (
+                <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
+                  −{clearancePct}%
+                </span>
+              )}
+              <div className="flex flex-col">
+                {selectedVariant && selectedList > selectedEff && (
+                  <span
+                    className={cn(
+                      fontSansTabular,
+                      "text-sm tabular-nums text-zinc-400 line-through"
+                    )}
+                  >
+                    {formatPrice(selectedList)}
+                  </span>
+                )}
+                <span className={cn(fontSansTabular, "text-2xl font-bold text-zinc-900 sm:text-3xl")}>
+                  {selectedVariant ? formatPrice(selectedEff) : "—"}
+                </span>
+              </div>
               {selectedVariant &&
                 (selectedVariant.stock ?? 0) <= 5 &&
                 (selectedVariant.stock ?? 0) > 0 && (

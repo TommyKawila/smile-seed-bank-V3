@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import {
   PRODUCT_SELECT_WITH_BREEDER,
   PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS,
+  type ProductWithBreederAndVariants,
 } from "@/lib/supabase/types";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
@@ -9,9 +10,13 @@ import {
   computeStartingPrice,
   computeTotalStock,
   generateSlug,
+  getEffectiveListingPrice,
+  getStartingVariant,
+  getStartingVariantLabel,
   isLowStock,
   resolveProductSlugFromName,
 } from "@/lib/product-utils";
+import { parseListParam, productMatchesSeedsPackFilter } from "@/lib/shop-attribute-filters";
 import { resolveBreederFromShopParam } from "@/lib/breeder-slug";
 import { stripEmbeddedColorMarkup } from "@/lib/sanitize-product-text";
 import type {
@@ -21,7 +26,13 @@ import type {
   ProductWithBreeder,
 } from "@/types/supabase";
 
-export { computeStartingPrice, computeTotalStock, isLowStock };
+export {
+  computeStartingPrice,
+  computeTotalStock,
+  getStartingVariant,
+  getStartingVariantLabel,
+  isLowStock,
+};
 
 type ServiceResult<T> = { data: T | null; error: string | null };
 
@@ -83,13 +94,20 @@ export async function getActiveProducts(opts?: {
   /** Prefer slug in URLs; resolves to `breeder_id` (empty list if unknown slug) */
   breeder_shop_param?: string;
   limit?: number;
+  /** Comma-separated pack buckets: 1,2,3,5,10,gt10,other — requires variant rows (filtered in memory). */
+  seeds_param?: string | null;
 }): Promise<ServiceResult<ProductWithBreeder[]>> {
   try {
     const supabase = await createClient();
+    const seedsSel = parseListParam(opts?.seeds_param ?? null);
+    const selectShape =
+      seedsSel.length > 0
+        ? PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS
+        : PRODUCT_SELECT_WITH_BREEDER;
 
     let query = supabase
       .from("products")
-      .select(PRODUCT_SELECT_WITH_BREEDER)
+      .select(selectShape)
       .eq("is_active", true)
       .order("id", { ascending: false });
 
@@ -106,9 +124,16 @@ export async function getActiveProducts(opts?: {
     const { data, error } = await query;
 
     if (error) return { data: null, error: error.message };
-    const rows = data as ProductWithBreeder[];
+    let rows = data as (ProductWithBreeder & {
+      product_variants?: { unit_label: string; is_active?: boolean | null }[];
+    })[];
+    if (seedsSel.length > 0) {
+      rows = rows.filter((p) =>
+        productMatchesSeedsPackFilter(p.product_variants ?? null, seedsSel)
+      );
+    }
     for (const row of rows) sanitizeProductTextFields(row);
-    return { data: rows, error: null };
+    return { data: rows as ProductWithBreeder[], error: null };
   } catch (err) {
     logger.error("product-service.getActiveProducts failed", {
       cause: err,
@@ -122,6 +147,48 @@ export async function getActiveProducts(opts?: {
 }
 
 /** Homepage carousel: active + flagged featured, lowest priority first. */
+/** Homepage clearance rail: active, flagged clearance, in stock, sorted by discount depth then id. */
+export async function getClearanceStorefrontProducts(
+  limit = 24
+): Promise<ServiceResult<ProductWithBreederAndVariants[]>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
+      .eq("is_active", true)
+      .eq("is_clearance", true)
+      .order("id", { ascending: false })
+      .limit(Math.min(80, limit * 3));
+
+    if (error) return { data: null, error: error.message };
+    const rows = (data ?? []) as ProductWithBreederAndVariants[];
+    const filtered = rows.filter((p) => {
+      const stock = computeTotalStock(p.product_variants ?? []);
+      return stock > 0 && getEffectiveListingPrice(p) > 0;
+    });
+    filtered.sort((a, b) => {
+      const pa = getEffectiveListingPrice(a);
+      const pb = getEffectiveListingPrice(b);
+      const ra = computeStartingPrice(a.product_variants);
+      const rb = computeStartingPrice(b.product_variants);
+      const pctA = ra > pa ? (ra - pa) / ra : 0;
+      const pctB = rb > pb ? (rb - pb) / rb : 0;
+      if (pctB !== pctA) return pctB - pctA;
+      return Number(b.id) - Number(a.id);
+    });
+    const out = filtered.slice(0, limit);
+    for (const row of out) sanitizeProductTextFields(row);
+    return { data: out, error: null };
+  } catch (err) {
+    logger.error("product-service.getClearanceStorefrontProducts failed", { cause: err });
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 export async function getFeaturedProducts(
   limit = 12
 ): Promise<ServiceResult<ProductWithBreeder[]>> {

@@ -1,6 +1,10 @@
 import { plainTextFromHtml } from "@/lib/magazine-seo";
 import { buildDetailGalleryUrls } from "@/lib/product-gallery-utils";
-import { computeStartingPrice, computeTotalStock, productDetailHref } from "@/lib/product-utils";
+import {
+  computeTotalStock,
+  getEffectiveListingPrice,
+  productDetailHref,
+} from "@/lib/product-utils";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import type { ProductFull } from "@/types/supabase";
 
@@ -31,7 +35,7 @@ export function buildProductJsonLd(product: ProductFull, siteOrigin: string): Re
 
   const brandName = product.breeders?.name?.trim() || "Smile Seed Bank";
   const variants = product.product_variants ?? [];
-  const price = computeStartingPrice(variants);
+  const price = getEffectiveListingPrice(product);
   const totalStock = computeTotalStock(variants);
   const availability =
     totalStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";

@@ -47,6 +47,15 @@ import {
   parseListParam,
   productMatchesShopAttributeFilters,
 } from "@/lib/shop-attribute-filters";
+import {
+  PRICE_PARAM_MAX,
+  PRICE_PARAM_MIN,
+  computePriceSliderCap,
+  parsePriceRangeParams,
+  priceFilterActive,
+  productMatchesPriceRange,
+} from "@/lib/shop-price-filter";
+import { ShopPriceChipsRow, ShopPriceFilterBottomSheet } from "@/components/storefront/ShopPriceFilter";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { ShopGeneticVaultHero } from "@/components/storefront/ShopGeneticVaultHero";
 import { selectVaultFeaturedProducts } from "@/lib/vault-featured-products";
@@ -92,12 +101,23 @@ function ShopContent() {
   const thcParam = searchParams.get("thc") ?? "";
   const cbdParam = searchParams.get("cbd") ?? "";
   const sexParam = searchParams.get("sex") ?? "";
+  const seedsParam = searchParams.get("seeds") ?? "";
   const ftParam = searchParams.get("ft") ?? "";
   const qParam = searchParams.get("q") ?? "";
   const yieldQuickParam = searchParams.get("yield") ?? "";
+  const priceRange = useMemo(
+    () => parsePriceRangeParams(searchParams),
+    [searchParams]
+  );
+  const priceMin = priceRange.min;
+  const priceMax = priceRange.max;
 
   /** Full catalog client-side (~90 items): no server limit — instant filter in memory */
   const { products, isLoading } = useProducts({ autoFetch: true, includeVariants: true });
+  const priceCap = useMemo(
+    () => (products.length > 0 ? computePriceSliderCap(products) : 5000),
+    [products]
+  );
   const { breeders: allBreeders, isLoading: breedersLoading } = useBreeders();
   const { locale, t } = useLanguage();
   const { t: tMsg } = useTranslations();
@@ -107,6 +127,7 @@ function ShopContent() {
     setSearchTerm(qParam);
   }, [qParam]);
   const [showFilter, setShowFilter] = useState(false);
+  const [showPriceSheet, setShowPriceSheet] = useState(false);
   const [bannerExpanded, setBannerExpanded] = useState(false);
   const [visibleCount, setVisibleCount] = useState(SHOP_PAGE_INITIAL);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -257,6 +278,21 @@ function ShopContent() {
     return () => clearTimeout(tid);
   }, [searchTerm, qParam, replaceCatalog]);
 
+  const setPriceRange = useCallback(
+    (min: number | null, max: number | null) => {
+      replaceCatalog((sp) => {
+        sp.delete(PRICE_PARAM_MIN);
+        sp.delete(PRICE_PARAM_MAX);
+        if (min == null && max == null) return;
+        const lo = min ?? 0;
+        const hi = max ?? priceCap;
+        if (lo > 0) sp.set(PRICE_PARAM_MIN, String(Math.round(lo)));
+        sp.set(PRICE_PARAM_MAX, String(Math.round(hi)));
+      });
+    },
+    [replaceCatalog, priceCap]
+  );
+
   /** Breeder + search + flowering (ft) scope only — used for sidebar filter option counts. */
   const shopScopedProducts = useMemo(() => {
     return searchFilteredProducts.filter((p) => {
@@ -291,23 +327,27 @@ function ShopContent() {
     const thcSel = parseListParam(thcParam);
     const cbdSel = parseListParam(cbdParam);
     const sexSel = parseListParam(sexParam);
-    return shopScopedProducts.filter((p) =>
-      productMatchesShopAttributeFilters(
-        {
-          strain_dominance: p.strain_dominance,
-          growing_difficulty: p.growing_difficulty,
-          thc_percent: p.thc_percent,
-          cbd_percent: p.cbd_percent ?? null,
-          seed_type: p.seed_type ?? null,
-          yield_info: (p as { yield_info?: string | null }).yield_info ?? null,
-        },
-        geneticsSel,
-        difficultySel,
-        thcSel,
-        cbdSel,
-        sexSel,
-        yieldQuickParam.trim() || null
-      )
+    const seedsSel = parseListParam(seedsParam);
+    return shopScopedProducts.filter(
+      (p) =>
+        productMatchesShopAttributeFilters(
+          {
+            strain_dominance: p.strain_dominance,
+            growing_difficulty: p.growing_difficulty,
+            thc_percent: p.thc_percent,
+            cbd_percent: p.cbd_percent ?? null,
+            seed_type: p.seed_type ?? null,
+            yield_info: (p as { yield_info?: string | null }).yield_info ?? null,
+            product_variants: p.product_variants ?? null,
+          },
+          geneticsSel,
+          difficultySel,
+          thcSel,
+          cbdSel,
+          sexSel,
+          yieldQuickParam.trim() || null,
+          seedsSel
+        ) && productMatchesPriceRange(p, priceMin, priceMax)
     );
   }, [
     shopScopedProducts,
@@ -316,15 +356,22 @@ function ShopContent() {
     thcParam,
     cbdParam,
     sexParam,
+    seedsParam,
     yieldQuickParam,
+    priceMin,
+    priceMax,
   ]);
 
   const isEn = locale === "en";
 
-  const vaultHeroProducts = useMemo(
-    () => selectVaultFeaturedProducts(filteredProducts),
-    [filteredProducts]
-  );
+  /** `/seeds` and `/seeds/[breeder]` use the compact catalog header only (no vault hero). */
+  const isSeedsJournalCatalogPath =
+    isSeedsIndexPath(pathname) || Boolean(seedsPathSlug);
+
+  const vaultHeroProducts = useMemo(() => {
+    if (isSeedsJournalCatalogPath) return [];
+    return selectVaultFeaturedProducts(filteredProducts);
+  }, [filteredProducts, isSeedsJournalCatalogPath]);
 
   const filteredIdsKey = useMemo(
     () => filteredProducts.map((p) => p.id).join(","),
@@ -395,7 +442,9 @@ function ShopContent() {
     parseListParam(difficultyParam).length > 0 ||
     parseListParam(thcParam).length > 0 ||
     parseListParam(cbdParam).length > 0 ||
-    parseListParam(sexParam).length > 0;
+    parseListParam(sexParam).length > 0 ||
+    parseListParam(seedsParam).length > 0 ||
+    priceFilterActive(priceMin, priceMax);
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -533,27 +582,16 @@ function ShopContent() {
       ) : vaultHeroProducts.length > 0 ? (
         <ShopGeneticVaultHero key={filteredIdsKey} products={vaultHeroProducts} isEn={isEn} t={t} />
       ) : (
-        <div
-          className={`border-b border-zinc-100 bg-white px-4 py-10 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
-        >
+        <div className="border-b border-zinc-100 bg-white px-4 py-4 sm:px-6 sm:py-5">
           <div className="mx-auto max-w-7xl">
-            <p className="font-[family-name:var(--font-journal-product-mono)] text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500">
-              {t("คลังพันธุกรรม", "GENETIC_VAULT")}
-            </p>
-            <h1 className="mt-2 font-sans text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
-              {t("ร้านค้า", "Shop")}
+            <h1 className="font-sans text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
+              {t("คลังเมล็ดพันธุ์รวมทุกค่าย", "Seed vault — all breeders")}
+              <span className="ml-2 text-sm font-normal tabular-nums text-zinc-400">
+                {isLoading
+                  ? `(${t("กำลังโหลด...", "Loading...")})`
+                  : `(${filteredProducts.length} ${t("รายการ", "items")})`}
+              </span>
             </h1>
-            <p className="mt-3 max-w-2xl text-sm font-normal leading-relaxed text-zinc-600">
-              {t(
-                "สำรวจสายพันธุ์ที่ตรวจสอบแล้ว — จากงานวิจัยสู่การปลูกของคุณ",
-                "Verified genetics—research-led picks for your grow."
-              )}
-            </p>
-            <p className="mt-2 font-[family-name:var(--font-journal-product-mono)] text-xs tabular-nums text-zinc-500">
-              {isLoading
-                ? t("กำลังโหลด...", "Loading...")
-                : t(`${filteredProducts.length} รายการ`, `${filteredProducts.length} items`)}
-            </p>
           </div>
         </div>
       )}
@@ -561,65 +599,121 @@ function ShopContent() {
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-0 sm:px-6 lg:pb-8">
         {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
         <div
-          className={`sticky top-20 z-40 -mx-4 mb-4 border-b border-zinc-100 bg-white/95 px-4 pt-3 pb-2 backdrop-blur-md sm:-mx-6 sm:top-28 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+          className={`sticky top-20 z-40 -mx-4 mb-3 border-b border-zinc-100 bg-white/95 px-4 pt-2 pb-1.5 backdrop-blur-md sm:-mx-6 sm:top-28 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
         >
-          {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 && (
-            <BreederTypeFilter
-              options={catalogFloweringPillOptions}
-              allLabel={t("ทั้งหมด", "All")}
-              paramKey="ft"
-              ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
-            />
-          )}
-          <div className="mt-1 flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-              <Input
-                placeholder={t("ค้นหาสายพันธุ์หรือแบรนด์...", "Search strains or brands...")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full min-w-0 border-zinc-200 bg-white pl-9 text-zinc-900 placeholder:text-zinc-400"
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                >
-                  <X className="h-4 w-4 text-zinc-400 hover:text-zinc-600" />
-                </button>
-              )}
+          <div className="flex flex-col gap-2 rounded-2xl border border-zinc-200/60 bg-white p-2 shadow-sm sm:p-2.5">
+            <div className="flex gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <Input
+                  placeholder={t("ค้นหาสายพันธุ์หรือแบรนด์...", "Search strains or brands...")}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-9 w-full min-w-0 rounded-xl border-zinc-200 bg-white py-2 pl-9 text-sm text-zinc-900 placeholder:text-zinc-400"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <X className="h-4 w-4 text-zinc-400 hover:text-zinc-600" />
+                  </button>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`hidden h-9 shrink-0 rounded-xl border-zinc-200 bg-white px-3 text-zinc-700 lg:inline-flex ${showFilter ? "border-primary bg-primary/10 text-primary" : ""}`}
+                onClick={() => setShowFilter((v) => !v)}
+                aria-expanded={showFilter}
+                aria-controls="shop-filters"
+              >
+                <SlidersHorizontal className="mr-1.5 h-4 w-4" />
+                {t("ตัวกรอง", "Filters")}
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              className={`hidden shrink-0 border-zinc-200 bg-white text-zinc-700 lg:inline-flex ${showFilter ? "border-primary bg-primary/10 text-primary" : ""}`}
-              onClick={() => setShowFilter((v) => !v)}
-              aria-expanded={showFilter}
-              aria-controls="shop-filters"
-            >
-              <SlidersHorizontal className="mr-1.5 h-4 w-4" />
-              {t("ตัวกรอง", "Filters")}
-            </Button>
+            <div className="relative min-h-[2.25rem]">
+              <div
+                className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 bg-gradient-to-r from-white to-transparent sm:w-6"
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-5 bg-gradient-to-l from-white to-transparent sm:w-6"
+                aria-hidden
+              />
+              <div
+                role="toolbar"
+                aria-label={t("กรองสินค้า", "Shop filters")}
+                className="flex min-h-[2.25rem] items-center gap-2 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 && (
+                  <>
+                    <BreederTypeFilter
+                      appearance="chips"
+                      options={catalogFloweringPillOptions}
+                      allLabel={t("ทั้งหมด", "All")}
+                      paramKey="ft"
+                      ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
+                    />
+                    <div
+                      className="mx-2 h-6 w-px shrink-0 bg-zinc-200"
+                      aria-hidden
+                    />
+                  </>
+                )}
+                <ShopPriceChipsRow
+                  compact
+                  showBahtGlyph
+                  t={t}
+                  cap={priceCap}
+                  min={priceMin}
+                  max={priceMax}
+                  onRangeChange={setPriceRange}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="flex min-h-0 flex-col lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-stretch lg:gap-8">
           {isLg && (
             <aside className="flex min-h-0 min-w-0 flex-col items-stretch self-stretch">
-              <FilterSidebar t={t} counts={filterOptionCounts} />
+              <FilterSidebar
+                t={t}
+                counts={filterOptionCounts}
+                priceFilter={{
+                  cap: priceCap,
+                  min: priceMin,
+                  max: priceMax,
+                  onRangeChange: setPriceRange,
+                }}
+              />
             </aside>
           )}
 
           <div className="min-w-0">
             {!isLg && (
-              <ShopFilterMobileSheet
-                t={t}
-                counts={filterOptionCounts}
-                open={showFilter}
-                onOpenChange={setShowFilter}
-                resultCount={filteredProducts.length}
-                onClearAll={clearFilters}
-              />
+              <>
+                <ShopPriceFilterBottomSheet
+                  t={t}
+                  open={showPriceSheet}
+                  onOpenChange={setShowPriceSheet}
+                  cap={priceCap}
+                  min={priceMin}
+                  max={priceMax}
+                  onRangeChange={setPriceRange}
+                  resultCount={filteredProducts.length}
+                />
+                <ShopFilterMobileSheet
+                  t={t}
+                  counts={filterOptionCounts}
+                  open={showFilter}
+                  onOpenChange={setShowFilter}
+                  resultCount={filteredProducts.length}
+                  onClearAll={clearFilters}
+                />
+              </>
             )}
 
             {hasFilters && (
@@ -732,14 +826,25 @@ function ShopContent() {
         </div>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
-        <Button
-          type="button"
-          className="pointer-events-auto h-12 rounded-full border border-primary/30 bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-lg ring-2 ring-primary/15 hover:bg-primary/90"
-          onClick={() => setShowFilter(true)}
-        >
-          {t("ตัวกรอง", "Filters")} 🔍
-        </Button>
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
+        <div className="pointer-events-auto flex w-full max-w-md gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12 flex-1 rounded-full border-zinc-200 bg-white text-sm font-semibold text-emerald-800 shadow-md hover:bg-zinc-50"
+            onClick={() => setShowPriceSheet(true)}
+          >
+            {t("กรองราคา", "Filter by price")}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12 flex-1 rounded-full border-zinc-200 bg-white px-5 text-sm font-semibold text-emerald-800 shadow-md hover:bg-zinc-50"
+            onClick={() => setShowFilter(true)}
+          >
+            {t("ตัวกรอง", "Filters")} 🔍
+          </Button>
+        </div>
       </div>
 
       {showBackToTop && (
@@ -747,7 +852,7 @@ function ShopContent() {
           type="button"
           aria-label={t("กลับขึ้นด้านบน", "Back to top")}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-md transition hover:bg-zinc-50 sm:bottom-24 sm:right-8 lg:bottom-8"
+          className="fixed bottom-8 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-md transition hover:bg-zinc-50 max-lg:bottom-[5.5rem] sm:right-8"
         >
           <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </button>

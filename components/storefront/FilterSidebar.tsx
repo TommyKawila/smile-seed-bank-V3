@@ -4,10 +4,12 @@ import { useCallback } from "react";
 import { Mars, Venus, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseListParam, type ShopFilterOptionCounts, defaultFilterOptionCounts } from "@/lib/shop-attribute-filters";
+import { useProductFilters } from "@/hooks/use-product-filters";
+import { useTranslations } from "@/hooks/use-translations";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { ShopPriceFilterPanel } from "@/components/storefront/ShopPriceFilter";
 
 type TFn = (th: string, en: string) => string;
 
@@ -114,17 +116,36 @@ const SEX_ROWS: { slug: "feminized" | "regular"; labelTh: string; labelEn: strin
   { slug: "regular", labelTh: "Reg", labelEn: "Reg", fem: false },
 ];
 
+const SEEDS_PACK_ROWS: { slug: string; labelTh: string; labelEn: string; i18n?: "pack_2" | "other" }[] = [
+  { slug: "1", labelTh: "1 เมล็ด", labelEn: "1 Seeds Pack" },
+  { slug: "2", labelTh: "2 เมล็ด", labelEn: "2 Seeds", i18n: "pack_2" },
+  { slug: "3", labelTh: "3 เมล็ด", labelEn: "3 Seeds Pack" },
+  { slug: "5", labelTh: "5 เมล็ด", labelEn: "5 Seeds Pack" },
+  { slug: "10", labelTh: "10 เมล็ด", labelEn: "10 Seeds Pack" },
+  { slug: "gt10", labelTh: "มากกว่า 10 เมล็ด", labelEn: "More than 10 seeds" },
+  { slug: "other", labelTh: "ขนาดอื่นๆ", labelEn: "Other Sizes", i18n: "other" },
+];
+
 /** Shared filter fields (URL-driven). */
 export function FilterSidebarContent({
   t,
   counts = defaultFilterOptionCounts(),
+  priceFilter,
 }: {
   t: TFn;
   counts?: ShopFilterOptionCounts;
+  priceFilter?: {
+    cap: number;
+    min: number | null;
+    max: number | null;
+    onRangeChange: (min: number | null, max: number | null) => void;
+  };
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { seeds: seedsSelected, toggleSeed } = useProductFilters();
+  const { t: tMsg } = useTranslations();
 
   const geneticsOn = useCallback(
     (slug: string) => parseListParam(searchParams.get("genetics")).includes(slug),
@@ -168,13 +189,14 @@ export function FilterSidebarContent({
     [router, pathname, searchParams]
   );
 
-  const mono = "font-[family-name:var(--font-journal-product-mono)]";
-
   const checkboxClass =
     "peer h-3 w-3 shrink-0 rounded-sm border border-primary/55 text-primary accent-primary focus:ring-1 focus:ring-primary/35 focus:ring-offset-0";
 
+  const seedsCheckboxClass =
+    "peer h-3 w-3 shrink-0 rounded-sm border border-emerald-600/45 text-emerald-600 accent-emerald-600 focus:ring-1 focus:ring-emerald-500/35 focus:ring-offset-0";
+
   const rowClass = (on: boolean, isZero: boolean) =>
-    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2 py-1.5 text-sm transition-colors ${
+    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
       isZero ? "opacity-60" : ""
     } ${
       on
@@ -183,7 +205,7 @@ export function FilterSidebarContent({
     }`;
 
   const sexRowClass = (on: boolean, isFem: boolean, isZero: boolean) =>
-    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2 py-1.5 text-sm transition-colors ${
+    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
       isZero ? "opacity-60" : ""
     } ${
       on
@@ -193,18 +215,77 @@ export function FilterSidebarContent({
         : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
     }`;
 
+  const seedsRowClass = (on: boolean, isZero: boolean) =>
+    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
+      isZero ? "opacity-60" : ""
+    } ${
+      on
+        ? "border-emerald-600/35 bg-emerald-50/60 text-emerald-900"
+        : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
+    }`;
+
   return (
-    <div className={`space-y-4 ${JOURNAL_PRODUCT_FONT_VARS}`}>
-      <p
-        className={`border-b border-zinc-200/90 pb-2 ${mono} text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500`}
-      >
+    <div className="space-y-5 font-sans">
+      {priceFilter ? (
+        <ShopPriceFilterPanel
+          t={t}
+          cap={priceFilter.cap}
+          min={priceFilter.min}
+          max={priceFilter.max}
+          onRangeChange={priceFilter.onRangeChange}
+          showChips={false}
+          showSlider
+          className="mb-0"
+        />
+      ) : null}
+      <div>
+        <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
+          {t("ขนาดแพ็กเกจ", "Package size")}
+        </p>
+        <div className="space-y-1.5">
+          {SEEDS_PACK_ROWS.map(({ slug, labelTh, labelEn, i18n }) => {
+            const on = seedsSelected.includes(slug);
+            const cnt = counts.seeds[slug] ?? 0;
+            const label =
+              i18n === "pack_2"
+                ? tMsg("seed_filter.pack_2", labelEn)
+                : i18n === "other"
+                  ? tMsg("seed_filter.other", labelEn)
+                  : t(labelTh, labelEn);
+            return (
+              <label key={slug} className={seedsRowClass(on, cnt === 0)}>
+                <input
+                  type="checkbox"
+                  className={seedsCheckboxClass}
+                  checked={on}
+                  onChange={() => toggleSeed(slug)}
+                />
+                <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-600">
+                    {label}
+                  </span>
+                  <span
+                    className={cn(
+                      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
+                      cnt === 0 ? "text-zinc-400" : "text-zinc-500"
+                    )}
+                  >
+                    ({cnt})
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+      <p className="border-b border-zinc-200/90 pb-2.5 font-sans text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500">
         {t("ห้องปฏิบัติการกรอง", "THE LAB")}
       </p>
       <div>
-        <p className={`mb-1.5 ${mono} text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600`}>
+        <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
           {t("พันธุกรรม", "Genetics")}
         </p>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {GENETICS_ROWS.map(({ slug, labelTh, labelEn, icon }) => {
             const on = geneticsOn(slug);
             const tint = GENETICS_ICON_COLORS[icon];
@@ -229,7 +310,7 @@ export function FilterSidebarContent({
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span
                       className={cn(
-                        `${mono} text-[11px] font-medium leading-tight tabular-nums tracking-wide`,
+                        "font-sans text-[11px] font-medium leading-tight tabular-nums tracking-wide",
                         on ? "text-primary" : "text-zinc-600"
                       )}
                     >
@@ -237,7 +318,7 @@ export function FilterSidebarContent({
                     </span>
                     <span
                       className={cn(
-                        `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                        "shrink-0 font-sans text-[10px] font-normal tabular-nums",
                         cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                       )}
                     >
@@ -252,13 +333,13 @@ export function FilterSidebarContent({
       </div>
 
       <div>
-        <p className={`mb-2 ${mono} text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600`}>
+        <p className="mb-2.5 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
           {t("THC & CBD", "THC & CBD")}
         </p>
-        <p className={`mb-1 ${mono} text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500`}>
+        <p className="mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">
           THC
         </p>
-        <div className="mb-2 space-y-1">
+        <div className="mb-3 space-y-1.5">
           {THC_ROWS.map(({ slug, labelTh, labelEn }) => {
             const on = thcOn(slug);
             const cnt = counts.thc[slug] ?? 0;
@@ -271,12 +352,12 @@ export function FilterSidebarContent({
                   onChange={() => toggleT(slug)}
                 />
                 <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className={`${mono} text-[11px] font-medium tabular-nums tracking-wide text-zinc-700`}>
+                  <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-700">
                     {t(labelTh, labelEn)}
                   </span>
                   <span
                     className={cn(
-                      `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
                       cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                     )}
                   >
@@ -287,10 +368,10 @@ export function FilterSidebarContent({
             );
           })}
         </div>
-        <p className={`mb-1 ${mono} text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500`}>
+        <p className="mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">
           CBD
         </p>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {CBD_ROWS.map(({ slug, labelTh, labelEn }) => {
             const on = cbdOn(slug);
             const cnt = counts.cbd[slug] ?? 0;
@@ -303,12 +384,12 @@ export function FilterSidebarContent({
                   onChange={() => toggleC(slug)}
                 />
                 <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className={`${mono} text-[11px] font-medium tabular-nums tracking-wide text-zinc-700`}>
+                  <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-700">
                     {t(labelTh, labelEn)}
                   </span>
                   <span
                     className={cn(
-                      `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
                       cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                     )}
                   >
@@ -322,7 +403,7 @@ export function FilterSidebarContent({
       </div>
 
       <div>
-        <p className={`mb-1.5 ${mono} text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600`}>
+        <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
           {t("ระดับความยาก", "Difficulty")}
         </p>
         <div className="space-y-1.5">
@@ -338,12 +419,12 @@ export function FilterSidebarContent({
                   onChange={() => toggleD(slug)}
                 />
                 <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className={`${mono} text-[11px] font-medium tabular-nums tracking-wide text-zinc-700`}>
+                  <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-700">
                     {t(labelTh, labelEn)}
                   </span>
                   <span
                     className={cn(
-                      `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
                       cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                     )}
                   >
@@ -357,10 +438,10 @@ export function FilterSidebarContent({
       </div>
 
       <div>
-        <p className={`mb-1.5 ${mono} text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600`}>
+        <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
           {t("ประเภทเพศเมล็ด", "Sex type")}
         </p>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {SEX_ROWS.map(({ slug, labelTh, labelEn, fem }) => {
             const on = sexOn(slug);
             const cnt = counts.sex[slug] ?? 0;
@@ -379,12 +460,12 @@ export function FilterSidebarContent({
                     <Mars className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                   )}
                   <span className="flex min-w-0 items-center gap-1.5">
-                    <span className={`${mono} text-[11px] font-medium tabular-nums tracking-wide text-zinc-700`}>
+                    <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-700">
                       {t(labelTh, labelEn)}
                     </span>
                     <span
                       className={cn(
-                        `${mono} shrink-0 text-[10px] font-normal tabular-nums`,
+                        "shrink-0 font-sans text-[10px] font-normal tabular-nums",
                         cnt === 0 ? "text-zinc-400" : "text-zinc-500"
                       )}
                     >
@@ -402,14 +483,27 @@ export function FilterSidebarContent({
 }
 
 /** Desktop / lg+ sticky sidebar. top ≈ Navbar 112px + search strip ~110px + 8px gap → 230px. */
-export function FilterSidebar({ t, counts }: { t: TFn; counts: ShopFilterOptionCounts }) {
+export function FilterSidebar({
+  t,
+  counts,
+  priceFilter,
+}: {
+  t: TFn;
+  counts: ShopFilterOptionCounts;
+  priceFilter?: {
+    cap: number;
+    min: number | null;
+    max: number | null;
+    onRangeChange: (min: number | null, max: number | null) => void;
+  };
+}) {
   return (
     <div
       id="shop-filters-desktop"
       className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-sm border border-zinc-200/90 bg-white shadow-sm lg:top-[230px] lg:max-h-[calc(100vh-230px)]"
     >
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl px-3 pb-3 pt-4 [-webkit-overflow-scrolling:touch]">
-        <FilterSidebarContent t={t} counts={counts} />
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl px-4 pb-5 pt-5 [-webkit-overflow-scrolling:touch]">
+        <FilterSidebarContent t={t} counts={counts} priceFilter={priceFilter} />
       </div>
     </div>
   );

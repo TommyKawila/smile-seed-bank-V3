@@ -10,7 +10,12 @@
   "product": {
     "stock_left_simple": "{n} left",
     "only_n_left": "Only {n} left",
-    "add_to_cart": "Add to Cart"
+    "add_to_cart": "Add to Cart",
+    "card_seeds_pack": "{n} Seeds Pack"
+  },
+  "seed_filter": {
+    "pack_2": "2 Seeds",
+    "other": "Other Sizes"
   },
   "photo_3n": "Photo 3N"
 }

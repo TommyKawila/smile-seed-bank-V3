@@ -3,6 +3,7 @@ export const DEFAULT_HOME_SECTION_KEYS = [
   "hero",
   "categories",
   "breeder_showcase",
+  "clearance",
   "blog",
   "featured",
   "breeders",
@@ -31,8 +32,15 @@ export const DEFAULT_SECTION_FALLBACK_LABELS: Record<
     label_th: "กริด Breeder เด่น (ไอคอน)",
     label_en: "Featured Breeders Grid (Icons)",
   },
+  clearance: {
+    label_th: "คลังล้างสต็อก",
+    label_en: "Clearance Vault",
+  },
   blog: { label_th: "คลังความรู้ / บทความ", label_en: "Blog / Insights" },
-  featured: { label_th: "สินค้าแนะนำ", label_en: "Featured products" },
+  featured: {
+    label_th: "สายพันธุ์เด่น (Featured Hero)",
+    label_en: "Featured strain hero",
+  },
   breeders: {
     label_th: "แถบ Breeder บนสุด (สไลด์)",
     label_en: "Top Breeders Bar (Slider)",

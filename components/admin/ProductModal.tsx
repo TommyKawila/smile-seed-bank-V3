@@ -126,6 +126,8 @@ const emptyForm: Partial<ProductFormData> = {
   is_featured: false,
   featured_priority: 0,
   featured_tagline: null,
+  is_clearance: false,
+  sale_price: null as number | null,
   variants: [{ ...emptyVariant }],
 };
 
@@ -208,6 +210,11 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         featured_priority:
           (p as { featured_priority?: number | null }).featured_priority ?? 0,
         featured_tagline: (p as { featured_tagline?: string | null }).featured_tagline ?? null,
+        is_clearance: (p as { is_clearance?: boolean | null }).is_clearance ?? false,
+        sale_price:
+          (p as { sale_price?: number | string | null }).sale_price != null
+            ? Number((p as { sale_price?: number | string | null }).sale_price)
+            : null,
         thc_percent: p.thc_percent,
         cbd_percent:
           p.cbd_percent != null && p.cbd_percent !== ""
@@ -859,6 +866,49 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 <p className="text-[10px] text-zinc-500">
                   แสดงบนการ์ดสไลด์ — ถ้าว่าง ระบบจะใช้ข้อความสั้นจากรายละเอียดสินค้าแทน
                 </p>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-3 rounded-lg border border-amber-200/80 bg-amber-50/40 px-4 py-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <Label className="text-sm font-medium">ล้างสต็อก (Clearance)</Label>
+                <p className="text-xs text-zinc-500">
+                  แสดงราคาเซลบนร้านค้า · แพ็กอื่นคิดส่วนลดตามสัดส่วนราคาแพ็กเริ่มต้น
+                </p>
+              </div>
+              <Switch
+                checked={form.is_clearance === true}
+                onCheckedChange={(v) => {
+                  setField("is_clearance", v);
+                  if (!v) setField("sale_price", null);
+                }}
+                aria-label="Clearance"
+              />
+            </div>
+            {form.is_clearance === true && (
+              <div className="space-y-1 border-t border-amber-100/80 pt-3">
+                <Label htmlFor="sale_price">ราคาเซล (THB) *</Label>
+                <Input
+                  id="sale_price"
+                  type="number"
+                  min={1}
+                  step={1}
+                  className="border-zinc-200 bg-white"
+                  value={form.sale_price ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === "") {
+                      setField("sale_price", null);
+                      return;
+                    }
+                    const n = parseInt(raw, 10);
+                    setField("sale_price", Number.isFinite(n) ? n : null);
+                  }}
+                />
+                {getFieldError("sale_price") && (
+                  <p className="text-xs text-red-500">{getFieldError("sale_price")}</p>
+                )}
               </div>
             )}
           </div>
