@@ -1,7 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Calendar, Loader2, Package, Printer, RefreshCw, Truck } from "lucide-react";
+import {
+  Calendar,
+  Loader2,
+  MessageCircle,
+  MoreVertical,
+  Package,
+  Printer,
+  RefreshCw,
+  Truck,
+  User,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +33,22 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
 import {
   bluetoothUnsupportedUserMessage,
   buildAndPrintLabel,
@@ -128,6 +154,26 @@ function isLikelyImage(url: string): boolean {
   return /\.(jpe?g|png|gif|webp|bmp)(\?|$)/i.test(url) || /\/object\//.test(url);
 }
 
+const LINE_SYNTHETIC_EMAIL_DOMAIN = "line.smileseedbank.local";
+
+function loginInsightKind(o: AdminOrder): "guest" | "line" | "google" {
+  if (!o.customer_id) return "guest";
+  const em = (o.customer_email ?? "").toLowerCase();
+  if (em.endsWith(`@${LINE_SYNTHETIC_EMAIL_DOMAIN}`) || em.startsWith("line_")) return "line";
+  return "google";
+}
+
+function floweringShortMobile(raw: string | null | undefined): string {
+  const c = (raw ?? "").trim().toLowerCase().replace(/-/g, "_");
+  if (c === "autoflower") return "Auto";
+  if (c === "photoperiod") return "Photo";
+  if (c === "photo_ff") return "Photo FF";
+  if (c === "photo_3n") return "Photo 3N";
+  return raw?.trim() ? raw.trim().slice(0, 14) : "—";
+}
+
+type AlertKind = "cancel" | "reject" | "revert";
+
 export default function AdminMobileOrdersPage() {
   const { toast } = useToast();
   const [statusTab, setStatusTab] = useState<StatusTab>("waiting");
@@ -141,6 +187,11 @@ export default function AdminMobileOrdersPage() {
   const [connectOpen, setConnectOpen] = useState(false);
   const [printBusy, setPrintBusy] = useState(false);
   const [pendingPrintOrder, setPendingPrintOrder] = useState<AdminOrder | null>(null);
+  const [alertDialog, setAlertDialog] = useState<
+    { kind: AlertKind; order: AdminOrder } | null
+  >(null);
+  const [voidOrder, setVoidOrder] = useState<AdminOrder | null>(null);
+  const [voidReason, setVoidReason] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,7 +202,16 @@ export default function AdminMobileOrdersPage() {
       const res = await fetch(`/api/admin/orders?${params.toString()}`, { cache: "no-store" });
       const data = (await res.json()) as { orders?: AdminOrder[]; error?: string };
       if (!res.ok) throw new Error(data.error ?? "Load failed");
-      setOrders(data.orders ?? []);
+      const list = data.orders ?? [];
+      setOrders(
+        list.map((o) => ({
+          ...o,
+          line_items: o.line_items ?? [],
+          discount_amount: Number(o.discount_amount ?? 0),
+          points_discount_amount: Number(o.points_discount_amount ?? 0),
+          promotion_discount_amount: Number(o.promotion_discount_amount ?? 0),
+        }))
+      );
     } catch (e) {
       toast({ title: "Error", description: String(e), variant: "destructive" });
       setOrders([]);
@@ -273,6 +333,93 @@ export default function AdminMobileOrdersPage() {
     [load, toast]
   );
 
+  const patchCancel = useCallback(
+    async (orderId: number, note?: string) => {
+      setBusy(orderId);
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}/cancel`, {
+          method: "PATCH",
+          headers: { ...MOBILE_JSON_HEADERS },
+          body: JSON.stringify({ note: note ?? "" }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) throw new Error(data.error ?? "Cancel failed");
+        toast({ title: "Cancelled", description: "Order cancelled" });
+        await load();
+      } catch (e) {
+        toast({ title: "Error", description: String(e), variant: "destructive" });
+      } finally {
+        setBusy(null);
+      }
+    },
+    [load, toast]
+  );
+
+  const patchVoid = useCallback(
+    async (orderId: number, reason: string) => {
+      setBusy(orderId);
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}/void`, {
+          method: "PATCH",
+          headers: { ...MOBILE_JSON_HEADERS },
+          body: JSON.stringify({ void_reason: reason.trim() || undefined }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) throw new Error(data.error ?? "Void failed");
+        toast({ title: "Voided", description: "Stock restored" });
+        setVoidOrder(null);
+        setVoidReason("");
+        await load();
+      } catch (e) {
+        toast({ title: "Error", description: String(e), variant: "destructive" });
+      } finally {
+        setBusy(null);
+      }
+    },
+    [load, toast]
+  );
+
+  const patchRevert = useCallback(
+    async (orderId: number) => {
+      setBusy(orderId);
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}/revert-approval`, {
+          method: "PATCH",
+          headers: { ...MOBILE_JSON_HEADERS },
+        });
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) throw new Error(data.error ?? "Revert failed");
+        toast({ title: "Reverted", description: "Back to pending / verify" });
+        await load();
+      } catch (e) {
+        toast({ title: "Error", description: String(e), variant: "destructive" });
+      } finally {
+        setBusy(null);
+      }
+    },
+    [load, toast]
+  );
+
+  const runAlertConfirm = useCallback(async () => {
+    if (!alertDialog) return;
+    const { kind, order } = alertDialog;
+    setAlertDialog(null);
+    if (kind === "cancel") {
+      await patchCancel(order.id);
+      return;
+    }
+    if (kind === "reject") {
+      await patchStatus(order.id, {
+        action: "reject",
+        note: "Rejected from mobile admin",
+      });
+      return;
+    }
+    if (kind === "revert") {
+      await patchRevert(order.id);
+    }
+  }, [alertDialog, patchCancel, patchRevert, patchStatus]);
+
   if (loading && orders.length === 0) {
     return (
       <div className="flex justify-center py-20">
@@ -360,7 +507,7 @@ export default function AdminMobileOrdersPage() {
             className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 shadow-sm"
           >
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-mono text-sm font-bold text-zinc-100">#{o.order_number}</p>
                 <p className="mt-0.5 text-[11px] text-zinc-500">
                   {formatOrderDateBangkok(o.created_at)}
@@ -370,17 +517,175 @@ export default function AdminMobileOrdersPage() {
                 <p className="truncate text-sm text-zinc-300">
                   {o.customer_name?.trim() || "—"}
                 </p>
-                <p className="mt-0.5 text-base font-semibold text-emerald-400">
+                {o.customer_phone?.trim() ? (
+                  <a
+                    href={`tel:${o.customer_phone.replace(/[\s-]/g, "")}`}
+                    className="mt-0.5 inline-block text-sm font-medium text-sky-400 underline-offset-2 hover:text-sky-300 hover:underline"
+                  >
+                    {o.customer_phone.trim()}
+                  </a>
+                ) : (
+                  <p className="mt-0.5 text-[11px] text-zinc-600">No phone on order</p>
+                )}
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {loginInsightKind(o) === "guest" ? (
+                    <Badge
+                      variant="outline"
+                      className="border-zinc-600 bg-zinc-800/60 text-[9px] text-zinc-300"
+                    >
+                      <User className="mr-0.5 h-2.5 w-2.5" />
+                      Guest
+                    </Badge>
+                  ) : loginInsightKind(o) === "line" ? (
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-700/50 bg-emerald-950/40 text-[9px] text-emerald-200"
+                    >
+                      LINE login
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="border-sky-700/50 bg-sky-950/40 text-[9px] text-sky-200"
+                    >
+                      Google / Web
+                    </Badge>
+                  )}
+                  {o.line_user_id?.trim() ? (
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-600/40 bg-emerald-900/20 text-[9px] text-emerald-300"
+                    >
+                      <MessageCircle className="mr-0.5 h-2.5 w-2.5" />
+                      LINE linked
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="border-zinc-600 bg-zinc-800/40 text-[9px] text-zinc-500"
+                    >
+                      No LINE
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-base font-semibold text-emerald-400">
                   {formatPrice(o.total_amount)}
                 </p>
               </div>
-              <Badge
-                variant="outline"
-                className={`shrink-0 border text-[10px] ${statusBadgeClass(o.status)}`}
-              >
-                {shortStatus(o.status)}
-              </Badge>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <Badge
+                  variant="outline"
+                  className={`border text-[10px] ${statusBadgeClass(o.status)}`}
+                >
+                  {shortStatus(o.status)}
+                </Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                      disabled={busy === o.id}
+                      aria-label="More actions"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-52 border-zinc-700 bg-zinc-900 text-zinc-100"
+                  >
+                    {(o.status === "PENDING" || o.status === "PENDING_INFO") && (
+                      <DropdownMenuItem
+                        className="focus:bg-zinc-800 focus:text-zinc-100"
+                        onSelect={() => setAlertDialog({ kind: "cancel", order: o })}
+                      >
+                        Cancel order…
+                      </DropdownMenuItem>
+                    )}
+                    {o.status === "AWAITING_VERIFICATION" && (
+                      <DropdownMenuItem
+                        className="focus:bg-zinc-800 focus:text-zinc-100"
+                        onSelect={() => setAlertDialog({ kind: "reject", order: o })}
+                      >
+                        Reject slip / cancel…
+                      </DropdownMenuItem>
+                    )}
+                    {o.status === "PAID" && (
+                      <DropdownMenuItem
+                        className="focus:bg-zinc-800 focus:text-zinc-100"
+                        onSelect={() => setAlertDialog({ kind: "revert", order: o })}
+                      >
+                        Reset to pending…
+                      </DropdownMenuItem>
+                    )}
+                    {(o.status === "PAID" || o.status === "COMPLETED") && (
+                      <DropdownMenuItem
+                        className="focus:bg-zinc-800 focus:text-amber-200"
+                        onSelect={() => {
+                          setVoidReason("");
+                          setVoidOrder(o);
+                        }}
+                      >
+                        Void order (restock)…
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
+
+            {(o.line_items?.length ?? 0) > 0 ? (
+              <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/40">
+                <p className="border-b border-zinc-800/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                  Items summary
+                </p>
+                <div className="divide-y divide-zinc-800/80 px-2 py-1">
+                  {(o.line_items ?? []).map((li, idx) => (
+                    <div key={idx} className="py-1.5 first:pt-1 last:pb-1">
+                      <p className="text-[11px] leading-snug text-zinc-200">
+                        <span className="text-zinc-500">{li.breeder_name}</span>
+                        <span className="text-zinc-600"> | </span>
+                        {li.product_name}
+                        <span className="text-zinc-500">
+                          {" "}
+                          ({floweringShortMobile(li.flowering_type)})
+                        </span>
+                      </p>
+                      <div className="mt-0.5 flex items-center justify-between gap-2 text-[10px] text-zinc-400">
+                        <span>
+                          {li.quantity} × {formatPrice(li.unit_price)}
+                          {li.unit_label ? (
+                            <span className="text-zinc-600"> · {li.unit_label}</span>
+                          ) : null}
+                        </span>
+                        {li.subtotal != null ? (
+                          <span className="shrink-0 font-mono text-zinc-300">
+                            {formatPrice(li.subtotal)}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {(o.discount_amount > 0 ||
+                  o.promotion_discount_amount > 0 ||
+                  o.points_discount_amount > 0) && (
+                  <div className="space-y-0.5 border-t border-zinc-800/80 px-2 py-1.5 text-[10px] text-amber-200/90">
+                    {o.discount_amount > 0 && (
+                      <div>Coupon / order discount: −{formatPrice(o.discount_amount)}</div>
+                    )}
+                    {o.promotion_discount_amount > 0 && (
+                      <div>Promotion: −{formatPrice(o.promotion_discount_amount)}</div>
+                    )}
+                    {o.points_discount_amount > 0 && (
+                      <div>Points: −{formatPrice(o.points_discount_amount)}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             {o.slip_url && !isPdfUrl(o.slip_url) && isLikelyImage(o.slip_url) ? (
               <button
@@ -553,6 +858,91 @@ export default function AdminMobileOrdersPage() {
               onClick={() => void handleConnectSubmit()}
             >
               {printBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Connect Bluetooth"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={!!alertDialog}
+        onOpenChange={(open) => !open && setAlertDialog(null)}
+      >
+        <AlertDialogContent className="border-zinc-700 bg-zinc-900 text-zinc-100 sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {alertDialog?.kind === "cancel" && "Cancel this order?"}
+              {alertDialog?.kind === "reject" && "Reject slip / cancel verification?"}
+              {alertDialog?.kind === "revert" && "Reset to pending?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              {alertDialog?.kind === "cancel" &&
+                "For PENDING / PENDING_INFO only. Stock will be restored."}
+              {alertDialog?.kind === "reject" &&
+                "Rejects this awaiting-verification order and restores stock."}
+              {alertDialog?.kind === "revert" &&
+                "Undoes mistaken approval: PAID → AWAITING_VERIFICATION (if slip) or PENDING. Clears tracking."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel className="border-zinc-600 bg-zinc-800 text-zinc-200 hover:bg-zinc-700">
+              Back
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              className="bg-amber-600 text-white hover:bg-amber-500"
+              onClick={() => void runAlertConfirm()}
+            >
+              Confirm
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog
+        open={!!voidOrder}
+        onOpenChange={(open) => {
+          if (!open) {
+            setVoidOrder(null);
+            setVoidReason("");
+          }
+        }}
+      >
+        <DialogContent className="border-zinc-700 bg-zinc-900 text-zinc-100 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Void order</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              PAID or COMPLETED only. Restores stock to variants. Optional reason.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={voidReason}
+            onChange={(e) => setVoidReason(e.target.value)}
+            placeholder="Reason (optional)"
+            className="min-h-[72px] border-zinc-600 bg-zinc-950 text-sm text-zinc-100"
+          />
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-zinc-600 bg-zinc-800 text-zinc-200"
+              onClick={() => {
+                setVoidOrder(null);
+                setVoidReason("");
+              }}
+            >
+              Back
+            </Button>
+            <Button
+              type="button"
+              className="bg-red-700 text-white hover:bg-red-600"
+              disabled={!voidOrder || busy === voidOrder.id}
+              onClick={() => voidOrder && void patchVoid(voidOrder.id, voidReason)}
+            >
+              {busy === voidOrder?.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Void & restock"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

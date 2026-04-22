@@ -15,6 +15,9 @@ import { sendLineFlexNotification } from "@/lib/order-line-notifications";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import { createOrderLog } from "@/lib/order-logs";
 import { pushTextToLineUser } from "@/services/line-messaging";
+import type { AdminOrderLineItem } from "@/types/admin-order";
+
+export type { AdminOrderLineItem };
 
 export interface AdminOrderRow {
   id: number;
@@ -31,6 +34,108 @@ export interface AdminOrderRow {
   line_user_id: string | null;
   customer_phone: string | null;
   shipping_address: string | null;
+  customer_id: string | null;
+  customer_email: string | null;
+  discount_amount: number;
+  points_discount_amount: number;
+  promotion_discount_amount: number;
+  line_items: AdminOrderLineItem[];
+}
+
+type RawOrderListRow = {
+  id: unknown;
+  order_number: string;
+  customer_name: string | null;
+  total_amount: unknown;
+  payment_method: string | null;
+  status: string;
+  slip_url: string | null;
+  reject_note: string | null;
+  tracking_number: string | null;
+  shipping_provider: string | null;
+  created_at: string;
+  line_user_id: string | null;
+  customer_phone: string | null;
+  shipping_address: string | null;
+  customer_note: string | null;
+  customer_id: string | null;
+  customer_email: string | null;
+  discount_amount: unknown;
+  points_discount_amount: unknown;
+  promotion_discount_amount: unknown;
+};
+
+function normalizeOrderListRow(r: RawOrderListRow): AdminOrderRow {
+  return {
+    id: Number(r.id),
+    order_number: r.order_number,
+    customer_name: r.customer_name,
+    total_amount: Number(r.total_amount ?? 0),
+    payment_method: r.payment_method,
+    status: r.status,
+    slip_url: r.slip_url,
+    reject_note: r.reject_note,
+    tracking_number: r.tracking_number,
+    shipping_provider: r.shipping_provider,
+    created_at: r.created_at,
+    line_user_id: r.line_user_id,
+    customer_phone: r.customer_phone,
+    shipping_address: r.shipping_address,
+    customer_id: r.customer_id,
+    customer_email: r.customer_email,
+    discount_amount: Number(r.discount_amount ?? 0),
+    points_discount_amount: Number(r.points_discount_amount ?? 0),
+    promotion_discount_amount: Number(r.promotion_discount_amount ?? 0),
+    line_items: [],
+  };
+}
+
+async function attachOrderLineItems(rows: AdminOrderRow[]): Promise<AdminOrderRow[]> {
+  if (!rows.length) return rows;
+  const sql = getSql();
+  const ids = rows.map((r) => r.id);
+  type LineSql = {
+    order_id: unknown;
+    quantity: number;
+    unit_price: unknown;
+    product_name: string;
+    unit_label: string | null;
+    subtotal: unknown;
+    breeder_name: string | null;
+    flowering_type: string | null;
+  };
+  const lines = await sql<LineSql[]>`
+    SELECT
+      oi.order_id,
+      oi.quantity,
+      oi.unit_price,
+      oi.product_name,
+      oi.unit_label,
+      oi.subtotal,
+      COALESCE(b.name, '') AS breeder_name,
+      p.flowering_type
+    FROM order_items oi
+    LEFT JOIN products p ON p.id = oi.product_id
+    LEFT JOIN breeders b ON b.id = p.breeder_id
+    WHERE oi.order_id IN ${sql(ids)}
+    ORDER BY oi.id ASC
+  `;
+  const map = new Map<number, AdminOrderLineItem[]>();
+  for (const l of lines) {
+    const oid = Number(l.order_id);
+    const arr = map.get(oid) ?? [];
+    arr.push({
+      quantity: l.quantity,
+      unit_price: Number(l.unit_price ?? 0),
+      product_name: l.product_name,
+      unit_label: l.unit_label,
+      subtotal: l.subtotal != null ? Number(l.subtotal) : null,
+      breeder_name: (l.breeder_name ?? "").trim() || "—",
+      flowering_type: l.flowering_type,
+    });
+    map.set(oid, arr);
+  }
+  return rows.map((r) => ({ ...r, line_items: map.get(r.id) ?? [] }));
 }
 
 export type ServiceResult<T> = { data: T | null; error: string | null };
@@ -114,16 +219,21 @@ export async function listOrders(opts?: {
         : "all";
     const from = hasDateRangeParam ? lowerBoundForDateRange(dr) : null;
 
-    let rows: AdminOrderRow[];
+    let rawRows: RawOrderListRow[];
 
     if (statuses?.length && from) {
-      rows = await sql<AdminOrderRow[]>`
+      rawRows = await sql<RawOrderListRow[]>`
           SELECT o.id, o.order_number,
                  COALESCE(c.full_name, o.customer_name) AS customer_name,
                  o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
                  o.tracking_number, o.shipping_provider, o.created_at,
                  o.customer_phone, o.shipping_address, o.customer_note,
-                 o.line_user_id
+                 COALESCE(NULLIF(trim(o.line_user_id), ''), NULLIF(trim(c.line_user_id), '')) AS line_user_id,
+                 o.customer_id::text AS customer_id,
+                 c.email AS customer_email,
+                 o.discount_amount,
+                 o.points_discount_amount,
+                 o.promotion_discount_amount
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
           WHERE o.status IN ${sql(statuses)}
@@ -132,13 +242,18 @@ export async function listOrders(opts?: {
           LIMIT 500
         `;
     } else if (statuses?.length) {
-      rows = await sql<AdminOrderRow[]>`
+      rawRows = await sql<RawOrderListRow[]>`
           SELECT o.id, o.order_number,
                  COALESCE(c.full_name, o.customer_name) AS customer_name,
                  o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
                  o.tracking_number, o.shipping_provider, o.created_at,
                  o.customer_phone, o.shipping_address, o.customer_note,
-                 o.line_user_id
+                 COALESCE(NULLIF(trim(o.line_user_id), ''), NULLIF(trim(c.line_user_id), '')) AS line_user_id,
+                 o.customer_id::text AS customer_id,
+                 c.email AS customer_email,
+                 o.discount_amount,
+                 o.points_discount_amount,
+                 o.promotion_discount_amount
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
           WHERE o.status IN ${sql(statuses)}
@@ -146,13 +261,18 @@ export async function listOrders(opts?: {
           LIMIT 500
         `;
     } else if (from) {
-      rows = await sql<AdminOrderRow[]>`
+      rawRows = await sql<RawOrderListRow[]>`
           SELECT o.id, o.order_number,
                  COALESCE(c.full_name, o.customer_name) AS customer_name,
                  o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
                  o.tracking_number, o.shipping_provider, o.created_at,
                  o.customer_phone, o.shipping_address, o.customer_note,
-                 o.line_user_id
+                 COALESCE(NULLIF(trim(o.line_user_id), ''), NULLIF(trim(c.line_user_id), '')) AS line_user_id,
+                 o.customer_id::text AS customer_id,
+                 c.email AS customer_email,
+                 o.discount_amount,
+                 o.points_discount_amount,
+                 o.promotion_discount_amount
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
           WHERE o.created_at >= ${from.toISOString()}::timestamptz
@@ -160,13 +280,18 @@ export async function listOrders(opts?: {
           LIMIT 500
         `;
     } else {
-      rows = await sql<AdminOrderRow[]>`
+      rawRows = await sql<RawOrderListRow[]>`
           SELECT o.id, o.order_number,
                  COALESCE(c.full_name, o.customer_name) AS customer_name,
                  o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
                  o.tracking_number, o.shipping_provider, o.created_at,
                  o.customer_phone, o.shipping_address, o.customer_note,
-                 o.line_user_id
+                 COALESCE(NULLIF(trim(o.line_user_id), ''), NULLIF(trim(c.line_user_id), '')) AS line_user_id,
+                 o.customer_id::text AS customer_id,
+                 c.email AS customer_email,
+                 o.discount_amount,
+                 o.points_discount_amount,
+                 o.promotion_discount_amount
           FROM orders o
           LEFT JOIN customers c ON c.id = o.customer_id
           ORDER BY o.created_at DESC
@@ -174,7 +299,9 @@ export async function listOrders(opts?: {
         `;
     }
 
-    return { data: rows, error: null };
+    const normalized = rawRows.map(normalizeOrderListRow);
+    const withItems = await attachOrderLineItems(normalized);
+    return { data: withItems, error: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[orders-service] listOrders error:", msg);
@@ -375,6 +502,37 @@ export async function cancelPendingOrder(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[orders-service] cancelPendingOrder error:", msg);
+    return { data: null, error: msg };
+  }
+}
+
+/** Undo mistaken approve: `PAID` → `AWAITING_VERIFICATION` if slip exists, else `PENDING`. Clears tracking. */
+export async function revertApprovalToPending(orderId: number): Promise<ServiceResult<null>> {
+  try {
+    const oid = BigInt(orderId);
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.orders.findUnique({
+        where: { id: oid },
+        select: { status: true, slip_url: true },
+      });
+      if (!order) throw new Error("Order not found");
+      if (order.status !== "PAID") {
+        throw new Error(`Only PAID orders can be reverted (current: ${order.status ?? "?"})`);
+      }
+      const next = order.slip_url?.trim() ? "AWAITING_VERIFICATION" : "PENDING";
+      await tx.orders.update({
+        where: { id: oid },
+        data: {
+          status: next,
+          tracking_number: null,
+          shipping_provider: null,
+        },
+      });
+    });
+    return { data: null, error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[orders-service] revertApprovalToPending error:", msg);
     return { data: null, error: msg };
   }
 }
