@@ -14,6 +14,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import { getURL } from "@/lib/get-url";
 import { safeNextPath } from "@/lib/safe-redirect-path";
 import { signIn as nextAuthSignIn } from "next-auth/react";
+import { LineInAppGoogleOverlay } from "@/components/storefront/LineInAppGoogleOverlay";
+import { isLineInAppUserAgent } from "@/lib/line-in-app-browser";
 
 function nextParamFromWindow(): string | null {
   if (typeof window === "undefined") return null;
@@ -48,8 +50,14 @@ export default function LoginPage() {
   const [resetSending, setResetSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [lineGoogleOverlayOpen, setLineGoogleOverlayOpen] = useState(false);
 
   const supabase = createClient();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isLineInAppUserAgent(navigator.userAgent)) setLineGoogleOverlayOpen(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -148,6 +156,10 @@ export default function LoginPage() {
   };
 
   const handleGoogle = async () => {
+    if (typeof navigator !== "undefined" && isLineInAppUserAgent(navigator.userAgent)) {
+      setLineGoogleOverlayOpen(true);
+      return;
+    }
     setGoogleLoading(true);
     const redirectTo = oauthRedirectTo();
     const { error: err } = await supabase.auth.signInWithOAuth({
@@ -174,6 +186,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 pt-20">
+      <LineInAppGoogleOverlay open={lineGoogleOverlayOpen} onOpenChange={setLineGoogleOverlayOpen} />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

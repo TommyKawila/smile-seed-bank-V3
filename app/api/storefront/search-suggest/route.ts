@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { productDetailHref } from "@/lib/product-utils";
 import { seedsBreederHref } from "@/lib/breeder-slug";
@@ -91,6 +92,11 @@ export async function GET(req: NextRequest) {
       href: seedsBreederHref({ name: row.name }),
       logoUrl: row.logo_url,
     }));
+
+    const termNorm = q.toLowerCase().slice(0, 200);
+    void prisma.search_logs
+      .create({ data: { term: termNorm } })
+      .catch(() => {});
 
     return NextResponse.json({ products, breeders });
   } catch (e) {

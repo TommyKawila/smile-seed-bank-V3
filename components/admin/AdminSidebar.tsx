@@ -22,6 +22,7 @@ import {
   LayoutGrid,
   LayoutTemplate,
   BarChart2,
+  BarChart3,
   FileText,
   Camera,
   Sparkles,
@@ -34,6 +35,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/analytics", label: "Executive analytics", icon: BarChart3 },
   { href: "/admin/products", label: "สินค้า", icon: Package },
   { href: "/admin/inventory", label: "สต็อก / Inventory", icon: Boxes },
   { href: "/admin/inventory/dashboard", label: "Inventory Dashboard", icon: BarChart2 },

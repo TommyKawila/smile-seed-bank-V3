@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Loader2, Gift } from "lucide-react";
 import {
@@ -9,6 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { LineInAppGoogleOverlay } from "@/components/storefront/LineInAppGoogleOverlay";
+import { isLineInAppUserAgent } from "@/lib/line-in-app-browser";
 
 function GoogleIcon() {
   return (
@@ -51,8 +54,23 @@ export function LoginForPromoDialog({
   oauthLoading = null,
   t = (th) => th,
 }: LoginForPromoDialogProps) {
+  const [lineGoogleOpen, setLineGoogleOpen] = useState(false);
+
+  const onGoogleClick = () => {
+    if (typeof navigator !== "undefined" && isLineInAppUserAgent(navigator.userAgent)) {
+      setLineGoogleOpen(true);
+      return;
+    }
+    void onGoogleLogin();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <LineInAppGoogleOverlay
+        open={lineGoogleOpen}
+        onOpenChange={setLineGoogleOpen}
+        className="z-[300]"
+      />
       <DialogContent className="sm:max-w-md border-primary/25 bg-gradient-to-b from-accent/80 to-white">
         <div className="flex flex-col items-center text-center space-y-4 py-2">
           <div className="rounded-full bg-accent p-4">
@@ -67,7 +85,7 @@ export function LoginForPromoDialog({
           <div className="flex w-full flex-col gap-2">
             <Button
               type="button"
-              onClick={() => void onGoogleLogin()}
+              onClick={() => void onGoogleClick()}
               disabled={!!oauthLoading}
               className="w-full gap-2 bg-white border-2 border-primary text-primary hover:bg-accent hover:border-primary font-semibold py-6"
             >
