@@ -9,8 +9,18 @@ import { UserNav } from "@/components/admin/user-nav";
 import { Toaster } from "@/components/ui/toaster";
 export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isAdminLogin = pathname === "/admin/login" || pathname?.startsWith("/admin/login/");
   const isMobileDash = pathname === "/admin/m" || pathname?.startsWith("/admin/m/");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  if (isAdminLogin) {
+    return (
+      <>
+        <Toaster />
+        {children}
+      </>
+    );
+  }
 
   if (isMobileDash) {
     return (

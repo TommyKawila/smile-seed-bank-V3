@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { env } from "@/lib/env";
+import { supabaseAuthCookieOptions } from "@/lib/supabase/session-cookies";
 
 function requireServiceRoleKey(): string {
   const key =
@@ -37,6 +38,7 @@ export async function createClient(): Promise<SupabaseClient<Database>> {
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
+      cookieOptions: supabaseAuthCookieOptions,
       cookies: {
         getAll() {
           return cookieStore.getAll();

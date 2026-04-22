@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database.types";
+import { supabaseAuthCookieOptions } from "@/lib/supabase/session-cookies";
 
 function adminRoleFromMetadata(user: { user_metadata?: Record<string, unknown> }): string {
   const r = user.user_metadata?.role;
@@ -28,6 +29,7 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: supabaseAuthCookieOptions,
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -59,8 +61,10 @@ export async function middleware(request: NextRequest) {
   const isAdminApi = path === "/api/admin" || path.startsWith("/api/admin/");
   const isAiApi = path === "/api/ai" || path.startsWith("/api/ai/");
 
+  const isAdminLogin = path === "/admin/login" || path.startsWith("/admin/login/");
+
   /** PKCE callback + password page: unauthenticated users must reach these routes. */
-  if (isAuthCallback || isUpdatePassword || isPublicOrderPage) {
+  if (isAuthCallback || isUpdatePassword || isPublicOrderPage || isAdminLogin) {
     return supabaseResponse;
   }
 
@@ -86,7 +90,12 @@ export async function middleware(request: NextRequest) {
 
   if (!user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    const isAdminPage = path === "/admin" || path.startsWith("/admin/");
+    if (isAdminPage) {
+      url.pathname = "/admin/login";
+    } else {
+      url.pathname = "/login";
+    }
     url.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     const redirect = NextResponse.redirect(url);
     copyCookies(supabaseResponse, redirect);
@@ -95,8 +104,14 @@ export async function middleware(request: NextRequest) {
 
   if (adminRoleFromMetadata(user) !== "ADMIN") {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("reason", "admin_required");
+    const isAdminPage = path === "/admin" || path.startsWith("/admin/");
+    if (isAdminPage) {
+      url.pathname = "/admin/login";
+      url.searchParams.set("reason", "admin_required");
+    } else {
+      url.pathname = "/login";
+      url.searchParams.set("reason", "admin_required");
+    }
     const redirect = NextResponse.redirect(url);
     copyCookies(supabaseResponse, redirect);
     return redirect;

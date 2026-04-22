@@ -4,6 +4,9 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-04-22
+- **Admin email/password login (Bluefy / restricted browsers):** Supabase `signInWithPassword` — `app/admin/login/page.tsx` (mobile-friendly, EN/TH copy); `middleware.ts` — public `/admin/login`, unauthenticated `/admin/*` → `/admin/login?next=…`, non-admin → `/admin/login?reason=admin_required`; `AdminLayoutClient` — full-bleed login (no sidebar); `lib/supabase/session-cookies.ts` + `cookieOptions` on browser/server/middleware clients (`maxAge` 30d); `prisma/schema.prisma` — comment that passwords live in `auth.users`; `scripts/set-admin-password.ts` + `npm run admin:set-password` (merge `user_metadata`, force `role: ADMIN`).
+
 ### บันทึกการทำงาน — 2026-04-19
 - **Admin homepage DnD:** `prisma/schema.prisma` + migration `20260419120000_homepage_sections` — ตาราง `homepage_sections` (key, label_th/en, sort_order, is_active); `GET`/`PATCH` `/api/admin/settings/homepage` (`assertAdmin`, `revalidatePath('/')`, PATCH ส่ง label_th/en); `app/admin/settings/homepage/page.tsx` — `@dnd-kit` sortable, รูปย่อ `HOMEPAGE_SECTION_PREVIEW_IMAGES`, Popover แก้ป้าย, Switch **Preview Storefront Labels**; `AdminSidebar` ลิงก์หน้าแรก
 - **Storefront dynamic home:** `app/(storefront)/page.tsx` server — `prisma.homepage_sections` → `sections` (key + `label_th`/`label_en`); `HomePageClient` + `resolveSectionHeading` (`lib/homepage-section-title.ts`) ผูกหัวข้อหลักกับ InsightSection / FeaturedProductsCarousel / breeders / trust / new_strains / newsletter; `DEFAULT_HOME_SECTION_KEYS` + `"—"` fallback

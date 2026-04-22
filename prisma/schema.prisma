@@ -141,6 +141,7 @@ model coupon_redemptions {
   @@schema("public")
 }
 
+/// Web auth profiles: credentials and OAuth live in Supabase `auth.users` (hashed password there). This row uses `id` = auth user UUID.
 model customers {
   id                         String    @id @db.Uuid
   full_name                  String?
