@@ -246,7 +246,7 @@ export async function createOrder(
               total_amount: new Prisma.Decimal(summary.total),
               total_cost: new Prisma.Decimal(totalCost),
               status: "PENDING",
-              payment_status: "unpaid",
+              payment_status: "pending",
               ...(noteTrimmed ? { customer_note: noteTrimmed } : {}),
               ...(orderLineUserId ? { line_user_id: orderLineUserId } : {}),
             },

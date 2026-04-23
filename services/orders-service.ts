@@ -36,6 +36,7 @@ export interface AdminOrderRow {
   line_user_id: string | null;
   customer_phone: string | null;
   shipping_address: string | null;
+  customer_note: string | null;
   customer_id: string | null;
   customer_email: string | null;
   discount_amount: number;
@@ -75,7 +76,8 @@ function normalizeOrderListRow(r: RawOrderListRow): AdminOrderRow {
     customer_name: r.customer_name,
     total_amount: Number(r.total_amount ?? 0),
     payment_method: r.payment_method,
-    payment_status: (r.payment_status ?? "unpaid").toLowerCase() === "paid" ? "paid" : "unpaid",
+    payment_status:
+      (r.payment_status ?? "").toLowerCase() === "paid" ? "paid" : "unpaid",
     status: r.status,
     slip_url: r.slip_url,
     reject_note: r.reject_note,
@@ -85,6 +87,7 @@ function normalizeOrderListRow(r: RawOrderListRow): AdminOrderRow {
     line_user_id: r.line_user_id,
     customer_phone: r.customer_phone,
     shipping_address: r.shipping_address,
+    customer_note: r.customer_note,
     customer_id: r.customer_id,
     customer_email: r.customer_email,
     discount_amount: Number(r.discount_amount ?? 0),
@@ -242,7 +245,7 @@ export async function countOrdersByListTabs(): Promise<OrderListTabCounts> {
   ] = await Promise.all([
     sql<[{ c: string }]>`
       SELECT COUNT(*)::text AS c FROM orders o
-      WHERE (o.payment_status IS NULL OR o.payment_status = 'unpaid')
+      WHERE (o.payment_status IS NULL OR o.payment_status NOT ILIKE 'paid')
         AND o.status IN ('PENDING', 'PENDING_INFO', 'AWAITING_VERIFICATION')
     `,
     sql<[{ c: string }]>`
@@ -299,7 +302,7 @@ export async function listOrders(opts?: {
     if (tab) {
       switch (tab) {
         case "waiting":
-          whereFragment = sql`(o.payment_status IS NULL OR o.payment_status = 'unpaid') AND o.status IN ('PENDING', 'PENDING_INFO', 'AWAITING_VERIFICATION')`;
+          whereFragment = sql`(o.payment_status IS NULL OR o.payment_status NOT ILIKE 'paid') AND o.status IN ('PENDING', 'PENDING_INFO', 'AWAITING_VERIFICATION')`;
           break;
         case "paid":
           whereFragment = sql`o.payment_status = 'paid' AND o.status IN ('PENDING', 'PROCESSING')`;
@@ -598,7 +601,7 @@ export async function revertApprovalToPending(orderId: number): Promise<ServiceR
         where: { id: oid },
         data: {
           status: next,
-          payment_status: "unpaid",
+          payment_status: "pending",
           tracking_number: null,
           shipping_provider: null,
         },

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Calendar,
+  Copy,
   Loader2,
   MessageCircle,
   MoreVertical,
@@ -60,6 +61,7 @@ import {
   type LabelPrintPayload,
 } from "@/lib/peripage-printer";
 import type { AdminOrder } from "@/hooks/useAdminOrders";
+import type { AdminOrderLineItem } from "@/types/admin-order";
 
 const MOBILE_JSON_HEADERS = {
   "Content-Type": "application/json",
@@ -171,6 +173,37 @@ function loginInsightKind(o: AdminOrder): "guest" | "line" | "google" {
   return "google";
 }
 
+function lineItemSeedsLabel(li: AdminOrderLineItem): string {
+  const effectiveForPack =
+    li.unit_label?.trim() || li.variant_unit_label?.trim() || "";
+  if (effectiveForPack.length === 0) return "—";
+  return `${parsePackFromUnitLabel(effectiveForPack)} เมล็ด`;
+}
+
+function buildShippingLabelText(o: AdminOrder): string {
+  const name = o.customer_name?.trim() || "—";
+  const phone = o.customer_phone?.trim() || "—";
+  const addr = o.shipping_address?.trim() || "—";
+  return `${name}\n${phone}\n${addr}`;
+}
+
+function buildOrderSummaryText(o: AdminOrder): string {
+  const lines =
+    (o.line_items?.length ?? 0) > 0
+      ? (o.line_items ?? []).map(
+          (li) => `${li.product_name} x ${li.quantity} (${lineItemSeedsLabel(li)})`
+        )
+      : ["(no items)"];
+  const note = (o.customer_note ?? "").trim();
+  return [
+    `Order: #${o.order_number}`,
+    "------------------",
+    ...lines,
+    "------------------",
+    `Note: ${note || "—"}`,
+  ].join("\n");
+}
+
 function floweringShortMobile(raw: string | null | undefined): string {
   const c = (raw ?? "").trim().toLowerCase().replace(/-/g, "_");
   if (c === "autoflower") return "Auto";
@@ -221,6 +254,7 @@ export default function AdminMobileOrdersPage() {
       setOrders(
         list.map((o) => ({
           ...o,
+          customer_note: (o as { customer_note?: string | null }).customer_note ?? null,
           payment_status: (o as { payment_status?: string }).payment_status ?? "unpaid",
           line_items: o.line_items ?? [],
           discount_amount: Number(o.discount_amount ?? 0),
@@ -273,6 +307,22 @@ export default function AdminMobileOrdersPage() {
       status: o.status,
     };
   }, []);
+
+  const copyOrderText = useCallback(
+    async (text: string, description: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast({ title: "Copied!", description });
+      } catch (e) {
+        toast({
+          title: "Copy failed",
+          description: String(e),
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
 
   const runPrint = useCallback(
     async (o: AdminOrder) => {
@@ -833,22 +883,52 @@ export default function AdminMobileOrdersPage() {
             {(orderIsPaymentReceived(o.status, o.payment_status) ||
               o.status === "SHIPPED" ||
               o.status === "COMPLETED") && (
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-2 h-10 w-full border-zinc-500 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800"
-                disabled={printBusy}
-                onClick={() => void runPrint(o)}
-              >
-                {printBusy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print label
-                  </>
-                )}
-              </Button>
+              <div className="mt-2 space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 w-full border-zinc-500 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800"
+                  disabled={printBusy}
+                  onClick={() => void runPrint(o)}
+                >
+                  {printBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Printer className="mr-2 h-4 w-4" />
+                      Print label
+                    </>
+                  )}
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    className="h-10 rounded-xl border-0 bg-zinc-100 text-zinc-700 shadow-none hover:bg-zinc-200"
+                    onClick={() =>
+                      void copyOrderText(
+                        buildShippingLabelText(o),
+                        "Shipping address copied"
+                      )
+                    }
+                  >
+                    <Copy className="mr-1.5 h-4 w-4 shrink-0" />
+                    คัดลอกที่อยู่ (Label)
+                  </Button>
+                  <Button
+                    type="button"
+                    className="h-10 rounded-xl border-0 bg-zinc-100 text-zinc-700 shadow-none hover:bg-zinc-200"
+                    onClick={() =>
+                      void copyOrderText(
+                        buildOrderSummaryText(o),
+                        "Packing summary copied"
+                      )
+                    }
+                  >
+                    <Copy className="mr-1.5 h-4 w-4 shrink-0" />
+                    คัดลอกใบจัดของ (Summary)
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         ))

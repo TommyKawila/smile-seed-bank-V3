@@ -20,6 +20,7 @@ export interface AdminOrder {
   line_user_id: string | null;
   customer_phone: string | null;
   shipping_address: string | null;
+  customer_note: string | null;
   customer_id: string | null;
   customer_email: string | null;
   discount_amount: number;
@@ -68,6 +69,7 @@ export function useAdminOrders(options?: UseAdminOrdersOptions) {
       setOrders(
         list.map((o: AdminOrder) => ({
           ...o,
+          customer_note: o.customer_note ?? null,
           payment_status: (o as { payment_status?: string }).payment_status ?? "unpaid",
           line_items: o.line_items ?? [],
           discount_amount: Number(o.discount_amount ?? 0),
