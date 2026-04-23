@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
           shipping_fee: new Prisma.Decimal(0),
           discount_amount: new Prisma.Decimal(manualDiscountAmount),
           status,
+          payment_status: status === "COMPLETED" ? "paid" : "unpaid",
           order_origin: "MANUAL",
           points_redeemed: points_redeemed,
           points_discount_amount: new Prisma.Decimal(points_discount_amount),

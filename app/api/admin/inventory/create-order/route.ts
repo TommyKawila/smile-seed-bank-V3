@@ -62,7 +62,8 @@ export async function POST(req: NextRequest) {
         total_cost: totalCost,
         shipping_fee: 0,
         discount_amount: 0,
-        status: "PAID",
+        status: "PENDING",
+        payment_status: "paid",
       })
       .select("id")
       .single();

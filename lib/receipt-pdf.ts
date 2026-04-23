@@ -58,11 +58,14 @@ export type ReceiptPDFOptions = {
   paymentMethod?: string | null;
 };
 
-export const RECEIPT_ELIGIBLE_STATUSES = ["PAID", "COMPLETED", "SHIPPED", "DELIVERED"] as const;
+export const RECEIPT_ELIGIBLE_STATUSES = [
+  "PAID",
+  "COMPLETED",
+  "SHIPPED",
+  "DELIVERED",
+] as const;
 
-export function isReceiptEligibleStatus(status: string): boolean {
-  return (RECEIPT_ELIGIBLE_STATUSES as readonly string[]).includes(status);
-}
+export { isReceiptEligibleStatus } from "./order-paid";
 
 /** Split order-level discount across lines by line total (for receipt transparency). */
 export function allocateOrderDiscountToLines(lineTotals: number[], orderDiscount: number): number[] {

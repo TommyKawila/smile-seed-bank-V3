@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { cn, formatPrice } from "@/lib/utils";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import { orderIsPaymentReceived } from "@/lib/order-paid";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,7 @@ export type OrderDetailRow = {
   id: number;
   order_number: string;
   status: string;
+  payment_status: string;
   total_amount: number;
   shipping_fee?: number;
   discount_amount?: number;
@@ -208,7 +210,12 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
   const promoCode = order?.promo_code?.trim() || null;
 
   const rawStatus = (order?.status ?? "").trim();
-  const statusInfo = STATUS_MAP[rawStatus] ?? STATUS_MAP.PENDING;
+  const ps = (order?.payment_status ?? "").toLowerCase();
+  const displayKey =
+    ps === "paid" && (rawStatus === "PENDING" || rawStatus === "PROCESSING")
+      ? "PAID"
+      : rawStatus;
+  const statusInfo = STATUS_MAP[displayKey] ?? STATUS_MAP.PENDING;
   const StatusIcon = statusInfo.icon;
 
   const dateStr = order
@@ -275,7 +282,7 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
                 </div>
               </div>
 
-              {(order.status === "PAID" || order.status === "COMPLETED") && (
+              {orderIsPaymentReceived(order.status, order.payment_status) && (
                 <a
                   href={`/api/storefront/orders/${encodeURIComponent(order.order_number)}/receipt`}
                   target="_blank"
@@ -287,7 +294,9 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
                 </a>
               )}
 
-              {order.status === "PENDING" && order.payment_method === "TRANSFER" && (
+              {order.status === "PENDING" &&
+                (order.payment_status ?? "").toLowerCase() !== "paid" &&
+                order.payment_method === "TRANSFER" && (
                 <Link
                   href={`/order-success/${encodeURIComponent(order.order_number)}`}
                   onClick={onClose}

@@ -36,6 +36,7 @@ import {
   lineOaPrefillUrlForCancelledOrder,
 } from "@/lib/line-oa-url";
 import type { OrderSuccessView } from "@/lib/services/order-service";
+import { orderIsPaymentReceived, orderIsReadyToShip } from "@/lib/order-paid";
 import { LineOaResponsiveCta } from "@/components/storefront/LineOaResponsiveCta";
 
 /** Storefront payment-settings API: `lineId` = `payment_settings.line_id` (LINE OA @handle). */
@@ -388,6 +389,7 @@ export default function OrderSuccessDynamicPage() {
 
   const showTransferPayFlow =
     order.status === "PENDING" &&
+    (order.payment_status ?? "").toLowerCase() !== "paid" &&
     order.payment_method === "TRANSFER" &&
     !order.slip_url;
 
@@ -410,7 +412,7 @@ export default function OrderSuccessDynamicPage() {
   };
 
   const handleDownloadReceipt = async () => {
-    if (!order || !isReceiptEligibleStatus(order.status)) return;
+    if (!order || !isReceiptEligibleStatus(order.status, order.payment_status)) return;
     setReceiptLoading(true);
     try {
       const pdfSettings = await fetchStorefrontReceiptPdfSettings();
@@ -466,13 +468,17 @@ export default function OrderSuccessDynamicPage() {
     }
   };
 
+  const paymentReceived = orderIsPaymentReceived(
+    order.status,
+    order.payment_status
+  );
   const showSlipLineHelp =
     !isCancelled &&
     !isVoided &&
     !isShipped &&
     (order.status === "AWAITING_VERIFICATION" ||
       (!!order.slip_url &&
-        order.status !== "PAID" &&
+        !paymentReceived &&
         order.status !== "COMPLETED" &&
         order.status !== "DELIVERED"));
 
@@ -490,7 +496,7 @@ export default function OrderSuccessDynamicPage() {
     defaultHeroTitleEn = "Cancelled";
     defaultHeroDesc = "ออเดอร์นี้ถูกยกเลิกแล้ว";
     defaultHeroDescEn = "This order has been cancelled.";
-  } else if (order.status === "PAID") {
+  } else if (orderIsReadyToShip(order.status, order.payment_status)) {
     defaultHeroTitle = "ชำระเงินเรียบร้อย";
     defaultHeroTitleEn = "Payment confirmed";
     defaultHeroDesc = "เรากำลังเตรียมและจัดส่งให้เร็วที่สุด";
@@ -512,7 +518,7 @@ export default function OrderSuccessDynamicPage() {
     defaultHeroDescEn = "We will update your order status soon.";
   } else if (
     order.status === "AWAITING_VERIFICATION" ||
-    (!!order.slip_url && order.status !== "PAID" && order.status !== "COMPLETED")
+    (!!order.slip_url && !orderIsReadyToShip(order.status, order.payment_status) && order.status !== "COMPLETED")
   ) {
     defaultHeroTitle = "ได้รับหลักฐานการโอนเงินเรียบร้อยแล้ว!";
     defaultHeroTitleEn = "Payment slip received!";
@@ -835,7 +841,7 @@ export default function OrderSuccessDynamicPage() {
                 ))}
               </ul>
               <ShippingRecipientBlock order={order} t={t} />
-              {isReceiptEligibleStatus(order.status) ? (
+              {isReceiptEligibleStatus(order.status, order.payment_status) ? (
                 <Button
                   type="button"
                   variant="outline"

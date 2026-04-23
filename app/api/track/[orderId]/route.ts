@@ -23,6 +23,7 @@ export async function GET(
       select: {
         order_number: true,
         status: true,
+        payment_status: true,
         tracking_number: true,
         shipping_provider: true,
         line_user_id: true,
@@ -36,8 +37,9 @@ export async function GET(
     return NextResponse.json({
       orderNumber: order.order_number,
       status: order.status,
-      statusLabelEn: trackStatusLabelEn(order.status),
-      statusLabelTh: trackStatusLabelTh(order.status),
+      paymentStatus: order.payment_status,
+      statusLabelEn: trackStatusLabelEn(order.status, order.payment_status),
+      statusLabelTh: trackStatusLabelTh(order.status, order.payment_status),
       trackingNumber: order.tracking_number,
       shippingProvider: order.shipping_provider,
       lineLinked: Boolean(order.line_user_id?.trim()),

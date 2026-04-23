@@ -3,10 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
 import { dashboardRangeBounds } from "@/lib/dashboard-date-range";
 import { ordersTableHasFeeColumns } from "@/lib/dashboard-order-fees";
+import { prismaWhereOrderPaymentConfirmed } from "@/lib/order-paid";
 
 export const dynamic = "force-dynamic";
-
-const PAID_STATUSES = ["PAID", "COMPLETED", "SHIPPED", "DELIVERED"] as const;
 
 function toNum(v: unknown): number {
   if (v == null) return 0;
@@ -36,8 +35,8 @@ export async function GET(req: NextRequest) {
     const hasFeeCols = await ordersTableHasFeeColumns();
 
     const orderWherePaidInRange = {
-      status: { in: [...PAID_STATUSES] },
       created_at: { gte: start, lte: end },
+      ...prismaWhereOrderPaymentConfirmed,
     };
 
     const aggResult = await prisma.orders.aggregate({
@@ -122,7 +121,10 @@ export async function GET(req: NextRequest) {
         INNER JOIN public.orders o ON o.id = oi.order_id
         LEFT JOIN public.products p ON p.id = oi.product_id
         LEFT JOIN public.breeders b ON b.id = p.breeder_id
-        WHERE o.status IN ('PAID', 'COMPLETED', 'SHIPPED', 'DELIVERED')
+        WHERE (
+            (o.status IN ('PENDING', 'PROCESSING') AND o.payment_status = 'paid')
+            OR o.status IN ('PAID', 'COMPLETED', 'SHIPPED', 'DELIVERED')
+          )
           AND o.created_at >= ${start}
           AND o.created_at <= ${end}
       ) sub

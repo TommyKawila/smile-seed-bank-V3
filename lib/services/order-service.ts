@@ -86,6 +86,7 @@ export interface OrderSuccessView {
   /** YYYY-MM-DD (Bangkok calendar day from DB `created_at`) */
   order_date: string;
   status: string;
+  payment_status: string;
   total_amount: number;
   shipping_address: string | null;
   payment_method: string | null;
@@ -245,6 +246,7 @@ export async function createOrder(
               total_amount: new Prisma.Decimal(summary.total),
               total_cost: new Prisma.Decimal(totalCost),
               status: "PENDING",
+              payment_status: "unpaid",
               ...(noteTrimmed ? { customer_note: noteTrimmed } : {}),
               ...(orderLineUserId ? { line_user_id: orderLineUserId } : {}),
             },
@@ -396,9 +398,10 @@ export async function getOrderForSuccessView(
         promotion_discount_amount: string;
         points_discount_amount: string;
         line_user_id: string | null;
+        payment_status: string | null;
       }[]
     >`
-      SELECT id, customer_id, order_number, created_at, status, total_amount::text AS total_amount,
+      SELECT id, customer_id, order_number, created_at, status, payment_status, total_amount::text AS total_amount,
              shipping_address, payment_method, slip_url,
              tracking_number, shipping_provider,
              customer_name, customer_phone,
@@ -449,6 +452,7 @@ export async function getOrderForSuccessView(
         order_number: order.order_number,
         order_date: orderDate,
         status: order.status ?? "UNKNOWN",
+        payment_status: order.payment_status ?? "unpaid",
         total_amount: Number(order.total_amount),
         shipping_address: order.shipping_address,
         payment_method: order.payment_method,

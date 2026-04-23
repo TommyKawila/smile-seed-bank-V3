@@ -36,8 +36,11 @@ export async function GET(req: NextRequest) {
         where: {
           variant_id: { not: null },
           orders: {
-            status: { in: ["COMPLETED", "PAID", "SHIPPED"] },
             created_at: { gte: startOfDay, lte: endOfDay },
+            OR: [
+              { status: { in: ["COMPLETED", "PAID", "SHIPPED"] } },
+              { status: { in: ["PENDING", "PROCESSING"] }, payment_status: "paid" },
+            ],
           },
         },
         _sum: { quantity: true },

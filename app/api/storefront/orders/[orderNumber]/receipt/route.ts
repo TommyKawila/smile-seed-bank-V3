@@ -73,7 +73,7 @@ export async function GET(
       return jsonError("Server error", 500, { code: "ORDER_LOAD" });
     }
 
-    if (!isReceiptEligibleStatus(order.status)) {
+    if (!isReceiptEligibleStatus(order.status, order.payment_status)) {
       return jsonError("Receipt not available for this status", 403, {
         code: "STATUS",
         status: order.status,

@@ -27,6 +27,7 @@ export type AdminOrderDetailPayload = {
   shippingFee: number;
   discountAmount: number;
   status: string;
+  paymentStatus: string;
   voidReason: string | null;
   trackingNumber: string | null;
   shippingProvider: string | null;
@@ -143,6 +144,7 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
       Number(order.promotion_discount_amount ?? 0) +
       Number(order.points_discount_amount ?? 0),
     status: order.status,
+    paymentStatus: order.payment_status ?? "unpaid",
     voidReason: order.void_reason,
     trackingNumber: order.tracking_number,
     shippingProvider: order.shipping_provider,

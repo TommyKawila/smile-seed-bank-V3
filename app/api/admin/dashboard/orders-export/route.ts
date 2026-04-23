@@ -3,10 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
 import { dashboardRangeBounds } from "@/lib/dashboard-date-range";
 import { ordersTableHasFeeColumns } from "@/lib/dashboard-order-fees";
+import { prismaWhereOrderPaymentConfirmed } from "@/lib/order-paid";
 
 export const dynamic = "force-dynamic";
-
-const COMPLETED = ["PAID", "COMPLETED", "SHIPPED", "DELIVERED"] as const;
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,8 +26,8 @@ export async function GET(req: NextRequest) {
     const rows = hasFeeCols
       ? await prisma.orders.findMany({
           where: {
-            status: { in: [...COMPLETED] },
             created_at: { gte: start, lte: end },
+            ...prismaWhereOrderPaymentConfirmed,
           },
           orderBy: { created_at: "asc" },
           select: {
@@ -39,8 +38,8 @@ export async function GET(req: NextRequest) {
         })
       : await prisma.orders.findMany({
           where: {
-            status: { in: [...COMPLETED] },
             created_at: { gte: start, lte: end },
+            ...prismaWhereOrderPaymentConfirmed,
           },
           orderBy: { created_at: "asc" },
           select: { ...baseSelect },

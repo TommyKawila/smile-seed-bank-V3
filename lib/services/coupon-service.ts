@@ -298,7 +298,8 @@ async function _hasCompletedOrder(
   if (userId) {
     const rows = await sql`
       SELECT id FROM orders
-      WHERE customer_id = ${userId} AND status IN ('PAID', 'SHIPPED')
+      WHERE customer_id = ${userId}
+        AND ((status IN ('PENDING', 'PROCESSING') AND payment_status = 'paid') OR status IN ('PAID', 'SHIPPED'))
       LIMIT 1
     `;
     return rows.length > 0;
@@ -311,7 +312,8 @@ async function _hasCompletedOrder(
     if (!cust) return false;
     const rows = await sql`
       SELECT id FROM orders
-      WHERE customer_id = ${cust.id} AND status IN ('PAID', 'SHIPPED')
+      WHERE customer_id = ${cust.id}
+        AND ((status IN ('PENDING', 'PROCESSING') AND payment_status = 'paid') OR status IN ('PAID', 'SHIPPED'))
       LIMIT 1
     `;
     return rows.length > 0;

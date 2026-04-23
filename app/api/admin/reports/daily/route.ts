@@ -19,7 +19,10 @@ export async function GET(req: NextRequest) {
     const endOfDay = new Date(dateStr + "T23:59:59.999Z");
 
     const where = {
-      status: { in: ["COMPLETED", "PAID", "SHIPPED"] },
+      OR: [
+        { status: { in: ["COMPLETED", "PAID", "SHIPPED"] } },
+        { status: { in: ["PENDING", "PROCESSING"] }, payment_status: "paid" },
+      ],
       created_at: { gte: startOfDay, lte: endOfDay },
     };
 
@@ -48,7 +51,9 @@ export async function GET(req: NextRequest) {
         _sum: { points_discount_amount: true },
       }),
       prisma.$queryRaw<{ total: bigint }[]>(
-        Prisma.sql`SELECT COALESCE(SUM(points_redeemed), 0)::bigint as total FROM orders WHERE status IN ('COMPLETED','PAID','SHIPPED') AND created_at >= ${startOfDay} AND created_at <= ${endOfDay}`
+        Prisma.sql`SELECT COALESCE(SUM(points_redeemed), 0)::bigint as total FROM orders WHERE (
+          (status IN ('PENDING', 'PROCESSING') AND payment_status = 'paid') OR status IN ('COMPLETED','PAID','SHIPPED')
+        ) AND created_at >= ${startOfDay} AND created_at <= ${endOfDay}`
       ),
       prisma.order_items.findMany({
         where: { orders: { ...where } },

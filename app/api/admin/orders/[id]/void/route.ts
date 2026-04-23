@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { orderIsReadyToShip } from "@/lib/order-paid";
 import { restoreVariantStockForOrderItems } from "@/lib/order-inventory";
 import { revalidateAfterOrderStatusChange } from "@/lib/revalidate-storefront-order";
 import { sendVoidOrderAlert } from "@/services/line-messaging";
@@ -34,9 +35,11 @@ export async function PATCH(
       return NextResponse.json({ error: "Order is already voided" }, { status: 400 });
     }
 
-    if (order.status !== "COMPLETED" && order.status !== "PAID") {
+    const canVoidFromPaid =
+      orderIsReadyToShip(order.status, order.payment_status) || order.status === "PAID";
+    if (order.status !== "COMPLETED" && !canVoidFromPaid) {
       return NextResponse.json(
-        { error: "Only PAID or COMPLETED orders can be voided" },
+        { error: "Only paid (ready to ship) or completed orders can be voided" },
         { status: 400 }
       );
     }

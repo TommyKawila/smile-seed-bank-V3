@@ -59,6 +59,7 @@ export async function createManualOrderFromItems(input: {
       shipping_fee: new Prisma.Decimal(shipping_fee),
       discount_amount: new Prisma.Decimal(discount_amount),
       status: "COMPLETED",
+      payment_status: "paid",
       order_origin: "MANUAL",
       payment_method: customer?.payment_method ?? "CASH",
       shipping_address: customer?.address ?? null,

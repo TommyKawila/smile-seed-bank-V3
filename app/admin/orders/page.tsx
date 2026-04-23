@@ -28,6 +28,7 @@ import {
   isReceiptEligibleStatus,
 } from "@/lib/receipt-pdf";
 import { computeOrderReceiptFinancials } from "@/lib/order-receipt-math";
+import { orderIsReadyToShip, orderIsPaymentReceived } from "@/lib/order-paid";
 import { getSiteOrigin } from "@/lib/get-url";
 import {
   buildPromptPayIoQrUrl,
@@ -58,16 +59,17 @@ const SHIPPING_PROVIDERS = [
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
-const STATUS_TABS = [
-  { value: "", label: "ทั้งหมด" },
-  { value: "AWAITING_VERIFICATION", label: "รอตรวจสอบ" },
-  { value: "PENDING_INFO", label: "รอลูกค้ากรอก" },
-  { value: "PENDING", label: "รอดำเนินการ" },
-  { value: "PAID", label: "ชำระแล้ว" },
-  { value: "COMPLETED", label: "เสร็จสิ้น" },
-  { value: "SHIPPED", label: "จัดส่งแล้ว" },
-  { value: "CANCELLED", label: "ยกเลิก" },
-  { value: "VOIDED", label: "ยกเลิก/คืน" },
+type OrderListTabId = "" | "waiting" | "paid" | "shipped" | "completed" | "cancelled";
+type OrderListCountKey = "waiting" | "paid" | "shipped" | "completed" | "cancelled";
+
+/** Desktop workflow tabs — same filters as mobile `listOrders` + `countOrdersByListTabs` */
+const ORDER_LIST_TABS: { id: OrderListTabId; label: string; countKey: OrderListCountKey | null }[] = [
+  { id: "", label: "ทั้งหมด", countKey: null },
+  { id: "waiting", label: "รอชำระ / สลิป", countKey: "waiting" },
+  { id: "paid", label: "ชำระแล้ว (แพ็ค)", countKey: "paid" },
+  { id: "shipped", label: "จัดส่งแล้ว", countKey: "shipped" },
+  { id: "completed", label: "เสร็จสิ้น", countKey: "completed" },
+  { id: "cancelled", label: "ยกเลิก / Void", countKey: "cancelled" },
 ];
 
 const ORDER_QUICK_MESSAGE_PRESETS = [
@@ -147,12 +149,21 @@ function buildLineFlexJsonFromOrderDetail(d: {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-function statusStyle(status: string): string {
-  switch (status) {
+function orderDisplayStatus(status: string, paymentStatus?: string): string {
+  const ps = (paymentStatus ?? "").toLowerCase();
+  if (ps === "paid" && (status === "PENDING" || status === "PROCESSING"))
+    return "PAID";
+  return status;
+}
+
+function statusStyle(status: string, paymentStatus?: string): string {
+  const s = orderDisplayStatus(status, paymentStatus);
+  switch (s) {
     case "PENDING_INFO":            return "bg-violet-100 text-violet-900 border-violet-200";
     case "AWAITING_VERIFICATION": return "bg-amber-100 text-amber-800 border-amber-200";
     case "PAID":
-    case "COMPLETED":             return "bg-accent text-primary border-primary/25";
+      return "bg-cyan-50 text-cyan-900 border-cyan-200";
+    case "COMPLETED":             return "bg-emerald-50 text-emerald-900 border-emerald-200";
     case "SHIPPED":
     case "DELIVERED":             return "bg-blue-100 text-blue-800 border-blue-200";
     case "CANCELLED":             return "bg-red-100 text-red-800 border-red-200";
@@ -161,11 +172,12 @@ function statusStyle(status: string): string {
   }
 }
 
-function statusLabel(status: string): string {
+function statusLabel(status: string, paymentStatus?: string): string {
+  const s = orderDisplayStatus(status, paymentStatus);
   return (
     { AWAITING_VERIFICATION: "รอตรวจสอบ", PENDING_INFO: "รอลูกค้ากรอกข้อมูล", PENDING: "รอดำเนินการ",
       PAID: "ชำระแล้ว", COMPLETED: "เสร็จสิ้น", SHIPPED: "จัดส่งแล้ว", DELIVERED: "ส่งถึงแล้ว",
-      CANCELLED: "ยกเลิก", VOIDED: "ยกเลิก/คืน" }[status] ?? status
+      CANCELLED: "ยกเลิก", VOIDED: "ยกเลิก/คืน" }[s] ?? s
   );
 }
 
@@ -309,11 +321,13 @@ function OrderCard({
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
+  const ps = (order.payment_status ?? "").toLowerCase();
   const canCancelPending =
-    order.status === "PENDING" || order.status === "PENDING_INFO";
-  const canShip = order.status === "PAID" || order.status === "COMPLETED";
-  const canVoid = order.status === "COMPLETED" || order.status === "PAID";
-  const canReceipt = isReceiptEligibleStatus(order.status);
+    (order.status === "PENDING" || order.status === "PENDING_INFO") && ps !== "paid";
+  const canShip = orderIsReadyToShip(order.status, order.payment_status);
+  const canVoid =
+    order.status === "COMPLETED" || orderIsReadyToShip(order.status, order.payment_status);
+  const canReceipt = isReceiptEligibleStatus(order.status, order.payment_status);
   const busy = isUpdating === order.id;
   const pmLabel = PAYMENT_LABELS[order.payment_method ?? ""] ?? order.payment_method ?? "—";
 
@@ -335,8 +349,8 @@ function OrderCard({
               {formatRelativeTime(order.created_at)}
             </div>
           </div>
-          <Badge className={cn("shrink-0 text-xs", statusStyle(order.status))}>
-            {statusLabel(order.status)}
+          <Badge className={cn("shrink-0 text-xs", statusStyle(order.status, order.payment_status))}>
+            {statusLabel(order.status, order.payment_status)}
           </Badge>
         </div>
 
@@ -465,7 +479,7 @@ function OrderCard({
                 <><Truck className="mr-1.5 h-4 w-4" /> ยืนยันการจัดส่ง</>
               )}
             </Button>
-            {order.status === "PAID" && canVoid && (
+            {orderIsReadyToShip(order.status, order.payment_status) && canVoid && (
               <Button
                 size="sm"
                 variant="outline"
@@ -526,14 +540,17 @@ function OrderTableRow({
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
+  const ps = (order.payment_status ?? "").toLowerCase();
   const canCancelPending =
-    order.status === "PENDING" || order.status === "PENDING_INFO";
-  const canShip = order.status === "PAID" || order.status === "COMPLETED";
-  const canVoid = order.status === "COMPLETED" || order.status === "PAID";
-  const canReceipt = isReceiptEligibleStatus(order.status);
+    (order.status === "PENDING" || order.status === "PENDING_INFO") && ps !== "paid";
+  const canShip = orderIsReadyToShip(order.status, order.payment_status);
+  const canVoid =
+    order.status === "COMPLETED" || orderIsReadyToShip(order.status, order.payment_status);
+  const canReceipt = isReceiptEligibleStatus(order.status, order.payment_status);
   const busy = isUpdating === order.id;
   const isPdf = order.slip_url?.toLowerCase().includes(".pdf");
   const pmLabel = PAYMENT_LABELS[order.payment_method ?? ""] ?? order.payment_method ?? "—";
+  const isPaidQueue = orderIsReadyToShip(order.status, order.payment_status);
 
   return (
     <tr className="border-b border-zinc-100 text-sm hover:bg-zinc-50/60">
@@ -569,8 +586,8 @@ function OrderTableRow({
         </span>
       </td>
       <td className="px-4 py-3">
-        <Badge className={cn("text-xs", statusStyle(order.status))}>
-          {statusLabel(order.status)}
+        <Badge className={cn("text-xs", statusStyle(order.status, order.payment_status))}>
+          {statusLabel(order.status, order.payment_status)}
         </Badge>
       </td>
       <td className="px-4 py-3">
@@ -661,9 +678,9 @@ function OrderTableRow({
               {canVoid && (
                 <Button
                   size="sm"
-                  variant={order.status === "PAID" ? "outline" : "ghost"}
+                  variant={isPaidQueue ? "outline" : "ghost"}
                   className={
-                    order.status === "PAID"
+                    isPaidQueue
                       ? "shrink-0 border-red-300 text-red-700 hover:bg-red-50"
                       : "text-red-600 hover:bg-red-50 hover:text-red-700"
                   }
@@ -672,9 +689,9 @@ function OrderTableRow({
                   aria-label="ยกเลิกและคืนสต็อก"
                 >
                   <RotateCcw
-                    className={cn("h-3.5 w-3.5 shrink-0", order.status === "PAID" && "mr-1")}
+                    className={cn("h-3.5 w-3.5 shrink-0", isPaidQueue && "mr-1")}
                   />
-                  {order.status === "PAID" ? (
+                  {isPaidQueue ? (
                     <span className="max-w-[9rem] truncate text-xs font-medium">ยกเลิก·คืนสต็อก</span>
                   ) : null}
                 </Button>
@@ -714,6 +731,7 @@ type OrderDetail = {
   shippingFee: number;
   discountAmount: number;
   status: string;
+  paymentStatus?: string;
   voidReason?: string | null;
   trackingNumber: string | null;
   shippingProvider: string | null;
@@ -733,7 +751,7 @@ type OrderDetail = {
 export default function AdminOrdersPage() {
   const router = useRouter();
   const openedOrderFromQuery = useRef(false);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [listTab, setListTab] = useState<OrderListTabId>("waiting");
   const [slipModalUrl, setSlipModalUrl] = useState<string | null>(null);
   const [detailModal, setDetailModal] = useState<OrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -766,7 +784,10 @@ export default function AdminOrdersPage() {
   const [quickMessageBody, setQuickMessageBody] = useState("");
   const [quickMessageSending, setQuickMessageSending] = useState(false);
 
-  const { orders, isLoading, error, refetch } = useAdminOrders(statusFilter || undefined);
+  const { orders, isLoading, error, refetch, tabCounts } = useAdminOrders({
+    statusTab: listTab === "" ? undefined : listTab,
+    includeTabCounts: true,
+  });
 
   useEffect(() => {
     if (!linkLineOpen) return;
@@ -1197,7 +1218,7 @@ export default function AdminOrdersPage() {
 
   const handleReceiptPDF = useCallback(() => {
     if (!detailModal?.id) return;
-    if (!isReceiptEligibleStatus(detailModal.status)) {
+    if (!isReceiptEligibleStatus(detailModal.status, detailModal.paymentStatus)) {
       pushToast("ไม่สามารถออกใบเสร็จสำหรับสถานะนี้", "error");
       return;
     }
@@ -1280,14 +1301,13 @@ export default function AdminOrdersPage() {
     }
   }, [detailModal, pushToast]);
 
-  // Tab counts (from current full list — best-effort)
-  const countByStatus = orders.reduce<Record<string, number>>((acc, o) => {
-    acc[o.status] = (acc[o.status] ?? 0) + 1;
-    return acc;
-  }, {});
-
   const totalRevenue = orders
-    .filter((o) => ["PAID", "SHIPPED", "COMPLETED"].includes(o.status))
+    .filter(
+      (o) =>
+        orderIsReadyToShip(o.status, o.payment_status) ||
+        o.status === "SHIPPED" ||
+        o.status === "COMPLETED"
+    )
     .reduce((s, o) => s + Number(o.total_amount), 0);
 
   return (
@@ -1338,14 +1358,19 @@ export default function AdminOrdersPage() {
 
       {/* Filter Tabs — horizontally scrollable on mobile */}
       <div className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:rounded-lg sm:bg-zinc-100 sm:p-1">
-        {STATUS_TABS.map((t) => {
-          const count = t.value ? (countByStatus[t.value] ?? 0) : orders.length;
-          const active = statusFilter === t.value;
+        {ORDER_LIST_TABS.map((t) => {
+          const active = listTab === t.id;
+          const count =
+            t.countKey != null
+              ? (tabCounts?.[t.countKey] ?? 0)
+              : tabCounts
+                ? Object.values(tabCounts).reduce((a, b) => a + b, 0)
+                : 0;
           return (
             <button
-              key={t.value || "all"}
+              key={t.id || "all"}
               type="button"
-              onClick={() => setStatusFilter(t.value)}
+              onClick={() => setListTab(t.id)}
               className={cn(
                 "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:rounded-md sm:py-1.5",
                 active
@@ -1354,14 +1379,14 @@ export default function AdminOrdersPage() {
               )}
             >
               {t.label}
-              {count > 0 && (
-                <span className={cn(
+              <span
+                className={cn(
                   "rounded-full px-1.5 py-0.5 text-xs",
                   active ? "bg-white/20 text-white" : "bg-zinc-200 text-zinc-600"
-                )}>
-                  {count}
-                </span>
-              )}
+                )}
+              >
+                {count}
+              </span>
             </button>
           );
         })}
@@ -1481,7 +1506,7 @@ export default function AdminOrdersPage() {
             </div>
             {detailModal && detailModal.id != null && (
               <div className="flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4">
-                {isReceiptEligibleStatus(detailModal.status) && (
+                {isReceiptEligibleStatus(detailModal.status, detailModal.paymentStatus) && (
                   <Button
                     size="sm"
                     className="h-9 shrink-0 bg-[#003366] px-3 text-white hover:bg-[#00264d] border-0"
@@ -1562,7 +1587,8 @@ export default function AdminOrdersPage() {
                     แอดมินจัดการแทน
                   </Button>
                 )}
-                {(detailModal.status === "PENDING" || detailModal.status === "PENDING_INFO") && (
+                {(detailModal.status === "PENDING" || detailModal.status === "PENDING_INFO") &&
+                  (detailModal.paymentStatus ?? "").toLowerCase() !== "paid" && (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -1573,20 +1599,27 @@ export default function AdminOrdersPage() {
                     ยกเลิกออเดอร์
                   </Button>
                 )}
-                {(detailModal.status === "COMPLETED" || detailModal.status === "PAID") && (
+                {(detailModal.status === "COMPLETED" ||
+                  orderIsReadyToShip(detailModal.status, detailModal.paymentStatus)) && (
                   <Button
                     size="sm"
-                    variant={detailModal.status === "PAID" ? "outline" : "ghost"}
+                    variant={
+                      orderIsReadyToShip(detailModal.status, detailModal.paymentStatus)
+                        ? "outline"
+                        : "ghost"
+                    }
                     className={cn(
                       "h-9 shrink-0 px-3",
-                      detailModal.status === "PAID"
+                      orderIsReadyToShip(detailModal.status, detailModal.paymentStatus)
                         ? "border-red-300 text-red-700 hover:bg-red-50"
                         : "text-red-600 hover:bg-red-50 hover:text-red-700"
                     )}
                     onClick={() => { setDetailModal(null); handleVoidOpen(detailModal.id); }}
                   >
                     <RotateCcw className="mr-1.5 h-4 w-4 shrink-0" />
-                    {detailModal.status === "PAID" ? "ยกเลิกและคืนสต็อก" : "ยกเลิกออเดอร์"}
+                    {orderIsReadyToShip(detailModal.status, detailModal.paymentStatus)
+                      ? "ยกเลิกและคืนสต็อก"
+                      : "ยกเลิกออเดอร์"}
                   </Button>
                 )}
               </div>
@@ -1600,7 +1633,7 @@ export default function AdminOrdersPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-lg bg-accent px-3 py-2">
                 <span className="font-mono font-bold text-primary">#{detailModal.orderNumber}</span>
-                <Badge className={statusStyle(detailModal.status)}>{statusLabel(detailModal.status)}</Badge>
+                <Badge className={statusStyle(detailModal.status, detailModal.paymentStatus)}>{statusLabel(detailModal.status, detailModal.paymentStatus)}</Badge>
               </div>
               <div>
                 <h4 className="mb-2 text-sm font-semibold text-zinc-700">รายการสินค้า</h4>
@@ -1778,7 +1811,7 @@ export default function AdminOrdersPage() {
                 </div>
               )}
 
-              {(detailModal.status === "PAID" || detailModal.status === "COMPLETED") && (
+              {orderIsReadyToShip(detailModal.status, detailModal.paymentStatus) && (
                 <Button
                   size="sm"
                   className="w-full bg-primary hover:bg-primary/90 sm:w-auto"

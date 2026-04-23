@@ -53,8 +53,11 @@ export async function getFinancialSummary(opts?: {
   to?: string;
 }): Promise<ServiceResult<FinancialSummary>> {
   try {
-    const where: { status: { in: string[] }; created_at?: object } = {
-      status: { in: ["PAID", "SHIPPED"] },
+    const where: { OR: object[]; created_at?: object } = {
+      OR: [
+        { status: { in: ["PAID", "SHIPPED"] } },
+        { status: { in: ["PENDING", "PROCESSING"] }, payment_status: "paid" },
+      ],
     };
     if (opts?.from || opts?.to) {
       where.created_at = {};
@@ -119,8 +122,11 @@ export async function getRevenueSeries(
   opts?: { from?: string; to?: string }
 ): Promise<ServiceResult<RevenueDataPoint[]>> {
   try {
-    const where: { status: { in: string[] }; created_at?: object } = {
-      status: { in: ["PAID", "SHIPPED"] },
+    const where: { OR: object[]; created_at?: object } = {
+      OR: [
+        { status: { in: ["PAID", "SHIPPED"] } },
+        { status: { in: ["PENDING", "PROCESSING"] }, payment_status: "paid" },
+      ],
     };
     if (opts?.from || opts?.to) {
       where.created_at = {};
@@ -192,26 +198,30 @@ export async function getSalesChannelBreakdown(opts?: {
   to?: string;
 }): Promise<ServiceResult<ChannelBreakdown[]>> {
   try {
-    const supabase = await createAdminClient();
+    const created_at: { gte?: Date; lte?: Date } = {};
+    if (opts?.from) created_at.gte = new Date(opts.from);
+    if (opts?.to) created_at.lte = new Date(opts.to);
+    const hasDate = created_at.gte != null || created_at.lte != null;
 
-    let query = supabase
-      .from("orders")
-      .select("order_origin, total_amount")
-      .in("status", ["PAID", "SHIPPED"]);
-
-    if (opts?.from) query = query.gte("created_at", opts.from);
-    if (opts?.to) query = query.lte("created_at", opts.to);
-
-    const { data, error } = await query;
-    if (error) return { data: null, error: error.message };
+    const data = await prisma.orders.findMany({
+      where: {
+        ...(hasDate ? { created_at } : {}),
+        OR: [
+          { status: { in: ["PAID", "SHIPPED"] } },
+          { status: { in: ["PENDING", "PROCESSING"] }, payment_status: "paid" },
+        ],
+      },
+      select: { order_origin: true, total_amount: true },
+    });
 
     const map = new Map<string, { count: number; revenue: number }>();
 
-    (data as Pick<Order, "order_origin" | "total_amount">[]).forEach((o) => {
-      const prev = map.get(o.order_origin) ?? { count: 0, revenue: 0 };
-      map.set(o.order_origin, {
+    data.forEach((o) => {
+      const ch = o.order_origin ?? "WEB";
+      const prev = map.get(ch) ?? { count: 0, revenue: 0 };
+      map.set(ch, {
         count: prev.count + 1,
-        revenue: prev.revenue + o.total_amount,
+        revenue: prev.revenue + Number(o.total_amount),
       });
     });
 

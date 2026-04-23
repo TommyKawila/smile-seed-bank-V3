@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { dashboardRangeBounds } from "@/lib/dashboard-date-range";
+import { prismaWhereOrderPaymentConfirmed } from "@/lib/order-paid";
 
 export const dynamic = "force-dynamic";
-
-const PAID_STATUSES = ["PAID", "COMPLETED", "SHIPPED", "DELIVERED"] as const;
 
 function eachDay(start: Date, end: Date): string[] {
   const out: string[] = [];
@@ -37,8 +36,8 @@ export async function GET(req: NextRequest) {
     const { start, end } = dashboardRangeBounds(p);
 
     const orderWherePaid = {
-      status: { in: [...PAID_STATUSES] },
       created_at: { gte: start, lte: end },
+      ...prismaWhereOrderPaymentConfirmed,
     };
 
     const [salesAgg, ordersForVolume, ordersForPie, newCustomersCount] = await Promise.all([

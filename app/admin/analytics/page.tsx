@@ -108,8 +108,11 @@ function MetricCard({
   );
 }
 
-function statusBadgeCls(status: string) {
+function statusBadgeCls(status: string, paymentStatus?: string) {
   const s = (status ?? "").toUpperCase();
+  const ps = (paymentStatus ?? "").toLowerCase();
+  if (s === "PENDING" && ps === "paid")
+    return "bg-emerald-100 text-emerald-800";
   if (["PAID", "COMPLETED", "SHIPPED", "DELIVERED"].includes(s))
     return "bg-emerald-100 text-emerald-800";
   if (s === "PENDING") return "bg-amber-100 text-amber-800";
@@ -470,7 +473,14 @@ export default function DashboardPage() {
                           <tr key={o.orderNumber} className="border-b border-zinc-100">
                             <td className="py-2.5 font-mono text-zinc-800">{o.orderNumber}</td>
                             <td className="py-2.5">
-                              <Badge className={cn("text-xs font-normal", statusBadgeCls(o.status))}>{o.status}</Badge>
+                              <Badge
+                                className={cn(
+                                  "text-xs font-normal",
+                                  statusBadgeCls(o.status, (o as { payment_status?: string }).payment_status)
+                                )}
+                              >
+                                {o.status}
+                              </Badge>
                             </td>
                             <td className="py-2.5 text-right font-medium text-emerald-700">{formatPrice(o.totalAmount)}</td>
                             <td className="py-2.5 text-right text-zinc-500">

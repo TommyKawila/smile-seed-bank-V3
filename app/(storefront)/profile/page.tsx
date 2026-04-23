@@ -28,6 +28,7 @@ import type { EligibleCoupon } from "@/components/storefront/FloatingOfferButton
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { GenomeCirclePanel } from "@/components/storefront/GenomeCirclePanel";
 import { canViewMembershipProgram } from "@/lib/feature-flags";
+import { orderIsPaymentReceived } from "@/lib/order-paid";
 
 type ProfileTab = "orders" | "membership" | "coupons" | "profile";
 
@@ -61,6 +62,7 @@ type OrderRow = {
   id: number;
   order_number: string;
   status: string;
+  payment_status: string;
   total_amount: number;
   payment_method: string;
   tracking_number: string | null;
@@ -93,8 +95,19 @@ const STATUS_CONFIG: Record<string, { label: string; labelEn: string; cls: strin
   VOIDED: { label: "ยกเลิก·คืนสต็อก", labelEn: "Voided", cls: "bg-zinc-100 text-zinc-600" },
 };
 
-function StatusBadge({ status, locale }: { status: string; locale: string }) {
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING;
+function StatusBadge({
+  status,
+  paymentStatus,
+  locale,
+}: {
+  status: string;
+  paymentStatus?: string;
+  locale: string;
+}) {
+  const ps = (paymentStatus ?? "").toLowerCase();
+  const key =
+    status === "PENDING" && ps === "paid" ? "PAID" : status;
+  const cfg = STATUS_CONFIG[key] ?? STATUS_CONFIG.PENDING;
   return (
     <span
       className={cn(
@@ -395,7 +408,10 @@ function ProfileContent() {
                   const itemCount = order.order_items?.length ?? 0;
                   const img = firstItem?.product_variants?.products?.image_url;
                   const itemName = firstItem?.product_variants?.products?.name ?? "สินค้า";
-                  const showReceiptBtn = order.status === "PAID" || order.status === "COMPLETED";
+                  const showReceiptBtn = orderIsPaymentReceived(
+                    order.status,
+                    order.payment_status
+                  );
                   return (
                     <motion.button
                       key={order.id}
@@ -441,7 +457,11 @@ function ProfileContent() {
                             </div>
                             <div className="flex flex-col items-end gap-1.5">
                               <div className="flex flex-wrap items-center justify-end gap-1.5">
-                                <StatusBadge status={order.status} locale={locale} />
+                                <StatusBadge
+                                  status={order.status}
+                                  paymentStatus={order.payment_status}
+                                  locale={locale}
+                                />
                                 {showReceiptBtn ? (
                                   <a
                                     href={`/api/storefront/orders/${encodeURIComponent(order.order_number)}/receipt`}

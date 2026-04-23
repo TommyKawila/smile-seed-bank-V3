@@ -54,7 +54,8 @@ export async function PATCH(
       await revalidateAfterOrderStatusChange(orderId);
       return NextResponse.json({
         success: true,
-        status: "PAID",
+        status: "PENDING",
+        payment_status: "paid",
         order: data ? bigintToJson(data.order) : undefined,
       });
     }

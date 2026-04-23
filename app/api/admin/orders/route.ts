@@ -3,7 +3,11 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { generateOrderNumber } from "@/lib/order-utils";
 import type { Order, OrderItem } from "@/types/supabase";
-import { listOrders } from "@/services/orders-service";
+import {
+  countOrdersByListTabs,
+  countPaidReadyToShipOrders,
+  listOrders,
+} from "@/services/orders-service";
 
 const ManualOrderSchema = z.object({
   customer: z.object({
@@ -36,9 +40,25 @@ export async function GET(req: NextRequest) {
     const status = req.nextUrl.searchParams.get("status") ?? undefined;
     const statusTab = req.nextUrl.searchParams.get("statusTab") ?? undefined;
     const dateRange = req.nextUrl.searchParams.get("dateRange") ?? undefined;
+    const includePaidCount = req.nextUrl.searchParams.get("includePaidCount") === "1";
+    const includeTabCounts = req.nextUrl.searchParams.get("includeTabCounts") === "1";
     const { data, error } = await listOrders({ status, statusTab, dateRange });
     if (error) return NextResponse.json({ error }, { status: 500 });
-    return NextResponse.json({ orders: data ?? [] });
+    let paidQueueCount: number | undefined;
+    if (includePaidCount && dateRange) {
+      paidQueueCount = await countPaidReadyToShipOrders(dateRange);
+    } else if (includePaidCount) {
+      paidQueueCount = await countPaidReadyToShipOrders("all");
+    }
+    let tabCounts: Awaited<ReturnType<typeof countOrdersByListTabs>> | undefined;
+    if (includeTabCounts) {
+      tabCounts = await countOrdersByListTabs();
+    }
+    return NextResponse.json({
+      orders: data ?? [],
+      ...(paidQueueCount !== undefined ? { paidQueueCount } : {}),
+      ...(tabCounts !== undefined ? { tabCounts } : {}),
+    });
   } catch (err) {
     console.error("GET /api/admin/orders error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

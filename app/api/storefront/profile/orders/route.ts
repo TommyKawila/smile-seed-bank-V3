@@ -15,6 +15,7 @@ export async function GET() {
         o.id,
         o.order_number,
         o.status,
+        o.payment_status,
         o.total_amount,
         o.payment_method,
         o.tracking_number,
@@ -79,7 +80,8 @@ export async function GET() {
     }
 
     const result = (orders as {
-      id: number; order_number: string; status: string; total_amount: number;
+      id: number; order_number: string; status: string; payment_status: string | null;
+      total_amount: number;
       payment_method: string; tracking_number: string | null;
       shipping_provider: string | null;
       shipping_address: string | null; created_at: string;
@@ -92,6 +94,7 @@ export async function GET() {
       id: order.id,
       order_number: order.order_number,
       status: order.status,
+      payment_status: order.payment_status ?? "unpaid",
       total_amount: Number(order.total_amount),
       shipping_fee: Number(order.shipping_fee ?? 0),
       discount_amount: Number(order.discount_amount ?? 0),

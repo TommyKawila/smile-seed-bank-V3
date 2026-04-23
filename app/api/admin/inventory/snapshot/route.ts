@@ -53,8 +53,11 @@ export async function POST(req: NextRequest) {
         const endOfDay = new Date(dateStr + "T23:59:59.999Z");
         const agg = await prisma.orders.aggregate({
           where: {
-            status: { in: ["COMPLETED", "PAID", "SHIPPED"] },
             created_at: { gte: startOfDay, lte: endOfDay },
+            OR: [
+              { status: { in: ["COMPLETED", "PAID", "SHIPPED"] } },
+              { status: { in: ["PENDING", "PROCESSING"] }, payment_status: "paid" },
+            ],
           },
           _sum: { total_amount: true },
           _count: true,

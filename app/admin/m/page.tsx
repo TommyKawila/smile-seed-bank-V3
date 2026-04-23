@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
+import { parsePackFromUnitLabel } from "@/lib/sku-utils";
+import { orderIsReadyToShip, orderIsPaymentReceived } from "@/lib/order-paid";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,15 +73,15 @@ const CARRIERS: { value: string; label: string }[] = [
   { value: "J&T_EXPRESS", label: "J&T" },
 ];
 
-type StatusTab = "waiting" | "shipped" | "completed" | "cancelled" | "void";
+type StatusTab = "waiting" | "paid" | "shipped" | "completed" | "cancelled";
 type DateRangeFilter = "week" | "month" | "year" | "all";
 
-const STATUS_TABS: { id: StatusTab; label: string }[] = [
-  { id: "waiting", label: "Waiting" },
-  { id: "shipped", label: "Shipped" },
-  { id: "completed", label: "Completed" },
-  { id: "cancelled", label: "Cancelled" },
-  { id: "void", label: "Void" },
+const STATUS_TABS: { id: StatusTab; label: string; labelTh: string }[] = [
+  { id: "waiting", label: "Waiting", labelTh: "รอ" },
+  { id: "paid", label: "Paid", labelTh: "ชำระแล้ว" },
+  { id: "shipped", label: "Shipped", labelTh: "ส่งแล้ว" },
+  { id: "completed", label: "Completed", labelTh: "เสร็จ" },
+  { id: "cancelled", label: "Cancelled", labelTh: "ยกเลิก" },
 ];
 
 function formatOrderDateBangkok(iso: string): string {
@@ -101,13 +103,12 @@ function formatOrderDateBangkok(iso: string): string {
 }
 
 function sortWaitingQueue(orders: AdminOrder[]): AdminOrder[] {
-  const rank = (s: string) => {
-    if (s === "AWAITING_VERIFICATION") return 0;
-    if (s === "PAID" || s === "COMPLETED") return 1;
-    return 2;
+  const rank = (o: AdminOrder) => {
+    if (o.status === "AWAITING_VERIFICATION") return 0;
+    return 1;
   };
   return [...orders].sort((a, b) => {
-    const d = rank(a.status) - rank(b.status);
+    const d = rank(a) - rank(b);
     if (d !== 0) return d;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
@@ -120,14 +121,18 @@ function sortOrdersForTab(orders: AdminOrder[], tab: StatusTab): AdminOrder[] {
   );
 }
 
-function statusBadgeClass(status: string): string {
+function statusBadgeClass(status: string, paymentStatus?: string): string {
+  const ps = (paymentStatus ?? "").toLowerCase();
+  if (ps === "paid" && (status === "PENDING" || status === "PROCESSING")) {
+    return "bg-emerald-500/20 text-emerald-200 border-emerald-500/40";
+  }
   switch (status) {
     case "AWAITING_VERIFICATION":
       return "bg-amber-500/20 text-amber-200 border-amber-500/40";
     case "PENDING":
     case "PENDING_INFO":
       return "bg-zinc-500/25 text-zinc-200 border-zinc-500/40";
-    case "PAID":
+    case "PAID": // legacy
       return "bg-emerald-500/20 text-emerald-200 border-emerald-500/40";
     case "COMPLETED":
       return "bg-cyan-500/15 text-cyan-200 border-cyan-500/30";
@@ -141,7 +146,10 @@ function statusBadgeClass(status: string): string {
   }
 }
 
-function shortStatus(status: string): string {
+function shortStatus(status: string, paymentStatus?: string): string {
+  const ps = (paymentStatus ?? "").toLowerCase();
+  if (ps === "paid" && (status === "PENDING" || status === "PROCESSING"))
+    return "ชำระแล้ว / Pack";
   if (status === "AWAITING_VERIFICATION") return "รอตรวจ / Verify";
   return status;
 }
@@ -192,6 +200,7 @@ export default function AdminMobileOrdersPage() {
   >(null);
   const [voidOrder, setVoidOrder] = useState<AdminOrder | null>(null);
   const [voidReason, setVoidReason] = useState("");
+  const [paidQueueCount, setPaidQueueCount] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -199,13 +208,20 @@ export default function AdminMobileOrdersPage() {
       const params = new URLSearchParams();
       params.set("statusTab", statusTab);
       params.set("dateRange", dateRange);
+      params.set("includePaidCount", "1");
       const res = await fetch(`/api/admin/orders?${params.toString()}`, { cache: "no-store" });
-      const data = (await res.json()) as { orders?: AdminOrder[]; error?: string };
+      const data = (await res.json()) as {
+        orders?: AdminOrder[];
+        paidQueueCount?: number;
+        error?: string;
+      };
       if (!res.ok) throw new Error(data.error ?? "Load failed");
       const list = data.orders ?? [];
+      setPaidQueueCount(typeof data.paidQueueCount === "number" ? data.paidQueueCount : 0);
       setOrders(
         list.map((o) => ({
           ...o,
+          payment_status: (o as { payment_status?: string }).payment_status ?? "unpaid",
           line_items: o.line_items ?? [],
           discount_amount: Number(o.discount_amount ?? 0),
           points_discount_amount: Number(o.points_discount_amount ?? 0),
@@ -438,13 +454,18 @@ export default function AdminMobileOrdersPage() {
                 key={t.id}
                 type="button"
                 onClick={() => setStatusTab(t.id)}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                   statusTab === t.id
                     ? "border-emerald-500/70 bg-emerald-950/50 text-emerald-100"
                     : "border-zinc-700 bg-zinc-900/80 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
                 }`}
               >
-                {t.label}
+                {t.id === "paid" ? t.labelTh : t.label}
+                {t.id === "paid" && paidQueueCount > 0 ? (
+                  <span className="min-w-[1.125rem] rounded-full bg-emerald-500/90 px-1 text-center text-[10px] font-bold text-zinc-950">
+                    {paidQueueCount > 99 ? "99+" : paidQueueCount}
+                  </span>
+                ) : null}
               </button>
             ))}
           </div>
@@ -575,9 +596,9 @@ export default function AdminMobileOrdersPage() {
               <div className="flex shrink-0 flex-col items-end gap-1">
                 <Badge
                   variant="outline"
-                  className={`border text-[10px] ${statusBadgeClass(o.status)}`}
+                  className={`border text-[10px] ${statusBadgeClass(o.status, o.payment_status)}`}
                 >
-                  {shortStatus(o.status)}
+                  {shortStatus(o.status, o.payment_status)}
                 </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -596,7 +617,8 @@ export default function AdminMobileOrdersPage() {
                     align="end"
                     className="w-52 border-zinc-700 bg-zinc-900 text-zinc-100"
                   >
-                    {(o.status === "PENDING" || o.status === "PENDING_INFO") && (
+                    {(o.status === "PENDING" || o.status === "PENDING_INFO") &&
+                      (o.payment_status ?? "").toLowerCase() !== "paid" && (
                       <DropdownMenuItem
                         className="focus:bg-zinc-800 focus:text-zinc-100"
                         onSelect={() => setAlertDialog({ kind: "cancel", order: o })}
@@ -612,7 +634,7 @@ export default function AdminMobileOrdersPage() {
                         Reject slip / cancel…
                       </DropdownMenuItem>
                     )}
-                    {o.status === "PAID" && (
+                    {orderIsReadyToShip(o.status, o.payment_status) && (
                       <DropdownMenuItem
                         className="focus:bg-zinc-800 focus:text-zinc-100"
                         onSelect={() => setAlertDialog({ kind: "revert", order: o })}
@@ -620,7 +642,7 @@ export default function AdminMobileOrdersPage() {
                         Reset to pending…
                       </DropdownMenuItem>
                     )}
-                    {(o.status === "PAID" || o.status === "COMPLETED") && (
+                    {(orderIsReadyToShip(o.status, o.payment_status) || o.status === "COMPLETED") && (
                       <DropdownMenuItem
                         className="focus:bg-zinc-800 focus:text-amber-200"
                         onSelect={() => {
@@ -642,32 +664,54 @@ export default function AdminMobileOrdersPage() {
                   Items summary
                 </p>
                 <div className="divide-y divide-zinc-800/80 px-2 py-1">
-                  {(o.line_items ?? []).map((li, idx) => (
-                    <div key={idx} className="py-1.5 first:pt-1 last:pb-1">
-                      <p className="text-[11px] leading-snug text-zinc-200">
-                        <span className="text-zinc-500">{li.breeder_name}</span>
-                        <span className="text-zinc-600"> | </span>
-                        {li.product_name}
-                        <span className="text-zinc-500">
-                          {" "}
-                          ({floweringShortMobile(li.flowering_type)})
-                        </span>
-                      </p>
-                      <div className="mt-0.5 flex items-center justify-between gap-2 text-[10px] text-zinc-400">
-                        <span>
-                          {li.quantity} × {formatPrice(li.unit_price)}
-                          {li.unit_label ? (
-                            <span className="text-zinc-600"> · {li.unit_label}</span>
-                          ) : null}
-                        </span>
-                        {li.subtotal != null ? (
-                          <span className="shrink-0 font-mono text-zinc-300">
-                            {formatPrice(li.subtotal)}
-                          </span>
+                  {(o.line_items ?? []).map((li, idx) => {
+                    const effectiveForPack =
+                      li.unit_label?.trim() || li.variant_unit_label?.trim() || "";
+                    const packSeeds = parsePackFromUnitLabel(effectiveForPack);
+                    const showSeedCount = effectiveForPack.length > 0;
+                    const flowShort = floweringShortMobile(li.flowering_type);
+                    const showFlowering = flowShort !== "—";
+                    const bre =
+                      li.breeder_name?.trim() && li.breeder_name.trim() !== "—"
+                        ? li.breeder_name.trim()
+                        : null;
+                    return (
+                      <div key={idx} className="py-1.5 font-sans first:pt-1 last:pb-1">
+                        {bre ? (
+                          <p className="text-[10px] font-normal uppercase leading-tight text-zinc-500">
+                            {bre}
+                          </p>
                         ) : null}
+                        <p className="text-[11px] leading-snug text-zinc-200">
+                          <span className="text-zinc-200">{li.product_name}</span>
+                          {showSeedCount ? (
+                            <span className="text-[11px] font-medium text-zinc-400">
+                              {" "}
+                              ({packSeeds} เมล็ด)
+                            </span>
+                          ) : null}
+                          {!showSeedCount ? (
+                            <span className="text-zinc-500"> ({flowShort})</span>
+                          ) : showFlowering ? (
+                            <span className="text-zinc-500"> · {flowShort}</span>
+                          ) : null}
+                        </p>
+                        <div className="mt-0.5 flex items-center justify-between gap-2 text-[10px] text-zinc-400">
+                          <span>
+                            {li.quantity} × {formatPrice(li.unit_price)}
+                            {!showSeedCount && li.unit_label ? (
+                              <span className="text-zinc-600"> · {li.unit_label}</span>
+                            ) : null}
+                          </span>
+                          {li.subtotal != null ? (
+                            <span className="shrink-0 font-mono text-zinc-300">
+                              {formatPrice(li.subtotal)}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {(o.discount_amount > 0 ||
                   o.promotion_discount_amount > 0 ||
@@ -732,7 +776,7 @@ export default function AdminMobileOrdersPage() {
               </Button>
             ) : null}
 
-            {o.status === "PAID" || o.status === "COMPLETED" ? (
+            {orderIsReadyToShip(o.status, o.payment_status) ? (
               <div className="mt-3 space-y-2">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px]">
                   <Input
@@ -786,7 +830,7 @@ export default function AdminMobileOrdersPage() {
               </div>
             ) : null}
 
-            {(o.status === "PAID" ||
+            {(orderIsPaymentReceived(o.status, o.payment_status) ||
               o.status === "SHIPPED" ||
               o.status === "COMPLETED") && (
               <Button

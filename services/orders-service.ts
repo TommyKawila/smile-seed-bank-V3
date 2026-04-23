@@ -25,6 +25,8 @@ export interface AdminOrderRow {
   customer_name: string | null;
   total_amount: number;
   payment_method: string | null;
+  /** unpaid | paid */
+  payment_status: string;
   status: string;
   slip_url: string | null;
   reject_note: string | null;
@@ -63,6 +65,7 @@ type RawOrderListRow = {
   discount_amount: unknown;
   points_discount_amount: unknown;
   promotion_discount_amount: unknown;
+  payment_status?: string | null;
 };
 
 function normalizeOrderListRow(r: RawOrderListRow): AdminOrderRow {
@@ -72,6 +75,7 @@ function normalizeOrderListRow(r: RawOrderListRow): AdminOrderRow {
     customer_name: r.customer_name,
     total_amount: Number(r.total_amount ?? 0),
     payment_method: r.payment_method,
+    payment_status: (r.payment_status ?? "unpaid").toLowerCase() === "paid" ? "paid" : "unpaid",
     status: r.status,
     slip_url: r.slip_url,
     reject_note: r.reject_note,
@@ -100,6 +104,7 @@ async function attachOrderLineItems(rows: AdminOrderRow[]): Promise<AdminOrderRo
     unit_price: unknown;
     product_name: string;
     unit_label: string | null;
+    variant_unit_label: string | null;
     subtotal: unknown;
     breeder_name: string | null;
     flowering_type: string | null;
@@ -111,12 +116,14 @@ async function attachOrderLineItems(rows: AdminOrderRow[]): Promise<AdminOrderRo
       oi.unit_price,
       oi.product_name,
       oi.unit_label,
+      pv.unit_label AS variant_unit_label,
       oi.subtotal,
       COALESCE(b.name, '') AS breeder_name,
       p.flowering_type
     FROM order_items oi
     LEFT JOIN products p ON p.id = oi.product_id
     LEFT JOIN breeders b ON b.id = p.breeder_id
+    LEFT JOIN product_variants pv ON pv.id = oi.variant_id
     WHERE oi.order_id IN ${sql(ids)}
     ORDER BY oi.id ASC
   `;
@@ -129,6 +136,7 @@ async function attachOrderLineItems(rows: AdminOrderRow[]): Promise<AdminOrderRo
       unit_price: Number(l.unit_price ?? 0),
       product_name: l.product_name,
       unit_label: l.unit_label,
+      variant_unit_label: l.variant_unit_label,
       subtotal: l.subtotal != null ? Number(l.subtotal) : null,
       breeder_name: (l.breeder_name ?? "").trim() || "—",
       flowering_type: l.flowering_type,
@@ -140,13 +148,15 @@ async function attachOrderLineItems(rows: AdminOrderRow[]): Promise<AdminOrderRo
 
 export type ServiceResult<T> = { data: T | null; error: string | null };
 
-/** Mobile /admin/m status tabs → DB `orders.status` values */
+/**
+ * Mobile /admin/m — tab keys (filter logic is SQL in `listOrders`: payment_status + status).
+ */
 export const ADMIN_ORDER_STATUS_TAB = {
-  waiting: ["PENDING", "PENDING_INFO", "AWAITING_VERIFICATION", "PAID"],
+  waiting: ["PENDING", "PENDING_INFO", "AWAITING_VERIFICATION"],
+  paid: ["PENDING", "PROCESSING"],
   shipped: ["SHIPPED", "DELIVERED"],
   completed: ["COMPLETED"],
-  cancelled: ["CANCELLED"],
-  void: ["VOIDED", "VOID"],
+  cancelled: ["CANCELLED", "VOID", "VOIDED"],
 } as const;
 
 export type AdminOrderStatusTab = keyof typeof ADMIN_ORDER_STATUS_TAB;
@@ -188,6 +198,79 @@ export type ApprovePaymentResult = {
   };
 };
 
+export async function countPaidReadyToShipOrders(dateRange: AdminOrderDateRange | string): Promise<number> {
+  const sql = getSql();
+  const drRaw = String(dateRange ?? "all").trim();
+  const dr: AdminOrderDateRange =
+    drRaw === "week" || drRaw === "month" || drRaw === "year" || drRaw === "all" ? drRaw : "all";
+  const from = lowerBoundForDateRange(dr);
+  if (from) {
+    const rows = await sql<[{ c: string }]>`
+      SELECT COUNT(*)::text AS c
+      FROM orders o
+      WHERE o.payment_status = 'paid'
+        AND o.status IN ('PENDING', 'PROCESSING')
+        AND o.created_at >= ${from.toISOString()}::timestamptz
+    `;
+    return parseInt(rows[0]?.c ?? "0", 10) || 0;
+  }
+  const rows = await sql<[{ c: string }]>`
+    SELECT COUNT(*)::text AS c
+    FROM orders o
+    WHERE o.payment_status = 'paid' AND o.status IN ('PENDING', 'PROCESSING')
+  `;
+  return parseInt(rows[0]?.c ?? "0", 10) || 0;
+}
+
+export type OrderListTabCounts = {
+  waiting: number;
+  paid: number;
+  shipped: number;
+  completed: number;
+  cancelled: number;
+};
+
+/** All-time counts for desktop order tabs (same WHERE as `listOrders` per tab). */
+export async function countOrdersByListTabs(): Promise<OrderListTabCounts> {
+  const sql = getSql();
+  const [
+    waitingRows,
+    paidRows,
+    shippedRows,
+    completedRows,
+    cancelledRows,
+  ] = await Promise.all([
+    sql<[{ c: string }]>`
+      SELECT COUNT(*)::text AS c FROM orders o
+      WHERE (o.payment_status IS NULL OR o.payment_status = 'unpaid')
+        AND o.status IN ('PENDING', 'PENDING_INFO', 'AWAITING_VERIFICATION')
+    `,
+    sql<[{ c: string }]>`
+      SELECT COUNT(*)::text AS c FROM orders o
+      WHERE o.payment_status = 'paid' AND o.status IN ('PENDING', 'PROCESSING')
+    `,
+    sql<[{ c: string }]>`
+      SELECT COUNT(*)::text AS c FROM orders o
+      WHERE o.status IN ('SHIPPED', 'DELIVERED')
+    `,
+    sql<[{ c: string }]>`
+      SELECT COUNT(*)::text AS c FROM orders o WHERE o.status = 'COMPLETED'
+    `,
+    sql<[{ c: string }]>`
+      SELECT COUNT(*)::text AS c FROM orders o
+      WHERE o.status IN ('CANCELLED', 'VOID', 'VOIDED')
+    `,
+  ]);
+  const n = (r: [{ c: string }]) => parseInt(r[0]?.c ?? "0", 10) || 0;
+  return {
+    waiting: n(waitingRows),
+    paid: n(paidRows),
+    shipped: n(shippedRows),
+    completed: n(completedRows),
+    cancelled: n(cancelledRows),
+  };
+}
+
 export async function listOrders(opts?: {
   status?: string;
   /** Mobile dashboard: maps to multiple `orders.status` values */
@@ -204,13 +287,6 @@ export async function listOrders(opts?: {
         : undefined;
     const legacyStatus = opts?.status?.trim();
 
-    let statuses: string[] | null = null;
-    if (tab) {
-      statuses = [...ADMIN_ORDER_STATUS_TAB[tab]];
-    } else if (legacyStatus) {
-      statuses = [legacyStatus];
-    }
-
     const drRaw = opts?.dateRange?.trim();
     const hasDateRangeParam = opts?.dateRange !== undefined && opts?.dateRange !== "";
     const dr: AdminOrderDateRange =
@@ -219,85 +295,69 @@ export async function listOrders(opts?: {
         : "all";
     const from = hasDateRangeParam ? lowerBoundForDateRange(dr) : null;
 
-    let rawRows: RawOrderListRow[];
-
-    if (statuses?.length && from) {
-      rawRows = await sql<RawOrderListRow[]>`
-          SELECT o.id, o.order_number,
-                 COALESCE(c.full_name, o.customer_name) AS customer_name,
-                 o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
-                 o.tracking_number, o.shipping_provider, o.created_at,
-                 o.customer_phone, o.shipping_address, o.customer_note,
-                 COALESCE(NULLIF(trim(o.line_user_id), ''), NULLIF(trim(c.line_user_id), '')) AS line_user_id,
-                 o.customer_id::text AS customer_id,
-                 c.email AS customer_email,
-                 o.discount_amount,
-                 o.points_discount_amount,
-                 o.promotion_discount_amount
-          FROM orders o
-          LEFT JOIN customers c ON c.id = o.customer_id
-          WHERE o.status IN ${sql(statuses)}
-            AND o.created_at >= ${from.toISOString()}::timestamptz
-          ORDER BY o.created_at DESC
-          LIMIT 500
-        `;
-    } else if (statuses?.length) {
-      rawRows = await sql<RawOrderListRow[]>`
-          SELECT o.id, o.order_number,
-                 COALESCE(c.full_name, o.customer_name) AS customer_name,
-                 o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
-                 o.tracking_number, o.shipping_provider, o.created_at,
-                 o.customer_phone, o.shipping_address, o.customer_note,
-                 COALESCE(NULLIF(trim(o.line_user_id), ''), NULLIF(trim(c.line_user_id), '')) AS line_user_id,
-                 o.customer_id::text AS customer_id,
-                 c.email AS customer_email,
-                 o.discount_amount,
-                 o.points_discount_amount,
-                 o.promotion_discount_amount
-          FROM orders o
-          LEFT JOIN customers c ON c.id = o.customer_id
-          WHERE o.status IN ${sql(statuses)}
-          ORDER BY o.created_at DESC
-          LIMIT 500
-        `;
-    } else if (from) {
-      rawRows = await sql<RawOrderListRow[]>`
-          SELECT o.id, o.order_number,
-                 COALESCE(c.full_name, o.customer_name) AS customer_name,
-                 o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
-                 o.tracking_number, o.shipping_provider, o.created_at,
-                 o.customer_phone, o.shipping_address, o.customer_note,
-                 COALESCE(NULLIF(trim(o.line_user_id), ''), NULLIF(trim(c.line_user_id), '')) AS line_user_id,
-                 o.customer_id::text AS customer_id,
-                 c.email AS customer_email,
-                 o.discount_amount,
-                 o.points_discount_amount,
-                 o.promotion_discount_amount
-          FROM orders o
-          LEFT JOIN customers c ON c.id = o.customer_id
-          WHERE o.created_at >= ${from.toISOString()}::timestamptz
-          ORDER BY o.created_at DESC
-          LIMIT 500
-        `;
+    let whereFragment;
+    if (tab) {
+      switch (tab) {
+        case "waiting":
+          whereFragment = sql`(o.payment_status IS NULL OR o.payment_status = 'unpaid') AND o.status IN ('PENDING', 'PENDING_INFO', 'AWAITING_VERIFICATION')`;
+          break;
+        case "paid":
+          whereFragment = sql`o.payment_status = 'paid' AND o.status IN ('PENDING', 'PROCESSING')`;
+          break;
+        case "shipped":
+          whereFragment = sql`o.status IN ('SHIPPED', 'DELIVERED')`;
+          break;
+        case "completed":
+          whereFragment = sql`o.status = 'COMPLETED'`;
+          break;
+        case "cancelled":
+          whereFragment = sql`o.status IN ('CANCELLED', 'VOID', 'VOIDED')`;
+          break;
+        default:
+          whereFragment = sql`TRUE`;
+      }
+    } else if (legacyStatus) {
+      if (legacyStatus === "PAID") {
+        whereFragment = sql`o.payment_status = 'paid' AND o.status IN ('PENDING', 'PROCESSING')`;
+      } else {
+        whereFragment = sql`o.status = ${legacyStatus}`;
+      }
     } else {
-      rawRows = await sql<RawOrderListRow[]>`
-          SELECT o.id, o.order_number,
-                 COALESCE(c.full_name, o.customer_name) AS customer_name,
-                 o.total_amount, o.payment_method, o.status, o.slip_url, o.reject_note,
-                 o.tracking_number, o.shipping_provider, o.created_at,
-                 o.customer_phone, o.shipping_address, o.customer_note,
-                 COALESCE(NULLIF(trim(o.line_user_id), ''), NULLIF(trim(c.line_user_id), '')) AS line_user_id,
-                 o.customer_id::text AS customer_id,
-                 c.email AS customer_email,
-                 o.discount_amount,
-                 o.points_discount_amount,
-                 o.promotion_discount_amount
-          FROM orders o
-          LEFT JOIN customers c ON c.id = o.customer_id
-          ORDER BY o.created_at DESC
-          LIMIT 200
-        `;
+      whereFragment = sql`TRUE`;
     }
+
+    const limit = tab || legacyStatus ? 500 : 200;
+
+    const baseSelect = sql`
+      SELECT o.id, o.order_number,
+             COALESCE(c.full_name, o.customer_name) AS customer_name,
+             o.total_amount, o.payment_method, o.payment_status, o.status, o.slip_url, o.reject_note,
+             o.tracking_number, o.shipping_provider, o.created_at,
+             o.customer_phone, o.shipping_address, o.customer_note,
+             COALESCE(NULLIF(trim(o.line_user_id), ''), NULLIF(trim(c.line_user_id), '')) AS line_user_id,
+             o.customer_id::text AS customer_id,
+             c.email AS customer_email,
+             o.discount_amount,
+             o.points_discount_amount,
+             o.promotion_discount_amount
+      FROM orders o
+      LEFT JOIN customers c ON c.id = o.customer_id`;
+
+    const rawRows =
+      from != null
+        ? await sql<RawOrderListRow[]>`
+      ${baseSelect}
+      WHERE ${whereFragment}
+        AND o.created_at >= ${from.toISOString()}::timestamptz
+      ORDER BY o.created_at DESC
+      LIMIT ${limit}
+    `
+        : await sql<RawOrderListRow[]>`
+      ${baseSelect}
+      WHERE ${whereFragment}
+      ORDER BY o.created_at DESC
+      LIMIT ${limit}
+    `;
 
     const normalized = rawRows.map(normalizeOrderListRow);
     const withItems = await attachOrderLineItems(normalized);
@@ -335,7 +395,7 @@ export async function approvePayment(
 
       const order = await tx.orders.update({
         where: { id: oid },
-        data: { status: "PAID", reject_note: null },
+        data: { status: "PENDING", payment_status: "paid", reject_note: null },
       });
 
       // TODO: Loyalty — accrue points from `order.total_amount` / tier rules (100 THB = 1 pt per blueprint); run inside this transaction when implemented.
@@ -443,6 +503,12 @@ export async function rejectPayment(orderId: number, note: string): Promise<Serv
       if (order.status === "CANCELLED") {
         throw new Error("Order is already cancelled");
       }
+      if (
+        (order.status === "PENDING" || order.status === "PROCESSING") &&
+        (order.payment_status ?? "").toLowerCase() === "paid"
+      ) {
+        throw new Error("Use void/cancel from paid queue — payment already confirmed");
+      }
       const status = order.status ?? "";
       const canRestoreStock = (REJECT_STOCK_RESTORE_STATUSES as readonly string[]).includes(status);
       if (!canRestoreStock) {
@@ -488,6 +554,9 @@ export async function cancelPendingOrder(
           `Cannot cancel: only PENDING or PENDING_INFO orders (current: ${s})`
         );
       }
+      if ((order.payment_status ?? "").toLowerCase() === "paid") {
+        throw new Error("Cannot cancel: payment already confirmed — use void if needed");
+      }
       await restoreVariantStockForOrderItems(tx, order.order_items);
       const trimmed = (note ?? "").trim();
       const rejectNote = trimmed
@@ -511,19 +580,25 @@ export async function revertApprovalToPending(orderId: number): Promise<ServiceR
   try {
     const oid = BigInt(orderId);
     await prisma.$transaction(async (tx) => {
-      const order = await tx.orders.findUnique({
+      const o = await tx.orders.findUnique({
         where: { id: oid },
-        select: { status: true, slip_url: true },
+        select: { status: true, payment_status: true, slip_url: true },
       });
-      if (!order) throw new Error("Order not found");
-      if (order.status !== "PAID") {
-        throw new Error(`Only PAID orders can be reverted (current: ${order.status ?? "?"})`);
+      if (!o) throw new Error("Order not found");
+      const isPaidQueue =
+        (o.status === "PENDING" || o.status === "PROCESSING") &&
+        (o.payment_status ?? "").toLowerCase() === "paid";
+      if (!isPaidQueue && o.status !== "PAID") {
+        throw new Error(
+          `Only paid, ready-to-ship orders can be reverted (current: ${o.status ?? "?"})`
+        );
       }
-      const next = order.slip_url?.trim() ? "AWAITING_VERIFICATION" : "PENDING";
+      const next = o.slip_url?.trim() ? "AWAITING_VERIFICATION" : "PENDING";
       await tx.orders.update({
         where: { id: oid },
         data: {
           status: next,
+          payment_status: "unpaid",
           tracking_number: null,
           shipping_provider: null,
         },
@@ -547,18 +622,28 @@ export async function markShipped(
 ): Promise<ServiceResult<MarkShippedResult>> {
   try {
     const sql = getSql();
-
-    await sql`
-      UPDATE orders
-      SET status            = 'SHIPPED',
-          tracking_number   = ${trackingNumber},
-          shipping_provider = ${shippingProvider}
-      WHERE id = ${orderId}
-    `;
+    const oid = BigInt(orderId);
+    const upd = await prisma.orders.updateMany({
+      where: {
+        id: oid,
+        OR: [
+          { status: "PENDING", payment_status: "paid" },
+          { status: "PROCESSING", payment_status: "paid" },
+          { status: "PAID" },
+        ],
+      },
+      data: {
+        status: "SHIPPED",
+        tracking_number: trackingNumber,
+        shipping_provider: shippingProvider,
+      },
+    });
+    if (upd.count === 0) {
+      return { data: null, error: "Order not in ready-to-ship state" };
+    }
 
     let quotationSynced = false;
     try {
-      const oid = BigInt(orderId);
       const byLink = await prisma.quotations.updateMany({
         where: { convertedOrderId: oid },
         data: { status: "SHIPPED" },
