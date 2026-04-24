@@ -333,66 +333,76 @@ export default function ProductDetailClient({
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-            className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-white/95 p-4 shadow-sm sm:gap-3.5 sm:p-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"
+            className="flex flex-col gap-2 rounded-2xl border border-zinc-100 bg-white/95 p-4 shadow-sm sm:gap-2.5 sm:p-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"
           >
-            {/* Breeder — clickable tag with logo */}
-            {product.breeders && (
-              <Link
-                href={shopBreederHref(product.breeders)}
-                className="inline-flex max-w-full items-center gap-2 rounded-sm border border-zinc-200 bg-zinc-50/90 px-3 py-2 text-xs shadow-sm transition-colors hover:border-zinc-300 hover:bg-white"
-              >
-                <BreederLogoImage
-                  src={product.breeders.logo_url}
-                  breederName={product.breeders.name}
-                  width={24}
-                  height={24}
-                  className="shrink-0 rounded-sm border border-zinc-200 bg-white"
-                  imgClassName="object-contain p-0.5"
-                  sizes="24px"
-                />
-                <span className={cn(fontSansTabular, "truncate font-medium text-zinc-800")}>
-                  {product.breeders.name}
-                </span>
-              </Link>
-            )}
-
-            <h1 className="font-sans text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
-              {product.name}
-            </h1>
-
-            {/* Price + stock (above fold) */}
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-              {clearancePct != null && clearancePct > 0 && (
-                <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
-                  −{clearancePct}%
-                </span>
-              )}
-              <div className="flex min-w-0 flex-col">
-                {selectedVariant && selectedList > selectedEff && (
-                  <span
-                    className={cn(
-                      fontSansTabular,
-                      "text-sm tabular-nums text-zinc-400 line-through"
+            <div className="flex min-w-0 items-start gap-3 max-lg:gap-2.5">
+              <div className="min-w-0 flex-1 space-y-1.5 max-lg:space-y-1">
+                <h1 className="font-sans text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
+                  {product.name}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                  {clearancePct != null && clearancePct > 0 && (
+                    <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
+                      −{clearancePct}%
+                    </span>
+                  )}
+                  <div className="flex min-w-0 flex-col">
+                    {selectedVariant && selectedList > selectedEff && (
+                      <span
+                        className={cn(
+                          fontSansTabular,
+                          "text-sm tabular-nums text-zinc-400 line-through"
+                        )}
+                      >
+                        {formatPrice(selectedList)}
+                      </span>
                     )}
-                  >
-                    {formatPrice(selectedList)}
-                  </span>
-                )}
-                <span className={cn(fontSansTabular, "text-2xl font-bold text-zinc-900 sm:text-3xl")}>
-                  {selectedVariant ? formatPrice(selectedEff) : "—"}
-                </span>
+                    <span
+                      className={cn(
+                        fontSansTabular,
+                        "text-2xl font-extrabold text-emerald-600 sm:text-3xl"
+                      )}
+                    >
+                      {selectedVariant ? formatPrice(selectedEff) : "—"}
+                    </span>
+                  </div>
+                  {selectedVariant &&
+                    (selectedVariant.stock ?? 0) <= 5 &&
+                    (selectedVariant.stock ?? 0) > 0 && (
+                      <Badge className="shrink-0 border border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10">
+                        {fillN(tMsg("product.only_n_left", "Only {n} left"), selectedVariant.stock ?? 0)}
+                      </Badge>
+                    )}
+                </div>
               </div>
-              {selectedVariant &&
-                (selectedVariant.stock ?? 0) <= 5 &&
-                (selectedVariant.stock ?? 0) > 0 && (
-                  <Badge className="shrink-0 border border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10">
-                    {fillN(tMsg("product.only_n_left", "Only {n} left"), selectedVariant.stock ?? 0)}
-                  </Badge>
-                )}
+              {product.breeders && (
+                <Link
+                  href={shopBreederHref(product.breeders)}
+                  className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border-2 border-zinc-200/90 bg-white shadow-md ring-1 ring-zinc-100/80 transition-transform hover:scale-[1.02] hover:shadow-lg"
+                  aria-label={product.breeders.name}
+                >
+                  <BreederLogoImage
+                    src={product.breeders.logo_url}
+                    breederName={product.breeders.name}
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 rounded-lg"
+                    imgClassName="object-contain p-0.5"
+                    sizes="48px"
+                  />
+                </Link>
+              )}
             </div>
 
+            <GeneticRatioBar
+              product={product}
+              variant="compact"
+              t={t}
+              className={cn(fontSansTabular, "text-[11px] sm:text-xs -mt-0.5 max-lg:mb-0.5")}
+            />
+
             {descPlain ? (
-              <div className="space-y-1.5">
+              <div className="space-y-1 max-lg:mt-0">
                 <p
                   className={cn(
                     fontSansTabular,
@@ -446,13 +456,6 @@ export default function ProductDetailClient({
                 </span>
               ) : null}
             </div>
-
-            <GeneticRatioBar
-              product={product}
-              variant="compact"
-              t={t}
-              className={cn(fontSansTabular, "text-[11px] sm:text-xs")}
-            />
 
             <Separator className="my-0" />
 
