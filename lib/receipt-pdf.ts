@@ -1,5 +1,8 @@
 import { jsPDF } from "jspdf";
 import { parsePackCountFromUnitLabel } from "./cart-pack-display";
+import { parsePackFromUnitLabel } from "./sku-utils";
+import type { OrderDisplayLocale } from "./order-receipt-line-format";
+import { formatFloweringForLocale } from "./order-receipt-line-format";
 import { getImageDimensionsFromDataUrl } from "./image-data-url-dimensions";
 import { defaultQuotationShippingFee } from "./order-financials";
 import { PROMPT_FONT_BASE64 } from "./prompt-font-base64";
@@ -9,6 +12,8 @@ export type ReceiptItem = {
   productName: string;
   breeder?: string | null;
   unitLabel?: string | null;
+  /** Raw `products.flowering_type` for item column label */
+  floweringType?: string | null;
   quantity: number;
   price: number;
   discount: number;
@@ -49,6 +54,8 @@ export type ReceiptPDFOptions = {
   itemsSubtotal?: number | null;
   /** Receipt: from `orders.shipping_fee` & `orders.discount_amount` when generating from an order */
   orderFinancials?: { shippingFee: number; discountAmount: number } | null;
+  /** For pack + flowering labels on line items (storefront / order success). Default `th`. */
+  receiptLocale?: OrderDisplayLocale;
   /**
    * When `orderFinancials` is omitted but `shippingCost` is set — gross items subtotal =
    * `grandTotal - shippingCost + receiptOrderDiscount`.
@@ -94,23 +101,38 @@ function formatBahtPdf(amount: number): string {
   return `฿${n.toLocaleString("th-TH", opts)}`;
 }
 
-function itemTitleLine(productName: string | null | undefined, breeder: string | null | undefined): string {
-  const name = (productName ?? "").toString().trim() || "—";
+function receiptItemColumnLine(
+  productName: string,
+  breeder: string | null | undefined,
+  floweringType: string | null | undefined,
+  locale: OrderDisplayLocale
+): string {
+  const p = (productName ?? "").toString().trim() || "—";
   const b = (breeder ?? "").toString().trim();
-  return b ? `${name} by ${b}` : name;
+  const typeRaw = (floweringType ?? "").toString().trim();
+  const type = typeRaw ? formatFloweringForLocale(typeRaw, locale) : "";
+  const base = b ? `${b} - ${p}` : p;
+  if (!type || type === "—") return base;
+  return `${base} (${type})`;
 }
 
-function packCellLines(unitLabel: string | null | undefined): { th: string; en: string } {
-  const raw = (unitLabel ?? "").toString();
-  const n = parsePackCountFromUnitLabel(raw);
-  if (n > 0) {
-    return {
-      th: `แพ็ค ${n} เมล็ด`,
-      en: `${n} seeds pack`,
-    };
+function packCellLines(
+  unitLabel: string | null | undefined,
+  locale: OrderDisplayLocale
+): { line1: string; line2: string } {
+  const raw = (unitLabel ?? "").toString().trim();
+  if (!raw) return { line1: "—", line2: "" };
+  const n = parsePackFromUnitLabel(raw);
+  if (n >= 1) {
+    if (locale === "th") return { line1: `${n} เมล็ด`, line2: "" };
+    return { line1: n === 1 ? "1 seed" : `${n} seeds`, line2: "" };
   }
-  const u = raw.trim();
-  return { th: u || "—", en: u || "—" };
+  const n0 = parsePackCountFromUnitLabel(raw);
+  if (n0 > 0) {
+    if (locale === "th") return { line1: `${n0} เมล็ด`, line2: "" };
+    return { line1: n0 === 1 ? "1 seed" : `${n0} seeds`, line2: "" };
+  }
+  return { line1: raw, line2: "" };
 }
 
 export function formatPaymentMethodForPdf(m: string | null | undefined): string | null {
@@ -134,7 +156,8 @@ function registerThaiFont(doc: jsPDF) {
 
 const MARGIN = 15;
 /** Column boundaries (mm): No | Item | Pack | Qty | Unit | Total — no per-line discount column */
-const COL_X = [15, 25, 95, 115, 133, 158, 195];
+/** Wider item col for breeder + product + type; pack stays short (seed count). */
+const COL_X = [15, 25, 102, 119, 133, 158, 195];
 const CELL_PAD = 2;
 const LOGO_W = 40;
 const LOGO_H_FALLBACK = 40 * (18 / 50);
@@ -184,7 +207,10 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
     receiptOrderDiscount,
     paymentDate,
     paymentMethod,
+    receiptLocale: receiptLocaleOpt,
   } = opts;
+
+  const receiptLocale: OrderDisplayLocale = receiptLocaleOpt ?? "th";
 
   const isReceipt = docType === "receipt";
   const theme = isReceipt ? { main: [0, 51, 102], dark: [0, 40, 80] } : { main: [5, 120, 80], dark: [5, 100, 65] };
@@ -379,17 +405,24 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
     doc.setFontSize(9);
     doc.setTextColor(40, 40, 40);
     doc.text(String(idx + 1), (COL_X[0] + COL_X[1]) / 2, textY, { align: "center" });
-    const itemLabel = itemTitleLine(item.productName, item.breeder);
+    const itemLabel = receiptItemColumnLine(
+      item.productName,
+      item.breeder,
+      item.floweringType,
+      receiptLocale
+    );
     const lines = doc.splitTextToSize(itemLabel, itemColW);
     for (let i = 0; i < Math.min(lines.length, 2); i++) {
-      doc.text(lines[i], COL_X[1] + CELL_PAD, textY + i * 4);
+      doc.text(lines[i], COL_X[1] + CELL_PAD, textY + i * 3.5);
     }
-    const pack = packCellLines(item.unitLabel);
+    const pack = packCellLines(item.unitLabel, receiptLocale);
     const packMidX = (COL_X[2] + COL_X[3]) / 2;
     doc.setFontSize(6.5);
     doc.setTextColor(72, 72, 72);
-    doc.text(pack.th, packMidX, textY, { align: "center" });
-    doc.text(pack.en, packMidX, textY + 3.4, { align: "center" });
+    doc.text(pack.line1, packMidX, textY, { align: "center" });
+    if (pack.line2) {
+      doc.text(pack.line2, packMidX, textY + 3.4, { align: "center" });
+    }
     doc.setFontSize(9);
     doc.setTextColor(40, 40, 40);
     doc.text(String(item.quantity), (COL_X[3] + COL_X[4]) / 2, textY, { align: "center" });

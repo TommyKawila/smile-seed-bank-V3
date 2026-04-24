@@ -1,9 +1,12 @@
 import { allocateOrderDiscountToLines, type ReceiptItem } from "@/lib/receipt-pdf";
+import { effectiveOrderItemUnitLabel } from "@/lib/order-receipt-line-format";
 
 export type OrderReceiptLineInput = {
   productName: string;
   unitLabel: string;
+  variantUnitLabel?: string | null;
   breederName: string | null;
+  floweringType?: string | null;
   quantity: number;
   totalPrice: number;
 };
@@ -44,12 +47,12 @@ export function computeOrderReceiptFinancials(detail: OrderReceiptDetailInput): 
         const qty = Math.max(1, i.quantity);
         const grossLine = round2(i.totalPrice);
         const grossUnit = round2(grossLine / qty);
-        const pack =
-          i.unitLabel?.trim() && i.unitLabel.trim().length > 0 ? i.unitLabel.trim() : "—";
+        const pack = effectiveOrderItemUnitLabel(i.unitLabel, i.variantUnitLabel ?? null) || "—";
         return {
           productName: i.productName,
           breeder: i.breederName,
           unitLabel: pack,
+          floweringType: i.floweringType ?? null,
           quantity: i.quantity,
           price: grossUnit,
           discount: 0,
@@ -63,12 +66,12 @@ export function computeOrderReceiptFinancials(detail: OrderReceiptDetailInput): 
           const grossLine = round2(i.totalPrice + share);
           const qty = Math.max(1, i.quantity);
           const grossUnit = round2(grossLine / qty);
-          const pack =
-            i.unitLabel?.trim() && i.unitLabel.trim().length > 0 ? i.unitLabel.trim() : "—";
+          const pack = effectiveOrderItemUnitLabel(i.unitLabel, i.variantUnitLabel ?? null) || "—";
           return {
             productName: i.productName,
             breeder: i.breederName,
             unitLabel: pack,
+            floweringType: i.floweringType ?? null,
             quantity: i.quantity,
             price: grossUnit,
             discount: share,

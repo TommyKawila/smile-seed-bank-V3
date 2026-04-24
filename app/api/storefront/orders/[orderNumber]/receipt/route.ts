@@ -97,9 +97,12 @@ export async function GET(
       logoLen: pdfSettings.logoDataUrl?.length ?? 0,
     });
 
+    const langRaw = req.nextUrl.searchParams.get("lang")?.toLowerCase();
+    const pdfLocale = langRaw === "en" ? "en" : "th";
+
     let doc: ReturnType<typeof buildOrderReceiptPdfDocument>;
     try {
-      doc = buildOrderReceiptPdfDocument(order, pdfSettings);
+      doc = buildOrderReceiptPdfDocument(order, pdfSettings, { locale: pdfLocale });
     } catch (buildErr) {
       console.error("[storefront/receipt] buildOrderReceiptPdfDocument", buildErr);
       return jsonError("PDF build failed", 500, {

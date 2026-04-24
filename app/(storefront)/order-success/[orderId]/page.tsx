@@ -35,7 +35,12 @@ import {
   lineOaPrefillUrlForParcelInquiry,
   lineOaPrefillUrlForCancelledOrder,
 } from "@/lib/line-oa-url";
-import type { OrderSuccessView } from "@/lib/services/order-service";
+import type { OrderSuccessView, OrderSuccessItemRow } from "@/lib/services/order-service";
+import { labelForFloweringTypeRaw } from "@/lib/seed-type-filter";
+import {
+  formatSeedsCountLabel,
+  type OrderDisplayLocale,
+} from "@/lib/order-receipt-line-format";
 import { orderIsPaymentReceived, orderIsReadyToShip } from "@/lib/order-paid";
 import { LineOaResponsiveCta } from "@/components/storefront/LineOaResponsiveCta";
 
@@ -54,6 +59,23 @@ const CARRIER_LABELS: Record<string, string> = {
 };
 
 type TFn = (th: string, en: string) => string;
+
+function orderSuccessItemSummaryLine(
+  line: OrderSuccessItemRow,
+  displayLocale: OrderDisplayLocale,
+  t: TFn
+): string {
+  const breeder = (line.breeder_name ?? "").trim() || "—";
+  const seeds = formatSeedsCountLabel(
+    line.unit_label,
+    line.variant_unit_label,
+    displayLocale
+  );
+  const type = line.flowering_type?.trim()
+    ? labelForFloweringTypeRaw(line.flowering_type, t)
+    : "—";
+  return `${breeder} | ${line.product_name} (${seeds}) (${type})`;
+}
 
 function pricingFromOrder(order: OrderSuccessView) {
   const itemsSubtotal = order.items.reduce((s, l) => s + l.line_total, 0);
@@ -426,8 +448,10 @@ export default function OrderSuccessDynamicPage() {
         discountAmount,
         items: order.items.map((i) => ({
           productName: i.product_name,
-          unitLabel: "",
-          breederName: null,
+          unitLabel: i.unit_label ?? "",
+          variantUnitLabel: i.variant_unit_label ?? null,
+          breederName: i.breeder_name,
+          floweringType: i.flowering_type,
           quantity: i.quantity,
           totalPrice: i.line_total,
         })),
@@ -461,6 +485,7 @@ export default function OrderSuccessDynamicPage() {
         },
         paymentDate: order.order_date,
         paymentMethod: formatPaymentMethodForPdf(order.payment_method),
+        receiptLocale: locale === "en" ? "en" : "th",
       });
       doc.save(`receipt-${order.order_number}.pdf`);
     } finally {
@@ -830,8 +855,12 @@ export default function OrderSuccessDynamicPage() {
                     key={`${line.product_name}-${idx}`}
                     className="flex justify-between gap-3 border-b border-zinc-100/80 pb-2.5 last:border-0 last:pb-0 text-zinc-800"
                   >
-                    <span className="min-w-0 flex-1 truncate">
-                      {line.product_name}{" "}
+                    <span className="min-w-0 flex-1 break-words font-sans leading-snug">
+                      {orderSuccessItemSummaryLine(
+                        line,
+                        locale === "en" ? "en" : "th",
+                        t
+                      )}{" "}
                       <span className="tabular-nums text-zinc-500">×{line.quantity}</span>
                     </span>
                     <span className="shrink-0 tabular-nums font-medium text-zinc-900">

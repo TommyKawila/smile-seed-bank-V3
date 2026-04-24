@@ -79,6 +79,12 @@ export interface OrderSuccessItemRow {
   quantity: number;
   unit_price: number;
   line_total: number;
+  /** From `breeders` join on `products.breeder_id` */
+  breeder_name: string | null;
+  unit_label: string | null;
+  variant_unit_label: string | null;
+  /** `products.flowering_type` */
+  flowering_type: string | null;
 }
 
 export interface OrderSuccessView {
@@ -422,11 +428,31 @@ export async function getOrderForSuccessView(
       if (order.customer_id !== requesterUserId) return { data: null, error: "forbidden" };
     }
 
-    const itemRows = await sql<{ product_name: string; quantity: number; unit_price: string }[]>`
-      SELECT product_name, quantity, unit_price::text AS unit_price
-      FROM order_items
-      WHERE order_id = ${order.id}
-      ORDER BY id ASC
+    const itemRows = await sql<
+      {
+        product_name: string;
+        quantity: number;
+        unit_price: string;
+        unit_label: string | null;
+        variant_unit_label: string | null;
+        breeder_name: string | null;
+        flowering_type: string | null;
+      }[]
+    >`
+      SELECT
+        oi.product_name,
+        oi.quantity,
+        oi.unit_price::text AS unit_price,
+        oi.unit_label,
+        pv.unit_label AS variant_unit_label,
+        NULLIF(TRIM(b.name::text), '') AS breeder_name,
+        p.flowering_type
+      FROM order_items oi
+      LEFT JOIN products p ON p.id = oi.product_id
+      LEFT JOIN breeders b ON b.id = p.breeder_id
+      LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+      WHERE oi.order_id = ${order.id}
+      ORDER BY oi.id ASC
     `;
 
     const items: OrderSuccessItemRow[] = itemRows.map((r) => {
@@ -437,6 +463,10 @@ export async function getOrderForSuccessView(
         quantity: qty,
         unit_price: unit,
         line_total: unit * qty,
+        breeder_name: r.breeder_name,
+        unit_label: r.unit_label,
+        variant_unit_label: r.variant_unit_label,
+        flowering_type: r.flowering_type,
       };
     });
 
