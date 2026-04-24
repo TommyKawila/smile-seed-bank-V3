@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import Image from "next/image";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChevronLeft, ShoppingCart, Leaf, FlaskConical, TestTube2, Flower2, Gauge, Sprout, Clock, Dna, GitFork, Package } from "lucide-react";
@@ -19,6 +18,9 @@ import { seedTypeDetailShort, sexTypeDetailShort } from "@/lib/seed-type-filter"
 import { cn, formatPrice } from "@/lib/utils";
 import { getClearancePercentOff, getEffectiveVariantPrice } from "@/lib/product-utils";
 import { shopBreederHref } from "@/lib/breeder-slug";
+import { ProductGallery } from "@/components/storefront/ProductGallery";
+import { StickyBuyBar } from "@/components/storefront/StickyBuyBar";
+import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import {
   FeminizedSeedSpecChip,
@@ -28,12 +30,7 @@ import {
   RegularStatCard,
 } from "@/components/storefront/ProductSpecs";
 import type { ProductFull, ProductVariant } from "@/types/supabase";
-import {
-  buildDetailGalleryUrls,
-  resolveDetailHeroUrl,
-} from "@/lib/product-gallery-utils";
-import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
-
+import { resolveDetailHeroUrl } from "@/lib/product-gallery-utils";
 /** Sans + tabular figures for prices and spec values (same family as nav). */
 const fontSansTabular = "font-sans tabular-nums";
 
@@ -47,114 +44,6 @@ function formatCbdDisplay(raw: string | number | null | undefined): string {
   if (!s) return "";
   if (s.includes("%") || /^[<>≤≥]/.test(s)) return s;
   return `${s}%`;
-}
-
-// ─── Image Gallery ────────────────────────────────────────────────────────────
-
-function ProductGallery({
-  product,
-  selectedVariantId,
-}: {
-  product: {
-    image_urls?: unknown;
-    image_url?: string | null;
-    image_url_2?: string | null;
-    image_url_3?: string | null;
-    image_url_4?: string | null;
-    image_url_5?: string | null;
-    product_images?: unknown;
-    name: string;
-    breeders?: { logo_url?: string | null; name: string } | null;
-  };
-  selectedVariantId: number | null;
-}) {
-  const images = useMemo(
-    () => buildDetailGalleryUrls(product, selectedVariantId),
-    [product, selectedVariantId]
-  );
-  const defaultHero = useMemo(
-    () => resolveDetailHeroUrl(product, selectedVariantId),
-    [product, selectedVariantId]
-  );
-
-  const [selected, setSelected] = useState(0);
-
-  useEffect(() => {
-    const i = defaultHero ? images.indexOf(defaultHero) : 0;
-    setSelected(i >= 0 ? i : 0);
-  }, [defaultHero, images, selectedVariantId]);
-
-  const current = images[selected] ?? defaultHero ?? null;
-
-  return (
-    <div className="flex flex-col gap-3">
-      <motion.div
-        key={`${current ?? "none"}-${selected}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        className="relative aspect-square overflow-hidden rounded-sm bg-zinc-50"
-      >
-        {current ? (
-          <Image
-            src={current}
-            alt={`${product.name} — image ${selected + 1}`}
-            fill
-            priority={selected === 0}
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover"
-            unoptimized={shouldOffloadImageOptimization(current)}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <Leaf className="h-20 w-20 text-zinc-200" />
-          </div>
-        )}
-        <div className="absolute right-3 top-3 h-16 w-16 overflow-hidden rounded-sm border border-white/60 bg-white/75 shadow-xl backdrop-blur-md transition-transform duration-200 hover:scale-110">
-          <BreederLogoImage
-            src={product.breeders?.logo_url}
-            breederName={product.breeders?.name ?? "Breeder"}
-            width={64}
-            height={64}
-            className="rounded-sm"
-            imgClassName="object-contain p-1.5"
-            sizes="64px"
-          />
-        </div>
-        {images.length > 1 && (
-          <span className="absolute left-3 top-3 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
-            {selected + 1} / {images.length}
-          </span>
-        )}
-      </motion.div>
-
-      {images.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-0.5">
-          {images.map((url, i) => (
-            <button
-              key={`${url}-${i}`}
-              type="button"
-              onClick={() => setSelected(i)}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-sm border-2 transition-all ${
-                i === selected
-                  ? "border-primary shadow-md scale-105"
-                  : "border-zinc-200 opacity-60 hover:opacity-100"
-              }`}
-            >
-              <Image
-                src={url}
-                alt={`thumb-${i + 1}`}
-                fill
-                sizes="64px"
-                className="object-cover"
-                unoptimized={shouldOffloadImageOptimization(url)}
-              />
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -325,8 +214,11 @@ export default function ProductDetailClient({
     return sorted.find((v) => (v.stock ?? 0) > 0) ?? sorted[0] ?? null;
   });
   const [added, setAdded] = useState(false);
+  const [infoTab, setInfoTab] = useState("specs");
+  const [showStickyBuy, setShowStickyBuy] = useState(false);
+  const mainAddToCartRef = useRef<HTMLButtonElement | null>(null);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (!product || !selectedVariant) return;
     const unit = getEffectiveVariantPrice(product, Number(selectedVariant.price));
     const { error } = addToCart({
@@ -346,10 +238,33 @@ export default function ProductDetailClient({
       toast.error(error);
       return;
     }
+    if (e?.currentTarget) {
+      const img = resolveDetailHeroUrl(product, selectedVariant.id);
+      requestCartFlyAnimation(e.currentTarget, {
+        productName: product.name,
+        productImage: img,
+        locale: locale as "th" | "en",
+        announceTh: `เพิ่มสินค้า '${product.name}' เข้าตะกร้าแล้ว`,
+        announceEn: `Added “${product.name}” to your cart`,
+      });
+    }
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
     openCart();
   };
+
+  useEffect(() => {
+    const el = mainAddToCartRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        setShowStickyBuy(!entry.isIntersecting);
+      },
+      { root: null, threshold: 0, rootMargin: "0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [product.id, selectedVariant?.id]);
 
   if (!product) {
     return (
@@ -372,29 +287,45 @@ export default function ProductDetailClient({
     selectedVariant != null ? getEffectiveVariantPrice(product, Number(selectedVariant.price)) : 0;
   const selectedList = selectedVariant != null ? Number(selectedVariant.price) : 0;
 
+  const preferredDesc = locale === "th" ? product.description_th : product.description_en;
+  const fallbackDesc = locale === "th" ? product.description_en : product.description_th;
+  const descPlain = (preferredDesc?.trim() || fallbackDesc?.trim() || "").trim();
+
+  const goToFullDescription = () => {
+    setInfoTab("description");
+    window.setTimeout(() => {
+      document.getElementById("product-full-description")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 80);
+  };
+
   return (
-    <div className="min-h-screen bg-white pt-20 font-sans sm:pt-28">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+    <div
+      className={cn(
+        "min-h-screen bg-white pt-16 font-sans sm:pt-28",
+        showStickyBuy && "max-lg:pb-28"
+      )}
+    >
+      <div className="mx-auto max-w-5xl px-4 py-3 sm:px-6 sm:py-6">
         {/* Breadcrumb */}
         <Link
           href="/shop"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-primary"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-primary sm:mb-4"
         >
           <ChevronLeft className="h-4 w-4" /> {tMsg("common.back_to_shop", "Back to Shop")}
         </Link>
 
         {/* Main Layout */}
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2 lg:gap-8">
           {/* ── Left: Image Gallery ───────────────────────────────────────── */}
           <motion.div
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <ProductGallery
-              product={product as Parameters<typeof ProductGallery>[0]["product"]}
-              selectedVariantId={selectedVariant?.id ?? null}
-            />
+            <ProductGallery product={product} selectedVariantId={selectedVariant?.id ?? null} />
           </motion.div>
 
           {/* ── Right: Info ───────────────────────────────────────────────── */}
@@ -402,7 +333,7 @@ export default function ProductDetailClient({
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-white/95 p-4 shadow-sm sm:gap-3.5 sm:p-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"
           >
             {/* Breeder — clickable tag with logo */}
             {product.breeders && (
@@ -425,10 +356,60 @@ export default function ProductDetailClient({
               </Link>
             )}
 
-            {/* Title — sans to match global nav / UI */}
             <h1 className="font-sans text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
               {product.name}
             </h1>
+
+            {/* Price + stock (above fold) */}
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+              {clearancePct != null && clearancePct > 0 && (
+                <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
+                  −{clearancePct}%
+                </span>
+              )}
+              <div className="flex min-w-0 flex-col">
+                {selectedVariant && selectedList > selectedEff && (
+                  <span
+                    className={cn(
+                      fontSansTabular,
+                      "text-sm tabular-nums text-zinc-400 line-through"
+                    )}
+                  >
+                    {formatPrice(selectedList)}
+                  </span>
+                )}
+                <span className={cn(fontSansTabular, "text-2xl font-bold text-zinc-900 sm:text-3xl")}>
+                  {selectedVariant ? formatPrice(selectedEff) : "—"}
+                </span>
+              </div>
+              {selectedVariant &&
+                (selectedVariant.stock ?? 0) <= 5 &&
+                (selectedVariant.stock ?? 0) > 0 && (
+                  <Badge className="shrink-0 border border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10">
+                    {fillN(tMsg("product.only_n_left", "Only {n} left"), selectedVariant.stock ?? 0)}
+                  </Badge>
+                )}
+            </div>
+
+            {descPlain ? (
+              <div className="space-y-1.5">
+                <p
+                  className={cn(
+                    fontSansTabular,
+                    "line-clamp-3 whitespace-pre-line text-sm font-light leading-relaxed text-zinc-600"
+                  )}
+                >
+                  {descPlain}
+                </p>
+                <button
+                  type="button"
+                  onClick={goToFullDescription}
+                  className="font-sans text-sm font-medium text-primary hover:underline"
+                >
+                  {t("อ่านเพิ่มเติม", "Read more")}
+                </button>
+              </div>
+            ) : null}
 
             {/* Spec chips */}
             <div className="flex flex-wrap gap-2">
@@ -473,7 +454,7 @@ export default function ProductDetailClient({
               className={cn(fontSansTabular, "text-[11px] sm:text-xs")}
             />
 
-            <Separator />
+            <Separator className="my-0" />
 
             {/* Variant Selector */}
             {activeVariants.length > 0 && (
@@ -520,38 +501,8 @@ export default function ProductDetailClient({
               </div>
             )}
 
-            {/* Price + Add to Cart */}
-            <div className="flex flex-wrap items-center gap-3">
-              {clearancePct != null && clearancePct > 0 && (
-                <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
-                  −{clearancePct}%
-                </span>
-              )}
-              <div className="flex flex-col">
-                {selectedVariant && selectedList > selectedEff && (
-                  <span
-                    className={cn(
-                      fontSansTabular,
-                      "text-sm tabular-nums text-zinc-400 line-through"
-                    )}
-                  >
-                    {formatPrice(selectedList)}
-                  </span>
-                )}
-                <span className={cn(fontSansTabular, "text-2xl font-bold text-zinc-900 sm:text-3xl")}>
-                  {selectedVariant ? formatPrice(selectedEff) : "—"}
-                </span>
-              </div>
-              {selectedVariant &&
-                (selectedVariant.stock ?? 0) <= 5 &&
-                (selectedVariant.stock ?? 0) > 0 && (
-                <Badge className="border border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10">
-                  {fillN(tMsg("product.only_n_left", "Only {n} left"), selectedVariant.stock ?? 0)}
-                </Badge>
-              )}
-            </div>
-
             <Button
+              ref={mainAddToCartRef}
               onClick={handleAddToCart}
               disabled={outOfStock || !selectedVariant}
               className="h-12 w-full bg-primary text-base font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
@@ -567,8 +518,8 @@ export default function ProductDetailClient({
         </div>
 
         {/* ── Premium Specs Section ─────────────────────────────────────── */}
-        <div className="mt-10">
-          <Tabs defaultValue="specs">
+        <div id="product-full-description" className="mt-8 scroll-mt-24 sm:mt-10">
+          <Tabs value={infoTab} onValueChange={setInfoTab}>
             <TabsList className="h-auto w-full flex-wrap gap-1 bg-zinc-100/90 p-1.5 sm:w-auto">
               <TabsTrigger
                 value="specs"
@@ -864,6 +815,23 @@ export default function ProductDetailClient({
           )}
         </div>
       </div>
+
+      {selectedVariant && (
+        <StickyBuyBar
+          visible={showStickyBuy}
+          productName={product.name}
+          priceLabel={formatPrice(selectedEff)}
+          outOfStock={outOfStock}
+          disabled={outOfStock}
+          onAdd={handleAddToCart}
+          addLabel={tMsg("product.add_to_cart", "Add to Cart")}
+          outOfStockLabel={t("หมดสต็อก", "Out of stock")}
+          lowStock={
+            !outOfStock && (selectedVariant.stock ?? 0) > 0 && (selectedVariant.stock ?? 0) <= 5
+          }
+          lowStockLabel={t("เหลือน้อย", "Low stock")}
+        />
+      )}
     </div>
   );
 }
