@@ -85,6 +85,24 @@ const config: Config = {
           from: { transform: "translateX(100%)" },
           to: { transform: "translateX(0)" },
         },
+        /** ~0.5s nod in first 14.3% of 3.5s cycle, then 3s rest (rhythmic cart pulse) */
+        "cart-nod": {
+          "0%, 100%": { transform: "rotate(0deg) scale(1)" },
+          "2.2%": { transform: "rotate(-6deg) scale(1.04)" },
+          "4.4%": { transform: "rotate(6deg) scale(1.04)" },
+          "6.6%": { transform: "rotate(-6deg) scale(1.04)" },
+          "8.8%": { transform: "rotate(6deg) scale(1.04)" },
+          "11%": { transform: "rotate(0deg) scale(1.04)" },
+          "14.3%, 100%": { transform: "rotate(0deg) scale(1)" },
+        },
+        /** One-shot when fly animation hits the cart */
+        "cart-hit": {
+          "0%": { transform: "rotate(0deg) scale(1)" },
+          "20%": { transform: "rotate(-10deg) scale(1.07)" },
+          "40%": { transform: "rotate(8deg) scale(1.06)" },
+          "60%": { transform: "rotate(-4deg) scale(1.03)" },
+          "100%": { transform: "rotate(0deg) scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -92,6 +110,8 @@ const config: Config = {
         "fade-in-up": "fade-in-up 0.5s ease-out both",
         "ken-burns": "ken-burns 8s ease-in-out infinite alternate",
         "slide-in-right": "slide-in-right 0.3s ease-out",
+        "cart-nod": "cart-nod 3.5s ease-in-out infinite",
+        "cart-hit": "cart-hit 0.45s ease-out both",
       },
     },
   },

@@ -8,6 +8,7 @@ import { OfferManager } from "@/components/storefront/OfferManager";
 import { PromotionBanner } from "@/components/storefront/PromotionBanner";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { Toaster } from "@/components/ui/sonner";
+import { CartAnimation } from "@/components/storefront/CartAnimation";
 import { AgeVerificationGate } from "@/components/storefront/age-verification-gate";
 import { BrowserDetectionBanner } from "@/components/storefront/BrowserDetectionBanner";
 
@@ -15,6 +16,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
   return (
     <LanguageProvider>
       <CartProvider>
+        <CartAnimation />
         <Toaster />
         <BrowserDetectionBanner />
         <AgeVerificationGate />

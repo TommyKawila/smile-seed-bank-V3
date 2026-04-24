@@ -23,6 +23,7 @@ import { productDetailHref } from "@/lib/product-utils";
 import { shopBreederHref } from "@/lib/breeder-slug";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
+import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { toast } from "sonner";
 
 const shopCardVariants: Variants = {
@@ -147,7 +148,7 @@ export function ProductCard({
     e.stopPropagation();
   };
 
-  const handleAdd = (e: React.MouseEvent) => {
+  const handleAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
     stopNavBubble(e);
     if (defaultVariant) {
       const unit = getEffectiveVariantPrice(product, Number(defaultVariant.price));
@@ -168,6 +169,19 @@ export function ProductCard({
         toast.error(error);
         return;
       }
+      const announceTh = `เพิ่มสินค้า '${product.name}' เข้าตะกร้าแล้ว`;
+      const announceEn = `Added “${product.name}” to your cart`;
+      if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        toast.success(locale === "th" ? announceTh : announceEn, { duration: 2800 });
+        return;
+      }
+      requestCartFlyAnimation(e.currentTarget, {
+        productName: product.name,
+        productImage: cardImage,
+        locale,
+        announceTh,
+        announceEn,
+      });
     } else {
       openCart();
     }
