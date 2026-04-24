@@ -6,7 +6,6 @@ import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { BreederLogoImage } from "@/components/storefront/BreederLogoImage"
 import {
   buildDetailGalleryUrls,
   resolveDetailHeroUrl,
@@ -24,7 +23,6 @@ type ProductGalleryProduct = {
   image_url_5?: string | null
   product_images?: unknown
   name: string
-  breeders?: { logo_url?: string | null; name: string } | null
 }
 
 function distance(
@@ -307,17 +305,6 @@ export function ProductGallery({
         }}
         aria-label="เปิดดูรูปเต็มหน้าจอ"
       >
-        <div className="absolute right-2 top-2 z-10 h-12 w-12 overflow-hidden rounded-sm border border-white/60 bg-white/75 shadow-xl backdrop-blur-md sm:h-16 sm:w-16">
-          <BreederLogoImage
-            src={product.breeders?.logo_url}
-            breederName={product.breeders?.name ?? "Breeder"}
-            width={64}
-            height={64}
-            className="rounded-sm"
-            imgClassName="object-contain p-1.5"
-            sizes="64px"
-          />
-        </div>
         {hasMultiple && (
           <span className="absolute left-2 top-2 z-10 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
             {selected + 1} / {gallery.length}

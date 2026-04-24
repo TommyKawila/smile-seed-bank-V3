@@ -194,6 +194,24 @@ function sortVariantsByPriceThenPack<T extends { price: number; unit_label: stri
   });
 }
 
+/** Internal browse URL from document.referrer (same product excluded). */
+function getValidListReferrerPath(): string | null {
+  if (typeof document === "undefined" || !document.referrer) return null;
+  let u: URL;
+  try {
+    u = new URL(document.referrer);
+  } catch {
+    return null;
+  }
+  if (u.origin !== window.location.origin) return null;
+  const path = u.pathname;
+  if (path.startsWith("/api") || path.startsWith("/admin") || path.startsWith("/_next")) {
+    return null;
+  }
+  if (path === window.location.pathname) return null;
+  return u.pathname + (u.search || "") + (u.hash || "");
+}
+
 // ─── Product Detail Page ──────────────────────────────────────────────────────
 
 export default function ProductDetailClient({
@@ -216,7 +234,12 @@ export default function ProductDetailClient({
   const [added, setAdded] = useState(false);
   const [infoTab, setInfoTab] = useState("specs");
   const [showStickyBuy, setShowStickyBuy] = useState(false);
+  const [listReferrerPath, setListReferrerPath] = useState<string | null>(null);
   const mainAddToCartRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    setListReferrerPath(getValidListReferrerPath());
+  }, [product?.id]);
 
   const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (!product || !selectedVariant) return;
@@ -278,6 +301,24 @@ export default function ProductDetailClient({
     );
   }
 
+  const backNav: { href: string; text: string; title: string } = (() => {
+    if (listReferrerPath) {
+      const text = t("กลับไปหน้าก่อน", "Back to previous page");
+      return { href: listReferrerPath, text, title: text };
+    }
+    if (product.breeders) {
+      const textTh = `กลับไปที่ ${product.breeders.name}`;
+      const textEn = `Back to ${product.breeders.name}`;
+      return {
+        href: shopBreederHref(product.breeders),
+        text: locale === "th" ? textTh : textEn,
+        title: locale === "th" ? textTh : textEn,
+      };
+    }
+    const fallback = tMsg("common.back_to_shop", "Back to Shop");
+    return { href: "/shop", text: fallback, title: fallback };
+  })();
+
   const activeVariants = sortVariantsByPriceThenPack(
     product.product_variants?.filter((v) => v.is_active !== false) ?? []
   );
@@ -309,12 +350,14 @@ export default function ProductDetailClient({
       )}
     >
       <div className="mx-auto max-w-5xl px-4 py-3 sm:px-6 sm:py-6">
-        {/* Breadcrumb */}
+        {/* Breadcrumb / back — list referrer, else breeder page, else shop */}
         <Link
-          href="/shop"
-          className="mb-2 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-primary sm:mb-4"
+          href={backNav.href}
+          className="mb-2 inline-flex max-w-full min-w-0 items-center gap-1 text-sm text-zinc-500 hover:text-primary sm:mb-4"
+          title={backNav.title}
         >
-          <ChevronLeft className="h-4 w-4" /> {tMsg("common.back_to_shop", "Back to Shop")}
+          <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="min-w-0 truncate font-sans">{backNav.text}</span>
         </Link>
 
         {/* Main Layout */}
