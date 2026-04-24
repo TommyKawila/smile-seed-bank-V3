@@ -103,6 +103,21 @@ const config: Config = {
           "60%": { transform: "rotate(-4deg) scale(1.03)" },
           "100%": { transform: "rotate(0deg) scale(1)" },
         },
+        /** Last-item card: sheen passes left→right in a loop */
+        "shimmer-urgent": {
+          "0%": { transform: "translateX(-120%) skewX(-12deg)" },
+          "100%": { transform: "translateX(220%) skewX(-12deg)" },
+        },
+        /** Inside urgent CTA text — stronger than pulse */
+        "urgent-cta-blink": {
+          "0%, 100%": { opacity: "1" },
+          "8%": { opacity: "0.45" },
+          "16%": { opacity: "1" },
+          "28%": { opacity: "0.35" },
+          "40%": { opacity: "1" },
+          "55%": { opacity: "0.55" },
+          "70%": { opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -112,6 +127,8 @@ const config: Config = {
         "slide-in-right": "slide-in-right 0.3s ease-out",
         "cart-nod": "cart-nod 3.5s ease-in-out infinite",
         "cart-hit": "cart-hit 0.45s ease-out both",
+        "shimmer-urgent": "shimmer-urgent 2.2s ease-in-out infinite",
+        "urgent-cta-blink": "urgent-cta-blink 1.1s ease-in-out infinite",
       },
     },
   },

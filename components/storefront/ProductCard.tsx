@@ -77,6 +77,24 @@ function isNewArrivalProduct(createdAt: string | null | undefined): boolean {
 
 type ProductListItem = ReturnType<typeof useProducts>["products"][number];
 
+type TeaserProduct = {
+  featured_tagline?: string | null;
+  description_th?: string | null;
+  description_en?: string | null;
+};
+
+function getDescriptionTeaser(p: TeaserProduct, loc: "th" | "en"): string {
+  const tag = (p.featured_tagline ?? "").trim();
+  if (tag) return tag;
+  const primary = loc === "th" ? p.description_th : p.description_en;
+  const secondary = loc === "th" ? p.description_en : p.description_th;
+  const text = (primary ?? secondary ?? "").trim();
+  if (!text) return "";
+  const lines = text.split(/\r?\n+/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return "";
+  return lines.slice(0, 2).join(" ");
+}
+
 /** Indica / Sativa / Hybrid for card spec row */
 function cardStrainTypeLabel(p: ProductListItem): string | null {
   const sd = (p.strain_dominance ?? "").trim();
@@ -136,16 +154,31 @@ export function ProductCard({
 }) {
   const { addToCart, openCart } = useCartContext();
   const { t, locale } = useLanguage();
+  const loc = locale as "th" | "en";
   const stock = product.stock ?? 0;
   const lowStock = stock > 0 && stock <= 5;
   const outOfStock = stock === 0;
+  const lastOneLeft = stock === 1 && !outOfStock;
   const defaultVariant = getDefaultVariant(product);
   const cardImage = getPrimaryImage(product);
   const pm = product as ProductWithMeta;
+  const descriptionTeaser = getDescriptionTeaser(
+    product as TeaserProduct,
+    loc
+  );
 
   const stopNavBubble = (e: React.SyntheticEvent) => {
     e.preventDefault();
     e.stopPropagation();
+  };
+
+  const successToast = (isTh: boolean) =>
+    isTh ? "เพิ่มลงตะกร้าเรียบร้อยแล้ว" : "Added to your cart";
+  const localizedAddError = (msg: string) => {
+    if (locale === "en" && (msg.startsWith("ขออภัย") || /สต็อก|ชิ้น/.test(msg))) {
+      return "Sorry, only a limited number of this item is in stock.";
+    }
+    return msg;
   };
 
   const handleAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -166,7 +199,7 @@ export function ProductCard({
         breederLogoUrl: product.breeders?.logo_url ?? null,
       });
       if (error) {
-        toast.error(error);
+        toast.error(localizedAddError(error));
         return;
       }
       const announceTh = `เพิ่มสินค้า '${product.name}' เข้าตะกร้าแล้ว`;
@@ -178,11 +211,15 @@ export function ProductCard({
       requestCartFlyAnimation(e.currentTarget, {
         productName: product.name,
         productImage: cardImage,
-        locale,
+        locale: loc,
         announceTh,
         announceEn,
       });
+      toast.success(successToast(locale === "th"), { duration: 2200 });
     } else {
+      toast.error(
+        locale === "th" ? "ไม่พบแพ็กสำหรับสั่งซื้อ" : "No pack available to order"
+      );
       openCart();
     }
   };
@@ -230,12 +267,12 @@ export function ProductCard({
             {outOfStock && (
               <span className={`${glassBadge} text-zinc-800`}>{t("หมด", "Out")}</span>
             )}
-            {lowStock && !outOfStock && (
+            {lowStock && !outOfStock && !lastOneLeft && (
               <span className={`${glassBadge} text-red-800`}>{t("เหลือน้อย", "Low")}</span>
             )}
           </div>
 
-          {product.breeders && (
+          {product.breeders && !lastOneLeft && (
             <Link
               href={shopBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
@@ -255,6 +292,25 @@ export function ProductCard({
           )}
         </div>
 
+        {lastOneLeft && (
+          <div className="relative -mx-px overflow-hidden border-b border-red-500/20 bg-gradient-to-r from-red-600 via-rose-600 to-red-700">
+            <div
+              className="pointer-events-none absolute inset-0 overflow-hidden"
+              aria-hidden
+            >
+              <div
+                className="absolute -left-1/2 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-80 animate-shimmer-urgent"
+                style={{ width: "55%" }}
+              />
+            </div>
+            <p className="relative px-2 py-2 text-center font-sans text-[10px] font-extrabold leading-tight text-white sm:text-[11px] sm:leading-snug">
+              {loc === "th"
+                ? "🔥 โอกาสสุดท้าย! เหลือเพียง 1 ชิ้นเท่านั้น (ห้ามพลาด!)"
+                : "🔥 LAST ONE! Only 1 left (Act Now!)"}
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-1 flex-col gap-1.5 px-2.5 pb-2.5 pt-2">
           <div className="flex items-center justify-center">
             <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-bold tabular-nums text-zinc-800 ring-1 ring-zinc-200/80">
@@ -264,7 +320,30 @@ export function ProductCard({
             </span>
           </div>
 
-          {product.breeders && (
+          {lastOneLeft && product.breeders && (
+            <Link
+              href={shopBreederHref(product.breeders)}
+              onClick={(e) => e.stopPropagation()}
+              className="font-sans flex items-center justify-center gap-1.5"
+            >
+              <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-white ring-1 ring-zinc-100">
+                <BreederLogoImage
+                  src={product.breeders.logo_url}
+                  breederName={product.breeders.name}
+                  width={20}
+                  height={20}
+                  className="rounded-full"
+                  imgClassName="object-contain p-0.5"
+                  sizes="20px"
+                />
+              </span>
+              <span className="line-clamp-1 text-left text-[11px] font-semibold text-emerald-700">
+                {product.breeders.name}
+              </span>
+            </Link>
+          )}
+
+          {!lastOneLeft && product.breeders && (
             <Link
               href={shopBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
@@ -280,36 +359,84 @@ export function ProductCard({
             </h3>
           </Link>
 
-          <div className="mt-auto flex items-end justify-between gap-2 border-t border-zinc-100 pt-2">
-            <div className="min-w-0">
-              {seedsPackLabel ? (
-                <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
-                  {seedsPackLabel}
-                </p>
-              ) : null}
-              {showStrike && (
-                <p className="text-xs tabular-nums text-zinc-400 line-through">
-                  {formatPrice(listRegular)}
-                </p>
-              )}
-              <p className="text-[15px] font-bold tabular-nums text-zinc-900">
-                {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
-              </p>
-            </div>
-            <Button
-              type="button"
-              size="icon"
-              disabled={outOfStock || !defaultVariant}
-              onClick={handleAdd}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-              }}
-              aria-label={t("เพิ่มลงตะกร้า", "Add to cart")}
-              className="relative z-20 h-8 w-8 shrink-0 rounded-full border-0 bg-primary text-lg font-bold leading-none text-primary-foreground shadow-sm transition-transform hover:scale-110 hover:bg-primary/90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+          {lastOneLeft && descriptionTeaser ? (
+            <p
+              className="line-clamp-2 min-h-0 text-center font-sans text-[11px] font-normal leading-snug text-zinc-600"
+              title={descriptionTeaser}
             >
-              +
-            </Button>
-          </div>
+              {descriptionTeaser}
+            </p>
+          ) : null}
+
+          {lastOneLeft ? (
+            <div className="mt-auto flex flex-col gap-1.5 border-t border-zinc-100 pt-2">
+              <div className="text-center">
+                {seedsPackLabel ? (
+                  <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
+                    {seedsPackLabel}
+                  </p>
+                ) : null}
+                {showStrike && (
+                  <p className="text-xs tabular-nums text-zinc-400 line-through">
+                    {formatPrice(listRegular)}
+                  </p>
+                )}
+                <p className="text-base font-bold tabular-nums text-zinc-900 sm:text-lg">
+                  {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
+                </p>
+              </div>
+              <div className="text-center">
+                <span className="inline-block rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[8px] font-bold text-red-700">
+                  {t("สต็อกน้อย", "Low stock")}
+                </span>
+              </div>
+              <Button
+                type="button"
+                disabled={outOfStock || !defaultVariant}
+                onClick={handleAdd}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="relative z-20 h-11 w-full border-0 bg-gradient-to-b from-emerald-500 to-emerald-700 font-sans text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(16,185,129,0.5)] transition hover:from-emerald-500 hover:to-emerald-800 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
+                aria-label={
+                  loc === "th" ? "สั่งซื้อก่อนหมด" : "Buy before it is gone"
+                }
+              >
+                <span className="inline-flex animate-urgent-cta-blink items-center justify-center gap-1.5">
+                  {loc === "th" ? "🚀 สั่งซื้อก่อนหมด!" : "🚀 BUY BEFORE IT'S GONE!"}
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-auto flex items-end justify-between gap-2 border-t border-zinc-100 pt-2">
+              <div className="min-w-0">
+                {seedsPackLabel ? (
+                  <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
+                    {seedsPackLabel}
+                  </p>
+                ) : null}
+                {showStrike && (
+                  <p className="text-xs tabular-nums text-zinc-400 line-through">
+                    {formatPrice(listRegular)}
+                  </p>
+                )}
+                <p className="text-[15px] font-bold tabular-nums text-zinc-900">
+                  {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="icon"
+                disabled={outOfStock || !defaultVariant}
+                onClick={handleAdd}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                }}
+                aria-label={t("เพิ่มลงตะกร้า", "Add to cart")}
+                className="relative z-20 h-8 w-8 shrink-0 rounded-full border-0 bg-primary text-lg font-bold leading-none text-primary-foreground shadow-sm transition-transform hover:scale-110 hover:bg-primary/90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+              >
+                +
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
