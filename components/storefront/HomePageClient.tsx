@@ -508,7 +508,9 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
               ) : (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                   {products.map((product) => (
-                    <ProductCard key={product.id} product={product} variant="showcase" />
+                    <div key={product.id} className="flex h-full min-h-0 min-w-0 flex-col">
+                      <ProductCard product={product} variant="showcase" />
+                    </div>
                   ))}
                 </div>
               )}

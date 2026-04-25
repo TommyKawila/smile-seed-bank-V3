@@ -4,12 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Sprout } from "lucide-react";
+import { toast } from "sonner";
 import { CART_FLY_EVENT, CART_HIT_EVENT, type CartFlyEventDetail, getNavCartButtonEl } from "@/lib/cart-fly-events";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 type ActiveFly = CartFlyEventDetail & { id: number };
 
 const FLY_MS = 560;
+const FLY_SAFETY_MS = 1000;
 
 function center(rect: Pick<DOMRect, "left" | "top" | "width" | "height">) {
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
@@ -20,42 +22,81 @@ function FlyingItem({ detail, onDone }: { detail: ActiveFly; onDone: () => void 
     const c = center(detail.startRect);
     return { x: c.x, y: c.y, t: 0, opacity: 1, scale: 1, trail: 0 };
   });
+  const doneRef = useRef(false);
 
   useEffect(() => {
+    doneRef.current = false;
     const targetEl = getNavCartButtonEl();
     if (!targetEl) {
       onDone();
       return;
     }
-    const tr = targetEl.getBoundingClientRect();
-    const end = center(tr);
-    const start = center(detail.startRect);
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const dist = Math.hypot(dx, dy) || 1;
-    const arcH = Math.min(120, 40 + dist * 0.12);
-    const t0 = performance.now();
-    let raf = 0;
 
-    const tick = (now: number) => {
-      const rawT = Math.min(1, (now - t0) / FLY_MS);
-      const easeT = rawT * rawT * (3 - 2 * rawT);
-      const x = start.x + dx * easeT;
-      const y = start.y + dy * t - 4 * arcH * rawT * (1 - rawT);
-      const fade = rawT < 0.88 ? 1 : 1 - (rawT - 0.88) / 0.12;
-      const sc = rawT < 0.88 ? 1 : 1 - 0.45 * ((rawT - 0.88) / 0.12);
-      setPos({ x, y, t, opacity: fade, scale: sc, trail: rawT });
-      if (rawT < 1) {
-        raf = requestAnimationFrame(tick);
-      } else {
-        if (typeof window !== "undefined") {
+    let raf = 0;
+    let t560: ReturnType<typeof setTimeout> | undefined;
+    let t1000: ReturnType<typeof setTimeout> | undefined;
+
+    const safeFinish = (opts: { hit: boolean }) => {
+      if (doneRef.current) return;
+      doneRef.current = true;
+      cancelAnimationFrame(raf);
+      if (t560 !== undefined) clearTimeout(t560);
+      if (t1000 !== undefined) clearTimeout(t1000);
+      try {
+        if (opts.hit && typeof window !== "undefined") {
           window.dispatchEvent(new Event(CART_HIT_EVENT));
         }
-        onDone();
+      } catch {
+        /* ignore */
       }
+      onDone();
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+
+    try {
+      const tr = targetEl.getBoundingClientRect();
+      const end = center(tr);
+      const start = center(detail.startRect);
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const arcH = Math.min(120, 40 + dist * 0.12);
+      const t0 = performance.now();
+
+      t560 = setTimeout(() => {
+        safeFinish({ hit: true });
+      }, FLY_MS);
+      t1000 = setTimeout(() => {
+        safeFinish({ hit: false });
+      }, FLY_SAFETY_MS);
+
+      const tick = (now: number) => {
+        try {
+          const rawT = Math.min(1, (now - t0) / FLY_MS);
+          const easeT = rawT * rawT * (3 - 2 * rawT);
+          const x = start.x + dx * easeT;
+          const y = start.y + dy * easeT - 4 * arcH * rawT * (1 - rawT);
+          const fade = rawT < 0.88 ? 1 : 1 - (rawT - 0.88) / 0.12;
+          const sc = rawT < 0.88 ? 1 : 1 - 0.45 * ((rawT - 0.88) / 0.12);
+          setPos({ x, y, t: rawT, opacity: fade, scale: sc, trail: rawT });
+          if (rawT < 1) {
+            raf = requestAnimationFrame(tick);
+          } else {
+            safeFinish({ hit: true });
+          }
+        } catch {
+          safeFinish({ hit: true });
+        }
+      };
+      raf = requestAnimationFrame(tick);
+    } catch {
+      safeFinish({ hit: false });
+    }
+
+    return () => {
+      cancelAnimationFrame(raf);
+      if (t560 !== undefined) clearTimeout(t560);
+      if (t1000 !== undefined) clearTimeout(t1000);
+    };
   }, [detail, onDone]);
 
   const glow = 10 + pos.trail * 10;
@@ -67,6 +108,7 @@ function FlyingItem({ detail, onDone }: { detail: ActiveFly; onDone: () => void 
         top: pos.y,
         transform: `translate(-50%, -50%) scale(${pos.scale})`,
         opacity: pos.opacity,
+        willChange: "transform, opacity",
       }}
     >
       <div
@@ -113,6 +155,10 @@ export function CartAnimation() {
     const e = ev as CustomEvent<CartFlyEventDetail>;
     const d = e.detail;
     if (!d?.startRect) return;
+    if (typeof document !== "undefined" && !getNavCartButtonEl()) {
+      toast.success("Added to cart", { description: "เพิ่มลงตะกร้าแล้ว" });
+      return;
+    }
     const id = ++idRef.current;
     setItems((prev) => [...prev, { ...d, id }]);
   }, []);
@@ -153,6 +199,15 @@ export function requestCartFlyAnimation(
   const live = document.getElementById("ssb-cart-announcer");
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     if (live) live.textContent = args.locale === "th" ? args.announceTh : args.announceEn;
+    return;
+  }
+  if (!getNavCartButtonEl()) {
+    if (live) live.textContent = args.locale === "th" ? args.announceTh : args.announceEn;
+    if (args.locale === "th") {
+      toast.success("เพิ่มลงตะกร้าแล้ว");
+    } else {
+      toast.success("Added to cart");
+    }
     return;
   }
   const r = startEl.getBoundingClientRect();

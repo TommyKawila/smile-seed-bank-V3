@@ -39,9 +39,6 @@ const showcaseCardVariant: Variants = {
 const glassBadge =
   "rounded-full border border-white/30 bg-white/20 px-2 py-0.5 text-[10px] font-medium backdrop-blur-md";
 
-const journalChip =
-  "rounded-full border border-zinc-100 bg-zinc-50/90 px-2 py-0.5 text-[10px] font-normal text-zinc-700";
-
 function getPrimaryImage(product: {
   image_urls?: unknown;
   image_url?: string | null;
@@ -77,23 +74,8 @@ function isNewArrivalProduct(createdAt: string | null | undefined): boolean {
 
 type ProductListItem = ReturnType<typeof useProducts>["products"][number];
 
-type TeaserProduct = {
-  featured_tagline?: string | null;
-  description_th?: string | null;
-  description_en?: string | null;
-};
-
-function getDescriptionTeaser(p: TeaserProduct, loc: "th" | "en"): string {
-  const tag = (p.featured_tagline ?? "").trim();
-  if (tag) return tag;
-  const primary = loc === "th" ? p.description_th : p.description_en;
-  const secondary = loc === "th" ? p.description_en : p.description_th;
-  const text = (primary ?? secondary ?? "").trim();
-  if (!text) return "";
-  const lines = text.split(/\r?\n+/).map((l) => l.trim()).filter(Boolean);
-  if (lines.length === 0) return "";
-  return lines.slice(0, 2).join(" ");
-}
+/** Urgency strip below image: same height for every card (empty = spacer). */
+const URGENCY_STRIP_H = "h-10";
 
 /** Indica / Sativa / Hybrid for card spec row */
 function cardStrainTypeLabel(p: ProductListItem): string | null {
@@ -162,10 +144,6 @@ export function ProductCard({
   const defaultVariant = getDefaultVariant(product);
   const cardImage = getPrimaryImage(product);
   const pm = product as ProductWithMeta;
-  const descriptionTeaser = getDescriptionTeaser(
-    product as TeaserProduct,
-    loc
-  );
 
   const stopNavBubble = (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -238,9 +216,9 @@ export function ProductCard({
   const seedsPackLabel = getStartingVariantLabel(product.product_variants, locale);
 
   return (
-    <motion.div variants={motionVariants}>
-      <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:border-zinc-200 hover:shadow-md">
-        <div className="relative aspect-square overflow-hidden bg-zinc-50">
+    <motion.div variants={motionVariants} className="h-full">
+      <div className="group flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:border-zinc-200 hover:shadow-md">
+        <div className="relative aspect-square shrink-0 overflow-hidden bg-zinc-50">
           <Link href={productDetailHref(product)} className="absolute inset-0 block">
             {cardImage ? (
               <Image
@@ -248,13 +226,29 @@ export function ProductCard({
                 alt={product.name}
                 fill
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                className={`object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "opacity-45 grayscale" : ""}`}
+                className={`object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "brightness-75 grayscale" : ""}`}
                 unoptimized={shouldOffloadImageOptimization(cardImage)}
               />
             ) : (
-              <CatalogImagePlaceholder seed={product.id} className="absolute inset-0" />
+              <CatalogImagePlaceholder
+                seed={product.id}
+                className={`absolute inset-0 ${outOfStock ? "brightness-75 grayscale" : ""}`}
+              />
             )}
           </Link>
+
+          {outOfStock && (
+            <div
+              className="pointer-events-none absolute inset-0 z-[12] flex items-center justify-center bg-zinc-950/35 p-3"
+              aria-hidden
+            >
+              <div className="w-full max-w-[min(92%,15rem)] rounded-md border border-zinc-400/80 bg-zinc-900/95 px-3 py-2.5 text-center shadow-lg ring-1 ring-black/20">
+                <p className="font-sans text-[11px] font-extrabold leading-tight text-white sm:text-xs">
+                  {t("สินค้าหมด / SOLD OUT", "Sold out / SOLD OUT")}
+                </p>
+              </div>
+            </div>
+          )}
 
           <ProductImageBadges product={pm} t={t} />
           {clearancePct != null && clearancePct > 0 && (
@@ -264,15 +258,12 @@ export function ProductCard({
           )}
 
           <div className="absolute bottom-2 left-2 z-10 flex max-w-[min(100%,11rem)] flex-wrap gap-1">
-            {outOfStock && (
-              <span className={`${glassBadge} text-zinc-800`}>{t("หมด", "Out")}</span>
-            )}
             {lowStock && !outOfStock && !lastOneLeft && (
               <span className={`${glassBadge} text-red-800`}>{t("เหลือน้อย", "Low")}</span>
             )}
           </div>
 
-          {product.breeders && !lastOneLeft && (
+          {product.breeders && (
             <Link
               href={shopBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
@@ -292,27 +283,38 @@ export function ProductCard({
           )}
         </div>
 
-        {lastOneLeft && (
-          <div className="relative -mx-px overflow-hidden border-b border-red-500/20 bg-gradient-to-r from-red-600 via-rose-600 to-red-700">
-            <div
-              className="pointer-events-none absolute inset-0 overflow-hidden"
-              aria-hidden
-            >
+        <div className={`relative shrink-0 overflow-hidden ${URGENCY_STRIP_H}`}>
+          {lastOneLeft ? (
+            <div className="absolute inset-0 overflow-hidden border-b border-red-500/20 bg-gradient-to-r from-red-600 via-rose-600 to-red-700">
               <div
-                className="absolute -left-1/2 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-80 animate-shimmer-urgent"
-                style={{ width: "55%" }}
-              />
+                className="pointer-events-none absolute inset-0 overflow-hidden"
+                aria-hidden
+              >
+                <div
+                  className="absolute -left-1/2 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-80 animate-shimmer-urgent"
+                  style={{ width: "55%" }}
+                />
+              </div>
+              <p
+                className="relative box-border flex h-10 min-h-0 items-center justify-center px-1.5 text-center font-sans text-[8px] font-extrabold leading-tight text-white sm:px-2 sm:text-[10px] sm:leading-none"
+                title={
+                  loc === "th"
+                    ? "โอกาสสุดท้าย! เหลือเพียง 1 ชิ้นเท่านั้น"
+                    : "LAST ONE! Only 1 left"
+                }
+              >
+                <span className="line-clamp-1 [overflow-wrap:anywhere]">
+                  {loc === "th"
+                    ? "🔥 โอกาสสุดท้าย! เหลือเพียง 1 ชิ้นเท่านั้น (ห้ามพลาด!)"
+                    : "🔥 LAST ONE! Only 1 left (Act Now!)"}
+                </span>
+              </p>
             </div>
-            <p className="relative px-2 py-2 text-center font-sans text-[10px] font-extrabold leading-tight text-white sm:text-[11px] sm:leading-snug">
-              {loc === "th"
-                ? "🔥 โอกาสสุดท้าย! เหลือเพียง 1 ชิ้นเท่านั้น (ห้ามพลาด!)"
-                : "🔥 LAST ONE! Only 1 left (Act Now!)"}
-            </p>
-          </div>
-        )}
+          ) : null}
+        </div>
 
-        <div className="flex flex-1 flex-col gap-1.5 px-2.5 pb-2.5 pt-2">
-          <div className="flex items-center justify-center">
+        <div className="flex min-h-0 flex-1 flex-col gap-1.5 px-2.5 pb-2.5 pt-2">
+          <div className="flex shrink-0 items-center justify-center">
             <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-bold tabular-nums text-zinc-800 ring-1 ring-zinc-200/80">
               <span className="text-emerald-800">THC {thcPill}</span>
               <span className="text-zinc-400">·</span>
@@ -320,94 +322,30 @@ export function ProductCard({
             </span>
           </div>
 
-          {lastOneLeft && product.breeders && (
+          {product.breeders ? (
             <Link
               href={shopBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
-              className="font-sans flex items-center justify-center gap-1.5"
-            >
-              <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-white ring-1 ring-zinc-100">
-                <BreederLogoImage
-                  src={product.breeders.logo_url}
-                  breederName={product.breeders.name}
-                  width={20}
-                  height={20}
-                  className="rounded-full"
-                  imgClassName="object-contain p-0.5"
-                  sizes="20px"
-                />
-              </span>
-              <span className="line-clamp-1 text-left text-[11px] font-semibold text-emerald-700">
-                {product.breeders.name}
-              </span>
-            </Link>
-          )}
-
-          {!lastOneLeft && product.breeders && (
-            <Link
-              href={shopBreederHref(product.breeders)}
-              onClick={(e) => e.stopPropagation()}
-              className="line-clamp-1 text-center text-[11px] font-medium text-emerald-600 hover:text-emerald-700"
+              className="line-clamp-1 min-h-[1.25rem] shrink-0 text-center text-[11px] font-medium leading-tight text-emerald-600 hover:text-emerald-700"
             >
               {product.breeders.name}
             </Link>
+          ) : (
+            <div className="min-h-[1.25rem] shrink-0" aria-hidden />
           )}
 
-          <Link href={productDetailHref(product)} className="min-h-0 flex-1">
+          <Link
+            href={productDetailHref(product)}
+            className="flex min-h-[2.5rem] shrink-0 flex-col justify-center"
+          >
             <h3 className="line-clamp-2 text-center font-sans text-[14px] font-bold leading-snug tracking-tight text-zinc-900">
               {product.name}
             </h3>
           </Link>
 
-          {lastOneLeft && descriptionTeaser ? (
-            <p
-              className="line-clamp-2 min-h-0 text-center font-sans text-[11px] font-normal leading-snug text-zinc-600"
-              title={descriptionTeaser}
-            >
-              {descriptionTeaser}
-            </p>
-          ) : null}
-
           {lastOneLeft ? (
-            <div className="mt-auto flex flex-col gap-1.5 border-t border-zinc-100 pt-2">
+            <div className="mt-auto flex min-h-0 flex-col border-t border-zinc-100 pt-2">
               <div className="text-center">
-                {seedsPackLabel ? (
-                  <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
-                    {seedsPackLabel}
-                  </p>
-                ) : null}
-                {showStrike && (
-                  <p className="text-xs tabular-nums text-zinc-400 line-through">
-                    {formatPrice(listRegular)}
-                  </p>
-                )}
-                <p className="text-base font-bold tabular-nums text-zinc-900 sm:text-lg">
-                  {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
-                </p>
-              </div>
-              <div className="text-center">
-                <span className="inline-block rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[8px] font-bold text-red-700">
-                  {t("สต็อกน้อย", "Low stock")}
-                </span>
-              </div>
-              <Button
-                type="button"
-                disabled={outOfStock || !defaultVariant}
-                onClick={handleAdd}
-                onPointerDown={(e) => e.stopPropagation()}
-                className="relative z-20 h-11 w-full border-0 bg-gradient-to-b from-emerald-500 to-emerald-700 font-sans text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(16,185,129,0.5)] transition hover:from-emerald-500 hover:to-emerald-800 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
-                aria-label={
-                  loc === "th" ? "สั่งซื้อก่อนหมด" : "Buy before it is gone"
-                }
-              >
-                <span className="inline-flex animate-urgent-cta-blink items-center justify-center gap-1.5">
-                  {loc === "th" ? "🚀 สั่งซื้อก่อนหมด!" : "🚀 BUY BEFORE IT'S GONE!"}
-                </span>
-              </Button>
-            </div>
-          ) : (
-            <div className="mt-auto flex items-end justify-between gap-2 border-t border-zinc-100 pt-2">
-              <div className="min-w-0">
                 {seedsPackLabel ? (
                   <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
                     {seedsPackLabel}
@@ -424,17 +362,80 @@ export function ProductCard({
               </div>
               <Button
                 type="button"
-                size="icon"
-                disabled={outOfStock || !defaultVariant}
+                disabled={!defaultVariant}
                 onClick={handleAdd}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                }}
-                aria-label={t("เพิ่มลงตะกร้า", "Add to cart")}
-                className="relative z-20 h-8 w-8 shrink-0 rounded-full border-0 bg-primary text-lg font-bold leading-none text-primary-foreground shadow-sm transition-transform hover:scale-110 hover:bg-primary/90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+                onPointerDown={(e) => e.stopPropagation()}
+                className="relative z-20 mt-1.5 h-10 w-full shrink-0 border-0 bg-gradient-to-b from-emerald-500 to-emerald-700 p-0 font-sans text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(16,185,129,0.5)] transition hover:from-emerald-500 hover:to-emerald-800 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
+                aria-label={
+                  loc === "th" ? "สั่งซื้อก่อนหมด" : "Buy before it is gone"
+                }
               >
-                +
+                <span className="inline-flex h-full w-full animate-urgent-cta-blink items-center justify-center gap-1.5 px-1">
+                  {loc === "th" ? "🚀 สั่งซื้อก่อนหมด!" : "🚀 BUY BEFORE IT'S GONE!"}
+                </span>
               </Button>
+            </div>
+          ) : (
+            <div className="mt-auto border-t border-zinc-100 pt-2">
+              {outOfStock ? (
+                <div className="flex min-h-0 flex-col">
+                  <div className="text-center">
+                    {seedsPackLabel ? (
+                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-zinc-500 sm:text-xs">
+                        {seedsPackLabel}
+                      </p>
+                    ) : null}
+                    {showStrike && (
+                      <p className="text-xs tabular-nums text-zinc-400 line-through">
+                        {formatPrice(listRegular)}
+                      </p>
+                    )}
+                    <p className="text-[15px] font-bold tabular-nums text-zinc-500">
+                      {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    disabled
+                    onPointerDown={(e) => e.stopPropagation()}
+                    aria-label={t("สินค้าหมดชั่วคราว", "Sold Out")}
+                    className="relative z-20 mt-1.5 h-10 w-full shrink-0 border border-zinc-300 bg-zinc-200 p-0 font-sans text-sm font-semibold text-zinc-600 shadow-none hover:bg-zinc-200"
+                  >
+                    {t("สินค้าหมดชั่วคราว", "Sold Out")}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex min-h-0 items-end justify-between gap-2">
+                  <div className="min-w-0">
+                    {seedsPackLabel ? (
+                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
+                        {seedsPackLabel}
+                      </p>
+                    ) : null}
+                    {showStrike && (
+                      <p className="text-xs tabular-nums text-zinc-400 line-through">
+                        {formatPrice(listRegular)}
+                      </p>
+                    )}
+                    <p className="text-[15px] font-bold tabular-nums text-zinc-900">
+                      {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    disabled={!defaultVariant}
+                    onClick={handleAdd}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                    aria-label={t("เพิ่มลงตะกร้า", "Add to cart")}
+                    className="relative z-20 h-10 w-10 shrink-0 rounded-full border-0 bg-primary p-0 text-lg font-bold leading-none text-primary-foreground shadow-sm transition-transform hover:scale-110 hover:bg-primary/90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    +
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
