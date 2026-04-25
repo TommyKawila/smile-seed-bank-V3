@@ -19,6 +19,7 @@ import {
   getStartingVariantLabel,
 } from "@/lib/product-utils";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import { getProductAggregateStock, isProductAggregateOutOfStock } from "@/lib/product-stock";
 import { productDetailHref } from "@/lib/product-utils";
 import { shopBreederHref } from "@/lib/breeder-slug";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
@@ -137,10 +138,10 @@ export function ProductCard({
   const { addToCart, openCart } = useCartContext();
   const { t, locale } = useLanguage();
   const loc = locale as "th" | "en";
-  const stock = product.stock ?? 0;
-  const lowStock = stock > 0 && stock <= 5;
-  const outOfStock = stock === 0;
-  const lastOneLeft = stock === 1 && !outOfStock;
+  const stock = getProductAggregateStock(product);
+  const outOfStock = isProductAggregateOutOfStock(product);
+  const lastOneLeft = !outOfStock && stock === 1;
+  const lowStock = !outOfStock && stock > 0 && stock <= 5;
   const defaultVariant = getDefaultVariant(product);
   const cardImage = getPrimaryImage(product);
   const pm = product as ProductWithMeta;

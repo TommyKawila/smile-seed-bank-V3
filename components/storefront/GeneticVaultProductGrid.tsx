@@ -5,10 +5,9 @@ import { motion, type Variants } from "framer-motion";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { ShopSpotlightCard } from "@/components/storefront/ShopSpotlightCard";
 import { ShopResearchInsightCard } from "@/components/storefront/ShopResearchInsightCard";
-import { FinalArchiveSpotlightCard } from "@/components/storefront/FinalArchiveSpotlightCard";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { MagazinePostPublic } from "@/lib/blog-service";
-import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/supabase/types";
+import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { interleaveContent } from "@/lib/interleave-vault-grid";
 
 const containerVariants: Variants = {
@@ -24,15 +23,13 @@ const cellVariants: Variants = {
 export function GeneticVaultProductGrid({
   products,
   researchPosts,
-  finalArchiveProducts,
 }: {
   products: ProductWithBreeder[];
   researchPosts: MagazinePostPublic[];
-  finalArchiveProducts: ProductWithBreederAndVariants[];
 }) {
   const items = useMemo(
-    () => interleaveContent(products, researchPosts, finalArchiveProducts),
-    [products, researchPosts, finalArchiveProducts]
+    () => interleaveContent(products, researchPosts),
+    [products, researchPosts]
   );
 
   return (
@@ -52,15 +49,6 @@ export function GeneticVaultProductGrid({
               >
                 <ProductCard product={item.product} />
               </div>
-            );
-          }
-          if (item.type === "finalArchive") {
-            return (
-              <FinalArchiveSpotlightCard
-                key={`vault-fa-${item.product.id}-${idx}`}
-                product={item.product}
-                variants={cellVariants}
-              />
             );
           }
           if (item.type === "spotlight") {

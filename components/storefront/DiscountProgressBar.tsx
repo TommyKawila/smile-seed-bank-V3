@@ -19,7 +19,7 @@ export function DiscountProgressBar({ subtotal, rules }: DiscountProgressBarProp
 
   if (!nextTier) {
     return currentTier ? (
-      <div className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-primary">
+      <div className="rounded-xl bg-accent px-3 py-2 font-sans text-xs font-medium text-primary">
         ✓ {t("รับส่วนลด", "You get")} {currentTier.discount_percent}% {t("แล้ว!", "off!")}
       </div>
     ) : null;
@@ -33,9 +33,9 @@ export function DiscountProgressBar({ subtotal, rules }: DiscountProgressBarProp
       : `Spend ${formatPrice(gap)} more to get ${nextTier.discount_percent}% off`;
 
   return (
-    <div className="space-y-2">
-      <div className="flex justify-end text-xs text-zinc-600">
-        <span>{formatPrice(nextTier.min_spend)}</span>
+    <div className="space-y-2 font-sans">
+      <div className="flex justify-end font-sans text-xs text-zinc-600">
+        <span className="tabular-nums">{formatPrice(nextTier.min_spend)}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-zinc-200">
         <div
@@ -43,7 +43,7 @@ export function DiscountProgressBar({ subtotal, rules }: DiscountProgressBarProp
           style={{ width: `${progress}%` }}
         />
       </div>
-      <div className="rounded-xl bg-primary/5 px-3 py-2 text-xs text-primary">
+      <div className="rounded-xl bg-primary/5 px-3 py-2 font-sans text-xs text-primary">
         💡 {hint}
       </div>
     </div>

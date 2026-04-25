@@ -1,5 +1,5 @@
 import type { MagazinePostPublic } from "@/lib/blog-service";
-import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/supabase/types";
+import type { ProductWithBreeder } from "@/lib/supabase/types";
 
 /** Desktop shop grid is 4 columns; 2-col specials must not start in the last column-only slot. */
 const DESKTOP_COLS = 4;
@@ -7,8 +7,7 @@ const DESKTOP_COLS = 4;
 export type VaultGridItem =
   | { type: "product"; product: ProductWithBreeder }
   | { type: "spotlight"; product: ProductWithBreeder }
-  | { type: "research"; post: MagazinePostPublic }
-  | { type: "finalArchive"; product: ProductWithBreederAndVariants };
+  | { type: "research"; post: MagazinePostPublic };
 
 /**
  * Row-aware interleaving: insert 2-column specials only when two consecutive
@@ -16,11 +15,9 @@ export type VaultGridItem =
  */
 export function interleaveContent(
   products: ProductWithBreeder[],
-  researchPosts: MagazinePostPublic[],
-  finalArchiveProducts: ProductWithBreederAndVariants[]
+  researchPosts: MagazinePostPublic[]
 ): VaultGridItem[] {
-  const archiveIds = new Set(finalArchiveProducts.map((p) => p.id));
-  const queue = products.filter((p) => !archiveIds.has(p.id));
+  const queue = products.slice();
   const out: VaultGridItem[] = [];
   let idx = 0;
   /** Column cursor within current row: 0..DESKTOP_COLS-1 */
@@ -61,10 +58,6 @@ export function interleaveContent(
   // First row: up to 4 products (original layout intent)
   for (let k = 0; k < 4 && idx < queue.length; k++) {
     emitProduct();
-  }
-
-  for (const p of finalArchiveProducts) {
-    pushSpan2({ type: "finalArchive", product: p });
   }
 
   let spotlightRound = 0;

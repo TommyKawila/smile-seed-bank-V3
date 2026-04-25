@@ -205,6 +205,51 @@ export function getClearancePercentOff(product: ClearanceProductSlice): number |
   return Math.round((1 - sale / regular) * 100);
 }
 
+/**
+ * Detail page: never show ฿0 when the selected pack is OOS or prices are bad — use denormalized
+ * `product.price` or the first active variant’s list price for clearance math.
+ */
+export function getDetailDisplayLinePrices(
+  product: ClearanceProductSlice,
+  activeVariantsSorted: ProductVariant[],
+  selected: ProductVariant | null
+): { eff: number; list: number } {
+  if (!selected) return { eff: 0, list: 0 };
+  const list = Number(selected.price ?? 0);
+  let eff = getEffectiveVariantPrice(product, list);
+  const variantOos = (selected.stock ?? 0) <= 0;
+  const bad =
+    variantOos ||
+    !Number.isFinite(eff) ||
+    eff <= 0 ||
+    !Number.isFinite(list) ||
+    list <= 0;
+  if (bad) {
+    const denorm = Number(product.price ?? 0);
+    if (denorm > 0) {
+      eff = getEffectiveVariantPrice(product, denorm);
+    }
+    if (!Number.isFinite(eff) || eff <= 0) {
+      const v0 = activeVariantsSorted[0];
+      if (v0) {
+        const lp = Number(v0.price ?? 0);
+        if (lp > 0) {
+          eff = getEffectiveVariantPrice(product, lp);
+        }
+      }
+    }
+  }
+  let listOut = list;
+  if (!Number.isFinite(listOut) || listOut <= 0) {
+    const d = Number(product.price ?? 0);
+    if (d > 0) listOut = d;
+    else if (activeVariantsSorted[0]) {
+      listOut = Number(activeVariantsSorted[0].price ?? 0);
+    }
+  }
+  return { eff, list: listOut };
+}
+
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
 /** True when aggregate stock is at or below threshold (0 = out / very low). */

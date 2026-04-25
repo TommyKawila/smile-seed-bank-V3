@@ -16,7 +16,12 @@ import { useTranslations } from "@/hooks/use-translations";
 import { labelFloweringType } from "@/lib/cannabis-attributes";
 import { seedTypeDetailShort, sexTypeDetailShort } from "@/lib/seed-type-filter";
 import { cn, formatPrice } from "@/lib/utils";
-import { getClearancePercentOff, getEffectiveVariantPrice } from "@/lib/product-utils";
+import {
+  getClearancePercentOff,
+  getDetailDisplayLinePrices,
+  getEffectiveVariantPrice,
+} from "@/lib/product-utils";
+import { isProductAggregateOutOfStock } from "@/lib/product-stock";
 import { shopBreederHref } from "@/lib/breeder-slug";
 import { ProductGallery } from "@/components/storefront/ProductGallery";
 import { StickyBuyBar } from "@/components/storefront/StickyBuyBar";
@@ -322,11 +327,21 @@ export default function ProductDetailClient({
   const activeVariants = sortVariantsByPriceThenPack(
     product.product_variants?.filter((v) => v.is_active !== false) ?? []
   );
-  const outOfStock = !selectedVariant || selectedVariant.stock === 0;
+  const aggregateOos = isProductAggregateOutOfStock(product);
+  const outOfStock = !selectedVariant || (selectedVariant.stock ?? 0) <= 0;
   const clearancePct = getClearancePercentOff(product);
-  const selectedEff =
-    selectedVariant != null ? getEffectiveVariantPrice(product, Number(selectedVariant.price)) : 0;
-  const selectedList = selectedVariant != null ? Number(selectedVariant.price) : 0;
+  const { eff: selectedEff, list: selectedList } = getDetailDisplayLinePrices(
+    product,
+    activeVariants,
+    selectedVariant
+  );
+
+  const mainPriceLine =
+    !selectedVariant
+      ? "—"
+      : selectedEff > 0
+        ? formatPrice(selectedEff)
+        : t("สอบถาม", "Inquire");
 
   const preferredDesc = locale === "th" ? product.description_th : product.description_en;
   const fallbackDesc = locale === "th" ? product.description_en : product.description_th;
@@ -368,7 +383,12 @@ export default function ProductDetailClient({
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <ProductGallery product={product} selectedVariantId={selectedVariant?.id ?? null} />
+            <ProductGallery
+              product={product}
+              selectedVariantId={selectedVariant?.id ?? null}
+              showAggregateSoldOut={aggregateOos}
+              soldOutLabel={t("สินค้าหมด / SOLD OUT", "Sold out / SOLD OUT")}
+            />
           </motion.div>
 
           {/* ── Right: Info ───────────────────────────────────────────────── */}
@@ -390,7 +410,7 @@ export default function ProductDetailClient({
                     </span>
                   )}
                   <div className="flex min-w-0 flex-col">
-                    {selectedVariant && selectedList > selectedEff && (
+                    {selectedVariant && selectedEff > 0 && selectedList > selectedEff && (
                       <span
                         className={cn(
                           fontSansTabular,
@@ -406,10 +426,11 @@ export default function ProductDetailClient({
                         "text-2xl font-extrabold text-emerald-600 sm:text-3xl"
                       )}
                     >
-                      {selectedVariant ? formatPrice(selectedEff) : "—"}
+                      {mainPriceLine}
                     </span>
                   </div>
                   {selectedVariant &&
+                    !aggregateOos &&
                     (selectedVariant.stock ?? 0) <= 5 &&
                     (selectedVariant.stock ?? 0) > 0 && (
                       <Badge className="shrink-0 border border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10">
@@ -535,7 +556,9 @@ export default function ProductDetailClient({
                         >
                           {formatPrice(getEffectiveVariantPrice(product, Number(v.price)))}
                         </span>
-                        {(v.stock ?? 0) <= 5 && (v.stock ?? 0) > 0 && (
+                        {!aggregateOos &&
+                          (v.stock ?? 0) <= 5 &&
+                          (v.stock ?? 0) > 0 && (
                           <span className="block text-[10px] text-destructive">
                             {fillN(tMsg("product.stock_left_simple", "{n} left"), v.stock ?? 0)}
                           </span>
@@ -866,14 +889,17 @@ export default function ProductDetailClient({
         <StickyBuyBar
           visible={showStickyBuy}
           productName={product.name}
-          priceLabel={formatPrice(selectedEff)}
+          priceLabel={mainPriceLine}
           outOfStock={outOfStock}
           disabled={outOfStock}
           onAdd={handleAddToCart}
           addLabel={tMsg("product.add_to_cart", "Add to Cart")}
           outOfStockLabel={t("หมดสต็อก", "Out of stock")}
           lowStock={
-            !outOfStock && (selectedVariant.stock ?? 0) > 0 && (selectedVariant.stock ?? 0) <= 5
+            !aggregateOos &&
+            !outOfStock &&
+            (selectedVariant.stock ?? 0) > 0 &&
+            (selectedVariant.stock ?? 0) <= 5
           }
           lowStockLabel={t("เหลือน้อย", "Low stock")}
         />

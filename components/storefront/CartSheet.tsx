@@ -30,11 +30,10 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
-const serif = "font-sans";
-const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
+const sans = "font-sans";
+const sansTab = "font-sans tabular-nums";
 
 function CartLineQuantityInput({
   variantId,
@@ -68,7 +67,7 @@ function CartLineQuantityInput({
       aria-label={ariaQuantity}
       className={cn(
         "h-7 w-11 border-0 bg-transparent p-0 text-center text-sm font-medium shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
-        "font-[family-name:var(--font-journal-product-mono)] tabular-nums",
+        sansTab,
         outOfStock && "cursor-not-allowed opacity-50"
       )}
       value={text}
@@ -257,16 +256,13 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         side="right"
-        className={cn(
-          "flex w-full flex-col border-l border-zinc-100 bg-white p-0 sm:max-w-md",
-          JOURNAL_PRODUCT_FONT_VARS
-        )}
+        className="flex w-full flex-col border-l border-zinc-100 bg-white p-0 font-sans sm:max-w-md"
       >
         {/* Header */}
         <SheetHeader className="border-b border-zinc-100 px-5 py-4">
           <SheetTitle
             className={cn(
-              serif,
+              sans,
               "flex items-center gap-2 text-lg font-medium tracking-tight text-zinc-900"
             )}
           >
@@ -274,7 +270,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
             {itemCount > 0 && (
               <span
                 className={cn(
-                  mono,
+                  sansTab,
                   "ml-1 rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-medium text-zinc-600"
                 )}
               >
@@ -289,10 +285,10 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
               <ShoppingBag className="h-10 w-10 text-zinc-200" strokeWidth={1} />
-              <p className={cn(serif, "text-lg font-medium text-zinc-800")}>
+              <p className={cn(sans, "text-lg font-medium text-zinc-800")}>
                 {t("ยังไม่มีสินค้าในตะกร้า", "Your cart is empty")}
               </p>
-              <Button variant="outline" size="sm" onClick={onClose} asChild className="mt-1 rounded-sm border-zinc-200 tracking-wide">
+              <Button variant="outline" size="sm" onClick={onClose} asChild className="mt-1 rounded-sm border-zinc-200 font-sans tracking-wide">
                 <Link href="/shop">{t("สำรวจสายพันธุ์", "Explore genetics")}</Link>
               </Button>
             </div>
@@ -316,7 +312,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                       </div>
                     )}
                     {item.isFreeGift && (
-                      <span className="absolute bottom-0 left-0 right-0 bg-amber-400 py-0.5 text-center text-[9px] font-bold text-white">
+                      <span className="absolute bottom-0 left-0 right-0 bg-amber-400 py-0.5 text-center font-sans text-[9px] font-bold text-white">
                         🎁 FREE
                       </span>
                     )}
@@ -328,7 +324,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <p
                           className={cn(
-                            serif,
+                            sans,
                             "min-w-0 text-sm font-medium leading-tight text-zinc-900 break-words"
                           )}
                         >
@@ -347,11 +343,11 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                           </span>
                         ) : null}
                       </div>
-                      <p className={cn(mono, "mt-0.5 text-[11px] font-normal text-zinc-500")}>
+                      <p className={cn(sans, "mt-0.5 text-[11px] font-normal text-zinc-500")}>
                         {cartItemPackDescription(item, locale)}
                       </p>
                       {item.stock_quantity === 0 && (
-                        <p className="text-xs font-medium text-red-600">
+                        <p className="font-sans text-xs font-medium text-red-600">
                           {t("หมดสต็อก", "Out of stock")}
                         </p>
                       )}
@@ -359,7 +355,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
 
                     <div className="flex items-center justify-between">
                       {item.isFreeGift ? (
-                        <span className={cn(mono, "text-sm font-medium text-amber-700")}>
+                        <span className={cn(sans, "text-sm font-medium text-amber-700")}>
                           {t("ฟรี!", "Free!")}
                         </span>
                       ) : (
@@ -371,13 +367,13 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                             const atMax =
                               max !== undefined && item.quantity >= max;
                             return (
-                          <div className="flex items-center gap-1 rounded-sm border border-zinc-200 bg-white p-0.5">
+                          <div className="flex items-center gap-1 rounded-sm border border-zinc-200 bg-white p-0.5 font-sans">
                             <button
                               type="button"
                               onClick={() =>
                                 updateQuantity(item.variantId, item.quantity - 1)
                               }
-                              className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-zinc-100"
+                              className="flex h-6 w-6 items-center justify-center rounded-md font-sans hover:bg-zinc-100"
                               aria-label="ลดจำนวน"
                             >
                               <Minus className="h-3 w-3 text-zinc-600" />
@@ -408,7 +404,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                                 }
                               }}
                               className={cn(
-                                "flex h-6 w-6 items-center justify-center rounded-md hover:bg-zinc-100",
+                                "flex h-6 w-6 items-center justify-center rounded-md font-sans hover:bg-zinc-100",
                                 (outOfStock || atMax) &&
                                   "cursor-not-allowed opacity-40 hover:bg-transparent"
                               )}
@@ -419,7 +415,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                           </div>
                             );
                           })()}
-                          <span className={cn(mono, "text-sm font-medium text-zinc-900")}>
+                          <span className={cn(sansTab, "text-sm font-medium text-zinc-900")}>
                             {formatPrice(item.price * item.quantity)}
                           </span>
                         </>
@@ -452,7 +448,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
             {/* Promo Code */}
             <div className="space-y-1.5">
               {!user && (
-                <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] leading-relaxed text-zinc-600">
+                <p className="font-sans rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] leading-relaxed text-zinc-600">
                   {t(
                     "สมัครสมาชิกเพื่อรับส่วนลดโปรโมชั่น (Google, Email หรือ LINE)",
                     "Sign up or log in to use promo codes (Google, Email, or LINE).",
@@ -462,19 +458,22 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
               {user && promo.code ? (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between rounded-sm border border-zinc-200 bg-zinc-50/80 px-3 py-2">
-                    <span className={cn(mono, "flex items-center gap-1.5 text-[11px] font-medium text-zinc-700")}>
+                    <span className={cn(sansTab, "flex items-center gap-1.5 text-[11px] font-medium text-zinc-700")}>
                       <Tag className="h-3.5 w-3.5" />
                       {promo.code.code} — {t("ลด", "Off")}{" "}
                       {String(promo.code.discount_type || "").toUpperCase() === "PERCENTAGE"
                         ? `${promo.code.discount_value}%`
                         : formatPrice(promo.code.discount_value ?? promo.discountAmount)}
                     </span>
-                    <button onClick={handleClearPromo} className="text-[11px] text-zinc-500 underline underline-offset-2">
+                    <button
+                      onClick={handleClearPromo}
+                      className="font-sans text-[11px] text-zinc-500 underline underline-offset-2"
+                    >
                       {t("ลบ", "Remove")}
                     </button>
                   </div>
                   {summary.promoSupersededByTier ? (
-                    <p className="text-[10px] leading-snug text-amber-800">
+                    <p className="font-sans text-[10px] leading-snug text-amber-800">
                       {t(
                         "ใช้ส่วนลดขั้นบันไดแทนโค้ด (ข้อเสนอดีกว่า)",
                         "Tier discount applies instead (better deal)."
@@ -488,7 +487,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                     placeholder={t("โค้ดส่วนลด", "Promo code")}
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                    className={cn(mono, "h-9 rounded-sm border-zinc-200 bg-white text-sm uppercase")}
+                    className={cn(sans, "h-9 rounded-sm border-zinc-200 bg-white text-sm uppercase tabular-nums")}
                     onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
                   />
                   <Button
@@ -496,7 +495,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                     size="sm"
                     onClick={() => void handleApplyPromo()}
                     disabled={isValidatingPromo || !couponInput.trim()}
-                    className="h-9 shrink-0 rounded-sm border-zinc-200"
+                    className="h-9 shrink-0 rounded-sm border-zinc-200 font-sans"
                   >
                     {isValidatingPromo ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -507,14 +506,14 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                 </div>
               ) : null}
               {user && promo.error && (
-                <p className="text-xs text-red-500">{promo.error}</p>
+                <p className="font-sans text-xs text-red-500">{promo.error}</p>
               )}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleOpenCoupons}
                 disabled={loadingCoupons}
-                className="w-full gap-2 text-xs text-primary hover:bg-primary/5"
+                className="w-full gap-2 font-sans text-xs text-primary hover:bg-primary/5"
               >
                 <Ticket className="h-3.5 w-3.5" />
                 {loadingCoupons ? t("กำลังโหลด...", "Loading...") : t("ดูโค้ดส่วนลดของฉัน", "View my available coupons")}
@@ -533,23 +532,27 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
             />
 
             <Dialog open={couponsOpen} onOpenChange={setCouponsOpen}>
-              <DialogContent className="sm:max-w-sm">
+              <DialogContent className="font-sans sm:max-w-sm">
                 <DialogHeader>
-                  <DialogTitle>{t("โค้ดส่วนลดที่ใช้ได้", "Available Coupons")}</DialogTitle>
+                  <DialogTitle className="font-sans">
+                    {t("โค้ดส่วนลดที่ใช้ได้", "Available Coupons")}
+                  </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="max-h-64 space-y-2 overflow-y-auto">
                   {availableCoupons.length === 0 && !loadingCoupons ? (
-                    <p className="text-sm text-zinc-500 py-4 text-center">{t("ไม่มีโค้ดที่ใช้ได้ในขณะนี้", "No coupons available at the moment")}</p>
+                    <p className="py-4 text-center font-sans text-sm text-zinc-500">
+                      {t("ไม่มีโค้ดที่ใช้ได้ในขณะนี้", "No coupons available at the moment")}
+                    </p>
                   ) : (
                     availableCoupons.map((c) => (
                       <button
                         key={c.code}
                         type="button"
                         onClick={() => void handleSelectCoupon(c.code)}
-                        className="flex w-full items-center justify-between rounded-lg border border-zinc-200 px-3 py-2.5 text-left text-sm hover:border-primary hover:bg-primary/5 transition-colors"
+                        className="flex w-full items-center justify-between rounded-lg border border-zinc-200 px-3 py-2.5 text-left font-sans text-sm transition-colors hover:border-primary hover:bg-primary/5"
                       >
-                        <span className="font-mono font-semibold">{c.code}</span>
-                        <span className="text-primary">
+                        <span className="font-sans font-semibold tracking-wide">{c.code}</span>
+                        <span className="font-sans text-primary">
                           {String(c.discount_type || "").toUpperCase() === "PERCENTAGE"
                             ? `ลด ${c.discount_value}%`
                             : `ลด ${formatPrice(c.discount_value)}`}
@@ -564,48 +567,48 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
             <Separator />
 
             {/* Totals */}
-            <div className="space-y-2 rounded-sm border border-zinc-100 bg-zinc-50/40 p-3 text-sm">
+            <div className="space-y-2 rounded-sm border border-zinc-100 bg-zinc-50/40 p-3 font-sans text-sm">
               <div className="flex justify-between gap-3 text-zinc-600">
-                <span className={cn(serif, "text-xs font-medium")}>{t("ยอดรวม", "Subtotal")}</span>
-                <span className={cn(mono, "font-medium text-zinc-900")}>{formatPrice(summary.subtotal)}</span>
+                <span className={cn(sans, "text-xs font-medium")}>{t("ยอดรวม", "Subtotal")}</span>
+                <span className={cn(sansTab, "font-medium text-zinc-900")}>{formatPrice(summary.subtotal)}</span>
               </div>
               {summary.tierDiscount > 0 && (
                 <div className="flex justify-between gap-3 text-emerald-800">
-                  <span className={cn(serif, "text-xs font-medium")}>
+                  <span className={cn(sans, "text-xs font-medium")}>
                     {t("ส่วนลดอัตโนมัติ", "Auto discount")} ({summary.discountPercent}%)
                   </span>
-                  <span className={cn(mono, "font-medium")}>-{formatPrice(summary.tierDiscount)}</span>
+                  <span className={cn(sansTab, "font-medium")}>-{formatPrice(summary.tierDiscount)}</span>
                 </div>
               )}
               {summary.promoDiscount > 0 && (
                 <div className="flex justify-between gap-3 text-emerald-800">
-                  <span className={cn(serif, "text-xs font-medium")}>
+                  <span className={cn(sans, "text-xs font-medium")}>
                     {t("ส่วนลดโค้ด", "Coupon")} ({promo.code?.code ?? ""})
                   </span>
-                  <span className={cn(mono, "font-medium")}>-{formatPrice(summary.promoDiscount)}</span>
+                  <span className={cn(sansTab, "font-medium")}>-{formatPrice(summary.promoDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between gap-3 text-zinc-600">
-                <span className={cn(serif, "text-xs font-medium")}>{t("ค่าส่ง", "Shipping")}</span>
-                <span className={cn(mono, "font-medium text-zinc-900")}>
+                <span className={cn(sans, "text-xs font-medium")}>{t("ค่าส่ง", "Shipping")}</span>
+                <span className={cn(sansTab, "font-medium text-zinc-900")}>
                   {summary.shipping === 0 ? t("ฟรี", "Free") : formatPrice(summary.shipping)}
                 </span>
               </div>
               <Separator className="bg-zinc-100" />
               <div className="flex justify-between gap-3 text-zinc-900">
-                <span className={cn(serif, "text-sm font-medium")}>{t("ยอดสุทธิ", "Total")}</span>
-                <span className={cn(mono, "text-base font-semibold text-emerald-900")}>
+                <span className={cn(sans, "text-sm font-medium")}>{t("ยอดสุทธิ", "Total")}</span>
+                <span className={cn(sansTab, "text-base font-semibold text-emerald-900")}>
                   {formatPrice(summary.total)}
                 </span>
               </div>
             </div>
 
             {summary.tierDiscount + summary.promoDiscount > 0 && (
-              <div className="flex items-center justify-center gap-2 rounded-sm border border-zinc-100 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
+              <div className="flex items-center justify-center gap-2 rounded-sm border border-zinc-100 bg-zinc-50 px-4 py-3 font-sans text-sm text-zinc-700">
                 <Sparkles className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1} />
                 <span className="text-xs leading-relaxed">
                   {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
-                  <strong className={cn(mono, "font-semibold")}>
+                  <strong className={cn(sansTab, "font-semibold")}>
                     {formatPrice(summary.tierDiscount + summary.promoDiscount)}
                   </strong>
                 </span>
@@ -616,9 +619,9 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
             <Button
               asChild
               onClick={onClose}
-              className="w-full rounded-sm bg-emerald-800 py-5 text-base font-semibold tracking-wide text-white shadow-none hover:bg-emerald-900 active:scale-[0.98]"
+              className="w-full rounded-sm bg-emerald-800 py-5 font-sans text-base font-semibold tracking-wide text-white shadow-none hover:bg-emerald-900 active:scale-[0.98]"
             >
-              <Link href="/checkout">
+              <Link href="/checkout" className="font-sans">
                 {t("ดำเนินการชำระเงิน", "Proceed to Checkout")}
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Link>

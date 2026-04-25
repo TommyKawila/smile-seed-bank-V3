@@ -61,7 +61,6 @@ import { ShopGeneticVaultHero } from "@/components/storefront/ShopGeneticVaultHe
 import { selectVaultFeaturedProducts } from "@/lib/vault-featured-products";
 import { GeneticVaultProductGrid } from "@/components/storefront/GeneticVaultProductGrid";
 import type { MagazinePostPublic } from "@/lib/blog-service";
-import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 
 const SHOP_PAGE_INITIAL = 30;
 const SHOP_PAGE_STEP = 24;
@@ -132,9 +131,6 @@ function ShopContent() {
   const [visibleCount, setVisibleCount] = useState(SHOP_PAGE_INITIAL);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [researchPosts, setResearchPosts] = useState<MagazinePostPublic[]>([]);
-  const [finalArchiveSpotlights, setFinalArchiveSpotlights] = useState<ProductWithBreederAndVariants[]>(
-    []
-  );
 
   // Breeder selected via URL param — slug preferred; numeric id still supported
   const urlBreeder = useMemo(
@@ -411,29 +407,6 @@ function ShopContent() {
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    const ids = filteredProducts.map((p) => p.id);
-    if (ids.length === 0) {
-      setFinalArchiveSpotlights([]);
-      return;
-    }
-    const q = new URLSearchParams();
-    q.set("ids", ids.join(","));
-    fetch(`/api/storefront/low-stock-spotlight?${q.toString()}`)
-      .then((r) => r.json())
-      .then((j: { products?: ProductWithBreederAndVariants[] }) => {
-        if (cancelled || !Array.isArray(j?.products)) return;
-        setFinalArchiveSpotlights(j.products);
-      })
-      .catch(() => {
-        if (!cancelled) setFinalArchiveSpotlights([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [filteredIdsKey]);
 
   const hasFilters =
     searchTerm.trim().length > 0 ||
@@ -794,11 +767,7 @@ function ShopContent() {
               </div>
             ) : (
               <>
-                <GeneticVaultProductGrid
-                  products={visibleProducts}
-                  researchPosts={researchPosts}
-                  finalArchiveProducts={finalArchiveSpotlights}
-                />
+                <GeneticVaultProductGrid products={visibleProducts} researchPosts={researchPosts} />
                 {totalFiltered > 0 && (
                   <p className="mt-6 text-center text-sm text-zinc-500">
                     {t("แสดง {current} จาก {total} สินค้า", "Showing {current} of {total} products")

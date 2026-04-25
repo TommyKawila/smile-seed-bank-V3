@@ -249,9 +249,14 @@ function Lightbox({
 export function ProductGallery({
   product,
   selectedVariantId,
+  showAggregateSoldOut = false,
+  soldOutLabel,
 }: {
   product: ProductGalleryProduct
   selectedVariantId: number | null
+  /** Same as catalog: `products.stock` aggregate ≤ 0 */
+  showAggregateSoldOut?: boolean
+  soldOutLabel?: string
 }) {
   const images = React.useMemo(
     () => buildDetailGalleryUrls(product, selectedVariantId),
@@ -317,11 +322,24 @@ export function ProductGallery({
             fill
             priority={selected === 0}
             sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-contain p-1 sm:p-2"
+            className={cn(
+              "object-contain p-1 sm:p-2",
+              showAggregateSoldOut && "brightness-75 grayscale"
+            )}
             quality={100}
             unoptimized={shouldOffloadImageOptimization(current.src)}
           />
         </div>
+        {showAggregateSoldOut && soldOutLabel ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-[12] flex items-center justify-center bg-zinc-950/35 p-3 font-sans"
+            aria-hidden
+          >
+            <div className="w-full max-w-[min(92%,15rem)] rounded-md border border-zinc-400/80 bg-zinc-900/95 px-3 py-2.5 text-center shadow-lg ring-1 ring-black/20">
+              <p className="text-[11px] font-extrabold leading-tight text-white sm:text-xs">{soldOutLabel}</p>
+            </div>
+          </div>
+        ) : null}
         {hasMultiple && (
           <div className="absolute bottom-1 right-1 z-20 flex h-6 items-center justify-center gap-0.5 rounded border border-amber-500/20 bg-amber-500/5 px-1 text-[0.5rem]">
             {gallery.map((_, i) => (

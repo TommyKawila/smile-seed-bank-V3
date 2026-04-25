@@ -71,7 +71,7 @@ export function LoginForPromoDialog({
         onOpenChange={setLineGoogleOpen}
         className="z-[300]"
       />
-      <DialogContent className="sm:max-w-md border-primary/25 bg-gradient-to-b from-accent/80 to-white">
+      <DialogContent className="border-primary/25 bg-gradient-to-b from-accent/80 to-white font-sans sm:max-w-md">
         <div className="flex flex-col items-center text-center space-y-4 py-2">
           <div className="rounded-full bg-accent p-4">
             <Gift className="h-10 w-10 text-primary" />
