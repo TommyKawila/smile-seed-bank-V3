@@ -6,7 +6,9 @@ export type OrderLogAction =
   | "AUTO_LINE_FLEX"
   | "AUTO_LINE_TEXT"
   | "AUTO_LINE_SKIPPED"
-  | "MOBILE_DASH";
+  | "MOBILE_DASH"
+  | "PAYMENT_REMINDER"
+  | "PAYMENT_AUTO_CANCEL";
 
 export async function createOrderLog(input: {
   orderId: number;

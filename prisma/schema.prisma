@@ -257,6 +257,9 @@ model orders {
   customer_phone      String?
   shipping_fee        Decimal             @default(0) @db.Decimal(12, 2)
   discount_amount     Decimal             @default(0) @db.Decimal(12, 2)
+  /// Customer notification reminder tier: 0 = none, 1–3 = escalation step (TH: จำว่าเตือนครั้งที่เท่าไหร่)
+  notification_level  Int                 @default(0)
+  last_notified_at    DateTime?           @db.Timestamptz(6)
   order_items         order_items[]
   order_logs          order_logs[]
   customers           customers?          @relation(fields: [customer_id], references: [id], onUpdate: NoAction)

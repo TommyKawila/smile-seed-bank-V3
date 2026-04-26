@@ -387,3 +387,37 @@ export async function sendNewsletterWelcomeEmail(opts: {
     return { success: false, error: String(err) };
   }
 }
+
+/** Transactional: pending payment nudges (see `lib/services/payment-reminder.ts`). */
+export async function sendPaymentReminderEmail(opts: {
+  toEmail: string;
+  subject: string;
+  html: string;
+}): Promise<ServiceResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { success: false, error: "RESEND_API_KEY ไม่ได้ตั้งค่า" };
+  const to = opts.toEmail?.trim();
+  if (!to) return { success: false, error: "ไม่มีอีเมลลูกค้า" };
+  try {
+    const res = await fetch(RESEND_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [to],
+        subject: opts.subject,
+        html: opts.html,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
+    }
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}

@@ -537,6 +537,47 @@ export async function rejectPayment(orderId: number, note: string): Promise<Serv
   }
 }
 
+const AUTO_CANCEL_UNPAID_NOTE = "System: Auto-cancelled due to non-payment after 3 reminders.";
+
+/**
+ * `PENDING_PAYMENT` (no slip) only — e.g. cron after L3 + grace. Stock via `restoreVariantStockForOrderItems` (variant lines; `lib/product-stock` aggregate matches restored rows).
+ */
+export async function autoCancelUnpaidOrderAfterReminders(
+  orderId: number
+): Promise<ServiceResult<null>> {
+  try {
+    const oid = BigInt(orderId);
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.orders.findUnique({
+        where: { id: oid },
+        include: { order_items: true },
+      });
+      if (!order) throw new Error("Order not found");
+      if (order.status === "CANCELLED") throw new Error("Order is already cancelled");
+      if (order.status !== "PENDING_PAYMENT") {
+        throw new Error(`auto-cancel: expected PENDING_PAYMENT, got ${order.status ?? "?"}`);
+      }
+      if ((order.payment_status ?? "").toLowerCase() === "paid") {
+        throw new Error("Cannot auto-cancel: payment already confirmed");
+      }
+      if (order.slip_url?.trim()) {
+        throw new Error("Cannot auto-cancel: payment slip present");
+      }
+      await restoreVariantStockForOrderItems(tx, order.order_items);
+      const rejectNote = `${AUTO_CANCEL_UNPAID_NOTE}${REJECT_STOCK_NOTE_SUFFIX}`;
+      await tx.orders.update({
+        where: { id: oid },
+        data: { status: "CANCELLED", reject_note: rejectNote },
+      });
+    });
+    return { data: null, error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[orders-service] autoCancelUnpaidOrderAfterReminders error:", msg);
+    return { data: null, error: msg };
+  }
+}
+
 /** Cancel only `PENDING` / `PENDING_INFO` (e.g. abandoned manual claim); restores variant stock. */
 export async function cancelPendingOrder(
   orderId: number,
