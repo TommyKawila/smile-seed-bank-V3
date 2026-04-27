@@ -29,3 +29,4 @@ yarn-error.log*
 .cursor/
 
 /lib/generated/prisma
+.vercel
