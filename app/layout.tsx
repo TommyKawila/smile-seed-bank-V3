@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
@@ -37,6 +38,7 @@ export default function RootLayout({
     <html lang="th" suppressHydrationWarning>
       <body className="min-h-screen bg-white font-sans antialiased">
         {children}
+        <GoogleAnalytics gaId="G-RSY7B2ZH9X" />
         <Analytics />
       </body>
     </html>
