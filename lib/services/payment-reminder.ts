@@ -1,24 +1,29 @@
 /**
- * Pending payment reminders (3 steps) + auto-cancel after L3 + 1h grace. `payment_slip` = `orders.slip_url`.
- * Stock restore: `autoCancelUnpaidOrderAfterReminders` → `restoreVariantStockForOrderItems` (same as admin cancel; storefront aggregate in `lib/product-stock` reflects variant sums).
+ * Statuses: DB `PENDING_PAYMENT` (waiting payment), `PENDING`, `PENDING_INFO` (awaiting info / claim).
+ * 24h auto-cancel: `autoCancelUnpaidOrder24hStale` + stock restore. Reminders: LINE/Email only if contact exists.
+ * `slip` = `orders.slip_url` empty. L1 = 2h from `created_at` when `notification_level` 0.
  */
 
 import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/get-url";
 import { createOrderLog } from "@/lib/order-logs";
 import { sendPaymentReminderEmail } from "@/services/email-service";
-import { autoCancelUnpaidOrderAfterReminders } from "@/services/orders-service";
+import { autoCancelUnpaidOrder24hStale } from "@/services/orders-service";
 import { pushTextToLineUser } from "@/services/line-messaging";
 
 const MS_HOUR = 60 * 60 * 1000;
-/** Level 1: notif 0, created_at &lt; now - 1h */
-const FIRST_REMINDER_AFTER_MS = 1 * MS_HOUR;
-/** Level 2: notif 1, last_notified_at &lt; now - 12h */
+const STALE_24H_MS = 24 * MS_HOUR;
+/** L1: notif 0, created_at &lt; (now - 2h) */
+const FIRST_REMINDER_AFTER_MS = 2 * MS_HOUR;
 const LEVEL_1_TO_2_MS = 12 * MS_HOUR;
-/** Level 3: notif 2, last_notified_at &lt; now - 10h (~23h total) */
 const LEVEL_2_TO_3_MS = 10 * MS_HOUR;
-/** "Executioner": notif 3 and last_notified_at older than 1h → cancel + restore */
-const POST_L3_AUTO_CANCEL_MS = 1 * MS_HOUR;
+
+/** PENDING_PAYMENT, PENDING, PENDING_INFO = WAITING_FOR_PAYMENT / รอดำเนินการ / รอข้อมูล */
+export const CRON_ORDER_STATUSES = [
+  "PENDING_PAYMENT",
+  "PENDING",
+  "PENDING_INFO",
+] as const;
 
 const TEMPLATE_L1 =
   "ขอบคุณที่สั่งซื้อกับ Smile Seed Bank นะครับ! ออเดอร์ของคุณยังรอดำเนินการชำระเงินอยู่ หากต้องการความช่วยเหลือแจ้งแอดมินได้เลยครับ 🌱";
@@ -74,7 +79,6 @@ function plainMessageToEmailHtml(message: string): string {
   )}</p></body></html>`;
 }
 
-/** Wraps LINE Messaging API — use `pushTextToLineUser`. */
 export async function sendLineMessage(
   lineUserId: string,
   message: string
@@ -82,7 +86,6 @@ export async function sendLineMessage(
   return pushTextToLineUser(lineUserId, message);
 }
 
-/** Resend — `sendPaymentReminderEmail` with tier subject + pre-line body. */
 export async function sendEmail(
   toEmail: string,
   message: string,
@@ -95,11 +98,6 @@ export async function sendEmail(
   });
 }
 
-/**
- * L1: notification_level === 0, created_at &lt; (now - 1h)
- * L2: notification_level === 1, last_notified_at &lt; (now - 12h)
- * L3: notification_level === 2, last_notified_at &lt; (now - 10h)
- */
 function computeNextTier(
   notificationLevel: number,
   createdAt: Date | null,
@@ -126,36 +124,42 @@ function computeNextTier(
   return null;
 }
 
+function resolveContact(order: {
+  line_user_id: string | null;
+  shipping_email: string | null;
+  customers: { email: string | null; line_user_id: string | null } | null;
+}) {
+  const line =
+    order.line_user_id?.trim() || order.customers?.line_user_id?.trim() || null;
+  const email = order.shipping_email?.trim() || order.customers?.email?.trim() || null;
+  return { line, email };
+}
+
 async function deliverReminder(opts: {
-  lineUserId: string | null | undefined;
-  email: string | null | undefined;
+  lineUserId: string | null;
+  email: string | null;
   tier: ReminderTier;
   orderNumber: string;
 }): Promise<{ ok: boolean; channel: "line" | "email" | "none"; error?: string }> {
   const payUrl = paymentPageUrl(opts.orderNumber);
   const fullMessage = buildFullMessage(opts.tier, opts.orderNumber, payUrl);
-
-  const line = opts.lineUserId?.trim();
-  if (line) {
-    const r = await sendLineMessage(line, fullMessage);
+  if (opts.lineUserId?.trim()) {
+    const r = await sendLineMessage(opts.lineUserId.trim(), fullMessage);
     if (r.success) return { ok: true, channel: "line" };
   }
-
-  const mail = opts.email?.trim();
-  if (mail) {
-    const r = await sendEmail(mail, fullMessage, opts.tier);
+  if (opts.email) {
+    const r = await sendEmail(opts.email, fullMessage, opts.tier);
     if (r.success) return { ok: true, channel: "email" };
     return { ok: false, channel: "none", error: r.error ?? "email failed" };
   }
-
-  return { ok: false, channel: "none", error: "no LINE user id or email" };
+  return { ok: false, channel: "none", error: "no contact" };
 }
 
 async function deliverAutoCancelFinalNotice(opts: {
-  lineUserId: string | null | undefined;
-  email: string | null | undefined;
+  lineUserId: string | null;
+  email: string | null;
   orderNumber: string;
-}): Promise<{ ok: boolean; channel: "line" | "email" | "none"; error?: string }> {
+}): Promise<{ ok: boolean; channel: "line" | "email" | "skipped"; error?: string }> {
   const text = AUTO_CANCEL_FINAL_MSG(opts.orderNumber);
   const line = opts.lineUserId?.trim();
   if (line) {
@@ -170,9 +174,13 @@ async function deliverAutoCancelFinalNotice(opts: {
       html: plainMessageToEmailHtml(text),
     });
     if (r.success) return { ok: true, channel: "email" };
-    return { ok: false, channel: "none", error: r.error ?? "email failed" };
+    return { ok: false, channel: "skipped", error: r.error ?? "email failed" };
   }
-  return { ok: false, channel: "none", error: "no LINE user id or email" };
+  return { ok: true, channel: "skipped" };
+}
+
+function unpaidFilter<T extends { payment_status: string | null }>(o: T): boolean {
+  return (o.payment_status ?? "").toLowerCase() !== "paid";
 }
 
 export async function runPaymentReminders(now: Date = new Date()): Promise<PaymentReminderRunResult> {
@@ -184,12 +192,11 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
     errors: [],
   };
 
-  const cancelCutoff = new Date(now.getTime() - POST_L3_AUTO_CANCEL_MS);
-  const toCancel = await prisma.orders.findMany({
+  const createdBefore = new Date(now.getTime() - STALE_24H_MS);
+  const staleBatch = await prisma.orders.findMany({
     where: {
-      status: "PENDING_PAYMENT",
-      notification_level: 3,
-      last_notified_at: { not: null, lt: cancelCutoff },
+      status: { in: [...CRON_ORDER_STATUSES] },
+      created_at: { lt: createdBefore },
       OR: [{ slip_url: null }, { slip_url: "" }],
     },
     include: {
@@ -197,43 +204,48 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
     },
   });
 
-  for (const order of toCancel) {
-    if (order.slip_url?.trim()) continue;
+  for (const order of staleBatch) {
+    if (order.slip_url?.trim() || !unpaidFilter(order)) {
+      continue;
+    }
 
-    const cancelled = await autoCancelUnpaidOrderAfterReminders(Number(order.id));
+    result.scanned += 1;
+    const cancelled = await autoCancelUnpaidOrder24hStale(Number(order.id), now);
     if (cancelled.error) {
-      result.errors.push({ orderId: String(order.id), message: `auto-cancel: ${cancelled.error}` });
+      result.errors.push({ orderId: String(order.id), message: `24h auto-cancel: ${cancelled.error}` });
       continue;
     }
 
     result.autoCancelled += 1;
 
-    const lineUid = order.line_user_id?.trim() || order.customers?.line_user_id?.trim() || null;
-    const email = order.shipping_email?.trim() || order.customers?.email?.trim() || null;
+    const { line, email } = resolveContact(order);
     const n = await deliverAutoCancelFinalNotice({
-      lineUserId: lineUid,
+      lineUserId: line,
       email,
       orderNumber: order.order_number,
     });
     if (!n.ok) {
       result.errors.push({
         orderId: String(order.id),
-        message: n.error ?? "auto-cancel final notify failed",
+        message: n.error ?? "24h final notify failed",
       });
     }
 
     await createOrderLog({
       orderId: Number(order.id),
       action: "PAYMENT_AUTO_CANCEL",
-      messageContent: n.ok
-        ? `cancelled; stock restored; final notice ${n.channel} @ ${now.toISOString()}`
-        : `cancelled; stock restored; final notice failed: ${n.error ?? "?"}`,
+      messageContent:
+        n.channel === "skipped"
+          ? `24h; stock restored; final notice skipped (no LINE/email) @ ${now.toISOString()}`
+          : n.ok
+            ? `24h; stock restored; final notice ${n.channel} @ ${now.toISOString()}`
+            : `24h; stock restored; final notice failed: ${n.error ?? "?"}`,
     });
   }
 
   const rows = await prisma.orders.findMany({
     where: {
-      status: "PENDING_PAYMENT",
+      status: { in: [...CRON_ORDER_STATUSES] },
       notification_level: { lt: 3 },
       OR: [{ slip_url: null }, { slip_url: "" }],
     },
@@ -243,12 +255,18 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
   });
 
   for (const order of rows) {
-    if (order.slip_url?.trim()) {
+    if (order.slip_url?.trim() || !unpaidFilter(order)) {
       result.skipped += 1;
       continue;
     }
 
     result.scanned += 1;
+
+    const { line, email } = resolveContact(order);
+    if (!line && !email) {
+      result.skipped += 1;
+      continue;
+    }
 
     const next = computeNextTier(
       order.notification_level,
@@ -261,11 +279,8 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
       continue;
     }
 
-    const lineUid = order.line_user_id?.trim() || order.customers?.line_user_id?.trim() || null;
-    const email = order.shipping_email?.trim() || order.customers?.email?.trim() || null;
-
     const out = await deliverReminder({
-      lineUserId: lineUid,
+      lineUserId: line,
       email,
       tier: next,
       orderNumber: order.order_number,

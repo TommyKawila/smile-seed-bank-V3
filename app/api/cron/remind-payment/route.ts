@@ -12,7 +12,13 @@ export async function GET(request: Request) {
 
   try {
     const result = await runPaymentReminders();
-    return NextResponse.json({ success: true, result });
+    return NextResponse.json({
+      success: true,
+      scanned: result.scanned,
+      sent: result.sent,
+      autoCancelled: result.autoCancelled,
+      result,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ success: false, error: message }, { status: 500 });

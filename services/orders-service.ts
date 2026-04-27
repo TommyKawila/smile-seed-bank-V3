@@ -537,16 +537,20 @@ export async function rejectPayment(orderId: number, note: string): Promise<Serv
   }
 }
 
-const AUTO_CANCEL_UNPAID_NOTE = "System: Auto-cancelled due to non-payment after 3 reminders.";
+const STALE_24H_MS = 24 * 60 * 60 * 1000;
+const AUTO_CANCEL_24H_NOTE =
+  "System: Auto-cancelled after 24 hours (pending payment or incomplete order).";
 
 /**
- * `PENDING_PAYMENT` (no slip) only — e.g. cron after L3 + grace. Stock via `restoreVariantStockForOrderItems` (variant lines; `lib/product-stock` aggregate matches restored rows).
+ * Cron: unpaid, no slip, `PENDING_PAYMENT` | `PENDING` | `PENDING_INFO`, age ≥ 24h. Stock via `restoreVariantStockForOrderItems`.
  */
-export async function autoCancelUnpaidOrderAfterReminders(
-  orderId: number
+export async function autoCancelUnpaidOrder24hStale(
+  orderId: number,
+  asOf: Date = new Date()
 ): Promise<ServiceResult<null>> {
   try {
     const oid = BigInt(orderId);
+    const cutoff = asOf.getTime() - STALE_24H_MS;
     await prisma.$transaction(async (tx) => {
       const order = await tx.orders.findUnique({
         where: { id: oid },
@@ -554,17 +558,21 @@ export async function autoCancelUnpaidOrderAfterReminders(
       });
       if (!order) throw new Error("Order not found");
       if (order.status === "CANCELLED") throw new Error("Order is already cancelled");
-      if (order.status !== "PENDING_PAYMENT") {
-        throw new Error(`auto-cancel: expected PENDING_PAYMENT, got ${order.status ?? "?"}`);
+      const s = order.status ?? "";
+      if (s !== "PENDING_PAYMENT" && s !== "PENDING" && s !== "PENDING_INFO") {
+        throw new Error(`24h auto-cancel: expected PENDING_PAYMENT|PENDING|PENDING_INFO, got ${s}`);
       }
       if ((order.payment_status ?? "").toLowerCase() === "paid") {
-        throw new Error("Cannot auto-cancel: payment already confirmed");
+        throw new Error("24h auto-cancel: payment already confirmed");
       }
       if (order.slip_url?.trim()) {
-        throw new Error("Cannot auto-cancel: payment slip present");
+        throw new Error("24h auto-cancel: payment slip present");
+      }
+      if (order.created_at.getTime() > cutoff) {
+        throw new Error("24h auto-cancel: order not old enough");
       }
       await restoreVariantStockForOrderItems(tx, order.order_items);
-      const rejectNote = `${AUTO_CANCEL_UNPAID_NOTE}${REJECT_STOCK_NOTE_SUFFIX}`;
+      const rejectNote = `${AUTO_CANCEL_24H_NOTE}${REJECT_STOCK_NOTE_SUFFIX}`;
       await tx.orders.update({
         where: { id: oid },
         data: { status: "CANCELLED", reject_note: rejectNote },
@@ -573,7 +581,7 @@ export async function autoCancelUnpaidOrderAfterReminders(
     return { data: null, error: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[orders-service] autoCancelUnpaidOrderAfterReminders error:", msg);
+    console.error("[orders-service] autoCancelUnpaidOrder24hStale error:", msg);
     return { data: null, error: msg };
   }
 }
