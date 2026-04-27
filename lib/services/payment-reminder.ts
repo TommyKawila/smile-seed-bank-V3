@@ -1,7 +1,8 @@
 /**
- * Statuses: DB `PENDING_PAYMENT` (waiting payment), `PENDING`, `PENDING_INFO` (awaiting info / claim).
- * 24h auto-cancel: `autoCancelUnpaidOrder24hStale` + stock restore. Reminders: LINE/Email only if contact exists.
- * `slip` = `orders.slip_url` empty. L1 = 2h from `created_at` when `notification_level` 0.
+ * `PENDING_PAYMENT` | `PENDING` | `PENDING_INFO`, ไม่มีสลิป, ยังไม่ paid.
+ * แจ้งเตือน: L1=2h / L2=12h / L3=22h จาก `created_at` — ใช้ `notification_level` 1..3 บันทึกขั้นล่าสุด.
+ * 24h+ จาก `created_at` → ยกเลิก + คืน stock; ไม่ส่งข้อความลูกค้า.
+ * ออเดอร์ <24h เท่านั้นที่อยู่ในรอบ reminder; ≥24h อยู่รอบ auto-cancel อย่างเดียว.
  */
 
 import { prisma } from "@/lib/prisma";
@@ -12,28 +13,16 @@ import { autoCancelUnpaidOrder24hStale } from "@/services/orders-service";
 import { pushTextToLineUser } from "@/services/line-messaging";
 
 const MS_HOUR = 60 * 60 * 1000;
+const L1_AGE_MS = 2 * MS_HOUR;
+const L2_AGE_MS = 12 * MS_HOUR;
+const L3_AGE_MS = 22 * MS_HOUR;
 const STALE_24H_MS = 24 * MS_HOUR;
-/** L1: notif 0, created_at &lt; (now - 2h) */
-const FIRST_REMINDER_AFTER_MS = 2 * MS_HOUR;
-const LEVEL_1_TO_2_MS = 12 * MS_HOUR;
-const LEVEL_2_TO_3_MS = 10 * MS_HOUR;
 
-/** PENDING_PAYMENT, PENDING, PENDING_INFO = WAITING_FOR_PAYMENT / รอดำเนินการ / รอข้อมูล */
 export const CRON_ORDER_STATUSES = [
   "PENDING_PAYMENT",
   "PENDING",
   "PENDING_INFO",
 ] as const;
-
-const TEMPLATE_L1 =
-  "ขอบคุณที่สั่งซื้อกับ Smile Seed Bank นะครับ! ออเดอร์ของคุณยังรอดำเนินการชำระเงินอยู่ หากต้องการความช่วยเหลือแจ้งแอดมินได้เลยครับ 🌱";
-const TEMPLATE_L2 =
-  "สินค้าที่คุณเลือกใกล้หมดแล้ว! เราจะล็อกสต็อกไว้ให้คุณอีกไม่นาน หากยังต้องการรับน้องไปดูแล รบกวนแจ้งโอนเงินได้เลยครับ 🚀";
-const TEMPLATE_L3 =
-  "แจ้งเตือนสุดท้าย! ออเดอร์จะถูกยกเลิกอัตโนมัติใน 1 ชม. เพื่อคืนสต็อกให้ลูกค้าท่านอื่น หากโอนไม่ทันต้องขออภัยด้วยนะครับ ⏳";
-
-const AUTO_CANCEL_FINAL_MSG = (orderNumber: string) =>
-  `ออเดอร์ #${orderNumber} ของคุณถูกยกเลิกเนื่องจากเกินกำหนดเวลาชำระเงิน ระบบได้คืนสินค้าเข้าคลังเรียบร้อยแล้ว หากยังสนใจสามารถกดสั่งซื้อใหม่ได้ตลอดเวลาครับ 🌱`;
 
 export type PaymentReminderRunResult = {
   scanned: number;
@@ -49,20 +38,25 @@ function paymentPageUrl(orderNumber: string): string {
   return `${getSiteOrigin()}/payment/${encodeURIComponent(orderNumber)}`;
 }
 
-function tierTemplate(tier: ReminderTier): string {
-  if (tier === 1) return TEMPLATE_L1;
-  if (tier === 2) return TEMPLATE_L2;
-  return TEMPLATE_L3;
+function reminderCopy(tier: ReminderTier, orderNumber: string): string {
+  const id = orderNumber;
+  if (tier === 1) {
+    return `ออเดอร์ #${id} ของคุณยังรอชำระเงินอยู่นะคะ หากติดปัญหาแจ้งแอดมินได้เลยค่ะ`;
+  }
+  if (tier === 2) {
+    return `คุณลูกค้าติดปัญหาในการโอนเงินสำหรับออเดอร์ #${id} หรือเปล่าคะ? สอบถามหรือขอความช่วยเหลือจากแอดมินได้ตลอดนะค้า`;
+  }
+  return `ประกาศเตือนครั้งสุดท้าย! ออเดอร์ #${id} ของคุณจะถูกยกเลิกเพื่อคืนสต็อกให้ลูกค้าท่านอื่นในอีก 2 ชม. หากยังสนใจสินค้า รบกวนแจ้งชำระเงินก่อนระบบจะตัดอัตโนมัตินะคะ`;
 }
 
-function buildFullMessage(tier: ReminderTier, orderNumber: string, payUrl: string): string {
-  return [tierTemplate(tier), "", `ออเดอร์ #${orderNumber}`, payUrl].join("\n");
+function buildReminderMessage(tier: ReminderTier, orderNumber: string): string {
+  return `${reminderCopy(tier, orderNumber)}\n\n${paymentPageUrl(orderNumber)}`;
 }
 
 function emailSubject(tier: ReminderTier): string {
-  if (tier === 1) return "แจ้งเตือนชำระเงิน · Smile Seed Bank";
-  if (tier === 2) return "ด่วน — รอชำระเงิน · Smile Seed Bank";
-  return "แจ้งเตือนสุดท้าย — Smile Seed Bank";
+  if (tier === 1) return "แจ้งเตือนออเดอร์ · Smile Seed Bank";
+  if (tier === 2) return "สอบถามการชำระเงิน · Smile Seed Bank";
+  return "แจ้งเตือนครั้งสุดท้าย · Smile Seed Bank";
 }
 
 function htmlEscape(s: string): string {
@@ -98,27 +92,26 @@ export async function sendEmail(
   });
 }
 
+/**
+ * จาก `created_at` อย่างเดียว: L1 หลัง 2h, L2 หลัง 12h, L3 หลัง 22h; ตรง `notification_level` ก่อน send ถัดไป
+ */
 function computeNextTier(
   notificationLevel: number,
   createdAt: Date | null,
-  lastNotifiedAt: Date | null,
   now: Date
 ): ReminderTier | null {
-  const t = now.getTime();
   if (!createdAt) return null;
-
+  const age = now.getTime() - createdAt.getTime();
   if (notificationLevel === 0) {
-    if (createdAt.getTime() >= t - FIRST_REMINDER_AFTER_MS) return null;
+    if (age < L1_AGE_MS) return null;
     return 1;
   }
   if (notificationLevel === 1) {
-    if (!lastNotifiedAt) return null;
-    if (lastNotifiedAt.getTime() >= t - LEVEL_1_TO_2_MS) return null;
+    if (age < L2_AGE_MS) return null;
     return 2;
   }
   if (notificationLevel === 2) {
-    if (!lastNotifiedAt) return null;
-    if (lastNotifiedAt.getTime() >= t - LEVEL_2_TO_3_MS) return null;
+    if (age < L3_AGE_MS) return null;
     return 3;
   }
   return null;
@@ -141,8 +134,7 @@ async function deliverReminder(opts: {
   tier: ReminderTier;
   orderNumber: string;
 }): Promise<{ ok: boolean; channel: "line" | "email" | "none"; error?: string }> {
-  const payUrl = paymentPageUrl(opts.orderNumber);
-  const fullMessage = buildFullMessage(opts.tier, opts.orderNumber, payUrl);
+  const fullMessage = buildReminderMessage(opts.tier, opts.orderNumber);
   if (opts.lineUserId?.trim()) {
     const r = await sendLineMessage(opts.lineUserId.trim(), fullMessage);
     if (r.success) return { ok: true, channel: "line" };
@@ -153,30 +145,6 @@ async function deliverReminder(opts: {
     return { ok: false, channel: "none", error: r.error ?? "email failed" };
   }
   return { ok: false, channel: "none", error: "no contact" };
-}
-
-async function deliverAutoCancelFinalNotice(opts: {
-  lineUserId: string | null;
-  email: string | null;
-  orderNumber: string;
-}): Promise<{ ok: boolean; channel: "line" | "email" | "skipped"; error?: string }> {
-  const text = AUTO_CANCEL_FINAL_MSG(opts.orderNumber);
-  const line = opts.lineUserId?.trim();
-  if (line) {
-    const r = await sendLineMessage(line, text);
-    if (r.success) return { ok: true, channel: "line" };
-  }
-  const mail = opts.email?.trim();
-  if (mail) {
-    const r = await sendPaymentReminderEmail({
-      toEmail: mail,
-      subject: "ออเดอร์ถูกยกเลิก · Smile Seed Bank",
-      html: plainMessageToEmailHtml(text),
-    });
-    if (r.success) return { ok: true, channel: "email" };
-    return { ok: false, channel: "skipped", error: r.error ?? "email failed" };
-  }
-  return { ok: true, channel: "skipped" };
 }
 
 function unpaidFilter<T extends { payment_status: string | null }>(o: T): boolean {
@@ -192,61 +160,13 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
     errors: [],
   };
 
-  const createdBefore = new Date(now.getTime() - STALE_24H_MS);
-  const staleBatch = await prisma.orders.findMany({
-    where: {
-      status: { in: [...CRON_ORDER_STATUSES] },
-      created_at: { lt: createdBefore },
-      OR: [{ slip_url: null }, { slip_url: "" }],
-    },
-    include: {
-      customers: { select: { email: true, line_user_id: true } },
-    },
-  });
-
-  for (const order of staleBatch) {
-    if (order.slip_url?.trim() || !unpaidFilter(order)) {
-      continue;
-    }
-
-    result.scanned += 1;
-    const cancelled = await autoCancelUnpaidOrder24hStale(Number(order.id), now);
-    if (cancelled.error) {
-      result.errors.push({ orderId: String(order.id), message: `24h auto-cancel: ${cancelled.error}` });
-      continue;
-    }
-
-    result.autoCancelled += 1;
-
-    const { line, email } = resolveContact(order);
-    const n = await deliverAutoCancelFinalNotice({
-      lineUserId: line,
-      email,
-      orderNumber: order.order_number,
-    });
-    if (!n.ok) {
-      result.errors.push({
-        orderId: String(order.id),
-        message: n.error ?? "24h final notify failed",
-      });
-    }
-
-    await createOrderLog({
-      orderId: Number(order.id),
-      action: "PAYMENT_AUTO_CANCEL",
-      messageContent:
-        n.channel === "skipped"
-          ? `24h; stock restored; final notice skipped (no LINE/email) @ ${now.toISOString()}`
-          : n.ok
-            ? `24h; stock restored; final notice ${n.channel} @ ${now.toISOString()}`
-            : `24h; stock restored; final notice failed: ${n.error ?? "?"}`,
-    });
-  }
+  const cutoff24h = new Date(now.getTime() - STALE_24H_MS);
 
   const rows = await prisma.orders.findMany({
     where: {
       status: { in: [...CRON_ORDER_STATUSES] },
       notification_level: { lt: 3 },
+      created_at: { gte: cutoff24h },
       OR: [{ slip_url: null }, { slip_url: "" }],
     },
     include: {
@@ -268,12 +188,7 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
       continue;
     }
 
-    const next = computeNextTier(
-      order.notification_level,
-      order.created_at,
-      order.last_notified_at,
-      now
-    );
+    const next = computeNextTier(order.notification_level, order.created_at, now);
     if (!next) {
       result.skipped += 1;
       continue;
@@ -306,10 +221,42 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
     await createOrderLog({
       orderId: Number(order.id),
       action: "PAYMENT_REMINDER",
-      messageContent: `tier ${next} via ${out.channel} @ ${at.toISOString()}`,
+      messageContent: `L${next} (notification_level=${next}) via ${out.channel} @ ${at.toISOString()}`,
     });
 
     result.sent += 1;
+  }
+
+  const staleBatch = await prisma.orders.findMany({
+    where: {
+      status: { in: [...CRON_ORDER_STATUSES] },
+      created_at: { lt: cutoff24h },
+      OR: [{ slip_url: null }, { slip_url: "" }],
+    },
+    include: {
+      customers: { select: { email: true, line_user_id: true } },
+    },
+  });
+
+  for (const order of staleBatch) {
+    if (order.slip_url?.trim() || !unpaidFilter(order)) {
+      continue;
+    }
+
+    result.scanned += 1;
+    const cancelled = await autoCancelUnpaidOrder24hStale(Number(order.id), now);
+    if (cancelled.error) {
+      result.errors.push({ orderId: String(order.id), message: `24h auto-cancel: ${cancelled.error}` });
+      continue;
+    }
+
+    result.autoCancelled += 1;
+
+    await createOrderLog({
+      orderId: Number(order.id),
+      action: "PAYMENT_AUTO_CANCEL",
+      messageContent: `24h; stock restored; CANCELLED (no customer message) @ ${now.toISOString()}`,
+    });
   }
 
   return result;
