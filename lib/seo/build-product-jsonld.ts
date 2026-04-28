@@ -6,6 +6,7 @@ import {
   productDetailHref,
 } from "@/lib/product-utils";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
+import { SHIPPING_ADMIN_DEFAULT_FEE } from "@/lib/validations/shipping-admin";
 import type { ProductFull } from "@/types/supabase";
 
 /** Lab-style readouts for AIO / LLM parsing (plain text, not font-specific). */
@@ -40,6 +41,52 @@ export function buildProductJsonLd(product: ProductFull, siteOrigin: string): Re
   const availability =
     totalStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
 
+  const offerId = `${productUrl}#offer`;
+  const validUntil = new Date();
+  validUntil.setFullYear(validUntil.getFullYear() + 1);
+  const priceValidUntil = validUntil.toISOString().slice(0, 10);
+
+  const shippingDetails = {
+    "@type": "OfferShippingDetails",
+    shippingDestination: {
+      "@type": "DefinedRegion",
+      addressCountry: "TH",
+    },
+    shippingRate: {
+      "@type": "MonetaryAmount",
+      value: String(SHIPPING_ADMIN_DEFAULT_FEE),
+      currency: "THB",
+    },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: {
+        "@type": "QuantitativeValue",
+        minValue: 1,
+        maxValue: 2,
+        unitText: "DAY",
+      },
+      transitTime: {
+        "@type": "QuantitativeValue",
+        minValue: 1,
+        maxValue: 7,
+        unitText: "DAY",
+      },
+    },
+    name: "Standard shipping (Thailand)",
+  };
+
+  const hasMerchantReturnPolicy = {
+    "@type": "MerchantReturnPolicy",
+    "@id": `${siteOrigin}/#merchant-return-policy-seeds`,
+    applicableCountry: "TH",
+    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+    merchantReturnDays: 7,
+    returnMethod: "https://schema.org/ReturnByMail",
+    returnFees: "https://schema.org/FreeReturn",
+    name: "Seeds are not returnable for change of mind; contact us within 7 days for damaged or incorrect shipments.",
+    url: `${siteOrigin}/terms`,
+  };
+
   const additionalProperty: Record<string, unknown>[] = [];
   if (product.thc_percent != null && Number.isFinite(Number(product.thc_percent))) {
     additionalProperty.push({
@@ -66,9 +113,14 @@ export function buildProductJsonLd(product: ProductFull, siteOrigin: string): Re
 
   const offers: Record<string, unknown> = {
     "@type": "Offer",
+    "@id": offerId,
     url: productUrl,
+    itemCondition: "https://schema.org/NewCondition",
     priceCurrency: "THB",
+    priceValidUntil,
     availability,
+    shippingDetails: [shippingDetails],
+    hasMerchantReturnPolicy,
     seller: {
       "@type": "Organization",
       name: "Smile Seed Bank",
