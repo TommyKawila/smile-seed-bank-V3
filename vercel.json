@@ -4,6 +4,3 @@
       "path": "/api/cron/remind-payment",
       "schedule": "0 0 * * *"
     }
-  ]
-}
-   

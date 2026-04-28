@@ -23,8 +23,18 @@ import {
   Search,
   BarChart3,
   ChevronRight,
+  LineChart,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+const LOOKER_STUDIO_EMBED_SRC =
+  "https://datastudio.google.com/embed/reporting/ff254623-e183-4f49-a0a5-af491cd2deda/page/DFZwF";
 import {
   Select,
   SelectContent,
@@ -278,6 +288,30 @@ export default function AdminDashboardPage() {
           </Card>
         </>
       ) : null}
+
+      <Card className="border-zinc-200/80 shadow-sm">
+        <CardHeader className="pb-2 pt-4 sm:pt-6">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold text-zinc-800 sm:text-base">
+            <LineChart className="h-4 w-4 text-primary" aria-hidden />
+            Website traffic & keywords
+          </CardTitle>
+          <CardDescription className="text-[11px] text-zinc-500 sm:text-xs">
+            Looker Studio — live report (may require Google sign-in for your workspace).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-3 pb-3 pt-0 sm:px-6 sm:pb-6">
+          <div className="overflow-hidden rounded-xl border border-zinc-200/90 bg-zinc-50/50 shadow-inner">
+            <iframe
+              title="Looker Studio — Website traffic and keywords"
+              src={LOOKER_STUDIO_EMBED_SRC}
+              className="block h-[min(80vh,800px)] w-full min-h-[400px] rounded-xl border-0 bg-white"
+              loading="lazy"
+              allowFullScreen
+              sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
