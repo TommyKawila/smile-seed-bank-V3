@@ -180,15 +180,41 @@ function buildShippingLabelText(o: AdminOrder): string {
   return `${name}\n${phone}\n${addr}`;
 }
 
+function packingListProductLines(o: AdminOrder): string[] {
+  if ((o.line_items?.length ?? 0) === 0) return ["(no items)"];
+  return (o.line_items ?? []).map(
+    (li) => `${li.product_name} x ${li.quantity} pack(s)`
+  );
+}
+
+/** English-style packing list (copy for warehouse). */
 function buildOrderSummaryText(o: AdminOrder): string {
-  const lines =
-    (o.line_items?.length ?? 0) > 0
-      ? (o.line_items ?? []).map((li) => formatAdminOrderLineSummary(li))
-      : ["(no items)"];
   const note = (o.customer_note ?? "").trim();
   return [
     `Order: #${o.order_number}`,
     "------------------",
+    ...packingListProductLines(o),
+    "------------------",
+    `Note: ${note || "—"}`,
+  ].join("\n");
+}
+
+/** Thai header + address + order lines for courier / packing. */
+function buildAddressAndPackingListText(o: AdminOrder): string {
+  const name = o.customer_name?.trim() || "—";
+  const phone = o.customer_phone?.trim() || "—";
+  const addr = o.shipping_address?.trim() || "—";
+  const note = (o.customer_note ?? "").trim();
+  const lines =
+    (o.line_items?.length ?? 0) === 0
+      ? ["(no items)"]
+      : (o.line_items ?? []).map((li) => `${li.product_name} x ${li.quantity}`);
+  return [
+    `คุณ ${name} (${phone})`,
+    addr,
+    "------------------",
+    `Order: #${o.order_number}`,
+    "รายการ:",
     ...lines,
     "------------------",
     `Note: ${note || "—"}`,
@@ -862,7 +888,7 @@ export default function AdminMobileOrdersPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
-                    className="h-10 rounded-xl border-0 bg-zinc-100 text-zinc-700 shadow-none hover:bg-zinc-200"
+                    className="h-11 min-h-[44px] flex-col gap-0 rounded-xl border-0 bg-zinc-100 px-1 py-1.5 text-center text-xs font-medium leading-tight text-zinc-700 shadow-none hover:bg-zinc-200 sm:text-[13px]"
                     onClick={() =>
                       void copyOrderText(
                         buildShippingLabelText(o),
@@ -870,12 +896,12 @@ export default function AdminMobileOrdersPage() {
                       )
                     }
                   >
-                    <Copy className="mr-1.5 h-4 w-4 shrink-0" />
+                    <Copy className="mx-auto mb-0.5 h-4 w-4 shrink-0" />
                     คัดลอกที่อยู่ (Label)
                   </Button>
                   <Button
                     type="button"
-                    className="h-10 rounded-xl border-0 bg-zinc-100 text-zinc-700 shadow-none hover:bg-zinc-200"
+                    className="h-11 min-h-[44px] flex-col gap-0 rounded-xl border-0 bg-zinc-100 px-1 py-1.5 text-center text-xs font-medium leading-tight text-zinc-700 shadow-none hover:bg-zinc-200 sm:text-[13px]"
                     onClick={() =>
                       void copyOrderText(
                         buildOrderSummaryText(o),
@@ -883,8 +909,21 @@ export default function AdminMobileOrdersPage() {
                       )
                     }
                   >
-                    <Copy className="mr-1.5 h-4 w-4 shrink-0" />
+                    <Copy className="mx-auto mb-0.5 h-4 w-4 shrink-0" />
                     คัดลอกใบจัดของ (Summary)
+                  </Button>
+                  <Button
+                    type="button"
+                    className="col-span-2 h-11 min-h-[44px] rounded-xl border border-emerald-700/40 bg-emerald-900/30 text-sm font-semibold text-emerald-100 shadow-none hover:bg-emerald-900/50"
+                    onClick={() =>
+                      void copyOrderText(
+                        buildAddressAndPackingListText(o),
+                        "Address + packing list copied"
+                      )
+                    }
+                  >
+                    <Copy className="mr-2 h-4 w-4 shrink-0" />
+                    คัดลอกที่อยู่ + ใบจัดของ
                   </Button>
                 </div>
               </div>

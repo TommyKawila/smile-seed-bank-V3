@@ -41,12 +41,12 @@ function paymentPageUrl(orderNumber: string): string {
 function reminderCopy(tier: ReminderTier, orderNumber: string): string {
   const id = orderNumber;
   if (tier === 1) {
-    return `ออเดอร์ #${id} ของคุณยังรอชำระเงินอยู่นะคะ หากติดปัญหาแจ้งแอดมินได้เลยค่ะ`;
+    return `ออเดอร์ #${id} ของคุณยังรอชำระเงินอยู่นะคะ หากติดปัญหาแจ้งแอดมินได้เลยค่ะ\n\nYour order #${id} is awaiting payment. Please let us know if you need any assistance!`;
   }
   if (tier === 2) {
-    return `คุณลูกค้าติดปัญหาในการโอนเงินสำหรับออเดอร์ #${id} หรือเปล่าคะ? สอบถามหรือขอความช่วยเหลือจากแอดมินได้ตลอดนะค้า`;
+    return `คุณลูกค้าติดปัญหาในการโอนเงินหรือเปล่าคะ? สอบถามหรือขอความช่วยเหลือจากแอดมินได้ตลอดนะคะ\n\nAre you having any trouble completing your payment? We're here to help if you need anything!`;
   }
-  return `ประกาศเตือนครั้งสุดท้าย! ออเดอร์ #${id} ของคุณจะถูกยกเลิกเพื่อคืนสต็อกให้ลูกค้าท่านอื่นในอีก 2 ชม. หากยังสนใจสินค้า รบกวนแจ้งชำระเงินก่อนระบบจะตัดอัตโนมัตินะคะ`;
+  return `ประกาศเตือนสุดท้าย! ออเดอร์ #${id} จะถูกยกเลิกในอีก 2 ชม. เพื่อคืนสต็อก หากยังต้องการสินค้า รบกวนชำระเงินก่อนระบบตัดอัตโนมัตินะคะ\n\nFinal Notice! Order #${id} will be cancelled in 2 hours to release stock. Please complete your payment to secure your items.`;
 }
 
 function buildReminderMessage(tier: ReminderTier, orderNumber: string): string {
