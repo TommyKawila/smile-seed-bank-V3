@@ -19,6 +19,7 @@
 ### บันทึกการทำงาน — 2026-04-28
 - **Product JSON-LD (GSC / rich results)** — `lib/seo/build-product-jsonld.ts`: Offer `@id`, `itemCondition`, `priceValidUntil`, `shippingDetails` (TH), `hasMerchantReturnPolicy` (7-day window, TH); no fabricated `aggregateRating`.
 - **Mobile admin packing copy** — `lib/admin-order-line-summary.ts` `formatAdminOrderPackingCopyLine`; `app/admin/m/page.tsx` `packingListProductLines` + `buildAddressAndPackingListText` ใช้บรรทัดเดียวกับ UI (`breeder` + `adminOrderLineItemSeedTypeLabel` + ` x N pack(s)`).
+- **Slip upload / 24h auto-cancel hardening** — `lib/services/order-service.ts` `uploadSlip` รับเฉพาะ `PENDING`/`PENDING_PAYMENT` ที่ยัง unpaid และอัปเดตแบบ conditional; `services/orders-service.ts` `autoCancelUnpaidOrder24hStale` claim สถานะก่อนคืนสต็อกเพื่อกัน race กับสลิป.
 
 ### บันทึกการทำงาน — 2026-04-22
 - **Homepage layout — breeder split + cache:** New DB key `breeder_showcase` (Featured Breeders Grid / `BreederShowcase`); `breeders` = Top Breeders Bar / `BreederRibbon`; `categories` = standalone `QuickCategoryNav`; `hero` = banner only. Migration `20260422120000_homepage_breeder_showcase` + label UPDATE. Storefront `unstable_cache` tag `home-layout`; `PATCH /api/admin/settings/homepage` → `revalidatePath('/')` + `revalidateTag('home-layout')`; `orderBy` `[sort_order, key]`. Admin homepage hints + preview image for `breeder_showcase`.

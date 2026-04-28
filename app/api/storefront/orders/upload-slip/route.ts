@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
         error === "Order not found" ? 404
         : error === "Slip already uploaded" ? 400
         : error === "This order does not require slip upload" ? 400
+        : error === "Order is no longer awaiting payment" ? 409
         : 500;
       return NextResponse.json({ error }, { status });
     }
