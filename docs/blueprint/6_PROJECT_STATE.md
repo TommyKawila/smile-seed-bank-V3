@@ -5,6 +5,7 @@
 ---
 
 ### บันทึกการทำงาน — 2026-04-25
+- **Admin order line items — breeder & seed type** — `services/orders-service.ts` `attachOrderLineItems`: JOIN `products` via `COALESCE(oi.product_id, pv.product_id)`; `lib/services/order-service.ts` checkout `createMany` ใส่ `product_id` + `unit_label`; order success SQL เดียวกัน; `lib/seed-type-filter.ts` `adminOrderLineFloweringLabel`; `lib/load-admin-order-detail.ts` โหลด variant ก่อน + `seedTypeLabel` / `resolvedProductId`; `app/admin/m/page.tsx` + `app/admin/orders/page.tsx` รูปแบบสรุปรายการ
 - **Admin dashboard — Looker Studio embed** — `app/admin/dashboard/page.tsx`: Card **Website traffic & keywords**; responsive iframe `min(80vh,800px)` + `min-h-[400px]`, sandbox attrs, `LOOKER_STUDIO_EMBED_SRC` constant.
 - **Payment reminder + auto-cancel** — `lib/services/payment-reminder.ts`: สแกน `PENDING_PAYMENT` / `PENDING` / `PENDING_INFO`; L1=2h / L2=12h / L3=22h จาก `created_at` → ตั้ง `notification_level` 1–3; แจ้งเฉพาะมี LINE/email + ลิงก์ชำระ; ออเดอร์ ≥24h จาก `created_at` (รอบ 2) → `autoCancelUnpaidOrder24hStale` ไม่ส่งข้อความลูกค้า. Cron route ส่ง `scanned` / `sent` / `autoCancelled`.
 - **Prisma `orders` notification tracking** — `notification_level` (Int, default 0), `last_notified_at` (DateTime?); migration `20260425120000_orders_notification_tracking`.

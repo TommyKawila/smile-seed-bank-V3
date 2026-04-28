@@ -20,6 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAdminOrders, type AdminOrder } from "@/hooks/useAdminOrders";
 import { formatPrice } from "@/lib/utils";
+import { adminOrderLineSeedsPart, formatAdminOrderLineSummary } from "@/lib/admin-order-line-summary";
+import { adminOrderLineFloweringLabel } from "@/lib/seed-type-filter";
+import type { AdminOrderLineItem } from "@/types/admin-order";
 import { cn } from "@/lib/utils";
 import { openPackingSlipPrint } from "@/components/admin/PackingSlipPrint";
 import {
@@ -110,6 +113,26 @@ const PAYMENT_LABELS: Record<string, string> = {
   CRYPTO: "คริปโต",
 };
 
+function formatAdminOrderDetailItemSummary(item: {
+  productName: string;
+  unitLabel: string;
+  quantity: number;
+  breederName: string | null;
+  seedTypeLabel?: string | null;
+}): string {
+  const seedsPart = adminOrderLineSeedsPart({
+    unit_label: item.unitLabel && item.unitLabel !== "—" ? item.unitLabel : null,
+    variant_unit_label: null,
+    quantity: item.quantity,
+  });
+  const breeder = item.breederName?.trim() || "—";
+  const seedType =
+    item.seedTypeLabel?.trim() && item.seedTypeLabel !== "—"
+      ? item.seedTypeLabel.trim()
+      : adminOrderLineFloweringLabel(item.productName, null);
+  return `${item.productName} (${seedsPart}) — ${breeder} (${seedType})`;
+}
+
 function buildLineFlexJsonFromOrderDetail(d: {
   orderNumber: string;
   customerName: string | null;
@@ -118,7 +141,7 @@ function buildLineFlexJsonFromOrderDetail(d: {
   totalAmount: number;
   shippingFee: number;
   discountAmount: number;
-  items: { productName: string; unitLabel: string; breederName: string | null; quantity: number; totalPrice: number }[];
+  items: { productName: string; unitLabel: string; breederName: string | null; seedTypeLabel?: string | null; quantity: number; totalPrice: number }[];
 }): string {
   const origin = getSiteOrigin();
   const on = encodeURIComponent(d.orderNumber);
@@ -383,6 +406,24 @@ function OrderCard({
           </span>
         </div>
 
+        {(order.line_items?.length ?? 0) > 0 ? (
+          <div className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50/90 px-2.5 py-2">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+              รายการ
+            </p>
+            <div className="space-y-1.5 text-[11px] leading-snug text-zinc-700">
+              {(order.line_items ?? []).slice(0, 3).map((li, idx) => (
+                <p key={idx} className="line-clamp-2" title={formatAdminOrderLineSummary(li as AdminOrderLineItem)}>
+                  {formatAdminOrderLineSummary(li as AdminOrderLineItem)}
+                </p>
+              ))}
+              {(order.line_items ?? []).length > 3 ? (
+                <p className="text-zinc-400">+{(order.line_items ?? []).length - 3} รายการ</p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
         {/* Reject note */}
         {order.status === "CANCELLED" && order.reject_note && (
           <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
@@ -574,6 +615,26 @@ function OrderTableRow({
           <span className="text-zinc-700">{order.customer_name ?? "—"}</span>
         </button>
       </td>
+      <td className="max-w-[min(280px,32vw)] px-4 py-3 align-top text-xs text-zinc-600">
+        {(order.line_items?.length ?? 0) === 0 ? (
+          <span className="text-zinc-400">—</span>
+        ) : (
+          <div className="space-y-1">
+            {(order.line_items ?? []).slice(0, 2).map((li, idx) => (
+              <p
+                key={idx}
+                className="line-clamp-2 leading-snug"
+                title={formatAdminOrderLineSummary(li as AdminOrderLineItem)}
+              >
+                {formatAdminOrderLineSummary(li as AdminOrderLineItem)}
+              </p>
+            ))}
+            {(order.line_items ?? []).length > 2 ? (
+              <p className="text-[11px] text-zinc-400">+{(order.line_items ?? []).length - 2} รายการ</p>
+            ) : null}
+          </div>
+        )}
+      </td>
       <td className="px-4 py-3 font-bold text-primary">
         {formatPrice(Number(order.total_amount))}
       </td>
@@ -738,7 +799,7 @@ type OrderDetail = {
   paymentMethod: string | null;
   createdAt: string;
   lineUserId?: string | null;
-  items: { productName: string; unitLabel: string; breederName: string | null; quantity: number; unitPrice: number; totalPrice: number }[];
+  items: { productName: string; unitLabel: string; breederName: string | null; seedTypeLabel?: string | null; quantity: number; unitPrice: number; totalPrice: number }[];
   activityLogs?: {
     id: string;
     orderId: number;
@@ -1439,6 +1500,7 @@ export default function AdminOrdersPage() {
                 <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   <th className="px-4 py-3">เลขออเดอร์</th>
                   <th className="px-4 py-3">ลูกค้า</th>
+                  <th className="px-4 py-3">รายการ</th>
                   <th className="px-4 py-3">ยอด</th>
                   <th className="px-4 py-3">ช่องทาง</th>
                   <th className="px-4 py-3">สถานะ</th>
@@ -1640,13 +1702,7 @@ export default function AdminOrdersPage() {
                 <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
                   {detailModal.items.map((item, i) => (
                     <div key={i} className="flex justify-between gap-2 text-sm">
-                      <span className="min-w-0 text-zinc-800">
-                        {item.productName} ({item.unitLabel})
-                        {item.breederName && (
-                          <span className="ml-1 text-xs text-zinc-500">— {item.breederName}</span>
-                        )}
-                        <span className="text-zinc-600"> × {item.quantity}</span>
-                      </span>
+                      <span className="min-w-0 text-zinc-800">{formatAdminOrderDetailItemSummary(item)}</span>
                       <span className="shrink-0 font-medium text-primary">{formatPrice(item.totalPrice)}</span>
                     </div>
                   ))}

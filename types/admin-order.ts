@@ -8,5 +8,10 @@ export type AdminOrderLineItem = {
   variant_unit_label: string | null;
   subtotal: number | null;
   breeder_name: string;
+  /** DB `products.flowering_type` — autoflower | photoperiod | photo_ff | … */
   flowering_type: string | null;
+  /** Legacy `products.category` (optional on older API payloads) */
+  category?: string | null;
+  /** `product_categories.name` */
+  product_category_name?: string | null;
 };

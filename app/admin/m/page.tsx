@@ -15,8 +15,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
-import { parsePackFromUnitLabel } from "@/lib/sku-utils";
-import { productCardFloweringChipLabel } from "@/lib/seed-type-filter";
+import { formatAdminOrderLineSummary } from "@/lib/admin-order-line-summary";
 import { orderIsReadyToShip, orderIsPaymentReceived } from "@/lib/order-paid";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -174,32 +173,6 @@ function loginInsightKind(o: AdminOrder): "guest" | "line" | "google" {
   return "google";
 }
 
-function lineItemSeedsLabel(li: AdminOrderLineItem): string {
-  const effectiveForPack =
-    li.unit_label?.trim() || li.variant_unit_label?.trim() || "";
-  if (effectiveForPack.length === 0) return "—";
-  return `${parsePackFromUnitLabel(effectiveForPack)} เมล็ด`;
-}
-
-/** Same bucketing as product grid cards (PHOTO / AUTO + FF name hints) → short Auto / Photo / … */
-const CHIP_TO_TYPE_SHORT: Record<string, string> = {
-  AUTO: "Auto",
-  PHOTO: "Photo",
-  "PHOTO FF": "Photo FF",
-  "PHOTO 3N": "Photo 3N",
-};
-
-function orderLineFloweringTypeDisplay(li: AdminOrderLineItem): string {
-  const chip = productCardFloweringChipLabel({
-    name: li.product_name,
-    flowering_type: li.flowering_type,
-    category: null,
-    product_categories: null,
-  });
-  if (!chip) return "—";
-  return CHIP_TO_TYPE_SHORT[chip] ?? chip;
-}
-
 function buildShippingLabelText(o: AdminOrder): string {
   const name = o.customer_name?.trim() || "—";
   const phone = o.customer_phone?.trim() || "—";
@@ -210,15 +183,7 @@ function buildShippingLabelText(o: AdminOrder): string {
 function buildOrderSummaryText(o: AdminOrder): string {
   const lines =
     (o.line_items?.length ?? 0) > 0
-      ? (o.line_items ?? []).map((li) => {
-          const bre =
-            li.breeder_name?.trim() && li.breeder_name.trim() !== "—"
-              ? li.breeder_name.trim()
-              : "—";
-          return `${bre} - ${li.product_name} x ${li.quantity} (${lineItemSeedsLabel(
-            li
-          )}) (${orderLineFloweringTypeDisplay(li)})`;
-        })
+      ? (o.line_items ?? []).map((li) => formatAdminOrderLineSummary(li))
       : ["(no items)"];
   const note = (o.customer_note ?? "").trim();
   return [
@@ -735,25 +700,10 @@ export default function AdminMobileOrdersPage() {
                     const effectiveForPack =
                       li.unit_label?.trim() || li.variant_unit_label?.trim() || "";
                     const showSeedCount = effectiveForPack.length > 0;
-                    const seedsText = showSeedCount
-                      ? `${parsePackFromUnitLabel(effectiveForPack)} เมล็ด`
-                      : "—";
-                    const typeText = orderLineFloweringTypeDisplay(li);
-                    const bre =
-                      li.breeder_name?.trim() && li.breeder_name.trim() !== "—"
-                        ? li.breeder_name.trim()
-                        : null;
                     return (
                       <div key={idx} className="py-1.5 font-sans first:pt-1 last:pb-1">
-                        {bre ? (
-                          <p className="text-[10px] font-normal uppercase leading-tight tracking-wide text-zinc-500">
-                            {bre}
-                          </p>
-                        ) : null}
                         <p className="font-sans text-[11px] leading-snug text-zinc-200">
-                          <span className="text-zinc-200">{li.product_name}</span>
-                          <span className="text-zinc-400"> ({seedsText})</span>
-                          <span className="text-zinc-500"> ({typeText})</span>
+                          {formatAdminOrderLineSummary(li)}
                         </p>
                         <div className="mt-0.5 flex items-center justify-between gap-2 text-[10px] text-zinc-400">
                           <span>

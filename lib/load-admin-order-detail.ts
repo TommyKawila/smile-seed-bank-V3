@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { adminOrderLineItemSeedTypeLabel } from "@/lib/seed-type-filter";
 
 function breederNameFromRelation(breeders: unknown): string | null {
   if (breeders == null) return null;
@@ -40,6 +41,7 @@ export type AdminOrderDetailPayload = {
     productName: string;
     unitLabel: string;
     breederName: string | null;
+    seedTypeLabel: string;
     imageUrl: string | null;
     quantity: number;
     unitPrice: number;
@@ -61,18 +63,7 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
 
   if (!order) return null;
 
-  const productIds = [...new Set(order.order_items.map((i) => i.product_id).filter(Boolean))] as bigint[];
   const variantIds = [...new Set(order.order_items.map((i) => i.variant_id).filter(Boolean))] as bigint[];
-  const products =
-    productIds.length > 0
-      ? await prisma.products.findMany({
-          where: { id: { in: productIds } },
-          select: { id: true, image_url: true, image_urls: true, breeders: { select: { name: true } } },
-        })
-      : [];
-  const breederByProductId = new Map(
-    products.map((p) => [p.id, breederNameFromRelation((p as { breeders?: unknown }).breeders)])
-  );
   const variants =
     variantIds.length > 0
       ? await prisma.product_variants.findMany({
@@ -81,11 +72,48 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
             id: true,
             unit_label: true,
             product_id: true,
-            products: { select: { breeders: { select: { name: true } } } },
+            products: {
+              select: {
+                flowering_type: true,
+                category: true,
+                product_categories: { select: { name: true } },
+                breeders: { select: { name: true } },
+              },
+            },
           },
         })
       : [];
   const variantRowById = new Map(variants.map((v) => [v.id, v]));
+
+  const productIdSet = new Set<bigint>();
+  for (const i of order.order_items) {
+    if (i.product_id) productIdSet.add(i.product_id);
+    else if (i.variant_id) {
+      const v = variantRowById.get(i.variant_id);
+      if (v?.product_id) productIdSet.add(v.product_id);
+    }
+  }
+  const productIds = [...productIdSet];
+
+  const products =
+    productIds.length > 0
+      ? await prisma.products.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            image_url: true,
+            image_urls: true,
+            flowering_type: true,
+            category: true,
+            product_categories: { select: { name: true } },
+            breeders: { select: { name: true } },
+          },
+        })
+      : [];
+  const breederByProductId = new Map(
+    products.map((p) => [p.id, breederNameFromRelation((p as { breeders?: unknown }).breeders)])
+  );
+  const productById = new Map(products.map((p) => [p.id, p]));
   const imageByProductId = new Map(
     products.map((p) => {
       const img =
@@ -108,10 +136,23 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
   const items = order.order_items.map((i) => {
     const vid = i.variant_id ?? null;
     const vrow = vid ? variantRowById.get(vid) : undefined;
+    const resolvedProductId = i.product_id ?? vrow?.product_id ?? null;
     const breederFromProduct =
-      i.product_id != null ? breederByProductId.get(i.product_id) ?? null : null;
+      resolvedProductId != null ? breederByProductId.get(resolvedProductId) ?? null : null;
     const breederFromVariant = vrow ? breederNameFromRelation(vrow.products?.breeders) : null;
     const breederName = breederFromProduct ?? breederFromVariant;
+    const prodRow = resolvedProductId != null ? productById.get(resolvedProductId) : undefined;
+    const vprod = vrow?.products;
+    const floweringType = prodRow?.flowering_type ?? vprod?.flowering_type ?? null;
+    const category = prodRow?.category ?? vprod?.category ?? null;
+    const productCategoryName =
+      prodRow?.product_categories?.name ?? vprod?.product_categories?.name ?? null;
+    const seedTypeLabel = adminOrderLineItemSeedTypeLabel({
+      product_name: i.product_name,
+      flowering_type: floweringType,
+      category,
+      product_category_name: productCategoryName,
+    });
     const unitLabel =
       (i.unit_label?.trim() && i.unit_label.trim().length > 0
         ? i.unit_label.trim()
@@ -121,7 +162,8 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
       productName: i.product_name,
       unitLabel,
       breederName,
-      imageUrl: i.product_id ? imageByProductId.get(i.product_id) ?? null : null,
+      seedTypeLabel,
+      imageUrl: resolvedProductId ? imageByProductId.get(resolvedProductId) ?? null : null,
       quantity: i.quantity,
       unitPrice: Number(i.unit_price),
       totalPrice: Number(i.total_price ?? 0) || Number(i.unit_price) * i.quantity,

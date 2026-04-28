@@ -246,3 +246,43 @@ export function productCardFloweringChipLabel(product: {
   const raw = product.flowering_type?.trim() ?? "";
   return raw ? raw.replace(/-/g, " ").toUpperCase() : null;
 }
+
+const ADMIN_ORDER_FLOWERING_SHORT: Record<string, string> = {
+  AUTO: "Autoflower",
+  PHOTO: "Photoperiod",
+  "PHOTO FF": "Photoperiod FF",
+  "PHOTO 3N": "Photoperiod 3N",
+};
+
+/**
+ * Admin order lines — prefers `products.flowering_type`; falls back to `products.category` /
+ * `product_categories.name` per `productCardFloweringChipLabel` (see Prisma `products` model).
+ */
+export function adminOrderLineItemSeedTypeLabel(item: {
+  product_name: string;
+  flowering_type: string | null;
+  category?: string | null;
+  product_category_name?: string | null;
+}): string {
+  const chip = productCardFloweringChipLabel({
+    name: item.product_name,
+    flowering_type: item.flowering_type,
+    category: item.category ?? null,
+    product_categories: item.product_category_name
+      ? { name: item.product_category_name }
+      : null,
+  });
+  if (!chip) return "—";
+  return ADMIN_ORDER_FLOWERING_SHORT[chip] ?? chip;
+}
+
+/** Name + `flowering_type` only (no category fallback). */
+export function adminOrderLineFloweringLabel(
+  productName: string,
+  floweringType: string | null | undefined
+): string {
+  return adminOrderLineItemSeedTypeLabel({
+    product_name: productName,
+    flowering_type: floweringType ?? null,
+  });
+}

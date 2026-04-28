@@ -167,12 +167,13 @@ export async function createOrder(
     const variantIds = [...new Set(items.map((i) => i.variantId))];
     const variantRows = await prisma.product_variants.findMany({
       where: { id: { in: variantIds.map((id) => BigInt(id)) } },
-      select: { id: true, cost_price: true },
+      select: { id: true, cost_price: true, product_id: true, unit_label: true },
     });
     if (variantRows.length !== variantIds.length) {
       return { data: null, error: "One or more products are no longer available" };
     }
 
+    const variantById = new Map(variantRows.map((v) => [Number(v.id), v]));
     const costMap = new Map(
       variantRows.map((v) => [Number(v.id), v.cost_price != null ? Number(v.cost_price) : 0])
     );
@@ -259,14 +260,19 @@ export async function createOrder(
           });
 
           await tx.order_items.createMany({
-            data: items.map((item) => ({
-              order_id: order.id,
-              variant_id: BigInt(item.variantId),
-              product_name: item.productName || "Unknown",
-              quantity: item.quantity,
-              unit_price: new Prisma.Decimal(item.price),
-              unit_cost: new Prisma.Decimal(costMap.get(item.variantId) ?? 0),
-            })),
+            data: items.map((item) => {
+              const vr = variantById.get(item.variantId);
+              return {
+                order_id: order.id,
+                product_id: vr?.product_id ?? null,
+                variant_id: BigInt(item.variantId),
+                product_name: item.productName || "Unknown",
+                quantity: item.quantity,
+                unit_price: new Prisma.Decimal(item.price),
+                unit_cost: new Prisma.Decimal(costMap.get(item.variantId) ?? 0),
+                unit_label: vr?.unit_label ?? null,
+              };
+            }),
           });
 
           if (promo_code_id) {
@@ -448,9 +454,9 @@ export async function getOrderForSuccessView(
         NULLIF(TRIM(b.name::text), '') AS breeder_name,
         p.flowering_type
       FROM order_items oi
-      LEFT JOIN products p ON p.id = oi.product_id
-      LEFT JOIN breeders b ON b.id = p.breeder_id
       LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+      LEFT JOIN products p ON p.id = COALESCE(oi.product_id, pv.product_id)
+      LEFT JOIN breeders b ON b.id = p.breeder_id
       WHERE oi.order_id = ${order.id}
       ORDER BY oi.id ASC
     `;

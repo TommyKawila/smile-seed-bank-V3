@@ -111,6 +111,8 @@ async function attachOrderLineItems(rows: AdminOrderRow[]): Promise<AdminOrderRo
     subtotal: unknown;
     breeder_name: string | null;
     flowering_type: string | null;
+    category: string | null;
+    product_category_name: string | null;
   };
   const lines = await sql<LineSql[]>`
     SELECT
@@ -122,11 +124,14 @@ async function attachOrderLineItems(rows: AdminOrderRow[]): Promise<AdminOrderRo
       pv.unit_label AS variant_unit_label,
       oi.subtotal,
       COALESCE(b.name, '') AS breeder_name,
-      p.flowering_type
+      p.flowering_type,
+      p.category AS category,
+      pc.name AS product_category_name
     FROM order_items oi
-    LEFT JOIN products p ON p.id = oi.product_id
-    LEFT JOIN breeders b ON b.id = p.breeder_id
     LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+    LEFT JOIN products p ON p.id = COALESCE(oi.product_id, pv.product_id)
+    LEFT JOIN breeders b ON b.id = p.breeder_id
+    LEFT JOIN product_categories pc ON pc.id = p.category_id
     WHERE oi.order_id IN ${sql(ids)}
     ORDER BY oi.id ASC
   `;
@@ -143,6 +148,8 @@ async function attachOrderLineItems(rows: AdminOrderRow[]): Promise<AdminOrderRo
       subtotal: l.subtotal != null ? Number(l.subtotal) : null,
       breeder_name: (l.breeder_name ?? "").trim() || "—",
       flowering_type: l.flowering_type,
+      category: l.category ?? null,
+      product_category_name: l.product_category_name ?? null,
     });
     map.set(oid, arr);
   }
