@@ -561,7 +561,12 @@ export async function autoCancelUnpaidOrder24hStale(
     await prisma.$transaction(async (tx) => {
       const order = await tx.orders.findUnique({
         where: { id: oid },
-        include: { order_items: true },
+        select: {
+          created_at: true,
+          payment_status: true,
+          slip_url: true,
+          status: true,
+        },
       });
       if (!order) throw new Error("Order not found");
       if (order.status === "CANCELLED") throw new Error("Order is already cancelled");
@@ -575,15 +580,30 @@ export async function autoCancelUnpaidOrder24hStale(
       if (order.slip_url?.trim()) {
         throw new Error("24h auto-cancel: payment slip present");
       }
+      if (!order.created_at) {
+        throw new Error("24h auto-cancel: missing created_at");
+      }
       if (order.created_at.getTime() > cutoff) {
         throw new Error("24h auto-cancel: order not old enough");
       }
-      await restoreVariantStockForOrderItems(tx, order.order_items);
-      const rejectNote = `${AUTO_CANCEL_24H_NOTE}${REJECT_STOCK_NOTE_SUFFIX}`;
-      await tx.orders.update({
-        where: { id: oid },
-        data: { status: "CANCELLED", reject_note: rejectNote },
+      const items = await tx.order_items.findMany({
+        where: { order_id: oid },
+        select: { variant_id: true, quantity: true },
       });
+      const rejectNote = `${AUTO_CANCEL_24H_NOTE}${REJECT_STOCK_NOTE_SUFFIX}`;
+      const claimed = await tx.$executeRaw`
+        UPDATE orders
+        SET status = 'CANCELLED', reject_note = ${rejectNote}
+        WHERE id = ${oid}
+          AND status IN ('PENDING_PAYMENT', 'PENDING', 'PENDING_INFO')
+          AND lower(COALESCE(payment_status, '')) <> 'paid'
+          AND (slip_url IS NULL OR slip_url = '')
+          AND created_at <= ${new Date(cutoff)}
+      `;
+      if (Number(claimed) !== 1) {
+        throw new Error("24h auto-cancel: order no longer eligible");
+      }
+      await restoreVariantStockForOrderItems(tx, items);
     });
     return { data: null, error: null };
   } catch (err) {
