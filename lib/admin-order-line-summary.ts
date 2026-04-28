@@ -24,3 +24,8 @@ export function formatAdminOrderLineSummary(li: AdminOrderLineItem): string {
   const typ = adminOrderLineItemSeedTypeLabel(li);
   return `${li.product_name} (${seeds}) — ${bre} (${typ})`;
 }
+
+/** Clipboard / packing: summary + ` x {qty} pack(s)` */
+export function formatAdminOrderPackingCopyLine(li: AdminOrderLineItem): string {
+  return `${formatAdminOrderLineSummary(li)} x ${li.quantity} pack(s)`;
+}

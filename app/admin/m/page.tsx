@@ -15,7 +15,10 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
-import { formatAdminOrderLineSummary } from "@/lib/admin-order-line-summary";
+import {
+  formatAdminOrderLineSummary,
+  formatAdminOrderPackingCopyLine,
+} from "@/lib/admin-order-line-summary";
 import { orderIsReadyToShip, orderIsPaymentReceived } from "@/lib/order-paid";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -182,8 +185,8 @@ function buildShippingLabelText(o: AdminOrder): string {
 
 function packingListProductLines(o: AdminOrder): string[] {
   if ((o.line_items?.length ?? 0) === 0) return ["(no items)"];
-  return (o.line_items ?? []).map(
-    (li) => `${li.product_name} x ${li.quantity} pack(s)`
+  return (o.line_items ?? []).map((li) =>
+    formatAdminOrderPackingCopyLine(li as AdminOrderLineItem)
   );
 }
 
@@ -208,7 +211,9 @@ function buildAddressAndPackingListText(o: AdminOrder): string {
   const lines =
     (o.line_items?.length ?? 0) === 0
       ? ["(no items)"]
-      : (o.line_items ?? []).map((li) => `${li.product_name} x ${li.quantity}`);
+      : (o.line_items ?? []).map((li) =>
+          formatAdminOrderPackingCopyLine(li as AdminOrderLineItem)
+        );
   return [
     `คุณ ${name} (${phone})`,
     addr,
