@@ -11,7 +11,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { Loader2 } from "lucide-react";
 import type { Breeder } from "@/types/supabase";
-import { shopBreederHref } from "@/lib/breeder-slug";
+import { seedsBreederHref } from "@/lib/breeder-slug";
 
 // ── Structured highlight grid from DB fields ─────────────────────────────────
 type HighlightRow = { icon: React.ElementType; label: string; value: string };
@@ -263,7 +263,7 @@ export default function BreedersPage() {
 
                   {/* CTA */}
                   <Link
-                    href={shopBreederHref(breeder)}
+                    href={seedsBreederHref(breeder)}
                     className="mt-5 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
                   >
                     <Dna className="h-4 w-4" />

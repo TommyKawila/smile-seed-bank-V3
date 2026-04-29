@@ -1,6 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { Customer } from "@/types/supabase";
@@ -13,7 +22,9 @@ interface AuthState {
   refetchCustomer: () => Promise<void>;
 }
 
-export function useAuth(): AuthState {
+const AuthContext = createContext<AuthState | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,12 +59,23 @@ export function useAuth(): AuthState {
     if (user) await fetchCustomer(user.id);
   }, [user, fetchCustomer]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
     setCustomer(null);
-  };
+  }, []);
 
-  return { user, customer, isLoading, signOut, refetchCustomer };
+  const value = useMemo(
+    () => ({ user, customer, isLoading, signOut, refetchCustomer }),
+    [user, customer, isLoading, signOut, refetchCustomer]
+  );
+
+  return createElement(AuthContext.Provider, { value }, children);
+}
+
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
+  return ctx;
 }

@@ -145,20 +145,6 @@ export async function GET(req: NextRequest) {
         shortSkuPrefix,
         breederName: breeder?.name ?? null,
       };
-      console.log("[Grid API] params:", {
-        breederId,
-        bid: String(bid),
-        categoryId: categoryId || "(omit)",
-        categoryRaw,
-        dominance: dominance || "(omit)",
-        hasCategoryFilter: !isAllToken(categoryId),
-        applyDominance,
-        longSkuPrefix,
-        shortSkuPrefix,
-        breederFound: !!breeder,
-        where: JSON.stringify(bigintToJson(where)),
-      });
-      console.log("[Grid API] counts (before main query):", gridDebug);
     }
 
     /** Narrow select avoids P2022 when DB is behind schema (e.g. missing `seo_meta`). */
@@ -198,7 +184,6 @@ export async function GET(req: NextRequest) {
         select: gridProductSelect,
         orderBy: { name: "asc" },
       });
-      console.log("[API Internal] Rows found (products):", products.length);
     } catch (dbErr) {
       const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
       console.error("[API Error]", dbErr);
@@ -284,7 +269,6 @@ export async function GET(req: NextRequest) {
     if (wantDebug && gridDebug) {
       gridDebug.rowCount = rows.length;
       payload._debug = gridDebug;
-      console.log("[Grid API] rows returned:", rows.length);
     }
 
     return NextResponse.json(bigintToJson(payload));

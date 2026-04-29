@@ -31,7 +31,6 @@ export default function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [categoryPendingDelete, setCategoryPendingDelete] = useState<string | null>(null);
-  const [migrating, setMigrating] = useState(false);
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -147,35 +146,6 @@ export default function CategoriesPage() {
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button
-          variant="outline"
-          onClick={async () => {
-            setMigrating(true);
-            try {
-              const res = await fetch("/api/admin/migrate/category-id", { method: "POST" });
-              const j = await res.json();
-              if (res.ok) {
-                toast({
-                  title: "สำเร็จ (Success)",
-                  description: `Migrate category_id แล้ว ${j.updated ?? 0} รายการ (products).`,
-                });
-              } else {
-                toast({
-                  title: "เกิดข้อผิดพลาด (Error)",
-                  description: j.error ?? "Failed",
-                  variant: "destructive",
-                });
-              }
-              fetchCategories();
-            } finally {
-              setMigrating(false);
-            }
-          }}
-          disabled={migrating}
-        >
-          {migrating ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-          Migrate category_id
-        </Button>
         <Button onClick={openAdd} className="bg-primary text-white hover:bg-primary/90">
           <Plus className="mr-1.5 h-4 w-4" /> เพิ่มหมวดหมู่
         </Button>

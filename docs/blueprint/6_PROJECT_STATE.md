@@ -4,6 +4,9 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-04-29
+- **Phase 3 final polish / code splitting:** `app/admin/inventory/page.tsx` split UI into `components/admin/inventory/InventoryStats`, `InventorySearch`, `InventoryGrid`, `InventoryDialogs`, shared badges/types in `inventory-shared`; `CheckoutPageClient` split `ShippingSection` + `PaymentSection`; `app/admin/settings/page.tsx` moved `LogoUploadCard` to `components/admin/settings/LogoUploadCard`; `services/orders-service.ts` grouped regions for list/counts, payment approval, cancellation/stock restore, and fulfillment; `ProductCard` + `BreederRibbon` memoized; fixed `app/admin/promotions/page.tsx` escaped quote and `LowStockWidget` duplicate class/type issue.
+
 ### บันทึกการทำงาน — 2026-04-25
 - **Admin order line items — breeder & seed type** — `services/orders-service.ts` `attachOrderLineItems`: JOIN `products` via `COALESCE(oi.product_id, pv.product_id)`; `lib/services/order-service.ts` checkout `createMany` ใส่ `product_id` + `unit_label`; order success SQL เดียวกัน; `lib/seed-type-filter.ts` `adminOrderLineFloweringLabel`; `lib/load-admin-order-detail.ts` โหลด variant ก่อน + `seedTypeLabel` / `resolvedProductId`; `app/admin/m/page.tsx` + `app/admin/orders/page.tsx` รูปแบบสรุปรายการ
 - **Admin dashboard — Looker Studio embed** — `app/admin/dashboard/page.tsx`: Card **Website traffic & keywords**; responsive iframe `min(80vh,800px)` + `min-h-[400px]`, sandbox attrs, `LOOKER_STUDIO_EMBED_SRC` constant.
@@ -186,9 +189,9 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 - **`next.config.mjs`** — `images.remotePatterns` from `NEXT_PUBLIC_SUPABASE_URL` + storage pathname; fallback host `jysdfxxilyjmjdmhazbu.supabase.co` (correct spelling)
 
 ### Storefront shop breeder filter (URL `?breeder=`)
-- **`lib/breeder-slug.ts`** — `breederSlugFromName` (from `generateSlug`), `shopBreederHref`, `resolveBreederFromShopParam` (slug preferred, legacy numeric id); invalid param → `router.replace("/shop")` on shop page.
-- **`app/(storefront)/shop/page.tsx`** — resolves breeder from query; numeric id URLs rewrite to slug; filter grid empty while invalid after load; **`BreederRibbon`** — `activeBreederSlug` + `shopBreederHref` per card.
-- **Links** — `product-detail-client.tsx`, `app/(storefront)/page.tsx`, `breeders/page.tsx` use `shopBreederHref` (not `breeder` id).
+- **`lib/breeder-slug.ts`** — `breederSlugFromName` (from `generateSlug`), `seedsBreederHref`, `resolveBreederFromShopParam` (slug preferred, legacy numeric id); invalid param → `router.replace("/shop")` on shop page.
+- **`app/(storefront)/shop/page.tsx`** — resolves breeder from query; numeric id URLs rewrite to slug; filter grid empty while invalid after load; **`BreederRibbon`** — `activeBreederSlug` + `seedsBreederHref` per card.
+- **Links** — `product-detail-client.tsx`, `app/(storefront)/page.tsx`, `breeders/page.tsx` use `seedsBreederHref` (not `breeder` id).
 
 ### Breeder detail — flowering type pills (`?type=`)
 - **`lib/seed-type-filter.ts`** — `resolveCategoryLabelForFilters` (FK `product_categories.name` then `category` string); `collectionKeyFromCategory` (original substring, FF / fast flowering / fast version); short labels Auto / Photo / Fast; `breederDisplayTypeKeyFromProduct` + `labelForBreederDisplayTypeSlug`.
@@ -268,7 +271,20 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 
 ## 6. Last Updated
 
-### Source of truth — March 31, 2026 *(next session: start here)*
+### Source of truth — April 29, 2026 *(next session: start here)*
+
+**Supabase Security Advisor hardening**
+- Migration `supabase/migrations/20260429120000_security_advisor_functions_storage_rls.sql`: `get_unused_coupons` / `has_used_welcome_coupon` — `REVOKE FROM PUBLIC`, `GRANT EXECUTE` to `authenticated` + `service_role` (signature resolved dynamically); `sync_customer_role_to_auth_user_metadata` — same grants; `storage.objects` — `payment_slips_select_authorized` + `payments_select_authorized` (ADMIN or order owner via `split_part(name,'-',1)`); `stock_snapshots` — `ENABLE ROW LEVEL SECURITY` (no storefront policies; admin Prisma bypasses).
+
+**Step 1 cleanup + critical performance**
+- Removed dead/legacy files: `hooks/useDashboard.ts`, `hooks/useWholesale.ts`, `services/cart-logic-service.ts`, public `/inventory`, migration API routes, legacy inventory create-order route, `getAllProductsAdmin`, and broken `getTopSellingVariants`.
+- Consolidated global client fetches: `AuthProvider` and `SiteSettingsProvider` now back storefront/admin consumers; POS customer and active product fetches now enforce default limits; breeder links use `seedsBreederHref`.
+
+**Step 2 high-impact logic optimization**
+- `lib/order-inventory.ts`: stock validation now uses one `findMany(IN ...)`; stock deduction uses a single conditional SQL update (`stock >= qty`) inside the existing Prisma transaction to prevent oversell under race.
+- `services/dashboard-service.ts`: `getFinancialSummary`, `getRevenueSeries`, `getSalesChannelBreakdown`, and `getTopSpenders` aggregate in Postgres instead of loading orders/items into Node.
+- `GET /api/products`: added server-side `category`, `search`/`q`, `minPrice`, `maxPrice`, `page`, and `limit`; `getActiveProducts` now supports DB-level filters + pagination.
+- `GET /api/storefront/home`: combines new arrivals, featured products, clearance, and recent magazine posts; `HomePageClient` fetches this single payload.
 
 **0. Storefront settings RLS (Supabase)**
 - Migration `supabase/migrations/20260331120000_site_store_settings_public_select_rls.sql`: `site_settings` — `anon`/`authenticated` SELECT only whitelisted keys (logos, hero, company, legal, social); admin-only keys (e.g. `tiered_discount_*`) via service role. `store_settings` — public SELECT for brand row (logo_url, contact).

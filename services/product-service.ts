@@ -36,6 +36,13 @@ export {
 
 type ServiceResult<T> = { data: T | null; error: string | null };
 
+const DEFAULT_ACTIVE_PRODUCTS_LIMIT = 50;
+const MAX_ACTIVE_PRODUCTS_LIMIT = 100;
+
+function postgrestSearchTerm(value: string): string {
+  return `%${value.trim().replace(/[,%()]/g, " ").replace(/\s+/g, " ")}%`;
+}
+
 function parseNumericProductIdParam(s: string): number | null {
   const t = s.trim();
   if (!/^\d+$/.test(t)) return null;
@@ -54,11 +61,12 @@ const TEXT_FIELDS_WITH_POSSIBLE_HTML: (keyof Product)[] = [
   "growing_difficulty",
 ];
 
-function sanitizeProductTextFields<T extends Product>(row: T): T {
+function sanitizeProductTextFields<T>(row: T): T {
+  const record = row as Record<string, unknown>;
   for (const key of TEXT_FIELDS_WITH_POSSIBLE_HTML) {
-    const v = row[key];
+    const v = record[key];
     if (typeof v === "string" && v.length > 0) {
-      (row as Record<string, unknown>)[key] = stripEmbeddedColorMarkup(v);
+      record[key] = stripEmbeddedColorMarkup(v);
     }
   }
   return row;
@@ -94,6 +102,11 @@ export async function getActiveProducts(opts?: {
   /** Prefer slug in URLs; resolves to `breeder_id` (empty list if unknown slug) */
   breeder_shop_param?: string;
   limit?: number;
+  page?: number;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  includeVariants?: boolean;
   /** Comma-separated pack buckets: 1,2,3,5,10,gt10,other — requires variant rows (filtered in memory). */
   seeds_param?: string | null;
 }): Promise<ServiceResult<ProductWithBreeder[]>> {
@@ -101,7 +114,7 @@ export async function getActiveProducts(opts?: {
     const supabase = await createClient();
     const seedsSel = parseListParam(opts?.seeds_param ?? null);
     const selectShape =
-      seedsSel.length > 0
+      seedsSel.length > 0 || opts?.includeVariants
         ? PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS
         : PRODUCT_SELECT_WITH_BREEDER;
 
@@ -112,6 +125,19 @@ export async function getActiveProducts(opts?: {
       .order("id", { ascending: false });
 
     if (opts?.category) query = query.eq("category", opts.category);
+    const search = opts?.search?.trim();
+    if (search) {
+      const term = postgrestSearchTerm(search);
+      query = query.or(
+        `name.ilike.${term},category.ilike.${term},description_th.ilike.${term},description_en.ilike.${term}`
+      );
+    }
+    if (opts?.minPrice != null && Number.isFinite(opts.minPrice)) {
+      query = query.gte("price", opts.minPrice);
+    }
+    if (opts?.maxPrice != null && Number.isFinite(opts.maxPrice)) {
+      query = query.lte("price", opts.maxPrice);
+    }
     let breederId: number | undefined = opts?.breeder_id;
     if (opts?.breeder_shop_param?.trim()) {
       const id = await getBreederIdFromShopParam(opts.breeder_shop_param);
@@ -119,12 +145,18 @@ export async function getActiveProducts(opts?: {
       breederId = id;
     }
     if (breederId != null) query = query.eq("breeder_id", breederId);
-    if (opts?.limit) query = query.limit(opts.limit);
+    const limit = Math.min(
+      MAX_ACTIVE_PRODUCTS_LIMIT,
+      Math.max(1, opts?.limit ?? DEFAULT_ACTIVE_PRODUCTS_LIMIT)
+    );
+    const page = Math.max(1, opts?.page ?? 1);
+    const from = (page - 1) * limit;
+    query = query.range(from, from + limit - 1);
 
     const { data, error } = await query;
 
     if (error) return { data: null, error: error.message };
-    let rows = data as (ProductWithBreeder & {
+    let rows = data as unknown as (ProductWithBreeder & {
       product_variants?: { unit_label: string; is_active?: boolean | null }[];
     })[];
     if (seedsSel.length > 0) {
@@ -294,30 +326,6 @@ export async function getProductFull(
       cause: err,
       context: { productId },
     });
-    return {
-      data: null,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
-}
-
-// ─── Admin Queries ────────────────────────────────────────────────────────────
-
-export async function getAllProductsAdmin(): Promise<
-  ServiceResult<ProductFull[]>
-> {
-  try {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from("products")
-      .select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
-      .order("id", { ascending: false });
-
-    if (error) return { data: null, error: error.message };
-    return { data: data as ProductFull[], error: null };
-  } catch (err) {
-    logger.error("product-service.getAllProductsAdmin failed", { cause: err });
     return {
       data: null,
       error: err instanceof Error ? err.message : String(err),

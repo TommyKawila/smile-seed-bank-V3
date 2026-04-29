@@ -1,6 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { usePathname } from "next/navigation";
 import { updateSiteSettingAction } from "@/app/actions/site-settings";
 
@@ -25,7 +34,17 @@ export interface SiteSettings {
   legal_business_registration_number?: string;
 }
 
-export function useSiteSettings() {
+type SiteSettingsState = {
+  settings: SiteSettings;
+  isLoading: boolean;
+  refetch: () => Promise<void>;
+  updateSetting: (key: string, value: string) => Promise<void>;
+  socialLinks: SocialLink[];
+};
+
+const SiteSettingsContext = createContext<SiteSettingsState | null>(null);
+
+export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const useAdmin = useMemo(
     () => pathname?.startsWith("/admin") ?? false,
@@ -62,7 +81,7 @@ export function useSiteSettings() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const socialLinks = ((): SocialLink[] => {
+  const socialLinks = useMemo<SocialLink[]>(() => {
     try {
       const s = settings.social_media;
       if (!s) return [];
@@ -71,7 +90,20 @@ export function useSiteSettings() {
     } catch {
       return [];
     }
-  })();
+  }, [settings.social_media]);
 
-  return { settings, isLoading, refetch: fetch_, updateSetting, socialLinks };
+  const value = useMemo(
+    () => ({ settings, isLoading, refetch: fetch_, updateSetting, socialLinks }),
+    [settings, isLoading, fetch_, updateSetting, socialLinks]
+  );
+
+  return createElement(SiteSettingsContext.Provider, { value }, children);
+}
+
+export function useSiteSettings() {
+  const ctx = useContext(SiteSettingsContext);
+  if (!ctx) {
+    throw new Error("useSiteSettings must be used inside <SiteSettingsProvider>");
+  }
+  return ctx;
 }

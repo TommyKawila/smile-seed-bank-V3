@@ -19,6 +19,10 @@ import type { AdminOrderLineItem } from "@/types/admin-order";
 
 export type { AdminOrderLineItem };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Types and row normalization
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface AdminOrderRow {
   id: number;
   order_number: string;
@@ -157,6 +161,10 @@ async function attachOrderLineItems(rows: AdminOrderRow[]): Promise<AdminOrderRo
 }
 
 export type ServiceResult<T> = { data: T | null; error: string | null };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// List queries and counters
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Mobile /admin/m — tab keys (filter logic is SQL in `listOrders`: payment_status + status).
@@ -379,6 +387,10 @@ export async function listOrders(opts?: {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment approval and quotation sync
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function approvePayment(
   orderId: number
 ): Promise<ServiceResult<ApprovePaymentResult>> {
@@ -499,6 +511,10 @@ export async function approvePayment(
 const REJECT_STOCK_NOTE_SUFFIX =
   " | Stock has been restored automatically upon cancellation.";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Cancellation, rejection, and stock restoration
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function rejectPayment(orderId: number, note: string): Promise<ServiceResult<null>> {
   try {
     const oid = BigInt(orderId);
@@ -574,6 +590,9 @@ export async function autoCancelUnpaidOrder24hStale(
       }
       if (order.slip_url?.trim()) {
         throw new Error("24h auto-cancel: payment slip present");
+      }
+      if (!order.created_at) {
+        throw new Error("24h auto-cancel: order missing created_at");
       }
       if (order.created_at.getTime() > cutoff) {
         throw new Error("24h auto-cancel: order not old enough");
@@ -672,6 +691,10 @@ export async function revertApprovalToPending(orderId: number): Promise<ServiceR
 }
 
 export type MarkShippedResult = { quotationSynced: boolean };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fulfillment and shipping notifications
+// ─────────────────────────────────────────────────────────────────────────────
 
 /** Mark order as SHIPPED with tracking number and carrier, then email customer. */
 export async function markShipped(

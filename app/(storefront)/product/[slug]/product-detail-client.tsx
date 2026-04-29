@@ -22,7 +22,7 @@ import {
   getEffectiveVariantPrice,
 } from "@/lib/product-utils";
 import { isProductAggregateOutOfStock } from "@/lib/product-stock";
-import { shopBreederHref } from "@/lib/breeder-slug";
+import { seedsBreederHref } from "@/lib/breeder-slug";
 import { ProductGallery } from "@/components/storefront/ProductGallery";
 import { StickyBuyBar } from "@/components/storefront/StickyBuyBar";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
@@ -315,7 +315,7 @@ export default function ProductDetailClient({
       const textTh = `กลับไปที่ ${product.breeders.name}`;
       const textEn = `Back to ${product.breeders.name}`;
       return {
-        href: shopBreederHref(product.breeders),
+        href: seedsBreederHref(product.breeders),
         text: locale === "th" ? textTh : textEn,
         title: locale === "th" ? textTh : textEn,
       };
@@ -441,7 +441,7 @@ export default function ProductDetailClient({
               </div>
               {product.breeders && (
                 <Link
-                  href={shopBreederHref(product.breeders)}
+                  href={seedsBreederHref(product.breeders)}
                   className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border-2 border-zinc-200/90 bg-white shadow-md ring-1 ring-zinc-100/80 transition-transform hover:scale-[1.02] hover:shadow-lg"
                   aria-label={product.breeders.name}
                 >

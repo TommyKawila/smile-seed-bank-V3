@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type { order_items } from "@prisma/client";
 
 /** Order statuses for which reject/cancel restores variant stock (guard in `rejectPayment`). */
@@ -47,15 +47,19 @@ export async function assertSufficientStockForCheckoutLines(
   lines: CheckoutStockLine[]
 ): Promise<void> {
   const merged = mergeCheckoutStockLines(lines);
+  if (merged.length === 0) return;
+
+  const variants = await tx.product_variants.findMany({
+    where: { id: { in: merged.map((line) => BigInt(line.variantId)) } },
+    select: { id: true, stock: true },
+  });
+  const byId = new Map(variants.map((v) => [Number(v.id), v.stock ?? 0]));
+
   for (const line of merged) {
-    const v = await tx.product_variants.findUnique({
-      where: { id: BigInt(line.variantId) },
-      select: { stock: true },
-    });
-    if (!v) {
+    const stock = byId.get(line.variantId);
+    if (stock == null) {
       throw new InsufficientStockError(`Insufficient stock for ${line.productName}`);
     }
-    const stock = v.stock ?? 0;
     if (stock < line.quantity) {
       throw new InsufficientStockError(`Insufficient stock for ${line.productName}`);
     }
@@ -69,15 +73,33 @@ export async function deductVariantStockForOrderItems(
   tx: Prisma.TransactionClient,
   lines: { variantId: number; quantity: number }[]
 ): Promise<void> {
-  const merged = new Map<number, number>();
-  for (const l of lines) {
-    merged.set(l.variantId, (merged.get(l.variantId) ?? 0) + l.quantity);
-  }
-  for (const [variantId, quantity] of merged) {
-    await tx.product_variants.update({
-      where: { id: BigInt(variantId) },
-      data: { stock: { decrement: quantity } },
-    });
+  const merged = mergeCheckoutStockLines(
+    lines.map((line) => ({
+      variantId: line.variantId,
+      quantity: line.quantity,
+      productName: `variant ${line.variantId}`,
+    }))
+  );
+  if (merged.length === 0) return;
+
+  const values = Prisma.join(
+    merged.map((line) => Prisma.sql`(${BigInt(line.variantId)}::bigint, ${line.quantity}::integer)`)
+  );
+  const updated = await tx.$queryRaw<{ id: bigint }[]>`
+    WITH wanted(id, qty) AS (VALUES ${values}),
+    updated AS (
+      UPDATE public.product_variants pv
+      SET stock = COALESCE(pv.stock, 0) - wanted.qty
+      FROM wanted
+      WHERE pv.id = wanted.id
+        AND COALESCE(pv.stock, 0) >= wanted.qty
+      RETURNING pv.id
+    )
+    SELECT id FROM updated
+  `;
+
+  if (updated.length !== merged.length) {
+    throw new InsufficientStockError("Insufficient stock for one or more products");
   }
 }
 

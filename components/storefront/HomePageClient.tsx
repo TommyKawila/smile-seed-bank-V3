@@ -11,7 +11,6 @@ import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import { ChevronRight, Leaf, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProducts } from "@/hooks/useProducts";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { useLanguage } from "@/context/LanguageContext";
 import Hero from "@/components/storefront/Hero";
@@ -37,6 +36,13 @@ import {
   type SectionTitle,
 } from "@/lib/homepage-section-title";
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
+
+type HomePayload = {
+  products?: ProductWithBreeder[];
+  featuredProducts?: ProductWithBreeder[];
+  clearanceProducts?: ProductWithBreederAndVariants[];
+  insights?: MagazinePostPublic[];
+};
 
 const staggerContainer: Variants = {
   hidden: {},
@@ -238,8 +244,9 @@ function InsightSection({
 }
 
 function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
-  const { products, isLoading } = useProducts({ limit: 8, autoFetch: true, includeVariants: true });
   const { t, locale } = useLanguage();
+  const [products, setProducts] = useState<ProductWithBreeder[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [featuredProducts, setFeaturedProducts] = useState<ProductWithBreeder[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [insights, setInsights] = useState<MagazinePostPublic[]>([]);
@@ -251,56 +258,28 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/storefront/featured-products");
-        const json = (await res.json()) as { products?: ProductWithBreeder[] };
-        if (!cancelled && res.ok && Array.isArray(json.products)) {
-          setFeaturedProducts(json.products);
+        const res = await fetch("/api/storefront/home");
+        const json = (await res.json()) as HomePayload;
+        if (!cancelled && res.ok) {
+          setProducts(Array.isArray(json.products) ? json.products : []);
+          setFeaturedProducts(Array.isArray(json.featuredProducts) ? json.featuredProducts : []);
+          setInsights(Array.isArray(json.insights) ? json.insights : []);
+          setClearanceProducts(Array.isArray(json.clearanceProducts) ? json.clearanceProducts : []);
         }
       } catch {
-        if (!cancelled) setFeaturedProducts([]);
-      } finally {
-        if (!cancelled) setFeaturedLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setInsightsLoading(true);
-      try {
-        const res = await fetch("/api/storefront/magazine/recent?take=4");
-        const json = (await res.json()) as { posts?: MagazinePostPublic[] };
-        if (!cancelled && res.ok && Array.isArray(json.posts)) {
-          setInsights(json.posts);
-        } else if (!cancelled) setInsights([]);
-      } catch {
-        if (!cancelled) setInsights([]);
-      } finally {
-        if (!cancelled) setInsightsLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/storefront/clearance-products");
-        const json = (await res.json()) as { products?: ProductWithBreederAndVariants[] };
-        if (!cancelled && res.ok && Array.isArray(json.products)) {
-          setClearanceProducts(json.products);
+        if (!cancelled) {
+          setProducts([]);
+          setFeaturedProducts([]);
+          setInsights([]);
+          setClearanceProducts([]);
         }
-      } catch {
-        if (!cancelled) setClearanceProducts([]);
       } finally {
-        if (!cancelled) setClearanceLoading(false);
+        if (!cancelled) {
+          setProductsLoading(false);
+          setFeaturedLoading(false);
+          setInsightsLoading(false);
+          setClearanceLoading(false);
+        }
       }
     })();
     return () => {
@@ -481,7 +460,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
                 </Button>
               </motion.div>
 
-              {isLoading ? (
+              {productsLoading ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                   {[...Array(8)].map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">

@@ -4,6 +4,7 @@ import { bigintToJson } from "@/lib/bigint-json";
 import { dashboardRangeBounds } from "@/lib/dashboard-date-range";
 import { ordersTableHasFeeColumns } from "@/lib/dashboard-order-fees";
 import { prismaWhereOrderPaymentConfirmed } from "@/lib/order-paid";
+import { getTopSpenders } from "@/services/dashboard-service";
 
 export const dynamic = "force-dynamic";
 
@@ -48,8 +49,12 @@ export async function GET(req: NextRequest) {
     });
 
     const totalRevenue = Number(aggResult._sum.total_amount ?? 0);
-    const totalShipping = hasFeeCols ? Number(aggResult._sum.shipping_fee ?? 0) : 0;
-    const totalDiscount = hasFeeCols ? Number(aggResult._sum.discount_amount ?? 0) : 0;
+    const feeSum = aggResult._sum as {
+      shipping_fee?: unknown;
+      discount_amount?: unknown;
+    };
+    const totalShipping = hasFeeCols ? Number(feeSum.shipping_fee ?? 0) : 0;
+    const totalDiscount = hasFeeCols ? Number(feeSum.discount_amount ?? 0) : 0;
     const orderCount = aggResult._count._all;
     const netProductRevenue = totalRevenue - totalShipping + totalDiscount;
 
@@ -140,110 +145,11 @@ export async function GET(req: NextRequest) {
       revenue: toNum(r.rev),
     }));
 
-    const [webOrders, posOrders] = await Promise.all([
-      prisma.orders.findMany({
-        where: {
-          ...orderWherePaidInRange,
-          customer_id: { not: null },
-        },
-        include: { customers: true },
-      }),
-      prisma.orders.findMany({
-        where: {
-          ...orderWherePaidInRange,
-          customer_id: null,
-          customer_profile_id: { not: null },
-        },
-        include: { customer_profile: true },
-      }),
-    ]);
-
-    type SpRow = { name: string | null; spent: unknown; orders: bigint };
-    const webSpenders: SpRow[] = [];
-    const webByCustomer = new Map<
-      string,
-      { name: string; spent: number; orders: number }
-    >();
-    for (const o of webOrders) {
-      const cid = o.customer_id;
-      if (!cid) continue;
-      const name =
-        (o.customers?.full_name?.trim() ||
-          o.customer_name?.trim() ||
-          "Guest") || "Guest";
-      const spent = Number(o.total_amount ?? 0);
-      const prev = webByCustomer.get(cid);
-      if (prev) {
-        webByCustomer.set(cid, {
-          name: prev.name,
-          spent: prev.spent + spent,
-          orders: prev.orders + 1,
-        });
-      } else {
-        webByCustomer.set(cid, { name, spent, orders: 1 });
-      }
-    }
-    for (const v of webByCustomer.values()) {
-      webSpenders.push({
-        name: v.name,
-        spent: v.spent,
-        orders: BigInt(v.orders),
-      });
-    }
-    webSpenders.sort((a, b) => toNum(b.spent) - toNum(a.spent));
-    const webTop = webSpenders.slice(0, 8);
-
-    const posSpenders: SpRow[] = [];
-    const posByProfile = new Map<
-      string,
-      { name: string; spent: number; orders: number }
-    >();
-    for (const o of posOrders) {
-      const pid = o.customer_profile_id;
-      if (pid == null) continue;
-      const key = String(pid);
-      const name =
-        (o.customer_profile?.name?.trim() ||
-          o.customer_name?.trim() ||
-          "POS") || "POS";
-      const spent = Number(o.total_amount ?? 0);
-      const prev = posByProfile.get(key);
-      if (prev) {
-        posByProfile.set(key, {
-          name: prev.name,
-          spent: prev.spent + spent,
-          orders: prev.orders + 1,
-        });
-      } else {
-        posByProfile.set(key, { name, spent, orders: 1 });
-      }
-    }
-    for (const v of posByProfile.values()) {
-      posSpenders.push({
-        name: v.name,
-        spent: v.spent,
-        orders: BigInt(v.orders),
-      });
-    }
-    posSpenders.sort((a, b) => toNum(b.spent) - toNum(a.spent));
-    const posTop = posSpenders.slice(0, 8);
-
-    type Sp = { name: string; spent: number; orders: number };
-    const mergeMap = new Map<string, Sp>();
-    for (const row of [...webTop, ...posTop]) {
-      const name = (row.name ?? "Guest").trim() || "Guest";
-      const spent = toNum(row.spent);
-      const oc = Number(row.orders);
-      const prev = mergeMap.get(name);
-      if (prev) {
-        mergeMap.set(name, { name, spent: prev.spent + spent, orders: prev.orders + oc });
-      } else {
-        mergeMap.set(name, { name, spent, orders: oc });
-      }
-    }
-    const topSpenders = [...mergeMap.values()]
-      .sort((a, b) => b.spent - a.spent)
-      .slice(0, 5);
+    const topSpendersResult = await getTopSpenders(5, {
+      from: start.toISOString(),
+      to: end.toISOString(),
+    });
+    const topSpenders = topSpendersResult.data ?? [];
 
     const recentOrders = await prisma.orders.findMany({
       orderBy: { created_at: "desc" },

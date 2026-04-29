@@ -1,20 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useMotionValue, useAnimationFrame, AnimatePresence } from "framer-motion";
 import { useBreeders } from "@/hooks/useBreeders";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Breeder } from "@/types/supabase";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
-import { breederSlugFromName, shopBreederHref } from "@/lib/breeder-slug";
+import { breederSlugFromName, seedsBreederHref } from "@/lib/breeder-slug";
 
 const ITEM_W = 140;
 const ITEM_W_COMPACT = 100;
 
 type BreederTooltipData = { breeder: Breeder; mx: number; my: number };
 
-export function BreederRibbon({
+function BreederRibbonBase({
   compact = false,
   activeBreederSlug = null,
   scrollOnNav = true,
@@ -28,9 +28,12 @@ export function BreederRibbon({
   const { breeders } = useBreeders();
   const { t } = useLanguage();
   const router = useRouter();
-  const active = breeders.filter((b) => b.is_active && b.logo_url);
+  const active = useMemo(
+    () => breeders.filter((b) => b.is_active && b.logo_url),
+    [breeders]
+  );
   const totalW = active.length * (compact ? ITEM_W_COMPACT : ITEM_W);
-  const items = [...active, ...active, ...active];
+  const items = useMemo(() => [...active, ...active, ...active], [active]);
 
   const x = useMotionValue(0);
   const isPausedRef = useRef(false);
@@ -236,7 +239,7 @@ export function BreederRibbon({
             return (
               <a
                 key={`${b.id}-${i}`}
-                href={shopBreederHref(b)}
+                href={seedsBreederHref(b)}
                 draggable={false}
                 tabIndex={isDuplicate ? -1 : 0}
                 aria-hidden={isDuplicate}
@@ -303,3 +306,5 @@ export function BreederRibbon({
     </div>
   );
 }
+
+export const BreederRibbon = memo(BreederRibbonBase);

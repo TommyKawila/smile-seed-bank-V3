@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,7 +22,7 @@ import {
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { getProductAggregateStock } from "@/lib/product-stock";
 import { productDetailHref } from "@/lib/product-utils";
-import { shopBreederHref } from "@/lib/breeder-slug";
+import { seedsBreederHref } from "@/lib/breeder-slug";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
@@ -128,13 +129,15 @@ function ProductImageBadges({ product, t }: { product: ProductWithMeta; t: (th: 
   );
 }
 
-export function ProductCard({
-  product,
-  variant = "shop",
-}: {
+type ProductCardProps = {
   product: ProductListItem;
   variant?: "shop" | "showcase";
-}) {
+};
+
+function ProductCardBase({
+  product,
+  variant = "shop",
+}: ProductCardProps) {
   const { addToCart, openCart } = useCartContext();
   const { t, locale } = useLanguage();
   const loc = locale as "th" | "en";
@@ -267,7 +270,7 @@ export function ProductCard({
 
           {product.breeders && (
             <Link
-              href={shopBreederHref(product.breeders)}
+              href={seedsBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
               className="absolute left-2 top-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-white shadow-md ring-2 ring-white transition-transform hover:scale-105"
               aria-label={product.breeders.name}
@@ -326,7 +329,7 @@ export function ProductCard({
 
           {product.breeders ? (
             <Link
-              href={shopBreederHref(product.breeders)}
+              href={seedsBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
               className="line-clamp-1 min-h-[1.25rem] shrink-0 text-center text-[11px] font-medium leading-tight text-emerald-600 hover:text-emerald-700"
             >
@@ -445,3 +448,5 @@ export function ProductCard({
     </motion.div>
   );
 }
+
+export const ProductCard = memo(ProductCardBase);

@@ -44,13 +44,6 @@ export async function POST(req: NextRequest) {
   const bid = BigInt(breederId);
 
   try {
-    const { migrateCategoryIds } = await import("@/lib/migrate-category-id");
-    await migrateCategoryIds();
-  } catch {
-    /* ignore */
-  }
-
-  try {
     let product = await prisma.products.findFirst({
     where: { master_sku: masterSku.trim() },
     include: { product_variants: true },
@@ -120,7 +113,6 @@ export async function POST(req: NextRequest) {
     const stock = Math.max(0, Number(cell.stock) || 0);
     const cost = Math.max(0, Number(cell.cost) || 0);
     const price = Math.max(0, Number(cell.price) || 0);
-    console.log("[sync] Backend processing pack:", packSize, "with data:", cell, "-> stock:", stock, "price:", price);
     const label = packToLabel(packSize);
     const sku = toVariantSku(masterSkuTrim, label);
 

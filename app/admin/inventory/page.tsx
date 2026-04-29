@@ -1,22 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, Fragment, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { InventorySkeleton } from "@/components/skeletons/InventorySkeleton";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
-  flexRender,
   createColumnHelper,
   type ColumnDef,
 } from "@tanstack/react-table";
-import Link from "next/link";
-import { Loader2, Plus, Filter, Pencil, Wrench, ShoppingCart, Search, Trash2, LayoutGrid, ImagePlus } from "lucide-react";
+import { Loader2, Plus, ShoppingCart, Search, Trash2, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -32,110 +29,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ProductModal } from "@/components/admin/ProductModal";
+import { InventoryDialogs } from "@/components/admin/inventory/InventoryDialogs";
+import { InventoryGrid } from "@/components/admin/inventory/InventoryGrid";
+import { InventorySearch } from "@/components/admin/inventory/InventorySearch";
+import { InventoryStats } from "@/components/admin/inventory/InventoryStats";
+import {
+  CategoryBadge,
+  EditableCell,
+  TypeBadge,
+  type InventoryRow,
+  type ProductGroup,
+} from "@/components/admin/inventory/inventory-shared";
 import { useProducts } from "@/hooks/useProducts";
 import { processAndUploadImages } from "@/lib/supabase/storage-utils";
 import { toMasterSku } from "@/lib/sku-utils";
 import type { ProductFull } from "@/types/supabase";
 
-type InventoryRow = {
-  id: number;
-  product_id: number;
-  product_name: string;
-  image_url?: string | null;
-  master_sku?: string | null;
-  brand: string;
-  breeder_id: number | null;
-  unit_label: string;
-  sku: string | null;
-  stock: number;
-  low_stock_threshold?: number;
-  cost_price: number;
-  price: number;
-  margin: number;
-  is_active: boolean;
-  category: string;
-  type: string;
-  thc_level: string;
-};
-
-type ProductGroup = {
-  product_id: number;
-  product_name: string;
-  master_sku?: string | null;
-  brand: string;
-  category: string;
-  type: string;
-  thc_level: string;
-  variants: InventoryRow[];
-};
-
 const PACK_OPTIONS = ["1 Seed", "3 Seeds", "5 Seeds", "10 Seeds"];
 
 const emptyPack = () => ({ unit_label: "1 Seed", cost_price: 0, price: 0, stock: 0 });
-
-function CategoryBadge({ value }: { value: string }) {
-  if (!value || value === "—") return <span className="text-zinc-400">—</span>;
-  const isAuto = value.toLowerCase() === "auto";
-  return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-        isAuto ? "bg-accent text-primary" : "bg-secondary text-secondary-foreground"
-      }`}
-    >
-      {value}
-    </span>
-  );
-}
-
-function TypeBadge({ value }: { value: string }) {
-  if (!value || value === "—") return <span className="text-zinc-400">—</span>;
-  const cls =
-    value === "Indica" ? "bg-indigo-100 text-indigo-800" :
-    value === "Sativa" ? "bg-amber-100 text-amber-800" :
-    "bg-slate-100 text-slate-700";
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {value}
-    </span>
-  );
-}
-
-function EditableCell({
-  value,
-  saving,
-  onSave,
-  type = "number",
-  prefix,
-}: {
-  value: number;
-  saving: boolean;
-  onSave: (v: number) => void;
-  type?: "number";
-  prefix?: string;
-}) {
-  const [local, setLocal] = useState(String(value));
-  useEffect(() => setLocal(String(value)), [value]);
-
-  const commit = () => {
-    const n = type === "number" ? parseFloat(local) : value;
-    if (!Number.isNaN(n) && n !== value) onSave(n);
-  };
-
-  return (
-    <div className="flex items-center gap-0.5">
-      {prefix && <span className="text-xs text-zinc-400">{prefix}</span>}
-      <Input
-        type="number"
-        className="h-8 w-20 border-0 border-b border-transparent bg-transparent px-1 py-0 text-sm shadow-none focus:border-primary focus:ring-0"
-        value={local}
-        onChange={(e) => setLocal(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => e.key === "Enter" && commit()}
-        disabled={saving}
-      />
-    </div>
-  );
-}
 
 function AdminInventoryContent() {
   const { fetchProductFull } = useProducts({ autoFetch: false });
@@ -163,13 +75,9 @@ function AdminInventoryContent() {
   });
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
-  const [migrateConfirmOpen, setMigrateConfirmOpen] = useState(false);
-  const [migrating, setMigrating] = useState(false);
-  const [migrateResult, setMigrateResult] = useState<{ updated_products: number; updated_variants: number } | { error: string } | null>(null);
-
   // ── POS Create Order ──────────────────────────────────────────────────────
   type SearchProduct = { id: number; name: string; master_sku: string | null; brand: string; variants: { id: number; unit_label: string; sku: string | null; price: number; cost_price: number; stock: number }[] };
-  type OrderLineItem = { variantId: number; productName: string; variantLabel: string; price: number; cost_price: number; maxStock: number; qty: number };
+  type OrderLineItem = { variantId: number; productId: number; productName: string; variantLabel: string; price: number; cost_price: number; maxStock: number; qty: number };
   const [posOpen, setPosOpen] = useState(false);
   const [posQuery, setPosQuery] = useState("");
   const [posSearching, setPosSearching] = useState(false);
@@ -374,7 +282,7 @@ function AdminInventoryContent() {
       if (idx >= 0) {
         return prev.map((l, i) => i === idx ? { ...l, qty: Math.min(l.qty + 1, l.maxStock) } : l);
       }
-      return [...prev, { variantId: variant.id, productName: product.name, variantLabel: variant.unit_label, price: variant.price, cost_price: variant.cost_price, maxStock: variant.stock, qty: 1 }];
+      return [...prev, { variantId: variant.id, productId: product.id, productName: product.name, variantLabel: variant.unit_label, price: variant.price, cost_price: variant.cost_price, maxStock: variant.stock, qty: 1 }];
     });
   }, []);
 
@@ -387,12 +295,20 @@ function AdminInventoryContent() {
     setPosSaving(true);
     setPosError(null);
     try {
-      const res = await fetch("/api/admin/inventory/create-order", {
+      const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: posLines.map((l) => ({ variantId: l.variantId, quantity: l.qty, price: l.price, cost_price: l.cost_price })),
-          note: posNote || undefined,
+          status: "COMPLETED",
+          items: posLines.map((l) => ({
+            variantId: l.variantId,
+            productId: l.productId,
+            productName: l.productName,
+            unitLabel: l.variantLabel,
+            quantity: l.qty,
+            price: l.price,
+          })),
+          customer: posNote ? { note: posNote } : undefined,
         }),
       });
       const data = await res.json();
@@ -409,25 +325,6 @@ function AdminInventoryContent() {
       setPosSaving(false);
     }
   }, [posLines, posNote, refetchInventory]);
-
-  const runMigrateSkus = useCallback(async () => {
-    setMigrating(true);
-    setMigrateResult(null);
-    try {
-      const res = await fetch("/api/admin/inventory/migrate-skus", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        setMigrateResult({ error: data.error ?? "Migration failed" });
-        return;
-      }
-      setMigrateResult({ updated_products: data.updated_products ?? 0, updated_variants: data.updated_variants ?? 0 });
-      await refetchInventory();
-    } catch (e) {
-      setMigrateResult({ error: String(e) });
-    } finally {
-      setMigrating(false);
-    }
-  }, [refetchInventory]);
 
   const grouped = useMemo((): ProductGroup[] => {
     const byProduct = new Map<number, InventoryRow[]>();
@@ -467,7 +364,7 @@ function AdminInventoryContent() {
   }, [grouped, searchQuery]);
 
   const columnHelper = createColumnHelper<InventoryRow>();
-  const columns = useMemo<ColumnDef<InventoryRow, unknown>[]>(
+  const columns = useMemo<ColumnDef<InventoryRow, any>[]>(
     () => [
       columnHelper.display({
         id: "photo",
@@ -569,243 +466,40 @@ function AdminInventoryContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-zinc-900">สต็อกและราคา (Inventory)</h1>
-          <p className="text-sm text-zinc-500">{rows.length} รายการ variant</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { setMigrateConfirmOpen(true); setMigrateResult(null); }}
-            disabled={migrating}
-            className="text-zinc-600"
-          >
-            {migrating ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Wrench className="mr-1.5 h-4 w-4" />}
-            Standardize SKUs
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { setPosOpen(true); setPosSuccess(null); setPosError(null); }}
-            className="border-primary/30 text-primary hover:bg-accent"
-          >
-            <ShoppingCart className="mr-1.5 h-4 w-4" /> สร้างออเดอร์
-          </Button>
-          <Link href={brandId ? `/admin/inventory/manual?breederId=${brandId}` : "/admin/inventory/manual"}>
-            <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-accent">
-              <LayoutGrid className="mr-1.5 h-4 w-4" /> Manual Grid
-            </Button>
-          </Link>
-          <Button
-            onClick={() => setAddOpen(true)}
-            className="bg-primary text-white hover:bg-primary/90"
-          >
-            <Plus className="mr-1.5 h-4 w-4" /> เพิ่มสินค้าและแพ็ก (Inventory)
-          </Button>
-        </div>
-      </div>
+      <InventoryStats
+        rowsCount={rows.length}
+        brandId={brandId}
+        onOpenPos={() => { setPosOpen(true); setPosSuccess(null); setPosError(null); }}
+        onOpenAdd={() => setAddOpen(true)}
+      />
 
-      {/* Filters */}
-      <Card>
-        <CardHeader className="py-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Filter className="h-4 w-4" /> กรอง
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-end gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">ค้นหา</Label>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-              <Input
-                placeholder="ค้นหาชื่อสายพันธุ์ หรือ SKU..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 w-[220px] pl-8 rounded-md border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Category</Label>
-            <Select value={category || "all"} onValueChange={(v) => setCategory(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="ทั้งหมด" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">ทั้งหมด</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Type</Label>
-            <Select value={typeFilter || "all"} onValueChange={(v) => setTypeFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">ทั้งหมด</SelectItem>
-                <SelectItem value="Indica">Indica</SelectItem>
-                <SelectItem value="Sativa">Sativa</SelectItem>
-                <SelectItem value="Hybrid">Hybrid</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">แบรนด์</Label>
-            <Select value={brandId || "all"} onValueChange={(v) => setBrandId(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="ทั้งหมด" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">ทั้งหมด</SelectItem>
-                {breeders.map((b) => (
-                  <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">สต็อก</Label>
-            <Select value={stockLevel || "all"} onValueChange={(v) => setStockLevel(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">ทั้งหมด</SelectItem>
-                <SelectItem value="low">ต่ำ</SelectItem>
-                <SelectItem value="out">หมด</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <InventorySearch
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        category={category}
+        setCategory={setCategory}
+        typeFilter={typeFilter}
+        setTypeFilter={setTypeFilter}
+        brandId={brandId}
+        setBrandId={setBrandId}
+        stockLevel={stockLevel}
+        setStockLevel={setStockLevel}
+        categories={categories}
+        breeders={breeders}
+      />
 
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="py-12 text-center text-zinc-500">ไม่มี variant ในระบบ หรือกรองแล้วไม่ตรง</div>
-          ) : filteredGrouped.length === 0 ? (
-            <div className="py-12 text-center text-zinc-500">ไม่พบผลลัพธ์ที่ตรงกับคำค้นหา</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  {table.getHeaderGroups().map((hg) => (
-                    <tr key={hg.id} className="border-b bg-zinc-50">
-                      {hg.headers.map((h) => (
-                        <th key={h.id} className="px-4 py-3 text-left font-medium text-zinc-700">
-                          {flexRender(h.column.columnDef.header, h.getContext())}
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </thead>
-                <tbody>
-                  {filteredGrouped.map((grp) => (
-                    <Fragment key={grp.product_id}>
-                      <tr className="border-b bg-zinc-100/80 font-medium">
-                        <td className="w-10 px-2 py-2.5" />
-                        <td className="px-4 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-zinc-900">{grp.product_name}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleEditProduct(grp.product_id)}
-                              disabled={loadingEditId === grp.product_id}
-                              className="rounded p-1.5 text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-800 disabled:opacity-50"
-                              title="แก้ไขสินค้า"
-                            >
-                              {loadingEditId === grp.product_id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Pencil className="h-4 w-4" />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2.5">{grp.brand}</td>
-                        <td className="px-4 py-2.5"><CategoryBadge value={grp.category} /></td>
-                        <td className="px-4 py-2.5"><TypeBadge value={grp.type} /></td>
-                        <td className="px-4 py-2.5 text-xs">{grp.thc_level}</td>
-                        <td colSpan={6} className="px-4 py-2.5 text-xs text-zinc-500">{grp.variants.length} SKU(s)</td>
-                      </tr>
-                      {grp.variants.map((v, vIdx) => (
-                        <tr
-                          key={v.id}
-                          className={`border-b transition-colors hover:bg-accent/50 ${v.stock === 0 ? "bg-red-50" : ""} ${(v.stock <= ((v as InventoryRow).low_stock_threshold ?? 5)) && v.stock > 0 ? "bg-red-50/50" : ""} ${vIdx % 2 === 1 ? "bg-zinc-50/30" : ""}`}
-                        >
-                          <td className="w-10 px-2 py-2" />
-                          <td className="pl-8 pr-4 py-2 text-zinc-500">
-                          ↳ {v.unit_label}
-                          {!v.is_active && (
-                            <span className="ml-2 rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600">
-                              ปิด / Inactive
-                            </span>
-                          )}
-                        </td>
-                          <td className="px-4 py-2" />
-                          <td className="px-4 py-2" />
-                          <td className="px-4 py-2" />
-                          <td className="px-4 py-2" />
-                          <td className="px-4 py-2 font-mono text-xs">{v.sku ?? "—"}</td>
-                          <td className="px-4 py-2">
-                            {(() => {
-                              const th = (v as InventoryRow).low_stock_threshold ?? 5;
-                              const low = v.stock > 0 && v.stock <= th;
-                              return (
-                                <div className={low ? "inline-flex items-center gap-1 rounded bg-red-100/80 px-1.5 py-0.5" : "inline-flex items-center gap-1"}>
-                                  <EditableCell
-                                    value={v.stock}
-                                    saving={savingId === v.id}
-                                    onSave={(val) => patchVariant(v.id, { stock: Math.max(0, Math.round(val)) })}
-                                  />
-                                  {low && <span className="text-[10px] font-medium text-red-700 shrink-0" title={`แจ้งต่ำ ≤ ${th}`}>ต่ำ ≤{th}</span>}
-                                </div>
-                              );
-                            })()}
-                          </td>
-                          <td className="px-4 py-2">
-                            <EditableCell
-                              value={v.cost_price}
-                              saving={savingId === v.id}
-                              onSave={(val) => patchVariant(v.id, { cost_price: val })}
-                              prefix="฿"
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <EditableCell
-                              value={v.price}
-                              saving={savingId === v.id}
-                              onSave={(val) => patchVariant(v.id, { price: val })}
-                              prefix="฿"
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className={`text-xs ${v.margin < 0 ? "text-red-600" : "text-slate-500"}`}>{v.margin}%</span>
-                          </td>
-                          <td className="px-4 py-2">{v.unit_label}</td>
-                        </tr>
-                      ))}
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <InventoryGrid
+        loading={loading}
+        rowsLength={rows.length}
+        filteredGrouped={filteredGrouped}
+        table={table}
+        handleEditProduct={handleEditProduct}
+        loadingEditId={loadingEditId}
+        savingId={savingId}
+        patchVariant={patchVariant}
+      />
 
-      {/* Add New Product & Variants Modal */}
+      <InventoryDialogs>
       <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) setAddError(null); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -1080,46 +774,8 @@ function AdminInventoryContent() {
           )}
         </DialogContent>
       </Dialog>
+      </InventoryDialogs>
 
-      {/* Migrate SKUs confirmation */}
-      <Dialog open={migrateConfirmOpen} onOpenChange={(open) => { if (!migrating) setMigrateConfirmOpen(open); if (!open) setMigrateResult(null); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Standardize All SKUs</DialogTitle>
-          </DialogHeader>
-          {!migrateResult ? (
-            <>
-              <p className="text-sm text-zinc-600">
-                {migrating
-                  ? "Migrating… Please wait."
-                  : "This will rewrite all product Master SKUs and variant SKUs to the new UPPERCASE format (e.g. 420FASTBUDS-RAINBOW-MELON-1). Existing values will be overwritten. Continue?"}
-              </p>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setMigrateConfirmOpen(false)} disabled={migrating}>
-                  Cancel
-                </Button>
-                <Button onClick={runMigrateSkus} disabled={migrating}>
-                  {migrating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Run migration
-                </Button>
-              </DialogFooter>
-            </>
-          ) : (
-            <>
-              {"error" in migrateResult ? (
-                <p className="text-sm text-red-600">{migrateResult.error}</p>
-              ) : (
-                <p className="text-sm text-primary">
-                  Done. Updated {migrateResult.updated_products} products and {migrateResult.updated_variants} variants.
-                </p>
-              )}
-              <DialogFooter>
-                <Button onClick={() => { setMigrateConfirmOpen(false); setMigrateResult(null); }}>Close</Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

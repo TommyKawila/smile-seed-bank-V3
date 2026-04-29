@@ -847,7 +847,7 @@ export default function PromotionsPage() {
             <DialogTitle>ยืนยันการลบ</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-zinc-600">
-            ลบโปรโมชั่น "{deleteConfirm?.name}" ใช่หรือไม่?
+            ลบโปรโมชั่น &quot;{deleteConfirm?.name}&quot; ใช่หรือไม่?
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>ยกเลิก</Button>

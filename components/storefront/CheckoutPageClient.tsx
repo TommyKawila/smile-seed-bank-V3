@@ -10,10 +10,8 @@ import generatePayload from "promptpay-qr";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useCartContext } from "@/context/CartContext";
 import { useAuth } from "@/hooks/use-auth";
 import { DiscountProgressBar } from "@/components/storefront/DiscountProgressBar";
@@ -30,6 +28,10 @@ import {
   type SavedPromotionPayload,
 } from "@/lib/saved-promotion-local";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { CouponSection } from "@/components/storefront/checkout/CouponSection";
+import { OrderSummary } from "@/components/storefront/checkout/OrderSummary";
+import { PaymentSection } from "@/components/storefront/checkout/PaymentSection";
+import { ShippingSection } from "@/components/storefront/checkout/ShippingSection";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const serif = "font-sans";
@@ -69,8 +71,6 @@ function mergeSavedCoupons(
   }
   return out;
 }
-
-const QR_IMAGE_SIZE = 220;
 
 const CheckoutFormSchema = z.object({
   full_name: z.string().min(2, "กรุณาระบุชื่อ-นามสกุล"),
@@ -474,102 +474,16 @@ export function CheckoutPageClient({
                 </div>
               )}
 
-              <Card className="rounded-sm border-zinc-200 shadow-sm">
-                <CardContent className="space-y-4 p-5">
-                  <h2 className={cn(serif, "text-sm font-medium text-zinc-800")}>
-                    {t("ข้อมูลจัดส่ง", "Shipping details")}
-                  </h2>
+              <ShippingSection
+                user={user}
+                form={form}
+                fieldErrors={fieldErrors}
+                setField={setField}
+                t={t}
+                serif={serif}
+              />
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="full_name" className="text-xs font-light text-zinc-600">
-                        {t("ชื่อ-นามสกุล *", "Full name *")}
-                      </Label>
-                      <Input
-                        id="full_name"
-                        value={form.full_name}
-                        onChange={(e) => setField("full_name", e.target.value)}
-                        placeholder={t("ชื่อผู้รับ", "Recipient name")}
-                        className="rounded-sm border-zinc-200 bg-white"
-                      />
-                      {fieldErrors.full_name && (
-                        <p className="text-xs text-red-500">{fieldErrors.full_name}</p>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="phone" className="text-xs font-light text-zinc-600">
-                        {t("เบอร์โทร *", "Phone *")}
-                      </Label>
-                      <Input
-                        id="phone"
-                        value={form.phone}
-                        onChange={(e) => setField("phone", e.target.value)}
-                        placeholder="08x-xxx-xxxx"
-                        type="tel"
-                        className="rounded-sm border-zinc-200 bg-white"
-                      />
-                      {fieldErrors.phone && (
-                        <p className="text-xs text-red-500">{fieldErrors.phone}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {!user && (
-                    <div className="space-y-1">
-                      <Label htmlFor="guest_email" className="text-xs font-light text-zinc-600">
-                        {t("อีเมล *", "Email *")}
-                      </Label>
-                      <Input
-                        id="guest_email"
-                        type="email"
-                        value={form.guest_email}
-                        onChange={(e) => setField("guest_email", e.target.value)}
-                        placeholder="your@email.com"
-                        autoComplete="email"
-                        className="rounded-sm border-zinc-200 bg-white"
-                      />
-                      {fieldErrors.guest_email && (
-                        <p className="text-xs text-red-500">{fieldErrors.guest_email}</p>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                    <Label htmlFor="address" className="text-xs font-light text-zinc-600">
-                      {t("ที่อยู่จัดส่ง *", "Shipping address *")}
-                    </Label>
-                    <Textarea
-                      id="address"
-                      value={form.address}
-                      onChange={(e) => setField("address", e.target.value)}
-                      placeholder={t("บ้านเลขที่, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์", "Street, district, province, postal code")}
-                      rows={3}
-                      className="rounded-sm border-zinc-200 bg-white"
-                    />
-                    {fieldErrors.address && (
-                      <p className="text-xs text-red-500">{fieldErrors.address}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="order_note" className="text-xs font-light text-zinc-600">
-                      {t("หมายเหตุถึงผู้ขาย (ไม่บังคับ)", "Order note (optional)")}
-                    </Label>
-                    <Textarea
-                      id="order_note"
-                      value={form.order_note}
-                      onChange={(e) => setField("order_note", e.target.value)}
-                      placeholder={t("เช่น วันเวลาที่สะดวกรับ", "e.g. preferred delivery time")}
-                      rows={3}
-                      className="resize-none rounded-sm border-zinc-200 bg-white"
-                    />
-                    {fieldErrors.order_note && (
-                      <p className="text-xs text-red-500">{fieldErrors.order_note}</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
+              <OrderSummary>
               <Card className="rounded-sm border-zinc-200 shadow-sm">
                 <CardContent className="space-y-4 p-5">
                   <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3">
@@ -603,6 +517,7 @@ export function CheckoutPageClient({
                     )}
                   </p>
 
+                  <CouponSection>
                   {user && savedCoupons.length > 0 && (
                     <div className="space-y-2 rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900/80">
@@ -740,6 +655,8 @@ export function CheckoutPageClient({
                     </div>
                   )}
 
+                  </CouponSection>
+
                   <div className="space-y-2 rounded-sm border border-zinc-100 bg-zinc-50/40 p-3 text-sm">
                     <div className="flex justify-between gap-3 text-zinc-600">
                       <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
@@ -802,105 +719,15 @@ export function CheckoutPageClient({
                   </div>
                 </CardContent>
               </Card>
+              </OrderSummary>
 
-              <Card className="rounded-sm border-zinc-200 shadow-sm">
-                <CardContent className="space-y-3 p-5">
-                  <h2 className={cn(serif, "text-sm font-medium text-zinc-800")}>
-                    {t("ชำระเงินด้วยการโอนเงิน", "Bank transfer")}
-                  </h2>
-                  <p className="text-xs text-zinc-500">
-                    {t("ธนาคาร / PromptPay — ใช้ยอดสุทธิด้านบนเมื่อโอน", "Bank / PromptPay — use the net total above when transferring.")}
-                  </p>
-
-                  <div className="space-y-3 border-t border-zinc-100 pt-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                        {t("รายละเอียดการโอน (สาธารณะ)", "Transfer details")}
-                      </p>
-                      {paymentSettingsError && (
-                        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                          {t("ไม่สามารถโหลดข้อมูลบัญชีได้ กรุณาลองใหม่หรือดูหน้าชำระเงินหลังสั่งซื้อ", "Could not load bank details. You can still place the order and see instructions on the next page.")}
-                        </p>
-                      )}
-                      {!paymentSettingsError && paymentSettings.length === 0 && (
-                        <p className="rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-600">
-                          {t("ยังไม่มีช่องทางโอนที่เปิดใช้งาน — ทีมงานจะติดต่อกลับ", "No active transfer methods — our team will follow up.")}
-                        </p>
-                      )}
-                      {paymentSettings.map((pm) => (
-                        <Card key={`${pm.source}-${pm.id}`} className="rounded-sm border-zinc-200 bg-white shadow-sm">
-                          <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-base text-primary">
-                              {pm.source === "promptpay"
-                                ? t("พร้อมเพย์", "PromptPay")
-                                : pm.bank_name ?? t("โอนเงินผ่านธนาคาร", "Bank transfer")}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-2 p-4 pt-0 text-sm">
-                            {pm.source === "bank" && pm.bank_name && (
-                              <div className="flex justify-between gap-2">
-                                <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
-                                <span className="font-medium text-zinc-900">{pm.bank_name}</span>
-                              </div>
-                            )}
-                            {pm.account_number && (
-                              <div className="flex justify-between gap-2">
-                                <span className="text-zinc-500">
-                                  {pm.source === "promptpay"
-                                    ? t("หมายเลขพร้อมเพย์", "PromptPay ID")
-                                    : t("เลขบัญชี", "Account number")}
-                                </span>
-                                <span className="font-mono font-medium text-zinc-900">{pm.account_number}</span>
-                              </div>
-                            )}
-                            {pm.account_name && (
-                              <div className="flex justify-between gap-2">
-                                <span className="text-zinc-500">{t("ชื่อบัญชี", "Account name")}</span>
-                                <span className="font-medium text-zinc-900">{pm.account_name}</span>
-                              </div>
-                            )}
-                            {pm.source === "promptpay" && promptPayQrDataUrl ? (
-                              <div className="mx-auto mt-2 flex w-[220px] max-w-full justify-center">
-                                <Image
-                                  src={promptPayQrDataUrl}
-                                  alt={t(
-                                    "QR พร้อมเพย์ตามยอดออเดอร์",
-                                    "PromptPay QR with order amount"
-                                  )}
-                                  width={QR_IMAGE_SIZE}
-                                  height={QR_IMAGE_SIZE}
-                                  className="h-[220px] w-[220px] max-w-full rounded-lg border border-zinc-200 object-contain"
-                                  unoptimized
-                                />
-                              </div>
-                            ) : pm.qr_code_url ? (
-                              <div className="mx-auto mt-2 flex w-[220px] max-w-full justify-center">
-                                <Image
-                                  src={pm.qr_code_url}
-                                  alt={
-                                    pm.source === "promptpay"
-                                      ? t(
-                                          "QR Code พร้อมเพย์สำหรับชำระเงิน",
-                                          "PromptPay QR code for payment"
-                                        )
-                                      : t(
-                                          "QR Code โอนเงินผ่านธนาคารสำหรับชำระเงิน",
-                                          "Bank transfer QR code for payment"
-                                        )
-                                  }
-                                  width={QR_IMAGE_SIZE}
-                                  height={QR_IMAGE_SIZE}
-                                  className="h-[220px] w-[220px] max-w-full object-contain"
-                                  sizes="220px"
-                                  unoptimized={shouldOffloadImageOptimization(pm.qr_code_url)}
-                                />
-                              </div>
-                            ) : null}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                </CardContent>
-              </Card>
+              <PaymentSection
+                paymentSettings={paymentSettings}
+                paymentSettingsError={paymentSettingsError}
+                promptPayQrDataUrl={promptPayQrDataUrl}
+                t={t}
+                serif={serif}
+              />
 
               {submitError && (
                 <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{submitError}</p>

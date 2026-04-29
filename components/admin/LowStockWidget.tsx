@@ -23,8 +23,8 @@ export function LowStockWidget() {
     fetch("/api/admin/inventory/low-stock", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        const arr = Array.isArray(data) ? data : [];
-        setItems(arr.map((d: { breeder?: string; brand?: string }) => ({ ...d, brand: d.brand ?? d.breeder ?? "—" })));
+        const arr = Array.isArray(data) ? (data as LowStockItem[]) : [];
+        setItems(arr.map((d) => ({ ...d, brand: d.brand ?? d.breeder ?? "—" })));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -65,7 +65,6 @@ export function LowStockWidget() {
         {items.length > 0 && (
             <Link
             href="/admin/inventory?stock=low"
-            className="print:hidden"
             className="mt-3 flex items-center justify-center gap-1 rounded-lg border border-zinc-200 py-2 text-sm font-medium text-primary hover:bg-primary/5"
           >
             ดูทั้งหมดที่ Inventory

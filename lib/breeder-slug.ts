@@ -10,11 +10,6 @@ export function seedsBreederHref(b: { name: string }): string {
   return `/seeds/${breederSlugFromName(b.name)}`;
 }
 
-/** @deprecated Use seedsBreederHref — kept for gradual migration */
-export function shopBreederHref(b: { name: string }): string {
-  return seedsBreederHref(b);
-}
-
 /**
  * Resolve `?breeder=` from slug (preferred) or legacy numeric id.
  * Invalid values → null (caller may redirect to /shop).

@@ -59,6 +59,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const qRaw = (searchParams.get("q") ?? "").trim();
     const tier = searchParams.get("tier") ?? "";
+    const limitRaw = Number(searchParams.get("limit") ?? 80);
+    const limit = Number.isFinite(limitRaw) ? Math.min(100, Math.max(1, limitRaw)) : 80;
     const qNorm = qRaw.replace(/[\s\-().]/g, "");
     const qDigits = phoneDigits(qRaw);
 
@@ -69,6 +71,7 @@ export async function GET(req: NextRequest) {
       }
       const customers = await prisma.customer.findMany({
         where,
+        take: limit,
         orderBy: { name: "asc" },
       });
       return NextResponse.json(bigintToJson(customers));
@@ -106,12 +109,12 @@ export async function GET(req: NextRequest) {
     const [posList, webList, quoteRows] = await Promise.all([
       prisma.customer.findMany({
         where: wherePos,
-        take: 80,
+        take: limit,
         orderBy: { name: "asc" },
       }),
       prisma.customers.findMany({
         where: { OR: orWeb },
-        take: 80,
+        take: limit,
         select: { id: true, full_name: true, phone: true, email: true, address: true },
       }),
       prisma.$queryRaw<
@@ -158,7 +161,7 @@ export async function GET(req: NextRequest) {
           FROM ranked
         )
         SELECT name, phone, email, address, notes FROM picked WHERE rn = 1
-        LIMIT 80
+        LIMIT ${limit}
       `,
     ]);
 

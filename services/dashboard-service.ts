@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import type { Order, OrderItem, ProductVariant } from "@/types/supabase";
+import { Prisma } from "@prisma/client";
 
 type ServiceResult<T> = { data: T | null; error: string | null };
 
@@ -46,6 +46,32 @@ export interface InventoryValueResult {
   breeders: { id: number; name: string }[];
 }
 
+export interface TopSpender {
+  name: string;
+  spent: number;
+  orders: number;
+}
+
+function parseDate(value?: string): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function paidOrdersWhereSql(alias = "o", opts?: { from?: string; to?: string }) {
+  const from = parseDate(opts?.from);
+  const to = parseDate(opts?.to);
+  const ref = Prisma.raw(alias);
+  return Prisma.sql`
+    (
+      ${ref}.status IN ('PAID', 'SHIPPED', 'DELIVERED', 'COMPLETED')
+      OR (${ref}.status IN ('PENDING', 'PROCESSING') AND ${ref}.payment_status = 'paid')
+    )
+    ${from ? Prisma.sql`AND ${ref}.created_at >= ${from}` : Prisma.empty}
+    ${to ? Prisma.sql`AND ${ref}.created_at <= ${to}` : Prisma.empty}
+  `;
+}
+
 // ─── Financial Summary ────────────────────────────────────────────────────────
 
 export async function getFinancialSummary(opts?: {
@@ -53,48 +79,30 @@ export async function getFinancialSummary(opts?: {
   to?: string;
 }): Promise<ServiceResult<FinancialSummary>> {
   try {
-    const where: { OR: object[]; created_at?: object } = {
-      OR: [
-        { status: { in: ["PAID", "SHIPPED"] } },
-        { status: { in: ["PENDING", "PROCESSING"] }, payment_status: "paid" },
-      ],
-    };
-    if (opts?.from || opts?.to) {
-      where.created_at = {};
-      if (opts.from) (where.created_at as Record<string, Date>).gte = new Date(opts.from);
-      if (opts.to) (where.created_at as Record<string, Date>).lte = new Date(opts.to);
-    }
+    const rows = await prisma.$queryRaw<
+      { total_revenue: unknown; total_cogs: unknown; total_orders: bigint }[]
+    >`
+      WITH paid_orders AS (
+        SELECT o.id, COALESCE(o.total_amount, 0)::numeric AS total_amount
+        FROM public.orders o
+        WHERE ${paidOrdersWhereSql("o", opts)}
+      ),
+      cogs AS (
+        SELECT COALESCE(SUM(oi.quantity * COALESCE(NULLIF(oi.unit_cost, 0), pv.cost_price, 0)), 0)::numeric AS total_cogs
+        FROM public.order_items oi
+        INNER JOIN paid_orders po ON po.id = oi.order_id
+        LEFT JOIN public.product_variants pv ON pv.id = oi.variant_id
+      )
+      SELECT
+        COALESCE(SUM(po.total_amount), 0)::text AS total_revenue,
+        (SELECT total_cogs::text FROM cogs) AS total_cogs,
+        COUNT(*)::bigint AS total_orders
+      FROM paid_orders po
+    `;
 
-    const orders = await prisma.orders.findMany({
-      where,
-      select: { id: true, total_amount: true, total_cost: true },
-    });
-
-    const orderIds = orders.map((o) => o.id);
-    const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
-
-    // COGS from order_items: quantity * (unit_cost ?? variant.cost_price)
-    let totalCOGS = 0;
-    if (orderIds.length > 0) {
-      const items = await prisma.order_items.findMany({
-        where: { order_id: { in: orderIds } },
-        select: { variant_id: true, quantity: true, unit_cost: true },
-      });
-      const variantIds = [...new Set(items.map((i) => i.variant_id).filter(Boolean))] as bigint[];
-      const variantCosts = variantIds.length
-        ? await prisma.product_variants.findMany({
-            where: { id: { in: variantIds } },
-            select: { id: true, cost_price: true },
-          })
-        : [];
-      const costMap = new Map(variantCosts.map((v) => [Number(v.id), Number(v.cost_price ?? 0)]));
-      for (const item of items) {
-        const cost = item.unit_cost != null && Number(item.unit_cost) > 0
-          ? Number(item.unit_cost)
-          : (item.variant_id ? costMap.get(Number(item.variant_id)) ?? 0 : 0);
-        totalCOGS += item.quantity * cost;
-      }
-    }
+    const row = rows[0];
+    const totalRevenue = Number(row?.total_revenue ?? 0);
+    const totalCOGS = Number(row?.total_cogs ?? 0);
 
     const netProfit = totalRevenue - totalCOGS;
     const profitMarginPercent =
@@ -106,7 +114,7 @@ export async function getFinancialSummary(opts?: {
         totalCOGS: Math.round(totalCOGS),
         netProfit,
         profitMarginPercent: Math.round(profitMarginPercent * 10) / 10,
-        totalOrders: orders.length,
+        totalOrders: Number(row?.total_orders ?? 0),
       },
       error: null,
     };
@@ -122,68 +130,53 @@ export async function getRevenueSeries(
   opts?: { from?: string; to?: string }
 ): Promise<ServiceResult<RevenueDataPoint[]>> {
   try {
-    const where: { OR: object[]; created_at?: object } = {
-      OR: [
-        { status: { in: ["PAID", "SHIPPED"] } },
-        { status: { in: ["PENDING", "PROCESSING"] }, payment_status: "paid" },
-      ],
-    };
-    if (opts?.from || opts?.to) {
-      where.created_at = {};
-      if (opts.from) (where.created_at as Record<string, Date>).gte = new Date(opts.from);
-      if (opts.to) (where.created_at as Record<string, Date>).lte = new Date(opts.to);
-    }
+    const bucket = period === "daily" ? "day" : "month";
+    const rows = await prisma.$queryRaw<
+      { date: string; revenue: unknown; cogs: unknown }[]
+    >`
+      WITH paid_orders AS (
+        SELECT
+          o.id,
+          date_trunc(${bucket}, o.created_at)::date AS bucket_date,
+          COALESCE(o.total_amount, 0)::numeric AS total_amount
+        FROM public.orders o
+        WHERE ${paidOrdersWhereSql("o", opts)}
+      ),
+      revenue AS (
+        SELECT bucket_date, SUM(total_amount)::numeric AS revenue
+        FROM paid_orders
+        GROUP BY bucket_date
+      ),
+      cogs AS (
+        SELECT
+          po.bucket_date,
+          COALESCE(SUM(oi.quantity * COALESCE(NULLIF(oi.unit_cost, 0), pv.cost_price, 0)), 0)::numeric AS cogs
+        FROM paid_orders po
+        LEFT JOIN public.order_items oi ON oi.order_id = po.id
+        LEFT JOIN public.product_variants pv ON pv.id = oi.variant_id
+        GROUP BY po.bucket_date
+      )
+      SELECT
+        ${period === "daily"
+          ? Prisma.sql`to_char(revenue.bucket_date, 'YYYY-MM-DD')`
+          : Prisma.sql`to_char(revenue.bucket_date, 'YYYY-MM')`} AS date,
+        revenue.revenue::text AS revenue,
+        COALESCE(cogs.cogs, 0)::text AS cogs
+      FROM revenue
+      LEFT JOIN cogs ON cogs.bucket_date = revenue.bucket_date
+      ORDER BY revenue.bucket_date ASC
+    `;
 
-    const orders = await prisma.orders.findMany({
-      where,
-      select: { id: true, total_amount: true, created_at: true },
-      orderBy: { created_at: "asc" },
+    const series: RevenueDataPoint[] = rows.map((row) => {
+      const revenue = Number(row.revenue ?? 0);
+      const cogs = Number(row.cogs ?? 0);
+      return {
+        date: row.date,
+        revenue: Math.round(revenue),
+        cogs: Math.round(cogs),
+        profit: Math.round(revenue - cogs),
+      };
     });
-
-    const map = new Map<string, { revenue: number; cogs: number }>();
-
-    if (orders.length > 0) {
-      const items = await prisma.order_items.findMany({
-        where: { order_id: { in: orders.map((o) => o.id) } },
-        select: { order_id: true, variant_id: true, quantity: true, unit_cost: true },
-      });
-      const variantIds = [...new Set(items.map((i) => i.variant_id).filter(Boolean))] as bigint[];
-      const variantCosts = variantIds.length
-        ? await prisma.product_variants.findMany({
-            where: { id: { in: variantIds } },
-            select: { id: true, cost_price: true },
-          })
-        : [];
-      const costMap = new Map(variantCosts.map((v) => [Number(v.id), Number(v.cost_price ?? 0)]));
-
-      const orderCogsMap = new Map<bigint, number>();
-      for (const item of items) {
-        const cost = item.unit_cost != null && Number(item.unit_cost) > 0
-          ? Number(item.unit_cost)
-          : (item.variant_id ? costMap.get(Number(item.variant_id)) ?? 0 : 0);
-        const add = item.quantity * cost;
-        orderCogsMap.set(item.order_id!, (orderCogsMap.get(item.order_id!) ?? 0) + add);
-      }
-
-      for (const order of orders) {
-        const d = new Date(order.created_at!);
-        const key = period === "daily" ? d.toISOString().slice(0, 10) : d.toISOString().slice(0, 7);
-        const prev = map.get(key) ?? { revenue: 0, cogs: 0 };
-        map.set(key, {
-          revenue: prev.revenue + Number(order.total_amount),
-          cogs: prev.cogs + (orderCogsMap.get(order.id) ?? 0),
-        });
-      }
-    }
-
-    const series: RevenueDataPoint[] = Array.from(map.entries()).map(
-      ([date, v]) => ({
-        date,
-        revenue: Math.round(v.revenue),
-        cogs: Math.round(v.cogs),
-        profit: Math.round(v.revenue - v.cogs),
-      })
-    );
 
     return { data: series, error: null };
   } catch (err) {
@@ -198,32 +191,23 @@ export async function getSalesChannelBreakdown(opts?: {
   to?: string;
 }): Promise<ServiceResult<ChannelBreakdown[]>> {
   try {
-    const created_at: { gte?: Date; lte?: Date } = {};
-    if (opts?.from) created_at.gte = new Date(opts.from);
-    if (opts?.to) created_at.lte = new Date(opts.to);
-    const hasDate = created_at.gte != null || created_at.lte != null;
-
-    const data = await prisma.orders.findMany({
-      where: {
-        ...(hasDate ? { created_at } : {}),
-        OR: [
-          { status: { in: ["PAID", "SHIPPED"] } },
-          { status: { in: ["PENDING", "PROCESSING"] }, payment_status: "paid" },
-        ],
-      },
-      select: { order_origin: true, total_amount: true },
-    });
-
-    const map = new Map<string, { count: number; revenue: number }>();
-
-    data.forEach((o) => {
-      const ch = o.order_origin ?? "WEB";
-      const prev = map.get(ch) ?? { count: 0, revenue: 0 };
-      map.set(ch, {
-        count: prev.count + 1,
-        revenue: prev.revenue + Number(o.total_amount),
-      });
-    });
+    const rows = await prisma.$queryRaw<
+      { channel: "WEB" | "MANUAL"; order_count: bigint; revenue: unknown }[]
+    >`
+      SELECT
+        COALESCE(NULLIF(o.order_origin, ''), 'WEB')::text AS channel,
+        COUNT(*)::bigint AS order_count,
+        COALESCE(SUM(o.total_amount), 0)::text AS revenue
+      FROM public.orders o
+      WHERE ${paidOrdersWhereSql("o", opts)}
+      GROUP BY COALESCE(NULLIF(o.order_origin, ''), 'WEB')
+    `;
+    const map = new Map(
+      rows.map((r) => [
+        r.channel,
+        { count: Number(r.order_count), revenue: Number(r.revenue ?? 0) },
+      ])
+    );
 
     const result: ChannelBreakdown[] = (["WEB", "MANUAL"] as const).map(
       (ch) => ({
@@ -234,6 +218,56 @@ export async function getSalesChannelBreakdown(opts?: {
     );
 
     return { data: result, error: null };
+  } catch (err) {
+    return { data: null, error: String(err) };
+  }
+}
+
+export async function getTopSpenders(
+  limit = 5,
+  opts?: { from?: string; to?: string }
+): Promise<ServiceResult<TopSpender[]>> {
+  try {
+    const rows = await prisma.$queryRaw<
+      { name: string | null; spent: unknown; orders: bigint }[]
+    >`
+      WITH paid_orders AS (
+        SELECT
+          o.id,
+          o.customer_id,
+          o.customer_profile_id,
+          o.customer_name,
+          COALESCE(o.total_amount, 0)::numeric AS total_amount
+        FROM public.orders o
+        WHERE ${paidOrdersWhereSql("o", opts)}
+      ),
+      named AS (
+        SELECT
+          CASE
+            WHEN po.customer_id IS NOT NULL THEN COALESCE(NULLIF(TRIM(c.full_name), ''), NULLIF(TRIM(po.customer_name), ''), 'Guest')
+            WHEN po.customer_profile_id IS NOT NULL THEN COALESCE(NULLIF(TRIM(cp.name), ''), NULLIF(TRIM(po.customer_name), ''), 'POS')
+            ELSE COALESCE(NULLIF(TRIM(po.customer_name), ''), 'Guest')
+          END AS name,
+          po.total_amount
+        FROM paid_orders po
+        LEFT JOIN public.customers c ON c.id = po.customer_id
+        LEFT JOIN public."Customer" cp ON cp.id = po.customer_profile_id
+      )
+      SELECT name, SUM(total_amount)::text AS spent, COUNT(*)::bigint AS orders
+      FROM named
+      GROUP BY name
+      ORDER BY SUM(total_amount) DESC
+      LIMIT ${Math.min(50, Math.max(1, limit))}
+    `;
+
+    return {
+      data: rows.map((row) => ({
+        name: row.name?.trim() || "Guest",
+        spent: Number(row.spent ?? 0),
+        orders: Number(row.orders),
+      })),
+      error: null,
+    };
   } catch (err) {
     return { data: null, error: String(err) };
   }
@@ -324,40 +358,3 @@ export async function getInventoryValue(): Promise<
   }
 }
 
-// ─── Top Selling Variants (for Admin overview table) ─────────────────────────
-
-export async function getTopSellingVariants(
-  limit = 10
-): Promise<ServiceResult<{ variantId: number; unitsSold: number; revenue: number }[]>> {
-  try {
-    const supabase = await createAdminClient();
-
-    const { data, error } = await supabase
-      .from("order_items")
-      .select("variant_id, quantity, unit_price")
-      .limit(1000); // Fetch recent items — aggregate in JS
-
-    if (error) return { data: null, error: error.message };
-
-    const items = data as Pick<OrderItem, "variant_id" | "quantity" | "unit_price">[];
-
-    const map = new Map<number, { unitsSold: number; revenue: number }>();
-
-    items.forEach((item) => {
-      const prev = map.get(item.variant_id) ?? { unitsSold: 0, revenue: 0 };
-      map.set(item.variant_id, {
-        unitsSold: prev.unitsSold + item.quantity,
-        revenue: prev.revenue + item.quantity * item.unit_price,
-      });
-    });
-
-    const sorted = Array.from(map.entries())
-      .map(([variantId, v]) => ({ variantId, ...v }))
-      .sort((a, b) => b.unitsSold - a.unitsSold)
-      .slice(0, limit);
-
-    return { data: sorted, error: null };
-  } catch (err) {
-    return { data: null, error: String(err) };
-  }
-}

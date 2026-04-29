@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { AuthProvider } from "@/hooks/use-auth";
+import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import { StorefrontStructuredData } from "@/components/seo/StorefrontStructuredData";
 import { Navbar } from "@/components/storefront/Navbar";
 import { Footer } from "@/components/storefront/Footer";
@@ -15,23 +17,27 @@ import { BrowserDetectionBanner } from "@/components/storefront/BrowserDetection
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
     <LanguageProvider>
-      <CartProvider>
-        <CartAnimation />
-        <Toaster />
-        <BrowserDetectionBanner />
-        <AgeVerificationGate />
-        <Suspense fallback={null}>
-          <PromoReturnHandler />
-        </Suspense>
-        <PromotionBanner />
-        <StorefrontStructuredData />
-        <div className="flex min-h-screen flex-col">
-          <Navbar />
-          <main className="flex-1 bg-white">{children}</main>
-          <Footer />
-          <OfferManager />
-        </div>
-      </CartProvider>
+      <AuthProvider>
+        <SiteSettingsProvider>
+          <CartProvider>
+            <CartAnimation />
+            <Toaster />
+            <BrowserDetectionBanner />
+            <AgeVerificationGate />
+            <Suspense fallback={null}>
+              <PromoReturnHandler />
+            </Suspense>
+            <PromotionBanner />
+            <StorefrontStructuredData />
+            <div className="flex min-h-screen flex-col">
+              <Navbar />
+              <main className="flex-1 bg-white">{children}</main>
+              <Footer />
+              <OfferManager />
+            </div>
+          </CartProvider>
+        </SiteSettingsProvider>
+      </AuthProvider>
     </LanguageProvider>
   );
 }
