@@ -38,10 +38,10 @@ import {
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
 
 type HomePayload = {
-  products?: ProductWithBreeder[];
-  featuredProducts?: ProductWithBreeder[];
-  clearanceProducts?: ProductWithBreederAndVariants[];
-  insights?: MagazinePostPublic[];
+  newArrivals?: ProductWithBreeder[];
+  featured?: ProductWithBreeder[];
+  clearance?: ProductWithBreederAndVariants[];
+  magazine?: MagazinePostPublic[];
 };
 
 const staggerContainer: Variants = {
@@ -261,10 +261,10 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
         const res = await fetch("/api/storefront/home");
         const json = (await res.json()) as HomePayload;
         if (!cancelled && res.ok) {
-          setProducts(Array.isArray(json.products) ? json.products : []);
-          setFeaturedProducts(Array.isArray(json.featuredProducts) ? json.featuredProducts : []);
-          setInsights(Array.isArray(json.insights) ? json.insights : []);
-          setClearanceProducts(Array.isArray(json.clearanceProducts) ? json.clearanceProducts : []);
+          setProducts(Array.isArray(json.newArrivals) ? json.newArrivals : []);
+          setFeaturedProducts(Array.isArray(json.featured) ? json.featured : []);
+          setInsights(Array.isArray(json.magazine) ? json.magazine : []);
+          setClearanceProducts(Array.isArray(json.clearance) ? json.clearance : []);
         }
       } catch {
         if (!cancelled) {

@@ -52,10 +52,10 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        products: newArrivals.data ?? [],
-        featuredProducts: featuredPool.slice(0, FEATURED_SHOW),
-        clearanceProducts: clearance.data ?? [],
-        insights,
+        newArrivals: newArrivals.data ?? [],
+        featured: featuredPool.slice(0, FEATURED_SHOW),
+        clearance: clearance.data ?? [],
+        magazine: insights,
       },
       {
         headers: {
