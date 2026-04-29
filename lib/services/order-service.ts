@@ -563,13 +563,15 @@ export async function uploadSlip(
       {
         id: number;
         payment_method: string | null;
+        status: string | null;
+        payment_status: string | null;
         slip_url: string | null;
         total_amount: string;
         customer_name: string | null;
         cust_full: string | null;
       }[]
     >`
-      SELECT o.id, o.payment_method, o.slip_url, o.total_amount::text AS total_amount,
+      SELECT o.id, o.payment_method, o.status, o.payment_status, o.slip_url, o.total_amount::text AS total_amount,
              o.customer_name, c.full_name AS cust_full
       FROM orders o
       LEFT JOIN customers c ON c.id = o.customer_id
@@ -581,6 +583,12 @@ export async function uploadSlip(
     if (order.slip_url) return { data: null, error: "Slip already uploaded" };
     if (order.payment_method !== "TRANSFER") {
       return { data: null, error: "This order does not require slip upload" };
+    }
+    if (
+      !["PENDING", "PENDING_PAYMENT", "PENDING_INFO"].includes(order.status ?? "") ||
+      (order.payment_status ?? "").toLowerCase() === "paid"
+    ) {
+      return { data: null, error: "This order is no longer awaiting payment" };
     }
 
     // Guard: file type + size
@@ -611,10 +619,17 @@ export async function uploadSlip(
     const slipUrl = data.publicUrl;
 
     // Update order status
-    await sql`
+    const updated = await sql<{ id: number }[]>`
       UPDATE orders SET slip_url = ${slipUrl}, status = 'AWAITING_VERIFICATION'
       WHERE id = ${order.id}
+        AND status IN ('PENDING', 'PENDING_PAYMENT', 'PENDING_INFO')
+        AND lower(COALESCE(payment_status, '')) <> 'paid'
+        AND (slip_url IS NULL OR trim(slip_url) = '')
+      RETURNING id
     `;
+    if (updated.length === 0) {
+      return { data: null, error: "This order is no longer awaiting payment" };
+    }
 
     const displayName =
       order.customer_name?.trim() || order.cust_full?.trim() || "—";
