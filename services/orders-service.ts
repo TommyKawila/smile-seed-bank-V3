@@ -403,10 +403,19 @@ export async function approvePayment(
         throw new Error("Order not found");
       }
 
-      const order = await tx.orders.update({
-        where: { id: oid },
+      const approved = await tx.orders.updateMany({
+        where: {
+          id: oid,
+          status: "AWAITING_VERIFICATION",
+          payment_status: { not: "paid" },
+        },
         data: { status: "PENDING", payment_status: "paid", reject_note: null },
       });
+      if (approved.count === 0) {
+        throw new Error("Order is not awaiting payment verification");
+      }
+      const order = await tx.orders.findUnique({ where: { id: oid } });
+      if (!order) throw new Error("Order not found after approval");
 
       // TODO: Loyalty — accrue points from `order.total_amount` / tier rules (100 THB = 1 pt per blueprint); run inside this transaction when implemented.
 
@@ -574,6 +583,9 @@ export async function autoCancelUnpaidOrder24hStale(
       }
       if (order.slip_url?.trim()) {
         throw new Error("24h auto-cancel: payment slip present");
+      }
+      if (!order.created_at) {
+        throw new Error("24h auto-cancel: missing order created_at");
       }
       if (order.created_at.getTime() > cutoff) {
         throw new Error("24h auto-cancel: order not old enough");

@@ -20,6 +20,9 @@
 - **Product JSON-LD (GSC / rich results)** — `lib/seo/build-product-jsonld.ts`: Offer `@id`, `itemCondition`, `priceValidUntil`, `shippingDetails` (TH), `hasMerchantReturnPolicy` (7-day window, TH); no fabricated `aggregateRating`.
 - **Mobile admin packing copy** — `lib/admin-order-line-summary.ts` `formatAdminOrderPackingCopyLine`; `app/admin/m/page.tsx` `packingListProductLines` + `buildAddressAndPackingListText` ใช้บรรทัดเดียวกับ UI (`breeder` + `adminOrderLineItemSeedTypeLabel` + ` x N pack(s)`).
 
+### บันทึกการทำงาน — 2026-04-29
+- **Critical order state guard** — `services/orders-service.ts` `approvePayment` อนุมัติเฉพาะ `AWAITING_VERIFICATION` + unpaid; `lib/services/order-service.ts` `uploadSlip` กันอัปโหลด/เปลี่ยนสถานะออเดอร์ที่ถูก cancel หรือ paid แล้ว.
+
 ### บันทึกการทำงาน — 2026-04-22
 - **Homepage layout — breeder split + cache:** New DB key `breeder_showcase` (Featured Breeders Grid / `BreederShowcase`); `breeders` = Top Breeders Bar / `BreederRibbon`; `categories` = standalone `QuickCategoryNav`; `hero` = banner only. Migration `20260422120000_homepage_breeder_showcase` + label UPDATE. Storefront `unstable_cache` tag `home-layout`; `PATCH /api/admin/settings/homepage` → `revalidatePath('/')` + `revalidateTag('home-layout')`; `orderBy` `[sort_order, key]`. Admin homepage hints + preview image for `breeder_showcase`.
 - **Mobile admin `/admin/m` — order cards v2:** ⋮ menu — Cancel (`PENDING`/`PENDING_INFO` → `cancel`), Reject slip (`AWAITING_VERIFICATION` → `status` reject), Reset approval (`PAID` → `PATCH .../revert-approval`), Void (`PAID`/`COMPLETED` → `void` + reason dialog); `tel:` phone; badges Guest / LINE login / Google·Web + LINE linked vs No LINE; **Items summary** from `listOrders` line_items + join `products`/`breeders` (compact rows, discounts); `COALESCE` order/customer `line_user_id`; shared type `types/admin-order.ts`; `revertApprovalToPending` in `orders-service.ts`.
