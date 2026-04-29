@@ -25,6 +25,7 @@ import { isProductAggregateOutOfStock } from "@/lib/product-stock";
 import { seedsBreederHref } from "@/lib/breeder-slug";
 import { ProductGallery } from "@/components/storefront/ProductGallery";
 import { StickyBuyBar } from "@/components/storefront/StickyBuyBar";
+import { ProductCard } from "@/components/storefront/ProductCard";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import {
@@ -240,11 +241,43 @@ export default function ProductDetailClient({
   const [infoTab, setInfoTab] = useState("specs");
   const [showStickyBuy, setShowStickyBuy] = useState(false);
   const [listReferrerPath, setListReferrerPath] = useState<string | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<ProductFull[]>([]);
   const mainAddToCartRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setListReferrerPath(getValidListReferrerPath());
   }, [product?.id]);
+
+  useEffect(() => {
+    if (!product) return;
+    let cancelled = false;
+    const params = new URLSearchParams({
+      productId: String(product.id),
+      limit: "4",
+    });
+    if (product.breeder_id != null) params.set("breederId", String(product.breeder_id));
+    if (product.category) params.set("category", product.category);
+    const genetics =
+      product.strain_dominance || product.genetic_ratio || product.genetics || "";
+    if (genetics) params.set("genetics", genetics);
+
+    fetch(`/api/products/${product.slug ?? product.id}/related?${params.toString()}`, {
+      cache: "no-store",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json: { products?: ProductFull[] } | null) => {
+        if (!cancelled) {
+          setRelatedProducts(Array.isArray(json?.products) ? json.products.slice(0, 4) : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setRelatedProducts([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [product]);
 
   const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (!product || !selectedVariant) return;
@@ -292,7 +325,7 @@ export default function ProductDetailClient({
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [product.id, selectedVariant?.id]);
+  }, [product?.id, selectedVariant?.id]);
 
   if (!product) {
     return (
@@ -883,6 +916,32 @@ export default function ProductDetailClient({
             </p>
           )}
         </div>
+
+        {relatedProducts.length > 0 && (
+          <section className="mt-14 border-t border-zinc-100 pt-10 sm:mt-16 sm:pt-12">
+            <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  RELATED PRODUCTS
+                </p>
+                <h2 className="mt-2 font-sans text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+                  {t("สินค้าที่เกี่ยวข้อง", "Related Products")}
+                </h2>
+              </div>
+              <p className="max-w-xl text-sm font-light leading-relaxed text-zinc-500">
+                {t(
+                  "คัดจากบรีดเดอร์และหมวดหมู่เดียวกัน เพื่อให้เลือกต่อได้ง่าย",
+                  "Selected from the same breeder and category for easy comparison."
+                )}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {relatedProducts.slice(0, 4).map((related) => (
+                <ProductCard key={related.id} product={related} variant="showcase" />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {selectedVariant && (

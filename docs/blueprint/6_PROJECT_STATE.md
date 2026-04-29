@@ -5,6 +5,7 @@
 ---
 
 ### บันทึกการทำงาน — 2026-04-29
+- **Product detail related products:** `services/product-service.ts` added `getRelatedProducts` (same breeder/category, genetics-first fallback, active variants/images); `app/api/products/[slug]/related/route.ts` returns cached nested related products via `bigintToJson`; `product-detail-client.tsx` fetches and renders 4 `ProductCard` items below details.
 - **Phase 3 final polish / code splitting:** `app/admin/inventory/page.tsx` split UI into `components/admin/inventory/InventoryStats`, `InventorySearch`, `InventoryGrid`, `InventoryDialogs`, shared badges/types in `inventory-shared`; `CheckoutPageClient` split `ShippingSection` + `PaymentSection`; `app/admin/settings/page.tsx` moved `LogoUploadCard` to `components/admin/settings/LogoUploadCard`; `services/orders-service.ts` grouped regions for list/counts, payment approval, cancellation/stock restore, and fulfillment; `ProductCard` + `BreederRibbon` memoized; fixed `app/admin/promotions/page.tsx` escaped quote and `LowStockWidget` duplicate class/type issue.
 
 ### บันทึกการทำงาน — 2026-04-25

@@ -6,6 +6,7 @@ import {
 } from "@/lib/supabase/types";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import {
   computeStartingPrice,
   computeTotalStock,
@@ -203,6 +204,124 @@ export async function getBreederIdFromShopParam(
     trimmed
   );
   return row ? Number(row.id) : null;
+}
+
+export async function getNewArrivals(limit = 8) {
+  try {
+    const take = Math.min(MAX_ACTIVE_PRODUCTS_LIMIT, Math.max(1, Math.floor(limit)));
+    const data = await prisma.products.findMany({
+      where: { is_active: true },
+      take,
+      orderBy: { created_at: "desc" },
+      include: {
+        breeders: true,
+        product_variants: {
+          where: { is_active: true },
+          orderBy: { price: "asc" },
+        },
+        product_images: {
+          orderBy: { sort_order: "asc" },
+        },
+      },
+    });
+    return { data, error: null };
+  } catch (err) {
+    logger.error("product-service.getNewArrivals failed", { cause: err });
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+function relatedGeneticsWhere(genetics?: string | null): Prisma.productsWhereInput | undefined {
+  const value = genetics?.trim().toLowerCase();
+  if (!value) return undefined;
+
+  const terms = value.includes("indica")
+    ? ["indica"]
+    : value.includes("sativa")
+      ? ["sativa"]
+      : value.includes("hybrid")
+        ? ["hybrid"]
+        : [value];
+
+  return {
+    OR: terms.flatMap((term) => [
+      { strain_dominance: { contains: term, mode: "insensitive" as const } },
+      { genetic_ratio: { contains: term, mode: "insensitive" as const } },
+      { genetics: { contains: term, mode: "insensitive" as const } },
+    ]),
+  };
+}
+
+export async function getRelatedProducts({
+  productId,
+  breederId,
+  categoryName,
+  genetics,
+  limit = 4,
+}: {
+  productId: number;
+  breederId: number | null;
+  categoryName?: string | null;
+  genetics?: string | null;
+  limit?: number;
+}) {
+  try {
+    const take = Math.min(8, Math.max(1, Math.floor(limit)));
+    const baseWhere: Prisma.productsWhereInput = {
+      is_active: true,
+      id: { not: BigInt(productId) },
+      ...(breederId != null ? { breeder_id: BigInt(breederId) } : {}),
+      ...(categoryName?.trim() ? { category: categoryName.trim() } : {}),
+    };
+    const geneticsWhere = relatedGeneticsWhere(genetics);
+    const data = await prisma.products.findMany({
+      where: geneticsWhere ? { AND: [baseWhere, geneticsWhere] } : baseWhere,
+      take,
+      orderBy: [{ created_at: "desc" }, { id: "desc" }],
+      include: {
+        breeders: true,
+        product_variants: {
+          where: { is_active: true },
+          orderBy: { price: "asc" },
+        },
+        product_images: {
+          orderBy: { sort_order: "asc" },
+        },
+      },
+    });
+
+    if (data.length >= take || !geneticsWhere) return { data, error: null };
+
+    const fallback = await prisma.products.findMany({
+      where: {
+        ...baseWhere,
+        id: { notIn: [BigInt(productId), ...data.map((p) => p.id)] },
+      },
+      take: take - data.length,
+      orderBy: [{ created_at: "desc" }, { id: "desc" }],
+      include: {
+        breeders: true,
+        product_variants: {
+          where: { is_active: true },
+          orderBy: { price: "asc" },
+        },
+        product_images: {
+          orderBy: { sort_order: "asc" },
+        },
+      },
+    });
+
+    return { data: [...data, ...fallback].slice(0, take), error: null };
+  } catch (err) {
+    logger.error("product-service.getRelatedProducts failed", { cause: err });
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 export async function getMixedBreederProducts(

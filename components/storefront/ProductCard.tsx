@@ -7,7 +7,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { useProducts } from "@/hooks/useProducts";
+import type {
+  ProductImageRow,
+  ProductVariantRow,
+  ProductWithBreeder,
+} from "@/lib/supabase/types";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { getGeneticPercents } from "@/components/storefront/ProductSpecs";
 import { formatPrice } from "@/lib/utils";
@@ -56,7 +60,7 @@ function getDefaultVariant(product: {
     stock: number | null;
     is_active: boolean | null;
     unit_label: string;
-  }[];
+  }[] | null;
 }) {
   const inStock =
     product.product_variants?.filter(
@@ -74,7 +78,10 @@ function isNewArrivalProduct(createdAt: string | null | undefined): boolean {
   return Date.now() - t < NEW_ARRIVAL_MS;
 }
 
-type ProductListItem = ReturnType<typeof useProducts>["products"][number];
+type ProductListItem = ProductWithBreeder & {
+  product_variants?: ProductVariantRow[] | null;
+  product_images?: ProductImageRow[] | null;
+};
 
 /** Urgency strip below image: same height for every card (empty = spacer). */
 const URGENCY_STRIP_H = "h-10";
@@ -132,11 +139,13 @@ function ProductImageBadges({ product, t }: { product: ProductWithMeta; t: (th: 
 type ProductCardProps = {
   product: ProductListItem;
   variant?: "shop" | "showcase";
+  imagePriority?: boolean;
 };
 
 function ProductCardBase({
   product,
   variant = "shop",
+  imagePriority = false,
 }: ProductCardProps) {
   const { addToCart, openCart } = useCartContext();
   const { t, locale } = useLanguage();
@@ -232,6 +241,7 @@ function ProductCardBase({
                 fill
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 className={`object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "brightness-75 grayscale" : ""}`}
+                priority={imagePriority}
                 unoptimized={shouldOffloadImageOptimization(cardImage)}
               />
             ) : (
