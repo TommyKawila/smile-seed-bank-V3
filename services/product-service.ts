@@ -38,6 +38,23 @@ type ServiceResult<T> = { data: T | null; error: string | null };
 
 const DEFAULT_ACTIVE_PRODUCTS_LIMIT = 50;
 const MAX_ACTIVE_PRODUCTS_LIMIT = 100;
+const MIXED_BREEDER_SQL_DEBUG =
+  "WITH ranked AS (SELECT p.*, ROW_NUMBER() OVER (PARTITION BY p.breeder_id ORDER BY COALESCE(p.price, 999999999)::numeric ASC, COALESCE(NULLIF(p.stock, 0), 999999999)::int ASC, p.id DESC) AS deal_rank FROM public.products p LEFT JOIN public.breeders b ON b.id = p.breeder_id WHERE p.is_active IS TRUE AND p.breeder_id IS NOT NULL AND (b.is_active IS DISTINCT FROM FALSE)) SELECT ranked.*, product_variants, product_images WHERE ranked.deal_rank <= $perBreeder LIMIT $limit";
+
+type MixedBreederProductRow = ProductWithBreederAndVariants & {
+  deal_rank: number;
+};
+
+type RawMixedBreederProductRow = Record<string, unknown> & {
+  deal_rank: number;
+  b_id: unknown;
+  b_name: string | null;
+  b_logo_url: string | null;
+  pc_id: unknown;
+  pc_name: string | null;
+  product_variants: unknown;
+  product_images: unknown;
+};
 
 function postgrestSearchTerm(value: string): string {
   return `%${value.trim().replace(/[,%()]/g, " ").replace(/\s+/g, " ")}%`;
@@ -79,6 +96,98 @@ function normalizeProductFullRow(data: ProductFull): ProductFull {
   return data;
 }
 
+function interleaveBreederRows(rows: MixedBreederProductRow[]): ProductWithBreederAndVariants[] {
+  const byRank = new Map<number, MixedBreederProductRow[]>();
+  for (const row of rows) {
+    const list = byRank.get(row.deal_rank) ?? [];
+    list.push(row);
+    byRank.set(row.deal_rank, list);
+  }
+  return [...byRank.keys()]
+    .sort((a, b) => a - b)
+    .flatMap((rank) => byRank.get(rank) ?? [])
+    .map(({ deal_rank: _dealRank, ...row }) => row);
+}
+
+function n(value: unknown): number | null {
+  if (value == null) return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function arr<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function mapRawMixedBreederRow(row: RawMixedBreederProductRow): MixedBreederProductRow {
+  return ({
+    ...row,
+    id: n(row.id) ?? 0,
+    breeder_id: n(row.breeder_id),
+    category_id: n(row.category_id),
+    price: n(row.price) ?? 0,
+    stock: n(row.stock) ?? 0,
+    thc_percent: n(row.thc_percent),
+    indica_ratio: n(row.indica_ratio),
+    sativa_ratio: n(row.sativa_ratio),
+    sale_price: n(row.sale_price),
+    created_at: row.created_at as string | null,
+    updated_at: row.updated_at as string | null,
+    product_variants: arr(row.product_variants).map((v) => {
+      const r = v as Record<string, unknown>;
+      return {
+        ...r,
+        id: n(r.id) ?? 0,
+        product_id: n(r.product_id),
+        cost_price: n(r.cost_price) ?? 0,
+        price: n(r.price) ?? 0,
+        stock: n(r.stock) ?? 0,
+        low_stock_threshold: n(r.low_stock_threshold) ?? 5,
+      };
+    }) as MixedBreederProductRow["product_variants"],
+    product_images: arr(row.product_images).map((img) => {
+      const r = img as Record<string, unknown>;
+      return {
+        id: n(r.id) ?? 0,
+        url: String(r.url ?? ""),
+        variant_id: n(r.variant_id),
+        is_main: Boolean(r.is_main),
+        sort_order: n(r.sort_order) ?? 0,
+      };
+    }),
+    breeders:
+      row.b_id == null
+        ? null
+        : {
+            id: n(row.b_id) ?? 0,
+            name: row.b_name ?? "",
+            logo_url: row.b_logo_url,
+          },
+    product_categories:
+      row.pc_id == null
+        ? null
+        : {
+            id: n(row.pc_id) ?? 0,
+            name: row.pc_name ?? "",
+          },
+    deal_rank: Number(row.deal_rank ?? 1),
+  } as unknown) as MixedBreederProductRow;
+}
+
+async function fallbackMixedBreederProducts(
+  limit: number
+): Promise<ServiceResult<ProductWithBreederAndVariants[]>> {
+  const fallback = await getActiveProducts({
+    limit,
+    includeVariants: true,
+    sort: "smart_deal",
+  });
+  return {
+    data: (fallback.data ?? []) as ProductWithBreederAndVariants[],
+    error: fallback.error,
+  };
+}
+
 // ─── Storefront Queries ───────────────────────────────────────────────────────
 
 /** Resolve `?breeder=` slug or legacy numeric id to breeder id (for server filters). */
@@ -96,6 +205,96 @@ export async function getBreederIdFromShopParam(
   return row ? Number(row.id) : null;
 }
 
+export async function getMixedBreederProducts(
+  perBreeder = 2,
+  limit = DEFAULT_ACTIVE_PRODUCTS_LIMIT
+): Promise<ServiceResult<ProductWithBreederAndVariants[]>> {
+  try {
+    const takePerBreeder = Math.min(2, Math.max(1, Math.floor(perBreeder)));
+    const takeLimit = Math.min(MAX_ACTIVE_PRODUCTS_LIMIT, Math.max(1, Math.floor(limit)));
+    const rows = await prisma.$queryRaw<RawMixedBreederProductRow[]>`
+      WITH ranked AS (
+        SELECT
+          p.*,
+          b.id AS b_id,
+          b.name AS b_name,
+          b.logo_url AS b_logo_url,
+          pc.id AS pc_id,
+          pc.name AS pc_name,
+          ROW_NUMBER() OVER (
+            PARTITION BY p.breeder_id
+            ORDER BY COALESCE(p.price, 999999999)::numeric ASC,
+                     COALESCE(NULLIF(p.stock, 0), 999999999)::int ASC,
+                     p.id DESC
+          )::int AS deal_rank
+        FROM public.products p
+        LEFT JOIN public.breeders b ON b.id = p.breeder_id
+        LEFT JOIN public.product_categories pc ON pc.id = p.category_id
+        WHERE p.is_active IS TRUE
+          AND p.breeder_id IS NOT NULL
+          AND (b.is_active IS DISTINCT FROM FALSE)
+      )
+      SELECT
+        ranked.*,
+        COALESCE(
+          (
+            SELECT jsonb_agg(to_jsonb(pv) ORDER BY pv.id ASC)
+            FROM public.product_variants pv
+            WHERE pv.product_id = ranked.id
+          ),
+          '[]'::jsonb
+        ) AS product_variants,
+        COALESCE(
+          (
+            SELECT jsonb_agg(
+              jsonb_build_object(
+                'id', pi.id,
+                'url', pi.url,
+                'variant_id', pi.variant_id,
+                'is_main', pi.is_main,
+                'sort_order', pi.sort_order
+              )
+              ORDER BY pi.sort_order ASC, pi.id ASC
+            )
+            FROM public.product_images pi
+            WHERE pi.product_id = ranked.id
+          ),
+          '[]'::jsonb
+        ) AS product_images,
+        ranked.b_id,
+        ranked.b_name,
+        ranked.b_logo_url,
+        ranked.pc_id,
+        ranked.pc_name
+      FROM ranked
+      WHERE ranked.deal_rank <= ${takePerBreeder}
+      ORDER BY ranked.deal_rank ASC,
+               COALESCE(ranked.price, 999999999)::numeric ASC,
+               COALESCE(NULLIF(ranked.stock, 0), 999999999)::int ASC,
+               ranked.id DESC
+      LIMIT ${takeLimit}
+    `;
+
+    if (rows.length === 0) {
+      console.warn(
+        "[product-service] getMixedBreederProducts returned 0 rows; falling back to getActiveProducts",
+        { sql: MIXED_BREEDER_SQL_DEBUG, takePerBreeder, takeLimit }
+      );
+      return fallbackMixedBreederProducts(takeLimit);
+    }
+
+    const out = interleaveBreederRows(rows.map(mapRawMixedBreederRow));
+    for (const row of out) sanitizeProductTextFields(row);
+    return { data: out, error: null };
+  } catch (err) {
+    logger.error("product-service.getMixedBreederProducts failed", { cause: err });
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 export async function getActiveProducts(opts?: {
   category?: string;
   breeder_id?: number;
@@ -106,6 +305,7 @@ export async function getActiveProducts(opts?: {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
+  sort?: "smart_deal" | "newest" | string;
   includeVariants?: boolean;
   /** Comma-separated pack buckets: 1,2,3,5,10,gt10,other — requires variant rows (filtered in memory). */
   seeds_param?: string | null;
@@ -121,8 +321,7 @@ export async function getActiveProducts(opts?: {
     let query = supabase
       .from("products")
       .select(selectShape)
-      .eq("is_active", true)
-      .order("id", { ascending: false });
+      .eq("is_active", true);
 
     if (opts?.category) query = query.eq("category", opts.category);
     const search = opts?.search?.trim();
@@ -145,6 +344,19 @@ export async function getActiveProducts(opts?: {
       breederId = id;
     }
     if (breederId != null) query = query.eq("breeder_id", breederId);
+    if (opts?.sort === "smart_deal") {
+      query = query
+        .gt("stock", 0)
+        .order("price", { ascending: true, nullsFirst: false })
+        .order("stock", { ascending: true, nullsFirst: false })
+        .order("id", { ascending: false });
+    } else if (opts?.sort === "newest") {
+      query = query
+        .order("created_at", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: false });
+    } else {
+      query = query.order("id", { ascending: false });
+    }
     const limit = Math.min(
       MAX_ACTIVE_PRODUCTS_LIMIT,
       Math.max(1, opts?.limit ?? DEFAULT_ACTIVE_PRODUCTS_LIMIT)

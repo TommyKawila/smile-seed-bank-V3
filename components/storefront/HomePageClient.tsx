@@ -38,7 +38,7 @@ import {
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
 
 type HomePayload = {
-  newArrivals?: ProductWithBreeder[];
+  newArrivals?: ProductWithBreederAndVariants[];
   featured?: ProductWithBreeder[];
   clearance?: ProductWithBreederAndVariants[];
   magazine?: MagazinePostPublic[];
@@ -245,7 +245,7 @@ function InsightSection({
 
 function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
   const { t, locale } = useLanguage();
-  const [products, setProducts] = useState<ProductWithBreeder[]>([]);
+  const [products, setProducts] = useState<ProductWithBreederAndVariants[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [featuredProducts, setFeaturedProducts] = useState<ProductWithBreeder[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
@@ -260,6 +260,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
       try {
         const res = await fetch("/api/storefront/home");
         const json = (await res.json()) as HomePayload;
+        console.log("Home Data:", json);
         if (!cancelled && res.ok) {
           setProducts(Array.isArray(json.newArrivals) ? json.newArrivals : []);
           setFeaturedProducts(Array.isArray(json.featured) ? json.featured : []);
@@ -306,6 +307,16 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
     th: s.label_th,
     en: s.label_en,
   });
+  const displaySections = sections.some((section) => section.key === "new_strains")
+    ? sections
+    : [
+        ...sections,
+        {
+          key: "new_strains",
+          label_th: "สายพันธุ์มาใหม่",
+          label_en: "New Arrivals",
+        },
+      ];
 
   const renderSection = (section: HomePageSectionPayload): ReactNode => {
     const st = sectionTitle(section);
@@ -481,7 +492,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
                 <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
                   <Leaf className="h-10 w-10 text-zinc-300" />
                   <p className="text-sm text-zinc-600">
-                    {t("กำลังเพิ่มสินค้าเร็วๆ นี้", "Products coming soon")}
+                    {t("ไม่พบสินค้าใน newArrivals จาก API", "No products found in newArrivals API data")}
                   </p>
                 </div>
               ) : (
@@ -507,7 +518,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
 
   return (
     <div className="min-h-screen bg-white pt-20 text-zinc-900 sm:pt-28">
-      {sections.map((section) => (
+      {displaySections.map((section) => (
         <Fragment key={section.key}>{renderSection(section)}</Fragment>
       ))}
     </div>

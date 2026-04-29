@@ -110,9 +110,28 @@ function ShopContent() {
   );
   const priceMin = priceRange.min;
   const priceMax = priceRange.max;
+  const hasSidebarFilter =
+    Boolean(
+      geneticsParam ||
+        difficultyParam ||
+        thcParam ||
+        cbdParam ||
+        sexParam ||
+        seedsParam ||
+        ftParam ||
+        yieldQuickParam ||
+        qParam ||
+        priceFilterActive(priceMin, priceMax)
+    );
+  const useMixedBreederDefault = !breederParam && !hasSidebarFilter;
 
   /** Full catalog client-side (~90 items): no server limit — instant filter in memory */
-  const { products, isLoading } = useProducts({ autoFetch: true, includeVariants: true });
+  const { products, isLoading } = useProducts({
+    autoFetch: true,
+    includeVariants: true,
+    limit: useMixedBreederDefault ? 100 : undefined,
+    sort: useMixedBreederDefault ? "mixed_breeder" : undefined,
+  });
   const priceCap = useMemo(
     () => (products.length > 0 ? computePriceSliderCap(products) : 5000),
     [products]
@@ -324,7 +343,7 @@ function ShopContent() {
     const cbdSel = parseListParam(cbdParam);
     const sexSel = parseListParam(sexParam);
     const seedsSel = parseListParam(seedsParam);
-    return shopScopedProducts.filter(
+    const matches = shopScopedProducts.filter(
       (p) =>
         productMatchesShopAttributeFilters(
           {
@@ -345,8 +364,18 @@ function ShopContent() {
           seedsSel
         ) && productMatchesPriceRange(p, priceMin, priceMax)
     );
+    if (!breederParam?.trim()) return matches;
+    return [...matches].sort((a, b) => {
+      const priceA = Number(a.price ?? Number.MAX_SAFE_INTEGER);
+      const priceB = Number(b.price ?? Number.MAX_SAFE_INTEGER);
+      if (priceA !== priceB) return priceA - priceB;
+      const stockA = Number(a.stock ?? Number.MAX_SAFE_INTEGER);
+      const stockB = Number(b.stock ?? Number.MAX_SAFE_INTEGER);
+      return stockA - stockB;
+    });
   }, [
     shopScopedProducts,
+    breederParam,
     geneticsParam,
     difficultyParam,
     thcParam,

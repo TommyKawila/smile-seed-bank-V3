@@ -52,6 +52,7 @@ interface UseProductsOptions {
   includeVariants?: boolean;
   /** Admin: list inactive (off-catalog) products too */
   includeInactive?: boolean;
+  sort?: "mixed_breeder" | "smart_deal";
 }
 
 interface UseProductsReturn {
@@ -79,6 +80,7 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     autoFetch = true,
     includeVariants = false,
     includeInactive = false,
+    sort,
   } = opts;
 
   const [products, setProducts] = useState<ProductListItem[]>([]);
@@ -91,6 +93,17 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     setIsLoading(true);
     setError(null);
     try {
+      if (!includeInactive && sort === "mixed_breeder") {
+        const params = new URLSearchParams({
+          sort: "mixed_breeder",
+          limit: String(limit ?? 100),
+        });
+        const res = await fetch(`/api/products?${params.toString()}`, { cache: "no-store" });
+        const json = (await res.json()) as { products?: ProductListItem[]; error?: string };
+        if (!res.ok) throw new Error(json.error ?? "Failed to load products");
+        setProducts(Array.isArray(json.products) ? json.products : []);
+        return;
+      }
       const supabase = createClient();
       // Branch select literals so PostgREST result types parse (no dynamic select string).
       let query = includeVariants
@@ -153,6 +166,7 @@ export function useProducts(opts: UseProductsOptions = {}): UseProductsReturn {
     limit,
     includeVariants,
     includeInactive,
+    sort,
   ]);
 
   useEffect(() => {
