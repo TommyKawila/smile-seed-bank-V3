@@ -176,10 +176,17 @@ function ProductCardBase({
   const handleAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
     stopNavBubble(e);
     if (defaultVariant) {
+      const variantId = Number(defaultVariant.id);
+      const productId = Number(product.id);
+      const breederId = product.breeder_id == null ? null : Number(product.breeder_id);
+      if (!Number.isSafeInteger(variantId) || !Number.isSafeInteger(productId)) {
+        toast.error(locale === "th" ? "ข้อมูลสินค้าไม่ถูกต้อง" : "Invalid product data");
+        return;
+      }
       const unit = getEffectiveVariantPrice(product, Number(defaultVariant.price));
       const { error } = addToCart({
-        variantId: defaultVariant.id,
-        productId: product.id,
+        variantId,
+        productId,
         productName: product.name,
         productImage: cardImage,
         unitLabel: defaultVariant.unit_label,
@@ -187,7 +194,7 @@ function ProductCardBase({
         quantity: 1,
         stock_quantity: defaultVariant.stock ?? 0,
         masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
-        breeder_id: product.breeder_id ?? null,
+        breeder_id: breederId != null && Number.isSafeInteger(breederId) ? breederId : null,
         breederLogoUrl: product.breeders?.logo_url ?? null,
       });
       if (error) {
