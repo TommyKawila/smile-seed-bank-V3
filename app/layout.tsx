@@ -1,8 +1,22 @@
 import type { Metadata } from "next";
-import { GoogleAnalytics } from "@next/third-parties/google";
+import { Inter, Prompt } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const prompt = Prompt({
+  subsets: ["latin", "thai"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-prompt",
+  display: "swap",
+});
 
 export const viewport = {
   width: "device-width",
@@ -36,9 +50,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="th" suppressHydrationWarning>
-      <body className="min-h-screen bg-white font-sans antialiased">
+      <body className={`${inter.variable} ${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
         {children}
-        <GoogleAnalytics gaId="G-RSY7B2ZH9X" />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-RSY7B2ZH9X"
+          strategy="lazyOnload"
+        />
+        <Script id="google-analytics" strategy="lazyOnload">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-RSY7B2ZH9X');
+          `}
+        </Script>
         <Analytics />
       </body>
     </html>

@@ -104,7 +104,11 @@ export async function PATCH(
 
     await syncProductImagesForProduct(
       productId,
-      gallery_entries,
+      gallery_entries?.map((entry) => ({
+        url: entry.url,
+        is_main: entry.is_main,
+        variant_unit_label: entry.variant_unit_label ?? null,
+      })),
       insertedVariants.map((v) => ({
         id: Number(v.id),
         unit_label: v.unit_label,

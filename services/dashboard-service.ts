@@ -19,6 +19,22 @@ export interface RevenueDataPoint {
   profit: number;
 }
 
+export interface FinancialStatsPoint {
+  date: string;
+  revenue: number;
+  profit: number;
+}
+
+export interface FinancialStats {
+  totalRevenue: number;
+  totalCOGS: number;
+  grossProfit: number;
+  netProfit: number;
+  totalOrders: number;
+  totalInventoryValue: number;
+  series: FinancialStatsPoint[];
+}
+
 export interface ChannelBreakdown {
   channel: "WEB" | "MANUAL";
   orderCount: number;
@@ -70,6 +86,88 @@ function paidOrdersWhereSql(alias = "o", opts?: { from?: string; to?: string }) 
     ${from ? Prisma.sql`AND ${ref}.created_at >= ${from}` : Prisma.empty}
     ${to ? Prisma.sql`AND ${ref}.created_at <= ${to}` : Prisma.empty}
   `;
+}
+
+function financialStatsDays(startDate: Date, endDate: Date): string[] {
+  const out: string[] = [];
+  const d = new Date(startDate);
+  d.setHours(0, 0, 0, 0);
+  const last = new Date(endDate);
+  last.setHours(0, 0, 0, 0);
+  while (d <= last) {
+    out.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+export async function getFinancialStats(
+  startDate: Date,
+  endDate: Date
+): Promise<ServiceResult<FinancialStats>> {
+  try {
+    const [ordersAgg, inventoryRows, seriesRows] = await Promise.all([
+      prisma.orders.aggregate({
+        where: {
+          created_at: { gte: startDate, lte: endDate },
+          status: { in: ["PAID", "SHIPPED", "COMPLETED"] },
+        },
+        _sum: { total_amount: true, total_cost: true },
+        _count: { _all: true },
+      }),
+      prisma.$queryRaw<{ total_inventory_value: string }[]>`
+        SELECT COALESCE(SUM(COALESCE(cost_price, 0) * COALESCE(stock, 0)), 0)::text AS total_inventory_value
+        FROM public.product_variants
+      `,
+      prisma.$queryRaw<{ date: string; revenue: string; cogs: string }[]>`
+        SELECT
+          to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
+          COALESCE(SUM(total_amount), 0)::text AS revenue,
+          COALESCE(SUM(total_cost), 0)::text AS cogs
+        FROM public.orders
+        WHERE created_at >= ${startDate}
+          AND created_at <= ${endDate}
+          AND status IN ('PAID', 'SHIPPED', 'COMPLETED')
+        GROUP BY date_trunc('day', created_at)
+        ORDER BY date_trunc('day', created_at) ASC
+      `,
+    ]);
+
+    const totalRevenue = Number(ordersAgg._sum.total_amount ?? 0);
+    const totalCOGS = Number(ordersAgg._sum.total_cost ?? 0);
+    const totalInventoryValue = Number(inventoryRows[0]?.total_inventory_value ?? 0);
+    const seriesByDay = new Map(
+      seriesRows.map((row) => {
+        const revenue = Number(row.revenue ?? 0);
+        const cogs = Number(row.cogs ?? 0);
+        return [
+          row.date,
+          {
+            date: row.date,
+            revenue: Math.round(revenue * 100) / 100,
+            profit: Math.round((revenue - cogs) * 100) / 100,
+          },
+        ];
+      })
+    );
+
+    return {
+      data: {
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        totalCOGS: Math.round(totalCOGS * 100) / 100,
+        grossProfit: Math.round((totalRevenue - totalCOGS) * 100) / 100,
+        netProfit: Math.round((totalRevenue - totalCOGS) * 100) / 100,
+        totalOrders: ordersAgg._count._all,
+        totalInventoryValue: Math.round(totalInventoryValue * 100) / 100,
+        series: financialStatsDays(startDate, endDate).map(
+          (date) => seriesByDay.get(date) ?? { date, revenue: 0, profit: 0 }
+        ),
+      },
+      error: null,
+    };
+  } catch (err) {
+    return { data: null, error: String(err) };
+  }
 }
 
 // ─── Financial Summary ────────────────────────────────────────────────────────

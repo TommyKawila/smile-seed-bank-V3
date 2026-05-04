@@ -78,7 +78,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
       <AnimatePresence mode="wait">
         <motion.div
           key={current.id}
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.55 }}

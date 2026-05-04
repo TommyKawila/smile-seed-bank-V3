@@ -78,7 +78,7 @@ export function ReceiptPreviewModal({ open, onOpenChange, orderId, buildDoc, onE
         const res = await fetch(`/api/admin/orders/${orderId}`);
         const data = (await res.json()) as OrderFetchPayload & { error?: string };
         if (!res.ok) throw new Error(data.error ?? "โหลดออเดอร์ไม่สำเร็จ");
-        if (!isReceiptEligibleStatus(data.status, data.paymentStatus)) {
+        if (!isReceiptEligibleStatus(data.status ?? "", data.paymentStatus)) {
           throw new Error("ไม่สามารถออกใบเสร็จสำหรับสถานะนี้");
         }
         const doc = await buildDoc(data);

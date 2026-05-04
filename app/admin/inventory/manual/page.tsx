@@ -9,16 +9,12 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Plus,
   X,
-  Search,
-  XCircle,
   ImagePlus,
   Trash2,
   Settings2,
   FileText,
   RefreshCw,
-  Sparkles,
   Store,
   Sprout,
   Pencil,
@@ -61,6 +57,10 @@ import { consumeManualGridImport } from "@/lib/manual-grid-import-handoff";
 import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
 import { resolvePdfLogos } from "@/lib/pdf-image-data-uri";
 import { InventoryPdfDocument, ensurePdfPromptFont } from "./components/InventoryPdfDocument";
+import { InventoryActionButtons } from "@/components/admin/inventory/InventoryActionButtons";
+import { InventoryGridTable } from "@/components/admin/inventory/InventoryGridTable";
+import { InventorySearchBar } from "@/components/admin/inventory/InventorySearchBar";
+import { ManualInventoryStats } from "@/components/admin/inventory/InventoryStats";
 import {
   Sheet,
   SheetContent,
@@ -1606,10 +1606,11 @@ export default function ManualInventoryPage() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-xl font-bold text-zinc-900">Manual Inventory (Spreadsheet)</h1>
-          <p className="text-sm text-zinc-500">จัดการสต็อกแบบ Dynamic Grid ตาม Breeder</p>
-        </div>
+        <ManualInventoryStats
+          strainsCount={sortedRows.length}
+          totalStock={footerTotals.totalStockAll}
+          selectedCount={selectedProductIds.size}
+        />
       </div>
 
       {fetchError && (
@@ -1688,32 +1689,7 @@ export default function ManualInventoryPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label>ค้นหา</Label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                <Input
-                  ref={searchInputRef}
-                  placeholder="ค้นหาชื่อสายพันธุ์ หรือ SKU..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 w-[220px] rounded-md border-zinc-200 pl-8 pr-9 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-                {searchQuery.trim() !== "" && (
-                  <button
-                    type="button"
-                    aria-label="Clear search"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full text-zinc-400 transition hover:text-emerald-500 focus-visible:outline focus-visible:ring-2 focus-visible:ring-primary/30"
-                    onClick={() => {
-                      setSearchQuery("");
-                      queueMicrotask(() => searchInputRef.current?.focus());
-                    }}
-                  >
-                    <XCircle className="h-4 w-4" strokeWidth={1.75} />
-                  </button>
-                )}
-              </div>
-            </div>
+            <InventorySearchBar value={searchQuery} onChange={setSearchQuery} inputRef={searchInputRef} />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -1776,34 +1752,9 @@ export default function ManualInventoryPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <span className="text-sm font-medium text-zinc-700">Inventory Grid</span>
-          <div className="flex items-center gap-2">
-            {breederId && exportRows.length > 0 && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleExportPNG}
-                  disabled={!!exporting}
-                  className="border-primary/30 text-primary hover:bg-accent"
-                >
-                  {exporting === "png" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : "📸"}
-                  {" "}Export PNG
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleExportPDF}
-                  disabled={!!exporting}
-                  className="border-primary/30 text-primary hover:bg-accent"
-                >
-                  {exporting === "pdf" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : "📄"}
-                  {" "}Export PDF
-                </Button>
-              </>
-            )}
+      <InventoryGridTable
+        actions={
+          <>
             {breederId && (
               <>
                 <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600">
@@ -1839,40 +1790,23 @@ export default function ManualInventoryPage() {
                   />
                   สต็อกต่ำเท่านั้น
                 </label>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setSyncNewItemsDialogOpen(true)}
-                  disabled={syncableNewCount === 0 || batchSyncing || !breederId}
-                  className="border-emerald-500/40 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-500/60"
-                  title="Sync all new draft strains in the current filtered view (Master SKU required). No checkbox selection needed."
-                >
-                  {batchSyncing ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin text-emerald-700" />
-                  ) : (
-                    <>
-                      <Sparkles className="mr-1 h-4 w-4 text-emerald-600" />
-                      <RefreshCw className="mr-1.5 h-3.5 w-3.5 text-emerald-700" />
-                    </>
-                  )}
-                  {syncableNewCount > 0
-                    ? `Sync ${syncableNewCount} New Items`
-                    : "Sync New Items"}
-                  {batchSyncing && batchSyncLabel ? ` (${batchSyncLabel})` : ""}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={addNewStrain}
-                  disabled={batchSyncing}
-                  className="bg-primary text-white hover:bg-primary/90"
-                >
-                  <Plus className="mr-1.5 h-4 w-4" /> Add New Strain
-                </Button>
               </>
             )}
-          </div>
-        </div>
-        <CardContent className="p-0">
+            <InventoryActionButtons
+              canExport={Boolean(breederId && exportRows.length > 0)}
+              exporting={exporting}
+              batchSyncing={batchSyncing}
+              batchSyncLabel={batchSyncLabel}
+              syncableNewCount={syncableNewCount}
+              breederSelected={Boolean(breederId)}
+              onExportPng={handleExportPNG}
+              onExportPdf={handleExportPDF}
+              onSyncNewItems={() => setSyncNewItemsDialogOpen(true)}
+              onAddStrain={addNewStrain}
+            />
+          </>
+        }
+      >
           {!breederId ? (
             <div className="py-12 text-center text-zinc-500">เลือก Breeder เพื่อแสดงตาราง</div>
           ) : loading ? (
@@ -2323,8 +2257,7 @@ export default function ManualInventoryPage() {
           {!loading && breederId && rows.length === 0 && (
             <div className="py-12 text-center text-zinc-500">ไม่มีสินค้าตามเงื่อนไขนี้</div>
           )}
-        </CardContent>
-      </Card>
+      </InventoryGridTable>
 
       {selectedProductIds.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between gap-4 border-t border-slate-200 bg-white px-6 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">

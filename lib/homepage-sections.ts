@@ -1,6 +1,7 @@
 /** Keys must match `homepage_sections.key` and `HomePageClient` section map. */
 export const DEFAULT_HOME_SECTION_KEYS = [
   "hero",
+  "promotion_banner",
   "categories",
   "breeder_showcase",
   "clearance",
@@ -27,6 +28,10 @@ export const DEFAULT_SECTION_FALLBACK_LABELS: Record<
   { label_th: string; label_en: string }
 > = {
   hero: { label_th: "แบนเนอร์หลัก", label_en: "Hero" },
+  promotion_banner: {
+    label_th: "แบนเนอร์โปรโมชัน (Carousel)",
+    label_en: "Promotion Banner",
+  },
   categories: { label_th: "เลือกสไตล์การปลูก", label_en: "Find your grow style" },
   breeder_showcase: {
     label_th: "กริด Breeder เด่น (ไอคอน)",

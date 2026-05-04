@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { JetBrains_Mono } from "next/font/google";
@@ -61,9 +62,16 @@ function HeroMediaPanel({
     );
   }
   return (
-    <div
-      className="h-full min-h-0 w-full bg-cover bg-center animate-ken-burns"
-      style={{ backgroundImage: `url('${staticBgUrl}')` }}
+    <Image
+      src={staticBgUrl}
+      alt=""
+      fill
+      priority
+      fetchPriority="high"
+      loading="eager"
+      className="object-cover animate-ken-burns"
+      sizes="(max-width: 1023px) 100vw, 50vw"
+      unoptimized
     />
   );
 }
@@ -161,7 +169,7 @@ export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) 
           </div>
         </div>
 
-        <div className="relative order-1 h-[65svh] w-full flex-shrink-0 overflow-hidden lg:order-2 lg:h-auto lg:min-h-[88vh]">
+        <div className="relative order-1 aspect-[4/5] h-[65svh] w-full flex-shrink-0 overflow-hidden lg:order-2 lg:aspect-auto lg:h-auto lg:min-h-[88vh]">
           <HeroMediaPanel
             isLoading={isLoading}
             useAnimatedSvg={Boolean(useAnimatedSvg)}

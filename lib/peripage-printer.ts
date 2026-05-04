@@ -50,6 +50,10 @@ function concatU8(chunks: Uint8Array[]): Uint8Array {
   return out;
 }
 
+function toArrayBuffer(data: Uint8Array): ArrayBuffer {
+  return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+}
+
 function utf8(s: string): Uint8Array {
   return new TextEncoder().encode(s);
 }
@@ -177,14 +181,15 @@ const CHUNK = 100;
 
 async function writeAll(ch: BluetoothRemoteGATTCharacteristic, data: Uint8Array): Promise<void> {
   const wn = (ch as BluetoothRemoteGATTCharacteristic & {
-    writeValueWithoutResponse?: (v: ArrayBuffer) => Promise<void>;
+    writeValueWithoutResponse?: (v: BufferSource) => Promise<void>;
   }).writeValueWithoutResponse;
   for (let i = 0; i < data.length; i += CHUNK) {
     const slice = data.subarray(i, i + CHUNK);
+    const payload = toArrayBuffer(slice);
     if (ch.properties.writeWithoutResponse && typeof wn === "function") {
-      await wn.call(ch, slice);
+      await wn.call(ch, payload);
     } else {
-      await ch.writeValue(slice);
+      await ch.writeValue(payload);
     }
   }
 }

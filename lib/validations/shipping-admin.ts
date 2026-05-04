@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { QUOTATION_SHIPPING_FREE_THRESHOLD } from "@/lib/order-financials";
 
 /** Form defaults when no DB row (admin spec). */
 export const SHIPPING_ADMIN_DEFAULT_FEE = 50;
-export const SHIPPING_ADMIN_DEFAULT_FREE_THRESHOLD = 500;
+export const SHIPPING_ADMIN_DEFAULT_FREE_THRESHOLD = QUOTATION_SHIPPING_FREE_THRESHOLD;
 
 export const ShippingRulesAdminSchema = z.object({
   base_fee: z.coerce.number().min(0).max(1_000_000),

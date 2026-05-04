@@ -113,7 +113,7 @@ export function CreateOrderModal({
     return d.toISOString().slice(0, 10);
   };
 
-  const generatePDF = (orderNoOverride?: string) => {
+  const generatePDF = async (orderNoOverride?: string) => {
     const num = orderNoOverride ?? orderNumber;
     const items = lineItems.map((i) => ({
       productName: i.productName,
@@ -154,7 +154,7 @@ export function CreateOrderModal({
   const handlePreview = async () => {
     setPreviewing(true);
     try {
-      const doc = generatePDF();
+      const doc = await generatePDF();
       const blob = doc.output("blob");
       await new Promise((r) => setTimeout(r, 50));
       const url = URL.createObjectURL(blob);
@@ -201,7 +201,7 @@ export function CreateOrderModal({
       if (!res.ok) throw new Error(data.error ?? "สร้างออเดอร์ไม่สำเร็จ");
       const savedNo = String(data.orderNumber ?? orderNumber);
       setOrderNumber(savedNo);
-      const doc = generatePDF(savedNo);
+      const doc = await generatePDF(savedNo);
       doc.save(quotationPdfFileName(savedNo, customerName || null));
       onSuccess?.();
       onOpenChange(false);

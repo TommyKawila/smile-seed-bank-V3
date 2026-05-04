@@ -57,7 +57,7 @@ export async function GET() {
     for (const r of guestRows) {
       const id = r.key.replace(/^line_ia_guest:/, "").trim();
       if (!id || byId.has(id)) continue;
-      const last = parseGuestStoredAt(r.value, r.updated_at);
+      const last = parseGuestStoredAt(r.value, r.updated_at ?? new Date(0));
       byId.set(id, {
         line_user_id: id,
         display_name: null,

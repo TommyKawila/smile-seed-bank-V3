@@ -178,20 +178,20 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
     customerPhone,
     customerEmail,
     shippingAddress,
-    customerNote: order.customer_note,
+    customerNote: order.customer_note ?? null,
     totalAmount: Number(order.total_amount),
     shippingFee: Number(order.shipping_fee ?? 0),
     discountAmount:
       Number(order.discount_amount ?? 0) +
       Number(order.promotion_discount_amount ?? 0) +
       Number(order.points_discount_amount ?? 0),
-    status: order.status,
+    status: order.status ?? "PENDING",
     paymentStatus: order.payment_status ?? "unpaid",
     voidReason: order.void_reason,
     trackingNumber: order.tracking_number,
     shippingProvider: order.shipping_provider,
-    paymentMethod: order.payment_method,
-    createdAt: order.created_at,
+    paymentMethod: order.payment_method ?? "TRANSFER",
+    createdAt: order.created_at ?? new Date(0),
     lineUserId: (() => {
       const o = order.line_user_id?.trim();
       const c = order.customers?.line_user_id?.trim();

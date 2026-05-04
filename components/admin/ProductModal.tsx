@@ -24,6 +24,7 @@ import { packSizeNum, toVariantSku } from "@/lib/sku-utils";
 import { useToast } from "@/hooks/use-toast";
 import { ProductImageUpload, type ProductGalleryEntry } from "@/components/admin/ProductImageUpload";
 import { normalizeFloweringFromDb, normalizeSexFromDb } from "@/lib/cannabis-attributes";
+import type { FloweringType, ProductSexType, SeedType } from "@/types/supabase";
 
 const MAX_IMAGES = 5;
 const AI_SCAN_STAGING_MAX = 5;
@@ -114,6 +115,17 @@ interface ProductModalProps {
 }
 
 const emptyVariant = { unit_label: "", price: 0, cost_price: 0, stock: 0, low_stock_threshold: 5, is_active: true, sku: null as string | null };
+const STRAIN_DOMINANCE_VALUES = ["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"] as const;
+
+function toStrainDominance(value: string | null | undefined): ProductFormData["strain_dominance"] {
+  return STRAIN_DOMINANCE_VALUES.includes(value as (typeof STRAIN_DOMINANCE_VALUES)[number])
+    ? (value as ProductFormData["strain_dominance"])
+    : null;
+}
+
+function toSeedType(value: string | null | undefined): SeedType | null {
+  return value === "FEMINIZED" || value === "REGULAR" ? value : null;
+}
 
 const emptyForm: Partial<ProductFormData> = {
   name: "",
@@ -178,8 +190,8 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
       const firstVariantSku = p.product_variants?.[0] ? (p.product_variants[0] as { sku?: string | null }).sku : null;
       const derivedMasterSku = firstVariantSku?.replace(/-?\d+$/, "") ?? "";
       const catId = (p as { category_id?: number | bigint | null }).category_id;
-      let floweringNorm = normalizeFloweringFromDb(p.flowering_type);
-      let sexNorm = normalizeSexFromDb((p as { sex_type?: string | null }).sex_type);
+      let floweringNorm: FloweringType | null = normalizeFloweringFromDb(p.flowering_type) || null;
+      let sexNorm: ProductSexType | null = normalizeSexFromDb((p as { sex_type?: string | null }).sex_type) || null;
       const sexLegacy = String((p as { sex_type?: string | null }).sex_type ?? "").toLowerCase();
       if (!sexNorm && p.seed_type) {
         const st = String(p.seed_type).toUpperCase();
@@ -205,7 +217,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         image_url_4: p.image_url_4 ?? null,
         image_url_5: p.image_url_5 ?? null,
         video_url: p.video_url,
-        is_active: p.is_active,
+        is_active: p.is_active ?? true,
         is_featured: (p as { is_featured?: boolean | null }).is_featured ?? false,
         featured_priority:
           (p as { featured_priority?: number | null }).featured_priority ?? 0,
@@ -229,9 +241,9 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         indica_percent:
           toInt0to100((p as { indica_percent?: number | null }).indica_percent) ??
           toInt0to100(p.indica_ratio),
-        strain_dominance: (p as { strain_dominance?: string | null }).strain_dominance ?? null,
+        strain_dominance: toStrainDominance((p as { strain_dominance?: string | null }).strain_dominance),
         flowering_type: floweringNorm,
-        seed_type: p.seed_type,
+        seed_type: toSeedType(p.seed_type),
         yield_info: p.yield_info,
         growing_difficulty: p.growing_difficulty,
         effects: p.effects,
@@ -243,11 +255,11 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         terpenes: (p as { terpenes?: unknown }).terpenes ?? null,
         variants: p.product_variants?.map((v) => ({
           unit_label: v.unit_label,
-          price: v.price,
-          cost_price: v.cost_price,
-          stock: v.stock,
+          price: Number(v.price ?? 0),
+          cost_price: Number(v.cost_price ?? 0),
+          stock: Number(v.stock ?? 0),
           low_stock_threshold: (v as { low_stock_threshold?: number | null }).low_stock_threshold ?? 5,
-          is_active: v.is_active,
+          is_active: v.is_active ?? true,
           sku: (v as { sku?: string | null }).sku ?? null,
         })) ?? [],
       });
@@ -711,7 +723,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                       isAiScanDragging
                         ? "border-secondary-foreground/35 bg-secondary/60"
                         : "border-secondary-foreground/30 bg-white/90 hover:border-secondary-foreground/35 hover:bg-secondary/50"
-                    } ${aiPending && aiPending !== "scanner" ? "pointer-events-none opacity-50" : ""}`}
+                    } ${aiPending === "wand" ? "pointer-events-none opacity-50" : ""}`}
                   >
                     <Sparkles className="h-5 w-5 text-secondary-foreground/60" />
                     <span className="px-0.5 text-[9px] font-medium leading-tight text-zinc-600">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutGrid, Plus, ShoppingCart } from "lucide-react";
+import { LayoutGrid, Package, Plus, ShoppingCart, Sprout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function InventoryStats({
@@ -38,6 +38,37 @@ export function InventoryStats({
         <Button onClick={onOpenAdd} className="bg-primary text-white hover:bg-primary/90">
           <Plus className="mr-1.5 h-4 w-4" /> เพิ่มสินค้าและแพ็ก (Inventory)
         </Button>
+      </div>
+    </div>
+  );
+}
+
+export function ManualInventoryStats({
+  strainsCount,
+  totalStock,
+  selectedCount,
+}: {
+  strainsCount: number;
+  totalStock: number;
+  selectedCount: number;
+}) {
+  return (
+    <div>
+      <h1 className="text-xl font-bold text-zinc-900">Manual Inventory (Spreadsheet)</h1>
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
+        <span className="inline-flex items-center gap-1">
+          <Sprout className="h-3.5 w-3.5 text-primary" />
+          {strainsCount} strains
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Package className="h-3.5 w-3.5 text-primary" />
+          {totalStock.toLocaleString("th-TH")} stock
+        </span>
+        {selectedCount > 0 ? (
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            selected {selectedCount}
+          </span>
+        ) : null}
       </div>
     </div>
   );

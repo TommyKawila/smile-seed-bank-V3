@@ -45,6 +45,7 @@ import { getSiteOrigin } from "@/lib/get-url";
 import { cn } from "@/lib/utils";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { BlogArticleBreederRibbon } from "@/components/storefront/magazine/BlogArticleBreederRibbon";
+import { ArticleCampaignBanner } from "@/components/storefront/ArticleCampaignBanner";
 import {
   magazineDisplayContentJson,
   magazineDisplayExcerpt,
@@ -325,6 +326,8 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
             productMap={productMap}
           />
         </div>
+
+        <ArticleCampaignBanner lang={locale} />
 
         <ShopTheStorySection products={shopStoryProducts} />
 

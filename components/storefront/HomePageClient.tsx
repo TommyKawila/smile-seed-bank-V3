@@ -4,7 +4,7 @@
  * Storefront home — sections order from `homepage_sections` (see `app/(storefront)/page.tsx`).
  */
 
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -36,25 +36,19 @@ import {
   type SectionTitle,
 } from "@/lib/homepage-section-title";
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
+import { fetchWithTimeout } from "@/lib/timeout";
+import { PromotionBannerSection } from "@/components/storefront/PromotionBannerSection";
+import type { DynamicBanner } from "@/services/banner-service";
 
-type HomePayload = {
-  newArrivals?: ProductWithBreederAndVariants[];
+type StorefrontHomePayload = {
+  newArrivals: ProductWithBreederAndVariants[];
+  featured: ProductWithBreeder[];
+  clearance: ProductWithBreederAndVariants[];
+  magazine: MagazinePostPublic[];
+};
+
+type RawHomePayload = Partial<StorefrontHomePayload> & {
   data?: ProductWithBreederAndVariants[];
-  featured?: ProductWithBreeder[];
-  clearance?: ProductWithBreederAndVariants[];
-  magazine?: MagazinePostPublic[];
-};
-
-const HERO_FALLBACK_SECTION: HomePageSectionPayload = {
-  key: "hero",
-  label_th: "แบนเนอร์หลัก",
-  label_en: "Hero",
-};
-
-const NEW_ARRIVALS_SECTION: HomePageSectionPayload = {
-  key: "new_strains",
-  label_th: "สายพันธุ์มาใหม่",
-  label_en: "New Arrivals",
 };
 
 const staggerContainer: Variants = {
@@ -227,7 +221,7 @@ function InsightSection({
                       fill
                       className="object-cover transition duration-700 group-hover:scale-[1.03]"
                       sizes="(max-width: 1024px) 100vw, 50vw"
-                      priority
+                      loading="lazy"
                       placeholder="blur"
                       blurDataURL={SHIMMER_BLUR_DATA_URL}
                       unoptimized={shouldOffloadImageOptimization(featuredImg)}
@@ -256,31 +250,57 @@ function InsightSection({
   );
 }
 
-function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
+type HomePageClientProps = {
+  sections: HomePageSectionPayload[];
+  initialData: StorefrontHomePayload;
+  banners?: DynamicBanner[];
+};
+
+function hasHomePayload(data: StorefrontHomePayload): boolean {
+  return (
+    data.newArrivals.length > 0 ||
+    data.featured.length > 0 ||
+    data.clearance.length > 0 ||
+    data.magazine.length > 0
+  );
+}
+
+async function fetchStorefrontHomeClient(): Promise<StorefrontHomePayload> {
+  const response = await fetchWithTimeout("/api/storefront/home", {}, 5000);
+  if (!response.ok) throw new Error("Failed to load home data");
+  const result = (await response.json()) as RawHomePayload | ProductWithBreederAndVariants[];
+  const newArrivals = Array.isArray(result) ? result : result.newArrivals ?? result.data ?? [];
+  return {
+    newArrivals: Array.isArray(newArrivals) ? newArrivals.slice(0, 8) : [],
+    featured: !Array.isArray(result) && Array.isArray(result.featured) ? result.featured : [],
+    clearance: !Array.isArray(result) && Array.isArray(result.clearance) ? result.clearance : [],
+    magazine: !Array.isArray(result) && Array.isArray(result.magazine) ? result.magazine : [],
+  };
+}
+
+function HomePageMain({ sections, initialData, banners = [] }: HomePageClientProps) {
   const { t, locale } = useLanguage();
-  const [newArrivals, setNewArrivals] = useState<ProductWithBreederAndVariants[]>([]);
-  const [newArrivalsLoading, setNewArrivalsLoading] = useState(true);
-  const [featuredProducts, setFeaturedProducts] = useState<ProductWithBreeder[]>([]);
-  const [featuredLoading, setFeaturedLoading] = useState(true);
-  const [insights, setInsights] = useState<MagazinePostPublic[]>([]);
-  const [insightsLoading, setInsightsLoading] = useState(true);
-  const [clearanceProducts, setClearanceProducts] = useState<ProductWithBreederAndVariants[]>([]);
-  const [clearanceLoading, setClearanceLoading] = useState(true);
+  const hasInitialData = hasHomePayload(initialData);
+  const [newArrivals, setNewArrivals] = useState<ProductWithBreederAndVariants[]>(initialData.newArrivals);
+  const [newArrivalsLoading, setNewArrivalsLoading] = useState(!hasInitialData);
+  const [featuredProducts, setFeaturedProducts] = useState<ProductWithBreeder[]>(initialData.featured);
+  const [featuredLoading, setFeaturedLoading] = useState(!hasInitialData);
+  const [insights, setInsights] = useState<MagazinePostPublic[]>(initialData.magazine);
+  const [insightsLoading, setInsightsLoading] = useState(!hasInitialData);
+  const [clearanceProducts, setClearanceProducts] = useState<ProductWithBreederAndVariants[]>(initialData.clearance);
+  const [clearanceLoading, setClearanceLoading] = useState(!hasInitialData);
 
   useEffect(() => {
+    if (hasInitialData) return;
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch("/api/storefront/home");
-        const result = (await response.json()) as HomePayload | ProductWithBreederAndVariants[];
-        const arrivalData = Array.isArray(result)
-          ? result
-          : (result.newArrivals || result.data || []);
-        if (!cancelled && response.ok) {
-          setNewArrivals(Array.isArray(arrivalData) ? arrivalData.slice(0, 8) : []);
-          setFeaturedProducts(!Array.isArray(result) && Array.isArray(result.featured) ? result.featured : []);
-          setInsights(!Array.isArray(result) && Array.isArray(result.magazine) ? result.magazine : []);
-          setClearanceProducts(!Array.isArray(result) && Array.isArray(result.clearance) ? result.clearance : []);
+        const data = await fetchStorefrontHomeClient();
+        if (!cancelled) {
+          setNewArrivals(data.newArrivals);
+          setFeaturedProducts(data.featured);
+          setInsights(data.magazine);
+          setClearanceProducts(data.clearance);
         }
       } catch {
         if (!cancelled) {
@@ -301,7 +321,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [hasInitialData]);
 
   const features = [
     {
@@ -322,16 +342,7 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
     th: s.label_th,
     en: s.label_en,
   });
-  const heroSection = useMemo(
-    () => sections.find((section) => section.key === "hero") ?? HERO_FALLBACK_SECTION,
-    [sections]
-  );
-  const displaySections = useMemo(
-    () => sections.filter((section) => section.key !== "hero" && section.key !== "new_strains"),
-    [sections]
-  );
   const hasNewArrivals = newArrivals.length > 0;
-  console.log("RENDER CHECK - newArrivals count:", newArrivals?.length);
 
   const renderSection = (section: HomePageSectionPayload): ReactNode => {
     const st = sectionTitle(section);
@@ -347,6 +358,94 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
             </div>
           </div>
         );
+      case "promotion_banner":
+        return <PromotionBannerSection key={sk} banners={banners} locale={locale} />;
+      case "new_strains": {
+        const arrivalsHeading = resolveSectionHeading(
+          locale,
+          st,
+          "สายพันธุ์มาใหม่",
+          "New Arrivals"
+        );
+        return (
+          <section
+            key={sk}
+            className={`mx-auto min-h-[400px] max-w-7xl px-4 py-14 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+          >
+            <motion.div
+              initial={false}
+              whileInView="show"
+              viewport={{ once: true, margin: "-80px" }}
+              variants={staggerContainer}
+            >
+              <motion.div
+                variants={cardVariant}
+                className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+              >
+                <div className="max-w-2xl space-y-2">
+                  <p className="font-[family-name:var(--font-journal-product-mono)] text-[11px] font-medium uppercase tracking-widest text-emerald-800">
+                    NEW ARRIVALS
+                  </p>
+                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
+                    {arrivalsHeading}
+                  </h2>
+                  <p className="text-sm font-light leading-relaxed text-zinc-600">
+                    {t(
+                      "สายพันธุ์ใหม่ล่าสุดในคลัง — อัปเดตตามการคัดเลือกอย่างต่อเนื่อง",
+                      "Latest genetic entries in the Smile Seed Bank archive—refreshed as new strains land."
+                    )}
+                  </p>
+                </div>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 self-start text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900 sm:self-end"
+                >
+                  <Link href="/shop?category=Seeds">
+                    {t("ไปที่คลังเมล็ดพันธุ์", "Seed vault")}{" "}
+                    <ChevronRight className="ml-0.5 h-4 w-4" />
+                  </Link>
+                </Button>
+              </motion.div>
+
+              {newArrivalsLoading ? (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {[...Array(8)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
+                    >
+                      <div className="aspect-square animate-pulse bg-zinc-100" />
+                      <div className="space-y-2 px-2.5 pb-2.5 pt-2">
+                        <div className="mx-auto h-6 w-28 animate-pulse rounded-full bg-zinc-100" />
+                        <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
+                        <div className="h-4 animate-pulse rounded bg-zinc-100" />
+                        <div className="flex justify-between pt-2">
+                          <div className="h-5 w-16 animate-pulse rounded bg-zinc-100" />
+                          <div className="h-8 w-8 animate-pulse rounded-full bg-zinc-100" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : hasNewArrivals ? (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {newArrivals.slice(0, 8).map((product) => (
+                    <div key={product.id} className="flex h-full min-h-0 min-w-0 flex-col">
+                      <ProductCard product={product} variant="showcase" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
+                  {t("ยังไม่มีสินค้าใหม่ในช่วงนี้", "No new arrivals yet.")}
+                </p>
+              )}
+            </motion.div>
+          </section>
+        );
+      }
       case "categories":
         return (
           <div key={sk} className="bg-white pb-6 sm:pb-8">
@@ -456,91 +555,15 @@ function HomePageMain({ sections }: { sections: HomePageSectionPayload[] }) {
     }
   };
 
-  const newArrivalsHeading = resolveSectionHeading(
-    locale,
-    sectionTitle(NEW_ARRIVALS_SECTION),
-    "สายพันธุ์มาใหม่",
-    "New Arrivals"
-  );
-  const newArrivalsSection = (
-    <section
-      key={newArrivals.length}
-      className={`mx-auto min-h-[400px] max-w-7xl px-4 py-14 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
-    >
-      <motion.div
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: "-80px" }}
-        variants={staggerContainer}
-      >
-        <motion.div variants={cardVariant} className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-2xl space-y-2">
-            <p className="font-[family-name:var(--font-journal-product-mono)] text-[11px] font-medium uppercase tracking-widest text-emerald-800">
-              NEW ARRIVALS
-            </p>
-            <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
-              {newArrivalsHeading}
-            </h2>
-            <p className="text-sm font-light leading-relaxed text-zinc-600">
-              {t(
-                "สายพันธุ์ใหม่ล่าสุดในคลัง — อัปเดตตามการคัดเลือกอย่างต่อเนื่อง",
-                "Latest genetic entries in the Smile Seed Bank archive—refreshed as new strains land."
-              )}
-            </p>
-          </div>
-          <Button asChild variant="ghost" size="sm" className="shrink-0 self-start text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900 sm:self-end">
-            <Link href="/shop?category=Seeds">
-              {t("ไปที่คลังเมล็ดพันธุ์", "Seed vault")}{" "}
-              <ChevronRight className="ml-0.5 h-4 w-4" />
-            </Link>
-          </Button>
-        </motion.div>
-
-        {newArrivalsLoading || newArrivals.length === 0 ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-                <div className="aspect-square animate-pulse bg-zinc-100" />
-                <div className="space-y-2 px-2.5 pb-2.5 pt-2">
-                  <div className="mx-auto h-6 w-28 animate-pulse rounded-full bg-zinc-100" />
-                  <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
-                  <div className="h-4 animate-pulse rounded bg-zinc-100" />
-                  <div className="flex justify-between pt-2">
-                    <div className="h-5 w-16 animate-pulse rounded bg-zinc-100" />
-                    <div className="h-8 w-8 animate-pulse rounded-full bg-zinc-100" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : hasNewArrivals ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {newArrivals.slice(0, 8).map((product, index) => (
-              <div key={product.id} className="flex h-full min-h-0 min-w-0 flex-col">
-                <ProductCard
-                  product={product}
-                  variant="showcase"
-                  imagePriority={index < 4}
-                />
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </motion.div>
-    </section>
-  );
-
   return (
     <div className="min-h-screen bg-white pt-20 text-zinc-900 sm:pt-28">
-      <Fragment key={heroSection.key}>{renderSection(heroSection)}</Fragment>
-      {newArrivalsSection}
-      {displaySections.map((section) => (
+      {sections.map((section) => (
         <Fragment key={section.key}>{renderSection(section)}</Fragment>
       ))}
     </div>
   );
 }
 
-export function HomePageClient({ sections }: { sections: HomePageSectionPayload[] }) {
-  return <HomePageMain sections={sections} />;
+export function HomePageClient({ sections, initialData, banners }: HomePageClientProps) {
+  return <HomePageMain sections={sections} initialData={initialData} banners={banners} />;
 }

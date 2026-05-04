@@ -33,6 +33,7 @@ function toDateStr(d: Date): string {
 }
 
 export default function StockSnapshotsPage() {
+  const { toast } = useToast();
   const [date, setDate] = useState(() => toDateStr(new Date()));
   const [data, setData] = useState<ReconciliationData | null>(null);
   const [loading, setLoading] = useState(true);

@@ -30,6 +30,9 @@ export async function PATCH(
   if (updErr || !variant) {
     return NextResponse.json({ error: updErr?.message ?? "Variant not found" }, { status: 500 });
   }
+  if (variant.product_id == null) {
+    return NextResponse.json({ id });
+  }
 
   const { data: allVariants, error: listErr } = await supabase
     .from("product_variants")
@@ -40,8 +43,17 @@ export async function PATCH(
     return NextResponse.json({ id });
   }
 
-  const startingPrice = computeStartingPrice(allVariants as ProductVariant[]);
-  const totalStock = computeTotalStock(allVariants as ProductVariant[]);
+  const normalizedVariants: ProductVariant[] = allVariants.map((v) => ({
+    id: v.id,
+    product_id: variant.product_id,
+    unit_label: "",
+    price: Number(v.price ?? 0),
+    cost_price: null,
+    stock: v.stock ?? 0,
+    is_active: v.is_active ?? true,
+  }));
+  const startingPrice = computeStartingPrice(normalizedVariants);
+  const totalStock = computeTotalStock(normalizedVariants);
   await supabase
     .from("products")
     .update({ price: startingPrice, stock: totalStock })

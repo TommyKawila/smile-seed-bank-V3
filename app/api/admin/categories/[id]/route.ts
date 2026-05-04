@@ -10,7 +10,7 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const bid = BigInt(id);
-  if (bid < 1n) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  if (bid < BigInt(1)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   try {
     const body = await req.json();
     const { name, sort_order } = body as { name?: string; sort_order?: number };
@@ -33,7 +33,7 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const bid = BigInt(id);
-  if (bid < 1n) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  if (bid < BigInt(1)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   try {
     await prisma.products.updateMany({ where: { category_id: bid }, data: { category_id: null } });
     await prisma.product_categories.delete({ where: { id: bid } });

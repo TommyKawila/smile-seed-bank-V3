@@ -200,7 +200,7 @@ export function ProductTableRow({
       <TableCell className="text-sm text-zinc-500">{product.breeders?.name ?? "—"}</TableCell>
       <TableCell className="text-sm text-zinc-500">{product.strain_dominance ?? "—"}</TableCell>
       <TableCell className="text-right text-sm font-medium text-zinc-500">
-        {formatPrice(product.price)}
+        {formatPrice(product.price ?? 0)}
         <span className="ml-1 text-xs text-zinc-400">(แก้ที่ Inventory)</span>
       </TableCell>
       <TableCell className="text-right">

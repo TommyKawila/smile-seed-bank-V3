@@ -456,7 +456,7 @@ export default function OrderSuccessDynamicPage() {
           totalPrice: i.line_total,
         })),
       });
-      const doc = generateReceiptPDF({
+      const doc = await generateReceiptPDF({
         docType: "receipt",
         orderNumber: order.order_number,
         orderDate: order.order_date,

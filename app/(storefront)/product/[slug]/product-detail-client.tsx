@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ShoppingCart, Leaf, FlaskConical, TestTube2, Flower2, Gauge, Sprout, Clock, Dna, GitFork, Package } from "lucide-react";
 type ProductWithSpecs = ProductFull;
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -20,6 +19,8 @@ import {
   getClearancePercentOff,
   getDetailDisplayLinePrices,
   getEffectiveVariantPrice,
+  isVariantDiscountActive,
+  normalizeDiscountPercent,
 } from "@/lib/product-utils";
 import { isProductAggregateOutOfStock } from "@/lib/product-stock";
 import { seedsBreederHref } from "@/lib/breeder-slug";
@@ -28,6 +29,8 @@ import { StickyBuyBar } from "@/components/storefront/StickyBuyBar";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
+import { DiscountCountdown } from "@/components/storefront/DiscountCountdown";
+import { StockAlert } from "@/components/storefront/StockAlert";
 import {
   FeminizedSeedSpecChip,
   FeminizedStatCard,
@@ -39,10 +42,6 @@ import type { ProductFull, ProductVariant } from "@/types/supabase";
 import { resolveDetailHeroUrl } from "@/lib/product-gallery-utils";
 /** Sans + tabular figures for prices and spec values (same family as nav). */
 const fontSansTabular = "font-sans tabular-nums";
-
-function fillN(template: string, n: number) {
-  return template.replace(/\{n\}/g, String(n));
-}
 
 function formatCbdDisplay(raw: string | number | null | undefined): string {
   if (raw == null || raw === "") return "";
@@ -95,7 +94,7 @@ function formatDescriptionJournal(text: string, productName: string): React.Reac
 }
 
 const statCardShell =
-  "flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center";
+  "flex flex-col items-center justify-center rounded-[var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center";
 
 // Stat card — unified light surface + emerald icon accent
 function StatCard({
@@ -368,11 +367,19 @@ export default function ProductDetailClient({
     activeVariants,
     selectedVariant
   );
+  const selectedDiscountActive = selectedVariant
+    ? isVariantDiscountActive(selectedVariant)
+    : false;
+  const selectedDiscountPct = selectedDiscountActive
+    ? normalizeDiscountPercent(selectedVariant?.discount_percent)
+    : 0;
+  const salePct = selectedDiscountPct > 0 ? selectedDiscountPct : clearancePct;
+  const discountEndsAt = selectedDiscountPct > 0 ? selectedVariant?.discount_ends_at : null;
 
   const mainPriceLine =
     !selectedVariant
       ? "—"
-      : selectedEff > 0
+      : selectedEff > 0 || selectedDiscountPct === 100
         ? formatPrice(selectedEff)
         : t("สอบถาม", "Inquire");
 
@@ -437,9 +444,11 @@ export default function ProductDetailClient({
                   {product.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                  {clearancePct != null && clearancePct > 0 && (
-                    <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
-                      −{clearancePct}%
+                  {salePct != null && salePct > 0 && (
+                    <span className="rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/40">
+                      {selectedDiscountPct > 0
+                        ? t(`ลด ${salePct}%`, `${salePct}% OFF`)
+                        : `−${salePct}%`}
                     </span>
                   )}
                   <div className="flex min-w-0 flex-col">
@@ -461,15 +470,11 @@ export default function ProductDetailClient({
                     >
                       {mainPriceLine}
                     </span>
+                    <div className="mt-1 flex min-h-6 flex-wrap gap-1.5">
+                      <DiscountCountdown endsAt={discountEndsAt} locale={locale} />
+                      <StockAlert quantity={selectedVariant?.stock} locale={locale} />
+                    </div>
                   </div>
-                  {selectedVariant &&
-                    !aggregateOos &&
-                    (selectedVariant.stock ?? 0) <= 5 &&
-                    (selectedVariant.stock ?? 0) > 0 && (
-                      <Badge className="shrink-0 border border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/10">
-                        {fillN(tMsg("product.only_n_left", "Only {n} left"), selectedVariant.stock ?? 0)}
-                      </Badge>
-                    )}
                 </div>
               </div>
               {product.breeders && (
@@ -564,6 +569,9 @@ export default function ProductDetailClient({
                   {activeVariants.map((v) => {
                     const soldOut = (v.stock ?? 0) === 0;
                     const isSelected = selectedVariant?.id === v.id;
+                    const variantEff = getEffectiveVariantPrice(product, Number(v.price));
+                    const variantList = Number(v.price ?? 0);
+                    const showVariantStrike = variantList > variantEff;
                     return (
                       <button
                         key={v.id}
@@ -587,14 +595,21 @@ export default function ProductDetailClient({
                             isSelected ? "text-primary" : "text-zinc-900"
                           )}
                         >
-                          {formatPrice(getEffectiveVariantPrice(product, Number(v.price)))}
+                          {formatPrice(variantEff)}
                         </span>
+                        {showVariantStrike ? (
+                          <span className={cn(fontSansTabular, "block text-xs text-zinc-400 line-through")}>
+                            {formatPrice(variantList)}
+                          </span>
+                        ) : null}
                         {!aggregateOos &&
                           (v.stock ?? 0) <= 5 &&
                           (v.stock ?? 0) > 0 && (
-                          <span className="block text-[10px] text-destructive">
-                            {fillN(tMsg("product.stock_left_simple", "{n} left"), v.stock ?? 0)}
-                          </span>
+                          <StockAlert
+                            quantity={v.stock}
+                            locale={locale}
+                            className="mt-1 h-5 text-[10px]"
+                          />
                         )}
                       </button>
                     );

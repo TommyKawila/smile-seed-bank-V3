@@ -18,37 +18,6 @@ function bootstrapNextAuthEnv(): void {
 
 bootstrapNextAuthEnv();
 
-let debugEnvLogged = false;
-function logDebugEnvOnce(): void {
-  if (debugEnvLogged) return;
-  debugEnvLogged = true;
-  console.log("DEBUG_ENV:", {
-    url: process.env.NEXTAUTH_URL,
-    hasSecret: !!(process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET),
-    channelId:
-      process.env.LINE_LOGIN_CHANNEL_ID ?? process.env.LINE_CLIENT_ID ?? null,
-    hasLineSecret: !!(
-      process.env.LINE_LOGIN_CHANNEL_SECRET ?? process.env.LINE_CLIENT_SECRET
-    ),
-    vercel: !!process.env.VERCEL,
-    authTrustHost: process.env.AUTH_TRUST_HOST ?? null,
-  });
-}
-
 const handler = NextAuth(authOptions);
 
-export async function GET(
-  req: Request,
-  context: { params: Promise<{ nextauth: string[] }> }
-) {
-  logDebugEnvOnce();
-  return handler(req, context);
-}
-
-export async function POST(
-  req: Request,
-  context: { params: Promise<{ nextauth: string[] }> }
-) {
-  logDebugEnvOnce();
-  return handler(req, context);
-}
+export { handler as GET, handler as POST };

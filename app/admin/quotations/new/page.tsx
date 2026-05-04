@@ -569,7 +569,7 @@ export default function QuotationsNewPage() {
         discount: d.discount,
         subtotal: d.subtotal,
       }));
-      const doc = generateReceiptPDF({
+      const doc = await generateReceiptPDF({
         docType: "quotation",
         orderNumber,
         orderDate,

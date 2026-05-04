@@ -176,7 +176,7 @@ export default function BreedersPage() {
             {active.map((breeder) => (
               <motion.div
                 key={breeder.id}
-                variants={cardVariant}
+                variants={cardVariant as import("framer-motion").Variants}
                 className="group flex flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
                 {/* Logo area */}

@@ -53,6 +53,7 @@ const navItems = [
   { href: "/admin/customers", label: "ลูกค้า", icon: Users },
   { href: "/admin/promotions", label: "โปรโมชั่น", icon: Tag },
   { href: "/admin/promotions/campaigns", label: "แคมเปญป๊อปอัพ", icon: Sparkles },
+  { href: "/admin/banners", label: "แบนเนอร์หน้าแรก", icon: LayoutTemplate },
   { href: "/admin/discounts", label: "ส่วนลด / คูปอง", icon: Percent },
   { href: "/admin/magazine", label: "Smile Seed Blog", icon: Newspaper },
 ];

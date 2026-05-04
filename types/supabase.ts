@@ -107,6 +107,9 @@ export interface ProductVariant {
   unit_label: string;
   cost_price: number | null;
   price: number;
+  discount_percent?: number;
+  discount_ends_at?: string | null;
+  final_price?: number;
   stock: number | null;
   is_active: boolean | null;
   sku?: string | null;

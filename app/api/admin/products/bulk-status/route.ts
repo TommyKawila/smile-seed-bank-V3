@@ -17,8 +17,6 @@ const BodySchema = z.object({
 /** Smaller batches = shorter per-transaction work; avoids default 5s Prisma tx limit. */
 const CHUNK = 35;
 
-const TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
-
 export async function PATCH(req: NextRequest) {
   let body: unknown;
   try {
@@ -71,8 +69,7 @@ export async function PATCH(req: NextRequest) {
             where: { id: BigInt(r.id) },
             data: { is_active: r.next },
           })
-        ),
-        TX_OPTS
+        )
       );
     }
 

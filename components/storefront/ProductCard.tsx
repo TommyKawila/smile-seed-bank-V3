@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, createElement } from "react";
 import { motion, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,12 +16,15 @@ import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { getGeneticPercents } from "@/components/storefront/ProductSpecs";
 import { formatPrice } from "@/lib/utils";
 import {
+  calculateDiscountedPrice,
   computeStartingPrice,
   getClearancePercentOff,
   getEffectiveListingPrice,
   getEffectiveVariantPrice,
   getStartingVariant,
   getStartingVariantLabel,
+  isVariantDiscountActive,
+  normalizeDiscountPercent,
 } from "@/lib/product-utils";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { getProductAggregateStock } from "@/lib/product-stock";
@@ -30,6 +33,8 @@ import { seedsBreederHref } from "@/lib/breeder-slug";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
+import { DiscountCountdown } from "@/components/storefront/DiscountCountdown";
+import { StockAlert } from "@/components/storefront/StockAlert";
 import { toast } from "sonner";
 
 const shopCardVariants: Variants = {
@@ -57,6 +62,8 @@ function getDefaultVariant(product: {
   product_variants?: {
     id: number;
     price: number;
+    discount_percent?: number;
+    discount_ends_at?: string | null;
     stock: number | null;
     is_active: boolean | null;
     unit_label: string;
@@ -140,12 +147,15 @@ type ProductCardProps = {
   product: ProductListItem;
   variant?: "shop" | "showcase";
   imagePriority?: boolean;
+  /** When parent already wraps this card in `<motion.div variants={…}>`, omit inner motion (avoids nested variant trees / runtime issues). */
+  disableOuterMotion?: boolean;
 };
 
 function ProductCardBase({
   product,
   variant = "shop",
   imagePriority = false,
+  disableOuterMotion = false,
 }: ProductCardProps) {
   const { addToCart, openCart } = useCartContext();
   const { t, locale } = useLanguage();
@@ -176,7 +186,19 @@ function ProductCardBase({
   const handleAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
     stopNavBubble(e);
     if (defaultVariant) {
-      const unit = getEffectiveVariantPrice(product, Number(defaultVariant.price));
+      const variantListPrice = Number(defaultVariant.price ?? 0);
+      const directUnit = isVariantDiscountActive(defaultVariant)
+        ? calculateDiscountedPrice(
+            variantListPrice,
+            defaultVariant.discount_percent,
+            defaultVariant.discount_ends_at
+          )
+        : variantListPrice;
+      const unit = Math.min(getEffectiveVariantPrice(product, variantListPrice), directUnit);
+      if (typeof addToCart !== "function") {
+        toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
+        return;
+      }
       const { error } = addToCart({
         variantId: defaultVariant.id,
         productId: product.id,
@@ -196,23 +218,32 @@ function ProductCardBase({
       }
       const announceTh = `เพิ่มสินค้า '${product.name}' เข้าตะกร้าแล้ว`;
       const announceEn = `Added “${product.name}” to your cart`;
-      if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const reduceMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+      if (reduceMotion) {
         toast.success(locale === "th" ? announceTh : announceEn, { duration: 2800 });
         return;
       }
-      requestCartFlyAnimation(e.currentTarget, {
-        productName: product.name,
-        productImage: cardImage,
-        locale: loc,
-        announceTh,
-        announceEn,
-      });
+      try {
+        if (typeof requestCartFlyAnimation === "function" && e.currentTarget instanceof HTMLElement) {
+          requestCartFlyAnimation(e.currentTarget, {
+            productName: product.name,
+            productImage: cardImage,
+            locale: loc,
+            announceTh,
+            announceEn,
+          });
+        }
+      } catch {
+        /* ignore animation failures */
+      }
       toast.success(successToast(locale === "th"), { duration: 2200 });
     } else {
       toast.error(
         locale === "th" ? "ไม่พบแพ็กสำหรับสั่งซื้อ" : "No pack available to order"
       );
-      openCart();
+      if (typeof openCart === "function") openCart();
     }
   };
 
@@ -223,15 +254,54 @@ function ProductCardBase({
       : "—";
   const genLetter = cardGeneticsLetter(product);
   const typePill = cardStrainTypeLabel(product) ?? genLetter;
-  const listFrom = getEffectiveListingPrice(product);
-  const listRegular = computeStartingPrice(product.product_variants);
+  const listingFallbackPrice = getEffectiveListingPrice(product);
+  const listRegular = Number(defaultVariant?.price ?? computeStartingPrice(product.product_variants));
+  const directCardPrice =
+    defaultVariant && isVariantDiscountActive(defaultVariant)
+      ? calculateDiscountedPrice(
+          listRegular,
+          defaultVariant.discount_percent,
+          defaultVariant.discount_ends_at
+        )
+      : listRegular;
+  const listFrom = defaultVariant
+    ? Math.min(getEffectiveVariantPrice(product, listRegular), directCardPrice)
+    : listingFallbackPrice;
   const clearancePct = getClearancePercentOff(product);
-  const showStrike = clearancePct != null && listRegular > listFrom;
+  const activeDiscountVariants = (product.product_variants ?? []).filter((variant) => {
+    if (variant.is_active === false || !isVariantDiscountActive(variant)) return false;
+    const listPrice = Number(variant.price ?? 0);
+    const discountedPrice = calculateDiscountedPrice(
+      listPrice,
+      variant.discount_percent,
+      variant.discount_ends_at
+    );
+    return listPrice > 0 && discountedPrice < listPrice;
+  });
+  const directDiscountPct = Math.max(
+    0,
+    ...activeDiscountVariants
+      .map((variant) => normalizeDiscountPercent(variant.discount_percent))
+  );
+  const salePct = directDiscountPct > 0 ? directDiscountPct : clearancePct;
+  const priceLabel = listFrom > 0 || directDiscountPct === 100
+    ? formatPrice(listFrom)
+    : t("สอบถาม", "Inquire");
+  const showStrike = listRegular > listFrom;
   const seedsPackLabel = getStartingVariantLabel(product.product_variants, locale);
+  const discountEndsAt =
+    defaultVariant && isVariantDiscountActive(defaultVariant)
+      ? defaultVariant.discount_ends_at
+      : null;
+  const stockAlert = defaultVariant && !outOfStock ? (
+    <StockAlert quantity={defaultVariant.stock} locale={locale} className="h-5 text-[10px]" />
+  ) : null;
+  const countdown = discountEndsAt ? (
+    <DiscountCountdown endsAt={discountEndsAt} locale={locale} className="h-5 text-[10px]" />
+  ) : null;
 
-  return (
-    <motion.div variants={motionVariants} className="h-full">
-      <div className="group flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:border-zinc-200 hover:shadow-md">
+  const cardInner = (
+    <div className="group flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:border-zinc-200 hover:shadow-md">
         <div className="relative aspect-square shrink-0 overflow-hidden bg-zinc-50">
           <Link href={productDetailHref(product)} className="absolute inset-0 block">
             {cardImage ? (
@@ -239,9 +309,11 @@ function ProductCardBase({
                 src={cardImage}
                 alt={product.name}
                 fill
-                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 className={`object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "brightness-75 grayscale" : ""}`}
                 priority={imagePriority}
+                fetchPriority={imagePriority ? "high" : "auto"}
+                loading={imagePriority ? "eager" : "lazy"}
                 unoptimized={shouldOffloadImageOptimization(cardImage)}
               />
             ) : (
@@ -251,6 +323,13 @@ function ProductCardBase({
               />
             )}
           </Link>
+          {salePct ? (
+            <div className="absolute left-2 top-2 z-20">
+              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/40">
+                {t(`ลด ${salePct}%`, `Sale ${salePct}%`)}
+              </span>
+            </div>
+          ) : null}
 
           {outOfStock && (
             <div
@@ -282,7 +361,7 @@ function ProductCardBase({
             <Link
               href={seedsBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
-              className="absolute left-2 top-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-white shadow-md ring-2 ring-white transition-transform hover:scale-105"
+              className={`absolute left-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-white shadow-md ring-2 ring-white transition-transform hover:scale-105 ${salePct ? "top-10" : "top-2"}`}
               aria-label={product.breeders.name}
             >
               <BreederLogoImage
@@ -371,9 +450,15 @@ function ProductCardBase({
                     {formatPrice(listRegular)}
                   </p>
                 )}
-                <p className="text-[15px] font-bold tabular-nums text-zinc-900">
-                  {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
+                <p className="text-[15px] font-bold tabular-nums text-primary">
+                  {priceLabel}
                 </p>
+                {(countdown || stockAlert) && (
+                  <div className="mt-1 flex min-h-5 flex-wrap justify-center gap-1">
+                    {countdown}
+                    {stockAlert}
+                  </div>
+                )}
               </div>
               <Button
                 type="button"
@@ -406,8 +491,14 @@ function ProductCardBase({
                       </p>
                     )}
                     <p className="text-[15px] font-bold tabular-nums text-zinc-500">
-                      {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
+                      {priceLabel}
                     </p>
+                    {(countdown || stockAlert) && (
+                      <div className="mt-1 flex min-h-5 flex-wrap justify-center gap-1">
+                        {countdown}
+                        {stockAlert}
+                      </div>
+                    )}
                   </div>
                   <Button
                     type="button"
@@ -432,9 +523,15 @@ function ProductCardBase({
                         {formatPrice(listRegular)}
                       </p>
                     )}
-                    <p className="text-[15px] font-bold tabular-nums text-zinc-900">
-                      {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
+                    <p className="text-[15px] font-bold tabular-nums text-primary">
+                      {priceLabel}
                     </p>
+                    {(countdown || stockAlert) && (
+                      <div className="mt-1 flex min-h-5 flex-wrap gap-1">
+                        {countdown}
+                        {stockAlert}
+                      </div>
+                    )}
                   </div>
                   <Button
                     type="button"
@@ -455,7 +552,12 @@ function ProductCardBase({
           )}
         </div>
       </div>
-    </motion.div>
+  );
+
+  return createElement(
+    disableOuterMotion ? "div" : motion.div,
+    disableOuterMotion ? { className: "h-full" } : { variants: motionVariants, className: "h-full" },
+    cardInner
   );
 }
 

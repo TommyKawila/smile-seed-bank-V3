@@ -69,7 +69,7 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    let clearT: ReturnType<typeof setTimeout> | undefined;
+    let clearT: number | undefined;
     const onHit = () => {
       if (clearT) window.clearTimeout(clearT);
       setCartHitWobble(true);
@@ -111,7 +111,7 @@ export function Navbar() {
                 height={77}
                 className="h-11 w-auto max-w-[min(152px,46vw)] object-contain object-left sm:max-w-[200px] sm:h-[3.5rem] lg:max-w-none"
                 unoptimized
-                priority
+                loading="lazy"
               />
             ) : (
               <>

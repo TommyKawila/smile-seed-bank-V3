@@ -24,8 +24,10 @@ import {
   GripVertical,
   LayoutTemplate,
   Loader2,
+  Megaphone,
   Settings2,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -47,6 +49,7 @@ type HomepageSectionRow = {
 /** Placeholder previews (picsum seeds) — swap for real screenshots in `public/` later. */
 const HOMEPAGE_SECTION_PREVIEW_IMAGES: Record<string, string> = {
   hero: "https://picsum.photos/seed/ssb-home-hero/96/64",
+  promotion_banner: "https://picsum.photos/seed/ssb-home-promo-banner/96/64",
   categories: "https://picsum.photos/seed/ssb-home-categories/96/64",
   breeder_showcase: "https://picsum.photos/seed/ssb-home-breeder-grid/96/64",
   blog: "https://picsum.photos/seed/ssb-home-blog/96/64",
@@ -58,8 +61,13 @@ const HOMEPAGE_SECTION_PREVIEW_IMAGES: Record<string, string> = {
   clearance: "https://picsum.photos/seed/ssb-home-clearance/96/64",
 };
 
+const HOMEPAGE_SECTION_ROW_ICONS: Partial<Record<string, LucideIcon>> = {
+  promotion_banner: Megaphone,
+};
+
 /** Short hint under the technical `key` in admin list (not stored in DB). */
 const HOMEPAGE_SECTION_KEY_HINTS: Record<string, string> = {
+  promotion_banner: "Carousel · dynamic_banners (mobile 4:5 / desktop cinematic)",
   breeder_showcase: "Icon grid · BreederShowcase",
   breeders: "Horizontal slider · BreederRibbon",
   categories: "Quick pills · QuickCategoryNav",
@@ -91,6 +99,7 @@ function SortableRow({
   };
 
   const previewUrl = sectionPreviewSrc(row.key);
+  const SectionIcon = HOMEPAGE_SECTION_ROW_ICONS[row.key];
 
   return (
     <div
@@ -110,6 +119,15 @@ function SortableRow({
       >
         <GripVertical className="h-5 w-5" />
       </button>
+
+      {SectionIcon ? (
+        <div
+          className="flex h-14 w-10 shrink-0 items-center justify-center self-center rounded-md border border-emerald-100 bg-emerald-50 text-emerald-900"
+          aria-label="Promotion banner"
+        >
+          <SectionIcon className="h-5 w-5" aria-hidden />
+        </div>
+      ) : null}
 
       <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-100">
         <img

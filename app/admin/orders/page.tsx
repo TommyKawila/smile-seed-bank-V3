@@ -51,6 +51,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { OrderFilters } from "@/components/admin/orders/OrderFilters";
+import { OrderListTable } from "@/components/admin/orders/OrderListTable";
+import { OrderDetailModal } from "@/components/admin/orders/OrderDetailModal";
+import { OrderStatusActions } from "@/components/admin/orders/OrderStatusActions";
 
 // ─── Shipping providers ────────────────────────────────────────────────────────
 const SHIPPING_PROVIDERS = [
@@ -671,25 +675,18 @@ function OrderTableRow({
       </td>
       <td className="px-4 py-3">
         {canAct ? (
-          <div className="flex gap-1.5">
-            <Button
-              size="sm"
-              className="bg-primary hover:bg-primary/90"
-              onClick={() => onApprove(order.id)}
-              disabled={busy}
-            >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "อนุมัติ"}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-red-200 text-red-600 hover:bg-red-50"
-              onClick={() => onReject(order.id)}
-              disabled={busy}
-            >
-              ปฏิเสธ
-            </Button>
-          </div>
+          <OrderStatusActions
+            busy={busy}
+            canApprove
+            canCancelPending={false}
+            canShip={false}
+            canVoid={false}
+            onApprove={() => onApprove(order.id)}
+            onReject={() => onReject(order.id)}
+            onCancelPending={() => onCancelPending(order.id)}
+            onShip={() => onShip(order.id)}
+            onVoid={() => onVoid(order.id)}
+          />
         ) : (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap gap-1.5">
@@ -705,17 +702,6 @@ function OrderTableRow({
                   แอดมินจัดการแทน
                 </Button>
               )}
-              {canCancelPending && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="border border-red-200/80 text-red-600 hover:bg-red-50"
-                  onClick={() => onCancelPending(order.id)}
-                  disabled={busy}
-                >
-                  ยกเลิกออเดอร์
-                </Button>
-              )}
               {canReceipt && (
                 <Button
                   size="sm"
@@ -726,37 +712,19 @@ function OrderTableRow({
                   ออกใบเสร็จ
                 </Button>
               )}
-              {canShip && (
-                <Button
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90"
-                  onClick={() => onShip(order.id)}
-                  disabled={busy}
-                >
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Truck className="mr-1 h-3.5 w-3.5" />จัดส่ง</>}
-                </Button>
-              )}
-              {canVoid && (
-                <Button
-                  size="sm"
-                  variant={isPaidQueue ? "outline" : "ghost"}
-                  className={
-                    isPaidQueue
-                      ? "shrink-0 border-red-300 text-red-700 hover:bg-red-50"
-                      : "text-red-600 hover:bg-red-50 hover:text-red-700"
-                  }
-                  onClick={() => onVoid(order.id)}
-                  disabled={busy}
-                  aria-label="ยกเลิกและคืนสต็อก"
-                >
-                  <RotateCcw
-                    className={cn("h-3.5 w-3.5 shrink-0", isPaidQueue && "mr-1")}
-                  />
-                  {isPaidQueue ? (
-                    <span className="max-w-[9rem] truncate text-xs font-medium">ยกเลิก·คืนสต็อก</span>
-                  ) : null}
-                </Button>
-              )}
+              <OrderStatusActions
+                busy={busy}
+                canApprove={false}
+                canCancelPending={canCancelPending}
+                canShip={canShip}
+                canVoid={canVoid}
+                completedVoid={!isPaidQueue}
+                onApprove={() => onApprove(order.id)}
+                onReject={() => onReject(order.id)}
+                onCancelPending={() => onCancelPending(order.id)}
+                onShip={() => onShip(order.id)}
+                onVoid={() => onVoid(order.id)}
+              />
             </div>
             {order.status === "SHIPPED" && order.tracking_number && (
               <div className="flex items-center gap-1 text-xs text-blue-600">
@@ -1417,41 +1385,12 @@ export default function AdminOrdersPage() {
         </p>
       )}
 
-      {/* Filter Tabs — horizontally scrollable on mobile */}
-      <div className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:rounded-lg sm:bg-zinc-100 sm:p-1">
-        {ORDER_LIST_TABS.map((t) => {
-          const active = listTab === t.id;
-          const count =
-            t.countKey != null
-              ? (tabCounts?.[t.countKey] ?? 0)
-              : tabCounts
-                ? Object.values(tabCounts).reduce((a, b) => a + b, 0)
-                : 0;
-          return (
-            <button
-              key={t.id || "all"}
-              type="button"
-              onClick={() => setListTab(t.id)}
-              className={cn(
-                "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors sm:rounded-md sm:py-1.5",
-                active
-                  ? "bg-primary text-white shadow-sm"
-                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 sm:bg-transparent"
-              )}
-            >
-              {t.label}
-              <span
-                className={cn(
-                  "rounded-full px-1.5 py-0.5 text-xs",
-                  active ? "bg-white/20 text-white" : "bg-zinc-200 text-zinc-600"
-                )}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <OrderFilters
+        tabs={ORDER_LIST_TABS}
+        activeTab={listTab}
+        counts={tabCounts ?? undefined}
+        onTabChange={setListTab}
+      />
 
       {/* Content */}
       {isLoading ? (
@@ -1494,21 +1433,7 @@ export default function AdminOrdersPage() {
           </div>
 
           {/* Desktop: Table */}
-          <div className="hidden overflow-x-auto rounded-xl border border-zinc-200 bg-white lg:block">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                  <th className="px-4 py-3">เลขออเดอร์</th>
-                  <th className="px-4 py-3">ลูกค้า</th>
-                  <th className="px-4 py-3">รายการ</th>
-                  <th className="px-4 py-3">ยอด</th>
-                  <th className="px-4 py-3">ช่องทาง</th>
-                  <th className="px-4 py-3">สถานะ</th>
-                  <th className="px-4 py-3">สลิป</th>
-                  <th className="px-4 py-3">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody>
+          <OrderListTable>
                 {orders.map((order) => (
                   <OrderTableRow
                     key={order.id}
@@ -1525,15 +1450,12 @@ export default function AdminOrdersPage() {
                     isUpdating={updatingId}
                   />
                 ))}
-              </tbody>
-            </table>
-          </div>
+          </OrderListTable>
         </>
       )}
 
       {/* ── Order Detail Modal ── */}
-      <Dialog open={!!detailModal || detailLoading} onOpenChange={(o) => !o && !detailLoading && setDetailModal(null)}>
-        <DialogContent className="max-w-3xl">
+      <OrderDetailModal open={!!detailModal || detailLoading} onOpenChange={(o) => !o && !detailLoading && setDetailModal(null)}>
           <DialogHeader className="space-y-4 pr-10 text-left sm:pr-12">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <DialogTitle className="flex min-w-0 items-center gap-2 text-primary sm:pt-0.5">
@@ -1978,8 +1900,7 @@ export default function AdminOrdersPage() {
               </div>
             </div>
           ) : null}
-        </DialogContent>
-      </Dialog>
+      </OrderDetailModal>
 
       <Dialog
         open={quickMessageOpen}

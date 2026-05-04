@@ -25,7 +25,7 @@ export function normalizeReceiptOrderDate(raw: string | undefined): string {
   }).format(new Date());
 }
 
-export function buildOrderReceiptPdfDocument(
+export async function buildOrderReceiptPdfDocument(
   order: OrderSuccessView,
   pdfSettings: PdfSettings,
   options?: { locale?: OrderDisplayLocale }
@@ -52,7 +52,7 @@ export function buildOrderReceiptPdfDocument(
 
   const orderDate = normalizeReceiptOrderDate(order.order_date);
 
-  return generateReceiptPDF({
+  return await generateReceiptPDF({
     docType: "receipt",
     orderNumber: order.order_number,
     orderDate,

@@ -145,7 +145,7 @@ export default function DashboardPage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error ?? "ส่งออกไม่สำเร็จ");
       const orders = (j.orders ?? []) as OrderExportRow[];
-      exportOrdersToExcel(
+      await exportOrdersToExcel(
         orders,
         `sales-report-${range}-${new Date().toISOString().slice(0, 10)}.xlsx`
       );
@@ -347,7 +347,7 @@ export default function DashboardPage() {
                       <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#71717a" />
                       <YAxis tick={{ fontSize: 10 }} stroke="#71717a" tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
                       <Tooltip
-                        formatter={(v: number | string) => formatPrice(Number(v))}
+                        formatter={(v: number | string | undefined) => formatPrice(Number(v ?? 0))}
                         labelStyle={{ color: "#27272a" }}
                       />
                       <Legend />

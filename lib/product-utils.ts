@@ -121,7 +121,80 @@ export function computeTotalStock(
 type StartingVariantPick = Pick<
   ProductVariant,
   "price" | "stock" | "is_active" | "unit_label"
+> &
+  Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "final_price">>;
+
+type DiscountVariantPick = Pick<
+  ProductVariant,
+  "price" | "stock" | "is_active"
 >;
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+export function normalizeDiscountPercent(value: unknown): number {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(100, Math.max(0, Math.floor(n)));
+}
+
+export function isVariantDiscountActive(
+  variant: Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at">>,
+  now: Date = new Date()
+): boolean {
+  if (normalizeDiscountPercent(variant.discount_percent) <= 0) return false;
+  const rawEndsAt = variant.discount_ends_at;
+  if (!rawEndsAt) return true;
+  const endsAt = new Date(rawEndsAt);
+  if (Number.isNaN(endsAt.getTime())) return false;
+  return now <= endsAt;
+}
+
+export function getVariantFinalPrice(
+  variant: Pick<ProductVariant, "price"> & Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "final_price">>
+): number {
+  const price = Number(variant.price ?? 0);
+  if (!Number.isFinite(price) || price <= 0) return 0;
+  if (!isVariantDiscountActive(variant)) return roundMoney(price);
+  const explicit = Number(variant.final_price ?? 0);
+  if (Number.isFinite(explicit) && explicit > 0) return roundMoney(explicit);
+  const discount = normalizeDiscountPercent(variant.discount_percent);
+  return roundMoney(price * (1 - discount / 100));
+}
+
+export function calculateDiscountedPrice(
+  price: number,
+  discountPercent: unknown,
+  discountEndsAt?: string | null
+): number {
+  return getVariantFinalPrice({
+    price,
+    discount_percent: normalizeDiscountPercent(discountPercent),
+    discount_ends_at: discountEndsAt ?? null,
+  });
+}
+
+export type TimeRemaining = {
+  totalMs: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+};
+
+export function getTimeRemaining(endsAt: Date): TimeRemaining | null {
+  const endMs = endsAt.getTime();
+  if (!Number.isFinite(endMs)) return null;
+  const totalMs = endMs - Date.now();
+  if (totalMs <= 0) return null;
+  const totalSeconds = Math.floor(totalMs / 1000);
+  return {
+    totalMs,
+    hours: Math.floor(totalSeconds / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60,
+  };
+}
 
 /**
  * Variant that determines `computeStartingPrice` (in-stock priced tiers preferred;
@@ -161,21 +234,53 @@ export function computeStartingPrice(
   return Number(v.price ?? 0);
 }
 
+export function computeStartingFinalPrice(
+  variants: (DiscountVariantPick & Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "final_price" | "unit_label">>)[] | null | undefined
+): number {
+  if (!variants?.length) return 0;
+  const active = variants.filter((v) => v.is_active !== false);
+  const rows = active
+    .map((v) => ({
+      v,
+      finalPrice: getVariantFinalPrice(v),
+      stock: Number(v.stock ?? 0),
+      pack: parsePackFromUnitLabel(v.unit_label ?? ""),
+    }))
+    .filter((row) => row.finalPrice > 0);
+  if (rows.length === 0) return 0;
+  const pool = rows.some((row) => row.stock > 0)
+    ? rows.filter((row) => row.stock > 0)
+    : rows;
+  pool.sort((a, b) => a.finalPrice - b.finalPrice || a.pack - b.pack);
+  return pool[0]?.finalPrice ?? 0;
+}
+
+function hasActiveVariantDiscount(
+  variants: (Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "is_active">>)[] | null | undefined
+): boolean {
+  return Boolean(
+    variants?.some((variant) => variant.is_active !== false && isVariantDiscountActive(variant))
+  );
+}
+
 type ClearanceProductSlice = {
   is_clearance?: boolean | null;
   sale_price?: unknown;
-  product_variants?: Pick<ProductVariant, "price" | "stock" | "is_active">[] | null;
+  product_variants?: (Pick<ProductVariant, "price" | "stock" | "is_active"> &
+    Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "final_price" | "unit_label">>)[] | null;
   price?: number | null;
 };
 
 /** Storefront “from” price: clearance sale replaces starting variant price when set. */
 export function getEffectiveListingPrice(product: ClearanceProductSlice): number {
   const regular = computeStartingPrice(product.product_variants);
+  const discounted = computeStartingFinalPrice(product.product_variants);
+  const directPrice = hasActiveVariantDiscount(product.product_variants) ? discounted : regular;
   if (product.is_clearance === true) {
     const sale = Number(product.sale_price ?? 0);
-    if (sale > 0) return sale;
+    if (sale > 0) return directPrice > 0 ? Math.min(sale, directPrice) : sale;
   }
-  if (regular > 0) return regular;
+  if (directPrice > 0) return directPrice;
   const p = Number(product.price ?? 0);
   return Number.isFinite(p) ? p : 0;
 }
@@ -188,12 +293,16 @@ export function getEffectiveVariantPrice(
   product: ClearanceProductSlice,
   variantListPrice: number
 ): number {
-  if (product.is_clearance !== true) return variantListPrice;
+  const variant = product.product_variants?.find(
+    (v) => Number(v.price ?? 0) === Number(variantListPrice)
+  );
+  const directPrice = variant ? getVariantFinalPrice(variant) : variantListPrice;
+  if (product.is_clearance !== true) return directPrice;
   const sale = Number(product.sale_price ?? 0);
-  if (sale <= 0) return variantListPrice;
+  if (sale <= 0) return directPrice;
   const base = computeStartingPrice(product.product_variants);
-  if (base <= 0) return Math.min(variantListPrice, sale);
-  return Math.max(1, Math.round(sale * (variantListPrice / base)));
+  if (base <= 0) return Math.min(directPrice, sale);
+  return Math.min(directPrice, Math.max(1, roundMoney(sale * (variantListPrice / base))));
 }
 
 export function getClearancePercentOff(product: ClearanceProductSlice): number | null {

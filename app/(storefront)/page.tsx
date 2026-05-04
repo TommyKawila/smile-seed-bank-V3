@@ -4,10 +4,15 @@ import { Loader2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { HomePageClient } from "@/components/storefront/HomePageClient";
 import {
+  EMPTY_STOREFRONT_HOME_PAYLOAD,
+  getStorefrontHomePayload,
+} from "@/services/storefront-home-service";
+import {
   DEFAULT_HOME_SECTION_KEYS,
   DEFAULT_SECTION_FALLBACK_LABELS,
   type HomePageSectionPayload,
 } from "@/lib/homepage-sections";
+import { getActiveBanners } from "@/services/banner-service";
 
 const getSectionsCached = unstable_cache(
   async (): Promise<HomePageSectionPayload[]> => {
@@ -41,8 +46,16 @@ async function getSections(): Promise<HomePageSectionPayload[]> {
   return getSectionsCached();
 }
 
-export default async function HomePage() {
-  const sections = await getSections();
+async function HomePageContent() {
+  const [sections, initialData, banners] = await Promise.all([
+    getSections(),
+    getStorefrontHomePayload().catch(() => EMPTY_STOREFRONT_HOME_PAYLOAD),
+    getActiveBanners().catch(() => []),
+  ]);
+  return <HomePageClient sections={sections} initialData={initialData} banners={banners} />;
+}
+
+export default function HomePage() {
   return (
     <Suspense
       fallback={
@@ -52,7 +65,7 @@ export default async function HomePage() {
         </div>
       }
     >
-      <HomePageClient sections={sections} />
+      <HomePageContent />
     </Suspense>
   );
 }

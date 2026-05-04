@@ -22,6 +22,9 @@ const BreederSchema = z.object({
   highlight_focus_en: z.string().max(120).nullable().optional(),
   is_active: z.boolean().default(true),
 });
+const BreederPatchSchema = BreederSchema.partial().extend({
+  id: z.coerce.number().int().positive(),
+});
 
 export async function GET() {
   try {
@@ -49,8 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = await createAdminClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("breeders")
       .insert({
         name: parsed.data.name,
@@ -86,12 +88,17 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, ...rest } = body as { id: number } & Partial<Breeder>;
-    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const parsed = BreederPatchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" },
+        { status: 400 }
+      );
+    }
+    const { id, ...rest } = parsed.data;
 
     const supabase = await createAdminClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("breeders")
       .update(rest)
       .eq("id", id)

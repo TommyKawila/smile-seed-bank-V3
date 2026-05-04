@@ -100,9 +100,9 @@ export async function GET(
     const langRaw = req.nextUrl.searchParams.get("lang")?.toLowerCase();
     const pdfLocale = langRaw === "en" ? "en" : "th";
 
-    let doc: ReturnType<typeof buildOrderReceiptPdfDocument>;
+    let doc: Awaited<ReturnType<typeof buildOrderReceiptPdfDocument>>;
     try {
-      doc = buildOrderReceiptPdfDocument(order, pdfSettings, { locale: pdfLocale });
+      doc = await buildOrderReceiptPdfDocument(order, pdfSettings, { locale: pdfLocale });
     } catch (buildErr) {
       console.error("[storefront/receipt] buildOrderReceiptPdfDocument", buildErr);
       return jsonError("PDF build failed", 500, {
@@ -129,7 +129,8 @@ export async function GET(
       return jsonError("Invalid PDF bytes", 500, { code: "PDF_EMPTY", length: buf.length });
     }
 
-    return new NextResponse(buf, {
+    const body = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+    return new NextResponse(body, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

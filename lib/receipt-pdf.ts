@@ -5,7 +5,7 @@ import type { OrderDisplayLocale } from "./order-receipt-line-format";
 import { formatFloweringForLocale } from "./order-receipt-line-format";
 import { getImageDimensionsFromDataUrl } from "./image-data-url-dimensions";
 import { defaultQuotationShippingFee } from "./order-financials";
-import { PROMPT_FONT_BASE64 } from "./prompt-font-base64";
+import { loadPromptFontBase64ForJsPdf } from "./prompt-font-loader";
 import { formatPhoneNumber } from "./utils";
 
 export type ReceiptItem = {
@@ -148,8 +148,8 @@ export function formatPaymentMethodForPdf(m: string | null | undefined): string 
   return map[m] ?? m;
 }
 
-function registerThaiFont(doc: jsPDF) {
-  doc.addFileToVFS("Prompt-Regular.ttf", PROMPT_FONT_BASE64);
+function registerThaiFont(doc: jsPDF, promptFontBase64: string): void {
+  doc.addFileToVFS("Prompt-Regular.ttf", promptFontBase64);
   doc.addFont("Prompt-Regular.ttf", "Prompt", "normal");
   doc.setFont("Prompt", "normal");
 }
@@ -174,7 +174,8 @@ function formatCustomerName(name: string): string {
     .join(" ");
 }
 
-export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
+export async function generateReceiptPDF(opts: ReceiptPDFOptions): Promise<jsPDF> {
+  const fontB64 = await loadPromptFontBase64ForJsPdf();
   const {
     docType,
     orderNumber,
@@ -228,7 +229,7 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
   };
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  registerThaiFont(doc);
+  registerThaiFont(doc, fontB64);
 
   const w = 210;
   const rightEdge = w - MARGIN;
@@ -396,7 +397,7 @@ export function generateReceiptPDF(opts: ReceiptPDFOptions): jsPDF {
     const item = items[idx];
     if (y > 248) {
       doc.addPage();
-      registerThaiFont(doc);
+      registerThaiFont(doc, fontB64);
       y = MARGIN;
     }
     y += rowPadTop;

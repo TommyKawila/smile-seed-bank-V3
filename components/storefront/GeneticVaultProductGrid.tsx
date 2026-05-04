@@ -43,12 +43,13 @@ export function GeneticVaultProductGrid({
         {items.map((item, idx) => {
           if (item.type === "product") {
             return (
-              <div
-                key={`vault-p-${item.product.id}-${idx}`}
+              <motion.div
+                key={`vault-p-${item.product.id}`}
+                variants={cellVariants}
                 className="flex h-full min-h-0 min-w-0 flex-col"
               >
-                <ProductCard product={item.product} />
-              </div>
+                <ProductCard product={item.product} disableOuterMotion />
+              </motion.div>
             );
           }
           if (item.type === "spotlight") {

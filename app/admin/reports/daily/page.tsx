@@ -318,7 +318,7 @@ export default function DailyReportPage() {
                                   className="h-8 text-red-600 hover:bg-red-50 hover:text-red-700"
                                   onClick={() => setVoidModal({ orderId: o.id })}
                                 >
-                                  <RotateCcw className="h-3.5 w-3.5" title="ยกเลิกออเดอร์" />
+                                  <RotateCcw className="h-3.5 w-3.5" aria-label="ยกเลิกออเดอร์" />
                                 </Button>
                               )}
                             </td>

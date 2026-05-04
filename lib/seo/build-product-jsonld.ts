@@ -8,6 +8,7 @@ import {
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import { SHIPPING_ADMIN_DEFAULT_FEE } from "@/lib/validations/shipping-admin";
 import type { ProductFull } from "@/types/supabase";
+import type { Json } from "@/types/database.types";
 
 /** Lab-style readouts for AIO / LLM parsing (plain text, not font-specific). */
 function formatCbdJsonLd(raw: string | number | null | undefined): string {
@@ -16,6 +17,20 @@ function formatCbdJsonLd(raw: string | number | null | undefined): string {
   if (!s) return "";
   if (s.includes("%") || /^[<>≤≥]/.test(s)) return s;
   return `${s}%`;
+}
+
+function jsonObject(value: Json | null | undefined): Record<string, Json | undefined> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value;
+}
+
+function numericMetaValue(meta: Record<string, Json | undefined>, keys: string[]): number | null {
+  for (const key of keys) {
+    const raw = meta[key];
+    const value = typeof raw === "number" || typeof raw === "string" ? Number(raw) : NaN;
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return null;
 }
 
 export function buildProductJsonLd(product: ProductFull, siteOrigin: string): Record<string, unknown> {
@@ -145,6 +160,21 @@ export function buildProductJsonLd(product: ProductFull, siteOrigin: string): Re
   const sku = product.master_sku?.trim();
   if (sku) node.sku = sku;
   if (additionalProperty.length > 0) node.additionalProperty = additionalProperty;
+
+  const seoMeta = jsonObject(product.seo_meta);
+  const ratingValue = seoMeta
+    ? numericMetaValue(seoMeta, ["ratingValue", "rating_value", "aggregateRating"])
+    : null;
+  const reviewCount = seoMeta
+    ? numericMetaValue(seoMeta, ["reviewCount", "review_count", "ratingCount", "rating_count"])
+    : null;
+  if (ratingValue && reviewCount) {
+    node.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: Math.min(5, ratingValue),
+      reviewCount: Math.floor(reviewCount),
+    };
+  }
 
   return node;
 }

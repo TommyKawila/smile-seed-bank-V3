@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = createServiceRoleClient();
-    let buffer = Buffer.from(await file.arrayBuffer());
+    let buffer: Buffer = Buffer.from(await file.arrayBuffer());
     let ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
     let contentType = file.type || "application/octet-stream";
 

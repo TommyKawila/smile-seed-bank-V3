@@ -628,6 +628,8 @@ export type Database = {
         Row: {
           cost_price: number | null
           created_at: string | null
+          discount_ends_at: string | null
+          discount_percent: number
           id: number
           is_active: boolean | null
           low_stock_threshold: number | null
@@ -640,6 +642,8 @@ export type Database = {
         Insert: {
           cost_price?: number | null
           created_at?: string | null
+          discount_ends_at?: string | null
+          discount_percent?: number
           id?: never
           is_active?: boolean | null
           low_stock_threshold?: number | null
@@ -652,6 +656,8 @@ export type Database = {
         Update: {
           cost_price?: number | null
           created_at?: string | null
+          discount_ends_at?: string | null
+          discount_percent?: number
           id?: never
           is_active?: boolean | null
           low_stock_threshold?: number | null

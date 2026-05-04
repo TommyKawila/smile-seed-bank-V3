@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-const PHOTO_CATEGORY_ID = 1n;
+const PHOTO_CATEGORY_ID = BigInt(1);
 const CATEGORY_MAP: { pattern: RegExp; categoryName: string }[] = [
   { pattern: /auto\s+original\s+line/i, categoryName: "Auto Original Line" },
   { pattern: /^auto$/i, categoryName: "Auto" },

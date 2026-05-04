@@ -190,7 +190,7 @@ function Lightbox({
                 alt={current.alt}
                 fill
                 className="object-contain"
-                priority
+                loading="lazy"
                 sizes="100vw"
                 quality={100}
                 unoptimized={shouldOffloadImageOptimization(current.src)}
@@ -321,7 +321,9 @@ export function ProductGallery({
             alt={current.alt}
             fill
             priority={selected === 0}
-            sizes="(max-width: 1024px) 100vw, 50vw"
+            fetchPriority={selected === 0 ? "high" : "auto"}
+            loading={selected === 0 ? "eager" : "lazy"}
+            sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 42vw"
             className={cn(
               "object-contain p-1 sm:p-2",
               showAggregateSoldOut && "brightness-75 grayscale"
@@ -390,6 +392,7 @@ export function ProductGallery({
                 fill
                 className="object-contain p-0.5"
                 sizes="100px"
+                loading="lazy"
                 unoptimized={shouldOffloadImageOptimization(img.src)}
               />
             </button>

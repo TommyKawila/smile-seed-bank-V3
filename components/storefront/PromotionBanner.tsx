@@ -181,7 +181,7 @@ export function PromotionBanner() {
         className="object-contain"
         sizes="(max-width: 640px) 90vw, min(512px, 90vw)"
         unoptimized
-        priority
+        loading="lazy"
       />
     </div>
   );

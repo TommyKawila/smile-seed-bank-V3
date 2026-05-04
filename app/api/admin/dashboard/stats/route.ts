@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
+import { assertAdmin } from "@/lib/auth-utils";
 import { dashboardRangeBounds } from "@/lib/dashboard-date-range";
 import { ordersTableHasFeeColumns } from "@/lib/dashboard-order-fees";
 import { prismaWhereOrderPaymentConfirmed } from "@/lib/order-paid";
-import { getTopSpenders } from "@/services/dashboard-service";
+import { getFinancialStats, getTopSpenders } from "@/services/dashboard-service";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +31,9 @@ function eachDay(start: Date, end: Date): string[] {
 
 export async function GET(req: NextRequest) {
   try {
+    await assertAdmin();
     const preset = req.nextUrl.searchParams.get("range") ?? "30";
-    const p = preset === "7" || preset === "month" ? preset : "30";
+    const p = preset === "7" || preset === "7d" ? "7" : preset === "month" ? "month" : "30";
     const { start, end } = dashboardRangeBounds(p);
     const hasFeeCols = await ordersTableHasFeeColumns();
 
@@ -150,6 +152,10 @@ export async function GET(req: NextRequest) {
       to: end.toISOString(),
     });
     const topSpenders = topSpendersResult.data ?? [];
+    const financialResult = await getFinancialStats(start, end);
+    if (financialResult.error || !financialResult.data) {
+      throw new Error(financialResult.error ?? "Failed to load financial stats");
+    }
 
     const recentOrders = await prisma.orders.findMany({
       orderBy: { created_at: "desc" },
@@ -165,10 +171,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       bigintToJson({
         range: {
-          preset: p,
+          preset: p === "7" ? "7d" : "30d",
           start: start.toISOString(),
           end: end.toISOString(),
         },
+        ...financialResult.data,
         metrics: {
           totalRevenue,
           totalShipping,

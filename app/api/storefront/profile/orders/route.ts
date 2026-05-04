@@ -39,9 +39,23 @@ export async function GET() {
       LIMIT 50
     `;
 
-    if (orders.length === 0) return NextResponse.json({ orders: [] });
+    type RawOrder = {
+      id: number; order_number: string; status: string; payment_status: string | null;
+      total_amount: number;
+      payment_method: string; tracking_number: string | null;
+      shipping_provider: string | null;
+      shipping_address: string | null; created_at: string;
+      shipping_fee: unknown;
+      discount_amount: unknown;
+      promotion_discount_amount: unknown;
+      points_discount_amount: unknown;
+      promo_code: string | null;
+    };
 
-    const orderIds = orders.map((o) => (o as { id: number }).id);
+    const orderRows = Array.from(orders) as unknown as RawOrder[];
+    if (orderRows.length === 0) return NextResponse.json({ orders: [] });
+
+    const orderIds = orderRows.map((o) => o.id);
 
     // Join breeders + flowering_type for rich product display
     const items = await sql`
@@ -74,23 +88,13 @@ export async function GET() {
     };
 
     const itemsByOrder = new Map<number, RawItem[]>();
-    for (const item of items as RawItem[]) {
+    const itemRows = Array.from(items) as unknown as RawItem[];
+    for (const item of itemRows) {
       if (!itemsByOrder.has(item.order_id)) itemsByOrder.set(item.order_id, []);
       itemsByOrder.get(item.order_id)!.push(item);
     }
 
-    const result = (orders as {
-      id: number; order_number: string; status: string; payment_status: string | null;
-      total_amount: number;
-      payment_method: string; tracking_number: string | null;
-      shipping_provider: string | null;
-      shipping_address: string | null; created_at: string;
-      shipping_fee: unknown;
-      discount_amount: unknown;
-      promotion_discount_amount: unknown;
-      points_discount_amount: unknown;
-      promo_code: string | null;
-    }[]).map((order) => ({
+    const result = orderRows.map((order) => ({
       id: order.id,
       order_number: order.order_number,
       status: order.status,

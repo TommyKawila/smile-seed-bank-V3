@@ -11,8 +11,13 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
 import type { Customer } from "@/types/supabase";
+import {
+  fetchCustomerProfile,
+  getCurrentUser,
+  signOutCurrentUser,
+  subscribeToAuthChanges,
+} from "@/services/auth-service";
 
 interface AuthState {
   user: User | null;
@@ -30,29 +35,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCustomer = useCallback(async (uid: string) => {
-    const supabase = createClient();
-    const { data } = await supabase.from("customers").select("*").eq("id", uid).single();
-    setCustomer(data ? (data as unknown as Customer) : null);
+    setCustomer(await fetchCustomerProfile(uid));
   }, []);
 
   useEffect(() => {
-    const supabase = createClient();
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
+    getCurrentUser().then((u) => {
       setUser(u);
       if (u) fetchCustomer(u.id).finally(() => setIsLoading(false));
       else setIsLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const u = session?.user ?? null;
+    return subscribeToAuthChanges((u) => {
       setUser(u);
       if (u) fetchCustomer(u.id);
       else setCustomer(null);
     });
-
-    return () => subscription.unsubscribe();
   }, [fetchCustomer]);
 
   const refetchCustomer = useCallback(async () => {
@@ -60,8 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchCustomer]);
 
   const signOut = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOutCurrentUser();
     setUser(null);
     setCustomer(null);
   }, []);

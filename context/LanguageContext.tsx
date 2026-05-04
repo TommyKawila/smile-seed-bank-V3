@@ -25,17 +25,32 @@ function persistLocaleCookie(next: Locale) {
   document.cookie = `locale=${next};path=/;max-age=31536000;SameSite=Lax`;
 }
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("th");
+type LanguageProviderProps = {
+  children: React.ReactNode;
+  /** Cookie / server-known locale — must match SSR for storefront client trees. */
+  initialLocale?: Locale;
+};
 
-  // Persist preference across sessions (+ cookie for SSR magazine locale)
+export function LanguageProvider({
+  children,
+  initialLocale = "th",
+}: LanguageProviderProps) {
+  const seed: Locale = initialLocale === "en" ? "en" : "th";
+  const [locale, setLocaleState] = useState<Locale>(seed);
+
   useEffect(() => {
-    const saved = localStorage.getItem("locale") as Locale | null;
-    if (saved === "th" || saved === "en") {
-      setLocaleState(saved);
-      persistLocaleCookie(saved);
+    try {
+      const saved = localStorage.getItem("locale") as Locale | null;
+      if (saved === "th" || saved === "en") {
+        setLocaleState(saved);
+        persistLocaleCookie(saved);
+        return;
+      }
+    } catch {
+      /* ignore */
     }
-  }, []);
+    persistLocaleCookie(seed);
+  }, [seed]);
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);

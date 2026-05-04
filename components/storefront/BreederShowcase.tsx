@@ -11,14 +11,10 @@ import {
   type SectionTitle,
 } from "@/lib/homepage-section-title";
 import { cn } from "@/lib/utils";
-
-type Row = {
-  id: number;
-  name: string;
-  logoUrl: string | null;
-  strainCount: number;
-  slug: string;
-};
+import {
+  fetchBreederShowcase,
+  type BreederShowcaseRow,
+} from "@/services/breeder-service";
 
 export default function BreederShowcase({
   sectionTitle,
@@ -26,7 +22,7 @@ export default function BreederShowcase({
   sectionTitle?: SectionTitle;
 }) {
   const { t, locale } = useLanguage();
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<BreederShowcaseRow[] | null>(null);
   const [totalBreeders, setTotalBreeders] = useState<number | null>(null);
 
   const mainHeading = resolveSectionHeading(
@@ -38,12 +34,11 @@ export default function BreederShowcase({
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/storefront/breeder-showcase")
-      .then((r) => r.json())
-      .then((j: { breeders?: Row[]; totalBreeders?: number | null }) => {
+    fetchBreederShowcase()
+      .then((j) => {
         if (cancelled) return;
-        setRows(j.breeders ?? []);
-        setTotalBreeders(typeof j.totalBreeders === "number" ? j.totalBreeders : null);
+        setRows(j.breeders);
+        setTotalBreeders(j.totalBreeders);
       })
       .catch(() => {
         if (!cancelled) {

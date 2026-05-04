@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export type OrderExportRow = {
   orderDate: string | null;
@@ -34,10 +34,16 @@ const HEADERS = [
   "ยอดเงินสุทธิ (Total)",
 ] as const;
 
-export function exportOrdersToExcel(orders: OrderExportRow[], filename: string): void {
-  const data: (string | number)[][] = [
-    [...HEADERS],
-    ...orders.map((o) => [
+/** Client-safe XLSX download (replaces unmaintained `xlsx` package). */
+export async function exportOrdersToExcel(
+  orders: OrderExportRow[],
+  filename: string
+): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Sales");
+  ws.addRow([...HEADERS]);
+  orders.forEach((o) => {
+    ws.addRow([
       formatDdMmYyyy(o.orderDate),
       o.orderNumber,
       o.customerName,
@@ -47,14 +53,32 @@ export function exportOrdersToExcel(orders: OrderExportRow[], filename: string):
       Number(o.shippingFee.toFixed(2)),
       Number(o.discountAmount.toFixed(2)),
       Number(o.totalAmount.toFixed(2)),
-    ]),
+    ]);
+  });
+  ws.columns = [
+    { width: 12 },
+    { width: 10 },
+    { width: 28 },
+    { width: 14 },
+    { width: 12 },
+    { width: 18 },
+    { width: 12 },
+    { width: 10 },
+    { width: 18 },
   ];
 
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  const colW = [{ wch: 12 }, { wch: 10 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 18 }];
-  ws["!cols"] = colW;
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Sales");
-  XLSX.writeFile(wb, filename.endsWith(".xlsx") ? filename : `${filename}.xlsx`);
+  const out = filename.endsWith(".xlsx") ? filename : `${filename}.xlsx`;
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = out;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

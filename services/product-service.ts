@@ -142,6 +142,8 @@ function mapRawMixedBreederRow(row: RawMixedBreederProductRow): MixedBreederProd
         product_id: n(r.product_id),
         cost_price: n(r.cost_price) ?? 0,
         price: n(r.price) ?? 0,
+        discount_percent: n(r.discount_percent) ?? 0,
+        discount_ends_at: (r.discount_ends_at as string | null | undefined) ?? null,
         stock: n(r.stock) ?? 0,
         low_stock_threshold: n(r.low_stock_threshold) ?? 5,
       };
@@ -209,22 +211,19 @@ export async function getBreederIdFromShopParam(
 export async function getNewArrivals(limit = 8) {
   try {
     const take = Math.min(MAX_ACTIVE_PRODUCTS_LIMIT, Math.max(1, Math.floor(limit)));
-    const data = await prisma.products.findMany({
-      where: { is_active: true },
-      take,
-      orderBy: { created_at: "desc" },
-      include: {
-        breeders: true,
-        product_variants: {
-          where: { is_active: true },
-          orderBy: { price: "asc" },
-        },
-        product_images: {
-          orderBy: { sort_order: "asc" },
-        },
-      },
-    });
-    return { data, error: null };
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: false })
+      .limit(take);
+
+    if (error) return { data: null, error: error.message };
+    const rows = (data ?? []) as ProductWithBreederAndVariants[];
+    for (const row of rows) sanitizeProductTextFields(row);
+    return { data: rows, error: null };
   } catch (err) {
     logger.error("product-service.getNewArrivals failed", { cause: err });
     return {

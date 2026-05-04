@@ -20,6 +20,7 @@ export async function GET(req: Request) {
     undefined;
   const breederId = numParam(searchParams.get("breederId"));
   const requestedSort = searchParams.get("sort")?.trim() || undefined;
+  const includeVariants = searchParams.get("includeVariants") === "true";
   const sort =
     requestedSort === "mixed_breeder" || requestedSort === "smart_deal"
       ? requestedSort
@@ -39,6 +40,7 @@ export async function GET(req: Request) {
           maxPrice: numParam(searchParams.get("maxPrice")),
           page,
           limit,
+          includeVariants,
           sort,
           seeds_param: searchParams.get("seeds"),
         });

@@ -34,14 +34,23 @@ const ManualOrderSchema = z.object({
   promoCode: z.string().nullable().optional(),
   orderOrigin: z.enum(["MANUAL", "WEB"]).default("MANUAL"),
 });
+const OrdersQuerySchema = z.object({
+  status: z.string().trim().optional(),
+  statusTab: z.string().trim().optional(),
+  dateRange: z.string().trim().optional(),
+  includePaidCount: z.enum(["0", "1"]).optional(),
+  includeTabCounts: z.enum(["0", "1"]).optional(),
+});
 
 export async function GET(req: NextRequest) {
   try {
-    const status = req.nextUrl.searchParams.get("status") ?? undefined;
-    const statusTab = req.nextUrl.searchParams.get("statusTab") ?? undefined;
-    const dateRange = req.nextUrl.searchParams.get("dateRange") ?? undefined;
-    const includePaidCount = req.nextUrl.searchParams.get("includePaidCount") === "1";
-    const includeTabCounts = req.nextUrl.searchParams.get("includeTabCounts") === "1";
+    const parsed = OrdersQuerySchema.safeParse(Object.fromEntries(req.nextUrl.searchParams));
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid query parameters" }, { status: 400 });
+    }
+    const { status, statusTab, dateRange } = parsed.data;
+    const includePaidCount = parsed.data.includePaidCount === "1";
+    const includeTabCounts = parsed.data.includeTabCounts === "1";
     const { data, error } = await listOrders({ status, statusTab, dateRange });
     if (error) return NextResponse.json({ error }, { status: 500 });
     let paidQueueCount: number | undefined;
@@ -88,7 +97,7 @@ export async function POST(req: NextRequest) {
       .in("id", variantIds);
 
     const costMap = new Map(
-      (variants ?? []).map((v: { id: number; cost_price: number }) => [v.id, v.cost_price])
+      (variants ?? []).map((v: { id: number; cost_price: number | null }) => [v.id, Number(v.cost_price ?? 0)])
     );
     const totalCost = items.reduce(
       (sum, i) => sum + (costMap.get(i.variantId) ?? 0) * i.quantity,

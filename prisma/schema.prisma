@@ -1,12 +1,11 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["partialIndexes"]
-  engineType      = "library"
+  provider   = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
   provider = "postgresql"
-  // url      = env("DATABASE_URL") // Prisma 7 จะใช้จาก prisma.config.ts เป็นหลัก
+  url      = env("DATABASE_URL")
   schemas  = ["public"]
 }
 
@@ -32,7 +31,7 @@ model blog_categories {
   id          BigInt       @id @default(autoincrement())
   name        String
   slug        String       @unique
-  description String?      @db.Text
+  description String?
   sort_order  Int          @default(0)
   posts       blog_posts[]
 
@@ -61,35 +60,35 @@ model newsletter_subscribers {
 }
 
 model blog_posts {
-  id               BigInt           @id @default(autoincrement())
-  title            String
-  title_en         String?          @db.Text
-  slug             String           @unique
+  id                 BigInt           @id @default(autoincrement())
+  title              String
+  slug               String           @unique
   /// TipTap JSON document; UTF-8 (emoji-safe in PostgreSQL `jsonb`)
-  content          Json?            @db.Json
-  content_en       Json?            @db.Json
-  excerpt          String?          @db.Text
-  excerpt_en       String?          @db.Text
-  tagline          String?          @db.Text
-  tagline_en       String?          @db.Text
+  content            Json?            @db.Json
+  excerpt            String?
+  featured_image     String?
+  author_id          String?          @db.Uuid
+  status             String           @default("DRAFT") @db.VarChar(20)
+  published_at       DateTime?        @db.Timestamptz(6)
+  tags               String[]         @default([])
+  related_products   BigInt[]         @default([])
+  created_at         DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime         @default(now()) @updatedAt @db.Timestamptz(6)
+  category_id        BigInt?
+  is_highlight       Boolean          @default(false)
+  manual_rank        Int              @default(0)
+  view_count         Int              @default(0)
+  ai_opening_closing String?
+  ai_target_audience String?
+  ai_tone_mood       String?
+  content_en         Json?            @db.Json
+  excerpt_en         String?
   /// Research notes / pasted source material for AI writer
-  raw_input              String?  @db.Text
-  ai_tone_mood           String?  @db.Text
-  ai_opening_closing     String?  @db.Text
-  ai_target_audience     String?  @db.Text
-  featured_image   String?
-  author_id        String?          @db.Uuid
-  status           String           @default("DRAFT") @db.VarChar(20)
-  published_at     DateTime?        @db.Timestamptz(6)
-  tags             String[]         @default([])
-  related_products BigInt[]         @default([])
-  category_id      BigInt?
-  is_highlight     Boolean          @default(false)
-  view_count       Int              @default(0)
-  manual_rank      Int              @default(0)
-  created_at       DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime         @default(now()) @updatedAt @db.Timestamptz(6)
-  blog_categories  blog_categories? @relation(fields: [category_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  raw_input          String?
+  tagline            String?
+  tagline_en         String?
+  title_en           String?
+  blog_categories    blog_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
 
   @@index([category_id])
   @@index([status])
@@ -143,50 +142,42 @@ model coupon_redemptions {
 
 /// Web auth profiles: credentials and OAuth live in Supabase `auth.users` (hashed password there). This row uses `id` = auth user UUID.
 model customers {
-  id                         String    @id @db.Uuid
+  id                         String               @id @db.Uuid
   full_name                  String?
-  email                      String?   @unique
-  role                       String    @default("USER")
+  email                      String?              @unique
   phone                      String?
   address                    String?
   line_user_id               String?
-  last_interaction_at        DateTime? @db.Timestamptz(6)
-  is_linked                  Boolean   @default(false)
-  is_wholesale               Boolean?  @default(false)
-  wholesale_discount_percent Decimal?  @default(0) @db.Decimal
-  created_at                 DateTime? @default(now()) @db.Timestamptz(6)
+  is_wholesale               Boolean?             @default(false)
+  wholesale_discount_percent Decimal?             @default(0) @db.Decimal
+  created_at                 DateTime?            @default(now()) @db.Timestamptz(6)
+  role                       String               @default("USER")
+  last_interaction_at        DateTime?            @db.Timestamptz(6)
+  is_linked                  Boolean              @default(false)
   orders                     orders[]
-  user_saved_promotions      UserSavedPromotion[]
   user_claimed_coupons       UserClaimedCoupon[]
+  user_saved_promotions      UserSavedPromotion[]
 
   @@schema("public")
 }
 
 /// Customer Management - standalone customers (POS/Admin, not tied to auth)
 model Customer {
-  id                         BigInt    @id @default(autoincrement())
+  id                         BigInt       @id @default(autoincrement())
   name                       String
-  phone                      String    @unique
+  phone                      String       @unique
   line_id                    String?
   tier                       CustomerTier @default(Retail)
-  wholesale_discount_percent  Int       @default(0)
-  points                     Int       @default(0)
-  total_spend                 Decimal   @default(0) @db.Decimal(12, 2)
+  points                     Int          @default(0)
+  total_spend                Decimal      @default(0) @db.Decimal(12, 2)
   preference                 String?
-  notes                      String?   @db.Text
-  address                    String?   @db.Text
-  is_active                  Boolean   @default(true)
-  created_at                 DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at                 DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  notes                      String?
+  address                    String?
+  created_at                 DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
+  wholesale_discount_percent Int          @default(0)
+  is_active                  Boolean      @default(true)
   orders                     orders[]
-
-  @@schema("public")
-}
-
-enum CustomerTier {
-  Retail
-  Wholesale
-  VIP
 
   @@schema("public")
 }
@@ -221,50 +212,50 @@ model order_items {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model orders {
-  id                     BigInt              @id @default(autoincrement())
-  order_number           String              @unique @db.VarChar(48)
-  source_quotation_number String?          @db.VarChar(48)
-  customer_id            String?             @db.Uuid
-  customer_profile_id    BigInt?
-  order_origin           String?             @default("WEB")
-  /** pending | unpaid | paid — `pending` = awaiting payment; `paid` = confirmed (PENDING+paid = pack queue) */
-  payment_status         String              @default("pending")
-  payment_method         String?
-  total_amount           Decimal             @db.Decimal(12, 2)
-  total_cost             Decimal?            @default(0) @db.Decimal(12, 2)
-  points_redeemed           Int                 @default(0)
+  id                        BigInt              @id @default(autoincrement())
+  order_number              String              @unique @db.VarChar(48)
+  customer_id               String?             @db.Uuid
+  order_origin              String?             @default("WEB")
+  payment_method            String?
+  total_amount              Decimal             @db.Decimal(12, 2)
+  total_cost                Decimal?            @default(0) @db.Decimal(12, 2)
+  status                    String?             @default("PENDING")
+  tracking_number           String?
+  created_at                DateTime?           @default(now()) @db.Timestamptz(6)
+  shipping_address          String?
+  slip_url                  String?
+  reject_note               String?
+  shipping_provider         String?
+  customer_name             String?
+  customer_note             String?
+  customer_phone            String?
+  customer_profile_id       BigInt?
   points_discount_amount    Decimal             @default(0) @db.Decimal(12, 2)
-  promotion_rule_id         BigInt?
+  points_redeemed           Int                 @default(0)
   promotion_discount_amount Decimal             @default(0) @db.Decimal(12, 2)
-  status              String?             @default("PENDING")
-  void_reason         String?             @db.Text
-  tracking_number     String?
-  created_at          DateTime?           @default(now()) @db.Timestamptz(6)
-  shipping_address    String?
-  shipping_name       String?
-  /** Optional email for transactional notifications (claim/manual when no web customer email). */
-  shipping_email      String?
-  shipping_phone      String?
-  /** Opaque token for customer self-service claim page (manual orders awaiting address + slip). */
-  claim_token         String?             @unique @db.VarChar(48)
-  slip_url            String?
-  reject_note         String?
-  shipping_provider   String?
+  promotion_rule_id         BigInt?
+  void_reason               String?
+  discount_amount           Decimal             @default(0) @db.Decimal(12, 2)
+  shipping_fee              Decimal             @default(0) @db.Decimal(12, 2)
+  source_quotation_number   String?             @db.VarChar(48)
   /// LINE Messaging API user id (U…) — set via /track LINE OAuth or POST /api/track/.../claim
-  line_user_id        String?
-  customer_name       String?
-  customer_note       String?
-  customer_phone      String?
-  shipping_fee        Decimal             @default(0) @db.Decimal(12, 2)
-  discount_amount     Decimal             @default(0) @db.Decimal(12, 2)
+  line_user_id              String?
+  /// * Opaque token for customer self-service claim page (manual orders awaiting address + slip).
+  claim_token               String?             @unique @db.VarChar(48)
+  /// * Optional email for transactional notifications (claim/manual when no web customer email).
+  shipping_email            String?
+  shipping_name             String?
+  shipping_phone            String?
+  /// * pending | unpaid | paid — `pending` = awaiting payment; `paid` = confirmed (PENDING+paid = pack queue)
+  payment_status            String              @default("pending")
+  last_notified_at          DateTime?           @db.Timestamptz(6)
   /// Customer notification reminder tier: 0 = none, 1–3 = escalation step (TH: จำว่าเตือนครั้งที่เท่าไหร่)
-  notification_level  Int                 @default(0)
-  last_notified_at    DateTime?           @db.Timestamptz(6)
-  order_items         order_items[]
-  order_logs          order_logs[]
-  customers           customers?          @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
-  customer_profile    Customer?          @relation(fields: [customer_profile_id], references: [id], onUpdate: NoAction)
-  promo_code_usages   promo_code_usages[]
+  notification_level        Int                 @default(0)
+  order_items               order_items[]
+  order_logs                order_logs[]
+  customers                 customers?          @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  customer_profile          Customer?           @relation(fields: [customer_profile_id], references: [id], onUpdate: NoAction)
+  promo_code_usages         promo_code_usages[]
 
   @@schema("public")
 }
@@ -274,7 +265,7 @@ model order_logs {
   id              BigInt   @id @default(autoincrement())
   order_id        BigInt
   action          String   @db.VarChar(64)
-  message_content String?  @db.Text
+  message_content String?
   created_at      DateTime @default(now()) @db.Timestamptz(6)
   orders          orders   @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -298,48 +289,49 @@ model payment_settings {
 }
 
 model product_variants {
-  id                   BigInt       @id @default(autoincrement())
-  product_id           BigInt?
-  unit_label           String
-  cost_price           Decimal?     @default(0) @db.Decimal
-  price                Decimal      @db.Decimal
-  stock                Int?         @default(0)
-  low_stock_threshold  Int?         @default(5)
-  is_active            Boolean?     @default(true)
-  created_at           DateTime?    @default(now()) @db.Timestamptz(6)
-  sku                  String?      @unique
-  products   products?    @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  promotions promotions[]
-  stock_snapshots      stock_snapshots[]
-  product_images       product_images[]
+  id                  BigInt            @id @default(autoincrement())
+  product_id          BigInt?
+  unit_label          String
+  cost_price          Decimal?          @default(0) @db.Decimal
+  price               Decimal           @db.Decimal
+  stock               Int?              @default(0)
+  is_active           Boolean?          @default(true)
+  created_at          DateTime?         @default(now()) @db.Timestamptz(6)
+  sku                 String?           @unique
+  low_stock_threshold Int?              @default(5)
+  discount_percent    Int               @default(0)
+  discount_ends_at    DateTime?         @db.Timestamptz(6)
+  product_images      product_images[]
+  products            products?         @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  promotions          promotions[]
+  stock_snapshots     stock_snapshots[]
 
   @@schema("public")
 }
 
 /// Gallery rows: optional per-variant hero; `is_main` = shop listing thumbnail when set.
 model product_images {
-  id          BigInt   @id @default(autoincrement())
-  product_id  BigInt
-  variant_id  BigInt?
-  url         String
-  is_main     Boolean  @default(false)
-  sort_order  Int      @default(0)
-  created_at  DateTime? @default(now()) @db.Timestamptz(6)
-
+  id               BigInt            @id @default(autoincrement())
+  product_id       BigInt
+  variant_id       BigInt?
+  url              String
+  is_main          Boolean           @default(false)
+  sort_order       Int               @default(0)
+  created_at       DateTime?         @default(now()) @db.Timestamptz(6)
   products         products          @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  product_variants product_variants? @relation(fields: [variant_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  product_variants product_variants? @relation(fields: [variant_id], references: [id], onUpdate: NoAction)
 
   @@index([product_id])
   @@schema("public")
 }
 
 model stock_snapshots {
-  id             BigInt    @id @default(autoincrement())
-  snapshot_date  DateTime  @db.Timestamptz(6)
-  variant_id     BigInt
-  quantity       Int
-  total_value    Decimal?  @db.Decimal(12, 2)
-  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  id               BigInt           @id @default(autoincrement())
+  snapshot_date    DateTime         @db.Timestamptz(6)
+  variant_id       BigInt
+  quantity         Int
+  total_value      Decimal?         @db.Decimal(12, 2)
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
   product_variants product_variants @relation(fields: [variant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([snapshot_date, variant_id])
@@ -359,8 +351,6 @@ model products {
   id                 BigInt              @id @default(autoincrement())
   breeder_id         BigInt?
   name               String
-  /// SEO URL segment; unique when set. Run `npx prisma migrate dev` / `db push` after adding column.
-  slug               String?             @unique
   category           String?
   description_th     String?
   description_en     String?
@@ -377,7 +367,7 @@ model products {
   genetics           String?
   indica_ratio       Decimal?            @db.Decimal
   sativa_ratio       Decimal?            @db.Decimal
-  flowering_type     String? // autoflower | photoperiod | photo_ff (lowercase)
+  flowering_type     String?
   seed_type          String?
   yield_info         String?
   growing_difficulty String?
@@ -386,9 +376,7 @@ model products {
   medical_benefits   Json?               @default("[]")
   created_at         DateTime?           @default(now()) @db.Timestamptz(6)
   genetic_ratio      String?
-  sativa_percent     Int?
-  indica_percent     Int?
-  sex_type           String? // feminized | regular (lowercase)
+  sex_type           String?
   lineage            String?
   terpenes           Json?
   image_url_4        String?
@@ -398,19 +386,24 @@ model products {
   category_id        BigInt?
   strain_dominance   String?
   seo_meta           Json?
+  /// SEO URL segment; unique when set. Run `npx prisma migrate dev` / `db push` after adding column.
+  slug               String?             @unique
+  indica_percent     Int?
+  sativa_percent     Int?
   /// Homepage featured carousel
-  is_featured       Boolean? @default(false)
-  featured_priority Int?     @default(0)
-  featured_tagline  String?  @db.Text
+  is_featured        Boolean?            @default(false)
+  featured_priority  Int?                @default(0)
+  featured_tagline   String?
   /// Clearance: flat sale aligns to starting (lowest in-stock) variant; other packs scale by ratio.
-  sale_price   Decimal? @db.Decimal
-  is_clearance Boolean? @default(false)
-  product_variants   product_variants[]
+  sale_price         Decimal?            @db.Decimal
+  is_clearance       Boolean?            @default(false)
   product_images     product_images[]
+  product_variants   product_variants[]
   breeders           breeders?           @relation(fields: [breeder_id], references: [id], onUpdate: NoAction)
   product_categories product_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
 
   @@index([category_id])
+  @@index([category_id], map: "idx_products_category_id")
   @@schema("public")
 }
 
@@ -439,10 +432,10 @@ model promo_codes {
   total_usage_limit    Int?                 @default(100)
   first_order_only     Boolean?             @default(false)
   requires_auth        Boolean?             @default(false)
-  /** Public URL for floating coupon badge image (Supabase Storage `coupons` bucket). */
-  badge_url            String?              @db.Text
-  /** Public URL for Lottie JSON (`.json`) floating badge; takes priority over `badge_url` when set. */
-  badge_lottie_url     String?              @db.Text
+  /// * Public URL for floating coupon badge image (Supabase Storage `coupons` bucket).
+  badge_url            String?
+  /// * Public URL for Lottie JSON (`.json`) floating badge; takes priority over `badge_url` when set.
+  badge_lottie_url     String?
   coupon_redemptions   coupon_redemptions[]
   promo_code_usages    promo_code_usages[]
   promotion_campaign   promotion_campaigns?
@@ -451,56 +444,60 @@ model promo_codes {
   @@schema("public")
 }
 
-enum CampaignDisplayMode {
-  POPUP
-  EASTER_EGG
-
-  @@schema("public")
-}
-
 /// Admin-managed pop-up campaigns; linked promo row is synced for checkout validation.
 model promotion_campaigns {
-  id              BigInt    @id @default(autoincrement())
-  name               String
-  image_url_desktop  String  @map("image_url")
-  image_width        Int?
-  image_height       Int?
-  image_url_mobile   String  @default("")
-  target_url      String    @default("")
+  id                           BigInt               @id @default(autoincrement())
+  name                         String
+  image_url_desktop            String               @map("image_url")
+  image_width                  Int?
+  image_height                 Int?
+  promo_code                   String               @unique
+  promo_code_id                BigInt?              @unique
+  discount_type                String
+  discount_value               Decimal              @db.Decimal(12, 2)
+  target_paths                 String[]             @default([])
+  start_at                     DateTime             @db.Timestamptz(6)
+  end_at                       DateTime             @db.Timestamptz(6)
+  total_limit                  Int                  @default(0)
+  usage_count                  Int                  @default(0)
+  per_user_limit               Int                  @default(1)
+  is_active                    Boolean              @default(true)
+  created_at                   DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
+  display_delay_ms             Int                  @default(3000)
+  display_mode                 CampaignDisplayMode  @default(POPUP)
+  image_url_mobile             String               @default("")
+  probability                  Float                @default(1.0)
+  target_url                   String               @default("")
   /// When true, clicking the banner saves the promo to profile (and optional URL still opens if set).
-  save_to_profile Boolean   @default(false)
-  display_delay_ms Int      @default(3000)
-  display_mode    CampaignDisplayMode @default(POPUP)
-  probability     Float     @default(1.0)
-  promo_code      String    @unique
-  promo_code_id   BigInt?   @unique
-  discount_type   String
-  discount_value  Decimal   @db.Decimal(12, 2)
-  target_paths    String[]  @default([])
-  start_at        DateTime  @db.Timestamptz(6)
-  end_at          DateTime  @db.Timestamptz(6)
-  total_limit     Int       @default(0)
-  usage_count     Int       @default(0)
-  per_user_limit  Int       @default(1)
-  is_active       Boolean   @default(true)
-  created_at      DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
-  promo_codes     promo_codes? @relation(fields: [promo_code_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  user_saved_promotions UserSavedPromotion[]
+  save_to_profile              Boolean              @default(false)
+  breeder_id                   BigInt?
+  campaign_kind                String               @default("POPUP")
+  discount_percent             Int?
+  ends_at                      DateTime?            @db.Timestamptz(6)
+  status                       String               @default("ACTIVE")
+  article_banner_en_url        String?
+  article_banner_mobile_en_url String?
+  article_banner_mobile_th_url String?
+  article_banner_th_url        String?
+  promo_codes                  promo_codes?         @relation(fields: [promo_code_id], references: [id], onUpdate: NoAction)
+  user_saved_promotions        UserSavedPromotion[]
 
   @@index([promo_code_id])
+  @@index([campaign_kind, status, ends_at])
+  @@index([breeder_id])
+  @@index([campaign_kind, status, created_at])
   @@schema("public")
 }
 
 /// Links auth user (customers.id) to a promotion campaign for one-click checkout.
 model UserSavedPromotion {
-  id                    BigInt   @id @default(autoincrement())
-  user_id               String   @db.Uuid
+  id                    BigInt              @id @default(autoincrement())
+  user_id               String              @db.Uuid
   promotion_campaign_id BigInt
-  created_at            DateTime @default(now()) @db.Timestamptz(6)
-
-  customers             customers             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  promotion_campaigns   promotion_campaigns   @relation(fields: [promotion_campaign_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at            DateTime            @default(now()) @db.Timestamptz(6)
+  promotion_campaigns   promotion_campaigns @relation(fields: [promotion_campaign_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  customers             customers           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, promotion_campaign_id])
   @@index([user_id])
@@ -510,13 +507,12 @@ model UserSavedPromotion {
 
 /// Promo codes saved to profile via "Collect" in the storefront coupon drawer.
 model UserClaimedCoupon {
-  id            BigInt   @id @default(autoincrement())
-  user_id       String   @db.Uuid
+  id            BigInt      @id @default(autoincrement())
+  user_id       String      @db.Uuid
   promo_code_id BigInt
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
-
-  customers   customers   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  promo_codes promo_codes @relation(fields: [promo_code_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  promo_codes   promo_codes @relation(fields: [promo_code_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  customers     customers   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, promo_code_id])
   @@index([user_id])
@@ -537,21 +533,12 @@ model promotions {
   @@schema("public")
 }
 
-enum PromotionRuleType {
-  DISCOUNT
-  BUY_X_GET_Y
-  FREEBIES
-  BUNDLE
-
-  @@schema("public")
-}
-
 /// Promotion rules for POS / Admin — managed via /admin/promotions
 model promotion_rules {
   id             BigInt            @id @default(autoincrement())
   name           String
   type           PromotionRuleType
-  description    String?           @db.Text
+  description    String?
   start_date     DateTime          @db.Timestamptz(6)
   end_date       DateTime          @db.Timestamptz(6)
   is_active      Boolean           @default(true)
@@ -582,8 +569,31 @@ model homepage_sections {
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@schema("public")
   @@map("homepage_sections")
+  @@schema("public")
+}
+
+model dynamic_banners {
+  id               BigInt   @id @default(autoincrement())
+  title_th         String?
+  title_en         String?
+  /// Primary hero image (TH desktop). EN + mobile variants optional; storefront falls back to this.
+  desktop_image_th String
+  desktop_image_en String?
+  mobile_image_th  String?
+  mobile_image_en  String?
+  link_url         String?
+  /// Visible from this instant (nullable = no lower bound).
+  start_date DateTime? @map("start_date") @db.Timestamptz(6)
+  /// Visible until this instant (nullable = no upper bound).
+  end_date   DateTime? @map("end_date") @db.Timestamptz(6)
+  order_index      Int      @default(0)
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([is_active, order_index, id], map: "dynamic_banners_active_order_idx")
+  @@schema("public")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -603,44 +613,44 @@ model quotation_daily_seq {
 }
 
 model quotations {
-  id                 BigInt            @id @default(autoincrement())
-  quotationNumber    String            @unique @map("quotation_number") @db.VarChar(48)
-  customerName       String?           @map("customer_name")
-  customerEmail      String?           @map("customer_email")
-  customerPhone      String?           @map("customer_phone")
-  customerAddress    String?           @map("customer_address") @db.Text
-  customerNote       String?           @map("customer_note") @db.Text
-  status             String            @default("DRAFT")
-  totalAmount        Decimal           @default(0) @map("total_amount") @db.Decimal(12, 2)
-  shippingCost       Decimal           @default(0) @map("shipping_cost") @db.Decimal(12, 2)
-  discountAmount     Decimal           @default(0) @map("discount_amount") @db.Decimal(12, 2)
-  validUntil         DateTime?         @map("valid_until") @db.Date
-  convertedOrderId   BigInt?           @map("converted_order_id")
-  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  quotationItems     quotation_items[]
+  id               BigInt            @id @default(autoincrement())
+  quotationNumber  String            @unique @map("quotation_number") @db.VarChar(48)
+  customerName     String?           @map("customer_name")
+  customerEmail    String?           @map("customer_email")
+  customerPhone    String?           @map("customer_phone")
+  customerNote     String?           @map("customer_note")
+  status           String            @default("DRAFT")
+  totalAmount      Decimal           @default(0) @map("total_amount") @db.Decimal(12, 2)
+  validUntil       DateTime?         @map("valid_until") @db.Date
+  convertedOrderId BigInt?           @map("converted_order_id")
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  customerAddress  String?           @map("customer_address")
+  discountAmount   Decimal           @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  shippingCost     Decimal           @default(0) @map("shipping_cost") @db.Decimal(12, 2)
+  quotationItems   quotation_items[]
 
-  @@schema("public")
   @@map("quotations")
+  @@schema("public")
 }
 
 model quotation_items {
-  id           BigInt     @id @default(autoincrement())
-  quotationId  BigInt     @map("quotation_id")
-  productId    BigInt     @map("product_id")
-  variantId    BigInt     @map("variant_id")
-  productName  String     @map("product_name")
-  unitLabel    String?    @map("unit_label")
-  breederName  String?    @map("breeder_name")
-  quantity     Int
-  unitPrice    Decimal    @map("unit_price") @db.Decimal(12, 2)
-  discount     Decimal    @default(0) @map("discount") @db.Decimal(12, 2)
-  lineTotal    Decimal    @map("line_total") @db.Decimal(12, 2)
-  quotations   quotations @relation(fields: [quotationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id          BigInt     @id @default(autoincrement())
+  quotationId BigInt     @map("quotation_id")
+  productId   BigInt     @map("product_id")
+  variantId   BigInt     @map("variant_id")
+  productName String     @map("product_name")
+  unitLabel   String?    @map("unit_label")
+  breederName String?    @map("breeder_name")
+  quantity    Int
+  unitPrice   Decimal    @map("unit_price") @db.Decimal(12, 2)
+  discount    Decimal    @default(0) @map("discount") @db.Decimal(12, 2)
+  lineTotal   Decimal    @map("line_total") @db.Decimal(12, 2)
+  quotations  quotations @relation(fields: [quotationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([quotationId], map: "idx_quotation_items_quotation_id")
-  @@schema("public")
   @@map("quotation_items")
+  @@schema("public")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -658,9 +668,33 @@ model store_settings {
 /// Storefront search bar usage — populated by GET /api/storefront/search-suggest
 model search_logs {
   id         BigInt   @id @default(autoincrement())
-  term       String   @db.Text
+  term       String
   created_at DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([created_at], map: "idx_search_logs_created_at")
+  @@schema("public")
+}
+
+enum CustomerTier {
+  Retail
+  Wholesale
+  VIP
+
+  @@schema("public")
+}
+
+enum CampaignDisplayMode {
+  POPUP
+  EASTER_EGG
+
+  @@schema("public")
+}
+
+enum PromotionRuleType {
+  DISCOUNT
+  BUY_X_GET_Y
+  FREEBIES
+  BUNDLE
+
   @@schema("public")
 }

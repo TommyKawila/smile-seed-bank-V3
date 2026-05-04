@@ -43,6 +43,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatPrice, cn } from "@/lib/utils";
+import { FinancialScorecards } from "@/components/admin/dashboard/FinancialScorecards";
+import { RevenueProfitChart } from "@/components/admin/dashboard/RevenueProfitChart";
 
 type OverviewPayload = {
   range: { preset: string; start: string; end: string };
@@ -52,6 +54,17 @@ type OverviewPayload = {
   orderVolumeByDay: { date: string; orders: number }[];
   userTypePie: { name: string; value: number; fill: string }[];
   topSearches: { term: string; count: number }[];
+};
+
+type FinancialStatsPayload = {
+  range: { preset: "7d" | "30d"; start: string; end: string };
+  totalRevenue: number;
+  totalCOGS: number;
+  grossProfit: number;
+  netProfit: number;
+  totalOrders: number;
+  totalInventoryValue: number;
+  series: { date: string; revenue: number; profit: number }[];
 };
 
 function MetricCard({
@@ -83,8 +96,9 @@ function MetricCard({
 }
 
 export default function AdminDashboardPage() {
-  const [range, setRange] = useState<"7" | "30" | "month">("30");
+  const [range, setRange] = useState<"7d" | "30d">("30d");
   const [data, setData] = useState<OverviewPayload | null>(null);
+  const [financialData, setFinancialData] = useState<FinancialStatsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,15 +106,21 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/dashboard/overview?range=${range}`, {
-        cache: "no-store",
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error ?? "โหลดไม่สำเร็จ");
-      setData(j as OverviewPayload);
+      const overviewRange = range === "7d" ? "7" : "30";
+      const [overviewRes, statsRes] = await Promise.all([
+        fetch(`/api/admin/dashboard/overview?range=${overviewRange}`, { cache: "no-store" }),
+        fetch(`/api/admin/dashboard/stats?range=${range}`, { cache: "no-store" }),
+      ]);
+      const overviewJson = await overviewRes.json();
+      const statsJson = await statsRes.json();
+      if (!overviewRes.ok) throw new Error(overviewJson.error ?? "โหลดไม่สำเร็จ");
+      if (!statsRes.ok) throw new Error(statsJson.error ?? "โหลดข้อมูลการเงินไม่สำเร็จ");
+      setData(overviewJson as OverviewPayload);
+      setFinancialData(statsJson as FinancialStatsPayload);
     } catch (e) {
       setError(String(e));
       setData(null);
+      setFinancialData(null);
     } finally {
       setLoading(false);
     }
@@ -133,9 +153,8 @@ export default function AdminDashboardPage() {
             <SelectValue placeholder="Range" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7">7 days</SelectItem>
-            <SelectItem value="30">30 days</SelectItem>
-            <SelectItem value="month">This month</SelectItem>
+            <SelectItem value="7d">7 days</SelectItem>
+            <SelectItem value="30d">30 days</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -150,8 +169,11 @@ export default function AdminDashboardPage() {
         <div className="flex justify-center py-20">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
-      ) : data ? (
+      ) : data && financialData ? (
         <>
+          <FinancialScorecards stats={financialData} />
+          <RevenueProfitChart data={financialData.series} />
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <MetricCard
               title="Total sales (THB)"
@@ -199,7 +221,7 @@ export default function AdminDashboardPage() {
                       <YAxis allowDecimals={false} tick={{ fontSize: 10 }} stroke="#71717a" width={36} />
                       <Tooltip
                         labelFormatter={(l) => String(l)}
-                        formatter={(v: number) => [`${v} orders`, "Volume"]}
+                        formatter={(v: number | string | undefined) => [`${Number(v ?? 0)} orders`, "Volume"]}
                       />
                       <Bar dataKey="orders" name="Orders" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={40} />
                     </BarChart>
@@ -238,7 +260,7 @@ export default function AdminDashboardPage() {
                             <Cell key={`${entry.name}-${i}`} fill={entry.fill} stroke="#fff" strokeWidth={1} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(v: number) => [`${v} orders`, ""]} />
+                        <Tooltip formatter={(v: number | string | undefined) => [`${Number(v ?? 0)} orders`, ""]} />
                         <Legend
                           wrapperStyle={{ fontSize: 12 }}
                           formatter={(value) => <span className="text-zinc-700">{value}</span>}

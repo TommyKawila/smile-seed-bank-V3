@@ -22,7 +22,7 @@ export async function PATCH(
   } catch {
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   }
-  if (bid < 1n) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  if (bid < BigInt(1)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
   try {
     const body = await req.json();
@@ -89,7 +89,7 @@ export async function DELETE(
   } catch {
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   }
-  if (bid < 1n) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  if (bid < BigInt(1)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
   try {
     await prisma.blog_categories.delete({ where: { id: bid } });

@@ -17,12 +17,24 @@ import {
 import { formatPrice } from "@/lib/utils";
 import { plainTextFromHtml, truncateMetaDescription } from "@/lib/magazine-seo";
 import type { ProductVariantRow, ProductWithBreeder } from "@/lib/supabase/types";
+import type { FloweringType } from "@/types/supabase";
 import { useLanguage } from "@/context/LanguageContext";
 
 function excerpt(product: ProductWithBreeder): string {
-  const raw = product.description_th ?? product.description_en ?? product.description ?? "";
+  const raw = product.description_th ?? product.description_en ?? "";
   const plain = plainTextFromHtml(String(raw));
   return truncateMetaDescription(plain, 140);
+}
+
+function asMicroGeneticsProduct(product: ProductWithBreeder): ProductWithBreeder & { flowering_type: FloweringType | null } {
+  const floweringType =
+    product.flowering_type === "autoflower" ||
+    product.flowering_type === "photoperiod" ||
+    product.flowering_type === "photo_ff" ||
+    product.flowering_type === "photo_3n"
+      ? product.flowering_type
+      : null;
+  return { ...product, flowering_type: floweringType };
 }
 
 export function ShopSpotlightCard({
@@ -80,7 +92,7 @@ export function ShopSpotlightCard({
             {product.name}
           </h3>
           <div className="mt-3 w-full min-w-0">
-            <MicroGeneticsBar product={product} />
+            <MicroGeneticsBar product={asMicroGeneticsProduct(product)} />
           </div>
           {ex && (
             <p className="mt-4 line-clamp-3 font-sans text-sm font-normal leading-relaxed text-zinc-600">

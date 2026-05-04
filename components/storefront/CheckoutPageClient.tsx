@@ -18,15 +18,17 @@ import { DiscountProgressBar } from "@/components/storefront/DiscountProgressBar
 import { LoginForPromoDialog } from "@/components/storefront/LoginForPromoDialog";
 import { useLanguage, type Locale } from "@/context/LanguageContext";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
-import { createClient } from "@/lib/supabase/client";
 import { getURL } from "@/lib/get-url";
 import { cn, formatPrice } from "@/lib/utils";
 import type { PaymentSetting } from "@/lib/payment-settings-public";
 import { toast } from "sonner";
 import {
-  readSavedPromotionsFromLocal,
-  type SavedPromotionPayload,
-} from "@/lib/saved-promotion-local";
+  createStorefrontOrder,
+  fetchProfileOrdersCount,
+  fetchSavedCouponsForCheckout,
+  type ApiSavedCoupon,
+} from "@/services/checkout-service";
+import { signInWithGoogleRedirect } from "@/services/auth-service";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { CouponSection } from "@/components/storefront/checkout/CouponSection";
 import { OrderSummary } from "@/components/storefront/checkout/OrderSummary";
@@ -36,41 +38,6 @@ import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
-
-type ApiSavedCoupon = {
-  campaign_id: string;
-  name: string;
-  promo_code: string;
-  discount_type: string;
-  discount_value: string;
-};
-
-function mergeSavedCoupons(
-  server: ApiSavedCoupon[],
-  local: SavedPromotionPayload[]
-): ApiSavedCoupon[] {
-  const seen = new Set<string>();
-  const out: ApiSavedCoupon[] = [];
-  for (const s of server) {
-    const k = s.promo_code.trim().toUpperCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(s);
-  }
-  for (const l of local) {
-    const k = l.promo_code.trim().toUpperCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push({
-      campaign_id: l.campaignId,
-      name: l.name,
-      promo_code: l.promo_code,
-      discount_type: l.discount_type,
-      discount_value: l.discount_value,
-    });
-  }
-  return out;
-}
 
 const CheckoutFormSchema = z.object({
   full_name: z.string().min(2, "กรุณาระบุชื่อ-นามสกุล"),
@@ -220,22 +187,12 @@ export function CheckoutPageClient({
 
   useEffect(() => {
     let cancelled = false;
-    const local = readSavedPromotionsFromLocal();
-    if (!user) {
-      setSavedCoupons(mergeSavedCoupons([], local));
-      return () => {
-        cancelled = true;
-      };
-    }
-    void fetch("/api/storefront/saved-promotions")
-      .then((r) => (r.ok ? r.json() : { items: [] }))
-      .then((data: { items?: ApiSavedCoupon[] }) => {
-        if (cancelled) return;
-        const items = Array.isArray(data.items) ? data.items : [];
-        setSavedCoupons(mergeSavedCoupons(items, local));
+    void fetchSavedCouponsForCheckout(Boolean(user))
+      .then((items) => {
+        if (!cancelled) setSavedCoupons(items);
       })
       .catch(() => {
-        if (!cancelled) setSavedCoupons(mergeSavedCoupons([], local));
+        if (!cancelled) setSavedCoupons([]);
       });
     return () => {
       cancelled = true;
@@ -253,10 +210,9 @@ export function CheckoutPageClient({
       return;
     }
     let cancelled = false;
-    fetch("/api/storefront/profile/orders")
-      .then((r) => r.ok ? r.json() : { orders: [] })
-      .then((data: { orders?: unknown[] }) => {
-        if (!cancelled) setOrdersCount(data.orders?.length ?? 0);
+    fetchProfileOrdersCount()
+      .then((count) => {
+        if (!cancelled) setOrdersCount(count);
       })
       .catch(() => { if (!cancelled) setOrdersCount(0); });
     return () => { cancelled = true; };
@@ -306,13 +262,9 @@ export function CheckoutPageClient({
         });
         return;
       }
-      const supabase = createClient();
       const redirectTo = `${getURL()}checkout?promo=${encodeURIComponent(loginPromoCode)}`;
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo },
-      });
-      if (error) toast.error(error.message);
+      const error = await signInWithGoogleRedirect(redirectTo);
+      if (error) toast.error(error);
     } finally {
       setPromoOauthLoading(null);
     }
@@ -358,41 +310,35 @@ export function CheckoutPageClient({
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/storefront/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer: {
-            full_name: parsed.data.full_name,
-            phone: parsed.data.phone,
-            address: parsed.data.address,
-            email: orderEmail,
-          },
-          order_note: parsed.data.order_note?.trim() || null,
-          items: items.map((i) => ({
-            variantId: i.variantId,
-            quantity: i.quantity,
-            price: i.price,
-            isFreeGift: i.isFreeGift ?? false,
-            productName: i.productName,
-          })),
-          summary: {
-            subtotal: summary.subtotal,
-            discount: summary.discount,
-            shipping: summary.shipping,
-            total: summary.total,
-          },
-          payment_method: "TRANSFER" as const,
-          customer_id: user?.id ?? null,
-          promo_code_id:
-            user && summary.usePromoForOrder ? promo.code?.id ?? null : null,
-          locale,
-        }),
+      const result = await createStorefrontOrder({
+        customer: {
+          full_name: parsed.data.full_name,
+          phone: parsed.data.phone,
+          address: parsed.data.address,
+          email: orderEmail,
+        },
+        order_note: parsed.data.order_note?.trim() || null,
+        items: items.map((i) => ({
+          variantId: i.variantId,
+          quantity: i.quantity,
+          price: i.price,
+          isFreeGift: i.isFreeGift ?? false,
+          productName: i.productName,
+        })),
+        summary: {
+          subtotal: summary.subtotal,
+          discount: summary.discount,
+          shipping: summary.shipping,
+          total: summary.total,
+        },
+        payment_method: "TRANSFER",
+        customer_id: user?.id ?? null,
+        promo_code_id: user && summary.usePromoForOrder ? promo.code?.id ?? null : null,
+        locale,
       });
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        if (res.status === 409 && body.code === "INSUFFICIENT_STOCK") {
+      if (!result.ok) {
+        if (result.code === "INSUFFICIENT_STOCK") {
           const msg = t(
             "ขออภัย สินค้าบางรายการในตะกร้าหมดสต็อกแล้ว",
             "Sorry, some items in your cart are out of stock."
@@ -401,12 +347,11 @@ export function CheckoutPageClient({
           setSubmitError(msg);
           return;
         }
-        throw new Error(body.error ?? (locale === "en" ? "Could not create order" : "สร้างออเดอร์ไม่สำเร็จ กรุณาลองใหม่"));
+        throw new Error(result.message || (locale === "en" ? "Could not create order" : "สร้างออเดอร์ไม่สำเร็จ กรุณาลองใหม่"));
       }
 
-      const { orderNumber } = await res.json();
       clearCart();
-      router.push(`/payment/${orderNumber}`);
+      router.push(`/payment/${result.orderNumber}`);
     } catch (err) {
       setSubmitError(String(err).replace("Error: ", ""));
     } finally {

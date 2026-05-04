@@ -39,6 +39,7 @@ export async function GET() {
   const { data: usages } = await supabase.from("promo_code_usages").select("promo_code_id");
   const countByCode = new Map<number, number>();
   for (const u of usages ?? []) {
+    if (u.promo_code_id == null) continue;
     countByCode.set(u.promo_code_id, (countByCode.get(u.promo_code_id) ?? 0) + 1);
   }
 

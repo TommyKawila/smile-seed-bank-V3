@@ -1,6 +1,8 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { magazineLocaleFromCookie } from "@/lib/magazine-bilingual";
 import { AuthProvider } from "@/hooks/use-auth";
 import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import { StorefrontStructuredData } from "@/components/seo/StorefrontStructuredData";
@@ -14,9 +16,16 @@ import { CartAnimation } from "@/components/storefront/CartAnimation";
 import { AgeVerificationGate } from "@/components/storefront/age-verification-gate";
 import { BrowserDetectionBanner } from "@/components/storefront/BrowserDetectionBanner";
 
-export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
+export default async function StorefrontLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const cookieStore = await cookies();
+  const initialLocale = magazineLocaleFromCookie(cookieStore.get("locale")?.value);
+
   return (
-    <LanguageProvider>
+    <LanguageProvider initialLocale={initialLocale}>
       <AuthProvider>
         <SiteSettingsProvider>
           <CartProvider>

@@ -13,7 +13,7 @@ import {
   Text,
   View,
 } from "@react-pdf/renderer";
-import type { ReactElement } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 export type PackFooterTotalsPdf = {
   totalStrains: number;
@@ -90,6 +90,8 @@ export function ensurePdfPromptFont(): void {
 
 /** Must clear fixed block (fixedTop paddingBottom 0). */
 const FIXED_TOP_PT = 222;
+
+type PdfViewStyle = NonNullable<ComponentProps<typeof View>["style"]>;
 
 const borderRight = { borderRightWidth: V_RULE, borderRightColor: RULE_COLOR };
 
@@ -221,19 +223,16 @@ const pdf = StyleSheet.create({
   pageNum: { position: "absolute", bottom: 28, right: MARGIN, fontSize: 8, color: "#64748b" },
 });
 
-function cellStyle(
-  width: number,
-  opts: { last: boolean; justify?: "center" | "flex-start" }
-): object[] {
+function cellStyle(width: number, opts: { last: boolean; justify?: "center" | "flex-start" }): PdfViewStyle {
   const centered = opts.justify === "center";
-  const base: object = {
+  const base = {
     width,
     justifyContent: "center",
     alignItems: centered ? "center" : "flex-start",
     paddingLeft: centered ? 0 : 3,
     paddingRight: 2,
   };
-  return [base, !opts.last ? borderRight : {}];
+  return [base, !opts.last ? borderRight : {}] as PdfViewStyle;
 }
 
 function PackHeader({ pack, last }: { pack: number; last: boolean }): ReactElement {

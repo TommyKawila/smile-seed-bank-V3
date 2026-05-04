@@ -51,7 +51,7 @@ function VaultHeroSlide({
       <div className="grid gap-6 sm:gap-8 md:grid-cols-2 md:items-stretch md:gap-10 lg:gap-12">
         <Link
           href={productDetailHref(product)}
-          className="group relative order-1 block min-h-[200px] overflow-hidden rounded-sm border border-zinc-100 bg-zinc-50 shadow-sm sm:min-h-[240px] md:min-h-[320px]"
+          className="group relative order-1 block aspect-[4/3] min-h-[200px] overflow-hidden rounded-sm border border-zinc-100 bg-zinc-50 shadow-sm sm:min-h-[240px] md:min-h-[320px]"
         >
           {img ? (
             <Image
@@ -61,6 +61,8 @@ function VaultHeroSlide({
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
               sizes="(max-width: 768px) 100vw, 50vw"
               priority={priorityImage}
+              fetchPriority={priorityImage ? "high" : "auto"}
+              loading={priorityImage ? "eager" : "lazy"}
               placeholder="blur"
               blurDataURL={SHIMMER_BLUR_DATA_URL}
               unoptimized={shouldOffloadImageOptimization(img)}

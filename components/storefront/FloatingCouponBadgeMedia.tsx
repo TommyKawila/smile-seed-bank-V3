@@ -51,8 +51,8 @@ export function FloatingCouponBadgeMedia({ asset }: { asset: FloatingBadgeAsset 
         width={36}
         height={36}
         unoptimized
+        loading="lazy"
         className="h-9 w-9 shrink-0 object-contain opacity-70"
-        priority
       />
     );
   }
@@ -64,8 +64,8 @@ export function FloatingCouponBadgeMedia({ asset }: { asset: FloatingBadgeAsset 
       width={36}
       height={36}
       unoptimized={shouldOffloadImageOptimization(asset.src)}
+      loading="lazy"
       className="h-9 w-9 shrink-0 object-contain drop-shadow-sm"
-      priority
     />
   );
 }

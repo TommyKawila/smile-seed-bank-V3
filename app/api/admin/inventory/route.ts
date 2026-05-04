@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
       low_stock_threshold: (r as { low_stock_threshold?: number | null }).low_stock_threshold ?? 5,
       cost_price: r.cost_price,
       price: r.price,
-      margin: r.cost_price > 0 ? Math.round(((r.price - r.cost_price) / r.price) * 100) : 0,
+      margin: Number(r.cost_price ?? 0) > 0 ? Math.round(((r.price - Number(r.cost_price ?? 0)) / r.price) * 100) : 0,
       is_active: r.is_active,
       category:
         p.category ??

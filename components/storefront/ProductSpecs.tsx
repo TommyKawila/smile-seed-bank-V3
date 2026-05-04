@@ -36,7 +36,7 @@ export function RegularSeedSpecChip({ className }: { className?: string }) {
 /** Bento stat cell when sex / seed is feminized — lavender slot in 4-tone lab palette. */
 export function FeminizedStatCard({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center">
+    <div className="flex flex-col items-center justify-center rounded-[var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center">
       <Venus className="mb-1.5 h-6 w-6 text-primary" aria-hidden />
       <span className="font-sans text-xl font-semibold tabular-nums tracking-tight text-zinc-900">
         Fem
@@ -49,7 +49,7 @@ export function FeminizedStatCard({ label }: { label: string }) {
 /** Bento stat cell when seed / sex is regular — muted slot + Mars. */
 export function RegularStatCard({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[length:var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center">
+    <div className="flex flex-col items-center justify-center rounded-[var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center">
       <Mars className="mb-1.5 h-6 w-6 text-primary" aria-hidden />
       <span className="font-sans text-xl font-semibold tabular-nums tracking-tight text-zinc-900">
         Reg

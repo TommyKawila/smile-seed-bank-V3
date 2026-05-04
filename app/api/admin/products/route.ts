@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import { createProductWithVariants } from "@/services/product-service";
 import { syncProductImagesForProduct } from "@/lib/product-images-sync";
@@ -21,11 +22,23 @@ type ProductInsert = Omit<Product, "id" | "price" | "stock">;
 type VariantInsert = Omit<ProductVariant, "id" | "product_id">;
 
 export const dynamic = "force-dynamic";
+const AdminProductsQuerySchema = z.object({
+  idsOnly: z.enum(["0", "1"]).optional(),
+  minimal: z.enum(["0", "1"]).optional(),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+  view: z.string().optional(),
+  featured: z.enum(["0", "1"]).optional(),
+}).passthrough();
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
 
   try {
+    const parsedQuery = AdminProductsQuerySchema.safeParse(Object.fromEntries(sp));
+    if (!parsedQuery.success) {
+      return NextResponse.json({ error: "Invalid query parameters" }, { status: 400 });
+    }
     if (sp.get("idsOnly") === "1") {
       const where = await buildAdminProductsWhere(prisma, sp);
       const featured = sp.get("view") === "featured" || sp.get("featured") === "1";
@@ -134,7 +147,11 @@ export async function POST(req: NextRequest) {
     if (result.data) {
       await syncProductImagesForProduct(
         result.data.productId,
-        gallery_entries,
+        gallery_entries?.map((entry) => ({
+          url: entry.url,
+          is_main: entry.is_main,
+          variant_unit_label: entry.variant_unit_label ?? null,
+        })),
         result.data.variants.map((v) => ({
           id: Number(v.id),
           unit_label: v.unit_label,

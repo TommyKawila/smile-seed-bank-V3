@@ -24,6 +24,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -33,6 +43,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
+import { BulkDiscountDialog } from "@/components/admin/promotions/BulkDiscountDialog";
 
 type PromotionType = "DISCOUNT" | "BUY_X_GET_Y" | "FREEBIES" | "BUNDLE";
 
@@ -46,6 +57,16 @@ type Promotion = {
   is_active: boolean;
   conditions: Record<string, unknown> | string | null;
   discount_value: string | number | null;
+};
+
+type BulkCampaign = {
+  id: string;
+  breeder_id: string | number | null;
+  breeder_name: string | null;
+  discount_percent: number;
+  ends_at: string | null;
+  status: "ACTIVE" | "EXPIRED" | "CLEARED" | string;
+  created_at: string;
 };
 
 const TYPE_OPTIONS: { value: PromotionType; label: string }[] = [
@@ -100,6 +121,82 @@ function statusBadge(p: Promotion) {
   return <Badge className="bg-accent text-primary">Active</Badge>;
 }
 
+function CancelCampaignButton({
+  campaign,
+  onCancelled,
+}: {
+  campaign: BulkCampaign;
+  onCancelled: () => void;
+}) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+
+  const cancel = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/promotions/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId: campaign.id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        updatedVariants?: number;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Cancel campaign failed");
+      toast({
+        title: "ยกเลิกแคมเปญแล้ว",
+        description: `Reset ${data.updatedVariants ?? 0} variants for ${campaign.breeder_name ?? "this breeder"}.`,
+      });
+      onCancelled();
+    } catch (err) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: toastErrorMessage(err),
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
+          aria-label="Cancel campaign"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancel this campaign?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will reset all variant discounts for {campaign.breeder_name ?? "this breeder"} to 0 and remove the expiry date.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={saving}>Back</AlertDialogCancel>
+          <Button
+            type="button"
+            disabled={saving}
+            onClick={cancel}
+            className="bg-red-600 text-white hover:bg-red-700"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            Cancel Campaign
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 export default function PromotionsPage() {
   const { toast } = useToast();
   const [list, setList] = useState<Promotion[]>([]);
@@ -129,6 +226,8 @@ export default function PromotionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Promotion | null>(null);
   const [breeders, setBreeders] = useState<{ id: number; name: string }[]>([]);
+  const [bulkCampaigns, setBulkCampaigns] = useState<BulkCampaign[]>([]);
+  const [bulkLoading, setBulkLoading] = useState(true);
   const [giftProductSearch, setGiftProductSearch] = useState("");
   const [giftProductResults, setGiftProductResults] = useState<{ id: number; name: string; variants: { id: number; unit_label: string }[] }[]>([]);
   const [giftProductSearchOpen, setGiftProductSearchOpen] = useState(false);
@@ -171,9 +270,25 @@ export default function PromotionsPage() {
     }
   }, []);
 
+  const fetchBulkCampaigns = useCallback(async () => {
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/admin/promotions/bulk-discount/campaigns", {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      setBulkCampaigns(Array.isArray(data) ? data : []);
+    } catch {
+      setBulkCampaigns([]);
+    } finally {
+      setBulkLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchList();
-  }, [fetchList]);
+    fetchBulkCampaigns();
+  }, [fetchBulkCampaigns, fetchList]);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -402,10 +517,70 @@ export default function PromotionsPage() {
           <h1 className="text-xl font-bold text-zinc-900">จัดการโปรโมชั่น</h1>
           <p className="text-sm text-zinc-500">กำหนดกฎส่วนลดและของแถม (สำหรับ Phase ถัดไป: นำไปใช้กับ POS)</p>
         </div>
-        <Button onClick={openAdd} className="bg-primary text-white hover:bg-primary/90">
-          <Plus className="mr-1.5 h-4 w-4" /> เพิ่มโปรโมชั่น
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <BulkDiscountDialog breeders={breeders} onApplied={fetchBulkCampaigns} />
+          <Button onClick={openAdd} className="bg-primary text-white hover:bg-primary/90">
+            <Plus className="mr-1.5 h-4 w-4" /> เพิ่มโปรโมชั่น
+          </Button>
+        </div>
       </div>
+
+      <Card className="border-primary/10">
+        <CardHeader className="pb-0">
+          <CardTitle className="text-base text-primary">Active Bulk Discount Campaigns</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-accent/40">
+                <TableHead>Breeder</TableHead>
+                <TableHead className="text-right">Discount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Expiry Date</TableHead>
+                <TableHead className="w-20 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bulkLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center">
+                    <Loader2 className="mx-auto h-5 w-5 animate-spin text-primary/60" />
+                  </TableCell>
+                </TableRow>
+              ) : bulkCampaigns.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-sm text-zinc-400">
+                    No active bulk discount campaigns.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                bulkCampaigns.map((campaign) => (
+                  <TableRow key={campaign.id} className="hover:bg-accent/20">
+                    <TableCell className="font-medium text-zinc-900">
+                      {campaign.breeder_name ?? `Breeder #${campaign.breeder_id ?? "-"}`}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums text-primary">
+                      {campaign.discount_percent}%
+                    </TableCell>
+                    <TableCell>
+                      <Badge className="bg-accent text-primary">{campaign.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-zinc-600">
+                      {campaign.ends_at ? formatDate(campaign.ends_at) : "No expiry"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <CancelCampaignButton
+                        campaign={campaign}
+                        onCancelled={fetchBulkCampaigns}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="py-3">

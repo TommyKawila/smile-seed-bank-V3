@@ -263,7 +263,7 @@ export default function QuotationsHistoryPage() {
         discount: Number(i.discount ?? 0),
         subtotal: Number(i.lineTotal),
       }));
-      const doc = generateReceiptPDF({
+      const doc = await generateReceiptPDF({
         docType: "quotation",
         orderNumber: q.quotationNumber,
         orderDate,

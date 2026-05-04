@@ -265,14 +265,17 @@ export default function CreateOrderPage() {
       .then((r) => r.ok ? r.json() : [])
       .then((list: unknown[]) => {
         setPromotions(
-          (Array.isArray(list) ? list : []).map((p) => ({
-            id: typeof p.id === "string" ? parseInt(p.id, 10) : Number(p.id ?? 0),
-            name: String(p.name ?? ""),
-            type: (p.type ?? "DISCOUNT") as PromotionRule["type"],
-            description: p.description ?? null,
-            conditions: (p.conditions ?? null) as PromotionRule["conditions"],
-            discount_value: p.discount_value != null ? Number(p.discount_value) : null,
-          }))
+          (Array.isArray(list) ? list : []).map((raw) => {
+            const p = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+            return {
+              id: typeof p.id === "string" ? parseInt(p.id, 10) : Number(p.id ?? 0),
+              name: String(p.name ?? ""),
+              type: (p.type ?? "DISCOUNT") as PromotionRule["type"],
+              description: typeof p.description === "string" ? p.description : null,
+              conditions: (p.conditions ?? null) as PromotionRule["conditions"],
+              discount_value: p.discount_value != null ? Number(p.discount_value) : null,
+            };
+          })
         );
       })
       .catch(() => setPromotions([]));

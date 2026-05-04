@@ -382,21 +382,21 @@ async function _getUsageCount(
   userId: string | null,
   email: string | null
 ): Promise<number> {
-  let rows: unknown[];
+  let rows: readonly unknown[];
   if (userId && email) {
-    rows = await sql`
+    rows = Array.from(await sql`
       SELECT id FROM coupon_redemptions
       WHERE coupon_id = ${couponId}
         AND (user_id = ${userId} OR email = ${email})
-    `;
+    `);
   } else if (userId) {
-    rows = await sql`
+    rows = Array.from(await sql`
       SELECT id FROM coupon_redemptions WHERE coupon_id = ${couponId} AND user_id = ${userId}
-    `;
+    `);
   } else {
-    rows = await sql`
+    rows = Array.from(await sql`
       SELECT id FROM coupon_redemptions WHERE coupon_id = ${couponId} AND email = ${email!}
-    `;
+    `);
   }
   return rows.length;
 }
