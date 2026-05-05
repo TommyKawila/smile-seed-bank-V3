@@ -114,7 +114,7 @@ export function CheckoutPageClient({
   paymentSettingsError,
 }: CheckoutPageClientProps) {
   const router = useRouter();
-  const { items, summary, promo, tieredDiscountRules, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount } = useCartContext();
+  const { items, summary, promo, tieredDiscountRules, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount, isLoadingRules } = useCartContext();
   const { user, customer, isLoading: authLoading } = useAuth();
   const { locale, t } = useLanguage();
 
@@ -137,6 +137,8 @@ export function CheckoutPageClient({
   const [loginPromoCode, setLoginPromoCode] = useState("");
   const [promoOauthLoading, setPromoOauthLoading] = useState<null | "google" | "line">(null);
   const [savedCoupons, setSavedCoupons] = useState<ApiSavedCoupon[]>([]);
+
+  const deferPromptPayFetch = isLoadingRules || isValidatingPromo;
 
   const promptPayCheckout = useMemo<PromptPayCheckoutBody>(
     () => ({
@@ -665,6 +667,7 @@ export function CheckoutPageClient({
                 paymentSettingsError={paymentSettingsError}
                 grandTotalBaht={summary.total}
                 promptPayCheckout={promptPayCheckout}
+                deferPromptPayFetch={deferPromptPayFetch}
                 t={t}
                 serif={serif}
               />

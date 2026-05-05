@@ -125,10 +125,13 @@ async function fetchPromptPayResolved(
 export function DynamicPromptPayQr({
   amountBaht,
   resolution,
+  deferPromptPayFetch = false,
   t,
 }: {
   amountBaht: number;
   resolution: PromptPayResolution;
+  /** When rules/promos are reloading — avoids POST with duplicated or stale snapshot lines (subtotal inflate). */
+  deferPromptPayFetch?: boolean;
   t: (th: string, en: string) => string;
 }) {
   const [payload, setPayload] = useState<string | null>(null);
@@ -148,6 +151,13 @@ export function DynamicPromptPayQr({
       : `order:${resolution.orderNumber}`;
 
   useEffect(() => {
+    if (deferPromptPayFetch) {
+      setPayload(null);
+      setServerAmountBaht(null);
+      setLoading(true);
+      return;
+    }
+
     if (resolution.mode === "checkout" && resolution.checkout.items.length === 0) {
       setPayload(null);
       setServerAmountBaht(null);
@@ -186,7 +196,7 @@ export function DynamicPromptPayQr({
       cancelled = true;
       window.clearTimeout(tid);
     };
-  }, [requestKey]);
+  }, [requestKey, deferPromptPayFetch]);
 
   const downloadPng = useCallback(() => {
     const canvas = canvasRef.current;

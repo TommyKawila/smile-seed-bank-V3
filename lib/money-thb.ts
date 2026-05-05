@@ -1,8 +1,9 @@
 /**
- * THB money helpers: integer satang comparisons and 2-decimal quantization (PromptPay / checkout).
+ * THB helpers: callers supply **already combined** totals (shipping included in grand total inside `calculateCartSummary`).
+ * Never add shipping here — only quantization / comparisons.
  */
 
-/** Convert BAHT → integer satang (`220.00` → `22000`). Same `Number.EPSILON` guard across Node/V8 versions (localhost + Vercel). */
+/** BAHT→integer satang; does not mutate business totals beyond IEEE754 stabilization. */
 export function bahtToSatangInt(baht: number): number {
   const x = Number(baht);
   if (!Number.isFinite(x)) return NaN;

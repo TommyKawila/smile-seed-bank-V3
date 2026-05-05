@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSql } from "@/lib/db";
 import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate";
 import { buildPromptPayPayload } from "@/lib/payment-utils";
-import { quantizeBaht2 } from "@/lib/money-thb";
+import { quantizeBaht2, sameBahtSatang } from "@/lib/money-thb";
 import { getOrderByNumber } from "@/lib/services/order-service";
 
 export const dynamic = "force-dynamic";
@@ -148,15 +148,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: priced.error }, { status: 400 });
     }
 
-    const calculatedTotal = quantizeBaht2(priced.resolvedSummary.total);
-    const amountBaht = priced.resolvedSummary.total;
+    /** Sole EMV amount: DB-backed totals from validator — never add client summary or subtotal. */
+    const serverResolvedTotalBaht = quantizeBaht2(priced.resolvedSummary.total);
+    const clientDeclaredTotalBaht = clientTotals.total;
+    if (!sameBahtSatang(summary.total, priced.resolvedSummary.total)) {
+      console.warn("[promptpay-payload] POST validation (informational): body summary.total≠server recomputed", {
+        clientDeclaredTotalBaht,
+        serverResolvedTotalBaht,
+      });
+    }
 
-    if (amountBaht <= 0 || amountBaht > 50_000_000) {
+    if (!(serverResolvedTotalBaht > 0) || serverResolvedTotalBaht > 50_000_000) {
       console.error("[promptpay-payload] POST amount out of range", {
         PROMPTPAY_MERCHANT_ID: envMasked,
-        amountBaht: calculatedTotal,
-        calculatedTotal,
-        clientSummaryTotal: clientTotals.total,
+        serverResolvedTotalBaht,
+        clientDeclaredTotalBaht,
       });
       return NextResponse.json({ error: "invalid_amount" }, { status: 400 });
     }
@@ -167,27 +173,28 @@ export async function POST(req: NextRequest) {
     if (!mid) {
       console.error("[promptpay-payload] POST no merchant ID (QR disabled)", {
         PROMPTPAY_MERCHANT_ID: envMasked,
-        amountBaht: calculatedTotal,
-        calculatedTotal,
-        clientSummaryTotal: clientTotals.total,
+        serverResolvedTotalBaht,
+        clientDeclaredTotalBaht,
         hint: "Set payment_settings.prompt_pay.identifier or PROMPTPAY_MERCHANT_ID on Vercel",
       });
-      return NextResponse.json({ payload: null, amountBaht: calculatedTotal }, { status: 200 });
+      return NextResponse.json({ payload: null, amountBaht: serverResolvedTotalBaht }, { status: 200 });
     }
 
-    const payload = buildPromptPayPayload(mid, amountBaht);
+    const payload = buildPromptPayPayload(mid, serverResolvedTotalBaht);
 
     if (!payload) {
       console.error("[promptpay-payload] POST buildPromptPayPayload returned null", {
         PROMPTPAY_MERCHANT_ID: envMasked,
         merchantResolvedMasked: midMasked,
-        amountBaht: calculatedTotal,
-        calculatedTotal,
-        clientSummaryTotal: clientTotals.total,
+        serverResolvedTotalBaht,
+        clientDeclaredTotalBaht,
       });
     }
 
-    return NextResponse.json({ payload: payload ?? null, amountBaht: calculatedTotal }, { status: 200 });
+    return NextResponse.json(
+      { payload: payload ?? null, amountBaht: serverResolvedTotalBaht },
+      { status: 200 },
+    );
   } catch (err) {
     console.error("[promptpay-payload] POST unhandled", {
       PROMPTPAY_MERCHANT_ID: envMasked,

@@ -18,6 +18,24 @@ type LineIn = {
   productName: string;
 };
 
+/** Merge duplicate lines for the same variant (localStorage / race) so subtotal is not double-counted. */
+function mergeLinesByVariantId(rows: LineIn[]): LineIn[] {
+  const m = new Map<number, LineIn>();
+  for (const row of rows) {
+    const prev = m.get(row.variantId);
+    if (!prev) {
+      m.set(row.variantId, { ...row });
+      continue;
+    }
+    m.set(row.variantId, {
+      ...prev,
+      quantity: prev.quantity + row.quantity,
+      productName: prev.productName || row.productName,
+    });
+  }
+  return [...m.values()];
+}
+
 function sortGiftTuples(rows: { variantId: number; quantity: number }[]): string {
   return JSON.stringify(
     [...rows].sort((a, b) => a.variantId - b.variantId || a.quantity - b.quantity)
@@ -103,8 +121,8 @@ export async function validateStorefrontCheckoutTotals(input: {
     return { ok: false, error: "โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุ" };
   }
 
-  const paidLines = lines.filter((l) => l.isFreeGift !== true);
-  const giftLines = lines.filter((l) => l.isFreeGift === true);
+  const paidLines = mergeLinesByVariantId(lines.filter((l) => l.isFreeGift !== true));
+  const giftLines = mergeLinesByVariantId(lines.filter((l) => l.isFreeGift === true));
 
   const paidCartItems: CartItem[] = paidLines.map((line) => {
     const v = vmap.get(line.variantId)!;
@@ -256,7 +274,8 @@ export async function validateStorefrontCheckoutTotals(input: {
     }
   }
 
-  const resolvedItems: CheckoutItem[] = lines.map((line) => {
+  const normalizedForOrder: LineIn[] = [...paidLines, ...giftLines];
+  const resolvedItems: CheckoutItem[] = normalizedForOrder.map((line) => {
     const v = vmap.get(line.variantId)!;
     const gift = line.isFreeGift === true;
     return {

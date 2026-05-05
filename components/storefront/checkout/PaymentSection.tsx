@@ -13,6 +13,7 @@ export function PaymentSection({
   paymentSettingsError,
   grandTotalBaht,
   promptPayCheckout,
+  deferPromptPayFetch = false,
   t,
   serif,
 }: {
@@ -20,6 +21,7 @@ export function PaymentSection({
   paymentSettingsError: boolean;
   grandTotalBaht: number;
   promptPayCheckout: PromptPayCheckoutBody;
+  deferPromptPayFetch?: boolean;
   t: (th: string, en: string) => string;
   serif: string;
 }) {
@@ -59,6 +61,7 @@ export function PaymentSection({
               <DynamicPromptPayQr
                 amountBaht={grandTotalBaht}
                 resolution={{ mode: "checkout", checkout: promptPayCheckout }}
+                deferPromptPayFetch={deferPromptPayFetch}
                 t={t}
               />
             </div>
