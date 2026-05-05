@@ -16,8 +16,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import {
-  formatAdminOrderLineSummary,
   formatAdminOrderPackingCopyLine,
+  formatItemForPacking,
 } from "@/lib/admin-order-line-summary";
 import { orderIsReadyToShip, orderIsPaymentReceived } from "@/lib/order-paid";
 import { useToast } from "@/hooks/use-toast";
@@ -189,7 +189,7 @@ function buildNimbotSummaryText(o: AdminOrder): string {
     (o.line_items?.length ?? 0) === 0
       ? "—"
       : (o.line_items ?? [])
-          .map((li) => `${(li.product_name ?? "").trim()} x${li.quantity}`)
+          .map((li) => formatItemForPacking(li as AdminOrderLineItem))
           .join("\n");
   return [`Order: ${o.order_number}`, itemsBlock, `Total: ${formatPrice(o.total_amount)}`].join(
     "\n"
@@ -740,31 +740,14 @@ export default function AdminMobileOrdersPage() {
                   Items summary
                 </p>
                 <div className="divide-y divide-zinc-800/80 px-2 py-1">
-                  {(o.line_items ?? []).map((li, idx) => {
-                    const effectiveForPack =
-                      li.unit_label?.trim() || li.variant_unit_label?.trim() || "";
-                    const showSeedCount = effectiveForPack.length > 0;
-                    return (
-                      <div key={idx} className="py-1.5 font-sans first:pt-1 last:pb-1">
-                        <p className="font-sans text-[11px] leading-snug text-zinc-200">
-                          {formatAdminOrderLineSummary(li)}
-                        </p>
-                        <div className="mt-0.5 flex items-center justify-between gap-2 text-[10px] text-zinc-400">
-                          <span>
-                            {li.quantity} × {formatPrice(li.unit_price)}
-                            {!showSeedCount && li.unit_label ? (
-                              <span className="text-zinc-600"> · {li.unit_label}</span>
-                            ) : null}
-                          </span>
-                          {li.subtotal != null ? (
-                            <span className="shrink-0 font-mono text-zinc-300">
-                              {formatPrice(li.subtotal)}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {(o.line_items ?? []).map((li, idx) => (
+                    <p
+                      key={idx}
+                      className="py-1.5 font-sans text-[11px] leading-snug text-zinc-200 first:pt-1 last:pb-1"
+                    >
+                      {formatItemForPacking(li as AdminOrderLineItem)}
+                    </p>
+                  ))}
                 </div>
                 {(o.discount_amount > 0 ||
                   o.promotion_discount_amount > 0 ||

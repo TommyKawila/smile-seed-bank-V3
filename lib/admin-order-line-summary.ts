@@ -25,6 +25,42 @@ export function formatAdminOrderLineSummary(li: AdminOrderLineItem): string {
   return `${li.product_name} (${seeds}) — ${bre} (${typ})`;
 }
 
+/** TH packing line: `{Name} แพคเกจ {Variant} / ค่าย {Brand} ({Type}) ราคา {n}.- X {qty} ชิ้น` */
+export function formatPriceBahtShort(amount: number): string {
+  const n = Math.round(Number(amount));
+  return `${n.toLocaleString("th-TH")}.-`;
+}
+
+function normalizePackingDisplayText(s: string): string {
+  return s
+    .replace(/\bPhotoperiod\s+FF\b/gi, "Photo FF")
+    .replace(/\bAutoflower\b/gi, "Auto")
+    .replace(/\bSeeds\b/gi, "เมล็ด")
+    .replace(/\bSeed\b/gi, "เมล็ด")
+    .trim();
+}
+
+function shortenTypeLabelForPacking(raw: string): string {
+  const t = raw.trim();
+  if (!t || t === "—") return t || "—";
+  if (/^autoflower$/i.test(t)) return "Auto";
+  if (/^photoperiod\s+ff$/i.test(t)) return "Photo FF";
+  return t;
+}
+
+export function formatItemForPacking(li: AdminOrderLineItem): string {
+  const product = (li.product_name ?? "").trim() || "—";
+  const packRaw = li.unit_label?.trim() || li.variant_unit_label?.trim() || "—";
+  const variant = normalizePackingDisplayText(packRaw);
+  let brand = (li.breeder_name ?? "").trim();
+  if (!brand || brand === "—") brand = "—";
+  const typeRaw = adminOrderLineItemSeedTypeLabel(li);
+  const type = shortenTypeLabelForPacking(normalizePackingDisplayText(typeRaw));
+  const price = formatPriceBahtShort(li.unit_price);
+  const qty = li.quantity;
+  return `${product} แพคเกจ ${variant} / ค่าย ${brand} (${type}) ราคา ${price} X ${qty} ชิ้น`;
+}
+
 /** Clipboard / packing: summary + ` x {qty} pack(s)` */
 export function formatAdminOrderPackingCopyLine(li: AdminOrderLineItem): string {
   return `${formatAdminOrderLineSummary(li)} x ${li.quantity} pack(s)`;
