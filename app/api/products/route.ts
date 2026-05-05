@@ -28,6 +28,8 @@ export async function GET(req: Request) {
         ? "smart_deal"
         : undefined;
 
+  const catalogFt = searchParams.get("ft")?.trim();
+
   let result =
     sort === "mixed_breeder"
       ? await getMixedBreederProducts(2, limit)
@@ -43,6 +45,7 @@ export async function GET(req: Request) {
           includeVariants,
           sort,
           seeds_param: searchParams.get("seeds"),
+          catalog_ft: catalogFt || undefined,
         });
 
   if ((result.error || (result.data ?? []).length === 0) && sort === "mixed_breeder") {
@@ -58,6 +61,7 @@ export async function GET(req: Request) {
       limit,
       includeVariants: true,
       seeds_param: searchParams.get("seeds"),
+      catalog_ft: catalogFt || undefined,
     });
   }
 
@@ -65,12 +69,19 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
+  const hasMoreFromCatalog =
+    "catalogHasMore" in result && typeof result.catalogHasMore === "boolean"
+      ? result.catalogHasMore
+      : undefined;
+  const hasMore =
+    hasMoreFromCatalog !== undefined ? hasMoreFromCatalog : (result.data ?? []).length === limit;
+
   return NextResponse.json(
     {
       products: bigintToJson(result.data ?? []),
       page,
       pageSize: limit,
-      hasMore: (result.data ?? []).length === limit,
+      hasMore,
     },
     { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } }
   );

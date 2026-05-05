@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { ShopSkeleton } from "@/components/skeletons/ShopSkeleton";
 import { ShopPageClient } from "@/app/(storefront)/shop/ShopPageClient";
-import { getStorefrontProducts } from "@/services/storefront-product-service";
+import { getActiveProducts } from "@/services/product-service";
 import { bigintToJson } from "@/lib/bigint-json";
 import { prisma } from "@/lib/prisma";
 import { breederSlugFromName } from "@/lib/breeder-slug";
@@ -38,18 +38,27 @@ export default async function ShopPage({
   const breederId = await resolveBreederIdFromSlug(breederSlug);
   const category = firstParam(searchParams?.category)?.trim() || "";
   const search = firstParam(searchParams?.q)?.trim() || "";
-  const initialProducts = await getStorefrontProducts({
+  const ft = firstParam(searchParams?.ft)?.trim() || "";
+  const catalog = await getActiveProducts({
     category: category || undefined,
     breeder_id: breederId,
     search: search || undefined,
+    catalog_ft: ft || undefined,
     includeVariants: true,
     limit: SHOP_INITIAL_PRODUCTS,
-  }).catch(() => []);
-  const serializableProducts = bigintToJson(initialProducts) as ProductListItem[];
+    page: 1,
+  }).catch(() => ({
+    data: [] as ProductListItem[],
+    error: "catalog_fetch_failed",
+    catalogHasMore: false,
+  }));
+  const initialProducts = catalog.error
+    ? []
+    : (bigintToJson(catalog.data ?? []) as ProductListItem[]);
 
   return (
     <Suspense fallback={<ShopSkeleton />}>
-      <ShopPageClient initialProducts={serializableProducts} />
+      <ShopPageClient initialProducts={initialProducts} />
     </Suspense>
   );
 }

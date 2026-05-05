@@ -33,7 +33,7 @@ import { parseSeedsBreederSlugFromPathname, isSeedsIndexPath } from "@/lib/catal
 import {
   catalogFloweringBucket,
   productMatchesCatalogFtParam,
-  floweringTypeToSlug,
+  normalizeCatalogFtUrlParam,
   type CatalogFloweringBucket,
 } from "@/lib/seed-type-filter";
 import { BreederTypeFilter } from "@/components/storefront/BreederTypeFilter";
@@ -213,22 +213,36 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
   const [loadingMore, setLoadingMore] = useState(false);
   const gridTopRef = useRef<HTMLDivElement | null>(null);
   const didMountScrollRef = useRef(false);
-  const isInitialRender = useRef(true);
+  const sortedInitialIdsKey = useMemo(
+    () =>
+      [...initialProducts]
+        .map((p) => Number(p.id))
+        .sort((a, b) => a - b)
+        .join(","),
+    [initialProducts]
+  );
+  const serverHydrateKey = useMemo(
+    () =>
+      `${pathname}|${breederParam ?? ""}|${categoryParam}|${qParam}|${ftParam}|${sortedInitialIdsKey}`,
+    [pathname, breederParam, categoryParam, qParam, ftParam, sortedInitialIdsKey]
+  );
+
   useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
+    setProducts(initialProducts);
+    setLoadedPage(1);
+    setHasMoreServerProducts(initialProducts.length >= SHOP_PAGE_INITIAL);
+  }, [serverHydrateKey, initialProducts]);
+
+  const deferFirstDupClientCatalog = useRef(true);
+
+  useEffect(() => {
+    if (deferFirstDupClientCatalog.current) {
+      deferFirstDupClientCatalog.current = false;
       if (initialProducts.length > 0) return;
-    } else {
-      console.log("[ShopPageClient] catalog refetch", {
-        q: qParam,
-        category: categoryParam,
-        breeder: breederParam,
-      });
     }
     let cancelled = false;
-    const spin = initialProducts.length === 0;
-    if (spin) setIsLoading(true);
-    (async () => {
+    void (async () => {
+      setIsLoading(true);
       try {
         const sp = new URLSearchParams({
           limit: String(SHOP_PAGE_INITIAL),
@@ -238,6 +252,7 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
         if (breederParam?.trim()) sp.set("breeder", breederParam.trim());
         const qTrim = qParam.trim();
         if (qTrim) sp.set("q", qTrim);
+        if (ftParam.trim()) sp.set("ft", ftParam.trim());
         const res = await fetchWithTimeout(`/api/products?${sp.toString()}`, { cache: "no-store" }, 4000);
         const json = (await res.json()) as { products?: ProductListItem[]; hasMore?: boolean };
         if (cancelled || !res.ok) return;
@@ -245,7 +260,7 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
         setLoadedPage(1);
         setHasMoreServerProducts(Boolean(json.hasMore));
       } catch {
-        if (!cancelled && initialProducts.length === 0) setHasMoreServerProducts(false);
+        if (!cancelled) setHasMoreServerProducts(false);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -253,7 +268,7 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     return () => {
       cancelled = true;
     };
-  }, [pathname, breederParam, categoryParam, qParam, initialProducts.length]);
+  }, [pathname, breederParam, categoryParam, qParam, ftParam]);
 
   const priceCap = useMemo(
     () => (products.length > 0 ? computePriceSliderCap(products) : 5000),
@@ -387,19 +402,19 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
   useEffect(() => {
     const raw = ftParam?.trim();
     if (!raw) return;
-    const key = floweringTypeToSlug(raw);
-    const allowed = new Set(catalogFloweringPillOptions.map((o) => o.slug));
-    if (key && allowed.size > 0 && !allowed.has(key)) {
+    const key = normalizeCatalogFtUrlParam(raw);
+    if (!key) {
       replaceCatalog((sp) => {
         sp.delete("ft");
       });
       return;
     }
-    const ok = key === "auto" || key === "photo" || key === "photo-ff" || key === "photo-3n";
-    if (ok) return;
-    replaceCatalog((sp) => {
-      sp.delete("ft");
-    });
+    const allowed = new Set(catalogFloweringPillOptions.map((o) => o.slug));
+    if (allowed.size > 0 && !allowed.has(key)) {
+      replaceCatalog((sp) => {
+        sp.delete("ft");
+      });
+    }
   }, [ftParam, replaceCatalog, catalogFloweringPillOptions]);
 
   useEffect(() => {
@@ -588,6 +603,7 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
       if (breederParam?.trim()) sp.set("breeder", breederParam.trim());
       if (categoryParam.trim()) sp.set("category", categoryParam.trim());
       if (qParam.trim()) sp.set("q", qParam.trim());
+      if (ftParam.trim()) sp.set("ft", ftParam.trim());
       if (seedsParam.trim()) sp.set("seeds", seedsParam.trim());
       if (priceMin != null) sp.set(PRICE_PARAM_MIN, String(priceMin));
       if (priceMax != null) sp.set(PRICE_PARAM_MAX, String(priceMax));
@@ -614,7 +630,21 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     } finally {
       setLoadingMore(false);
     }
-  }, [shownCount, totalFiltered, hasMoreServerProducts, loadingMore, loadedPage, breederParam, categoryParam, qParam, seedsParam, priceMin, priceMax, t]);
+  }, [
+    shownCount,
+    totalFiltered,
+    hasMoreServerProducts,
+    loadingMore,
+    loadedPage,
+    breederParam,
+    categoryParam,
+    qParam,
+    seedsParam,
+    ftParam,
+    priceMin,
+    priceMax,
+    t,
+  ]);
 
   const hasFilters =
     searchTerm.trim().length > 0 ||

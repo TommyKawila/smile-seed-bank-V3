@@ -24,12 +24,17 @@ type BankJson = {
   accountName?: string;
   accountNo?: string;
   isActive?: boolean;
+  bank_name?: string;
+  account_name?: string;
+  account_no?: string;
+  is_active?: boolean;
 };
 
 type PromptJson = {
   identifier?: string;
   qrUrl?: string;
   isActive?: boolean;
+  is_active?: boolean;
 };
 
 function parseBankAccounts(raw: Json | null): BankJson[] {
@@ -40,6 +45,26 @@ function parseBankAccounts(raw: Json | null): BankJson[] {
 function parsePromptPay(raw: Json | null): PromptJson | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   return raw as PromptJson;
+}
+
+function bankRowExplicitInactive(b: BankJson): boolean {
+  return b.isActive === false || b.is_active === false;
+}
+
+function promptPayExplicitInactive(pp: PromptJson): boolean {
+  return pp.isActive === false || pp.is_active === false;
+}
+
+function normalizedBankFields(b: BankJson): {
+  bankName: string;
+  accountNo: string;
+  accountName: string;
+} | null {
+  const bankName = (b.bankName ?? b.bank_name ?? "").trim();
+  const accountNo = (b.accountNo ?? b.account_no ?? "").trim();
+  const accountName = (b.accountName ?? b.account_name ?? "").trim();
+  if (!bankName || !accountNo) return null;
+  return { bankName, accountNo, accountName };
 }
 
 /**
@@ -76,14 +101,17 @@ export async function fetchCheckoutPaymentSettings(): Promise<{
     const settings: PaymentSetting[] = [];
     let idCounter = 0;
 
-    for (const b of parseBankAccounts(data.bank_accounts)) {
-      if (!b?.isActive) continue;
+    const banksParsed = parseBankAccounts(data.bank_accounts);
+    for (const b of banksParsed) {
+      if (bankRowExplicitInactive(b)) continue;
+      const row = normalizedBankFields(b);
+      if (!row) continue;
       idCounter += 1;
       settings.push({
         id: idCounter,
-        bank_name: b.bankName ?? null,
-        account_number: b.accountNo ?? null,
-        account_name: b.accountName ?? null,
+        bank_name: row.bankName,
+        account_number: row.accountNo,
+        account_name: row.accountName || null,
         qr_code_url: null,
         is_active: true,
         source: "bank",
@@ -91,7 +119,11 @@ export async function fetchCheckoutPaymentSettings(): Promise<{
     }
 
     const pp = parsePromptPay(data.prompt_pay);
-    if (pp?.isActive && (pp.identifier || pp.qrUrl)) {
+    if (
+      pp &&
+      !promptPayExplicitInactive(pp) &&
+      (pp.identifier || pp.qrUrl)
+    ) {
       idCounter += 1;
       settings.push({
         id: idCounter,
@@ -102,6 +134,15 @@ export async function fetchCheckoutPaymentSettings(): Promise<{
         is_active: true,
         source: "promptpay",
       });
+    }
+
+    if (settings.length === 0) {
+      console.warn(
+        "[fetchCheckoutPaymentSettings] No payment rows after filter — bank_accounts length:",
+        banksParsed.length,
+        "has_prompt_pay:",
+        Boolean(data.prompt_pay),
+      );
     }
 
     return { settings, error: false };

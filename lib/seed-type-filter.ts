@@ -69,6 +69,19 @@ export function breederDisplayTypeKeyFromProduct(p: BreederDisplayProductInput):
   return ft;
 }
 
+/** storefront `searchParams.ft` → pill / bucket key (aliases `auto`/`autoflower`, `photo`/`photoperiod`, etc.). */
+export function normalizeCatalogFtUrlParam(
+  raw: string | null | undefined
+): "auto" | "photo" | "photo-ff" | "photo-3n" | "" {
+  const key = floweringTypeToSlug(raw);
+  if (!key) return "";
+  if (key === "autoflower" || key === "auto") return "auto";
+  if (key === "photo-3n" || key === "photo_3n") return "photo-3n";
+  if (key === "photo-ff" || key === "photo_ff") return "photo-ff";
+  if (key === "photoperiod" || key === "photo") return "photo";
+  return "";
+}
+
 /** Shop-wide flowering buckets for pill filter (Auto / Photo / Photo FF / Photo 3N).
  *  Admin Manual Grid category filter uses the same DB values via `lib/admin-grid-category-filter.ts`. */
 export type CatalogFloweringBucket = "auto" | "photo" | "photo_ff" | "photo_3n";
@@ -116,12 +129,13 @@ export function productMatchesCatalogFtParam(
   p: BreederDisplayProductInput,
   ftParam: string | null | undefined
 ): boolean {
-  const want = floweringTypeToSlug(ftParam);
-  if (!want) return true;
+  const key = normalizeCatalogFtUrlParam(ftParam);
+  if (!key) return true;
   const b = catalogFloweringBucket(p);
   if (b == null) return false;
-  const slug = b === "photo_ff" ? "photo-ff" : b === "photo_3n" ? "photo-3n" : b;
-  return want === slug;
+  const slug =
+    b === "photo_ff" ? "photo-ff" : b === "photo_3n" ? "photo-3n" : b === "photo" ? "photo" : b === "auto" ? "auto" : "";
+  return key === slug;
 }
 
 export function breederDisplayTypeMatches(

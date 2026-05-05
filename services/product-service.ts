@@ -21,6 +21,10 @@ import { parseListParam, productMatchesSeedsPackFilter } from "@/lib/shop-attrib
 import { resolveBreederFromShopParam } from "@/lib/breeder-slug";
 import { stripEmbeddedColorMarkup } from "@/lib/sanitize-product-text";
 import { buildProductCatalogSearchOrFilter } from "@/lib/product-catalog-search";
+import {
+  normalizeCatalogFtUrlParam,
+  productMatchesCatalogFtParam,
+} from "@/lib/seed-type-filter";
 import type {
   Product,
   ProductVariant,
@@ -424,71 +428,190 @@ export async function getActiveProducts(opts?: {
   includeVariants?: boolean;
   /** Comma-separated pack buckets: 1,2,3,5,10,gt10,other — requires variant rows (filtered in memory). */
   seeds_param?: string | null;
-}): Promise<ServiceResult<ProductWithBreeder[]>> {
+  /** Genetic Vault flowering pill (?ft=) — narrowed at DB (`autoflower`, `photo_3n`) or supersets + storefront bucket match (`photo`, `photo-ff`). */
+  catalog_ft?: string | null;
+}): Promise<ServiceResult<ProductWithBreeder[]> & { catalogHasMore?: boolean }> {
   try {
     const supabase = await createClient();
     const seedsSel = parseListParam(opts?.seeds_param ?? null);
+    const ftOriginal = opts?.catalog_ft?.trim() ?? "";
+    const catalogFtKey = normalizeCatalogFtUrlParam(ftOriginal);
+    const memoryFtPassNeeded = catalogFtKey === "photo" || catalogFtKey === "photo-ff";
+
     const selectShape =
       seedsSel.length > 0 || opts?.includeVariants
         ? PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS
         : PRODUCT_SELECT_WITH_BREEDER;
 
-    let query = supabase
-      .from("products")
-      .select(selectShape)
-      .eq("is_active", true);
-
-    if (opts?.category) query = query.eq("category", opts.category);
-    const search = opts?.search?.trim();
-    const catalogOr = search ? buildProductCatalogSearchOrFilter(search) : null;
-    if (catalogOr) query = query.or(catalogOr);
-    if (opts?.minPrice != null && Number.isFinite(opts.minPrice)) {
-      query = query.gte("price", opts.minPrice);
-    }
-    if (opts?.maxPrice != null && Number.isFinite(opts.maxPrice)) {
-      query = query.lte("price", opts.maxPrice);
-    }
-    let breederId: number | undefined = opts?.breeder_id;
+    let breederIdResolved: number | undefined = opts?.breeder_id;
     if (opts?.breeder_shop_param?.trim()) {
-      const id = await getBreederIdFromShopParam(opts.breeder_shop_param);
-      if (id == null) return { data: [], error: null };
-      breederId = id;
+      const idResolved = await getBreederIdFromShopParam(opts.breeder_shop_param);
+      if (idResolved == null) return { data: [], error: null, catalogHasMore: false };
+      breederIdResolved = idResolved;
     }
-    if (breederId != null) query = query.eq("breeder_id", breederId);
-    if (opts?.sort === "smart_deal") {
-      query = query
-        .gt("stock", 0)
-        .order("price", { ascending: true, nullsFirst: false })
-        .order("stock", { ascending: true, nullsFirst: false })
-        .order("id", { ascending: false });
-    } else if (opts?.sort === "newest") {
-      query = query
-        .order("created_at", { ascending: false, nullsFirst: false })
-        .order("id", { ascending: false });
-    } else {
-      query = query.order("id", { ascending: false });
-    }
+
     const limit = Math.min(
       MAX_ACTIVE_PRODUCTS_LIMIT,
       Math.max(1, opts?.limit ?? DEFAULT_ACTIVE_PRODUCTS_LIMIT)
     );
     const page = Math.max(1, opts?.page ?? 1);
-    const from = (page - 1) * limit;
-    query = query.range(from, from + limit - 1);
+    const pageEndIndex = page * limit;
 
-    const { data, error } = await query;
+    const applyCommonFilters = () => {
+      let qb = supabase.from("products").select(selectShape).eq("is_active", true);
+      if (opts?.category) qb = qb.eq("category", opts.category);
+      const searchRaw = opts?.search?.trim();
+      const catalogOr = searchRaw ? buildProductCatalogSearchOrFilter(searchRaw) : null;
+      if (catalogOr) qb = qb.or(catalogOr);
+      if (opts?.minPrice != null && Number.isFinite(opts.minPrice)) {
+        qb = qb.gte("price", opts.minPrice);
+      }
+      if (opts?.maxPrice != null && Number.isFinite(opts.maxPrice)) {
+        qb = qb.lte("price", opts.maxPrice);
+      }
+      if (breederIdResolved != null) qb = qb.eq("breeder_id", breederIdResolved);
 
-    if (error) return { data: null, error: error.message };
-    let rows = data as unknown as (ProductWithBreeder & {
+      /** DB-level ft only where PostgREST stays valid; `photo` / `photo-ff` use memory pass (same bucket rules as storefront). */
+      switch (catalogFtKey) {
+        case "auto":
+          qb = qb.eq("flowering_type", "autoflower");
+          break;
+        case "photo-3n":
+          qb = qb.eq("flowering_type", "photo_3n");
+          break;
+        default:
+          break;
+      }
+      return qb;
+    };
+
+    const applySorting = (
+      qb: ReturnType<typeof applyCommonFilters>
+    ): ReturnType<typeof applyCommonFilters> => {
+      if (opts?.sort === "smart_deal") {
+        return qb
+          .gt("stock", 0)
+          .order("price", { ascending: true, nullsFirst: false })
+          .order("stock", { ascending: true, nullsFirst: false })
+          .order("id", { ascending: false });
+      }
+      if (opts?.sort === "newest") {
+        return qb
+          .order("created_at", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: false });
+      }
+      return qb.order("id", { ascending: false });
+    };
+
+    type Row = ProductWithBreeder & {
       product_variants?: { unit_label: string; is_active?: boolean | null }[];
-    })[];
-    if (seedsSel.length > 0) {
-      rows = rows.filter((p) =>
-        productMatchesSeedsPackFilter(p.product_variants ?? null, seedsSel)
+    };
+
+    const postSeedAndSanitize = (rowsIn: Row[]) => {
+      let rows = rowsIn;
+      if (seedsSel.length > 0) {
+        rows = rows.filter((p) =>
+          productMatchesSeedsPackFilter(p.product_variants ?? null, seedsSel)
+        );
+      }
+      for (const row of rows) sanitizeProductTextFields(row);
+      return rows as ProductWithBreeder[];
+    };
+
+    if (!memoryFtPassNeeded) {
+      let query = applySorting(applyCommonFilters());
+      const from = (page - 1) * limit;
+      query = query.range(from, from + limit - 1);
+      const { data, error } = await query;
+
+      if (error) return { data: null, error: error.message };
+      const fetched = (data ?? []) as unknown as Row[];
+      let rows = fetched.filter((p) =>
+        ftOriginal ? productMatchesCatalogFtParam(p, ftOriginal) : true
       );
+      const catalogHasMore = fetched.length === limit;
+      return {
+        data: postSeedAndSanitize(rows),
+        error: null,
+        catalogHasMore,
+      };
     }
-    for (const row of rows) sanitizeProductTextFields(row);
-    return { data: rows as ProductWithBreeder[], error: null };
+
+    const MEM_BREEDER_SMART_CAP = 900;
+    const MEM_SCAN_CHUNK = 140;
+    const MEM_MAX_ROUNDS = 42;
+
+    if (memoryFtPassNeeded && breederIdResolved != null && opts?.sort === "smart_deal") {
+      let qCap = applySorting(applyCommonFilters()).limit(MEM_BREEDER_SMART_CAP);
+      const { data, error } = await qCap;
+      if (error) return { data: null, error: error.message };
+
+      let rows = ((data ?? []) as unknown as Row[]).filter((p) =>
+        ftOriginal ? productMatchesCatalogFtParam(p, ftOriginal) : true
+      );
+      if (seedsSel.length > 0) {
+        rows = rows.filter((p) =>
+          productMatchesSeedsPackFilter(p.product_variants ?? null, seedsSel)
+        );
+      }
+      const catalogHasMore =
+        rows.length > pageEndIndex || (Array.isArray(data) && data.length === MEM_BREEDER_SMART_CAP);
+      const slice = rows.slice((page - 1) * limit, pageEndIndex);
+      return {
+        data: postSeedAndSanitize(slice),
+        error: null,
+        catalogHasMore,
+      };
+    }
+
+    const hits: Row[] = [];
+    let cursorLt: number | null = null;
+    let lastFetchLen = 0;
+
+    for (let round = 0; round < MEM_MAX_ROUNDS && hits.length < pageEndIndex; round++) {
+      let qb = applySorting(applyCommonFilters());
+      if (cursorLt != null) qb = qb.lt("id", cursorLt);
+      qb = qb.limit(MEM_SCAN_CHUNK);
+
+      const { data, error } = await qb;
+      if (error) return { data: null, error: error.message };
+      const chunk = (data ?? []) as unknown as Row[];
+
+      lastFetchLen = chunk.length;
+
+      let minSeen: number | null = null;
+
+      for (const row of chunk) {
+        const idNum = Number(row.id);
+        if (Number.isFinite(idNum)) {
+          minSeen = minSeen == null ? idNum : Math.min(minSeen, idNum);
+        }
+        if (!(ftOriginal ? productMatchesCatalogFtParam(row, ftOriginal) : true)) continue;
+        if (seedsSel.length > 0 && !productMatchesSeedsPackFilter(row.product_variants ?? null, seedsSel)) continue;
+        hits.push(row);
+        if (hits.length >= pageEndIndex) break;
+      }
+
+      if (chunk.length < MEM_SCAN_CHUNK) break;
+
+      cursorLt = minSeen;
+      if (cursorLt == null) break;
+
+      if (!Number.isFinite(cursorLt)) break;
+    }
+
+    const sliced = hits.slice((page - 1) * limit, pageEndIndex);
+
+    let catalogHasMore =
+      hits.length > pageEndIndex || (lastFetchLen === MEM_SCAN_CHUNK && hits.length >= pageEndIndex);
+
+    catalogHasMore = catalogHasMore || lastFetchLen === MEM_SCAN_CHUNK;
+
+    return {
+      data: postSeedAndSanitize(sliced),
+      error: null,
+      catalogHasMore,
+    };
   } catch (err) {
     logger.error("product-service.getActiveProducts failed", {
       cause: err,
@@ -497,10 +620,10 @@ export async function getActiveProducts(opts?: {
     return {
       data: null,
       error: err instanceof Error ? err.message : String(err),
+      catalogHasMore: false,
     };
   }
 }
-
 /** Homepage carousel: active + flagged featured, lowest priority first. */
 /** Homepage clearance rail: active, flagged clearance, in stock, sorted by discount depth then id. */
 export async function getClearanceStorefrontProducts(

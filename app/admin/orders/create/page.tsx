@@ -26,8 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
-import { applyWholesalePrice } from "@/lib/wholesale-utils";
 import type { ProductWithBreeder, ProductWithBreederMaybeVariants } from "@/types/supabase";
+import type { ProductVariantRow } from "@/lib/supabase/types";
 import { PosLowStockWarning } from "@/components/admin/PosLowStockWarning";
 import { PosBreederCombobox } from "@/components/admin/PosBreederCombobox";
 import {
@@ -41,6 +41,7 @@ import {
   claimLinkToDigitalReceiptPageUrl,
   generateOrderSummary,
 } from "@/lib/utils/format-order";
+import { resolvePosVariantUnitPrice } from "@/lib/pos-pricing";
 
 type PosLastCopyPack = {
   orderNumber: string;
@@ -135,6 +136,7 @@ export default function CreateOrderPage() {
   } | null>(null);
   const [summaryLang, setSummaryLang] = useState<"th" | "en">("th");
   const [manualDiscountPercent, setManualDiscountPercent] = useState(0);
+  const [bulkSaleBreederIds, setBulkSaleBreederIds] = useState<Set<number>>(new Set());
 
   const [customer, setCustomer] = useState<CustomerInfo>({
     full_name: "",
@@ -146,6 +148,22 @@ export default function CreateOrderPage() {
 
   const setCustomerField = (field: keyof CustomerInfo, value: string) =>
     setCustomer((prev) => ({ ...prev, [field]: value }));
+
+  useEffect(() => {
+    void fetch("/api/admin/promotions/bulk-discount/campaigns", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: { breeder_id?: unknown }[]) => {
+        const s = new Set<number>();
+        for (const row of Array.isArray(rows) ? rows : []) {
+          const id = row.breeder_id;
+          if (id == null) continue;
+          const n = typeof id === "bigint" ? Number(id) : Number(id);
+          if (Number.isFinite(n) && n > 0) s.add(n);
+        }
+        setBulkSaleBreederIds(s);
+      })
+      .catch(() => setBulkSaleBreederIds(new Set()));
+  }, []);
 
   useEffect(() => {
     void fetch("/api/storefront/payment-settings")
@@ -686,19 +704,30 @@ export default function CreateOrderPage() {
                           </div>
                           <div className="min-w-0 flex-1">
                             {breederName && (
-                              <span className="text-xs font-medium text-zinc-500">
-                                {breederName}
-                              </span>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-xs font-medium text-zinc-500">
+                                  {breederName}
+                                </span>
+                                {prod.breeder_id != null &&
+                                  bulkSaleBreederIds.has(Number(prod.breeder_id)) && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="h-5 border-amber-200/80 bg-amber-50 px-1.5 text-[10px] font-semibold text-amber-900"
+                                    >
+                                      Bulk sale
+                                    </Badge>
+                                  )}
+                              </div>
                             )}
                             <p className="text-sm font-semibold text-zinc-800">{product.name}</p>
                           </div>
                         </div>
                         <div className="divide-y divide-zinc-100">
                           {variants.map((variant) => {
-                            const retailPrice = Number(variant.price);
-                            const price = wholesaleDiscount > 0
-                              ? applyWholesalePrice(retailPrice, wholesaleDiscount)
-                              : retailPrice;
+                            const pv = variant as ProductVariantRow & { final_price?: number };
+                            const posPrice = resolvePosVariantUnitPrice(pv, wholesaleDiscount);
+                            const { unitCharge, strikeDisplay, showListStrike } = posPrice;
+                            const saleDisplay = unitCharge;
                             return (
                             <button
                               key={variant.id}
@@ -710,7 +739,7 @@ export default function CreateOrderPage() {
                                   productName: product.name,
                                   productImage: product.image_url,
                                   unitLabel: variant.unit_label,
-                                  price,
+                                  price: unitCharge,
                                   quantity: 1,
                                   stock_quantity: variant.stock ?? 0,
                                   masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
@@ -724,11 +753,16 @@ export default function CreateOrderPage() {
                               <span className="text-sm text-zinc-700">
                                 {variant.unit_label} · เหลือ {variant.stock}
                               </span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-primary">
-                                  {formatPrice(price)}
+                              <div className="flex shrink-0 flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+                                {showListStrike ? (
+                                  <span className="text-xs tabular-nums text-zinc-400 line-through">
+                                    {formatPrice(strikeDisplay)}
+                                  </span>
+                                ) : null}
+                                <span className="text-sm font-semibold tabular-nums text-primary">
+                                  {formatPrice(saleDisplay)}
                                 </span>
-                                <Plus className="h-4 w-4 text-primary" />
+                                <Plus className="h-4 w-4 shrink-0 text-primary" />
                               </div>
                             </button>
                           );

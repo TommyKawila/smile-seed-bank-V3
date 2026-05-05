@@ -22,14 +22,17 @@ export async function GET() {
     const promptPay = (row?.prompt_pay ?? null) as PromptPayRow | null;
     const lineId = (row as { line_id?: string })?.line_id ?? "";
 
-    const activeBank = allBanks.find((b) => b.isActive) ?? null;
+    const activeBank =
+      allBanks.find(
+        (b) => b.isActive !== false && b.bankName && b.accountNo,
+      ) ?? null;
 
     return NextResponse.json({
       bank: activeBank
         ? { name: activeBank.bankName, accountNo: activeBank.accountNo, accountName: activeBank.accountName }
         : null,
       promptPay:
-        promptPay?.isActive
+        promptPay != null && promptPay.isActive !== false
           ? { identifier: promptPay.identifier, qrUrl: promptPay.qrUrl ?? "" }
           : null,
       lineId: lineId || null,
