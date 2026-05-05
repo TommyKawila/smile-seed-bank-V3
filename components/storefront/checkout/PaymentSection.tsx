@@ -1,35 +1,29 @@
 "use client";
 
-import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { PaymentSetting } from "@/lib/storefront-payment-shared";
-import { isPrimaryKbankCheckoutAccount, PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
-import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import type { ActiveBankAccount } from "@/lib/storefront-payment-shared";
+import { PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
 import { DynamicPromptPayQr, type PromptPayCheckoutBody } from "@/components/storefront/checkout/DynamicPromptPayQr";
-import { ManualBankBackupCard } from "@/components/storefront/checkout/ManualBankBackupCard";
+import { BankTransferAccountList } from "@/components/storefront/checkout/BankTransferAccountList";
 
 export function PaymentSection({
-  paymentSettings,
-  paymentSettingsError,
+  bankAccounts,
+  bankAccountsError,
   grandTotalBaht,
   promptPayCheckout,
   deferPromptPayFetch = false,
   t,
   serif,
 }: {
-  paymentSettings: PaymentSetting[];
-  paymentSettingsError: boolean;
+  bankAccounts: ActiveBankAccount[];
+  bankAccountsError: boolean;
   grandTotalBaht: number;
   promptPayCheckout: PromptPayCheckoutBody;
   deferPromptPayFetch?: boolean;
   t: (th: string, en: string) => string;
   serif: string;
 }) {
-  const extraBanks = paymentSettings.filter(
-    (p) => !isPrimaryKbankCheckoutAccount(p.account_number),
-  );
-
   const promptPayOn = PAYMENT_CONFIG.isPromptPayEnabled;
 
   return (
@@ -41,12 +35,12 @@ export function PaymentSection({
         <p className="text-xs text-zinc-500">
           {promptPayOn
             ? t(
-                "สแกน QR พร้อมเพย์ด้านล่างตามยอดสุทธิด้านบน — หรือโอนผ่านธนาคารตามรายละเอียดด้านล่าง",
-                "Scan the PromptPay QR below for your net total, or use bank transfer as shown.",
+                "สแกน QR พร้อมเพย์ด้านล่างตามยอดสุทธิ — และ/หรือโอนผ่านธนาคารตามบัญชีที่เปิดใช้งานด้านล่าง",
+                "Use PromptPay below for your net total and/or transfer to an active bank account listed below.",
               )
             : t(
-                "โอนเงินตามยอดสุทธิด้านบนเข้าบัญชีด้านล่าง จากนั้นกดสั่งซื้อและอัปโหลดหลักฐานในขั้นตอนถัดไปเมื่อได้รับลิงก์",
-                "Transfer the net total below to the listed account. After placing your order, upload proof when prompted on the confirmation flow.",
+                "โอนเงินตามยอดสุทธิเข้าบัญชีด้านล่าง จากนั้นดำเนินการสั่งซื้อและอัปโหลดหลักฐานตามลิงก์ที่ได้รับ",
+                "Transfer the net total to an account below, then complete your order and upload proof when prompted.",
               )}
         </p>
 
@@ -55,23 +49,14 @@ export function PaymentSection({
             {t("รายละเอียดการโอน (สาธารณะ)", "Transfer details")}
           </p>
 
-          {paymentSettingsError && (
+          {bankAccountsError && (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              {promptPayOn
-                ? t(
-                    "ไม่สามารถโหลดบัญชีเสริมจากระบบได้ — พร้อมเพย์และบัญชีหลักด้านล่างใช้งานได้",
-                    "Supplementary accounts could not be loaded — PromptPay and the primary transfer details below still apply.",
-                  )
-                : t(
-                    "ไม่สามารถโหลดบัญชีเสริมจากระบบได้ — ข้อมูลโอนหลักด้านล่างยังใช้ได้",
-                    "Supplementary accounts could not be loaded — the primary transfer instructions below remain valid.",
-                  )}
+              {t(
+                "ไม่สามารถโหลดบัญชีจากระบบได้ — รีเฟรชหน้า หรือติดต่อร้านหากยังไม่เห็นข้อมูลโอน",
+                "Bank details could not be loaded. Refresh the page, or contact the shop if instructions are missing.",
+              )}
             </p>
           )}
-
-          {!promptPayOn ? (
-            <ManualBankBackupCard amountBaht={grandTotalBaht} t={t} variant="primary" />
-          ) : null}
 
           {promptPayOn ? (
             <div className="flex w-full justify-center">
@@ -86,52 +71,22 @@ export function PaymentSection({
             </div>
           ) : null}
 
-          {promptPayOn ? (
-            <ManualBankBackupCard amountBaht={grandTotalBaht} t={t} variant="secondary" />
-          ) : null}
+          <div className="space-y-3">
+            <BankTransferAccountList
+              accounts={bankAccounts}
+              grandTotalBaht={grandTotalBaht}
+              t={t}
+            />
 
-          {extraBanks.map((pm) => (
-            <Card key={`bank-${pm.id}`} className="rounded-sm border-zinc-200 bg-white shadow-sm">
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-base text-primary">
-                  {pm.bank_name ?? t("โอนเงินผ่านธนาคาร", "Bank transfer")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 p-4 pt-0 text-sm">
-                {pm.bank_name && (
-                  <div className="flex justify-between gap-2">
-                    <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
-                    <span className="font-medium text-zinc-900">{pm.bank_name}</span>
-                  </div>
+            {!bankAccountsError && bankAccounts.length === 0 && (
+              <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-center text-sm text-zinc-600">
+                {t(
+                  "ยังไม่มีบัญชีสำหรับแสดง — กรุณาติดต่อร้านเพื่อขอข้อมูลโอนเงิน",
+                  "No active bank accounts are listed. Please contact the shop for transfer details.",
                 )}
-                {pm.account_number && (
-                  <div className="flex justify-between gap-2">
-                    <span className="text-zinc-500">{t("เลขบัญชี", "Account number")}</span>
-                    <span className="font-mono font-medium text-zinc-900">{pm.account_number}</span>
-                  </div>
-                )}
-                {pm.account_name && (
-                  <div className="flex justify-between gap-2">
-                    <span className="text-zinc-500">{t("ชื่อบัญชี", "Account name")}</span>
-                    <span className="font-medium text-zinc-900">{pm.account_name}</span>
-                  </div>
-                )}
-                {pm.qr_code_url ? (
-                  <div className="mx-auto mt-2 flex w-[220px] max-w-full justify-center">
-                    <Image
-                      src={pm.qr_code_url}
-                      alt={t("QR Code โอนเงินผ่านธนาคารสำหรับชำระเงิน", "Bank transfer QR code for payment")}
-                      width={220}
-                      height={220}
-                      className="h-[220px] w-[220px] max-w-full object-contain"
-                      sizes="220px"
-                      unoptimized={shouldOffloadImageOptimization(pm.qr_code_url)}
-                    />
-                  </div>
-                ) : null}
-              </CardContent>
-            </Card>
-          ))}
+              </p>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

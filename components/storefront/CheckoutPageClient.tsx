@@ -18,7 +18,7 @@ import { useLanguage, type Locale } from "@/context/LanguageContext";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
 import { getURL } from "@/lib/get-url";
 import { cn, formatPrice } from "@/lib/utils";
-import type { PaymentSetting } from "@/lib/storefront-payment-shared";
+import type { ActiveBankAccount } from "@/lib/storefront-payment-shared";
 import { toast } from "sonner";
 import {
   createStorefrontOrder,
@@ -105,13 +105,13 @@ function OrderItemRow({
 }
 
 export type CheckoutPageClientProps = {
-  paymentSettings: PaymentSetting[];
-  paymentSettingsError: boolean;
+  bankAccounts: ActiveBankAccount[];
+  bankAccountsError: boolean;
 };
 
 export function CheckoutPageClient({
-  paymentSettings,
-  paymentSettingsError,
+  bankAccounts,
+  bankAccountsError,
 }: CheckoutPageClientProps) {
   const router = useRouter();
   const { items, summary, promo, tieredDiscountRules, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount, isLoadingRules } = useCartContext();
@@ -663,8 +663,8 @@ export function CheckoutPageClient({
               </OrderSummary>
 
               <PaymentSection
-                paymentSettings={paymentSettings}
-                paymentSettingsError={paymentSettingsError}
+                bankAccounts={bankAccounts}
+                bankAccountsError={bankAccountsError}
                 grandTotalBaht={summary.total}
                 promptPayCheckout={promptPayCheckout}
                 deferPromptPayFetch={deferPromptPayFetch}

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronLeft, CreditCard, Upload, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,16 +10,15 @@ import { Separator } from "@/components/ui/separator";
 import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackingCta";
 import { lineOaPrefillUrlForOrderSuccess } from "@/lib/line-oa-url";
 import { formatPrice } from "@/lib/utils";
-import type { PaymentSetting } from "@/lib/storefront-payment-shared";
-import { isPrimaryKbankCheckoutAccount, PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
-import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import type { ActiveBankAccount } from "@/lib/storefront-payment-shared";
+import { PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
 import { DynamicPromptPayQr } from "@/components/storefront/checkout/DynamicPromptPayQr";
-import { ManualBankBackupCard } from "@/components/storefront/checkout/ManualBankBackupCard";
+import { BankTransferAccountList } from "@/components/storefront/checkout/BankTransferAccountList";
 
 export type PaymentPageClientProps = {
   orderNumber: string;
-  paymentSettings: PaymentSetting[];
-  paymentSettingsError: boolean;
+  bankAccounts: ActiveBankAccount[];
+  bankAccountsError: boolean;
   lineId: string | null;
   initialOrder: {
     total_amount: number;
@@ -36,8 +34,8 @@ function tTh(th: string, _en: string) {
 
 export function PaymentPageClient({
   orderNumber,
-  paymentSettings,
-  paymentSettingsError,
+  bankAccounts,
+  bankAccountsError,
   lineId,
   initialOrder,
   orderUnavailable,
@@ -116,10 +114,6 @@ export function PaymentPageClient({
     );
   }
 
-  const extraBanks = paymentSettings.filter(
-    (p) => !isPrimaryKbankCheckoutAccount(p.account_number),
-  );
-
   const promptPayOn = PAYMENT_CONFIG.isPromptPayEnabled;
 
   return (
@@ -160,17 +154,11 @@ export function PaymentPageClient({
               ข้อมูลการโอนเงิน
             </div>
 
-            {paymentSettingsError && (
+            {bankAccountsError && (
               <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                {promptPayOn
-                  ? "ไม่สามารถโหลดบัญชีเสริมจากระบบได้ — พร้อมเพย์และบัญชีหลักด้านล่างใช้งานได้"
-                  : "ไม่สามารถโหลดบัญชีเสริมจากระบบได้ — ข้อมูลโอนหลักด้านล่างยังใช้ได้"}
+                ไม่สามารถโหลดบัญชีจากระบบได้ — รีเฟรชหน้า หรือติดต่อร้านหากยังไม่เห็นข้อมูลโอน
               </p>
             )}
-
-            {!promptPayOn ? (
-              <ManualBankBackupCard amountBaht={totalAmount} t={tTh} variant="primary" />
-            ) : null}
 
             {promptPayOn ? (
               <div className="flex w-full justify-center">
@@ -184,53 +172,18 @@ export function PaymentPageClient({
               </div>
             ) : null}
 
-            {promptPayOn ? (
-              <ManualBankBackupCard amountBaht={totalAmount} t={tTh} variant="secondary" />
-            ) : null}
-
-            {extraBanks.map((pm) => (
-              <div
-                key={`bank-${pm.id}`}
-                className="rounded-xl border border-zinc-200 bg-white p-4 text-sm shadow-sm"
-              >
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  {pm.bank_name ?? "โอนเงินผ่านธนาคาร"}
+            <div className="space-y-3">
+              <BankTransferAccountList
+                accounts={bankAccounts}
+                grandTotalBaht={totalAmount}
+                t={tTh}
+              />
+              {!bankAccountsError && bankAccounts.length === 0 && (
+                <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-center text-sm text-zinc-600">
+                  ยังไม่มีบัญชีสำหรับแสดง — กรุณาติดต่อร้านเพื่อขอข้อมูลโอนเงิน
                 </p>
-                <div className="grid gap-2">
-                  {pm.bank_name && (
-                    <div className="flex justify-between gap-2">
-                      <span className="text-zinc-500">ธนาคาร</span>
-                      <span className="font-medium text-zinc-800">{pm.bank_name}</span>
-                    </div>
-                  )}
-                  {pm.account_number && (
-                    <div className="flex justify-between gap-2">
-                      <span className="text-zinc-500">เลขบัญชี</span>
-                      <span className="font-mono font-semibold text-zinc-900">{pm.account_number}</span>
-                    </div>
-                  )}
-                  {pm.account_name && (
-                    <div className="flex justify-between gap-2">
-                      <span className="text-zinc-500">ชื่อบัญชี</span>
-                      <span className="font-medium text-zinc-800">{pm.account_name}</span>
-                    </div>
-                  )}
-                  {pm.qr_code_url ? (
-                    <div className="mx-auto mt-2 flex w-[220px] max-w-full justify-center">
-                      <Image
-                        src={pm.qr_code_url}
-                        alt="QR โอนธนาคาร"
-                        width={220}
-                        height={220}
-                        className="h-[220px] w-[220px] max-w-full object-contain"
-                        sizes="220px"
-                        unoptimized={shouldOffloadImageOptimization(pm.qr_code_url)}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
 
           <div

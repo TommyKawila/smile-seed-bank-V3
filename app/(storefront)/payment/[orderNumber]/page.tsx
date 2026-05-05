@@ -1,5 +1,5 @@
 import { PaymentPageClient } from "@/components/storefront/payment/PaymentPageClient";
-import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
+import { fetchActiveBankAccounts } from "@/lib/payment-settings-public";
 import { getOrderByNumber } from "@/lib/services/order-service";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +17,8 @@ export default async function PaymentPage({
     /* keep raw */
   }
 
-  const [{ settings, error: paymentSettingsError, lineId }, orderRes] = await Promise.all([
-    fetchCheckoutPaymentSettings(),
+  const [{ accounts: bankAccounts, error: bankAccountsError, lineId }, orderRes] = await Promise.all([
+    fetchActiveBankAccounts(),
     orderNumber.length >= 4 ? getOrderByNumber(orderNumber) : Promise.resolve({ data: null, error: "Invalid" }),
   ]);
 
@@ -28,8 +28,8 @@ export default async function PaymentPage({
   return (
     <PaymentPageClient
       orderNumber={orderNumber}
-      paymentSettings={settings}
-      paymentSettingsError={paymentSettingsError}
+      bankAccounts={bankAccounts}
+      bankAccountsError={bankAccountsError}
       lineId={lineId}
       initialOrder={
         order

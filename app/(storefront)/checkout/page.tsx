@@ -1,17 +1,17 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { CheckoutPageClient } from "@/components/storefront/CheckoutPageClient";
-import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
+import { fetchActiveBankAccounts } from "@/lib/payment-settings-public";
 
 export const dynamic = "force-dynamic";
 
-/** Server-only: loads payment instructions via Postgres (guest-safe, not Supabase anon RLS). */
+/** Server-only: bank accounts from Supabase `payment_settings` (guest-safe via service role). */
 async function CheckoutWithPaymentData() {
-  const { settings, error } = await fetchCheckoutPaymentSettings();
+  const { accounts: bankAccounts, error: bankAccountsError } = await fetchActiveBankAccounts();
   return (
     <CheckoutPageClient
-      paymentSettings={settings}
-      paymentSettingsError={error}
+      bankAccounts={bankAccounts}
+      bankAccountsError={bankAccountsError}
     />
   );
 }

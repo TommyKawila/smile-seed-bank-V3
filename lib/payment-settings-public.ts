@@ -1,8 +1,9 @@
 import "server-only";
 
 import { getSql } from "@/lib/db";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import type { Json } from "@/types/supabase";
-import type { PaymentSetting } from "@/lib/storefront-payment-shared";
+import type { ActiveBankAccount, PaymentSetting } from "@/lib/storefront-payment-shared";
 
 type BankJson = {
   bankName?: string;
@@ -36,8 +37,76 @@ function normalizedBankFields(b: BankJson): {
   return { bankName, accountNo, accountName };
 }
 
+/** Maps `payment_settings.bank_accounts` JSON (admin) to active rows only. */
+export function parseBankAccountsJsonToActive(raw: Json | null): ActiveBankAccount[] {
+  const out: ActiveBankAccount[] = [];
+  let idCounter = 0;
+  const banksParsed = parseBankAccounts(raw);
+  for (const b of banksParsed) {
+    if (bankRowExplicitInactive(b)) continue;
+    const line = normalizedBankFields(b);
+    if (!line) continue;
+    idCounter += 1;
+    out.push({
+      id: idCounter,
+      bank_name: line.bankName,
+      account_name: line.accountName || null,
+      account_number: line.accountNo,
+      qr_code_url: null,
+    });
+  }
+  if (out.length === 0 && banksParsed.length > 0) {
+    console.warn(
+      "[parseBankAccountsJsonToActive] No active rows after filter — raw items:",
+      banksParsed.length,
+    );
+  }
+  return out;
+}
+
 /**
- * Loads bank accounts + LINE OA id for storefront payment UIs via server Postgres (guest-safe).
+ * Active bank accounts from Supabase (`payment_settings.bank_accounts` JSONB).
+ * Service-role client; storefront-safe (no PII beyond public transfer instructions).
+ */
+export async function fetchActiveBankAccounts(): Promise<{
+  accounts: ActiveBankAccount[];
+  lineId: string | null;
+  error: boolean;
+}> {
+  try {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+      .from("payment_settings")
+      .select("bank_accounts, line_id")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const accounts = parseBankAccountsJsonToActive(data?.bank_accounts ?? null);
+    const lineId = data?.line_id?.trim() ? String(data.line_id).trim() : null;
+
+    return { accounts, lineId, error: false };
+  } catch (e) {
+    console.error("[fetchActiveBankAccounts]", e);
+    return { accounts: [], lineId: null, error: true };
+  }
+}
+
+function activeToPaymentSettings(accounts: ActiveBankAccount[]): PaymentSetting[] {
+  return accounts.map((a) => ({
+    id: a.id,
+    bank_name: a.bank_name,
+    account_number: a.account_number,
+    account_name: a.account_name,
+    qr_code_url: a.qr_code_url,
+    is_active: true,
+    source: "bank",
+  }));
+}
+
+/**
+ * Loads bank accounts + LINE OA id via Postgres (same data as `fetchActiveBankAccounts`; for callers not using Supabase client).
  */
 export async function fetchCheckoutPaymentSettings(): Promise<{
   settings: PaymentSetting[];
@@ -65,30 +134,13 @@ export async function fetchCheckoutPaymentSettings(): Promise<{
       };
     }
 
-    const settings: PaymentSetting[] = [];
-    let idCounter = 0;
-
-    const banksParsed = parseBankAccounts(row.bank_accounts);
-    for (const b of banksParsed) {
-      if (bankRowExplicitInactive(b)) continue;
-      const line = normalizedBankFields(b);
-      if (!line) continue;
-      idCounter += 1;
-      settings.push({
-        id: idCounter,
-        bank_name: line.bankName,
-        account_number: line.accountNo,
-        account_name: line.accountName || null,
-        qr_code_url: null,
-        is_active: true,
-        source: "bank",
-      });
-    }
+    const accounts = parseBankAccountsJsonToActive(row.bank_accounts);
+    const settings = activeToPaymentSettings(accounts);
 
     if (settings.length === 0) {
       console.warn(
         "[fetchCheckoutPaymentSettings] No bank rows after filter — bank_accounts length:",
-        banksParsed.length,
+        parseBankAccounts(row.bank_accounts).length,
       );
     }
 
