@@ -5,6 +5,7 @@ import { bigintToJson } from "@/lib/bigint-json";
 
 export const dynamic = "force-dynamic";
 
+/** All `user_saved_promotions` rows with campaign join (including expired) for profile UI. */
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -33,29 +34,25 @@ export async function GET() {
       },
     });
 
-    const now = Date.now();
     const items = rows
-      .map((r) => r.promotion_campaigns)
-      .filter((c): c is NonNullable<typeof c> => c != null)
-      .filter((c) => {
-        if (c.is_active === false) return false;
-        const end = c.end_at.getTime();
-        if (!Number.isFinite(end)) return true;
-        return now < end;
+      .map((r) => {
+        const c = r.promotion_campaigns;
+        if (!c) return null;
+        return {
+          campaign_id: String(c.id),
+          name: c.name,
+          promo_code: c.promo_code,
+          discount_type: c.discount_type,
+          discount_value: String(c.discount_value),
+          end_at: c.end_at.toISOString(),
+          is_active: c.is_active,
+        };
       })
-      .map((c) => ({
-        campaign_id: String(c.id),
-        name: c.name,
-        promo_code: c.promo_code,
-        discount_type: c.discount_type,
-        discount_value: String(c.discount_value),
-        end_at: c.end_at.toISOString(),
-        is_active: c.is_active,
-      }));
+      .filter((x): x is NonNullable<typeof x> => x != null);
 
     return NextResponse.json(bigintToJson({ items }));
   } catch (e) {
-    console.error("saved-promotions GET", e);
+    console.error("[member-saved-campaigns] GET", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }

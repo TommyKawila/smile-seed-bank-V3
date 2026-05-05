@@ -29,6 +29,7 @@ import {
 import { signInWithGoogleRedirect } from "@/services/auth-service";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { CouponSection } from "@/components/storefront/checkout/CouponSection";
+import { SavedCouponsCheckoutSection } from "@/components/storefront/checkout/CheckoutSummary";
 import { OrderSummary } from "@/components/storefront/checkout/OrderSummary";
 import { PaymentSection } from "@/components/storefront/checkout/PaymentSection";
 import type { PromptPayCheckoutBody } from "@/components/storefront/checkout/DynamicPromptPayQr";
@@ -459,55 +460,31 @@ export function CheckoutPageClient({
                   </p>
 
                   <CouponSection>
-                  {user && savedCoupons.length > 0 && (
-                    <div className="space-y-2 rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900/80">
-                        {t("คูปองที่เก็บไว้", "Available coupons")}
-                      </p>
-                      <div className="flex flex-col gap-2">
-                        {savedCoupons.map((c) => {
-                          const applied =
-                            promo.code?.code?.toUpperCase() === c.promo_code.toUpperCase();
-                          return (
-                            <button
-                              key={`${c.campaign_id}-${c.promo_code}`}
-                              type="button"
-                              disabled={applied || isValidatingPromo}
-                              onClick={() => {
-                                const phoneForPromo = (form.phone || customer?.phone || "").trim();
-                                if (!phoneForPromo || phoneForPromo.replace(/\D/g, "").length < 9) {
-                                  setFieldErrors((p) => ({ ...p, phone: "กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด" }));
-                                  toast.error("กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด");
-                                  return;
-                                }
-                                void applyPromoCode(
-                                  c.promo_code,
-                                  user?.email ?? null,
-                                  phoneForPromo,
-                                  user?.id ?? null
-                                );
-                              }}
-                              className={cn(
-                                "flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors",
-                                applied
-                                  ? "border-zinc-200 bg-zinc-100 text-zinc-500"
-                                  : "border-emerald-300/60 bg-white hover:border-emerald-400"
-                              )}
-                            >
-                              <span className="min-w-0 font-mono font-semibold text-emerald-900">
-                                {c.promo_code}
-                              </span>
-                              <span className="shrink-0 text-xs text-zinc-600">
-                                {applied
-                                  ? t("ใช้แล้ว", "Applied")
-                                  : t("แตะเพื่อใช้", "Tap to apply")}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                  <SavedCouponsCheckoutSection
+                    coupons={savedCoupons}
+                    hasUser={Boolean(user)}
+                    appliedPromoCode={promo.code?.code}
+                    isValidatingPromo={isValidatingPromo}
+                    mono={mono}
+                    t={t}
+                    getPhoneForPromo={() => (form.phone || customer?.phone || "").trim()}
+                    onPhoneMissing={() => {
+                      setFieldErrors((p) => ({
+                        ...p,
+                        phone: t(
+                          "กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด",
+                          "Enter a valid phone number to use a promo code",
+                        ),
+                      }));
+                      toast.error(
+                        t("กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด", "Please enter a phone number to use a promo code"),
+                      );
+                    }}
+                    onApplyCoupon={(code) => {
+                      const phoneForPromo = (form.phone || customer?.phone || "").trim();
+                      void applyPromoCode(code, user?.email ?? null, phoneForPromo, user?.id ?? null);
+                    }}
+                  />
 
                   {!user && (
                     <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-[11px] leading-relaxed text-zinc-600">

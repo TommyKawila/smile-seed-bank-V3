@@ -19,19 +19,27 @@ type LineIn = {
   productName: string;
 };
 
-/** Collapse duplicate API lines; never merge paid with gift (`variant+g`/`variant+p`). */
+function normalizeCheckoutVariantId(v: number): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return NaN;
+  return Math.trunc(n);
+}
+
+/** Collapse duplicate API lines; never merge paid with gift (`variant+g`/`variant+p`). Keys use canonical string variant id to avoid coercion collisions (e.g. duplicate rows on Vercel). */
 function mergeCheckoutDuplicateLines(rows: LineIn[]): LineIn[] {
   const m = new Map<string, LineIn>();
   for (const row of rows) {
+    const vidNum = normalizeCheckoutVariantId(row.variantId);
     const bucket = row.isFreeGift === true ? "gift" : "paid";
-    const key = `${row.variantId}:${bucket}`;
+    const key = `${String(vidNum)}:${bucket}`;
     const prev = m.get(key);
     if (!prev) {
-      m.set(key, { ...row });
+      m.set(key, { ...row, variantId: vidNum });
       continue;
     }
     m.set(key, {
       ...prev,
+      variantId: vidNum,
       quantity: prev.quantity + row.quantity,
       productName: prev.productName || row.productName,
     });
@@ -39,18 +47,22 @@ function mergeCheckoutDuplicateLines(rows: LineIn[]): LineIn[] {
   return [...m.values()];
 }
 
-/** Last-line defense: one paid row per variant before any sum (mirrors client cart merge). */
+/** Last-line defense: one paid row per variant before any sum — Map keys canonical string IDs. */
 function collapsePaidCartItemsByVariant(items: CartItem[]): CartItem[] {
-  const m = new Map<number, CartItem>();
+  const m = new Map<string, CartItem>();
   for (const i of items) {
     if (i.isFreeGift) continue;
-    const prev = m.get(i.variantId);
+    const vidNum = normalizeCheckoutVariantId(i.variantId);
+    if (!Number.isFinite(vidNum) || vidNum < 1) continue;
+    const key = String(vidNum);
+    const prev = m.get(key);
     if (!prev) {
-      m.set(i.variantId, { ...i });
+      m.set(key, { ...i, variantId: vidNum });
       continue;
     }
-    m.set(i.variantId, {
+    m.set(key, {
       ...prev,
+      variantId: vidNum,
       quantity: prev.quantity + i.quantity,
       productName: prev.productName || i.productName,
     });
@@ -112,11 +124,33 @@ export async function validateStorefrontCheckoutTotals(input: {
 > {
   const { items: rawLines, summary: clientSummary, promo_code_id, purpose = "order_create" } = input;
 
+  for (const row of rawLines) {
+    const v = normalizeCheckoutVariantId(row.variantId);
+    if (!Number.isFinite(v) || v < 1) {
+      return { ok: false, error: "สินค้าบางรายการไม่ถูกต้อง" };
+    }
+  }
+
   const mergedLines = mergeCheckoutDuplicateLines(rawLines);
   console.warn(
     `[checkout-server-validate] DEBUG: Raw items count: ${rawLines.length}, Merged items count: ${mergedLines.length}`,
   );
 
+  console.warn(
+    `LOG_GHOST: Raw ID List: [${rawLines
+      .map((r) => {
+        const v = normalizeCheckoutVariantId(r.variantId);
+        return `${String(Number.isFinite(v) ? v : r.variantId)}:${r.isFreeGift === true ? "g" : "p"}:${r.quantity}`;
+      })
+      .join(",")}]`,
+  );
+  console.warn(
+    `LOG_GHOST: Merged ID List: [${mergedLines
+      .map((r) => `${String(r.variantId)}:${r.isFreeGift === true ? "g" : "p"}:${r.quantity}`)
+      .join(",")}]`,
+  );
+
+  /** All maths use mergedLines exclusively from here onward. */
   const variantIds = [...new Set(mergedLines.map((l) => l.variantId))].map((id) => BigInt(id));
 
   const [

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate";
+import { quantizeBaht2 } from "@/lib/money-thb";
 import { createOrder, fetchEmailItems } from "@/lib/services/order-service";
 import { sendOrderConfirmationEmail } from "@/services/email-service";
 
@@ -105,7 +106,12 @@ export async function POST(req: NextRequest) {
         productName: i.productName,
         isFreeGift: i.isFreeGift,
       })),
-      summary: priced.resolvedSummary,
+      summary: {
+        subtotal: quantizeBaht2(priced.resolvedSummary.subtotal),
+        discount: quantizeBaht2(priced.resolvedSummary.discount),
+        shipping: quantizeBaht2(priced.resolvedSummary.shipping),
+        total: quantizeBaht2(priced.resolvedSummary.total),
+      },
       payment_method,
       customer_id: resolvedCustomerId,
       promo_code_id: resolvedPromoId,

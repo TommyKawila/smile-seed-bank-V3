@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import {
   User, MapPin, Phone, Mail, ChevronRight,
   Loader2, LogOut, Check, X, Leaf, ShoppingBag,
-  Truck, Copy, Tag, BadgeCheck, Save,
+  Truck, Copy, BadgeCheck, Save,
   Link2, Link2Off, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { CouponCard } from "@/components/storefront/FloatingOfferButton";
 import type { EligibleCoupon } from "@/components/storefront/FloatingOfferButton";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { GenomeCirclePanel } from "@/components/storefront/GenomeCirclePanel";
+import { MemberCoupons } from "@/components/storefront/profile/MemberCoupons";
 import { canViewMembershipProgram } from "@/lib/feature-flags";
 import { orderIsPaymentReceived } from "@/lib/order-paid";
 
@@ -522,70 +523,72 @@ function ProfileContent() {
         {/* ── MY COUPONS TAB (collected codes only) ───────────────────────────── */}
         {tab === "coupons" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            {couponsLoading ? (
-              <div className="flex justify-center py-16">
-                <Loader2 className="h-7 w-7 animate-spin text-primary" />
-              </div>
-            ) : collectedCoupons.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-4 rounded-sm border border-dashed border-zinc-200 py-16 text-center">
-                <Tag className="h-10 w-10 text-zinc-300" />
-                <p className="text-sm font-medium text-zinc-500">
-                  {t("ยังไม่มีโค้ดที่เก็บไว้", "No saved coupons yet")}
-                </p>
-                <p className="max-w-sm text-xs text-zinc-400">
-                  {t(
-                    "กด «เก็บโค้ด» จากปุ่มส่วนลดมุมขวาล่างเมื่อมีโค้ด — โค้ดจะแสดงที่นี่",
-                    "Tap “Collect code” on the discount button (bottom-right) when offers appear — saved codes show here."
-                  )}
-                </p>
-                <Button asChild variant="outline" className="rounded-sm border-zinc-200">
-                  <Link href="/shop">{t("ไปเลือกสินค้า", "Browse shop")}</Link>
-                </Button>
-              </div>
-            ) : (
-              (() => {
-                const available = collectedCoupons.filter((c) => !c.used);
-                const used = collectedCoupons.filter((c) => c.used);
-                return (
-                  <div className="space-y-6">
-                    {available.length > 0 && (
-                      <div className="space-y-2">
-                        <p className={cn(serif, "mb-3 text-sm text-zinc-600")}>
-                          {t("โค้ดที่ใช้ได้", "Available codes")}
-                        </p>
-                        {available.map((c) => (
-                          <CouponCard
-                            key={c.id}
-                            coupon={c}
-                            showCollect={false}
-                            collected={false}
-                            collecting={false}
-                          />
-                        ))}
-                      </div>
-                    )}
-                    {used.length > 0 && (
-                      <div className="space-y-2">
-                        <p className={cn(serif, "mb-3 text-sm text-zinc-400")}>
-                          {t("ใช้แล้ว / หมดอายุ", "Used / Expired")}
-                        </p>
-                        {used.map((c) => (
-                          <CouponCard
-                            key={c.id}
-                            coupon={c}
-                            showCollect={false}
-                            collected={false}
-                            collecting={false}
-                            used
-                          />
-                        ))}
-                      </div>
-                    )}
-                    {available.length === 0 && used.length === 0 && null}
+            <div className="space-y-8">
+              <MemberCoupons locale={locale} t={t} mono={mono} serif={serif} />
+
+              <div className="space-y-4">
+                <div className="border-b border-zinc-100 pb-2">
+                  <h3 className={cn(serif, "text-sm font-medium text-zinc-800")}>
+                    {t("โค้ดจากปุ่มส่วนลด", "Collected from offer button")}
+                  </h3>
+                  <p className="mt-1 text-xs text-zinc-500">{t("เลือกจากคูปองลอยมุมขวาล่างของร้าน", "From the floating coupon on the storefront")}</p>
+                </div>
+                {couponsLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-7 w-7 animate-spin text-primary" />
                   </div>
-                );
-              })()
-            )}
+                ) : collectedCoupons.length === 0 ? (
+                  <p className="text-center text-xs text-zinc-400">
+                    {t(
+                      "ยังไม่มีโค้ดในส่วนนี้ — กด «เก็บโค้ด» จากปุ่มส่วนลดมุมขวาล่างเมื่อมีโค้ด",
+                      "Nothing here yet — tap “Collect code” on the bottom-right discount button when offers appear.",
+                    )}
+                  </p>
+                ) : (
+                  (() => {
+                    const available = collectedCoupons.filter((c) => !c.used);
+                    const used = collectedCoupons.filter((c) => c.used);
+                    return (
+                      <div className="space-y-6">
+                        {available.length > 0 && (
+                          <div className="space-y-2">
+                            <p className={cn(serif, "mb-1 text-xs text-zinc-500")}>
+                              {t("ใช้ได้", "Available")}
+                            </p>
+                            {available.map((c) => (
+                              <CouponCard
+                                key={c.id}
+                                coupon={c}
+                                showCollect={false}
+                                collected={false}
+                                collecting={false}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {used.length > 0 && (
+                          <div className="space-y-2">
+                            <p className={cn(serif, "mb-1 text-xs text-zinc-400")}>
+                              {t("ใช้แล้ว / หมดอายุ", "Used / Expired")}
+                            </p>
+                            {used.map((c) => (
+                              <CouponCard
+                                key={c.id}
+                                coupon={c}
+                                showCollect={false}
+                                collected={false}
+                                collecting={false}
+                                used
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+            </div>
           </motion.div>
         )}
 

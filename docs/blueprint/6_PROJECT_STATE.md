@@ -5,6 +5,7 @@
 ---
 
 ### บันทึกการทำงาน — 2026-05-04
+- **Checkout ghost duplicate line (±170 mismatch):** `lib/checkout-server-validate.ts` — `mergeCheckoutDuplicateLines` และ `collapsePaidCartItemsByVariant` ใช้ **Map key เป็น string ของ variantId ที่ truncate** แล้ว normalize `variantId`; validate จาก `mergedLines` อย่างเดียว; log ชั่วคราว **`LOG_GHOST: Raw ID List`** / **`LOG_GHOST: Merged ID List`**; `app/api/storefront/orders/route.ts` ส่ง `summary` เข้า `createOrder` ผ่าน **`quantizeBaht2`** เทียบเท่า `priced.resolvedSummary`
 - **Checkout payment V3.6:** `fetchActiveBankAccounts` (Supabase service role → `payment_settings.bank_accounts` JSON, `isActive`≠false); `BankTransferAccountList` + ยอดโอนต่อการ์ด; `PAYMENT_CONFIG` ปิด PromptPay / `promptpay-payload` 503; ไม่มี hardcode บัญชีใน UI
 - **PromptPay V3.4:** `mergeCheckoutDuplicateLines` + `collapsePaidCartItemsByVariant`; `grandTotalFromSummaryParts` (subtotal−discount+shipping, satang); `resolvedSummary.total` = canonical; POST `SUBTOTAL_CHECK`/`SHIPPING_CHECK`/`TOTAL_CHECK` ก่อน `buildPromptPayPayload`.
 - **Checkout / PromptPay V3.3 (precision + server totals):** `money-thb`; `validateStorefrontCheckoutTotals` รองรับ **`purpose: prompt_pay_preview`** (ยอด PromptPay จาก DB ถึง UI mismatch เล็กน้อยไม่ fail); สร้างออเดอร์ใช้ **`order_create`** เข้มเหมือนเดิม; `useCart` **`evaluateFreeGifts(..., \"TRANSFER\")`**; `promptpay-payload` POST + log `invalid_body`/`unauthorized`; `DynamicPromptPayQr` `credentials: same-origin` + `console.warn` สาเหตุ; `PaymentSection` → `promptPayCheckout`.

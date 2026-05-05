@@ -10,6 +10,10 @@ export type ApiSavedCoupon = {
   promo_code: string;
   discount_type: string;
   discount_value: string;
+  /** ISO8601 from `promotion_campaigns.end_at` when logged in */
+  end_at?: string | null;
+  /** From campaign; omitted for guest/local merge entries */
+  is_active?: boolean;
 };
 
 export type CheckoutOrderPayload = {
@@ -43,6 +47,39 @@ export type CheckoutOrderResult =
   | { ok: true; orderNumber: string }
   | { ok: false; code?: string; message: string };
 
+/** Hide inactive or past-end campaigns in checkout “saved coupons” UI. Local merge rows without dates stay visible. */
+export function filterSavedCouponsForCheckoutDisplay(
+  coupons: ApiSavedCoupon[],
+  now: Date = new Date()
+): ApiSavedCoupon[] {
+  const t = now.getTime();
+  return coupons.filter((c) => {
+    if (c.is_active === false) return false;
+    const raw = c.end_at;
+    if (raw == null || String(raw).trim() === "") return true;
+    const endMs = new Date(raw).getTime();
+    if (!Number.isFinite(endMs)) return true;
+    return t < endMs;
+  });
+}
+
+function memberCouponKey(c: ApiSavedCoupon): string {
+  return `${c.campaign_id}:${c.promo_code.trim().toUpperCase()}`;
+}
+
+/**
+ * Profile “Available” vs “Expired”: same rules as {@link filterSavedCouponsForCheckoutDisplay} for the available set.
+ */
+export function partitionMemberSavedCoupons(
+  coupons: ApiSavedCoupon[],
+  now: Date = new Date()
+): { available: ApiSavedCoupon[]; expired: ApiSavedCoupon[] } {
+  const available = filterSavedCouponsForCheckoutDisplay(coupons, now);
+  const ok = new Set(available.map(memberCouponKey));
+  const expired = coupons.filter((c) => !ok.has(memberCouponKey(c)));
+  return { available, expired };
+}
+
 export function mergeSavedCoupons(
   server: ApiSavedCoupon[],
   local: SavedPromotionPayload[]
@@ -66,11 +103,14 @@ export function mergeSavedCoupons(
 
 export async function fetchSavedCouponsForCheckout(isLoggedIn: boolean): Promise<ApiSavedCoupon[]> {
   const local = readSavedPromotionsFromLocal();
-  if (!isLoggedIn) return mergeSavedCoupons([], local);
+  if (!isLoggedIn) {
+    return filterSavedCouponsForCheckoutDisplay(mergeSavedCoupons([], local));
+  }
 
   const res = await fetch("/api/storefront/saved-promotions");
   const data = res.ok ? ((await res.json()) as { items?: ApiSavedCoupon[] }) : { items: [] };
-  return mergeSavedCoupons(Array.isArray(data.items) ? data.items : [], local);
+  const merged = mergeSavedCoupons(Array.isArray(data.items) ? data.items : [], local);
+  return filterSavedCouponsForCheckoutDisplay(merged);
 }
 
 export async function fetchProfileOrdersCount(): Promise<number> {
