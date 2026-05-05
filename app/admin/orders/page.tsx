@@ -7,7 +7,7 @@ import {
   ShoppingCart, Loader2, CheckCircle2, XCircle,
   ImageIcon, User, RefreshCw, FileText, Clock, BadgeCheck,
   Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy, MessageCircle, FileUp, ChevronDown,
-  Send, ScrollText,
+  Send, ScrollText, Unlink,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { unlinkOrderLineUserId } from "@/app/actions/admin-order-actions";
 import { OrderFilters } from "@/components/admin/orders/OrderFilters";
 import { OrderListTable } from "@/components/admin/orders/OrderListTable";
 import { OrderDetailModal } from "@/components/admin/orders/OrderDetailModal";
@@ -799,6 +809,8 @@ export default function AdminOrdersPage() {
   const [linkLinePaste, setLinkLinePaste] = useState("");
   const [recentLineUsers, setRecentLineUsers] = useState<LineRecentUserRow[]>([]);
   const [linkLineSaving, setLinkLineSaving] = useState(false);
+  const [unlinkLineConfirmOpen, setUnlinkLineConfirmOpen] = useState(false);
+  const [unlinkLineSaving, setUnlinkLineSaving] = useState(false);
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
   const [storeSettings, setStoreSettings] = useState<{ storeName: string; contactEmail: string | null; supportPhone: string | null; address: string | null } | null>(null);
   const adminClaimFileRef = useRef<HTMLInputElement>(null);
@@ -1226,6 +1238,26 @@ export default function AdminOrdersPage() {
       setLinkLineSaving(false);
     }
   }, [detailModal, linkLinePaste, pushToast, refetch]);
+
+  const confirmUnlinkOrderLine = useCallback(async () => {
+    if (!detailModal?.id) return;
+    setUnlinkLineSaving(true);
+    try {
+      const result = await unlinkOrderLineUserId(detailModal.id);
+      if (!result.ok) {
+        pushToast(result.error, "error");
+        return;
+      }
+      setDetailModal((prev) => (prev ? { ...prev, lineUserId: null } : null));
+      setUnlinkLineConfirmOpen(false);
+      pushToast("ยกเลิกการเชื่อม LINE แล้ว", "success");
+      await refetch();
+    } catch (e) {
+      pushToast(String(e), "error");
+    } finally {
+      setUnlinkLineSaving(false);
+    }
+  }, [detailModal, pushToast, refetch]);
 
   useEffect(() => {
     if (openedOrderFromQuery.current) return;
@@ -1730,10 +1762,22 @@ export default function AdminOrdersPage() {
                 <h4 className="mb-2 text-sm font-semibold text-zinc-700">LINE Account Linking</h4>
                 <div className="space-y-2 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3 text-sm">
                   {detailModal.lineUserId ? (
-                    <p className="break-all font-mono text-xs text-zinc-800">
-                      <span className="font-sans text-zinc-500">เชื่อมแล้ว: </span>
-                      {detailModal.lineUserId}
-                    </p>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <p className="min-w-0 flex-1 break-all font-mono text-xs text-zinc-800">
+                        <span className="font-sans text-zinc-500">เชื่อมแล้ว: </span>
+                        {detailModal.lineUserId}
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => setUnlinkLineConfirmOpen(true)}
+                      >
+                        <Unlink className="mr-1.5 h-4 w-4" />
+                        Unlink
+                      </Button>
+                    </div>
                   ) : (
                     <>
                       <p className="text-xs text-zinc-600">ยังไม่มี LINE ผูกกับออเดอร์นี้</p>
@@ -2012,6 +2056,33 @@ export default function AdminOrdersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={unlinkLineConfirmOpen} onOpenChange={setUnlinkLineConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยกเลิกการเชื่อม LINE?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ลูกค้าจะไม่ได้รับข้อความ LINE จากออเดอร์นี้จนกว่าจะผูกบัญชีใหม่
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unlinkLineSaving}>ยกเลิก</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={unlinkLineSaving}
+              onClick={() => void confirmUnlinkOrderLine()}
+            >
+              {unlinkLineSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Unlink className="mr-2 h-4 w-4" />
+              )}
+              Unlink LINE
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── Slip Lightbox ── */}
       <Dialog open={!!slipModalUrl} onOpenChange={(o) => !o && setSlipModalUrl(null)}>
