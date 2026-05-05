@@ -68,7 +68,7 @@ async function fetchPromptPayResolved(
     const payload = typeof o.payload === "string" && o.payload.length > 0 ? o.payload : null;
     const amountBaht = typeof o.amountBaht === "number" && Number.isFinite(o.amountBaht) ? o.amountBaht : null;
     if (!payload && res.ok && (o.payload === undefined || o.payload === null))
-      console.warn(`${tag} GET ok but empty payload — set payment_settings.prompt_pay or PROMPTPAY_MERCHANT_ID on Vercel`, {
+      console.warn(`${tag} GET ok but empty payload — check merchant ID in payment settings or env`, {
         amountBaht,
         orderNumber: resolution.orderNumber,
       });
@@ -116,9 +116,9 @@ async function fetchPromptPayResolved(
   const payload = typeof o.payload === "string" && o.payload.length > 0 ? o.payload : null;
   const amountBaht = typeof o.amountBaht === "number" && Number.isFinite(o.amountBaht) ? o.amountBaht : null;
   if (!payload && (o.payload === undefined || o.payload === null || o.payload === ""))
-    console.warn(`${tag} POST ok but empty payload — set payment_settings.prompt_pay or PROMPTPAY_MERCHANT_ID on Vercel`, {
-      amountBaht,
-    });
+      console.warn(`${tag} POST ok but empty payload — check merchant ID in payment settings or env`, {
+        amountBaht,
+      });
   return { payload, amountBaht };
 }
 
@@ -234,8 +234,8 @@ export function DynamicPromptPayQr({
       <CardShell t={t}>
         <p className="rounded-lg bg-zinc-100 px-3 py-2 text-center text-sm text-zinc-600">
           {t(
-            "ชำระผ่าน PromptPay ชั่วคราวไม่พร้อม — ใช้บัญชีธนาคารหรือ QR ด้านล่างได้",
-            "PromptPay QR is unavailable — use the bank account or QR below.",
+            "พร้อมเพย์ไม่พร้อมให้บริการในขณะนี้ — กรุณาใช้ข้อมูลโอนเงินผ่านธนาคารด้านล่าง",
+            "PromptPay is not available — please use the bank transfer details below.",
           )}
         </p>
       </CardShell>

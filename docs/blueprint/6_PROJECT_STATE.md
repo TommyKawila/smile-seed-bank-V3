@@ -5,7 +5,8 @@
 ---
 
 ### บันทึกการทำงาน — 2026-05-04
-- **PromptPay V3.4 (จุดแก้ double subtotal):** `mergeLinesByVariantId` ใน `checkout-server-validate`; PromptPay POST ใช้ `serverResolvedTotalBaht` เท่านั้น; client `deferPromptPayFetch`; `money-thb` ชี้ว่าไม่บวก shipping ซ้อน.
+- **Checkout payment V3.6:** `PAYMENT_CONFIG.isPromptPayEnabled` + `BACKUP_BANK_DETAILS`; ปิด PromptPay → โอนธนาคารเป็น primary, `promptpay-payload` 503; `ManualBankBackupCard` มี `variant` primary/secondary
+- **PromptPay V3.4:** `mergeCheckoutDuplicateLines` + `collapsePaidCartItemsByVariant`; `grandTotalFromSummaryParts` (subtotal−discount+shipping, satang); `resolvedSummary.total` = canonical; POST `SUBTOTAL_CHECK`/`SHIPPING_CHECK`/`TOTAL_CHECK` ก่อน `buildPromptPayPayload`.
 - **Checkout / PromptPay V3.3 (precision + server totals):** `money-thb`; `validateStorefrontCheckoutTotals` รองรับ **`purpose: prompt_pay_preview`** (ยอด PromptPay จาก DB ถึง UI mismatch เล็กน้อยไม่ fail); สร้างออเดอร์ใช้ **`order_create`** เข้มเหมือนเดิม; `useCart` **`evaluateFreeGifts(..., \"TRANSFER\")`**; `promptpay-payload` POST + log `invalid_body`/`unauthorized`; `DynamicPromptPayQr` `credentials: same-origin` + `console.warn` สาเหตุ; `PaymentSection` → `promptPayCheckout`.
 - **Payment evidence `/payment/[orderNumber]`:** Server `page.tsx` โหลด `fetchCheckoutPaymentSettings` + `getOrderByNumber`; `PaymentPageClient` ใช้ `DynamicPromptPayQr` กับ `amountBaht` จาก `order.total_amount` + บัญชีเสริมจาก `bank_accounts` (ไม่ซ้ำ K-Bank หลัก); slip upload + LINE CTA (`lineId` จาก server) คงเดิม.
 - **Checkout PromptPay (dynamic QR, privacy):** `lib/payment-utils.ts` `buildPromptPayPayload`; `promptpay-payload` อ่าน merchant จาก DB / `PROMPTPAY_MERCHANT_ID`; `DynamicPromptPayQr` + `qrcode.react` (`QRCodeCanvas` 280px); `PaymentSection` ส่ง snapshot ตะกร้าเข้า `POST`; หลักฐานการชำระใช้ `GET ?orderNumber=`.

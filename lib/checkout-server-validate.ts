@@ -7,6 +7,7 @@ import {
   bahtToSatangInt,
   quantizeBaht2,
   sameBahtSatang,
+  satangIntToBaht,
 } from "@/lib/money-thb";
 import type { CheckoutItem, CheckoutSummary } from "@/lib/services/order-service";
 
@@ -18,22 +19,52 @@ type LineIn = {
   productName: string;
 };
 
-/** Merge duplicate lines for the same variant (localStorage / race) so subtotal is not double-counted. */
-function mergeLinesByVariantId(rows: LineIn[]): LineIn[] {
-  const m = new Map<number, LineIn>();
+/** Collapse duplicate API lines; never merge paid with gift (`variant+g`/`variant+p`). */
+function mergeCheckoutDuplicateLines(rows: LineIn[]): LineIn[] {
+  const m = new Map<string, LineIn>();
   for (const row of rows) {
-    const prev = m.get(row.variantId);
+    const bucket = row.isFreeGift === true ? "gift" : "paid";
+    const key = `${row.variantId}:${bucket}`;
+    const prev = m.get(key);
     if (!prev) {
-      m.set(row.variantId, { ...row });
+      m.set(key, { ...row });
       continue;
     }
-    m.set(row.variantId, {
+    m.set(key, {
       ...prev,
       quantity: prev.quantity + row.quantity,
       productName: prev.productName || row.productName,
     });
   }
   return [...m.values()];
+}
+
+/** Last-line defense: one paid row per variant before any sum (mirrors client cart merge). */
+function collapsePaidCartItemsByVariant(items: CartItem[]): CartItem[] {
+  const m = new Map<number, CartItem>();
+  for (const i of items) {
+    if (i.isFreeGift) continue;
+    const prev = m.get(i.variantId);
+    if (!prev) {
+      m.set(i.variantId, { ...i });
+      continue;
+    }
+    m.set(i.variantId, {
+      ...prev,
+      quantity: prev.quantity + i.quantity,
+      productName: prev.productName || i.productName,
+    });
+  }
+  return [...m.values()];
+}
+
+/** Grand total = subtotal − discount + shipping (integer satang, then BAHT). */
+function grandTotalFromSummaryParts(summary: Pick<CheckoutSummary, "subtotal" | "discount" | "shipping">): number {
+  const satang =
+    bahtToSatangInt(summary.subtotal) -
+    bahtToSatangInt(summary.discount) +
+    bahtToSatangInt(summary.shipping);
+  return quantizeBaht2(satangIntToBaht(satang));
 }
 
 function sortGiftTuples(rows: { variantId: number; quantity: number }[]): string {
@@ -79,9 +110,14 @@ export async function validateStorefrontCheckoutTotals(input: {
   | { ok: true; resolvedItems: CheckoutItem[]; resolvedSummary: CheckoutSummary }
   | { ok: false; error: string }
 > {
-  const { items: lines, summary: clientSummary, promo_code_id, purpose = "order_create" } = input;
+  const { items: rawLines, summary: clientSummary, promo_code_id, purpose = "order_create" } = input;
 
-  const variantIds = [...new Set(lines.map((l) => l.variantId))].map((id) => BigInt(id));
+  const mergedLines = mergeCheckoutDuplicateLines(rawLines);
+  console.warn(
+    `[checkout-server-validate] DEBUG: Raw items count: ${rawLines.length}, Merged items count: ${mergedLines.length}`,
+  );
+
+  const variantIds = [...new Set(mergedLines.map((l) => l.variantId))].map((id) => BigInt(id));
 
   const [
     variants,
@@ -111,7 +147,7 @@ export async function validateStorefrontCheckoutTotals(input: {
     vmap.set(Number(v.id), v);
   }
 
-  for (const line of lines) {
+  for (const line of mergedLines) {
     if (!vmap.has(line.variantId)) {
       return { ok: false, error: "สินค้าบางรายการไม่พร้อมจำหน่าย" };
     }
@@ -121,10 +157,10 @@ export async function validateStorefrontCheckoutTotals(input: {
     return { ok: false, error: "โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุ" };
   }
 
-  const paidLines = mergeLinesByVariantId(lines.filter((l) => l.isFreeGift !== true));
-  const giftLines = mergeLinesByVariantId(lines.filter((l) => l.isFreeGift === true));
+  const paidLines = mergedLines.filter((l) => l.isFreeGift !== true);
+  const giftLines = mergedLines.filter((l) => l.isFreeGift === true);
 
-  const paidCartItems: CartItem[] = paidLines.map((line) => {
+  const paidCartItemsDraft: CartItem[] = paidLines.map((line) => {
     const v = vmap.get(line.variantId)!;
     const unit = Number(v.price);
     return {
@@ -138,6 +174,13 @@ export async function validateStorefrontCheckoutTotals(input: {
       isFreeGift: false,
     };
   });
+
+  const paidCartItems = collapsePaidCartItemsByVariant(paidCartItemsDraft);
+  if (paidCartItemsDraft.length !== paidCartItems.length) {
+    console.warn(
+      `[checkout-server-validate] Collapsed duplicate paid cart rows: ${paidCartItemsDraft.length} → ${paidCartItems.length}`,
+    );
+  }
 
   const paidSubtotal = paidCartItems.reduce((s, i) => s + i.price * i.quantity, 0);
 
@@ -213,7 +256,7 @@ export async function validateStorefrontCheckoutTotals(input: {
     }),
   ];
 
-  const serverSummary = calculateCartSummary(
+  const serverSummaryRaw = calculateCartSummary(
     fullCart,
     tiers,
     shippingRules,
@@ -222,6 +265,31 @@ export async function validateStorefrontCheckoutTotals(input: {
     tiered,
     promoInfo
   );
+
+  const canonicalGrand = grandTotalFromSummaryParts(serverSummaryRaw);
+  if (!sameBahtSatang(canonicalGrand, serverSummaryRaw.total)) {
+    console.warn("[checkout-server-validate] canonical grand ≠ calculateCartSummary.total (using canonical)", {
+      canonicalGrand,
+      cartUtilsTotal: serverSummaryRaw.total,
+      subtotal: serverSummaryRaw.subtotal,
+      discount: serverSummaryRaw.discount,
+      shipping: serverSummaryRaw.shipping,
+    });
+  }
+
+  if (!sameBahtSatang(paidSubtotal, serverSummaryRaw.subtotal)) {
+    console.warn("[checkout-server-validate] paidSubtotal≠summary.subtotal", {
+      paidSubtotal,
+      summarySubtotal: serverSummaryRaw.subtotal,
+    });
+  }
+
+  const serverSummary: CheckoutSummary = {
+    subtotal: serverSummaryRaw.subtotal,
+    discount: serverSummaryRaw.discount,
+    shipping: serverSummaryRaw.shipping,
+    total: canonicalGrand,
+  };
 
   const totalsMismatch =
     !sameBahtSatang(clientSummary.subtotal, serverSummary.subtotal) ||

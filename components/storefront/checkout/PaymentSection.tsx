@@ -4,9 +4,10 @@ import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { PaymentSetting } from "@/lib/storefront-payment-shared";
-import { isPrimaryKbankCheckoutAccount } from "@/lib/storefront-payment-shared";
+import { isPrimaryKbankCheckoutAccount, PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { DynamicPromptPayQr, type PromptPayCheckoutBody } from "@/components/storefront/checkout/DynamicPromptPayQr";
+import { ManualBankBackupCard } from "@/components/storefront/checkout/ManualBankBackupCard";
 
 export function PaymentSection({
   paymentSettings,
@@ -29,6 +30,8 @@ export function PaymentSection({
     (p) => !isPrimaryKbankCheckoutAccount(p.account_number),
   );
 
+  const promptPayOn = PAYMENT_CONFIG.isPromptPayEnabled;
+
   return (
     <Card className="rounded-sm border-zinc-200 shadow-sm">
       <CardContent className="space-y-3 p-5">
@@ -36,10 +39,15 @@ export function PaymentSection({
           {t("ชำระเงิน", "Payment")}
         </h2>
         <p className="text-xs text-zinc-500">
-          {t(
-            "สแกน QR พร้อมเพย์ด้านล่างตามยอดสุทธิด้านบน — มีบัญชีธนาคารเสริมด้านล่างหากต้องการโอนธรรมดา",
-            "Scan the PromptPay QR below for your net total. Optional bank transfers are listed underneath.",
-          )}
+          {promptPayOn
+            ? t(
+                "สแกน QR พร้อมเพย์ด้านล่างตามยอดสุทธิด้านบน — หรือโอนผ่านธนาคารตามรายละเอียดด้านล่าง",
+                "Scan the PromptPay QR below for your net total, or use bank transfer as shown.",
+              )
+            : t(
+                "โอนเงินตามยอดสุทธิด้านบนเข้าบัญชีด้านล่าง จากนั้นกดสั่งซื้อและอัปโหลดหลักฐานในขั้นตอนถัดไปเมื่อได้รับลิงก์",
+                "Transfer the net total below to the listed account. After placing your order, upload proof when prompted on the confirmation flow.",
+              )}
         </p>
 
         <div className="space-y-3 border-t border-zinc-100 pt-4">
@@ -49,23 +57,38 @@ export function PaymentSection({
 
           {paymentSettingsError && (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              {t(
-                "ไม่สามารถโหลดบัญชีธนาคารจากระบบได้ — พร้อมเพย์ด้านล่างยังใช้ได้",
-                "Could not load bank accounts from the server — PromptPay below still works.",
-              )}
+              {promptPayOn
+                ? t(
+                    "ไม่สามารถโหลดบัญชีเสริมจากระบบได้ — พร้อมเพย์และบัญชีหลักด้านล่างใช้งานได้",
+                    "Supplementary accounts could not be loaded — PromptPay and the primary transfer details below still apply.",
+                  )
+                : t(
+                    "ไม่สามารถโหลดบัญชีเสริมจากระบบได้ — ข้อมูลโอนหลักด้านล่างยังใช้ได้",
+                    "Supplementary accounts could not be loaded — the primary transfer instructions below remain valid.",
+                  )}
             </p>
           )}
 
-          <div className="flex w-full justify-center">
-            <div className="w-full max-w-md">
-              <DynamicPromptPayQr
-                amountBaht={grandTotalBaht}
-                resolution={{ mode: "checkout", checkout: promptPayCheckout }}
-                deferPromptPayFetch={deferPromptPayFetch}
-                t={t}
-              />
+          {!promptPayOn ? (
+            <ManualBankBackupCard amountBaht={grandTotalBaht} t={t} variant="primary" />
+          ) : null}
+
+          {promptPayOn ? (
+            <div className="flex w-full justify-center">
+              <div className="w-full max-w-md">
+                <DynamicPromptPayQr
+                  amountBaht={grandTotalBaht}
+                  resolution={{ mode: "checkout", checkout: promptPayCheckout }}
+                  deferPromptPayFetch={deferPromptPayFetch}
+                  t={t}
+                />
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          {promptPayOn ? (
+            <ManualBankBackupCard amountBaht={grandTotalBaht} t={t} variant="secondary" />
+          ) : null}
 
           {extraBanks.map((pm) => (
             <Card key={`bank-${pm.id}`} className="rounded-sm border-zinc-200 bg-white shadow-sm">

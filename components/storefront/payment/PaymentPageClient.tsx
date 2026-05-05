@@ -12,9 +12,10 @@ import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackin
 import { lineOaPrefillUrlForOrderSuccess } from "@/lib/line-oa-url";
 import { formatPrice } from "@/lib/utils";
 import type { PaymentSetting } from "@/lib/storefront-payment-shared";
-import { isPrimaryKbankCheckoutAccount } from "@/lib/storefront-payment-shared";
+import { isPrimaryKbankCheckoutAccount, PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { DynamicPromptPayQr } from "@/components/storefront/checkout/DynamicPromptPayQr";
+import { ManualBankBackupCard } from "@/components/storefront/checkout/ManualBankBackupCard";
 
 export type PaymentPageClientProps = {
   orderNumber: string;
@@ -119,6 +120,8 @@ export function PaymentPageClient({
     (p) => !isPrimaryKbankCheckoutAccount(p.account_number),
   );
 
+  const promptPayOn = PAYMENT_CONFIG.isPromptPayEnabled;
+
   return (
     <div className="min-h-screen bg-zinc-50 pt-20 pb-12">
       <div className="mx-auto max-w-md px-4">
@@ -159,19 +162,31 @@ export function PaymentPageClient({
 
             {paymentSettingsError && (
               <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                ไม่สามารถโหลดบัญชีธนาคารจากระบบได้ — พร้อมเพย์ด้านล่างยังใช้ได้
+                {promptPayOn
+                  ? "ไม่สามารถโหลดบัญชีเสริมจากระบบได้ — พร้อมเพย์และบัญชีหลักด้านล่างใช้งานได้"
+                  : "ไม่สามารถโหลดบัญชีเสริมจากระบบได้ — ข้อมูลโอนหลักด้านล่างยังใช้ได้"}
               </p>
             )}
 
-            <div className="flex w-full justify-center">
-              <div className="w-full max-w-md">
-                <DynamicPromptPayQr
-                  amountBaht={totalAmount}
-                  resolution={{ mode: "order", orderNumber }}
-                  t={tTh}
-                />
+            {!promptPayOn ? (
+              <ManualBankBackupCard amountBaht={totalAmount} t={tTh} variant="primary" />
+            ) : null}
+
+            {promptPayOn ? (
+              <div className="flex w-full justify-center">
+                <div className="w-full max-w-md">
+                  <DynamicPromptPayQr
+                    amountBaht={totalAmount}
+                    resolution={{ mode: "order", orderNumber }}
+                    t={tTh}
+                  />
+                </div>
               </div>
-            </div>
+            ) : null}
+
+            {promptPayOn ? (
+              <ManualBankBackupCard amountBaht={totalAmount} t={tTh} variant="secondary" />
+            ) : null}
 
             {extraBanks.map((pm) => (
               <div

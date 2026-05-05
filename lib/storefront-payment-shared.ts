@@ -17,6 +17,21 @@ export const STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO = "5002021619" as const;
 export const STOREFRONT_KBANK_TRANSFER_NAME_TH = "ธนาคารกสิกรไทย" as const;
 export const STOREFRONT_KBANK_TRANSFER_NAME_EN = "Kasikornbank" as const;
 
+/** Static K-Bank backup when PromptPay is unavailable or for manual transfer (V3.6). */
+export const BACKUP_BANK_DETAILS = {
+  bankNameTh: STOREFRONT_KBANK_TRANSFER_NAME_TH,
+  bankNameEn: STOREFRONT_KBANK_TRANSFER_NAME_EN,
+  accountNumberDisplay: "500-2-02161-9",
+  accountNumberDigits: STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO,
+  accountName: "Tommy Smile Seed",
+} as const;
+
+/** Toggle PromptPay QR vs bank transfer-first checkout (single config for client + API). */
+export const PAYMENT_CONFIG = {
+  /** When false: hide PromptPay UI and return 503 from `/api/storefront/promptpay-payload`. */
+  isPromptPayEnabled: false,
+} as const;
+
 function accountDigits(s: string | null | undefined): string {
   return String(s ?? "").replace(/\D/g, "");
 }

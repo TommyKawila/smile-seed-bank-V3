@@ -6,6 +6,18 @@ import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate
 import { buildPromptPayPayload } from "@/lib/payment-utils";
 import { quantizeBaht2, sameBahtSatang } from "@/lib/money-thb";
 import { getOrderByNumber } from "@/lib/services/order-service";
+import { PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
+
+function promptPayUnavailableResponse(): NextResponse {
+  return NextResponse.json(
+    {
+      error: "prompt_pay_unavailable",
+      message:
+        "PromptPay QR is not available. Please complete payment via bank transfer using the instructions in checkout.",
+    },
+    { status: 503 },
+  );
+}
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -74,6 +86,10 @@ async function merchantId(): Promise<string> {
  * PromptPay QR: amount is recomputed server-side — POST (cart) or GET (?orderNumber=).
  */
 export async function POST(req: NextRequest) {
+  if (!PAYMENT_CONFIG.isPromptPayEnabled) {
+    return promptPayUnavailableResponse();
+  }
+
   const envMasked = maskMerchantId(process.env.PROMPTPAY_MERCHANT_ID);
   let raw: unknown;
   try {
@@ -148,7 +164,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: priced.error }, { status: 400 });
     }
 
-    /** Sole EMV amount: DB-backed totals from validator — never add client summary or subtotal. */
+    /**
+     * EMV amount = `priced.resolvedSummary.total` only (grand total from `calculateCartSummary`:
+     * paid subtotal − discounts + shipping). Do NOT add body `summary.subtotal` or derive from `body.total`.
+     */
     const serverResolvedTotalBaht = quantizeBaht2(priced.resolvedSummary.total);
     const clientDeclaredTotalBaht = clientTotals.total;
     if (!sameBahtSatang(summary.total, priced.resolvedSummary.total)) {
@@ -180,6 +199,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ payload: null, amountBaht: serverResolvedTotalBaht }, { status: 200 });
     }
 
+    console.log("SUBTOTAL_CHECK:", priced.resolvedSummary.subtotal);
+    console.log("SHIPPING_CHECK:", priced.resolvedSummary.shipping);
+    console.log("TOTAL_CHECK:", priced.resolvedSummary.total);
+
     const payload = buildPromptPayPayload(mid, serverResolvedTotalBaht);
 
     if (!payload) {
@@ -208,6 +231,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  if (!PAYMENT_CONFIG.isPromptPayEnabled) {
+    return promptPayUnavailableResponse();
+  }
+
   const envMasked = maskMerchantId(process.env.PROMPTPAY_MERCHANT_ID);
 
   try {
