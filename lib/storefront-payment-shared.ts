@@ -1,7 +1,15 @@
 /**
  * Storefront payment types + K-Bank display constants (no DB / server drivers).
  * Safe to import from Client Components.
+ *
+ * Shipping for cart/checkout uses `calculateShipping` → `shippingFeeForSubtotal` in
+ * `lib/order-financials.ts` (defaults below when no DB rule matches `STOREFRONT_SHIPPING_CATEGORY`).
  */
+export {
+  QUOTATION_SHIPPING_COST as STOREFRONT_DEFAULT_SHIPPING_COST,
+  QUOTATION_SHIPPING_FREE_THRESHOLD as STOREFRONT_DEFAULT_FREE_SHIPPING_THRESHOLD,
+  shippingFeeForSubtotal,
+} from "@/lib/order-financials";
 
 export const STOREFRONT_KBANK_TRANSFER_QR_IMAGE = "/payments/kbank-static-qr.png" as const;
 

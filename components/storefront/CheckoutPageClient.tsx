@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -31,6 +31,7 @@ import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-produ
 import { CouponSection } from "@/components/storefront/checkout/CouponSection";
 import { OrderSummary } from "@/components/storefront/checkout/OrderSummary";
 import { PaymentSection } from "@/components/storefront/checkout/PaymentSection";
+import type { PromptPayCheckoutBody } from "@/components/storefront/checkout/DynamicPromptPayQr";
 import { ShippingSection } from "@/components/storefront/checkout/ShippingSection";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
@@ -136,6 +137,36 @@ export function CheckoutPageClient({
   const [loginPromoCode, setLoginPromoCode] = useState("");
   const [promoOauthLoading, setPromoOauthLoading] = useState<null | "google" | "line">(null);
   const [savedCoupons, setSavedCoupons] = useState<ApiSavedCoupon[]>([]);
+
+  const promptPayCheckout = useMemo<PromptPayCheckoutBody>(
+    () => ({
+      customerId: user?.id ?? null,
+      promoCodeId: user && summary.usePromoForOrder ? promo.code?.id ?? null : null,
+      items: items.map((i) => ({
+        variantId: i.variantId,
+        quantity: i.quantity,
+        price: i.price,
+        isFreeGift: i.isFreeGift ?? false,
+        productName: i.productName,
+      })),
+      summary: {
+        subtotal: summary.subtotal,
+        discount: summary.discount,
+        shipping: summary.shipping,
+        total: summary.total,
+      },
+    }),
+    [
+      items,
+      promo.code?.id,
+      summary.discount,
+      summary.shipping,
+      summary.subtotal,
+      summary.total,
+      summary.usePromoForOrder,
+      user?.id,
+    ],
+  );
 
   useEffect(() => {
     if (customer) {
@@ -633,6 +664,7 @@ export function CheckoutPageClient({
                 paymentSettings={paymentSettings}
                 paymentSettingsError={paymentSettingsError}
                 grandTotalBaht={summary.total}
+                promptPayCheckout={promptPayCheckout}
                 t={t}
                 serif={serif}
               />

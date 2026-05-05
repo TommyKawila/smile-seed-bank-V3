@@ -6,18 +6,20 @@ import { cn } from "@/lib/utils";
 import type { PaymentSetting } from "@/lib/storefront-payment-shared";
 import { isPrimaryKbankCheckoutAccount } from "@/lib/storefront-payment-shared";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
-import { DynamicPromptPayQr } from "@/components/storefront/checkout/DynamicPromptPayQr";
+import { DynamicPromptPayQr, type PromptPayCheckoutBody } from "@/components/storefront/checkout/DynamicPromptPayQr";
 
 export function PaymentSection({
   paymentSettings,
   paymentSettingsError,
   grandTotalBaht,
+  promptPayCheckout,
   t,
   serif,
 }: {
   paymentSettings: PaymentSetting[];
   paymentSettingsError: boolean;
   grandTotalBaht: number;
+  promptPayCheckout: PromptPayCheckoutBody;
   t: (th: string, en: string) => string;
   serif: string;
 }) {
@@ -54,7 +56,11 @@ export function PaymentSection({
 
           <div className="flex w-full justify-center">
             <div className="w-full max-w-md">
-              <DynamicPromptPayQr amountBaht={grandTotalBaht} t={t} />
+              <DynamicPromptPayQr
+                amountBaht={grandTotalBaht}
+                resolution={{ mode: "checkout", checkout: promptPayCheckout }}
+                t={t}
+              />
             </div>
           </div>
 

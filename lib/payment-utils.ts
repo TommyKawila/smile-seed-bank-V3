@@ -1,4 +1,5 @@
 import generatePayload from "promptpay-qr";
+import { quantizeBaht2 } from "@/lib/money-thb";
 
 /**
  * EMV PromptPay payload for a fixed amount (CRC checked by promptpay-qr).
@@ -13,7 +14,9 @@ export function buildPromptPayPayload(
     if (!id) return null;
     const n = Number(amountBaht);
     if (!Number.isFinite(n) || n <= 0) return null;
-    return generatePayload(id, { amount: n });
+    const amount = quantizeBaht2(n);
+    if (!Number.isFinite(amount) || amount <= 0) return null;
+    return generatePayload(id, { amount });
   } catch {
     return null;
   }

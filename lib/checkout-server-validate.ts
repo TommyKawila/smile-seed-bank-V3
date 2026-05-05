@@ -3,6 +3,11 @@ import { calculateCartSummary, evaluateFreeGifts, type TieredDiscountRule } from
 import { STOREFRONT_SHIPPING_CATEGORY } from "@/lib/storefront-shipping";
 import { getActiveTieredDiscountRules } from "@/lib/active-tiered-discount-rules";
 import type { CartItem, DiscountTier, Promotion, ShippingRule } from "@/types/supabase";
+import {
+  bahtToSatangInt,
+  quantizeBaht2,
+  sameBahtSatang,
+} from "@/lib/money-thb";
 import type { CheckoutItem, CheckoutSummary } from "@/lib/services/order-service";
 
 type LineIn = {
@@ -19,8 +24,27 @@ function sortGiftTuples(rows: { variantId: number; quantity: number }[]): string
   );
 }
 
-function near(a: number, b: number, eps = 0.02): boolean {
-  return Math.abs(a - b) <= eps;
+function checkoutTotalsMismatchLine(client: CheckoutSummary, server: CheckoutSummary): string {
+  const cs = client;
+  const ss = server;
+  const c = (label: string, a: number, b: number) =>
+    `${label} client ${quantizeBaht2(a)} vs server ${quantizeBaht2(b)} (${bahtToSatangInt(a) - bahtToSatangInt(b)} satang)`;
+  const parts: string[] = [];
+  if (!sameBahtSatang(cs.subtotal, ss.subtotal)) parts.push(c("Subtotal", cs.subtotal, ss.subtotal));
+  if (!sameBahtSatang(cs.discount, ss.discount)) parts.push(c("Discount", cs.discount, ss.discount));
+  if (!sameBahtSatang(cs.shipping, ss.shipping))
+    parts.push(c("ShippingFee", cs.shipping, ss.shipping) + " — free-ship threshold vs subtotal-after-discount?");
+  if (!sameBahtSatang(cs.total, ss.total)) parts.push(c("GrandTotal", cs.total, ss.total));
+  return parts.length ? parts.join(" | ") : "unknown field";
+}
+
+function snapSummary(summary: CheckoutSummary): CheckoutSummary {
+  return {
+    subtotal: quantizeBaht2(summary.subtotal),
+    discount: quantizeBaht2(summary.discount),
+    shipping: quantizeBaht2(summary.shipping),
+    total: quantizeBaht2(summary.total),
+  };
 }
 
 /**
@@ -99,7 +123,7 @@ export async function validateStorefrontCheckoutTotals(input: {
 
   if (promoRow) {
     const minSpend = promoRow.min_spend != null ? Number(promoRow.min_spend) : 0;
-    if (minSpend > 0 && paidSubtotal + 1e-9 < minSpend) {
+    if (minSpend > 0 && bahtToSatangInt(paidSubtotal) < bahtToSatangInt(minSpend)) {
       return { ok: false, error: "ยอดสั่งซื้อไม่ถึงขั้นต่ำสำหรับโค้ดนี้" };
     }
   }
@@ -180,20 +204,38 @@ export async function validateStorefrontCheckoutTotals(input: {
   );
 
   if (
-    !near(clientSummary.subtotal, serverSummary.subtotal) ||
-    !near(clientSummary.discount, serverSummary.discount) ||
-    !near(clientSummary.shipping, serverSummary.shipping) ||
-    !near(clientSummary.total, serverSummary.total)
+    !sameBahtSatang(clientSummary.subtotal, serverSummary.subtotal) ||
+    !sameBahtSatang(clientSummary.discount, serverSummary.discount) ||
+    !sameBahtSatang(clientSummary.shipping, serverSummary.shipping) ||
+    !sameBahtSatang(clientSummary.total, serverSummary.total)
   ) {
-    console.warn("[checkout-server-validate] totals mismatch", {
-      client: clientSummary,
-      server: {
-        subtotal: serverSummary.subtotal,
-        discount: serverSummary.discount,
-        shipping: serverSummary.shipping,
-        total: serverSummary.total,
+    const cs = clientSummary;
+    const ss = serverSummary;
+    const detail = checkoutTotalsMismatchLine(cs, ss);
+    console.warn(
+      `[checkout-server-validate] Amount mismatch — ${detail}`,
+      {
+        narrative: `${detail}`,
+        diffSatang: {
+          subtotal: bahtToSatangInt(cs.subtotal) - bahtToSatangInt(ss.subtotal),
+          discount: bahtToSatangInt(cs.discount) - bahtToSatangInt(ss.discount),
+          shipping: bahtToSatangInt(cs.shipping) - bahtToSatangInt(ss.shipping),
+          total: bahtToSatangInt(cs.total) - bahtToSatangInt(ss.total),
+        },
+        clientSatang: {
+          subtotal: bahtToSatangInt(cs.subtotal),
+          discount: bahtToSatangInt(cs.discount),
+          shipping: bahtToSatangInt(cs.shipping),
+          total: bahtToSatangInt(cs.total),
+        },
+        serverSatang: {
+          subtotal: bahtToSatangInt(ss.subtotal),
+          discount: bahtToSatangInt(ss.discount),
+          shipping: bahtToSatangInt(ss.shipping),
+          total: bahtToSatangInt(ss.total),
+        },
       },
-    });
+    );
     return { ok: false, error: "ยอดเงินไม่ตรงกับระบบ กรุณารีเฟรชหน้าแล้วลองใหม่" };
   }
 
@@ -212,11 +254,6 @@ export async function validateStorefrontCheckoutTotals(input: {
   return {
     ok: true,
     resolvedItems,
-    resolvedSummary: {
-      subtotal: serverSummary.subtotal,
-      discount: serverSummary.discount,
-      shipping: serverSummary.shipping,
-      total: serverSummary.total,
-    },
+    resolvedSummary: snapSummary(serverSummary),
   };
 }

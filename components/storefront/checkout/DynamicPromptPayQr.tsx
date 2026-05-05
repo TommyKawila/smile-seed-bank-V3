@@ -1,58 +1,138 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 import { PROMPTPAY_CHECKOUT_DISPLAY_NAME } from "@/lib/payment-utils";
+import { quantizeBaht2 } from "@/lib/money-thb";
 
 const QR_SIZE = 280;
+const AMOUNT_DEBOUNCE_MS = 320;
 
-async function fetchPromptPayPayload(amountBaht: number): Promise<string | null> {
-  const res = await fetch(
-    `/api/storefront/promptpay-payload?amount=${encodeURIComponent(String(amountBaht))}`,
-    { cache: "no-store" },
-  );
-  if (!res.ok) return null;
-  const data = (await res.json()) as { payload?: string | null };
-  return typeof data.payload === "string" && data.payload.length > 0 ? data.payload : null;
+export type PromptPayCheckoutBody = {
+  customerId: string | null;
+  promoCodeId: number | null;
+  items: Array<{
+    variantId: number;
+    quantity: number;
+    price: number;
+    isFreeGift?: boolean;
+    productName: string;
+  }>;
+  summary: {
+    subtotal: number;
+    discount: number;
+    shipping: number;
+    total: number;
+  };
+};
+
+export type PromptPayResolution =
+  | { mode: "checkout"; checkout: PromptPayCheckoutBody }
+  | { mode: "order"; orderNumber: string };
+
+async function fetchPromptPayResolved(
+  resolution: PromptPayResolution,
+): Promise<{ payload: string | null; amountBaht: number | null }> {
+  if (resolution.mode === "order") {
+    const res = await fetch(
+      `/api/storefront/promptpay-payload?orderNumber=${encodeURIComponent(resolution.orderNumber)}`,
+      { cache: "no-store" },
+    );
+    if (!res.ok) return { payload: null, amountBaht: null };
+    const data = (await res.json()) as { payload?: string | null; amountBaht?: number | null };
+    const payload = typeof data.payload === "string" && data.payload.length > 0 ? data.payload : null;
+    const amountBaht = typeof data.amountBaht === "number" && Number.isFinite(data.amountBaht) ? data.amountBaht : null;
+    return { payload, amountBaht };
+  }
+
+  const { checkout } = resolution;
+  const res = await fetch("/api/storefront/promptpay-payload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      customer_id: checkout.customerId,
+      promo_code_id: checkout.promoCodeId,
+      items: checkout.items,
+      summary: checkout.summary,
+    }),
+    cache: "no-store",
+  });
+  if (!res.ok) return { payload: null, amountBaht: null };
+  const data = (await res.json()) as { payload?: string | null; amountBaht?: number | null };
+  const payload = typeof data.payload === "string" && data.payload.length > 0 ? data.payload : null;
+  const amountBaht = typeof data.amountBaht === "number" && Number.isFinite(data.amountBaht) ? data.amountBaht : null;
+  return { payload, amountBaht };
 }
 
 export function DynamicPromptPayQr({
   amountBaht,
+  resolution,
   t,
 }: {
   amountBaht: number;
+  resolution: PromptPayResolution;
   t: (th: string, en: string) => string;
 }) {
   const [payload, setPayload] = useState<string | null>(null);
+  const [serverAmountBaht, setServerAmountBaht] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const displayBaht = useMemo(() => {
+    const fromApi = serverAmountBaht != null ? quantizeBaht2(serverAmountBaht) : null;
+    if (fromApi != null && fromApi > 0) return fromApi;
+    return Number.isFinite(amountBaht) ? quantizeBaht2(amountBaht) : 0;
+  }, [amountBaht, serverAmountBaht]);
+
+  const requestKey =
+    resolution.mode === "checkout"
+      ? JSON.stringify(resolution.checkout)
+      : `order:${resolution.orderNumber}`;
+
   useEffect(() => {
-    if (!Number.isFinite(amountBaht) || amountBaht <= 0) {
+    if (resolution.mode === "checkout" && resolution.checkout.items.length === 0) {
       setPayload(null);
+      setServerAmountBaht(null);
       setLoading(false);
       return;
     }
+
+    if (resolution.mode === "order" && !resolution.orderNumber.trim()) {
+      setPayload(null);
+      setServerAmountBaht(null);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
-    void fetchPromptPayPayload(amountBaht)
-      .then((p) => {
-        if (!cancelled) setPayload(p);
-      })
-      .catch(() => {
-        if (!cancelled) setPayload(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    const tid = window.setTimeout(() => {
+      void fetchPromptPayResolved(resolution)
+        .then(({ payload: p, amountBaht: ab }) => {
+          if (!cancelled) {
+            setPayload(p);
+            setServerAmountBaht(ab);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setPayload(null);
+            setServerAmountBaht(null);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, AMOUNT_DEBOUNCE_MS);
     return () => {
       cancelled = true;
+      window.clearTimeout(tid);
     };
-  }, [amountBaht]);
+  }, [requestKey]);
 
   const downloadPng = useCallback(() => {
     const canvas = canvasRef.current;
@@ -60,10 +140,10 @@ export function DynamicPromptPayQr({
     const url = canvas.toDataURL("image/png");
     const a = document.createElement("a");
     a.href = url;
-    a.download = `smile-promptpay-${Math.round(amountBaht * 100) / 100}.png`;
+    a.download = `smile-promptpay-${displayBaht}.png`;
     a.rel = "noopener";
     a.click();
-  }, [amountBaht, payload]);
+  }, [displayBaht, payload]);
 
   if (!Number.isFinite(amountBaht) || amountBaht <= 0) {
     return null;
@@ -104,7 +184,7 @@ export function DynamicPromptPayQr({
         <div className="flex justify-between gap-2 border-b border-zinc-100 pb-2">
           <span className="text-zinc-500">{t("ยอดที่ต้องชำระ", "Amount to pay")}</span>
           <span className="font-mono font-semibold tabular-nums text-zinc-900">
-            {formatPrice(amountBaht)}
+            {formatPrice(displayBaht)}
           </span>
         </div>
         <div className="flex justify-between gap-2">

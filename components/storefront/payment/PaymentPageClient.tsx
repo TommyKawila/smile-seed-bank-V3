@@ -165,7 +165,11 @@ export function PaymentPageClient({
 
             <div className="flex w-full justify-center">
               <div className="w-full max-w-md">
-                <DynamicPromptPayQr amountBaht={totalAmount} t={tTh} />
+                <DynamicPromptPayQr
+                  amountBaht={totalAmount}
+                  resolution={{ mode: "order", orderNumber }}
+                  t={tTh}
+                />
               </div>
             </div>
 
