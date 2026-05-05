@@ -34,10 +34,14 @@ export default async function ShopPage({
   params?: { breederSlug?: string | string[] };
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
-  const breederId = await resolveBreederIdFromSlug(firstParam(params?.breederSlug));
+  const breederSlug = firstParam(params?.breederSlug);
+  const breederId = await resolveBreederIdFromSlug(breederSlug);
+  const category = firstParam(searchParams?.category)?.trim() || "";
+  const search = firstParam(searchParams?.q)?.trim() || "";
   const initialProducts = await getStorefrontProducts({
-    category: firstParam(searchParams?.category)?.trim() || undefined,
+    category: category || undefined,
     breeder_id: breederId,
+    search: search || undefined,
     includeVariants: true,
     limit: SHOP_INITIAL_PRODUCTS,
   }).catch(() => []);

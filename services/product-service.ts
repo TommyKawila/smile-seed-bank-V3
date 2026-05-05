@@ -20,6 +20,7 @@ import {
 import { parseListParam, productMatchesSeedsPackFilter } from "@/lib/shop-attribute-filters";
 import { resolveBreederFromShopParam } from "@/lib/breeder-slug";
 import { stripEmbeddedColorMarkup } from "@/lib/sanitize-product-text";
+import { buildProductCatalogSearchOrFilter } from "@/lib/product-catalog-search";
 import type {
   Product,
   ProductVariant,
@@ -56,10 +57,6 @@ type RawMixedBreederProductRow = Record<string, unknown> & {
   product_variants: unknown;
   product_images: unknown;
 };
-
-function postgrestSearchTerm(value: string): string {
-  return `%${value.trim().replace(/[,%()]/g, " ").replace(/\s+/g, " ")}%`;
-}
 
 function parseNumericProductIdParam(s: string): number | null {
   const t = s.trim();
@@ -443,12 +440,8 @@ export async function getActiveProducts(opts?: {
 
     if (opts?.category) query = query.eq("category", opts.category);
     const search = opts?.search?.trim();
-    if (search) {
-      const term = postgrestSearchTerm(search);
-      query = query.or(
-        `name.ilike.${term},category.ilike.${term},description_th.ilike.${term},description_en.ilike.${term}`
-      );
-    }
+    const catalogOr = search ? buildProductCatalogSearchOrFilter(search) : null;
+    if (catalogOr) query = query.or(catalogOr);
     if (opts?.minPrice != null && Number.isFinite(opts.minPrice)) {
       query = query.gte("price", opts.minPrice);
     }

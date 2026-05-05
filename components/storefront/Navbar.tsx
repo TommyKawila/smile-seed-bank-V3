@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Menu, X, Leaf, Search, User, LogOut, Package } from "lucide-react";
+import { ShoppingCart, Menu, X, Leaf, User, LogOut, Package } from "lucide-react";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
 import { BreederSeedsNav } from "@/components/storefront/BreederDropdownMenu";
-import { NavbarSearchPanel } from "@/components/storefront/NavbarSearchPanel";
+import { SearchCommand } from "@/components/header/search-command";
 
 export function Navbar() {
   const router = useRouter();
@@ -170,15 +170,7 @@ export function Navbar() {
               </span>
             </button>
 
-            {/* Search */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              className={`relative flex h-10 w-10 items-center justify-center ${iconBtnClass}`}
-              aria-label={t("ค้นหา", "Search")}
-            >
-              <Search className="h-5 w-5 text-zinc-800" />
-            </button>
-
+            <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} triggerClassName={iconBtnClass} />
             {/* User — Avatar dropdown or Login link */}
             <div className="relative" ref={userMenuRef}>
               {user ? (
@@ -367,7 +359,6 @@ export function Navbar() {
       {/* CartSheet */}
       <CartSheet open={isOpen} onClose={closeCart} />
 
-      <NavbarSearchPanel open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );
 }

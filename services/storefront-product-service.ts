@@ -7,6 +7,7 @@ import {
   type ProductWithBreeder,
 } from "@/lib/supabase/types";
 import { FLOWERING_DB_PHOTO_3N, FLOWERING_DB_PHOTO_PLAIN } from "@/lib/constants";
+import { buildProductCatalogSearchOrFilter } from "@/lib/product-catalog-search";
 import { ProductSchema, type ProductFormData } from "@/lib/validations/product";
 import type { ProductFull } from "@/types/supabase";
 import { getVariantFinalPrice, normalizeDiscountPercent } from "@/lib/product-utils";
@@ -19,6 +20,8 @@ export type StrainDominance = "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50"
 
 export interface ProductQueryOptions {
   category?: string;
+  /** Case-insensitive catalog search (matches name, category, description TH/EN). */
+  search?: string;
   breeder_id?: number;
   categoryId?: string | number;
   categoryFilterMode?: CategoryFilterMode;
@@ -42,6 +45,7 @@ export async function getStorefrontProducts(
 export async function fetchProductsForCatalog(opts: ProductQueryOptions): Promise<ProductListItem[]> {
   const {
     category,
+    search,
     breeder_id,
     categoryId,
     categoryFilterMode,
@@ -72,6 +76,8 @@ export async function fetchProductsForCatalog(opts: ProductQueryOptions): Promis
   if (!includeInactive) query = query.eq("is_active", true);
   if (featuredOnly) query = query.eq("is_featured", true);
   if (category) query = query.eq("category", category);
+  const catalogSearchOr = search?.trim() ? buildProductCatalogSearchOrFilter(search.trim()) : null;
+  if (catalogSearchOr) query = query.or(catalogSearchOr);
   if (breeder_id != null) query = query.eq("breeder_id", breeder_id);
   if (categoryId != null && categoryId !== "") {
     const cid = String(categoryId);

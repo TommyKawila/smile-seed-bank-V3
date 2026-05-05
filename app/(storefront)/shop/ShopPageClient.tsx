@@ -213,21 +213,39 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
   const [loadingMore, setLoadingMore] = useState(false);
   const gridTopRef = useRef<HTMLDivElement | null>(null);
   const didMountScrollRef = useRef(false);
+  const isInitialRender = useRef(true);
   useEffect(() => {
-    if (initialProducts.length > 0) return;
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      if (initialProducts.length > 0) return;
+    } else {
+      console.log("[ShopPageClient] catalog refetch", {
+        q: qParam,
+        category: categoryParam,
+        breeder: breederParam,
+      });
+    }
     let cancelled = false;
+    const spin = initialProducts.length === 0;
+    if (spin) setIsLoading(true);
     (async () => {
-      setIsLoading(true);
       try {
-      const sp = new URLSearchParams({ limit: "30", includeVariants: "true" });
-      if (categoryParam.trim()) sp.set("category", categoryParam.trim());
-      const res = await fetchWithTimeout(`/api/products?${sp.toString()}`, { cache: "no-store" }, 2000);
+        const sp = new URLSearchParams({
+          limit: String(SHOP_PAGE_INITIAL),
+          includeVariants: "true",
+        });
+        if (categoryParam.trim()) sp.set("category", categoryParam.trim());
+        if (breederParam?.trim()) sp.set("breeder", breederParam.trim());
+        const qTrim = qParam.trim();
+        if (qTrim) sp.set("q", qTrim);
+        const res = await fetchWithTimeout(`/api/products?${sp.toString()}`, { cache: "no-store" }, 4000);
         const json = (await res.json()) as { products?: ProductListItem[]; hasMore?: boolean };
         if (cancelled || !res.ok) return;
         setProducts(Array.isArray(json.products) ? json.products : []);
+        setLoadedPage(1);
         setHasMoreServerProducts(Boolean(json.hasMore));
       } catch {
-        if (!cancelled) setHasMoreServerProducts(false);
+        if (!cancelled && initialProducts.length === 0) setHasMoreServerProducts(false);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -235,7 +253,7 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     return () => {
       cancelled = true;
     };
-  }, [categoryParam, initialProducts.length]);
+  }, [pathname, breederParam, categoryParam, qParam, initialProducts.length]);
 
   const priceCap = useMemo(
     () => (products.length > 0 ? computePriceSliderCap(products) : 5000),
@@ -312,14 +330,17 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
 
   const matchingBreederIds = useMemo(() => new Set(matchingBreeders.map((b) => b.id)), [matchingBreeders]);
 
-  /** Instant search: product name + breeder name (+ products under breeders matched in profile text) */
+  /** Instant search: name, descriptions (TH/EN), breeder name, breeders matched in profile text */
   const searchFilteredProducts = useMemo(() => {
     if (!qNorm) return products;
+    const d = (s: string | null | undefined) => (s ?? "").toLowerCase();
     return products.filter((p) => {
       const nameMatch = p.name.toLowerCase().includes(qNorm);
+      const descMatch =
+        d(p.description_th).includes(qNorm) || d(p.description_en).includes(qNorm);
       const breederNameMatch = p.breeders?.name?.toLowerCase().includes(qNorm) ?? false;
       const breederIdMatch = p.breeder_id != null && matchingBreederIds.has(p.breeder_id);
-      return nameMatch || breederNameMatch || breederIdMatch;
+      return nameMatch || descMatch || breederNameMatch || breederIdMatch;
     });
   }, [products, qNorm, matchingBreederIds]);
 
@@ -901,7 +922,22 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
                 <div className="flex flex-col items-center justify-center gap-3 px-4 py-20 text-center">
                   <PackageX className="h-12 w-12 text-zinc-600" />
                   <p className="text-base font-medium text-zinc-600">
-                    {t("ไม่พบสินค้าที่ตรงกับการค้นหา", "No results found")}
+                    {(() => {
+                      const qDisplay = qParam.trim();
+                      if (qDisplay && urlBreeder) {
+                        return t(
+                          `ไม่พบผลลัพธ์สำหรับ "${qDisplay}" ในค่าย ${urlBreeder.name}`,
+                          `No results for '${qDisplay}' in ${urlBreeder.name}`
+                        );
+                      }
+                      if (qDisplay) {
+                        return t(
+                          `ไม่พบผลลัพธ์สำหรับ "${qDisplay}"`,
+                          `No results for '${qDisplay}'`
+                        );
+                      }
+                      return t("ไม่พบสินค้าที่ตรงกับการค้นหา", "No matching products");
+                    })()}
                   </p>
                   <Button variant="outline" size="sm" onClick={clearFilters}>
                     {t("ล้างตัวกรอง", "Clear filters")}
