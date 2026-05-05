@@ -191,7 +191,7 @@ export function useCart(): UseCartReturn {
     if (promotions.length === 0) return;
 
     const nonGiftItems = items.filter((i) => !i.isFreeGift);
-    const triggeredGifts = evaluateFreeGifts(nonGiftItems, promotions);
+    const triggeredGifts = evaluateFreeGifts(nonGiftItems, promotions, "TRANSFER");
 
     // Remove old free gifts, then add newly triggered ones
     const existingGiftIds = new Set(

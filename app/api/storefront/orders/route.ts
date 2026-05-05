@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         variantId: i.variantId,
         quantity: i.quantity,
         price: i.price,
-        isFreeGift: i.isFreeGift,
+        isFreeGift: i.isFreeGift === true,
         productName: i.productName,
       })),
       summary,

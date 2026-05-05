@@ -37,15 +37,41 @@ export type PromptPayResolution =
 async function fetchPromptPayResolved(
   resolution: PromptPayResolution,
 ): Promise<{ payload: string | null; amountBaht: number | null }> {
+  const tag = "[DynamicPromptPayQr] PromptPay API";
+
   if (resolution.mode === "order") {
-    const res = await fetch(
-      `/api/storefront/promptpay-payload?orderNumber=${encodeURIComponent(resolution.orderNumber)}`,
-      { cache: "no-store" },
-    );
-    if (!res.ok) return { payload: null, amountBaht: null };
-    const data = (await res.json()) as { payload?: string | null; amountBaht?: number | null };
-    const payload = typeof data.payload === "string" && data.payload.length > 0 ? data.payload : null;
-    const amountBaht = typeof data.amountBaht === "number" && Number.isFinite(data.amountBaht) ? data.amountBaht : null;
+    const url = `/api/storefront/promptpay-payload?orderNumber=${encodeURIComponent(resolution.orderNumber)}`;
+    const res = await fetch(url, { cache: "no-store", credentials: "same-origin" });
+    let data: unknown = {};
+    try {
+      data = await res.json();
+    } catch {
+      console.error(`${tag} GET invalid JSON`, { status: res.status, orderNumber: resolution.orderNumber });
+      return { payload: null, amountBaht: null };
+    }
+    const o = data as { payload?: string | null; amountBaht?: number | null; error?: unknown };
+    if (!res.ok) {
+      const bodySnippet = (() => {
+        try {
+          return JSON.stringify(o).slice(0, 900);
+        } catch {
+          return String(o.error ?? "");
+        }
+      })();
+      console.error(`${tag} GET failed`, {
+        status: res.status,
+        url,
+        responseBody: bodySnippet,
+      });
+      return { payload: null, amountBaht: null };
+    }
+    const payload = typeof o.payload === "string" && o.payload.length > 0 ? o.payload : null;
+    const amountBaht = typeof o.amountBaht === "number" && Number.isFinite(o.amountBaht) ? o.amountBaht : null;
+    if (!payload && res.ok && (o.payload === undefined || o.payload === null))
+      console.warn(`${tag} GET ok but empty payload — set payment_settings.prompt_pay or PROMPTPAY_MERCHANT_ID on Vercel`, {
+        amountBaht,
+        orderNumber: resolution.orderNumber,
+      });
     return { payload, amountBaht };
   }
 
@@ -56,15 +82,43 @@ async function fetchPromptPayResolved(
     body: JSON.stringify({
       customer_id: checkout.customerId,
       promo_code_id: checkout.promoCodeId,
-      items: checkout.items,
+      items: checkout.items.map((line) => ({
+        ...line,
+        isFreeGift: line.isFreeGift === true,
+      })),
       summary: checkout.summary,
     }),
     cache: "no-store",
+    credentials: "same-origin",
   });
-  if (!res.ok) return { payload: null, amountBaht: null };
-  const data = (await res.json()) as { payload?: string | null; amountBaht?: number | null };
-  const payload = typeof data.payload === "string" && data.payload.length > 0 ? data.payload : null;
-  const amountBaht = typeof data.amountBaht === "number" && Number.isFinite(data.amountBaht) ? data.amountBaht : null;
+  let data: unknown = {};
+  try {
+    data = await res.json();
+  } catch {
+    console.error(`${tag} POST invalid JSON`, { status: res.status });
+    return { payload: null, amountBaht: null };
+  }
+  const o = data as { payload?: string | null; amountBaht?: number | null; error?: unknown };
+  if (!res.ok) {
+    const bodySnippet = (() => {
+      try {
+        return JSON.stringify(o).slice(0, 900);
+      } catch {
+        return String(o.error ?? "");
+      }
+    })();
+    console.error(`${tag} POST failed (relative /api/storefront/promptpay-payload)`, {
+      status: res.status,
+      responseBody: bodySnippet,
+    });
+    return { payload: null, amountBaht: null };
+  }
+  const payload = typeof o.payload === "string" && o.payload.length > 0 ? o.payload : null;
+  const amountBaht = typeof o.amountBaht === "number" && Number.isFinite(o.amountBaht) ? o.amountBaht : null;
+  if (!payload && (o.payload === undefined || o.payload === null || o.payload === ""))
+    console.warn(`${tag} POST ok but empty payload — set payment_settings.prompt_pay or PROMPTPAY_MERCHANT_ID on Vercel`, {
+      amountBaht,
+    });
   return { payload, amountBaht };
 }
 

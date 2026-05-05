@@ -7,9 +7,18 @@ import { buildPromptPayPayload } from "@/lib/payment-utils";
 import { quantizeBaht2 } from "@/lib/money-thb";
 import { getOrderByNumber } from "@/lib/services/order-service";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type PromptPayJson = { identifier?: string; isActive?: boolean; is_active?: boolean };
+
+/** Safe for logs (Vercel / support); never full tax ID / phone in production logs. */
+function maskMerchantId(secret: string | undefined | null): string {
+  if (secret == null || !String(secret).trim()) return "(unset)";
+  const s = String(secret).trim();
+  if (s.length <= 4) return `(set; len=${s.length})`;
+  return `${s.slice(0, 2)}…${s.slice(-2)} (len=${s.length})`;
+}
 
 function explicitInactive(pp: PromptPayJson | null): boolean {
   return pp != null && (pp.isActive === false || pp.is_active === false);
@@ -65,15 +74,24 @@ async function merchantId(): Promise<string> {
  * PromptPay QR: amount is recomputed server-side — POST (cart) or GET (?orderNumber=).
  */
 export async function POST(req: NextRequest) {
+  const envMasked = maskMerchantId(process.env.PROMPTPAY_MERCHANT_ID);
   let raw: unknown;
   try {
     raw = await req.json();
-  } catch {
+  } catch (err) {
+    console.error("[promptpay-payload] POST invalid_json", {
+      PROMPTPAY_MERCHANT_ID: envMasked,
+      err: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
   const parsed = CheckoutPayloadSchema.safeParse(raw);
   if (!parsed.success) {
+    console.error("[promptpay-payload] POST invalid_body", {
+      PROMPTPAY_MERCHANT_ID: envMasked,
+      zod: parsed.error.flatten(),
+    });
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
@@ -81,99 +99,213 @@ export async function POST(req: NextRequest) {
   const resolvedCustomerId = customer_id ?? null;
   const resolvedPromoId = resolvedCustomerId == null ? null : (parsed.data.promo_code_id ?? null);
 
+  const clientTotals = {
+    subtotal: quantizeBaht2(summary.subtotal),
+    discount: quantizeBaht2(summary.discount),
+    shipping: quantizeBaht2(summary.shipping),
+    total: quantizeBaht2(summary.total),
+  };
+
   if (resolvedCustomerId) {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user || user.id !== resolvedCustomerId) {
+      console.error("[promptpay-payload] POST unauthorized", {
+        PROMPTPAY_MERCHANT_ID: envMasked,
+        calculatedTotal: null,
+        amountBaht: null,
+        clientSummaryTotal: clientTotals.total,
+        reason: user ? "customer_id≠session user" : "no session cookie",
+      });
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
   }
 
-  const priced = await validateStorefrontCheckoutTotals({
-    items: items.map((i) => ({
-      variantId: i.variantId,
-      quantity: i.quantity,
-      price: i.price,
-      isFreeGift: i.isFreeGift,
-      productName: i.productName,
-    })),
-    summary,
-    promo_code_id: resolvedPromoId,
-  });
+  try {
+    const priced = await validateStorefrontCheckoutTotals({
+      items: items.map((i) => ({
+        variantId: i.variantId,
+        quantity: i.quantity,
+        price: i.price,
+        isFreeGift: i.isFreeGift === true,
+        productName: i.productName,
+      })),
+      summary,
+      promo_code_id: resolvedPromoId,
+      purpose: "prompt_pay_preview",
+    });
 
-  if (!priced.ok) {
-    console.warn("[promptpay-payload] POST checkout validation failed:", priced.error);
-    return NextResponse.json({ error: priced.error }, { status: 400 });
-  }
-
-  const amountBaht = priced.resolvedSummary.total;
-  if (amountBaht <= 0 || amountBaht > 50_000_000) {
-    console.warn("[promptpay-payload] POST amount out of range", quantizeBaht2(amountBaht));
-    return NextResponse.json({ error: "invalid_amount" }, { status: 400 });
-  }
-
-  const mid = await merchantId();
-  if (!mid) {
-    return NextResponse.json({ payload: null, amountBaht: quantizeBaht2(amountBaht) }, { status: 200 });
-  }
-
-  const payload = buildPromptPayPayload(mid, amountBaht);
-  return NextResponse.json(
-    { payload: payload ?? null, amountBaht: quantizeBaht2(amountBaht) },
-    { status: 200 },
-  );
-}
-
-export async function GET(req: NextRequest) {
-  const orderNumber = req.nextUrl.searchParams.get("orderNumber")?.trim();
-
-  const mid = await merchantId();
-
-  if (orderNumber) {
-    const { data: order, error } = await getOrderByNumber(orderNumber);
-    if (!order || error) {
-      console.warn("[promptpay-payload] GET order not found:", orderNumber);
-      return NextResponse.json({ error: "order_not_found" }, { status: 404 });
+    if (!priced.ok) {
+      console.error("[promptpay-payload] POST validation failed", {
+        PROMPTPAY_MERCHANT_ID: envMasked,
+        amountBaht: null,
+        calculatedTotal: null,
+        clientSummaryTotal: clientTotals.total,
+        validatorError: priced.error,
+      });
+      return NextResponse.json({ error: priced.error }, { status: 400 });
     }
 
-    if (String(order.payment_method ?? "").toUpperCase() !== "TRANSFER") {
-      console.warn("[promptpay-payload] GET order not TRANSFER:", orderNumber, order.payment_method);
-      return NextResponse.json({ error: "unsupported_payment_method" }, { status: 400 });
-    }
+    const calculatedTotal = quantizeBaht2(priced.resolvedSummary.total);
+    const amountBaht = priced.resolvedSummary.total;
 
-    const amountBaht = quantizeBaht2(Number(order.total_amount));
-    if (!(amountBaht > 0) || amountBaht > 50_000_000) {
-      console.warn("[promptpay-payload] GET invalid order total", orderNumber, order.total_amount);
+    if (amountBaht <= 0 || amountBaht > 50_000_000) {
+      console.error("[promptpay-payload] POST amount out of range", {
+        PROMPTPAY_MERCHANT_ID: envMasked,
+        amountBaht: calculatedTotal,
+        calculatedTotal,
+        clientSummaryTotal: clientTotals.total,
+      });
       return NextResponse.json({ error: "invalid_amount" }, { status: 400 });
     }
 
+    const mid = await merchantId();
+    const midMasked = maskMerchantId(mid || process.env.PROMPTPAY_MERCHANT_ID);
+
     if (!mid) {
-      return NextResponse.json({ payload: null, amountBaht }, { status: 200 });
+      console.error("[promptpay-payload] POST no merchant ID (QR disabled)", {
+        PROMPTPAY_MERCHANT_ID: envMasked,
+        amountBaht: calculatedTotal,
+        calculatedTotal,
+        clientSummaryTotal: clientTotals.total,
+        hint: "Set payment_settings.prompt_pay.identifier or PROMPTPAY_MERCHANT_ID on Vercel",
+      });
+      return NextResponse.json({ payload: null, amountBaht: calculatedTotal }, { status: 200 });
     }
 
     const payload = buildPromptPayPayload(mid, amountBaht);
-    return NextResponse.json({ payload: payload ?? null, amountBaht }, { status: 200 });
+
+    if (!payload) {
+      console.error("[promptpay-payload] POST buildPromptPayPayload returned null", {
+        PROMPTPAY_MERCHANT_ID: envMasked,
+        merchantResolvedMasked: midMasked,
+        amountBaht: calculatedTotal,
+        calculatedTotal,
+        clientSummaryTotal: clientTotals.total,
+      });
+    }
+
+    return NextResponse.json({ payload: payload ?? null, amountBaht: calculatedTotal }, { status: 200 });
+  } catch (err) {
+    console.error("[promptpay-payload] POST unhandled", {
+      PROMPTPAY_MERCHANT_ID: envMasked,
+      calculatedTotal: null,
+      amountBaht: null,
+      clientSummaryTotal: clientTotals.total,
+      err: err instanceof Error ? err.stack ?? err.message : String(err),
+    });
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
+}
 
-  const rawAmt = req.nextUrl.searchParams.get("amount");
-  const parsed = rawAmt == null ? NaN : Number(rawAmt);
-  const quantized = quantizeBaht2(parsed);
+export async function GET(req: NextRequest) {
+  const envMasked = maskMerchantId(process.env.PROMPTPAY_MERCHANT_ID);
 
-  console.warn(
-    "[promptpay-payload] Deprecated GET ?amount= (not DB-backed); use POST checkout body or GET ?orderNumber=",
-    { quantized },
-  );
+  try {
+    const orderNumber = req.nextUrl.searchParams.get("orderNumber")?.trim();
+    const mid = await merchantId();
 
-  if (!Number.isFinite(parsed) || !(quantized > 0) || quantized > 50_000_000) {
-    return NextResponse.json({ error: "invalid_amount", amountBaht: null }, { status: 400 });
+    if (orderNumber) {
+      const { data: order, error } = await getOrderByNumber(orderNumber);
+      if (!order || error) {
+        console.error("[promptpay-payload] GET order_not_found", {
+          PROMPTPAY_MERCHANT_ID: envMasked,
+          orderNumber,
+          amountBaht: null,
+          calculatedTotal: null,
+        });
+        return NextResponse.json({ error: "order_not_found" }, { status: 404 });
+      }
+
+      if (String(order.payment_method ?? "").toUpperCase() !== "TRANSFER") {
+        console.error("[promptpay-payload] GET unsupported_payment_method", {
+          PROMPTPAY_MERCHANT_ID: envMasked,
+          orderNumber,
+          payment_method: order.payment_method,
+          calculatedTotal: null,
+          amountBaht: null,
+        });
+        return NextResponse.json({ error: "unsupported_payment_method" }, { status: 400 });
+      }
+
+      const calculatedTotal = quantizeBaht2(Number(order.total_amount));
+      const amountBaht = calculatedTotal;
+
+      if (!(amountBaht > 0) || amountBaht > 50_000_000) {
+        console.error("[promptpay-payload] GET invalid_amount", {
+          PROMPTPAY_MERCHANT_ID: envMasked,
+          orderNumber,
+          rawTotal: order.total_amount,
+          calculatedTotal,
+          amountBaht: calculatedTotal,
+        });
+        return NextResponse.json({ error: "invalid_amount" }, { status: 400 });
+      }
+
+      if (!mid) {
+        console.error("[promptpay-payload] GET no merchant ID (QR disabled)", {
+          PROMPTPAY_MERCHANT_ID: envMasked,
+          orderNumber,
+          calculatedTotal,
+          amountBaht: calculatedTotal,
+        });
+        return NextResponse.json({ payload: null, amountBaht }, { status: 200 });
+      }
+
+      const payload = buildPromptPayPayload(mid, calculatedTotal);
+
+      if (!payload) {
+        console.error("[promptpay-payload] GET buildPromptPayPayload returned null", {
+          PROMPTPAY_MERCHANT_ID: envMasked,
+          merchantResolvedMasked: maskMerchantId(mid),
+          calculatedTotal,
+          amountBaht: calculatedTotal,
+          orderNumber,
+        });
+      }
+
+      return NextResponse.json({ payload: payload ?? null, amountBaht }, { status: 200 });
+    }
+
+    const rawAmt = req.nextUrl.searchParams.get("amount");
+    const parsedNum = rawAmt == null ? NaN : Number(rawAmt);
+    const quantized = quantizeBaht2(parsedNum);
+
+    console.warn(
+      "[promptpay-payload] Deprecated GET ?amount=",
+      { quantized, PROMPTPAY_MERCHANT_ID: envMasked },
+    );
+
+    if (!Number.isFinite(parsedNum) || !(quantized > 0) || quantized > 50_000_000) {
+      console.error("[promptpay-payload] GET invalid_amount (deprecated param)", {
+        PROMPTPAY_MERCHANT_ID: envMasked,
+        rawAmt,
+        calculatedTotal: quantized,
+        amountBaht: quantized,
+      });
+      return NextResponse.json({ error: "invalid_amount", amountBaht: null }, { status: 400 });
+    }
+
+    if (!mid) {
+      console.error("[promptpay-payload] GET deprecated: no merchant", {
+        PROMPTPAY_MERCHANT_ID: envMasked,
+        calculatedTotal: quantized,
+        amountBaht: quantized,
+      });
+      return NextResponse.json({ payload: null, amountBaht: quantized }, { status: 200 });
+    }
+
+    const payload = buildPromptPayPayload(mid, quantized);
+    return NextResponse.json({ payload: payload ?? null, amountBaht: quantized }, { status: 200 });
+  } catch (err) {
+    console.error("[promptpay-payload] GET unhandled", {
+      PROMPTPAY_MERCHANT_ID: envMasked,
+      calculatedTotal: null,
+      amountBaht: null,
+      err: err instanceof Error ? err.stack ?? err.message : String(err),
+    });
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-
-  if (!mid) {
-    return NextResponse.json({ payload: null, amountBaht: quantized }, { status: 200 });
-  }
-
-  const payload = buildPromptPayPayload(mid, quantized);
-  return NextResponse.json({ payload: payload ?? null, amountBaht: quantized }, { status: 200 });
 }
