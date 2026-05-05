@@ -20,13 +20,19 @@ import {
   FileText,
   MessageCircle,
 } from "lucide-react";
-import generatePayload from "promptpay-qr";
-import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatPrice } from "@/lib/utils";
+import {
+  STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO,
+  STOREFRONT_KBANK_TRANSFER_NAME_EN,
+  STOREFRONT_KBANK_TRANSFER_NAME_TH,
+  STOREFRONT_KBANK_TRANSFER_QR_IMAGE,
+  isPrimaryKbankCheckoutAccount,
+} from "@/lib/storefront-payment-shared";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { fetchStorefrontReceiptPdfSettings } from "@/lib/pdf-settings";
 import { computeOrderReceiptFinancials } from "@/lib/order-receipt-math";
 import { formatPaymentMethodForPdf, generateReceiptPDF, isReceiptEligibleStatus } from "@/lib/receipt-pdf";
@@ -207,7 +213,6 @@ export default function OrderSuccessDynamicPage() {
 
   const [paySettings, setPaySettings] = useState<PaySettings>({ bank: null, promptPay: null, lineId: null });
   const [shopLineId, setShopLineId] = useState<string | null>(null);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -289,23 +294,6 @@ export default function OrderSuccessDynamicPage() {
       cancelled = true;
     };
   }, [order]);
-
-  useEffect(() => {
-    if (!order || order.payment_method !== "TRANSFER" || order.status !== "PENDING" || order.slip_url) {
-      setQrDataUrl(null);
-      return;
-    }
-    const promptId = paySettings.promptPay?.identifier;
-    if (!order.total_amount || !promptId) {
-      setQrDataUrl(null);
-      return;
-    }
-    const amount = Number(order.total_amount);
-    const payload = generatePayload(promptId, { amount });
-    QRCode.toDataURL(payload, { width: 280, margin: 2, color: { dark: "#0f172a", light: "#ffffff" } })
-      .then(setQrDataUrl)
-      .catch(() => setQrDataUrl(null));
-  }, [order, paySettings.promptPay?.identifier]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -414,6 +402,11 @@ export default function OrderSuccessDynamicPage() {
     (order.payment_status ?? "").toLowerCase() !== "paid" &&
     order.payment_method === "TRANSFER" &&
     !order.slip_url;
+
+  const apiBankExtras =
+    paySettings.bank && !isPrimaryKbankCheckoutAccount(paySettings.bank.accountNo)
+      ? paySettings.bank
+      : null;
 
   const lineOaId = shopLineId ?? paySettings.lineId ?? null;
   const lineHrefDefault = lineOaPrefillUrlForOrderSuccess(displayNo, lineOaId);
@@ -608,69 +601,55 @@ export default function OrderSuccessDynamicPage() {
               {t("ข้อมูลการโอนเงิน", "Transfer details")}
             </div>
 
-            {!paySettings.bank && !paySettings.promptPay && (
-              <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                {t(
-                  "ยังไม่มีข้อมูลบัญชีรับโอน — กรุณาติดต่อทางร้านค้า",
-                  "Payment details are not configured — please contact the shop."
-                )}
-              </div>
-            )}
-
-            {paySettings.bank && (
+            <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                {t("โอนผ่าน Thai QR / K-Bank", "Thai QR payment (K-Bank)")}
+              </p>
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
-                  <span className="font-medium text-zinc-800">{paySettings.bank.name}</span>
+                  <span className="font-medium text-zinc-800">
+                    {locale === "en" ? STOREFRONT_KBANK_TRANSFER_NAME_EN : STOREFRONT_KBANK_TRANSFER_NAME_TH}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">{t("เลขบัญชี", "Account no.")}</span>
-                  <span className="font-mono font-semibold text-zinc-900">{paySettings.bank.accountNo}</span>
+                  <span className="font-mono font-semibold text-zinc-900">{STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO}</span>
+                </div>
+              </div>
+              <p className="text-center text-xs text-zinc-500">
+                {t("สแกน QR แล้วโอนตามยอดด้านบน", "Scan the QR and transfer the amount shown above.")}
+              </p>
+              <div className="mx-auto flex w-full max-w-[360px] justify-center">
+                <Image
+                  src={STOREFRONT_KBANK_TRANSFER_QR_IMAGE}
+                  alt={t("QR K-Bank Thai QR", "K-Bank Thai QR")}
+                  width={360}
+                  height={360}
+                  className="h-auto w-full max-h-[400px] rounded-xl border border-zinc-200 object-contain"
+                  sizes="(max-width: 480px) 100vw, 360px"
+                  unoptimized={shouldOffloadImageOptimization(STOREFRONT_KBANK_TRANSFER_QR_IMAGE)}
+                />
+              </div>
+            </div>
+
+            {apiBankExtras && (
+              <div className="grid gap-2 text-sm">
+                <Separator className="bg-zinc-100" />
+                <p className="text-xs font-medium text-zinc-500">
+                  {t("บัญชีสำรอง", "Alternative account")}
+                </p>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
+                  <span className="font-medium text-zinc-800">{apiBankExtras.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">{t("เลขบัญชี", "Account no.")}</span>
+                  <span className="font-mono font-semibold text-zinc-900">{apiBankExtras.accountNo}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">{t("ชื่อบัญชี", "Account name")}</span>
-                  <span className="font-medium text-zinc-800">{paySettings.bank.accountName}</span>
-                </div>
-              </div>
-            )}
-
-            {paySettings.promptPay && (
-              <div className="flex flex-col items-center py-3">
-                <p className="mb-3 text-xs text-zinc-500">
-                  {t("สแกน QR PromptPay", "Scan PromptPay QR")}
-                  {paySettings.promptPay.identifier ? ` (${paySettings.promptPay.identifier})` : ""}
-                </p>
-                <div className="rounded-xl bg-white p-3 shadow-md ring-1 ring-zinc-200/80">
-                  {qrDataUrl ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={qrDataUrl}
-                        alt="PromptPay QR"
-                        width={256}
-                        height={256}
-                        className="size-[256px] rounded-lg"
-                      />
-                      <p className="mt-3 text-center text-sm font-semibold text-primary">
-                        {t("ยอดเงินรวมใน QR", "Amount in QR")}: {formatPrice(order.total_amount)}
-                      </p>
-                    </>
-                  ) : paySettings.promptPay.qrUrl ? (
-                    <>
-                      <Image
-                        src={paySettings.promptPay.qrUrl}
-                        alt="PromptPay QR"
-                        width={256}
-                        height={256}
-                        className="size-[256px] rounded-lg object-contain"
-                        unoptimized
-                      />
-                      <p className="mt-3 text-center text-sm font-semibold text-zinc-600">
-                        {t("ยอดเงินรวมใน QR", "Amount in QR")}: {formatPrice(order.total_amount)}
-                      </p>
-                    </>
-                  ) : null}
+                  <span className="font-medium text-zinc-800">{apiBankExtras.accountName}</span>
                 </div>
               </div>
             )}

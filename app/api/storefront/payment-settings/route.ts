@@ -4,11 +4,11 @@ import { getSql } from "@/lib/db";
 export const revalidate = 0; // always fresh
 
 export async function GET() {
+  /** Direct SQL — public read; PromptPay omitted on storefront for privacy (static QR in checkout UI). */
   const sql = getSql();
   try {
-    // Explicit columns only — no SELECT * (excludes updated_at, legacy jsonb, etc.)
     const rows = await sql`
-      SELECT bank_accounts, prompt_pay, line_id
+      SELECT bank_accounts, line_id
       FROM payment_settings
       WHERE id = 1
       LIMIT 1
@@ -16,10 +16,8 @@ export async function GET() {
     const row = rows[0] ?? null;
 
     type BankRow = { bankName: string; accountName: string; accountNo: string; isActive: boolean };
-    type PromptPayRow = { identifier: string; qrUrl: string; isActive: boolean };
 
     const allBanks = (row?.bank_accounts ?? []) as BankRow[];
-    const promptPay = (row?.prompt_pay ?? null) as PromptPayRow | null;
     const lineId = (row as { line_id?: string })?.line_id ?? "";
 
     const activeBank =
@@ -31,10 +29,7 @@ export async function GET() {
       bank: activeBank
         ? { name: activeBank.bankName, accountNo: activeBank.accountNo, accountName: activeBank.accountName }
         : null,
-      promptPay:
-        promptPay != null && promptPay.isActive !== false
-          ? { identifier: promptPay.identifier, qrUrl: promptPay.qrUrl ?? "" }
-          : null,
+      promptPay: null,
       lineId: lineId || null,
     });
   } catch (err) {

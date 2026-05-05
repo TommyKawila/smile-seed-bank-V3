@@ -41,11 +41,7 @@ export async function loadPaymentBlocksForEmail(): Promise<PaymentBlocks> {
         accountName: bankRow.account_name?.trim() ?? "",
       }
     : null;
-  const pp = settings.find((s) => s.source === "promptpay");
-  const promptPay = pp
-    ? { identifier: pp.account_number?.trim() ?? null, qrUrl: pp.qr_code_url?.trim() ?? null }
-    : null;
-  return { bank, promptPay };
+  return { bank, promptPay: null };
 }
 
 export function buildOrderConfirmationHtml(opts: {

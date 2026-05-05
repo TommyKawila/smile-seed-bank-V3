@@ -6,8 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { Loader2, ShoppingBag, ChevronLeft, ShieldCheck, Tag, Sparkles } from "lucide-react";
-import generatePayload from "promptpay-qr";
-import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -20,7 +18,7 @@ import { useLanguage, type Locale } from "@/context/LanguageContext";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
 import { getURL } from "@/lib/get-url";
 import { cn, formatPrice } from "@/lib/utils";
-import type { PaymentSetting } from "@/lib/payment-settings-public";
+import type { PaymentSetting } from "@/lib/storefront-payment-shared";
 import { toast } from "sonner";
 import {
   createStorefrontOrder,
@@ -130,7 +128,6 @@ export function CheckoutPageClient({
     guest_email: "",
     order_note: "",
   });
-  const [promptPayQrDataUrl, setPromptPayQrDataUrl] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof CheckoutForm, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -150,40 +147,6 @@ export function CheckoutPageClient({
       }));
     }
   }, [customer]);
-
-  useEffect(() => {
-    const pp = paymentSettings.find((p) => p.source === "promptpay");
-    const id = pp?.account_number?.trim();
-    if (!id || paymentSettingsError) {
-      setPromptPayQrDataUrl(null);
-      return;
-    }
-    const amount = summary.total;
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setPromptPayQrDataUrl(null);
-      return;
-    }
-    let cancelled = false;
-    try {
-      const payload = generatePayload(id, { amount });
-      void QRCode.toDataURL(payload, {
-        width: 280,
-        margin: 2,
-        color: { dark: "#0f172a", light: "#ffffff" },
-      })
-        .then((url) => {
-          if (!cancelled) setPromptPayQrDataUrl(url);
-        })
-        .catch(() => {
-          if (!cancelled) setPromptPayQrDataUrl(null);
-        });
-    } catch {
-      setPromptPayQrDataUrl(null);
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [paymentSettings, paymentSettingsError, summary.total]);
 
   useEffect(() => {
     let cancelled = false;
@@ -669,7 +632,7 @@ export function CheckoutPageClient({
               <PaymentSection
                 paymentSettings={paymentSettings}
                 paymentSettingsError={paymentSettingsError}
-                promptPayQrDataUrl={promptPayQrDataUrl}
+                grandTotalBaht={summary.total}
                 t={t}
                 serif={serif}
               />

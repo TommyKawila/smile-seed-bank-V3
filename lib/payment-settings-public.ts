@@ -1,23 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import "server-only";
+
+import { getSql } from "@/lib/db";
 import type { Json } from "@/types/supabase";
-
-/**
- * Strict PostgREST select for checkout — never use "*".
- * Excludes messenger_url, updated_at, and legacy jsonb not used by storefront.
- */
-export const CHECKOUT_PAYMENT_SETTINGS_SELECT =
-  "id, bank_accounts, prompt_pay" as const;
-
-/** Public storefront shape for payment instructions (no API keys or admin-only fields). */
-export type PaymentSetting = {
-  id: number;
-  bank_name: string | null;
-  account_number: string | null;
-  account_name: string | null;
-  qr_code_url: string | null;
-  is_active: boolean;
-  source: "bank" | "promptpay";
-};
+import type { PaymentSetting } from "@/lib/storefront-payment-shared";
 
 type BankJson = {
   bankName?: string;
@@ -30,29 +15,13 @@ type BankJson = {
   is_active?: boolean;
 };
 
-type PromptJson = {
-  identifier?: string;
-  qrUrl?: string;
-  isActive?: boolean;
-  is_active?: boolean;
-};
-
 function parseBankAccounts(raw: Json | null): BankJson[] {
   if (!raw || !Array.isArray(raw)) return [];
   return raw as BankJson[];
 }
 
-function parsePromptPay(raw: Json | null): PromptJson | null {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  return raw as PromptJson;
-}
-
 function bankRowExplicitInactive(b: BankJson): boolean {
   return b.isActive === false || b.is_active === false;
-}
-
-function promptPayExplicitInactive(pp: PromptJson): boolean {
-  return pp.isActive === false || pp.is_active === false;
 }
 
 function normalizedBankFields(b: BankJson): {
@@ -68,89 +37,68 @@ function normalizedBankFields(b: BankJson): {
 }
 
 /**
- * Loads active payment display rows for checkout via Supabase (RLS-safe columns only).
- * Maps JSON columns to PaymentSetting — DB uses bank_accounts / prompt_pay, not flat columns.
+ * Loads bank accounts + LINE OA id for storefront payment UIs via server Postgres (guest-safe).
  */
 export async function fetchCheckoutPaymentSettings(): Promise<{
   settings: PaymentSetting[];
   error: boolean;
+  lineId: string | null;
 }> {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("payment_settings")
-      .select(CHECKOUT_PAYMENT_SETTINGS_SELECT)
-      .eq("id", 1)
-      .maybeSingle();
+    const rows = await getSql()`
+      SELECT bank_accounts, line_id
+      FROM payment_settings
+      WHERE id = 1
+      LIMIT 1
+    `;
+    const row = rows[0] as
+      | { bank_accounts: Json | null; line_id?: string | null }
+      | undefined;
 
-    if (error) {
-      console.error("[fetchCheckoutPaymentSettings]", error.message);
-      return {
-        settings: [],
-        error: true,
-      };
-    }
+    const lineId = row?.line_id?.trim() ? row.line_id.trim() : null;
 
-    if (!data) {
+    if (!row) {
       return {
         settings: [],
         error: false,
+        lineId,
       };
     }
 
     const settings: PaymentSetting[] = [];
     let idCounter = 0;
 
-    const banksParsed = parseBankAccounts(data.bank_accounts);
+    const banksParsed = parseBankAccounts(row.bank_accounts);
     for (const b of banksParsed) {
       if (bankRowExplicitInactive(b)) continue;
-      const row = normalizedBankFields(b);
-      if (!row) continue;
+      const line = normalizedBankFields(b);
+      if (!line) continue;
       idCounter += 1;
       settings.push({
         id: idCounter,
-        bank_name: row.bankName,
-        account_number: row.accountNo,
-        account_name: row.accountName || null,
+        bank_name: line.bankName,
+        account_number: line.accountNo,
+        account_name: line.accountName || null,
         qr_code_url: null,
         is_active: true,
         source: "bank",
       });
     }
 
-    const pp = parsePromptPay(data.prompt_pay);
-    if (
-      pp &&
-      !promptPayExplicitInactive(pp) &&
-      (pp.identifier || pp.qrUrl)
-    ) {
-      idCounter += 1;
-      settings.push({
-        id: idCounter,
-        bank_name: null,
-        account_number: pp.identifier ?? null,
-        account_name: null,
-        qr_code_url: pp.qrUrl ?? null,
-        is_active: true,
-        source: "promptpay",
-      });
-    }
-
     if (settings.length === 0) {
       console.warn(
-        "[fetchCheckoutPaymentSettings] No payment rows after filter — bank_accounts length:",
+        "[fetchCheckoutPaymentSettings] No bank rows after filter — bank_accounts length:",
         banksParsed.length,
-        "has_prompt_pay:",
-        Boolean(data.prompt_pay),
       );
     }
 
-    return { settings, error: false };
+    return { settings, error: false, lineId };
   } catch (e) {
     console.error("[fetchCheckoutPaymentSettings]", e);
     return {
       settings: [],
       error: true,
+      lineId: null,
     };
   }
 }

@@ -1,8 +1,13 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getOrderReceiptCardByClaimToken } from "@/lib/services/order-service";
-import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
-import { buildPromptPayIoQrUrl } from "@/lib/utils/format-order";
+import {
+  STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO,
+  STOREFRONT_KBANK_TRANSFER_QR_IMAGE,
+  STOREFRONT_KBANK_TRANSFER_NAME_TH,
+  STOREFRONT_KBANK_TRANSFER_NAME_EN,
+} from "@/lib/storefront-payment-shared";
 import { formatPrice, cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -40,14 +45,7 @@ export default async function OrderReceiptPage({
   const { data, error } = await getOrderReceiptCardByClaimToken(token);
   if (error || !data) notFound();
 
-  const { settings } = await fetchCheckoutPaymentSettings();
-  const ppSetting = settings.find((s) => s.source === "promptpay");
-  const ppId =
-    ppSetting?.account_number?.trim() ||
-    process.env.NEXT_PUBLIC_PROMPTPAY_ID?.trim() ||
-    null;
-  const qrUrl =
-    ppId && data.total_amount >= 0 ? buildPromptPayIoQrUrl(ppId, data.total_amount) : null;
+  const unpaidForQr = ["PENDING_INFO", "PENDING", "PENDING_PAYMENT"].includes(data.status);
 
   const claimHref = `/order/claim/${data.claim_token}${lang === "en" ? "?lang=en" : ""}`;
   const selfTh = `/order/receipt/${token}`;
@@ -57,8 +55,8 @@ export default async function OrderReceiptPage({
     title: lang === "th" ? "ใบเสร็จดิจิทัล" : "Digital receipt",
     subtitle:
       lang === "th"
-        ? "สแกน PromptPay แล้วยืนยันที่อยู่ด้านล่าง"
-        : "Scan PromptPay, then confirm your details below",
+        ? "สแกน QR ธนาคารแล้วยืนยันที่อยู่ด้านล่าง"
+        : "Scan the bank QR, then confirm your details below",
     order: lang === "th" ? "เลขที่" : "Order",
     orderId: lang === "th" ? "รหัส" : "ID",
     status: lang === "th" ? "สถานะ" : "Status",
@@ -160,19 +158,26 @@ export default async function OrderReceiptPage({
               </span>
             </div>
 
-            {qrUrl ? (
+            {unpaidForQr ? (
               <div className="rounded-2xl border border-emerald-100/90 bg-gradient-to-b from-white to-emerald-50/30 p-5 text-center shadow-inner shadow-emerald-900/5">
+                <p className="mb-2 text-xs text-zinc-600">
+                  {lang === "th" ? STOREFRONT_KBANK_TRANSFER_NAME_TH : STOREFRONT_KBANK_TRANSFER_NAME_EN} ·{" "}
+                  <span className="font-mono font-medium text-zinc-900">{STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO}</span>
+                </p>
                 <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-emerald-800/90">
                   {t.qrCaption}
                 </p>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrUrl}
-                  alt="PromptPay QR"
-                  width={280}
-                  height={280}
-                  className="mx-auto h-auto w-[min(100%,280px)] rounded-2xl border border-white bg-white shadow-md"
-                />
+                <div className="mx-auto flex w-full max-w-[320px] justify-center">
+                  <Image
+                    src={STOREFRONT_KBANK_TRANSFER_QR_IMAGE}
+                    alt={lang === "th" ? "QR โอน K-Bank" : "K-Bank Thai QR"}
+                    width={320}
+                    height={320}
+                    className="h-auto w-full rounded-2xl border border-white bg-white shadow-md object-contain"
+                    sizes="(max-width: 480px) 100vw, 320px"
+                    unoptimized
+                  />
+                </div>
               </div>
             ) : null}
 

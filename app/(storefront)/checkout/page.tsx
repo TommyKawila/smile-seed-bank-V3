@@ -5,7 +5,7 @@ import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
 
 export const dynamic = "force-dynamic";
 
-/** Server-only: payment settings use Supabase server client + strict select in fetchCheckoutPaymentSettings. */
+/** Server-only: loads payment instructions via Postgres (guest-safe, not Supabase anon RLS). */
 async function CheckoutWithPaymentData() {
   const { settings, error } = await fetchCheckoutPaymentSettings();
   return (
