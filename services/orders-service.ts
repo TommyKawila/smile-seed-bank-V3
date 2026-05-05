@@ -542,15 +542,23 @@ export async function rejectPayment(orderId: number, note: string): Promise<Serv
           `Cannot reject/cancel order in status "${status}". Only ${REJECT_STOCK_RESTORE_STATUSES.join(", ")} are allowed.`
         );
       }
-      await restoreVariantStockForOrderItems(tx, order.order_items);
       const trimmed = note.trim();
       const rejectNote = trimmed
         ? `${trimmed}${REJECT_STOCK_NOTE_SUFFIX}`
         : `Cancelled.${REJECT_STOCK_NOTE_SUFFIX}`;
-      await tx.orders.update({
-        where: { id: oid },
+      const claimed = await tx.orders.updateMany({
+        where: {
+          id: oid,
+          status: order.status ?? "",
+          payment_status: order.payment_status ?? "pending",
+          NOT: { status: { in: ["CANCELLED", "VOIDED"] } },
+        },
         data: { status: "CANCELLED", reject_note: rejectNote },
       });
+      if (claimed.count !== 1) {
+        throw new Error("Cannot reject — order already final or concurrently updated");
+      }
+      await restoreVariantStockForOrderItems(tx, order.order_items);
     });
     return { data: null, error: null };
   } catch (err) {
@@ -597,12 +605,24 @@ export async function autoCancelUnpaidOrder24hStale(
       if (order.created_at.getTime() > cutoff) {
         throw new Error("24h auto-cancel: order not old enough");
       }
-      await restoreVariantStockForOrderItems(tx, order.order_items);
       const rejectNote = `${AUTO_CANCEL_24H_NOTE}${REJECT_STOCK_NOTE_SUFFIX}`;
-      await tx.orders.update({
-        where: { id: oid },
+      const claimed = await tx.orders.updateMany({
+        where: {
+          id: oid,
+          status: order.status ?? "",
+          NOT: { status: { in: ["CANCELLED", "VOIDED"] } },
+          created_at: { lte: new Date(cutoff) },
+          payment_status: order.payment_status ?? "pending",
+          ...(order.slip_url?.trim()
+            ? { slip_url: order.slip_url }
+            : { OR: [{ slip_url: null }, { slip_url: "" }] }),
+        },
         data: { status: "CANCELLED", reject_note: rejectNote },
       });
+      if (claimed.count !== 1) {
+        throw new Error("24h auto-cancel: order already final or concurrently updated");
+      }
+      await restoreVariantStockForOrderItems(tx, order.order_items);
     });
     return { data: null, error: null };
   } catch (err) {
@@ -635,15 +655,23 @@ export async function cancelPendingOrder(
       if ((order.payment_status ?? "").toLowerCase() === "paid") {
         throw new Error("Cannot cancel: payment already confirmed — use void if needed");
       }
-      await restoreVariantStockForOrderItems(tx, order.order_items);
       const trimmed = (note ?? "").trim();
       const rejectNote = trimmed
         ? `${trimmed}${REJECT_STOCK_NOTE_SUFFIX}`
         : `Cancelled by admin (pending order).${REJECT_STOCK_NOTE_SUFFIX}`;
-      await tx.orders.update({
-        where: { id: oid },
+      const claimed = await tx.orders.updateMany({
+        where: {
+          id: oid,
+          status: order.status ?? "",
+          NOT: { status: { in: ["CANCELLED", "VOIDED"] } },
+          payment_status: order.payment_status ?? "pending",
+        },
         data: { status: "CANCELLED", reject_note: rejectNote },
       });
+      if (claimed.count !== 1) {
+        throw new Error("Cannot cancel — order already final or concurrently updated");
+      }
+      await restoreVariantStockForOrderItems(tx, order.order_items);
     });
     return { data: null, error: null };
   } catch (err) {

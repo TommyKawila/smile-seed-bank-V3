@@ -6,6 +6,7 @@ import { bigintToJson } from "@/lib/bigint-json";
 import { randomUUID } from "crypto";
 import { generateOrderNumber } from "@/lib/order-utils";
 import { sendLowStockAlert } from "@/services/line-messaging";
+import { deductVariantStockForOrderItems, InsufficientStockError } from "@/lib/order-inventory";
 
 /** Matches `orders.status` string values used by POS / claim (DB column is String, not Prisma enum). */
 const POS_ORDER_STATUS = ["PENDING", "PENDING_INFO", "COMPLETED", "CANCELLED"] as const;
@@ -182,13 +183,12 @@ export async function POST(req: NextRequest) {
           await tx.order_items.createMany({ data: linesToCreate });
         }
 
-        if (deductStock) {
-          for (const [vid, qty] of decrementByVariant) {
-            await tx.product_variants.update({
-              where: { id: BigInt(vid) },
-              data: { stock: { decrement: qty } },
-            });
-          }
+        if (deductStock && decrementByVariant.size > 0) {
+          const deductLines = [...decrementByVariant.entries()].map(([variantId, quantity]) => ({
+            variantId,
+            quantity,
+          }));
+          await deductVariantStockForOrderItems(tx, deductLines);
         }
 
         await tx.orders.update({
@@ -239,6 +239,9 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
+    }
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });
   }

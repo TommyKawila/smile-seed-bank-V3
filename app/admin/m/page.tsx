@@ -183,6 +183,19 @@ function buildShippingLabelText(o: AdminOrder): string {
   return `${name}\n${phone}\n${addr}`;
 }
 
+/** Compact lines for Nimbot / thermal paste (order #, qty lines, total). */
+function buildNimbotSummaryText(o: AdminOrder): string {
+  const itemsBlock =
+    (o.line_items?.length ?? 0) === 0
+      ? "—"
+      : (o.line_items ?? [])
+          .map((li) => `${(li.product_name ?? "").trim()} x${li.quantity}`)
+          .join("\n");
+  return [`Order: ${o.order_number}`, itemsBlock, `Total: ${formatPrice(o.total_amount)}`].join(
+    "\n"
+  );
+}
+
 function packingListProductLines(o: AdminOrder): string[] {
   if ((o.line_items?.length ?? 0) === 0) return ["(no items)"];
   return (o.line_items ?? []).map((li) =>
@@ -325,7 +338,7 @@ export default function AdminMobileOrdersPage() {
     async (text: string, description: string) => {
       try {
         await navigator.clipboard.writeText(text);
-        toast({ title: "Copied!", description });
+        toast({ title: "Copied to clipboard!", description });
       } catch (e) {
         toast({
           title: "Copy failed",
@@ -893,42 +906,39 @@ export default function AdminMobileOrdersPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
-                    className="h-11 min-h-[44px] flex-col gap-0 rounded-xl border-0 bg-zinc-100 px-1 py-1.5 text-center text-xs font-medium leading-tight text-zinc-700 shadow-none hover:bg-zinc-200 sm:text-[13px]"
+                    variant="secondary"
+                    className="min-h-[44px] h-auto gap-2 rounded-lg px-3 py-2.5 text-sm font-medium"
                     onClick={() =>
-                      void copyOrderText(
-                        buildShippingLabelText(o),
-                        "Shipping address copied"
-                      )
+                      void copyOrderText(buildShippingLabelText(o), "Address ready for label")
                     }
                   >
-                    <Copy className="mx-auto mb-0.5 h-4 w-4 shrink-0" />
-                    คัดลอกที่อยู่ (Label)
+                    <Copy className="h-4 w-4 shrink-0" aria-hidden />
+                    Copy Address
                   </Button>
                   <Button
                     type="button"
-                    className="h-11 min-h-[44px] flex-col gap-0 rounded-xl border-0 bg-zinc-100 px-1 py-1.5 text-center text-xs font-medium leading-tight text-zinc-700 shadow-none hover:bg-zinc-200 sm:text-[13px]"
+                    variant="ghost"
+                    className="min-h-[44px] h-auto gap-2 rounded-lg border border-zinc-600/80 bg-zinc-900/40 px-3 py-2.5 text-sm font-medium text-zinc-100 hover:bg-zinc-800/80 hover:text-white"
                     onClick={() =>
-                      void copyOrderText(
-                        buildOrderSummaryText(o),
-                        "Packing summary copied"
-                      )
+                      void copyOrderText(buildNimbotSummaryText(o), "Order summary (compact)")
                     }
                   >
-                    <Copy className="mx-auto mb-0.5 h-4 w-4 shrink-0" />
-                    คัดลอกใบจัดของ (Summary)
+                    <Copy className="h-4 w-4 shrink-0" aria-hidden />
+                    Copy Summary
                   </Button>
                   <Button
                     type="button"
-                    className="col-span-2 h-11 min-h-[44px] rounded-xl border border-emerald-700/40 bg-emerald-900/30 text-sm font-semibold text-emerald-100 shadow-none hover:bg-emerald-900/50"
+                    variant="outline"
+                    className="col-span-2 min-h-[44px] gap-2 rounded-lg border-emerald-700/45 bg-emerald-950/20 py-2.5 text-emerald-100 hover:bg-emerald-950/40"
                     onClick={() =>
                       void copyOrderText(
                         buildAddressAndPackingListText(o),
-                        "Address + packing list copied"
+                        "Full TH address + packing list"
                       )
                     }
                   >
-                    <Copy className="mr-2 h-4 w-4 shrink-0" />
-                    คัดลอกที่อยู่ + ใบจัดของ
+                    <Copy className="h-4 w-4 shrink-0" aria-hidden />
+                    Copy address + packing (TH)
                   </Button>
                 </div>
               </div>

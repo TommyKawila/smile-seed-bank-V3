@@ -5,6 +5,8 @@
 ---
 
 ### บันทึกการทำงาน — 2026-05-04
+- **Mobile admin `/admin/m` Nimbot copy:** `Copy Address` / `Copy Summary` (secondary + ghost, min 44px), `buildNimbotSummaryText`, toast `Copied to clipboard!`; คงปุ่มรวม TH แบบ outline
+- **Stock V3.7 (admin simple + restock race):** `/api/admin/orders/simple` หักสต็อกด้วย `deductVariantStockForOrderItems` (SQL `COALESCE(stock) >= qty`); `rejectPayment` / `autoCancelUnpaidOrder24hStale` / `cancelPendingOrder` ใช้ `orders.updateMany` ล็อก snapshot แล้วค่อย `restoreVariantStockForOrderItems`; void ใช้ `buildVoidOrderClaimWhere` + `updateMany` ก่อน restock; `restoreVariantStockForOrderItems` normalize `variant_id` เป็น `bigint`
 - **Checkout ghost duplicate line (±170 mismatch):** `lib/checkout-server-validate.ts` — `mergeCheckoutDuplicateLines` และ `collapsePaidCartItemsByVariant` ใช้ **Map key เป็น string ของ variantId ที่ truncate** แล้ว normalize `variantId`; validate จาก `mergedLines` อย่างเดียว; log ชั่วคราว **`LOG_GHOST: Raw ID List`** / **`LOG_GHOST: Merged ID List`**; `app/api/storefront/orders/route.ts` ส่ง `summary` เข้า `createOrder` ผ่าน **`quantizeBaht2`** เทียบเท่า `priced.resolvedSummary`
 - **Checkout payment V3.6:** `fetchActiveBankAccounts` (Supabase service role → `payment_settings.bank_accounts` JSON, `isActive`≠false); `BankTransferAccountList` + ยอดโอนต่อการ์ด; `PAYMENT_CONFIG` ปิด PromptPay / `promptpay-payload` 503; ไม่มี hardcode บัญชีใน UI
 - **PromptPay V3.4:** `mergeCheckoutDuplicateLines` + `collapsePaidCartItemsByVariant`; `grandTotalFromSummaryParts` (subtotal−discount+shipping, satang); `resolvedSummary.total` = canonical; POST `SUBTOTAL_CHECK`/`SHIPPING_CHECK`/`TOTAL_CHECK` ก่อน `buildPromptPayPayload`.

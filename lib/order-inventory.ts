@@ -113,8 +113,12 @@ export async function restoreVariantStockForOrderItems(
 ): Promise<void> {
   for (const item of items) {
     if (item.variant_id == null) continue;
+    const id =
+      typeof item.variant_id === "bigint"
+        ? item.variant_id
+        : BigInt(String(item.variant_id));
     await tx.product_variants.update({
-      where: { id: item.variant_id },
+      where: { id },
       data: { stock: { increment: item.quantity } },
     });
   }
