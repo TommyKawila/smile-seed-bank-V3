@@ -84,11 +84,12 @@ export function SearchCommand({
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        e.stopPropagation();
         onOpenChange(!openRef.current);
       }
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
   }, [onOpenChange]);
 
   useEffect(() => {
@@ -206,12 +207,14 @@ export function SearchCommand({
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className={cn(DIALOG_CONTENT, "fixed left-1/2 top-[max(1rem,min(15dvh,3rem))] z-50 translate-x-[-50%] translate-y-0 sm:top-[12%]")}
-          onOpenAutoFocus={(e) => e.preventDefault()}
+          className={cn(
+            DIALOG_CONTENT,
+            "fixed left-1/2 top-[max(1rem,min(15dvh,3rem))] z-[60] translate-x-[-50%] translate-y-0 sm:top-[12%] pointer-events-auto"
+          )}
         >
           <DialogTitle className="sr-only">{title}</DialogTitle>
           <Command
-            className={cn(COMMAND_SHELL, ITEM_ROW)}
+            className={cn(COMMAND_SHELL, ITEM_ROW, "pointer-events-auto outline-none")}
             shouldFilter={debounced.length < 2 || !isLoading}
             loop
           >
@@ -223,7 +226,7 @@ export function SearchCommand({
             />
             <CommandList
               className={cn(
-                "max-h-[min(60dvh,22rem)] overflow-x-hidden overscroll-contain sm:max-h-[min(55dvh,24rem)]",
+                "max-h-[min(60dvh,22rem)] overflow-x-hidden overscroll-contain sm:max-h-[min(55dvh,24rem)] pointer-events-auto [&_[cmdk-item]]:pointer-events-auto",
                 debounced.length >= 2 && "scroll-smooth transition-[min-height] duration-200 ease-out"
               )}
             >
@@ -231,7 +234,7 @@ export function SearchCommand({
                 <div
                   className={cn(
                     SUGGEST_ZONE_MIN_H,
-                    "border-b border-zinc-100 px-2 pb-2 dark:border-zinc-800"
+                    "pointer-events-auto border-b border-zinc-100 px-2 pb-2 dark:border-zinc-800"
                   )}
                   aria-busy={isLoading || undefined}
                 >
@@ -268,7 +271,7 @@ export function SearchCommand({
                   )}
 
                   {hasSuggest && (
-                    <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150">
+                    <div className="pointer-events-auto motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150">
                   {data!.products.length > 0 && (
                     <CommandGroup
                       heading={t("สินค้า", "Products")}
@@ -277,11 +280,11 @@ export function SearchCommand({
                       {data!.products.map((p) => (
                         <CommandItem
                           key={`p-${p.id}`}
-                          value={`product ${p.name} ${p.strainType ?? ""}`}
+                          value={`product-${p.id} ${p.name} ${p.href} ${p.strainType ?? ""}`}
                           onSelect={() => go(p.href)}
                           className="flex cursor-pointer items-center gap-3 py-2.5"
                         >
-                          <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-700">
+                          <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-700 pointer-events-none">
                             {p.thumb ? (
                               <Image
                                 src={p.thumb}
@@ -314,11 +317,11 @@ export function SearchCommand({
                       {data!.breeders.map((b) => (
                         <CommandItem
                           key={`sb-${b.id}`}
-                          value={`breeder suggest ${b.name}`}
+                          value={`breeder-${b.id} ${b.name} ${b.href}`}
                           onSelect={() => go(b.href)}
                           className="cursor-pointer gap-2 py-2.5"
                         >
-                          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-700">
+                          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-700 pointer-events-none">
                             {b.logoUrl ? (
                               <Image
                                 src={b.logoUrl}
@@ -383,12 +386,12 @@ export function SearchCommand({
                 className="[&_[cmdk-group-heading]]:flex [&_[cmdk-group-heading]]:items-center [&_[cmdk-group-heading]]:gap-1.5"
               >
                 {sortedBreeders.map((b) => (
-                  <CommandItem
-                    key={b.id}
-                    value={`breeder ${b.name}`}
-                    onSelect={() => go(seedsBreederHref(b))}
-                    className="cursor-pointer gap-2 py-2.5"
-                  >
+                <CommandItem
+                  key={b.id}
+                  value={`breeder-catalog-${b.id} ${b.name} ${seedsBreederHref(b)}`}
+                  onSelect={() => go(seedsBreederHref(b))}
+                  className="cursor-pointer gap-2 py-2.5"
+                >
                     <Users className="h-4 w-4 shrink-0 text-primary" />
                     <span className="font-medium">{b.name}</span>
                   </CommandItem>
