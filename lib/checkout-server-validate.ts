@@ -96,6 +96,71 @@ function snapSummary(summary: CheckoutSummary): CheckoutSummary {
   };
 }
 
+type ServerVariantPricing = {
+  price: unknown;
+  stock: number | null;
+  is_active: boolean | null;
+  discount_percent: number | null;
+  discount_ends_at: Date | string | null;
+};
+
+type ServerProductPricing = {
+  is_clearance: boolean | null;
+  sale_price: unknown;
+  product_variants: ServerVariantPricing[] | null;
+};
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function normalizedDiscountPercent(value: unknown): number {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(100, Math.max(0, Math.floor(n)));
+}
+
+function isServerVariantDiscountActive(variant: ServerVariantPricing, now = new Date()): boolean {
+  if (normalizedDiscountPercent(variant.discount_percent) <= 0) return false;
+  if (!variant.discount_ends_at) return true;
+  const endsAt = new Date(variant.discount_ends_at);
+  return !Number.isNaN(endsAt.getTime()) && now <= endsAt;
+}
+
+function serverVariantFinalPrice(variant: ServerVariantPricing): number {
+  const price = Number(variant.price ?? 0);
+  if (!Number.isFinite(price) || price <= 0) return 0;
+  if (!isServerVariantDiscountActive(variant)) return roundMoney(price);
+  return roundMoney(price * (1 - normalizedDiscountPercent(variant.discount_percent) / 100));
+}
+
+function serverStartingListPrice(variants: ServerVariantPricing[] | null | undefined): number {
+  const active = variants?.filter((v) => v.is_active !== false) ?? [];
+  const rows = active
+    .map((v) => ({
+      price: Number(v.price ?? 0),
+      stock: Number(v.stock ?? 0),
+    }))
+    .filter((v) => Number.isFinite(v.price) && v.price > 0);
+  if (rows.length === 0) return 0;
+  const inStock = rows.filter((v) => v.stock > 0);
+  return Math.min(...(inStock.length > 0 ? inStock : rows).map((v) => v.price));
+}
+
+function serverEffectiveVariantPrice(
+  variant: ServerVariantPricing,
+  product: ServerProductPricing | null | undefined,
+): number {
+  const directPrice = serverVariantFinalPrice(variant);
+  if (product?.is_clearance !== true) return directPrice;
+  const sale = Number(product.sale_price ?? 0);
+  if (sale <= 0) return directPrice;
+  const listPrice = Number(variant.price ?? 0);
+  const base = serverStartingListPrice(product.product_variants);
+  if (base <= 0) return Math.min(directPrice, sale);
+  return Math.min(directPrice, Math.max(1, roundMoney(sale * (listPrice / base))));
+}
+
 /**
  * Recomputes cart totals from DB prices + rules and rejects tampered payloads.
  * Call before createOrder; use returned items/summary for persistence.
@@ -129,7 +194,24 @@ export async function validateStorefrontCheckoutTotals(input: {
   ] = await Promise.all([
     prisma.product_variants.findMany({
       where: { id: { in: variantIds }, is_active: true },
-      include: { products: { select: { name: true } } },
+      include: {
+        products: {
+          select: {
+            name: true,
+            is_clearance: true,
+            sale_price: true,
+            product_variants: {
+              select: {
+                price: true,
+                stock: true,
+                is_active: true,
+                discount_percent: true,
+                discount_ends_at: true,
+              },
+            },
+          },
+        },
+      },
     }),
     prisma.discount_tiers.findMany({ where: { is_active: true }, orderBy: { min_amount: "asc" } }),
     prisma.shipping_rules.findMany({ where: { is_active: true } }),
@@ -162,7 +244,7 @@ export async function validateStorefrontCheckoutTotals(input: {
 
   const paidCartItemsDraft: CartItem[] = paidLines.map((line) => {
     const v = vmap.get(line.variantId)!;
-    const unit = Number(v.price);
+    const unit = serverEffectiveVariantPrice(v, v.products);
     return {
       variantId: line.variantId,
       productId: v.product_id != null ? Number(v.product_id) : 0,
@@ -349,7 +431,7 @@ export async function validateStorefrontCheckoutTotals(input: {
     return {
       variantId: line.variantId,
       quantity: line.quantity,
-      price: gift ? 0 : Number(v.price),
+      price: gift ? 0 : serverEffectiveVariantPrice(v, v.products),
       productName: line.productName,
       isFreeGift: gift,
     };
