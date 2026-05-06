@@ -17,10 +17,11 @@ export default async function PaymentPage({
     /* keep raw */
   }
 
-  const [{ accounts: bankAccounts, error: bankAccountsError, lineId }, orderRes] = await Promise.all([
-    fetchActiveBankAccounts(),
-    orderNumber.length >= 4 ? getOrderByNumber(orderNumber) : Promise.resolve({ data: null, error: "Invalid" }),
-  ]);
+  const [{ accounts: bankAccounts, error: bankAccountsError, lineId, promptPay }, orderRes] =
+    await Promise.all([
+      fetchActiveBankAccounts(),
+      orderNumber.length >= 4 ? getOrderByNumber(orderNumber) : Promise.resolve({ data: null, error: "Invalid" }),
+    ]);
 
   const order = orderRes.data;
   const orderUnavailable = Boolean(orderRes.error) || !order;
@@ -31,6 +32,7 @@ export default async function PaymentPage({
       bankAccounts={bankAccounts}
       bankAccountsError={bankAccountsError}
       lineId={lineId}
+      promptPayPayeeDisplayName={promptPay.payeeDisplayName}
       initialOrder={
         order
           ? {

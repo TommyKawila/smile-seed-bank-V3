@@ -7,11 +7,18 @@ export const dynamic = "force-dynamic";
 
 /** Server-only: bank accounts from Supabase `payment_settings` (guest-safe via service role). */
 async function CheckoutWithPaymentData() {
-  const { accounts: bankAccounts, error: bankAccountsError } = await fetchActiveBankAccounts();
+  const {
+    accounts: bankAccounts,
+    error: bankAccountsError,
+    promptPay,
+    lineId,
+  } = await fetchActiveBankAccounts();
   return (
     <CheckoutPageClient
       bankAccounts={bankAccounts}
       bankAccountsError={bankAccountsError}
+      promptPay={promptPay}
+      lineId={lineId}
     />
   );
 }

@@ -536,6 +536,203 @@ export async function getOrderByNumber(
   }
 }
 
+// ─── Checkout restore (localStorage + PAYMENT step) ─────────────────────────────
+
+export interface CheckoutPendingRestoreItem {
+  variantId: number;
+  productId: number;
+  productName: string;
+  quantity: number;
+  unitPriceBaht: number;
+  unitLabel: string;
+  productImage: string | null;
+  breederLogoUrl: string | null;
+  isFreeGift: boolean;
+}
+
+export interface CheckoutPendingRestorePayload {
+  orderNumber: string;
+  totalBaht: number;
+  shippingBaht: number;
+  flatDiscountBaht: number;
+  merchSubtotalBaht: number;
+  shippingIncluded: boolean;
+  customerName: string;
+  customerPhone: string;
+  shippingAddress: string;
+  customerNote: string | null;
+  promo: { code: string; discount_type: string | null; discount_value: number | null } | null;
+  items: CheckoutPendingRestoreItem[];
+}
+
+const CHECKOUT_PENDING_BLOCKED_STATUS = new Set(
+  ["CANCELLED", "VOID", "REJECTED"].map((s) => s.toUpperCase())
+);
+
+/**
+ * Public read for pending transfer checkout: same trust model as `/payment/[orderNumber]`
+ * (opaque order number). Returns data only when slip is not yet uploaded.
+ */
+export async function getCheckoutPendingRestore(
+  orderNumber: string,
+): Promise<ServiceResult<CheckoutPendingRestorePayload>> {
+  const no = orderNumber?.trim() ?? "";
+  if (no.length < 4) return { data: null, error: "INVALID_ORDER_NUMBER" };
+  try {
+    const sql = getSql();
+    const head = await sql<
+      {
+        id: bigint;
+        order_number: string;
+        payment_method: string | null;
+        slip_url: string | null;
+        status: string | null;
+        shipping_fee: string;
+        discount_amount: string;
+        promotion_discount_amount: string;
+        total_amount: string;
+        customer_name: string | null;
+        customer_phone: string | null;
+        shipping_address: string | null;
+        customer_note: string | null;
+        promo_code: string | null;
+        promo_discount_type: string | null;
+        promo_discount_value: string | null;
+      }[]
+    >`
+      SELECT
+        o.id,
+        o.order_number,
+        o.payment_method,
+        o.slip_url,
+        o.status,
+        o.shipping_fee::text AS shipping_fee,
+        o.discount_amount::text AS discount_amount,
+        o.promotion_discount_amount::text AS promotion_discount_amount,
+        o.total_amount::text AS total_amount,
+        o.customer_name,
+        o.customer_phone,
+        o.shipping_address,
+        o.customer_note,
+        pc.code AS promo_code,
+        pc.discount_type AS promo_discount_type,
+        pc.discount_value::text AS promo_discount_value
+      FROM orders o
+      LEFT JOIN promo_codes pc ON pc.id = (
+        SELECT pcu.promo_code_id
+        FROM promo_code_usages pcu
+        WHERE pcu.order_id = o.id
+        ORDER BY pcu.used_at ASC NULLS LAST, pcu.id ASC
+        LIMIT 1
+      )
+      WHERE o.order_number = ${no}
+      LIMIT 1
+    `;
+    const o = head[0];
+    if (!o) return { data: null, error: "NOT_FOUND" };
+    if (CHECKOUT_PENDING_BLOCKED_STATUS.has(String(o.status ?? "").toUpperCase())) {
+      return { data: null, error: "NOT_PENDING" };
+    }
+    if (String(o.payment_method ?? "").toUpperCase() !== "TRANSFER") {
+      return { data: null, error: "NOT_PENDING" };
+    }
+    if (o.slip_url != null && String(o.slip_url).trim().length > 0) {
+      return { data: null, error: "ALREADY_UPLOADED" };
+    }
+
+    const orderIdForLines = Number(o.id);
+
+    const itemRows = await sql<
+      {
+        variant_id: string | number | bigint | null;
+        product_id: string | number | bigint | null;
+        product_name: string;
+        quantity: number;
+        unit_price: string;
+        unit_label: string | null;
+        image_url: string | null;
+        breeder_logo_url: string | null;
+      }[]
+    >`
+      SELECT
+        oi.variant_id,
+        oi.product_id,
+        oi.product_name,
+        oi.quantity,
+        oi.unit_price::text AS unit_price,
+        oi.unit_label,
+        p.image_url,
+        NULLIF(TRIM(b.logo_url::text), '') AS breeder_logo_url
+      FROM order_items oi
+      LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+      LEFT JOIN products p ON p.id = COALESCE(oi.product_id, pv.product_id)
+      LEFT JOIN breeders b ON b.id = p.breeder_id
+      WHERE oi.order_id = ${orderIdForLines}
+      ORDER BY oi.id ASC
+    `;
+
+    const items: CheckoutPendingRestoreItem[] = itemRows.map((r) => {
+      const up = Number(r.unit_price);
+      const vid = r.variant_id != null ? Number(r.variant_id) : 0;
+      const pid = r.product_id != null ? Number(r.product_id) : 0;
+      const isFreeGift = !Number.isFinite(up) || up <= 0;
+      return {
+        variantId: vid,
+        productId: pid,
+        productName: r.product_name,
+        quantity: r.quantity,
+        unitPriceBaht: isFreeGift ? 0 : up,
+        unitLabel: (r.unit_label ?? "").trim() || "เมล็ด",
+        productImage: r.image_url?.trim() ? r.image_url.trim() : null,
+        breederLogoUrl: r.breeder_logo_url?.trim() ? r.breeder_logo_url.trim() : null,
+        isFreeGift,
+      };
+    });
+
+    const shippingBaht = Number(o.shipping_fee ?? 0);
+    const disc =
+      Number(o.discount_amount ?? 0) + Number(o.promotion_discount_amount ?? 0);
+    const merchSubtotalBaht = items.reduce(
+      (sum, it) => sum + (it.isFreeGift ? 0 : it.unitPriceBaht * it.quantity),
+      0,
+    );
+    const totalBaht = Number(o.total_amount ?? 0);
+    const promo =
+      o.promo_code != null && String(o.promo_code).trim().length > 0
+        ? {
+            code: String(o.promo_code).trim(),
+            discount_type: o.promo_discount_type ?? null,
+            discount_value:
+              o.promo_discount_value != null && o.promo_discount_value !== ""
+                ? Number(o.promo_discount_value)
+                : null,
+          }
+        : null;
+
+    return {
+      data: {
+        orderNumber: o.order_number,
+        totalBaht,
+        shippingBaht,
+        flatDiscountBaht: disc,
+        merchSubtotalBaht,
+        shippingIncluded: shippingBaht > 0,
+        customerName: (o.customer_name ?? "").trim() || "—",
+        customerPhone: (o.customer_phone ?? "").trim() || "—",
+        shippingAddress: (o.shipping_address ?? "").trim() || "—",
+        customerNote: o.customer_note?.trim() ? o.customer_note.trim() : null,
+        promo,
+        items,
+      },
+      error: null,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[order-service] getCheckoutPendingRestore error:", msg);
+    return { data: null, error: "SERVER" };
+  }
+}
+
 // ─── uploadSlip ───────────────────────────────────────────────────────────────
 
 const SLIP_BUCKET = "payment-slips";

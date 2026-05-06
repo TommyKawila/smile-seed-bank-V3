@@ -21,6 +21,8 @@ export const PromptPaySchema = z.object({
   identifier: z.string(),
   qrUrl: z.union([z.string().url(), z.literal("")]).optional(),
   isActive: z.boolean().default(true),
+  /** Shown on checkout / payment QR card (optional). */
+  accountName: z.string().optional().default(""),
 });
 
 export const PaymentSettingsSchema = z.object({

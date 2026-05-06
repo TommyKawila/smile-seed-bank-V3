@@ -107,7 +107,7 @@ function QrUpload({
 }
 
 const emptyBank: BankAccount = { bankName: "", accountName: "", accountNo: "", isActive: true };
-const emptyPromptPay: PromptPay = { identifier: "", qrUrl: "", isActive: true };
+const emptyPromptPay: PromptPay = { identifier: "", qrUrl: "", isActive: true, accountName: "" };
 
 export default function PaymentSettingsPage() {
   const [form, setForm] = useState<PaymentSettingsForm>({
@@ -333,6 +333,16 @@ export default function PaymentSettingsPage() {
               placeholder="เช่น 0812345678"
               value={form.promptPay?.identifier ?? ""}
               onChange={(e) => updatePromptPay("identifier", e.target.value)}
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs">ชื่อผู้รับเงิน (แสดงหน้าเช็คเอาต์)</Label>
+            <Input
+              placeholder="ไม่บังคับ — ค่าเริ่มต้นจากระบบถ้าว่าง"
+              value={form.promptPay?.accountName ?? ""}
+              onChange={(e) => updatePromptPay("accountName", e.target.value)}
               className="mt-1"
             />
           </div>

@@ -20,8 +20,16 @@ export const STOREFRONT_KBANK_TRANSFER_NAME_EN = "Kasikornbank" as const;
 /** Toggle PromptPay QR vs bank transfer-first checkout (single config for client + API). */
 export const PAYMENT_CONFIG = {
   /** When false: hide PromptPay UI and return 503 from `/api/storefront/promptpay-payload`. */
-  isPromptPayEnabled: false,
+  isPromptPayEnabled: true,
 } as const;
+
+/** Parsed `payment_settings.prompt_pay` for storefront (never exposes raw target id). */
+export type StorefrontPromptPayPublic = {
+  /** `identifier` present and not explicitly inactive in JSON. */
+  isConfigured: boolean;
+  /** Label next to QR / payee line (from DB `accountName` or fallback constant). */
+  payeeDisplayName: string;
+};
 
 function accountDigits(s: string | null | undefined): string {
   return String(s ?? "").replace(/\D/g, "");

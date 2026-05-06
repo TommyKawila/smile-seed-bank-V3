@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { z } from "zod";
-import { Loader2, ShoppingBag, ChevronLeft, ShieldCheck, Tag, Sparkles } from "lucide-react";
+import { Loader2, ShoppingBag, ChevronLeft, ShieldCheck, Tag, Sparkles, MapPin } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -18,22 +18,32 @@ import { useLanguage, type Locale } from "@/context/LanguageContext";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
 import { getURL } from "@/lib/get-url";
 import { cn, formatPrice } from "@/lib/utils";
-import type { ActiveBankAccount } from "@/lib/storefront-payment-shared";
+import type { ActiveBankAccount, StorefrontPromptPayPublic } from "@/lib/storefront-payment-shared";
 import { toast } from "sonner";
 import {
   createStorefrontOrder,
+  fetchCheckoutPendingRestore,
   fetchProfileOrdersCount,
   fetchSavedCouponsForCheckout,
   type ApiSavedCoupon,
 } from "@/services/checkout-service";
 import { signInWithGoogleRedirect } from "@/services/auth-service";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CouponSection } from "@/components/storefront/checkout/CouponSection";
 import { SavedCouponsCheckoutSection } from "@/components/storefront/checkout/CheckoutSummary";
 import { OrderSummary } from "@/components/storefront/checkout/OrderSummary";
 import { PaymentSection } from "@/components/storefront/checkout/PaymentSection";
-import type { PromptPayCheckoutBody } from "@/components/storefront/checkout/DynamicPromptPayQr";
+import { CheckoutSlipUploadSection } from "@/components/storefront/checkout/CheckoutSlipUploadSection";
+import { quantizeBaht2 } from "@/lib/money-thb";
+import type { CartItem, CartSummary } from "@/types/supabase";
 import { ShippingSection } from "@/components/storefront/checkout/ShippingSection";
+import type { CheckoutPendingRestorePayload } from "@/lib/services/order-service";
+import {
+  readPersistedCheckout,
+  persistCheckoutPendingPayment,
+  clearCheckoutPersistence,
+} from "@/lib/checkout-persist";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const serif = "font-sans";
@@ -49,11 +59,75 @@ const CheckoutFormSchema = z.object({
 
 type CheckoutForm = z.infer<typeof CheckoutFormSchema>;
 
+type PlacedCheckoutState = {
+  orderNumber: string;
+  totalBaht: number;
+  shippingIncluded: boolean;
+  shipping: CheckoutForm;
+  lineItems: CartItem[];
+  summarySnapshot: CartSummary;
+  appliedPromo: { code: string; discount_type: string | null; discount_value: number | null } | null;
+  summarySource: "live" | "restore";
+  /** Present when `summarySource === "restore"`: single consolidated discount from order row. */
+  restoreFlatDiscountBaht?: number;
+};
+
+function placedFromRestorePayload(data: CheckoutPendingRestorePayload): PlacedCheckoutState {
+  const lineItems: CartItem[] = data.items.map((it) => ({
+    variantId: it.variantId,
+    productId: it.productId,
+    productName: it.productName,
+    productImage: it.productImage,
+    unitLabel: it.unitLabel,
+    price: it.unitPriceBaht,
+    quantity: it.quantity,
+    isFreeGift: it.isFreeGift,
+    breederLogoUrl: it.breederLogoUrl,
+  }));
+
+  const sub = quantizeBaht2(data.merchSubtotalBaht);
+  const ship = quantizeBaht2(data.shippingBaht);
+  const tot = quantizeBaht2(data.totalBaht);
+  const flatDisc = quantizeBaht2(data.flatDiscountBaht);
+
+  const summarySnapshot: CartSummary = {
+    subtotal: sub,
+    discount: flatDisc,
+    discountPercent: 0,
+    tierDiscount: 0,
+    promoDiscount: 0,
+    shipping: ship,
+    total: tot,
+    appliedTier: null,
+    upsellMessage: null,
+    usePromoForOrder: false,
+    promoSupersededByTier: false,
+  };
+
+  return {
+    orderNumber: data.orderNumber,
+    totalBaht: tot,
+    shippingIncluded: data.shippingIncluded,
+    shipping: {
+      full_name: data.customerName,
+      phone: data.customerPhone,
+      address: data.shippingAddress,
+      guest_email: "",
+      order_note: data.customerNote ?? "",
+    },
+    lineItems,
+    summarySnapshot,
+    appliedPromo: data.promo,
+    summarySource: "restore",
+    restoreFlatDiscountBaht: flatDisc,
+  };
+}
+
 function OrderItemRow({
   item,
   locale,
 }: {
-  item: ReturnType<typeof useCartContext>["items"][number];
+  item: CartItem;
   locale: Locale;
 }) {
   return (
@@ -108,13 +182,16 @@ function OrderItemRow({
 export type CheckoutPageClientProps = {
   bankAccounts: ActiveBankAccount[];
   bankAccountsError: boolean;
+  promptPay: StorefrontPromptPayPublic;
+  lineId: string | null;
 };
 
 export function CheckoutPageClient({
   bankAccounts,
   bankAccountsError,
+  promptPay,
+  lineId,
 }: CheckoutPageClientProps) {
-  const router = useRouter();
   const { items, summary, promo, tieredDiscountRules, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount, isLoadingRules } = useCartContext();
   const { user, customer, isLoading: authLoading } = useAuth();
   const { locale, t } = useLanguage();
@@ -138,38 +215,47 @@ export function CheckoutPageClient({
   const [loginPromoCode, setLoginPromoCode] = useState("");
   const [promoOauthLoading, setPromoOauthLoading] = useState<null | "google" | "line">(null);
   const [savedCoupons, setSavedCoupons] = useState<ApiSavedCoupon[]>([]);
+  const [phase, setPhase] = useState<"details" | "payment">("details");
+  const [placed, setPlaced] = useState<PlacedCheckoutState | null>(null);
+  const [persistProbeComplete, setPersistProbeComplete] = useState(false);
+  const [checkoutRestoreFetching, setCheckoutRestoreFetching] = useState(false);
 
-  const deferPromptPayFetch = isLoadingRules || isValidatingPromo;
-
-  const promptPayCheckout = useMemo<PromptPayCheckoutBody>(
-    () => ({
-      customerId: user?.id ?? null,
-      promoCodeId: user && summary.usePromoForOrder ? promo.code?.id ?? null : null,
-      items: items.map((i) => ({
-        variantId: i.variantId,
-        quantity: i.quantity,
-        price: i.price,
-        isFreeGift: i.isFreeGift ?? false,
-        productName: i.productName,
-      })),
-      summary: {
-        subtotal: summary.subtotal,
-        discount: summary.discount,
-        shipping: summary.shipping,
-        total: summary.total,
-      },
-    }),
-    [
-      items,
-      promo.code?.id,
-      summary.discount,
-      summary.shipping,
-      summary.subtotal,
-      summary.total,
-      summary.usePromoForOrder,
-      user?.id,
-    ],
-  );
+  useLayoutEffect(() => {
+    const persisted = readPersistedCheckout();
+    if (!persisted) {
+      setPersistProbeComplete(true);
+      return;
+    }
+    let cancelled = false;
+    setCheckoutRestoreFetching(true);
+    void fetchCheckoutPendingRestore(persisted.orderNumber)
+      .then((res) => {
+        if (cancelled) return;
+        setCheckoutRestoreFetching(false);
+        setPersistProbeComplete(true);
+        if (!res.ok) {
+          clearCheckoutPersistence();
+          return;
+        }
+        setPlaced(placedFromRestorePayload(res.data));
+        setPhase("payment");
+        toast.success(
+          t(
+            "เรียกคืนเซสชันชำระเงินแล้ว — โปรดชำระและอัปโหลดสลิป",
+            "Session restored — finish payment and upload your slip",
+          ),
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        clearCheckoutPersistence();
+        setCheckoutRestoreFetching(false);
+        setPersistProbeComplete(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
 
   useEffect(() => {
     if (customer) {
@@ -347,8 +433,25 @@ export function CheckoutPageClient({
         throw new Error(result.message || (locale === "en" ? "Could not create order" : "สร้างออเดอร์ไม่สำเร็จ กรุณาลองใหม่"));
       }
 
+      setPlaced({
+        orderNumber: result.orderNumber,
+        totalBaht: quantizeBaht2(summary.total),
+        shippingIncluded: summary.shipping > 0,
+        shipping: parsed.data,
+        lineItems: items.map((i) => ({ ...i })),
+        summarySnapshot: { ...summary },
+        appliedPromo: promo.code
+          ? {
+              code: promo.code.code,
+              discount_type: promo.code.discount_type,
+              discount_value: promo.code.discount_value,
+            }
+          : null,
+        summarySource: "live",
+      });
+      persistCheckoutPendingPayment(result.orderNumber);
+      setPhase("payment");
       clearCart();
-      router.push(`/payment/${result.orderNumber}`);
     } catch (err) {
       setSubmitError(String(err).replace("Error: ", ""));
     } finally {
@@ -356,7 +459,18 @@ export function CheckoutPageClient({
     }
   };
 
-  if (itemCount === 0 && !isSubmitting) {
+  if (!persistProbeComplete || checkoutRestoreFetching) {
+    return (
+      <div className={`flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-4 pt-24 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-800" aria-hidden />
+        <p className={cn(serif, "text-sm text-zinc-500")}>
+          {t("กำลังโหลด...", "Loading...")}
+        </p>
+      </div>
+    );
+  }
+
+  if (itemCount === 0 && !isSubmitting && !(phase === "payment" && placed)) {
     return (
       <div
         className={`flex min-h-screen flex-col items-center justify-center gap-4 bg-white px-4 pt-16 text-center ${JOURNAL_PRODUCT_FONT_VARS}`}
@@ -384,7 +498,7 @@ export function CheckoutPageClient({
           </h1>
         </div>
 
-        {!user && !authLoading && (
+        {!user && !authLoading && phase === "details" && (
           <div className="mx-auto mb-4 max-w-3xl rounded-lg border border-amber-200/90 bg-amber-50/95 px-4 py-3 text-[12px] leading-relaxed text-amber-950 shadow-sm">
             <p>
               {t(
@@ -407,6 +521,7 @@ export function CheckoutPageClient({
           </div>
         )}
 
+        {phase === "details" ? (
         <form onSubmit={handleSubmit}>
           <div className="mx-auto max-w-3xl space-y-4">
               {user && (
@@ -639,16 +754,6 @@ export function CheckoutPageClient({
               </Card>
               </OrderSummary>
 
-              <PaymentSection
-                bankAccounts={bankAccounts}
-                bankAccountsError={bankAccountsError}
-                grandTotalBaht={summary.total}
-                promptPayCheckout={promptPayCheckout}
-                deferPromptPayFetch={deferPromptPayFetch}
-                t={t}
-                serif={serif}
-              />
-
               {submitError && (
                 <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{submitError}</p>
               )}
@@ -674,7 +779,7 @@ export function CheckoutPageClient({
                 {isSubmitting ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("กำลังสร้างออเดอร์...", "Placing order...")}</>
                 ) : (
-                  `${t("ยืนยันการโอนเงิน", "Confirm transfer")} · ${formatPrice(summary.total)}`
+                  `${t("ยืนยันออเดอร์", "Confirm order")} · ${formatPrice(summary.total)}`
                 )}
               </Button>
 
@@ -683,6 +788,224 @@ export function CheckoutPageClient({
               </p>
           </div>
         </form>
+        ) : placed ? (
+          <div className="mx-auto max-w-3xl space-y-4">
+            <div className="flex flex-wrap items-center gap-2 rounded-sm border border-zinc-100 bg-zinc-50/90 px-4 py-3">
+              <p className={cn(mono, "text-sm font-semibold text-zinc-900")}>#{placed.orderNumber}</p>
+              <span className="text-zinc-400">·</span>
+              <p className="text-xs text-zinc-600">
+                {t("ชำระเงินและอัปโหลดหลักฐานด้านล่าง", "Pay and upload your proof below")}
+              </p>
+            </div>
+
+            <Accordion type="single" collapsible className="rounded-sm border border-zinc-200 bg-white px-2 shadow-sm">
+              <AccordionItem value="shipping" className="border-0">
+                <AccordionTrigger className="px-2 hover:no-underline [&>svg]:shrink-0">
+                  <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left">
+                    <span className="flex items-center gap-2 text-sm font-medium text-zinc-800">
+                      <MapPin className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1.5} aria-hidden />
+                      {t("ที่อยู่จัดส่ง", "Shipping address")}
+                    </span>
+                    <span className="line-clamp-1 w-full text-[11px] font-normal text-zinc-500">
+                      {placed.shipping.full_name} · {placed.shipping.phone}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="border-t border-zinc-100 px-2 pt-0">
+                  <div className="space-y-2 py-3 text-sm leading-relaxed text-zinc-700">
+                    <p>
+                      <span className="font-medium text-zinc-500">{t("ชื่อ", "Name")}: </span>
+                      {placed.shipping.full_name}
+                    </p>
+                    <p>
+                      <span className="font-medium text-zinc-500">{t("โทรศัพท์", "Phone")}: </span>
+                      {placed.shipping.phone}
+                    </p>
+                    <p>
+                      <span className="font-medium text-zinc-500">{t("ที่อยู่", "Address")}: </span>
+                      {placed.shipping.address}
+                    </p>
+                    {placed.shipping.order_note?.trim() ? (
+                      <p>
+                        <span className="font-medium text-zinc-500">{t("หมายเหตุ", "Note")}: </span>
+                        {placed.shipping.order_note}
+                      </p>
+                    ) : null}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <OrderSummary>
+              <Card className="rounded-sm border-zinc-200 shadow-sm">
+                <CardContent className="space-y-4 p-5">
+                  <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3">
+                    <h2 className={cn(serif, "text-xs font-medium text-zinc-700")}>
+                      {t("สรุปรายการ", "Order summary")}
+                    </h2>
+                    <span
+                      className={cn(
+                        mono,
+                        "shrink-0 rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-600"
+                      )}
+                    >
+                      {t("รอชำระเงิน", "Pending")}
+                    </span>
+                  </div>
+
+                  <div className="max-h-52 space-y-3 overflow-y-auto sm:max-h-60">
+                    {placed.lineItems.map((item, idx) => (
+                      <OrderItemRow
+                        key={`${placed.orderNumber}-${idx}-${item.variantId}`}
+                        item={item}
+                        locale={locale}
+                      />
+                    ))}
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2 rounded-sm border border-zinc-100 bg-zinc-50/40 p-3 text-sm">
+                    <div className="flex justify-between gap-3 text-zinc-600">
+                      <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
+                        {t("ยอดสินค้า", "Subtotal")}
+                      </span>
+                      <span className={cn(mono, "font-medium text-zinc-900")}>
+                        {formatPrice(placed.summarySnapshot.subtotal)}
+                      </span>
+                    </div>
+                    {placed.summarySource === "restore" && (placed.restoreFlatDiscountBaht ?? 0) > 0 ? (
+                      <div className="flex justify-between gap-3 text-emerald-800">
+                        <span className={cn(serif, "text-xs font-medium")}>
+                          {placed.appliedPromo?.code
+                            ? t(
+                                `ส่วนลด (${placed.appliedPromo.code})`,
+                                `Discount (${placed.appliedPromo.code})`,
+                              )
+                            : t("ส่วนลด", "Discount")}
+                        </span>
+                        <span className={cn(mono, "font-medium")}>
+                          -{formatPrice(placed.restoreFlatDiscountBaht ?? 0)}
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        {placed.summarySnapshot.tierDiscount > 0 && (
+                          <div className="flex justify-between gap-3 text-emerald-800">
+                            <span className={cn(serif, "text-xs font-medium")}>
+                              {placed.summarySnapshot.discountPercent > 0
+                                ? t(
+                                    `ส่วนลดอัตโนมัติ (${placed.summarySnapshot.discountPercent}%)`,
+                                    `Auto discount (${placed.summarySnapshot.discountPercent}%)`,
+                                  )
+                                : t("ส่วนลดอัตโนมัติ", "Spend discount")}
+                            </span>
+                            <span className={cn(mono, "font-medium")}>
+                              -{formatPrice(placed.summarySnapshot.tierDiscount)}
+                            </span>
+                          </div>
+                        )}
+                        {placed.summarySnapshot.promoDiscount > 0 && (
+                          <div className="flex justify-between gap-3 text-emerald-800">
+                            <span className={cn(serif, "text-xs font-medium")}>
+                              {t(
+                                `ส่วนลดโค้ด (${placed.appliedPromo?.code ?? ""})`,
+                                `Coupon (${placed.appliedPromo?.code ?? ""})`,
+                              )}
+                            </span>
+                            <span className={cn(mono, "font-medium")}>
+                              -{formatPrice(placed.summarySnapshot.promoDiscount)}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    <div className="flex justify-between gap-3 text-zinc-600">
+                      <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
+                        {t("ค่าจัดส่ง", "Shipping")}
+                      </span>
+                      <span className={cn(mono, "font-medium text-zinc-900")}>
+                        {placed.summarySnapshot.shipping === 0
+                          ? t("ฟรี", "Free")
+                          : formatPrice(placed.summarySnapshot.shipping)}
+                      </span>
+                    </div>
+                    {(placed.summarySource === "restore"
+                      ? (placed.restoreFlatDiscountBaht ?? 0)
+                      : placed.summarySnapshot.tierDiscount + placed.summarySnapshot.promoDiscount) > 0 && (
+                      <div className="flex items-center justify-center gap-2 rounded-sm border border-zinc-100 bg-white px-3 py-2.5 text-xs text-zinc-700">
+                        <Sparkles className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1} aria-hidden />
+                        <span>
+                          {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
+                          <strong className={cn(mono, "font-semibold")}>
+                            {formatPrice(
+                              placed.summarySource === "restore"
+                                ? placed.restoreFlatDiscountBaht ?? 0
+                                : placed.summarySnapshot.tierDiscount +
+                                    placed.summarySnapshot.promoDiscount,
+                            )}
+                          </strong>
+                        </span>
+                      </div>
+                    )}
+                    <Separator className="my-1 bg-zinc-100" />
+                    <div className="rounded-sm border border-zinc-200 bg-white px-4 py-3">
+                      <div className="flex items-center justify-between gap-3 text-zinc-900">
+                        <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
+                          {t("ยอดสุทธิ", "Net total")}
+                        </span>
+                        <span className={cn(mono, "text-xl font-semibold text-emerald-900")}>
+                          {formatPrice(placed.totalBaht)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </OrderSummary>
+
+            <AnimatePresence>
+              <motion.div
+                key={placed.orderNumber}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.28 }}
+                className="space-y-4"
+              >
+                <PaymentSection
+                  bankAccounts={bankAccounts}
+                  bankAccountsError={bankAccountsError}
+                  grandTotalBaht={placed.totalBaht}
+                  promptPayResolution={{ mode: "order", orderNumber: placed.orderNumber }}
+                  promptPaySettings={promptPay}
+                  shippingIncluded={placed.shippingIncluded}
+                  deferPromptPayFetch={false}
+                  t={t}
+                  serif={serif}
+                />
+                <CheckoutSlipUploadSection
+                  orderNumber={placed.orderNumber}
+                  lineId={lineId}
+                  t={t}
+                  serif={serif}
+                />
+              </motion.div>
+            </AnimatePresence>
+
+            <a
+              href={process.env.NEXT_PUBLIC_LINE_OA_URL ?? "https://page.line.me/smileseedsbank"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 rounded-lg border border-[#06C755]/30 bg-[#06C755]/10 px-3 py-2.5 text-[11px] font-medium text-[#06C755] hover:bg-[#06C755]/15"
+            >
+              <span className="text-base leading-none">💬</span>
+              {t(
+                "อย่าลืมเพิ่มเพื่อน @smileseedsbank เพื่อรับเลขพัสดุอัตโนมัติทาง LINE",
+                "Add @smileseedsbank as a friend to receive tracking updates on LINE",
+              )}
+            </a>
+          </div>
+        ) : null}
       </div>
 
       <LoginForPromoDialog

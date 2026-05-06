@@ -18,7 +18,6 @@ import {
   Check,
   RotateCcw,
   FileText,
-  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,13 +33,9 @@ import {
 } from "@/lib/storefront-payment-shared";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { fetchStorefrontReceiptPdfSettings } from "@/lib/pdf-settings";
+import { clearCheckoutPersistence } from "@/lib/checkout-persist";
 import { computeOrderReceiptFinancials } from "@/lib/order-receipt-math";
 import { formatPaymentMethodForPdf, generateReceiptPDF, isReceiptEligibleStatus } from "@/lib/receipt-pdf";
-import {
-  lineOaPrefillUrlForOrderSuccess,
-  lineOaPrefillUrlForParcelInquiry,
-  lineOaPrefillUrlForCancelledOrder,
-} from "@/lib/line-oa-url";
 import type { OrderSuccessView, OrderSuccessItemRow } from "@/lib/services/order-service";
 import { labelForFloweringTypeRaw } from "@/lib/seed-type-filter";
 import {
@@ -49,6 +44,9 @@ import {
 } from "@/lib/order-receipt-line-format";
 import { orderIsPaymentReceived, orderIsReadyToShip } from "@/lib/order-paid";
 import { LineOaResponsiveCta } from "@/components/storefront/LineOaResponsiveCta";
+
+/** Official account add link (storefront). */
+const STOREFRONT_LINE_OA_URL = "https://line.me/R/ti/p/@smileseedsbank";
 
 /** Storefront payment-settings API: `lineId` = `payment_settings.line_id` (LINE OA @handle). */
 type PaySettings = {
@@ -159,46 +157,6 @@ function ShippingRecipientBlock({ order, t }: { order: OrderSuccessView; t: TFn 
   );
 }
 
-function LineOrderUpdatesPromo({
-  t,
-  href,
-  lineId,
-  orderNo,
-}: {
-  t: TFn;
-  href: string;
-  lineId: string | null;
-  orderNo: string;
-}) {
-  return (
-    <div className="rounded-2xl border-2 border-[#06C755] bg-gradient-to-br from-[#ecfdf5] from-40% via-white to-white p-4 shadow-md ring-1 ring-[#06C755]/15">
-      <div className="mb-1.5 flex items-center justify-center gap-2">
-        <MessageCircle className="h-7 w-7 shrink-0 text-[#06C755]" aria-hidden />
-        <span className="text-center text-base font-extrabold leading-tight text-[#047857] sm:text-lg">
-          {t("รับอัปเดตออเดอร์ทาง LINE", "Get order updates on LINE")}
-        </span>
-      </div>
-      <p className="text-center text-[11px] leading-relaxed text-zinc-600">
-        {t(
-          "ยืนยันชำระ / เลขพัสดุ — แอด LINE แล้วส่งเลขออเดอร์ (รองรับอีเมลหากยังไม่เชื่อม)",
-          "Payment & shipping alerts — add LINE and send your order #. Email is used if LINE is not linked.",
-        )}
-      </p>
-      <div className="mt-3">
-        <LineOaResponsiveCta
-          href={href}
-          orderNumber={orderNo}
-          lineId={lineId}
-          desktopAddFriend
-          className="h-12 gap-2 py-0 text-base font-extrabold"
-        >
-          {t("รับอัปเดตออเดอร์บน LINE", "Get updates on LINE")}
-        </LineOaResponsiveCta>
-      </div>
-    </div>
-  );
-}
-
 export default function OrderSuccessDynamicPage() {
   const params = useParams();
   const rawId = typeof params.orderId === "string" ? params.orderId : "";
@@ -212,7 +170,6 @@ export default function OrderSuccessDynamicPage() {
   const [loading, setLoading] = useState(true);
 
   const [paySettings, setPaySettings] = useState<PaySettings>({ bank: null, promptPay: null, lineId: null });
-  const [shopLineId, setShopLineId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -220,6 +177,10 @@ export default function OrderSuccessDynamicPage() {
   const [copiedTracking, setCopiedTracking] = useState(false);
   const [copiedOrderNo, setCopiedOrderNo] = useState(false);
   const [receiptLoading, setReceiptLoading] = useState(false);
+
+  useEffect(() => {
+    clearCheckoutPersistence();
+  }, []);
 
   const loadOrder = useCallback(async (opts?: { silent?: boolean }) => {
     if (!orderNumber) {
@@ -287,7 +248,6 @@ export default function OrderSuccessDynamicPage() {
             promptPay: data.promptPay ?? null,
             lineId: lid && lid.length > 0 ? lid : null,
           });
-          setShopLineId(lid && lid.length > 0 ? lid : null);
         }
       );
     return () => {
@@ -395,7 +355,6 @@ export default function OrderSuccessDynamicPage() {
   const isCancelled = order.status === "CANCELLED";
   const isVoided = order.status === "VOIDED";
   const isShipped = order.status === "SHIPPED";
-  const showLineConversionHook = !lineLinked && !isVoided;
 
   const showTransferPayFlow =
     order.status === "PENDING" &&
@@ -407,11 +366,6 @@ export default function OrderSuccessDynamicPage() {
     paySettings.bank && !isPrimaryKbankCheckoutAccount(paySettings.bank.accountNo)
       ? paySettings.bank
       : null;
-
-  const lineOaId = shopLineId ?? paySettings.lineId ?? null;
-  const lineHrefDefault = lineOaPrefillUrlForOrderSuccess(displayNo, lineOaId);
-  const lineHrefCancelled = lineOaPrefillUrlForCancelledOrder(displayNo, lineOaId);
-  const lineHrefParcel = lineOaPrefillUrlForParcelInquiry(displayNo, order.tracking_number, lineOaId);
 
   const copyTracking = () => {
     if (!order.tracking_number) return;
@@ -555,14 +509,6 @@ export default function OrderSuccessDynamicPage() {
     return (
       <div className="min-h-screen bg-zinc-50 pt-20 pb-14">
         <div className="mx-auto max-w-lg space-y-5 px-4 sm:px-6">
-          {showLineConversionHook ? (
-            <LineOrderUpdatesPromo
-              t={t}
-              href={lineHrefDefault}
-              lineId={lineOaId}
-              orderNo={displayNo}
-            />
-          ) : null}
           <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -694,17 +640,15 @@ export default function OrderSuccessDynamicPage() {
 
           {isGuestOrder && !lineLinked ? (
             <div className="space-y-2">
-              <p className="text-center text-[11px] text-zinc-500">
+              <p className="text-center text-[11px] leading-relaxed text-zinc-500">
                 {t(
-                  "แอด LINE แล้วส่งเลขออเดอร์ในแชท — ระบบจะเชื่อมเพื่อแจ้งเตือนสถานะ",
-                  "Add LINE and send your order number in chat to enable status alerts.",
+                  `แอด LINE แล้วส่งเลขออเดอร์ #${displayNo} ในแชท — ระบบจะเชื่อมเพื่อแจ้งเตือนสถานะ`,
+                  `Add LINE and send order #${displayNo} in chat to enable status alerts.`,
                 )}
               </p>
               <LineOaResponsiveCta
-                href={lineHrefDefault}
+                href={STOREFRONT_LINE_OA_URL}
                 orderNumber={displayNo}
-                lineId={lineOaId}
-                desktopAddFriend
                 className="gap-2 px-3 py-3.5 text-sm leading-snug"
               >
                 {t(
@@ -715,11 +659,17 @@ export default function OrderSuccessDynamicPage() {
             </div>
           ) : null}
 
-          <div className="flex justify-center pb-4">
+          <div className="grid grid-cols-2 gap-2 pb-4">
             <Button asChild variant="outline" className="h-10">
               <Link href="/">
                 <Home className="mr-1.5 h-4 w-4" />
                 {t("หน้าแรก", "Home")}
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-10">
+              <Link href="/shop">
+                <ShoppingBag className="mr-1.5 h-4 w-4" />
+                {t("ช้อปต่อ", "Shop")}
               </Link>
             </Button>
           </div>
@@ -792,14 +742,6 @@ export default function OrderSuccessDynamicPage() {
           )}
 
           <CardContent className="space-y-5 p-5 sm:p-6">
-            {showLineConversionHook ? (
-              <LineOrderUpdatesPromo
-                t={t}
-                href={lineHrefDefault}
-                lineId={lineOaId}
-                orderNo={displayNo}
-              />
-            ) : null}
             <div className="rounded-lg border border-zinc-100 bg-zinc-50/90 px-3 py-2.5">
               <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
                 {t("เลขออเดอร์", "Order no.")}
@@ -928,7 +870,7 @@ export default function OrderSuccessDynamicPage() {
                     </span>
                   </p>
                 ) : null}
-                <LineOaResponsiveCta href={lineHrefCancelled} orderNumber={displayNo} className="gap-2.5 py-4 text-base">
+                <LineOaResponsiveCta href={STOREFRONT_LINE_OA_URL} orderNumber={displayNo} className="gap-2.5 py-4 text-base">
                   {lineLinked
                     ? t("สอบถามสถานะผ่าน LINE", "Get updates via LINE (Active ✓)")
                     : t("ติดต่อแอดมินผ่าน LINE", "Contact us on LINE")}
@@ -943,15 +885,15 @@ export default function OrderSuccessDynamicPage() {
                     </span>
                   </p>
                 ) : null}
-                <LineOaResponsiveCta href={lineHrefParcel} orderNumber={displayNo} className="gap-2.5 py-4 text-base">
+                <LineOaResponsiveCta href={STOREFRONT_LINE_OA_URL} orderNumber={displayNo} className="gap-2.5 py-4 text-base">
                   {lineLinked
                     ? t("สอบถามสถานะผ่าน LINE", "Get updates via LINE (Active ✓)")
                     : t("สอบถามสถานะพัสดุผ่าน LINE", "Ask about parcel status on LINE")}
                 </LineOaResponsiveCta>
                 <p className="text-center text-[11px] leading-relaxed text-zinc-500">
                   {t(
-                    "ข้อความจะรวมเลขออเดอร์และเลขพัสดุให้อัตโนมัติ (ถ้ามี)",
-                    "Your message will include the order number and tracking number when available."
+                    `เลขออเดอร์ #${displayNo} — พิมพ์ในแชท LINE ของร้านเมื่อมีเลขพัสดุ`,
+                    `Order #${displayNo} — message us on LINE; include tracking if you contact us.`,
                   )}
                 </p>
               </div>
@@ -965,10 +907,8 @@ export default function OrderSuccessDynamicPage() {
                   </p>
                 ) : null}
                 <LineOaResponsiveCta
-                  href={lineHrefDefault}
+                  href={STOREFRONT_LINE_OA_URL}
                   orderNumber={displayNo}
-                  lineId={lineOaId}
-                  desktopAddFriend
                   className="gap-2 px-3 py-3.5 text-sm leading-snug sm:gap-2.5 sm:py-4 sm:text-base"
                 >
                   {lineLinked
@@ -990,8 +930,8 @@ export default function OrderSuccessDynamicPage() {
                         "Your LINE is already linked for automated tracking."
                       )
                     : t(
-                        "เพิ่ม LINE OA ของร้าน — ระบบใส่เลขออเดอร์ในข้อความให้อัตโนมัติ",
-                        "Add our LINE — your order number is prefilled when you open the chat."
+                        `แอด @smileseedsbank แล้วพิมพ์เลขออเดอร์ #${displayNo} ในแชท`,
+                        `Add @smileseedsbank and send order #${displayNo} in chat.`,
                       )}
                 </p>
                 {showSlipLineHelp ? (

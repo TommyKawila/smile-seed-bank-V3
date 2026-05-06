@@ -3,6 +3,9 @@ import {
   readSavedPromotionsFromLocal,
   type SavedPromotionPayload,
 } from "@/lib/saved-promotion-local";
+import type { CheckoutPendingRestorePayload } from "@/lib/services/order-service";
+
+export type { CheckoutPendingRestorePayload as CheckoutPendingRestoreDto };
 
 export type ApiSavedCoupon = {
   campaign_id: string;
@@ -117,6 +120,28 @@ export async function fetchProfileOrdersCount(): Promise<number> {
   const res = await fetch("/api/storefront/profile/orders");
   const data = res.ok ? ((await res.json()) as { orders?: unknown[] }) : { orders: [] };
   return data.orders?.length ?? 0;
+}
+
+export async function fetchCheckoutPendingRestore(
+  orderNumber: string,
+): Promise<
+  | { ok: true; data: CheckoutPendingRestorePayload }
+  | { ok: false; code: string }
+> {
+  const trimmed = orderNumber.trim();
+  const res = await fetch(
+    `/api/storefront/orders/checkout-pending?orderNumber=${encodeURIComponent(trimmed)}`,
+    { cache: "no-store", credentials: "same-origin" },
+  );
+  const body = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    code?: string;
+    data?: CheckoutPendingRestorePayload;
+  };
+  if (!res.ok || !body.ok || !body.data) {
+    return { ok: false, code: body.code ?? `HTTP_${res.status}` };
+  }
+  return { ok: true, data: body.data };
 }
 
 export async function createStorefrontOrder(payload: CheckoutOrderPayload): Promise<CheckoutOrderResult> {

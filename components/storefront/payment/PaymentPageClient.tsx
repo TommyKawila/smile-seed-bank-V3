@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronLeft, CreditCard, Upload, Loader2, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, CreditCard, Upload, Loader2, CheckCircle2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackingCta";
@@ -20,6 +20,8 @@ export type PaymentPageClientProps = {
   bankAccounts: ActiveBankAccount[];
   bankAccountsError: boolean;
   lineId: string | null;
+  /** From `payment_settings.prompt_pay` — display only. */
+  promptPayPayeeDisplayName: string;
   initialOrder: {
     total_amount: number;
     payment_method: string | null;
@@ -37,6 +39,7 @@ export function PaymentPageClient({
   bankAccounts,
   bankAccountsError,
   lineId,
+  promptPayPayeeDisplayName,
   initialOrder,
   orderUnavailable,
 }: PaymentPageClientProps) {
@@ -45,6 +48,7 @@ export function PaymentPageClient({
   const totalAmount = order ? Number(order.total_amount) : 0;
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [ppReloadNonce, setPpReloadNonce] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -161,13 +165,28 @@ export function PaymentPageClient({
             )}
 
             {promptPayOn ? (
-              <div className="flex w-full justify-center">
+              <div className="flex w-full flex-col items-center gap-2">
+                <p className="text-center text-[11px] font-medium text-zinc-600">
+                  ยอดเงินรวมค่าจัดส่งแล้ว
+                </p>
                 <div className="w-full max-w-md">
                   <DynamicPromptPayQr
                     amountBaht={totalAmount}
                     resolution={{ mode: "order", orderNumber }}
+                    reloadNonce={ppReloadNonce}
+                    payeeDisplayName={promptPayPayeeDisplayName}
                     t={tTh}
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-11 w-full gap-2 rounded-xl"
+                    onClick={() => setPpReloadNonce((n) => n + 1)}
+                  >
+                    <RefreshCw className="h-4 w-4" aria-hidden />
+                    สร้าง QR ใหม่
+                  </Button>
                 </div>
               </div>
             ) : null}
