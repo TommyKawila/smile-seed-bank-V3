@@ -570,11 +570,12 @@ const CHECKOUT_PENDING_BLOCKED_STATUS = new Set(
 );
 
 /**
- * Public read for pending transfer checkout: same trust model as `/payment/[orderNumber]`
- * (opaque order number). Returns data only when slip is not yet uploaded.
+ * Pending transfer restore: guest orders use the opaque order number, registered
+ * customer orders require the same signed-in user as order-success.
  */
 export async function getCheckoutPendingRestore(
   orderNumber: string,
+  requesterUserId: string | null,
 ): Promise<ServiceResult<CheckoutPendingRestorePayload>> {
   const no = orderNumber?.trim() ?? "";
   if (no.length < 4) return { data: null, error: "INVALID_ORDER_NUMBER" };
@@ -583,6 +584,7 @@ export async function getCheckoutPendingRestore(
     const head = await sql<
       {
         id: bigint;
+        customer_id: string | null;
         order_number: string;
         payment_method: string | null;
         slip_url: string | null;
@@ -602,6 +604,7 @@ export async function getCheckoutPendingRestore(
     >`
       SELECT
         o.id,
+        o.customer_id,
         o.order_number,
         o.payment_method,
         o.slip_url,
@@ -630,6 +633,10 @@ export async function getCheckoutPendingRestore(
     `;
     const o = head[0];
     if (!o) return { data: null, error: "NOT_FOUND" };
+    if (o.customer_id != null) {
+      if (!requesterUserId) return { data: null, error: "LOGIN_REQUIRED" };
+      if (o.customer_id !== requesterUserId) return { data: null, error: "FORBIDDEN" };
+    }
     if (CHECKOUT_PENDING_BLOCKED_STATUS.has(String(o.status ?? "").toUpperCase())) {
       return { data: null, error: "NOT_PENDING" };
     }
