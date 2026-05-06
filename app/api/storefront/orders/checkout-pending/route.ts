@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { getCheckoutPendingRestore } from "@/lib/services/order-service";
 
 export const dynamic = "force-dynamic";
@@ -12,11 +13,21 @@ export async function GET(req: NextRequest) {
     } catch {
       /* keep raw */
     }
-    const { data, error } = await getCheckoutPendingRestore(orderNumber);
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data, error } = await getCheckoutPendingRestore(orderNumber, user?.id ?? null);
     if (!data) {
       const code = error ?? "UNKNOWN";
       const status =
-        code === "NOT_FOUND" || code === "INVALID_ORDER_NUMBER" ? 404 : 400;
+        code === "LOGIN_REQUIRED"
+          ? 401
+          : code === "FORBIDDEN"
+            ? 403
+            : code === "NOT_FOUND" || code === "INVALID_ORDER_NUMBER"
+              ? 404
+              : 400;
       return NextResponse.json({ ok: false, code }, { status });
     }
     return NextResponse.json({ ok: true, data });
