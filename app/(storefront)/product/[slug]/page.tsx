@@ -3,6 +3,10 @@ import { getProductBySlug } from "@/services/product-service";
 import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
 import ProductDetailClient from "./product-detail-client";
 
+function cleanProductPath(slug: string): string {
+  return `/product/${encodeURIComponent(slug.trim())}`;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -16,7 +20,7 @@ export async function generateMetadata({
     .replace(/\s+/g, " ")
     .trim();
   const description = raw ? raw.slice(0, 160) : `${title} — Smile Seed Bank`;
-  const canonical = `/product/${params.slug}`;
+  const canonical = cleanProductPath(data.slug?.trim() || params.slug);
   return {
     title,
     description,

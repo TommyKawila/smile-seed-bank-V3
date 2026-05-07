@@ -5,6 +5,7 @@
 ---
 
 ### บันทึกการทำงาน — 2026-05-06
+- **Technical SEO canonical cleanup:** `app/(storefront)/product/[slug]/page.tsx` canonical uses clean product slug; `/seeds/[breederSlug]` now exports canonical metadata; `app/robots.ts` explicitly allows public product/seed/blog paths and disallows `/admin/`, `/api/`, `/checkout/`, `/profile/`; sitemap remains clean parameter-free URLs.
 - **Admin bulk seeds table crash (`strain` on undefined):** `lib/bulk-seeds/sanitize.ts` — `coerceBulkSeedRow` / `sanitizeBulkSeedList`; `BulkSeedsAdminClient` — `safeRows`, `patchRow` ผ่าน sanitize + `coerceBulkSeedRow` หลัง PATCH; ตาราง `safeRows` + `colSpan={tableColSpan}` แถว "No data found"; Export PDF ใช้ `safeRows`
 
 ### บันทึกการทำงาน — 2026-05-04

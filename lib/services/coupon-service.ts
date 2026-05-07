@@ -30,7 +30,7 @@ export interface ValidateCouponInput {
   phone?: string | null;
   /**
    * INTERNAL: Route sets true after matching Supabase session to `user_id`.
-   * Skips per-user redemption count + phone reuse only (not expiry, min spend, campaign, etc.).
+   * Skips admin QA-only customer gates: first-order, redemption count, and phone reuse.
    */
   skipPerUserCouponReuseChecks?: boolean;
 }
@@ -138,8 +138,10 @@ export async function validateCoupon(
       return { ok: false, error: { type: "REQUIRE_LOGIN", message: loginMsg, requireLogin: true } };
     }
 
+    const skipReuse = skipPerUserCouponReuseChecks === true;
+
     // First order check
-    if (promo.first_order_only) {
+    if (promo.first_order_only && !skipReuse) {
       if (!user_id && !email) {
         return { ok: false, error: { type: "REQUIRE_LOGIN", message: "Please sign in to use this promo code", requireLogin: true } };
       }
@@ -159,8 +161,6 @@ export async function validateCoupon(
     if (promo.min_spend != null && promo.min_spend > 0 && subtotal < promo.min_spend) {
       return { ok: false, error: { type: "MIN_SPEND", minSpend: promo.min_spend } };
     }
-
-    const skipReuse = skipPerUserCouponReuseChecks === true;
 
     // Usage limit check (per user / email redemption rows)
     if (

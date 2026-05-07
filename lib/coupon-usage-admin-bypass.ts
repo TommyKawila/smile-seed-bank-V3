@@ -1,7 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 
 /**
- * Admin storefront QA bypass for per-customer promo reuse checks.
+ * Admin storefront QA bypass for customer-specific coupon gates.
  *
  * Set `ADMIN_COUPON_USAGE_BYPASS_EMAILS` to a comma-separated list of lowercase emails that
  * match the Supabase-auth email for the same `user_id` as the storefront request body.
@@ -25,7 +25,7 @@ function bypassEmailAllowlist(): Set<string> {
 
 /**
  * Server-side only: callers must resolve session from cookies; body user_id alone is untrusted.
- * Skips ONLY per-customer redemption / phone reuse checks when {@link coupon-service validates}.
+ * Skips first-order, per-customer redemption, and phone reuse checks when coupon-service validates.
  */
 export function resolveSkipCouponPerUserReuseForAdminSession(opts: {
   sessionUser: User | null | undefined;
