@@ -675,6 +675,28 @@ model search_logs {
   @@schema("public")
 }
 
+/// Admin-only wholesale CSV rows. Standalone: NO foreign keys to `products`, `product_variants`, or storefront pricing.
+model bulk_seeds {
+  id           BigInt   @id @default(autoincrement())
+  source_kind  String   @db.VarChar(32)
+  external_id  String   @db.VarChar(128)
+  code         String   @default("") @db.VarChar(128)
+  strain       String   @db.VarChar(512)
+  thc          String   @default("") @db.VarChar(128)
+  cycle        String   @default("") @db.VarChar(128)
+  bulk_type    String   @default("") @db.VarChar(128)
+  flavor       String   @default("") @db.VarChar(256)
+  tier_prices  Json     @default("{}") @db.JsonB
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@unique([source_kind, external_id], map: "bulk_seeds_source_external_unique")
+  @@index([strain])
+  @@index([code])
+  @@index([source_kind])
+  @@schema("public")
+}
+
 enum CustomerTier {
   Retail
   Wholesale

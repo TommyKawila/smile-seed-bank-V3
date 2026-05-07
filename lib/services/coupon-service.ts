@@ -28,6 +28,11 @@ export interface ValidateCouponInput {
   user_id: string | null;
   /** Customer phone (raw). Used for cross-account single-use fraud check. */
   phone?: string | null;
+  /**
+   * INTERNAL: Route sets true after matching Supabase session to `user_id`.
+   * Skips per-user redemption count + phone reuse only (not expiry, min spend, campaign, etc.).
+   */
+  skipPerUserCouponReuseChecks?: boolean;
 }
 
 export type ValidateCouponError =
@@ -85,7 +90,7 @@ export async function validateCoupon(
   input: ValidateCouponInput
 ): Promise<ValidateCouponResult> {
   try {
-    const { code, subtotal, email, user_id } = input;
+    const { code, subtotal, email, user_id, skipPerUserCouponReuseChecks } = input;
 
     if (!user_id) {
       return {
@@ -155,8 +160,13 @@ export async function validateCoupon(
       return { ok: false, error: { type: "MIN_SPEND", minSpend: promo.min_spend } };
     }
 
-    // Usage limit check
-    if (email || user_id) {
+    const skipReuse = skipPerUserCouponReuseChecks === true;
+
+    // Usage limit check (per user / email redemption rows)
+    if (
+      !skipReuse &&
+      (email || user_id)
+    ) {
       const usedCount = await _getUsageCount(sql, promo.id, user_id, email);
       const limit = promo.usage_limit_per_user ?? 1;
       if (usedCount >= limit) return { ok: false, error: { type: "ALREADY_USED" } };
@@ -165,8 +175,8 @@ export async function validateCoupon(
     // ── Phone-based cross-account fraud check ───────────────────────────────
     // For single-use codes, block if ANY past order with this coupon used the
     // same phone (normalized digits only), even under a different account.
-    const limit = promo.usage_limit_per_user ?? 1;
-    if (limit <= 1) {
+    const limitPhone = promo.usage_limit_per_user ?? 1;
+    if (!skipReuse && limitPhone <= 1) {
       const phoneDigits = _normalizePhone(input.phone);
       if (phoneDigits.length >= 9) {
         const usedByPhone = await _hasOrderUsingPromoByPhone(sql, promo.id, phoneDigits);

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { resolveSkipCouponPerUserReuseForAdminSession } from "@/lib/coupon-usage-admin-bypass";
+import { createClient } from "@/lib/supabase/server";
 import { validateCoupon } from "@/lib/services/coupon-service";
 
 const BodySchema = z.object({
@@ -22,12 +24,22 @@ export async function POST(req: NextRequest) {
     }
 
     const { code, subtotal, email, phone, user_id } = parsed.data;
+    const supabase = await createClient();
+    const {
+      data: { user: sessionUser },
+    } = await supabase.auth.getUser();
+    const skipReuse = resolveSkipCouponPerUserReuseForAdminSession({
+      sessionUser,
+      requestUserId: user_id ?? null,
+    });
+
     const result = await validateCoupon({
       code,
       subtotal,
       email: email ?? null,
       user_id: user_id ?? null,
       phone: phone ?? null,
+      skipPerUserCouponReuseChecks: skipReuse,
     });
 
     if (!result.ok) {

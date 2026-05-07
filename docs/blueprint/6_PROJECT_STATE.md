@@ -4,6 +4,9 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-06
+- **Admin bulk seeds table crash (`strain` on undefined):** `lib/bulk-seeds/sanitize.ts` — `coerceBulkSeedRow` / `sanitizeBulkSeedList`; `BulkSeedsAdminClient` — `safeRows`, `patchRow` ผ่าน sanitize + `coerceBulkSeedRow` หลัง PATCH; ตาราง `safeRows` + `colSpan={tableColSpan}` แถว "No data found"; Export PDF ใช้ `safeRows`
+
 ### บันทึกการทำงาน — 2026-05-04
 - **PromptPay V4.0 (re-enabled):** `PAYMENT_CONFIG.isPromptPayEnabled: true`; `fetchActiveBankAccounts` เลือก `prompt_pay` → `parseStorefrontPromptPayPublic` / `StorefrontPromptPayPublic`; admin PromptPay เพิ่ม `accountName`; `PaymentSection` + `DynamicPromptPayQr` (rounded-3xl, teal header, ยอดจาก API/server, `reloadNonce` / ปุ่มสร้าง QR ใหม่, ข้อความค่าจัดส่งเมื่อมี); `/payment/[orderNumber]` ส่ง `promptPayPayeeDisplayName`
 - **Mobile admin `/admin/m` Nimbot + packing line:** `formatItemForPacking` / `formatPriceBahtShort` ใน `lib/admin-order-line-summary.ts` (บรรทัดเดียว TH สำหรับทีมแพ็ก + `buildNimbotSummaryText`); ปุ่ม `Copy Address` / `Copy Summary` (secondary + ghost); คงปุ่มรวม TH แบบ outline

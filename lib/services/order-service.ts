@@ -59,6 +59,11 @@ export interface CreateOrderInput {
   customer_id: string | null;
   promo_code_id: number | null;
   order_note?: string | null;
+  /**
+   * INTERNAL: Server sets after session proves admin / allowlisted email matches `customer_id`.
+   * Skips promo phone reuse SQL guard only (not phone length requirement).
+   */
+  skipPromoPerUserReuseChecks?: boolean;
 }
 
 export interface CreateOrderResult {
@@ -130,7 +135,7 @@ export async function createOrder(
   input: CreateOrderInput
 ): Promise<ServiceResult<CreateOrderResult>> {
   try {
-    const { customer, items, summary, payment_method, customer_id, promo_code_id, order_note } =
+    const { customer, items, summary, payment_method, customer_id, promo_code_id, order_note, skipPromoPerUserReuseChecks } =
       input;
     const noteTrimmed = order_note?.trim() ?? "";
     const resolvedCustomerId = customer_id ?? null;
@@ -144,23 +149,25 @@ export async function createOrder(
       if (phoneDigits.length < 9) {
         return { data: null, error: "PROMO_REQUIRES_PHONE" };
       }
-      const dup = await prisma.$queryRaw<Array<{ exists: boolean }>>`
-        SELECT EXISTS (
-          SELECT 1
-          FROM coupon_redemptions cr
-          JOIN orders o ON o.id = cr.order_id
-          LEFT JOIN customers c ON c.id = o.customer_id
-          WHERE cr.coupon_id = ${BigInt(promo_code_id)}
-            AND o.status NOT IN ('CANCELLED', 'VOID', 'REJECTED')
-            AND (
-              regexp_replace(COALESCE(o.shipping_phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
-              OR regexp_replace(COALESCE(o.customer_phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
-              OR regexp_replace(COALESCE(c.phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
-            )
-        ) AS "exists"
-      `;
-      if (dup[0]?.exists) {
-        return { data: null, error: "PROMO_PHONE_ALREADY_USED" };
+      if (!skipPromoPerUserReuseChecks) {
+        const dup = await prisma.$queryRaw<Array<{ exists: boolean }>>`
+          SELECT EXISTS (
+            SELECT 1
+            FROM coupon_redemptions cr
+            JOIN orders o ON o.id = cr.order_id
+            LEFT JOIN customers c ON c.id = o.customer_id
+            WHERE cr.coupon_id = ${BigInt(promo_code_id)}
+              AND o.status NOT IN ('CANCELLED', 'VOID', 'REJECTED')
+              AND (
+                regexp_replace(COALESCE(o.shipping_phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
+                OR regexp_replace(COALESCE(o.customer_phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
+                OR regexp_replace(COALESCE(c.phone, ''), '[^0-9]', '', 'g') = ${phoneDigits}
+              )
+          ) AS "exists"
+        `;
+        if (dup[0]?.exists) {
+          return { data: null, error: "PROMO_PHONE_ALREADY_USED" };
+        }
       }
     }
 
