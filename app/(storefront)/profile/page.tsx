@@ -37,6 +37,7 @@ const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
 const navMono =
   "font-[family-name:var(--font-journal-product-mono)] text-[10px] font-medium uppercase tracking-widest";
+const NEXT_REWARD_POINTS = 100;
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────
 interface ToastMsg { id: number; msg: string; type: "success" | "error" }
@@ -70,6 +71,7 @@ type OrderRow = {
   shipping_provider: string | null;
   shipping_address: string | null;
   created_at: string;
+  points_discount_amount?: number;
   order_items: {
     id: number;
     quantity: number;
@@ -121,6 +123,90 @@ function StatusBadge({
   );
 }
 
+function loyaltyProgress(points: number): number {
+  return Math.min(100, Math.max(0, (points / NEXT_REWARD_POINTS) * 100));
+}
+
+function LoyaltyScorecard({
+  customer,
+  orders,
+  locale,
+  t,
+}: {
+  customer: Customer | null;
+  orders: OrderRow[];
+  locale: string;
+  t: (th: string, en: string) => string;
+}) {
+  const paidOrders = orders.filter((order) =>
+    orderIsPaymentReceived(order.status, order.payment_status)
+  );
+  const lifetimeSpend = paidOrders.reduce((sum, order) => sum + Number(order.total_amount ?? 0), 0);
+  const redeemedPoints = paidOrders.reduce(
+    (sum, order) => sum + Number(order.points_discount_amount ?? 0),
+    0
+  );
+  const currentPoints = Math.max(0, Math.floor(lifetimeSpend / 100) - redeemedPoints);
+  const progress = loyaltyProgress(currentPoints);
+  const remaining = Math.max(0, NEXT_REWARD_POINTS - currentPoints);
+
+  return (
+    <div className="mb-5 overflow-hidden rounded-sm border border-primary/15 bg-primary text-primary-foreground shadow-sm">
+      <div className="relative p-5 sm:p-6">
+        <div className="absolute right-4 top-4 rounded-full bg-white/10 p-3" aria-hidden>
+          <Leaf className="h-5 w-5" />
+        </div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
+          {t("บัตรคะแนนสะสม", "Loyalty Scorecard")}
+        </p>
+        <h2 className="mt-2 max-w-xl text-xl font-semibold tracking-tight sm:text-2xl">
+          {customer?.full_name ?? t("สมาชิก Smile", "Smile Member")}
+        </h2>
+        <p className="mt-2 max-w-2xl text-xs leading-relaxed text-white/70 sm:text-sm">
+          {t(
+            "ทุก 100 บาท = 1 คะแนน ใช้แลกเป็นส่วนลดเมื่อสั่งซื้อสินค้าที่ร่วมรายการ",
+            "100 THB = 1 point. Redeem points as discount on eligible orders."
+          )}
+        </p>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div>
+            <p className="text-xs text-white/60">{t("คะแนนปัจจุบัน", "Current points")}</p>
+            <p className={cn(mono, "mt-1 text-3xl font-bold")}>{currentPoints}</p>
+          </div>
+          <div>
+            <p className="text-xs text-white/60">{t("ยอดใช้จ่ายสะสม", "Lifetime spend")}</p>
+            <p className={cn(mono, "mt-1 text-xl font-semibold")}>{formatPrice(lifetimeSpend)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-white/60">{t("สถานะ", "Status")}</p>
+            <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm font-medium">
+              <BadgeCheck className="h-4 w-4" />
+              {customer?.is_wholesale ? t("ขายส่ง", "Wholesale") : t("ปลีก", "Retail")}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between text-xs text-white/70">
+            <span>{t("รางวัลถัดไป", "Next reward")}</span>
+            <span>
+              {remaining === 0
+                ? t("พร้อมแลกรางวัล", "Reward ready")
+                : locale === "en"
+                  ? `${remaining} pts to go`
+                  : `อีก ${remaining} คะแนน`}
+            </span>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-white/15">
+            <div className="h-full rounded-full bg-secondary" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Profile Page ─────────────────────────────────────────────────────────────
 
 function ProfileContent() {
@@ -156,7 +242,7 @@ function ProfileContent() {
     setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3500);
   }, []);
 
-  // Sync tab when URL ?tab= changes (e.g. from /account?tab=profile redirect)
+  // Sync tab when URL ?tab= changes.
   useEffect(() => {
     const p = searchParams.get("tab");
     const admin = user?.user_metadata?.role === "ADMIN";
@@ -338,6 +424,13 @@ function ProfileContent() {
             {t("ออกจากระบบ", "Sign Out")}
           </Button>
         </div>
+
+        <LoyaltyScorecard
+          customer={displayCustomer}
+          orders={orders}
+          locale={locale}
+          t={t}
+        />
 
         {/* Tabs */}
         <div

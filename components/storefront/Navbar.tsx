@@ -196,7 +196,7 @@ export function Navbar() {
                           <p className="truncate text-[11px] text-zinc-400">{user.email}</p>
                         </div>
                         <Link
-                          href="/account?tab=orders"
+                          href="/profile?tab=orders"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50"
                         >
@@ -204,7 +204,7 @@ export function Navbar() {
                           {t("ออเดอร์ของฉัน", "My Orders")}
                         </Link>
                         <Link
-                          href="/account?tab=profile"
+                          href="/profile?tab=profile"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50"
                         >

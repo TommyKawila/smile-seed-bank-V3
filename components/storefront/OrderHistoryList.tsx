@@ -2,6 +2,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QUOTATION_SHIPPING_FREE_THRESHOLD } from "@/lib/order-financials";
 import type { CustomerOrderSummary } from "@/services/customer-service";
+import type { Locale } from "@/context/LanguageContext";
+
+type OrderHistoryT = (key: string, fallbackEn?: string, values?: Record<string, string>) => string;
 
 function formatBaht(value: number): string {
   return new Intl.NumberFormat("th-TH", {
@@ -12,15 +15,15 @@ function formatBaht(value: number): string {
   }).format(value);
 }
 
-function statusLabel(status: string, paymentStatus: string): string {
+function statusLabel(status: string, paymentStatus: string, t: OrderHistoryT): string {
   const key = status === "PENDING" && paymentStatus === "paid" ? "PAID" : status;
   const labels: Record<string, string> = {
-    PAID: "Paid",
-    SHIPPED: "Shipped",
-    COMPLETED: "Completed",
-    DELIVERED: "Delivered",
-    PENDING: "Pending",
-    CANCELLED: "Cancelled",
+    PAID: t("Paid", "Paid"),
+    SHIPPED: t("Shipped", "Shipped"),
+    COMPLETED: t("Completed", "Completed"),
+    DELIVERED: t("Delivered", "Delivered"),
+    PENDING: t("Pending", "Pending"),
+    CANCELLED: t("Cancelled", "Cancelled"),
   };
   return labels[key] ?? key.replace(/_/g, " ");
 }
@@ -35,16 +38,28 @@ function statusClass(status: string, paymentStatus: string): string {
   return "border-zinc-200 bg-white text-zinc-600";
 }
 
-export function OrderHistoryList({ orders }: { orders: CustomerOrderSummary[] }) {
+export function OrderHistoryList({
+  orders,
+  locale,
+  t,
+}: {
+  orders: CustomerOrderSummary[];
+  locale: Locale;
+  t: OrderHistoryT;
+}) {
+  const dateLocale = locale === "en" ? "en-GB" : "th-TH";
+
   return (
     <Card className="min-h-[360px] border-zinc-200/80 shadow-sm">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-zinc-900">Order History</CardTitle>
+        <CardTitle className="text-base font-semibold text-zinc-900">
+          {t("Order History", "Order History")}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {orders.length === 0 ? (
           <div className="flex min-h-[240px] items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 text-center text-sm text-zinc-500">
-            Your orders will appear here after checkout.
+            {t("Your orders will appear here after checkout.", "Your orders will appear here after checkout.")}
           </div>
         ) : (
           <div className="space-y-3">
@@ -62,23 +77,25 @@ export function OrderHistoryList({ orders }: { orders: CustomerOrderSummary[] })
                     <div className="min-w-0">
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
                         {order.createdAt
-                          ? new Intl.DateTimeFormat("th-TH", {
+                          ? new Intl.DateTimeFormat(dateLocale, {
                               dateStyle: "medium",
                             }).format(new Date(order.createdAt))
-                          : "Order"}
+                          : t("Order", "Order")}
                       </p>
                       <h3 className="mt-1 font-semibold text-zinc-900">{order.orderNumber}</h3>
                       {order.trackingNumber ? (
                         <p className="mt-1 text-xs text-zinc-500">
-                          Tracking: {order.shippingProvider ?? "Carrier"} / {order.trackingNumber}
+                          {t("Tracking", "Tracking")}: {order.shippingProvider ?? t("Carrier", "Carrier")} / {order.trackingNumber}
                         </p>
                       ) : (
-                        <p className="mt-1 text-xs text-zinc-500">Tracking will appear after shipping.</p>
+                        <p className="mt-1 text-xs text-zinc-500">
+                          {t("Tracking will appear after shipping.", "Tracking will appear after shipping.")}
+                        </p>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge className={statusClass(order.status, order.paymentStatus)} variant="outline">
-                        {statusLabel(order.status, order.paymentStatus)}
+                        {statusLabel(order.status, order.paymentStatus, t)}
                       </Badge>
                       <span className="font-semibold tabular-nums text-zinc-900">
                         {formatBaht(order.totalAmount)}
@@ -88,11 +105,19 @@ export function OrderHistoryList({ orders }: { orders: CustomerOrderSummary[] })
 
                   <div className="mt-4 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
                     {freeShippingEarned ? (
-                      <span className="font-medium text-primary">Free Shipping unlocked for this order.</span>
+                      <span className="font-medium text-primary">
+                        {t("Free Shipping unlocked for this order.", "Free Shipping unlocked for this order.")}
+                      </span>
                     ) : (
                       <span>
-                        Add {formatBaht(remaining)} more next time to unlock Free Shipping at{" "}
-                        {formatBaht(QUOTATION_SHIPPING_FREE_THRESHOLD)}.
+                        {t(
+                          "Add {amount} more next time to unlock Free Shipping at {target}.",
+                          "Add {amount} more next time to unlock Free Shipping at {target}.",
+                          {
+                            amount: formatBaht(remaining),
+                            target: formatBaht(QUOTATION_SHIPPING_FREE_THRESHOLD),
+                          }
+                        )}
                       </span>
                     )}
                   </div>

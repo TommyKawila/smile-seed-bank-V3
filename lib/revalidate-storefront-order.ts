@@ -7,7 +7,6 @@ export async function revalidateAfterOrderStatusChange(
   orderNumberHint?: string | null
 ): Promise<void> {
   revalidatePath("/profile");
-  revalidatePath("/account");
   const orderNumber =
     orderNumberHint?.trim() ||
     (
