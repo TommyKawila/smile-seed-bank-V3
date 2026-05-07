@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     if (error || !data) {
       if (error === "PROMO_REQUIRES_ACCOUNT") {
         return NextResponse.json(
-          { error: "กรุณาเข้าสู่ระบบเพื่อใช้โค้ดส่วนลด" },
+          { error: "Please sign in to use a promo code" },
           { status: 403 }
         );
       }
@@ -133,25 +133,25 @@ export async function POST(req: NextRequest) {
       }
       if (error === "CAMPAIGN_EXHAUSTED") {
         return NextResponse.json(
-          { error: "โค้ดนี้ถูกใช้ครบโควตาแล้ว" },
+          { error: "This promo code has reached its usage limit" },
           { status: 400 }
         );
       }
       if (error === "CAMPAIGN_INACTIVE") {
         return NextResponse.json(
-          { error: "โค้ดนี้ไม่สามารถใช้ได้ในช่วงเวลานี้" },
+          { error: "This promo code cannot be used at this time" },
           { status: 400 }
         );
       }
       if (error === "PROMO_REQUIRES_PHONE") {
         return NextResponse.json(
-          { error: "กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด" },
+          { error: "Please enter a phone number to use a promo code" },
           { status: 400 }
         );
       }
       if (error === "PROMO_PHONE_ALREADY_USED") {
         return NextResponse.json(
-          { error: "สิทธิ์นี้ถูกใช้งานไปแล้วสำหรับเบอร์โทรศัพท์นี้" },
+          { error: "This promo has already been used for this phone number" },
           { status: 400 }
         );
       }

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { validateCoupon } from "@/lib/services/coupon-service";
 
 const BodySchema = z.object({
-  code: z.string().min(1).trim().toUpperCase(),
+  code: z.string().trim().toUpperCase().min(1, "Please enter a promo code"),
   subtotal: z.coerce.number().min(0),
   email: z.string().email().nullable().optional(),
   phone: z.string().nullable().optional(),
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const parsed = BodySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid request" },
         { status: 400 }
       );
     }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       const err = result.error;
       switch (err.type) {
         case "NOT_FOUND":
-          return NextResponse.json({ error: "ไม่พบโค้ดนี้" }, { status: 400 });
+          return NextResponse.json({ error: "Invalid or expired promo code" }, { status: 400 });
         case "REQUIRE_LOGIN":
           return NextResponse.json(
             { error: err.message, requireLogin: true },
@@ -47,31 +47,31 @@ export async function POST(req: NextRequest) {
           );
         case "EXPIRED":
           return NextResponse.json(
-            { error: "ขออภัย โค้ดส่วนลดนี้หมดอายุแล้ว" },
+            { error: "Invalid or expired promo code" },
             { status: 400 }
           );
         case "MIN_SPEND":
           return NextResponse.json(
             {
-              error: `ยอดไม่ถึงเกณฑ์ — ต้องซื้อขั้นต่ำ ฿${err.minSpend.toLocaleString("th-TH")}`,
+              error: `Minimum order amount not met — shop at least ฿${err.minSpend.toLocaleString("en-US")}`,
             },
             { status: 400 }
           );
         case "ALREADY_USED":
-          return NextResponse.json({ error: "Used" }, { status: 400 });
+          return NextResponse.json({ error: "This promo code has already been used" }, { status: 400 });
         case "PHONE_ALREADY_USED":
           return NextResponse.json(
-            { error: "สิทธิ์นี้ถูกใช้งานไปแล้วสำหรับเบอร์โทรศัพท์นี้" },
+            { error: "This promo has already been used for this phone number" },
             { status: 400 }
           );
         case "CAMPAIGN_EXHAUSTED":
           return NextResponse.json(
-            { error: "โค้ดนี้ถูกใช้ครบโควตาแล้ว" },
+            { error: "This promo code has reached its usage limit" },
             { status: 400 }
           );
         case "CAMPAIGN_INACTIVE":
           return NextResponse.json(
-            { error: "โค้ดนี้ไม่สามารถใช้ได้ในช่วงเวลานี้" },
+            { error: "This promo code cannot be used at this time" },
             { status: 400 }
           );
         case "SERVER_ERROR":

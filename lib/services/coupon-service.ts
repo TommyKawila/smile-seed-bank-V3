@@ -79,7 +79,7 @@ export interface EligibleCoupon {
 // ─── validateCoupon ───────────────────────────────────────────────────────────
 
 const REQUIRE_LOGIN_MSG =
-  "สมัครสมาชิกหรือเข้าสู่ระบบเพื่อใช้โค้ดส่วนลด (Google, อีเมล หรือ LINE)";
+  "Sign up or log in to use promo codes (Google, Email, or LINE)";
 
 export async function validateCoupon(
   input: ValidateCouponInput
@@ -128,15 +128,15 @@ export async function validateCoupon(
     if (promo.requires_auth && !user_id) {
       const loginMsg =
         promo.code === "WELCOME10"
-          ? "กรุณาเข้าสู่ระบบเพื่อใช้โค้ด WELCOME10 และรับส่วนลดสมาชิกใหม่ 10%"
-          : "Please login to use this code";
+          ? "Please sign in to apply WELCOME10 and get your new-member 10% discount"
+          : "Please sign in to use this promo code";
       return { ok: false, error: { type: "REQUIRE_LOGIN", message: loginMsg, requireLogin: true } };
     }
 
     // First order check
     if (promo.first_order_only) {
       if (!user_id && !email) {
-        return { ok: false, error: { type: "REQUIRE_LOGIN", message: "Please login to use this code", requireLogin: true } };
+        return { ok: false, error: { type: "REQUIRE_LOGIN", message: "Please sign in to use this promo code", requireLogin: true } };
       }
       const hasOrder = await _hasCompletedOrder(sql, user_id, email);
       if (hasOrder) return { ok: false, error: { type: "FIRST_ORDER_ONLY" } };

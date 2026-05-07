@@ -305,14 +305,14 @@ export function CheckoutPageClient({
     if (!promoInput.trim()) return;
     const phoneForPromo = (form.phone || customer?.phone || "").trim();
     if (!phoneForPromo || phoneForPromo.replace(/\D/g, "").length < 9) {
-      setFieldErrors((p) => ({ ...p, phone: "กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด" }));
-      toast.error("กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด");
+      setFieldErrors((p) => ({ ...p, phone: "Please enter a phone number to use a promo code" }));
+      toast.error("Please enter a phone number to use a promo code");
       return;
     }
     const result = await applyPromoCode(promoInput.trim(), user?.email ?? null, phoneForPromo, user?.id ?? null);
     if (result.success) setPromoInput("");
     else if (result.requireLogin && result.attemptedCode) {
-      setLoginPromoMessage(result.message ?? "กรุณาเข้าสู่ระบบเพื่อใช้โค้ด WELCOME10 และรับส่วนลดสมาชิกใหม่ 10%");
+      setLoginPromoMessage(result.message ?? "Please sign in to apply WELCOME10 and get your new-member 10% discount");
       setLoginPromoCode(result.attemptedCode);
       setLoginPromoOpen(true);
     }
@@ -321,14 +321,14 @@ export function CheckoutPageClient({
   const handleApplyWelcome10 = async () => {
     const phoneForPromo = (form.phone || customer?.phone || "").trim();
     if (!phoneForPromo || phoneForPromo.replace(/\D/g, "").length < 9) {
-      setFieldErrors((p) => ({ ...p, phone: "กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด" }));
-      toast.error("กรุณาระบุเบอร์โทรศัพท์เพื่อใช้โค้ดส่วนลด");
+      setFieldErrors((p) => ({ ...p, phone: "Please enter a phone number to use a promo code" }));
+      toast.error("Please enter a phone number to use a promo code");
       return;
     }
     setPromoInput("WELCOME10");
     const result = await applyPromoCode("WELCOME10", user?.email ?? null, phoneForPromo, user?.id ?? null);
     if (result.requireLogin && result.attemptedCode) {
-      setLoginPromoMessage(result.message ?? "กรุณาเข้าสู่ระบบเพื่อใช้โค้ด WELCOME10 และรับส่วนลดสมาชิกใหม่ 10%");
+      setLoginPromoMessage(result.message ?? "Please sign in to apply WELCOME10 and get your new-member 10% discount");
       setLoginPromoCode(result.attemptedCode);
       setLoginPromoOpen(true);
     }
@@ -648,7 +648,12 @@ export function CheckoutPageClient({
                     </div>
                   ) : null}
                   {user && promo.error && (
-                    <p className="text-xs text-red-500">{promo.error}</p>
+                    <p
+                      className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:bg-destructive/15"
+                      role="alert"
+                    >
+                      {promo.error}
+                    </p>
                   )}
 
                   {user && promo.code && (

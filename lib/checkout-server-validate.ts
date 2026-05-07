@@ -188,7 +188,7 @@ export async function validateStorefrontCheckoutTotals(input: {
   }
 
   if (promo_code_id != null && !promoRow) {
-    return { ok: false, error: "โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุ" };
+    return { ok: false, error: "Invalid or expired promo code" };
   }
 
   const paidLines = mergedLines.filter((l) => l.isFreeGift !== true);
@@ -221,7 +221,7 @@ export async function validateStorefrontCheckoutTotals(input: {
   if (promoRow) {
     const minSpend = promoRow.min_spend != null ? Number(promoRow.min_spend) : 0;
     if (minSpend > 0 && bahtToSatangInt(paidSubtotal) < bahtToSatangInt(minSpend)) {
-      return { ok: false, error: "ยอดสั่งซื้อไม่ถึงขั้นต่ำสำหรับโค้ดนี้" };
+      return { ok: false, error: "Order total does not meet the minimum spend for this promo code" };
     }
   }
 

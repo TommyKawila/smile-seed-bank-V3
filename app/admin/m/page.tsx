@@ -225,16 +225,16 @@ function buildAddressAndPackingListText(o: AdminOrder): string {
     (o.line_items?.length ?? 0) === 0
       ? ["(no items)"]
       : (o.line_items ?? []).map((li) =>
-          formatAdminOrderPackingCopyLine(li as AdminOrderLineItem)
+          formatItemForPacking(li as AdminOrderLineItem)
         );
   return [
-    `คุณ ${name} (${phone})`,
+    `${name} (${phone})`,
     addr,
-    "------------------",
-    `Order: #${o.order_number}`,
+    "--------------------",
+    `Order: ${o.order_number}`,
     "รายการ:",
     ...lines,
-    "------------------",
+    "--------------------",
     `Note: ${note || "—"}`,
   ].join("\n");
 }

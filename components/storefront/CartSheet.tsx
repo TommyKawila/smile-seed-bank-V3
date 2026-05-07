@@ -185,7 +185,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
       setCouponInput("");
       setCouponsOpen(false);
     } else if (result.requireLogin && result.attemptedCode) {
-      setLoginPromoMessage(result.message ?? "กรุณาเข้าสู่ระบบเพื่อใช้โค้ด WELCOME10 และรับส่วนลดสมาชิกใหม่ 10%");
+      setLoginPromoMessage(result.message ?? "Please sign in to apply WELCOME10 and get your new-member 10% discount");
       setLoginPromoCode(result.attemptedCode);
       setLoginPromoOpen(true);
       setCouponsOpen(false);
@@ -202,7 +202,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
     );
     if (result.success) setCouponInput("");
     else if (result.requireLogin && result.attemptedCode) {
-      setLoginPromoMessage(result.message ?? "กรุณาเข้าสู่ระบบเพื่อใช้โค้ด WELCOME10 และรับส่วนลดสมาชิกใหม่ 10%");
+      setLoginPromoMessage(result.message ?? "Please sign in to apply WELCOME10 and get your new-member 10% discount");
       setLoginPromoCode(result.attemptedCode);
       setLoginPromoOpen(true);
     }
@@ -506,7 +506,12 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                 </div>
               ) : null}
               {user && promo.error && (
-                <p className="font-sans text-xs text-red-500">{promo.error}</p>
+                <p
+                  className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 font-sans text-sm text-destructive dark:bg-destructive/15"
+                  role="alert"
+                >
+                  {promo.error}
+                </p>
               )}
               <Button
                 variant="ghost"

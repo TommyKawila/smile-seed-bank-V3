@@ -31,9 +31,9 @@ const PromoCodeSchema = z
   .string()
   .trim()
   .toUpperCase()
-  .min(3, "โค้ดต้องมีอย่างน้อย 3 ตัวอักษร")
-  .max(20, "โค้ดต้องไม่เกิน 20 ตัวอักษร")
-  .regex(/^[A-Z0-9_-]+$/, "โค้ดต้องเป็นตัวอักษรภาษาอังกฤษพิมพ์ใหญ่หรือตัวเลขเท่านั้น");
+  .min(3, "Promo code must be at least 3 characters")
+  .max(20, "Promo code must be at most 20 characters")
+  .regex(/^[A-Z0-9_-]+$/, "Use uppercase letters, numbers, hyphen, or underscore only");
 
 const AddToCartSchema = z.object({
   variantId: z.number().positive(),
@@ -332,7 +332,7 @@ export function useCart(): UseCartReturn {
         setPromo({
           code: null,
           discountAmount: 0,
-          error: parsed.error.issues[0]?.message ?? "รูปแบบโค้ดไม่ถูกต้อง",
+          error: parsed.error.issues[0]?.message ?? "Invalid promo code format",
         });
         setIsValidatingPromo(false);
         return { success: false };
@@ -346,7 +346,7 @@ export function useCart(): UseCartReturn {
           requireLogin: true,
           attemptedCode: parsed.data,
           message:
-            "สมัครสมาชิกหรือเข้าสู่ระบบเพื่อใช้โค้ดส่วนลด (Google, อีเมล หรือ LINE)",
+            "Sign up or log in to use promo codes (Google, Email, or LINE)",
         };
       }
 
@@ -369,14 +369,15 @@ export function useCart(): UseCartReturn {
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
+          const raw = typeof data?.error === "string" ? data.error : "";
           const errMsg =
-            data?.error === "Used"
-              ? "คุณเคยใช้โค้ดนี้แล้ว"
-              : data?.error === "Please login to use this code"
-                ? "กรุณาเข้าสู่ระบบเพื่อใช้โค้ดนี้"
-                : data?.error === "This code is for new customers only"
-                  ? "โค้ดนี้สำหรับลูกค้าใหม่เท่านั้น"
-                  : (data?.error ?? "ไม่สามารถใช้โค้ดได้");
+            raw === "Used"
+              ? "This promo code has already been used"
+              : raw === "Please login to use this code"
+                ? "Please sign in to use this promo code"
+                : raw === "This code is for new customers only"
+                  ? "This promo code is for new customers only"
+                  : raw || "Unable to apply this promo code";
           setPromo({ code: null, discountAmount: 0, error: data?.requireLogin ? null : errMsg });
           if (res.status === 401 && data?.requireLogin) {
             return { success: false, requireLogin: true, attemptedCode: parsed.data, message: data?.error };
