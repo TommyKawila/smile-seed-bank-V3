@@ -349,6 +349,9 @@ export async function validateStorefrontCheckoutTotals(input: {
       );
     } else {
       console.warn(
+        `DISCOUNT_DEBUG: Code: ${promoRow?.code ?? "none"}, Subtotal: ${serverSummaryRaw.subtotal}, CalculatedDisc: ${serverSummaryRaw.discount}, FinalServerTotal: ${serverSummary.total}`,
+      );
+      console.warn(
         `[checkout-server-validate] Amount mismatch — ${detail}`,
         {
           narrative: `${detail}`,

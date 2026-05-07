@@ -13,6 +13,7 @@ import {
   resolveExclusiveCartDiscounts,
   type PromoInfo as DiscountPromoInfo,
 } from "@/lib/discount-utils";
+import { bahtToSatangInt, quantizeBaht2, satangIntToBaht } from "@/lib/money-thb";
 
 export type { TieredDiscountRule };
 export { evaluateTieredDiscountBySpend, evaluateDiscountTier };
@@ -119,9 +120,10 @@ export function calculateCartSummary(
   tieredRules?: TieredDiscountRule[],
   promoInfo?: PromoInfo | null
 ): CartSummary {
-  const subtotal = items
+  const subtotalSatang = items
     .filter((i) => !i.isFreeGift)
-    .reduce((sum, i) => sum + i.price * i.quantity, 0);
+    .reduce((sum, i) => sum + bahtToSatangInt(i.price * i.quantity), 0);
+  const subtotal = quantizeBaht2(satangIntToBaht(subtotalSatang));
 
   const rules = tieredRules?.length ? tieredRules : [];
   const exclusive = resolveExclusiveCartDiscounts({
@@ -132,19 +134,27 @@ export function calculateCartSummary(
   });
 
   const { tierDiscount, promoDiscount: promoDiscountAmount, eligibleTierPercent } = exclusive;
-  const total = subtotal - tierDiscount - promoDiscountAmount;
-  const shipping = calculateShipping(primaryCategory, total, shippingRules);
+  const discountSatang =
+    bahtToSatangInt(tierDiscount) + bahtToSatangInt(promoDiscountAmount);
+  const discount = quantizeBaht2(satangIntToBaht(discountSatang));
+  const merchSatang = subtotalSatang - discountSatang;
+  const totalBeforeShipping = quantizeBaht2(satangIntToBaht(merchSatang));
+  const shipping = calculateShipping(primaryCategory, totalBeforeShipping, shippingRules);
 
   const appliedTier = evaluateDiscountTier(subtotal, tiers);
 
+  const grandSatang =
+    merchSatang + bahtToSatangInt(shipping);
+  const total = quantizeBaht2(satangIntToBaht(grandSatang));
+
   return {
     subtotal,
-    discount: tierDiscount + promoDiscountAmount,
+    discount,
     discountPercent: eligibleTierPercent,
     tierDiscount,
     promoDiscount: promoDiscountAmount,
     shipping,
-    total: total + shipping,
+    total,
     appliedTier: appliedTier ?? null,
     upsellMessage: generateUpsellMessage(subtotal, tiers, tieredRules),
     usePromoForOrder: exclusive.usePromoForOrder,

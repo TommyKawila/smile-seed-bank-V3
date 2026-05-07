@@ -1,4 +1,12 @@
 import type { DiscountTier } from "@/types/supabase";
+import {
+  type PromoInfo,
+  computeCouponDiscountSatang,
+  computePercentOfSubtotalDiscountSatang,
+  isCouponPercentageType,
+  satangDiscountToBaht,
+} from "@/lib/services/checkout-promo-math";
+import { bahtToSatangInt } from "@/lib/money-thb";
 
 /** Spend-based tiers (THB). Highest matching `min_spend` wins. */
 export interface TieredDiscountRule {
@@ -9,16 +17,8 @@ export interface TieredDiscountRule {
 /** Empty by default — spend tiers come from `promotion_rules` via `/api/storefront/tiered-discounts` only. */
 export const DEFAULT_TIERED_RULES: TieredDiscountRule[] = [];
 
-export interface PromoInfo {
-  discount_type: "PERCENTAGE" | "FIXED" | string;
-  discount_value: number;
-}
-
-/** DB may store mixed case; align with computeCouponDiscountOnSubtotal. */
-export function isCouponPercentageType(discountType: string | null | undefined): boolean {
-  const dt = String(discountType ?? "").trim().toUpperCase();
-  return dt === "PERCENTAGE" || dt === "PERCENT";
-}
+export type { PromoInfo };
+export { isCouponPercentageType };
 
 export function formatCouponValueDisplay(
   discountType: string | null | undefined,
@@ -51,12 +51,9 @@ export function evaluateDiscountTier(subtotal: number, tiers: DiscountTier[]): D
   );
 }
 
-/** Matches `lib/services/coupon-service` (percentage on subtotal; fixed capped). */
+/** Matches `lib/services/checkout-promo-math` / `coupon-service` (satang-safe). */
 export function computeCouponDiscountOnSubtotal(subtotal: number, promoInfo: PromoInfo): number {
-  if (isCouponPercentageType(promoInfo.discount_type)) {
-    return Math.round((subtotal * promoInfo.discount_value) / 100);
-  }
-  return Math.min(promoInfo.discount_value, subtotal);
+  return satangDiscountToBaht(computeCouponDiscountSatang(subtotal, promoInfo));
 }
 
 export type ExclusiveDiscountResolution = {
@@ -80,6 +77,7 @@ export function resolveExclusiveCartDiscounts(input: {
 }): ExclusiveDiscountResolution {
   const { subtotal, tieredRules, discountTiers, promoInfo } = input;
 
+  const subSat = bahtToSatangInt(subtotal);
   const tieredResult =
     tieredRules.length > 0 ? evaluateTieredDiscountBySpend(subtotal, tieredRules) : null;
   const appliedTier = evaluateDiscountTier(subtotal, discountTiers);
@@ -87,7 +85,8 @@ export function resolveExclusiveCartDiscounts(input: {
     tieredResult?.discountPercent ?? 0,
     appliedTier?.discount_percentage ?? 0
   );
-  const tierDiscount = Math.round((subtotal * eligibleTierPercent) / 100);
+  const tierDiscountSat = computePercentOfSubtotalDiscountSatang(subSat, eligibleTierPercent);
+  const tierDiscount = satangDiscountToBaht(tierDiscountSat);
 
   if (!promoInfo) {
     return {
@@ -99,9 +98,10 @@ export function resolveExclusiveCartDiscounts(input: {
     };
   }
 
-  const couponDiscount = computeCouponDiscountOnSubtotal(subtotal, promoInfo);
-  const merchAfterTier = subtotal - tierDiscount;
-  const merchAfterCoupon = subtotal - couponDiscount;
+  const couponDiscountSat = computeCouponDiscountSatang(subtotal, promoInfo);
+  const couponDiscount = satangDiscountToBaht(couponDiscountSat);
+  const merchAfterTierSat = subSat - tierDiscountSat;
+  const merchAfterCouponSat = subSat - couponDiscountSat;
 
   if (couponDiscount <= 0) {
     return {
@@ -113,7 +113,7 @@ export function resolveExclusiveCartDiscounts(input: {
     };
   }
 
-  if (merchAfterCoupon < merchAfterTier) {
+  if (merchAfterCouponSat < merchAfterTierSat) {
     return {
       tierDiscount: 0,
       promoDiscount: couponDiscount,
@@ -128,6 +128,6 @@ export function resolveExclusiveCartDiscounts(input: {
     promoDiscount: 0,
     eligibleTierPercent,
     usePromoForOrder: false,
-    promoSupersededByTier: merchAfterCoupon >= merchAfterTier,
+    promoSupersededByTier: merchAfterCouponSat >= merchAfterTierSat,
   };
 }

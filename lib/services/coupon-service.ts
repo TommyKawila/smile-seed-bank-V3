@@ -4,7 +4,7 @@
  */
 import { getSql } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
-import { isCouponPercentageType } from "@/lib/discount-utils";
+import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-promo-math";
 import type { DiscountType } from "@/types/supabase";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
@@ -174,9 +174,10 @@ export async function validateCoupon(
       }
     }
 
-    const discountAmount = isCouponPercentageType(promo.discount_type)
-      ? Math.round((subtotal * promo.discount_value) / 100)
-      : promo.discount_value;
+    const discountAmount = computeCouponDiscountBahtOnSubtotal(subtotal, {
+      discount_type: promo.discount_type,
+      discount_value: promo.discount_value,
+    });
 
     return {
       ok: true,
