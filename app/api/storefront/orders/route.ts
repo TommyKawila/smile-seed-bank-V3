@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate";
 import { quantizeBaht2 } from "@/lib/money-thb";
@@ -76,6 +77,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const effectivePromoId =
+      resolvedPromoId != null && resolvedPromoId > 0
+        ? await prisma.promo_codes
+            .findFirst({
+              where: {
+                id: BigInt(resolvedPromoId),
+                is_active: true,
+                OR: [{ expiry_date: null }, { expiry_date: { gt: new Date() } }],
+              },
+              select: { id: true },
+            })
+            .then((row) => (row ? resolvedPromoId : null))
+        : null;
+
     const priced = await validateStorefrontCheckoutTotals({
       items: items.map((i) => ({
         variantId: i.variantId,
@@ -85,7 +100,7 @@ export async function POST(req: NextRequest) {
         productName: i.productName,
       })),
       summary,
-      promo_code_id: resolvedPromoId,
+      promo_code_id: effectivePromoId,
     });
     if (!priced.ok) {
       return NextResponse.json({ error: priced.error }, { status: 400 });
@@ -114,7 +129,7 @@ export async function POST(req: NextRequest) {
       },
       payment_method,
       customer_id: resolvedCustomerId,
-      promo_code_id: resolvedPromoId,
+      promo_code_id: effectivePromoId,
       order_note: order_note?.trim() || null,
     });
 
