@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/order-utils";
 import { sendLowStockAlert } from "@/services/line-messaging";
+import { deductVariantStockForOrderItems } from "@/lib/order-inventory";
 
 export type ManualDeductItem = {
   variantId: number;
@@ -78,6 +79,8 @@ export async function createManualOrderFromItems(input: {
     const order = await tx.orders.create({ data: orderCreate });
 
     const postDeductionLowStockAlerts: { name: string; unitLabel: string; stock: number }[] = [];
+    const runningStock = new Map<number, number>();
+    const decrementByVariant = new Map<number, number>();
 
     for (const item of items) {
       const variant = await tx.product_variants.findUnique({
@@ -91,7 +94,7 @@ export async function createManualOrderFromItems(input: {
         },
       });
       if (!variant) throw new Error(`Variant ${item.variantId} not found`);
-      const currentStock = variant.stock ?? 0;
+      const currentStock = runningStock.get(item.variantId) ?? variant.stock ?? 0;
       if (currentStock < item.quantity) {
         throw new Error(
           `Insufficient stock for ${item.productName} (${item.unitLabel}): need ${item.quantity}, have ${currentStock}`
@@ -103,6 +106,7 @@ export async function createManualOrderFromItems(input: {
       totalCostAcc += costPrice * item.quantity;
 
       const afterStock = currentStock - item.quantity;
+      runningStock.set(item.variantId, afterStock);
       const threshold = variant.low_stock_threshold ?? 5;
       if (afterStock <= threshold) {
         postDeductionLowStockAlerts.push({
@@ -126,11 +130,16 @@ export async function createManualOrderFromItems(input: {
       };
       await tx.order_items.create({ data: lineCreate });
 
-      await tx.product_variants.update({
-        where: { id: BigInt(item.variantId) },
-        data: { stock: { decrement: item.quantity } },
-      });
+      decrementByVariant.set(
+        item.variantId,
+        (decrementByVariant.get(item.variantId) ?? 0) + item.quantity
+      );
     }
+
+    await deductVariantStockForOrderItems(
+      tx,
+      [...decrementByVariant.entries()].map(([variantId, quantity]) => ({ variantId, quantity }))
+    );
 
     await tx.orders.update({
       where: { id: order.id },
