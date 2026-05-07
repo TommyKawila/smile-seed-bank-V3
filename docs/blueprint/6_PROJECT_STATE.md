@@ -4,6 +4,9 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-07
+- **Manual order stock race fix:** `lib/services/manual-order-create.ts` ใช้ `deductVariantStockForOrderItems` แบบ atomic หลังสร้าง order items; duplicate variant lines ใช้ `runningStock`/merged decrement กันสต็อกติดลบจาก concurrent manual deduct / quotation convert; `inventory/deduct` และ `quotations/[id]/convert` คืน 409 เมื่อสต็อกไม่พอ
+
 ### บันทึกการทำงาน — 2026-05-06
 - **Admin bulk seeds table crash (`strain` on undefined):** `lib/bulk-seeds/sanitize.ts` — `coerceBulkSeedRow` / `sanitizeBulkSeedList`; `BulkSeedsAdminClient` — `safeRows`, `patchRow` ผ่าน sanitize + `coerceBulkSeedRow` หลัง PATCH; ตาราง `safeRows` + `colSpan={tableColSpan}` แถว "No data found"; Export PDF ใช้ `safeRows`
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
 import { orderNumberFromQuotationNumber } from "@/lib/pdf-filename";
+import { InsufficientStockError } from "@/lib/order-inventory";
 import { createManualOrderFromItems } from "@/lib/services/manual-order-create";
 
 export const dynamic = "force-dynamic";
@@ -118,6 +119,9 @@ export async function POST(
       { status: 201 }
     );
   } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
+    }
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
