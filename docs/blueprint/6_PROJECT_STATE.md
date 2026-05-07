@@ -5,6 +5,7 @@
 ---
 
 ### บันทึกการทำงาน — 2026-05-06
+- **Profile tab cleanup:** removed redundant LINE/Social Connections card from `/profile` profile tab; removed LINE connect button/SVG/callback handling and unused imports while keeping profile save toast.
 - **Unified account dashboard:** removed duplicate `/account` route; migrated Loyalty Scorecard into `/profile` tabbed dashboard above navigation; Navbar account links now point to `/profile`; order status revalidation no longer touches `/account`.
 - **Account/Profile bilingual localization:** `app/(storefront)/account/page.tsx` now uses locale cookie + `getMessage()` dictionary translator; `OrderHistoryList` receives `locale`/`t`; added TH/EN account portal, loyalty, profile, status, tracking, and free-shipping copy keys in `locales/th.json` and `locales/en.json`.
 - **Technical SEO canonical cleanup:** `app/(storefront)/product/[slug]/page.tsx` canonical uses clean product slug; `/seeds/[breederSlug]` now exports canonical metadata; `app/robots.ts` explicitly allows public product/seed/blog paths and disallows `/admin/`, `/api/`, `/checkout/`, `/profile/`; sitemap remains clean parameter-free URLs.

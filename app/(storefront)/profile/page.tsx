@@ -9,13 +9,11 @@ import { motion } from "framer-motion";
 import {
   User, MapPin, Phone, Mail, ChevronRight,
   Loader2, LogOut, Check, X, Leaf, ShoppingBag,
-  Truck, Copy, BadgeCheck, Save,
-  Link2, Link2Off, FileText,
+  Truck, Copy, BadgeCheck, Save, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { formatPrice, cn } from "@/lib/utils";
@@ -254,28 +252,6 @@ function ProfileContent() {
   useEffect(() => {
     if (!showMembershipProgram && tab === "membership") setTab("orders");
   }, [showMembershipProgram, tab]);
-
-  // Handle LINE OAuth callback result (?line_connected=1 or ?line_error=...)
-  useEffect(() => {
-    const connected = searchParams.get("line_connected");
-    const lineName = searchParams.get("line_name");
-    const lineError = searchParams.get("line_error");
-    if (connected === "1") {
-      const nameStr = lineName ? ` (${lineName})` : "";
-      pushToast(`เชื่อมต่อ LINE สำเร็จ${nameStr} ✓ คุณจะรับแจ้งเตือนการจัดส่งผ่าน LINE`, "success");
-      // Clean up URL params without re-render loop
-      const url = new URL(window.location.href);
-      url.searchParams.delete("line_connected");
-      url.searchParams.delete("line_name");
-      window.history.replaceState({}, "", url.toString());
-    } else if (lineError) {
-      pushToast(decodeURIComponent(lineError), "error");
-      const url = new URL(window.location.href);
-      url.searchParams.delete("line_error");
-      window.history.replaceState({}, "", url.toString());
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Scroll to address when landing on /profile#address (e.g. from Welcome modal)
   useEffect(() => {
@@ -785,84 +761,6 @@ function ProfileContent() {
                 </Button>
               </div>
             </div>
-
-            <Separator className="my-5" />
-
-            {/* Social Connections */}
-            <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm">
-              <div className="border-b border-zinc-100 px-5 py-4">
-                <h2 className={cn(serif, "text-lg font-medium text-zinc-900")}>
-                  {t("การเชื่อมต่อบัญชี", "Social Connections")}
-                </h2>
-                <p className="mt-0.5 text-xs font-light text-zinc-500">
-                  {t("เชื่อมต่อ LINE เพื่อรับแจ้งเตือนการจัดส่งพัสดุ", "Connect LINE to receive shipping notifications")}
-                </p>
-              </div>
-
-              <div className="p-5">
-                {customer?.line_user_id ? (
-                  /* ── Connected state ── */
-                  <div className="flex items-center justify-between rounded-xl border border-primary/25 bg-accent px-4 py-3.5">
-                    <div className="flex items-center gap-3">
-                      {/* Official LINE icon (SVG) */}
-                      <span className="flex h-9 w-9 items-center justify-center rounded-xl"
-                            style={{ background: "#06C755" }}>
-                        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white">
-                          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
-                        </svg>
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-primary">
-                          {t("เชื่อมต่อ LINE แล้ว", "LINE Connected")}
-                        </p>
-                        <p className="text-xs text-primary">
-                          {t("รับแจ้งเตือนการจัดส่งผ่าน LINE", "Shipping alerts active")}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-primary">
-                      <Check className="h-3 w-3" />
-                      {t("เชื่อมต่อแล้ว", "Active")}
-                    </div>
-                  </div>
-                ) : (
-                  /* ── Not connected state ── */
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3.5">
-                      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                            style={{ background: "#06C755" }}>
-                        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white">
-                          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.630 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.630 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
-                        </svg>
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-zinc-800">LINE</p>
-                        <p className="text-xs text-zinc-500 leading-relaxed">
-                          {t(
-                            "เชื่อมต่อ LINE เพื่อรับแจ้งเตือนเมื่อพัสดุถูกจัดส่ง พร้อมเลขติดตามพัสดุในทันที",
-                            "Get instant shipping alerts with tracking number directly on LINE"
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    <a
-                      href="/api/auth/line/connect"
-                      className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl font-semibold text-white transition-opacity hover:opacity-90 active:scale-[.98]"
-                      style={{ background: "#06C755" }}
-                    >
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white">
-                        <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.630 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.630 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
-                      </svg>
-                      <Link2 className="h-4 w-4" />
-                      {t("เชื่อมต่อ LINE", "Connect LINE")}
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Separator className="my-5" />
 
             {/* Quick Links */}
             <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm">
