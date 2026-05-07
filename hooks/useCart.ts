@@ -324,10 +324,18 @@ export function useCart(): UseCartReturn {
       customerPhone?: string | null,
       customerUserId?: string | null
     ): Promise<{ success: boolean; requireLogin?: boolean; attemptedCode?: string; message?: string }> => {
+      const trimmedIn = (code ?? "").trim();
+      if (trimmedIn === "") {
+        setPromo((prev) =>
+          prev.code != null ? prev : { code: null, discountAmount: 0, error: null }
+        );
+        return { success: false };
+      }
+
       setPromo({ code: null, discountAmount: 0, error: null });
       setIsValidatingPromo(true);
 
-      const parsed = PromoCodeSchema.safeParse(code);
+      const parsed = PromoCodeSchema.safeParse(trimmedIn);
       if (!parsed.success) {
         setPromo({
           code: null,

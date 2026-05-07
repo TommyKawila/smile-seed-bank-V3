@@ -104,16 +104,114 @@ export function mergeSavedCoupons(
   return out;
 }
 
+/** First wins per promo code (case-insensitive). */
+function mergeDedupeByPromoCodePreferredOrder(rows: ApiSavedCoupon[]): ApiSavedCoupon[] {
+  const seen = new Set<string>();
+  const out: ApiSavedCoupon[] = [];
+  for (const item of rows) {
+    const key = item.promo_code.trim().toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+
+/** `GET /api/storefront/coupons/collected` → rows ready for checkout tap list. */
+function collectedCouponsReadyForCheckout(list: unknown, now: Date): ApiSavedCoupon[] {
+  if (!Array.isArray(list)) return [];
+  const t = now.getTime();
+  const out: ApiSavedCoupon[] = [];
+  for (const row of list) {
+    if (!row || typeof row !== "object") continue;
+    const c = row as {
+      used?: boolean;
+      is_active?: boolean;
+      expiry_date?: string | null;
+      id?: unknown;
+      code?: unknown;
+      discount_type?: unknown;
+      discount_value?: unknown;
+    };
+    if (c.used === true) continue;
+    if (c.is_active === false) continue;
+    const rawExp = c.expiry_date;
+    if (rawExp != null && String(rawExp).trim() !== "") {
+      const expMs = new Date(String(rawExp)).getTime();
+      if (Number.isFinite(expMs) && t >= expMs) continue;
+    }
+    const id = typeof c.id === "number" ? c.id : Number(c.id);
+    const code = typeof c.code === "string" ? c.code.trim() : "";
+    if (!code || !Number.isFinite(id)) continue;
+    out.push({
+      campaign_id: `claimed_${String(id)}`,
+      name: "",
+      promo_code: code,
+      discount_type: typeof c.discount_type === "string" ? c.discount_type : "PERCENTAGE",
+      discount_value:
+        typeof c.discount_value === "number"
+          ? String(c.discount_value)
+          : String(c.discount_value ?? ""),
+      end_at: rawExp != null ? String(rawExp) : null,
+      is_active: true,
+    });
+  }
+  return out;
+}
+
 export async function fetchSavedCouponsForCheckout(isLoggedIn: boolean): Promise<ApiSavedCoupon[]> {
+  const now = new Date();
   const local = readSavedPromotionsFromLocal();
   if (!isLoggedIn) {
-    return filterSavedCouponsForCheckoutDisplay(mergeSavedCoupons([], local));
+    return filterSavedCouponsForCheckoutDisplay(mergeSavedCoupons([], local), now);
   }
 
-  const res = await fetch("/api/storefront/saved-promotions");
-  const data = res.ok ? ((await res.json()) as { items?: ApiSavedCoupon[] }) : { items: [] };
-  const merged = mergeSavedCoupons(Array.isArray(data.items) ? data.items : [], local);
-  return filterSavedCouponsForCheckoutDisplay(merged);
+  const [memberRes, collectedRes] = await Promise.all([
+    fetch("/api/storefront/profile/member-saved-campaigns", { cache: "no-store" }),
+    fetch("/api/storefront/coupons/collected", { cache: "no-store" }),
+  ]);
+
+  let memberItems: ApiSavedCoupon[] = [];
+  if (memberRes.ok) {
+    const mj = (await memberRes.json()) as { items?: ApiSavedCoupon[] };
+    memberItems = Array.isArray(mj.items) ? mj.items : [];
+  } else {
+    const sp = await fetch("/api/storefront/saved-promotions", { cache: "no-store", credentials: "same-origin" });
+    const sj = sp.ok ? ((await sp.json()) as { items?: ApiSavedCoupon[] }) : { items: [] };
+    memberItems = Array.isArray(sj.items) ? sj.items : [];
+  }
+
+  const { available: campaignAvailable } = partitionMemberSavedCoupons(memberItems, now);
+  const memberCodeKeysUpper = new Set(
+    memberItems.map((c) => c.promo_code.trim().toUpperCase()),
+  );
+
+  let collectedCouponsPayload: unknown;
+  if (collectedRes.ok) {
+    const cj = (await collectedRes.json()) as { coupons?: unknown };
+    collectedCouponsPayload = cj.coupons;
+  } else {
+    collectedCouponsPayload = [];
+  }
+  const fromClaimed = collectedCouponsReadyForCheckout(collectedCouponsPayload, now);
+
+  const localOnly = local.filter(
+    (l) => !memberCodeKeysUpper.has(l.promo_code.trim().toUpperCase()),
+  );
+  const localAsApi: ApiSavedCoupon[] = localOnly.map((l) => ({
+    campaign_id: l.campaignId,
+    name: l.name,
+    promo_code: l.promo_code,
+    discount_type: l.discount_type,
+    discount_value: l.discount_value,
+  }));
+
+  const merged = mergeDedupeByPromoCodePreferredOrder([
+    ...campaignAvailable,
+    ...fromClaimed,
+    ...localAsApi,
+  ]);
+  return filterSavedCouponsForCheckoutDisplay(merged, now);
 }
 
 export async function fetchProfileOrdersCount(): Promise<number> {

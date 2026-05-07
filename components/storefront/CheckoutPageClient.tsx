@@ -391,6 +391,20 @@ export function CheckoutPageClient({
       return;
     }
 
+    if (user && !promo.code && !promoInput.trim()) {
+      clearPromoCode();
+    }
+
+    const promoIdForOrder =
+      user?.id &&
+      promo.code != null &&
+      summary.usePromoForOrder &&
+      typeof promo.code.id === "number" &&
+      Number.isFinite(promo.code.id) &&
+      promo.code.id > 0
+        ? promo.code.id
+        : null;
+
     setIsSubmitting(true);
     try {
       const result = await createStorefrontOrder({
@@ -416,7 +430,7 @@ export function CheckoutPageClient({
         },
         payment_method: "TRANSFER",
         customer_id: user?.id ?? null,
-        promo_code_id: user && summary.usePromoForOrder ? promo.code?.id ?? null : null,
+        promo_code_id: promoIdForOrder,
         locale,
       });
 
@@ -631,7 +645,11 @@ export function CheckoutPageClient({
                     <div className="flex gap-2">
                       <Input
                         value={promoInput}
-                        onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                        onChange={(e) => {
+                          const v = e.target.value.toUpperCase();
+                          setPromoInput(v);
+                          if (!v.trim()) clearPromoCode();
+                        }}
                         placeholder={t("รหัสส่วนลด", "Promo code")}
                         className={cn(mono, "rounded-sm border-zinc-200 bg-white text-sm")}
                       />
@@ -647,7 +665,7 @@ export function CheckoutPageClient({
                       </Button>
                     </div>
                   ) : null}
-                  {user && promo.error && (
+                  {user && promo.error && (promoInput.trim() !== "" || promo.code != null) && (
                     <p
                       className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:bg-destructive/15"
                       role="alert"
