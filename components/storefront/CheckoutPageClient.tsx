@@ -301,6 +301,11 @@ export function CheckoutPageClient({
     return () => { cancelled = true; };
   }, [user]);
 
+  useEffect(() => {
+    if (!user || promo.code != null || promoInput.trim() !== "") return;
+    if (promo.error) clearPromoCode();
+  }, [user, promo.error, promo.code, promoInput, clearPromoCode]);
+
   const handleApplyPromo = async () => {
     if (!promoInput.trim()) return;
     const phoneForPromo = (form.phone || customer?.phone || "").trim();
@@ -435,16 +440,32 @@ export function CheckoutPageClient({
       });
 
       if (!result.ok) {
+        const msg =
+          result.message?.trim() ||
+          (locale === "en" ? "Could not create order" : "สร้างออเดอร์ไม่สำเร็จ กรุณาลองใหม่");
         if (result.code === "INSUFFICIENT_STOCK") {
-          const msg = t(
+          const stockMsg = t(
             "ขออภัย สินค้าบางรายการในตะกร้าหมดสต็อกแล้ว",
             "Sorry, some items in your cart are out of stock."
           );
-          toast.error(msg);
-          setSubmitError(msg);
+          toast.error(stockMsg);
+          setSubmitError(stockMsg);
           return;
         }
-        throw new Error(result.message || (locale === "en" ? "Could not create order" : "สร้างออเดอร์ไม่สำเร็จ กรุณาลองใหม่"));
+        if (/invalid or expired promo code/i.test(msg)) {
+          clearPromoCode();
+          setPromoInput("");
+          setSubmitError(null);
+          toast.info(
+            t(
+              "ลบโค้ดที่ใช้ไม่ได้แล้ว — กด «ยืนยันออเดอร์» อีกครั้งได้เลย",
+              "Removed the invalid promo — tap Confirm order again.",
+            ),
+          );
+          return;
+        }
+        setSubmitError(msg);
+        return;
       }
 
       setPlaced({
@@ -648,6 +669,7 @@ export function CheckoutPageClient({
                         onChange={(e) => {
                           const v = e.target.value.toUpperCase();
                           setPromoInput(v);
+                          setSubmitError(null);
                           if (!v.trim()) clearPromoCode();
                         }}
                         placeholder={t("รหัสส่วนลด", "Promo code")}
@@ -665,7 +687,7 @@ export function CheckoutPageClient({
                       </Button>
                     </div>
                   ) : null}
-                  {user && promo.error && (promoInput.trim() !== "" || promo.code != null) && (
+                  {user && promo.error && (
                     <p
                       className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:bg-destructive/15"
                       role="alert"

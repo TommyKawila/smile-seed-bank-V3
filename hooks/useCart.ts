@@ -393,8 +393,31 @@ export function useCart(): UseCartReturn {
           return { success: false };
         }
 
+        const rawPid = data.promo_code_id as unknown;
+        const pid =
+          typeof rawPid === "number" && Number.isFinite(rawPid)
+            ? rawPid
+            : typeof rawPid === "string"
+              ? Number(rawPid)
+              : Number(rawPid);
+        if (!Number.isFinite(pid) || pid <= 0) {
+          setPromo({
+            code: null,
+            discountAmount: 0,
+            error: "Could not attach this promo — try again or continue without a code.",
+          });
+          return { success: false };
+        }
+
         setPromo({
-          code: { id: data.promo_code_id, code: data.code, discount_type: data.discount_type, discount_value: data.discount_value, min_spend: null, is_active: true },
+          code: {
+            id: pid,
+            code: String(data.code ?? ""),
+            discount_type: data.discount_type,
+            discount_value: Number(data.discount_value),
+            min_spend: null,
+            is_active: true,
+          },
           discountAmount: data.discount_amount,
           error: null,
         });
