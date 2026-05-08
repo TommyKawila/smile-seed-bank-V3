@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-09
+- **Checkout amount mismatch:** `lib/order-financials.ts` / `lib/cart-utils.ts` now use fixed storefront shipping (50 THB) and free shipping only when subtotal is greater than 1,000 THB; checkout shipping is calculated from DB-priced subtotal before discount. `lib/checkout-server-validate.ts` quantizes client/server totals, recalculates subtotal from DB prices in satang, and logs `{ frontendTotalSent, calculatedSubtotal, calculatedShipping, calculatedDiscount, finalBackendExpectedTotal }` on mismatch. `components/storefront/CheckoutPageClient.tsx` sends a rounded summary and rounded item prices in the order payload.
+- **Checkout free shipping refinement:** Shipping threshold now applies to `netAmountBeforeShipping = subtotal - discount`; free shipping is granted when the net amount is at least 1,000 THB, otherwise shipping remains 50 THB. `cart-utils` and `checkout-server-validate` both keep satang-safe subtotal/discount/net/total calculations.
+
 ### บันทึกการทำงาน — 2026-05-06
 - **Profile tab cleanup:** removed redundant LINE/Social Connections card from `/profile` profile tab; removed LINE connect button/SVG/callback handling and unused imports while keeping profile save toast.
 - **Unified account dashboard:** removed duplicate `/account` route; migrated Loyalty Scorecard into `/profile` tabbed dashboard above navigation; Navbar account links now point to `/profile`; order status revalidation no longer touches `/account`.

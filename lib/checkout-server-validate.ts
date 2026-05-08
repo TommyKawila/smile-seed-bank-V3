@@ -9,6 +9,7 @@ import {
   sameBahtSatang,
   satangIntToBaht,
 } from "@/lib/money-thb";
+import { shippingFeeForSubtotal } from "@/lib/order-financials";
 import type { CheckoutItem, CheckoutSummary } from "@/lib/services/order-service";
 
 type LineIn = {
@@ -122,7 +123,8 @@ export async function validateStorefrontCheckoutTotals(input: {
   | { ok: true; resolvedItems: CheckoutItem[]; resolvedSummary: CheckoutSummary }
   | { ok: false; error: string }
 > {
-  const { items: rawLines, summary: clientSummary, promo_code_id, purpose = "order_create" } = input;
+  const { items: rawLines, promo_code_id, purpose = "order_create" } = input;
+  const clientSummary = snapSummary(input.summary);
 
   for (const row of rawLines) {
     const v = normalizeCheckoutVariantId(row.variantId);
@@ -216,7 +218,11 @@ export async function validateStorefrontCheckoutTotals(input: {
     );
   }
 
-  const paidSubtotal = paidCartItems.reduce((s, i) => s + i.price * i.quantity, 0);
+  const paidSubtotal = quantizeBaht2(
+    satangIntToBaht(
+      paidCartItems.reduce((s, i) => s + bahtToSatangInt(i.price * i.quantity), 0)
+    )
+  );
 
   if (promoRow) {
     const minSpend = promoRow.min_spend != null ? Number(promoRow.min_spend) : 0;
@@ -318,11 +324,25 @@ export async function validateStorefrontCheckoutTotals(input: {
     });
   }
 
+  const calculatedSubtotal = quantizeBaht2(serverSummaryRaw.subtotal);
+  const calculatedDiscount = quantizeBaht2(serverSummaryRaw.discount);
+  const netAmountBeforeShipping = quantizeBaht2(
+    satangIntToBaht(
+      bahtToSatangInt(calculatedSubtotal) - bahtToSatangInt(calculatedDiscount)
+    )
+  );
+  const calculatedShipping = quantizeBaht2(shippingFeeForSubtotal(netAmountBeforeShipping));
+  const finalBackendExpectedTotal = quantizeBaht2(
+    satangIntToBaht(
+      bahtToSatangInt(netAmountBeforeShipping) + bahtToSatangInt(calculatedShipping)
+    )
+  );
+
   const serverSummary: CheckoutSummary = {
-    subtotal: serverSummaryRaw.subtotal,
-    discount: serverSummaryRaw.discount,
-    shipping: serverSummaryRaw.shipping,
-    total: canonicalGrand,
+    subtotal: calculatedSubtotal,
+    discount: calculatedDiscount,
+    shipping: calculatedShipping,
+    total: finalBackendExpectedTotal,
   };
 
   const totalsMismatch =
@@ -335,6 +355,13 @@ export async function validateStorefrontCheckoutTotals(input: {
     const cs = clientSummary;
     const ss = serverSummary;
     const detail = checkoutTotalsMismatchLine(cs, ss);
+    console.log("[checkout-server-validate] total validation", {
+      frontendTotalSent: cs.total,
+      calculatedSubtotal: ss.subtotal,
+      calculatedShipping: ss.shipping,
+      calculatedDiscount: ss.discount,
+      finalBackendExpectedTotal: ss.total,
+    });
     if (purpose === "prompt_pay_preview") {
       console.warn(
         `[checkout-server-validate] PromptPay preview — client/UI totals ignored; QR uses DB rules. ${detail}`,

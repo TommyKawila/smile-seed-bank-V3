@@ -44,43 +44,23 @@ export function generateUpsellMessage(
 }
 
 function resolveShippingParams(
-  category: string,
-  rules: ShippingRule[] | null | undefined
+  _category: string,
+  _rules: ShippingRule[] | null | undefined
 ): { threshold: number; fee: number } {
-  const list = Array.isArray(rules) ? rules : [];
-  const rule = list.find(
-    (r) => String(r.category_name ?? "").toLowerCase() === category.toLowerCase()
-  );
-  if (!rule) {
-    return {
-      threshold: QUOTATION_SHIPPING_FREE_THRESHOLD,
-      fee: QUOTATION_SHIPPING_COST,
-    };
-  }
-  const th = Number(rule.free_shipping_threshold);
-  const fee = Number(rule.base_fee);
-  const ok =
-    Number.isFinite(th) &&
-    Number.isFinite(fee) &&
-    th >= 0 &&
-    fee >= 0;
-  if (!ok) {
-    return {
-      threshold: QUOTATION_SHIPPING_FREE_THRESHOLD,
-      fee: QUOTATION_SHIPPING_COST,
-    };
-  }
-  return { threshold: th, fee };
+  return {
+    threshold: QUOTATION_SHIPPING_FREE_THRESHOLD,
+    fee: QUOTATION_SHIPPING_COST,
+  };
 }
 
-/** Uses `shipping_rules` when present and valid; otherwise `order-financials` defaults. */
+/** Storefront checkout shipping is fixed: 50 THB, free when net amount after discounts reaches 1,000 THB. */
 export function calculateShipping(
   category: string,
-  subtotal: number,
+  netAmountBeforeShipping: number,
   rules: ShippingRule[] | null | undefined
 ): number {
   const { threshold, fee } = resolveShippingParams(category, rules);
-  return shippingFeeForSubtotal(subtotal, threshold, fee);
+  return shippingFeeForSubtotal(netAmountBeforeShipping, threshold, fee);
 }
 
 export function evaluateFreeGifts(
@@ -138,8 +118,8 @@ export function calculateCartSummary(
     bahtToSatangInt(tierDiscount) + bahtToSatangInt(promoDiscountAmount);
   const discount = quantizeBaht2(satangIntToBaht(discountSatang));
   const merchSatang = subtotalSatang - discountSatang;
-  const totalBeforeShipping = quantizeBaht2(satangIntToBaht(merchSatang));
-  const shipping = calculateShipping(primaryCategory, totalBeforeShipping, shippingRules);
+  const netAmountBeforeShipping = quantizeBaht2(satangIntToBaht(merchSatang));
+  const shipping = calculateShipping(primaryCategory, netAmountBeforeShipping, shippingRules);
 
   const appliedTier = evaluateDiscountTier(subtotal, tiers);
 

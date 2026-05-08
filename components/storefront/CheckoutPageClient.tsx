@@ -409,6 +409,12 @@ export function CheckoutPageClient({
       promo.code.id > 0
         ? promo.code.id
         : null;
+    const checkoutSummary = {
+      subtotal: quantizeBaht2(summary.subtotal),
+      discount: quantizeBaht2(summary.discount),
+      shipping: quantizeBaht2(summary.shipping),
+      total: quantizeBaht2(summary.total),
+    };
 
     setIsSubmitting(true);
     try {
@@ -423,16 +429,11 @@ export function CheckoutPageClient({
         items: items.map((i) => ({
           variantId: i.variantId,
           quantity: i.quantity,
-          price: i.price,
+          price: quantizeBaht2(i.price),
           isFreeGift: i.isFreeGift ?? false,
           productName: i.productName,
         })),
-        summary: {
-          subtotal: summary.subtotal,
-          discount: summary.discount,
-          shipping: summary.shipping,
-          total: summary.total,
-        },
+        summary: checkoutSummary,
         payment_method: "TRANSFER",
         customer_id: user?.id ?? null,
         promo_code_id: promoIdForOrder,
@@ -470,11 +471,11 @@ export function CheckoutPageClient({
 
       setPlaced({
         orderNumber: result.orderNumber,
-        totalBaht: quantizeBaht2(summary.total),
-        shippingIncluded: summary.shipping > 0,
+        totalBaht: checkoutSummary.total,
+        shippingIncluded: checkoutSummary.shipping > 0,
         shipping: parsed.data,
         lineItems: items.map((i) => ({ ...i })),
-        summarySnapshot: { ...summary },
+        summarySnapshot: { ...summary, ...checkoutSummary },
         appliedPromo: promo.code
           ? {
               code: promo.code.code,
