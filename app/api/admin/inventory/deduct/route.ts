@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { bigintToJson } from "@/lib/bigint-json";
+import { InsufficientStockError } from "@/lib/order-inventory";
 import { createManualOrderFromItems } from "@/lib/services/manual-order-create";
 
 const ItemSchema = z.object({
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(bigintToJson({ success: true, orderNumber }), { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (err instanceof InsufficientStockError) {
+      return NextResponse.json({ error: msg }, { status: 409 });
+    }
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

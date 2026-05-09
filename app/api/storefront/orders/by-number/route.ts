@@ -16,5 +16,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error ?? "Server error" }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  const { slip_url: _slipUrl, ...publicOrder } = data;
+  return NextResponse.json(publicOrder);
 }
