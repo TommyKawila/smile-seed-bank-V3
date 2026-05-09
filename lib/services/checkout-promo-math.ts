@@ -15,6 +15,10 @@ export function satangDiscountToBaht(discSatang: number): number {
   return quantizeBaht2(satangIntToBaht(Math.round(discSatang)));
 }
 
+function quantizedDiscountSatang(discSatang: number): number {
+  return bahtToSatangInt(quantizeBaht2(satangIntToBaht(Math.round(discSatang))));
+}
+
 /** Coupon discount in integer satang from subtotal BAHT (canonical for % and fixed cap). */
 export function computeCouponDiscountSatang(subtotalBaht: number, promo: PromoInfo): number {
   const subSat = bahtToSatangInt(subtotalBaht);
@@ -22,7 +26,7 @@ export function computeCouponDiscountSatang(subtotalBaht: number, promo: PromoIn
   if (isCouponPercentageType(promo.discount_type)) {
     const pct = Number(promo.discount_value);
     if (!Number.isFinite(pct) || pct <= 0) return 0;
-    return Math.round((subSat * pct) / 100);
+    return quantizedDiscountSatang((subSat * pct) / 100);
   }
   const fixedSat = bahtToSatangInt(promo.discount_value);
   if (!Number.isFinite(fixedSat) || fixedSat <= 0) return 0;
@@ -41,5 +45,5 @@ export function computePercentOfSubtotalDiscountSatang(
   const subSat = Math.round(Number(subtotalSatang));
   const pct = Number(percentPoints);
   if (!Number.isFinite(subSat) || subSat <= 0 || !Number.isFinite(pct) || pct <= 0) return 0;
-  return Math.round((subSat * pct) / 100);
+  return quantizedDiscountSatang((subSat * pct) / 100);
 }

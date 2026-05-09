@@ -117,7 +117,8 @@ export function calculateCartSummary(
   const discountSatang =
     bahtToSatangInt(tierDiscount) + bahtToSatangInt(promoDiscountAmount);
   const discount = quantizeBaht2(satangIntToBaht(discountSatang));
-  const merchSatang = subtotalSatang - discountSatang;
+  const normalizedDiscountSatang = bahtToSatangInt(discount);
+  const merchSatang = subtotalSatang - normalizedDiscountSatang;
   const netAmountBeforeShipping = quantizeBaht2(satangIntToBaht(merchSatang));
   const shipping = calculateShipping(primaryCategory, netAmountBeforeShipping, shippingRules);
 

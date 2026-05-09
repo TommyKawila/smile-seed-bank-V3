@@ -5,6 +5,7 @@
 ---
 
 ### บันทึกการทำงาน — 2026-05-09
+- **Checkout percentage discount precision:** `lib/services/checkout-promo-math.ts` now quantizes percentage discount results immediately before converting back to satang; `lib/cart-utils.ts` computes net/shipping from the normalized discount satang; `lib/checkout-server-validate.ts` compares subtotal/discount/shipping/total with a 0.01 THB tolerance after `quantizeBaht2`, preventing decimal discount payloads such as 632.5 from failing strict amount validation.
 - **Checkout amount mismatch:** `lib/order-financials.ts` / `lib/cart-utils.ts` now use fixed storefront shipping (50 THB) and free shipping only when subtotal is greater than 1,000 THB; checkout shipping is calculated from DB-priced subtotal before discount. `lib/checkout-server-validate.ts` quantizes client/server totals, recalculates subtotal from DB prices in satang, and logs `{ frontendTotalSent, calculatedSubtotal, calculatedShipping, calculatedDiscount, finalBackendExpectedTotal }` on mismatch. `components/storefront/CheckoutPageClient.tsx` sends a rounded summary and rounded item prices in the order payload.
 - **Checkout free shipping refinement:** Shipping threshold now applies to `netAmountBeforeShipping = subtotal - discount`; free shipping is granted when the net amount is at least 1,000 THB, otherwise shipping remains 50 THB. `cart-utils` and `checkout-server-validate` both keep satang-safe subtotal/discount/net/total calculations.
 

@@ -20,6 +20,8 @@ type LineIn = {
   productName: string;
 };
 
+const CHECKOUT_TOTAL_TOLERANCE_BAHT = 0.01;
+
 function normalizeCheckoutVariantId(v: number): number {
   const n = Number(v);
   if (!Number.isFinite(n)) return NaN;
@@ -92,12 +94,16 @@ function checkoutTotalsMismatchLine(client: CheckoutSummary, server: CheckoutSum
   const c = (label: string, a: number, b: number) =>
     `${label} client ${quantizeBaht2(a)} vs server ${quantizeBaht2(b)} (${bahtToSatangInt(a) - bahtToSatangInt(b)} satang)`;
   const parts: string[] = [];
-  if (!sameBahtSatang(cs.subtotal, ss.subtotal)) parts.push(c("Subtotal", cs.subtotal, ss.subtotal));
-  if (!sameBahtSatang(cs.discount, ss.discount)) parts.push(c("Discount", cs.discount, ss.discount));
-  if (!sameBahtSatang(cs.shipping, ss.shipping))
+  if (!sameBahtWithinTolerance(cs.subtotal, ss.subtotal)) parts.push(c("Subtotal", cs.subtotal, ss.subtotal));
+  if (!sameBahtWithinTolerance(cs.discount, ss.discount)) parts.push(c("Discount", cs.discount, ss.discount));
+  if (!sameBahtWithinTolerance(cs.shipping, ss.shipping))
     parts.push(c("ShippingFee", cs.shipping, ss.shipping) + " — free-ship threshold vs subtotal-after-discount?");
-  if (!sameBahtSatang(cs.total, ss.total)) parts.push(c("GrandTotal", cs.total, ss.total));
+  if (!sameBahtWithinTolerance(cs.total, ss.total)) parts.push(c("GrandTotal", cs.total, ss.total));
   return parts.length ? parts.join(" | ") : "unknown field";
+}
+
+function sameBahtWithinTolerance(a: number, b: number): boolean {
+  return Math.abs(quantizeBaht2(a) - quantizeBaht2(b)) <= CHECKOUT_TOTAL_TOLERANCE_BAHT;
 }
 
 function snapSummary(summary: CheckoutSummary): CheckoutSummary {
@@ -346,10 +352,10 @@ export async function validateStorefrontCheckoutTotals(input: {
   };
 
   const totalsMismatch =
-    !sameBahtSatang(clientSummary.subtotal, serverSummary.subtotal) ||
-    !sameBahtSatang(clientSummary.discount, serverSummary.discount) ||
-    !sameBahtSatang(clientSummary.shipping, serverSummary.shipping) ||
-    !sameBahtSatang(clientSummary.total, serverSummary.total);
+    !sameBahtWithinTolerance(clientSummary.subtotal, serverSummary.subtotal) ||
+    !sameBahtWithinTolerance(clientSummary.discount, serverSummary.discount) ||
+    !sameBahtWithinTolerance(clientSummary.shipping, serverSummary.shipping) ||
+    !sameBahtWithinTolerance(clientSummary.total, serverSummary.total);
 
   if (totalsMismatch) {
     const cs = clientSummary;
