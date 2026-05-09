@@ -11,6 +11,7 @@ import { quantizeBaht2 } from "@/lib/money-thb";
 
 const QR_SIZE = 280;
 const AMOUNT_DEBOUNCE_MS = 320;
+const QR_FILENAME = "smile-seed-qr.png";
 
 export type PromptPayCheckoutBody = {
   customerId: string | null;
@@ -122,6 +123,25 @@ async function fetchPromptPayResolved(
   return { payload, amountBaht };
 }
 
+function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), "image/png");
+  });
+}
+
+function downloadBlob(blob: Blob): void {
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = QR_FILENAME;
+  a.rel = "noopener";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 export function DynamicPromptPayQr({
   amountBaht,
   resolution,
@@ -208,16 +228,29 @@ export function DynamicPromptPayQr({
     };
   }, [requestKey, deferPromptPayFetch, reloadNonce]);
 
-  const downloadPng = useCallback(() => {
+  const downloadPng = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas || !payload) return;
-    const url = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `smile-promptpay-${displayBaht}.png`;
-    a.rel = "noopener";
-    a.click();
-  }, [displayBaht, payload]);
+    const blob = await canvasToPngBlob(canvas);
+    if (!blob) return;
+
+    const file = new File([blob], QR_FILENAME, { type: "image/png" });
+    const shareData: ShareData = {
+      files: [file],
+      title: "Smile Seed Bank QR",
+    };
+
+    if (navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      }
+    }
+
+    downloadBlob(blob);
+  }, [payload]);
 
   if (!Number.isFinite(amountBaht) || amountBaht <= 0) {
     return null;
@@ -295,7 +328,7 @@ export function DynamicPromptPayQr({
           variant="outline"
           size="sm"
           className="w-full max-w-xs gap-2 rounded-xl border-zinc-200"
-          onClick={() => downloadPng()}
+          onClick={() => void downloadPng()}
         >
           <Download className="h-4 w-4" aria-hidden />
           {t("บันทึก QR ลงเครื่อง", "Save QR image")}

@@ -7,6 +7,12 @@ import { quantizeBaht2 } from "@/lib/money-thb";
 import { createOrder, fetchEmailItems } from "@/lib/services/order-service";
 import { sendOrderConfirmationEmail } from "@/services/email-service";
 
+const MoneyAmountSchema = z.coerce
+  .number()
+  .finite()
+  .nonnegative()
+  .transform((value) => quantizeBaht2(value));
+
 const CheckoutSchema = z.object({
   customer: z.object({
     full_name: z.string().min(2, "กรุณาระบุชื่อ"),
@@ -19,17 +25,17 @@ const CheckoutSchema = z.object({
       z.object({
         variantId: z.coerce.number().int().positive(),
         quantity: z.coerce.number().int().positive(),
-        price: z.coerce.number().nonnegative(),
+        price: MoneyAmountSchema,
         isFreeGift: z.boolean().optional(),
         productName: z.string().min(1, "product name required"),
       })
     )
     .min(1, "ต้องมีสินค้าอย่างน้อย 1 รายการ"),
   summary: z.object({
-    subtotal: z.coerce.number(),
-    discount: z.coerce.number(),
-    shipping: z.coerce.number(),
-    total: z.coerce.number(),
+    subtotal: MoneyAmountSchema,
+    discount: MoneyAmountSchema,
+    shipping: MoneyAmountSchema,
+    total: MoneyAmountSchema,
   }),
   payment_method: z.string().min(1),
   customer_id: z.string().uuid().nullable().optional(),

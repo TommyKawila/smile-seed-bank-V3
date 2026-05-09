@@ -351,6 +351,13 @@ export async function validateStorefrontCheckoutTotals(input: {
     total: finalBackendExpectedTotal,
   };
 
+  console.log("--- CHECKOUT MATH ---", {
+    clientTotal: clientSummary.total,
+    serverTotal: serverSummary.total,
+    clientDiscount: clientSummary.discount,
+    serverDiscount: serverSummary.discount,
+  });
+
   const totalsMismatch =
     !sameBahtWithinTolerance(clientSummary.subtotal, serverSummary.subtotal) ||
     !sameBahtWithinTolerance(clientSummary.discount, serverSummary.discount) ||
