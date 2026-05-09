@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/order-utils";
+import { deductVariantStockForOrderItems, InsufficientStockError } from "@/lib/order-inventory";
 import { sendLowStockAlert } from "@/services/line-messaging";
 
 export type ManualDeductItem = {
@@ -93,7 +94,7 @@ export async function createManualOrderFromItems(input: {
       if (!variant) throw new Error(`Variant ${item.variantId} not found`);
       const currentStock = variant.stock ?? 0;
       if (currentStock < item.quantity) {
-        throw new Error(
+        throw new InsufficientStockError(
           `Insufficient stock for ${item.productName} (${item.unitLabel}): need ${item.quantity}, have ${currentStock}`
         );
       }
@@ -101,16 +102,6 @@ export async function createManualOrderFromItems(input: {
       const lineTotal = item.unitPrice * item.quantity;
       const costPrice = Number(variant.cost_price ?? 0);
       totalCostAcc += costPrice * item.quantity;
-
-      const afterStock = currentStock - item.quantity;
-      const threshold = variant.low_stock_threshold ?? 5;
-      if (afterStock <= threshold) {
-        postDeductionLowStockAlerts.push({
-          name: (variant.products as { name?: string })?.name ?? item.productName,
-          unitLabel: variant.unit_label,
-          stock: afterStock,
-        });
-      }
 
       const lineCreate: Prisma.order_itemsCreateInput = {
         orders: { connect: { id: order.id } },
@@ -125,11 +116,32 @@ export async function createManualOrderFromItems(input: {
         subtotal: new Prisma.Decimal(lineTotal),
       };
       await tx.order_items.create({ data: lineCreate });
+    }
 
-      await tx.product_variants.update({
-        where: { id: BigInt(item.variantId) },
-        data: { stock: { decrement: item.quantity } },
-      });
+    await deductVariantStockForOrderItems(
+      tx,
+      items.map((item) => ({ variantId: item.variantId, quantity: item.quantity }))
+    );
+
+    const postDeductionVariants = await tx.product_variants.findMany({
+      where: { id: { in: [...new Set(items.map((item) => BigInt(item.variantId)))] } },
+      select: {
+        stock: true,
+        unit_label: true,
+        low_stock_threshold: true,
+        products: { select: { name: true } },
+      },
+    });
+    for (const variant of postDeductionVariants) {
+      const afterStock = variant.stock ?? 0;
+      const threshold = variant.low_stock_threshold ?? 5;
+      if (afterStock <= threshold) {
+        postDeductionLowStockAlerts.push({
+          name: variant.products?.name ?? "Unknown product",
+          unitLabel: variant.unit_label,
+          stock: afterStock,
+        });
+      }
     }
 
     await tx.orders.update({
