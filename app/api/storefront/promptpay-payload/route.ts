@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSql } from "@/lib/db";
 import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate";
 import { buildPromptPayPayload } from "@/lib/payment-utils";
-import { quantizeBaht2, sameBahtSatang } from "@/lib/money-thb";
+import { quantizeBaht2, roundCheckoutBahtWhole, sameBahtSatang } from "@/lib/money-thb";
 import { getOrderByNumber } from "@/lib/services/order-service";
 import { PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
 
@@ -61,17 +61,17 @@ const CheckoutPayloadSchema = z.object({
       z.object({
         variantId: z.coerce.number().int().positive(),
         quantity: z.coerce.number().int().positive(),
-        price: z.coerce.number().nonnegative(),
+        price: z.coerce.number().finite().nonnegative().transform((v) => quantizeBaht2(v)),
         isFreeGift: z.boolean().optional(),
         productName: z.string().min(1),
       }),
     )
     .min(1),
   summary: z.object({
-    subtotal: z.coerce.number(),
-    discount: z.coerce.number(),
-    shipping: z.coerce.number(),
-    total: z.coerce.number(),
+    subtotal: z.coerce.number().finite().nonnegative().transform((v) => roundCheckoutBahtWhole(v)),
+    discount: z.coerce.number().finite().nonnegative().transform((v) => roundCheckoutBahtWhole(v)),
+    shipping: z.coerce.number().finite().nonnegative().transform((v) => roundCheckoutBahtWhole(v)),
+    total: z.coerce.number().finite().nonnegative().transform((v) => roundCheckoutBahtWhole(v)),
   }),
   promo_code_id: z.union([z.coerce.number().int(), z.null()]).optional(),
   customer_id: z.string().uuid().nullable().optional(),
@@ -116,10 +116,10 @@ export async function POST(req: NextRequest) {
   const resolvedPromoId = resolvedCustomerId == null ? null : (parsed.data.promo_code_id ?? null);
 
   const clientTotals = {
-    subtotal: quantizeBaht2(summary.subtotal),
-    discount: quantizeBaht2(summary.discount),
-    shipping: quantizeBaht2(summary.shipping),
-    total: quantizeBaht2(summary.total),
+    subtotal: roundCheckoutBahtWhole(summary.subtotal),
+    discount: roundCheckoutBahtWhole(summary.discount),
+    shipping: roundCheckoutBahtWhole(summary.shipping),
+    total: roundCheckoutBahtWhole(summary.total),
   };
 
   if (resolvedCustomerId) {
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
      * EMV amount = `priced.resolvedSummary.total` only (grand total from `calculateCartSummary`:
      * paid subtotal − discounts + shipping). Do NOT add body `summary.subtotal` or derive from `body.total`.
      */
-    const serverResolvedTotalBaht = quantizeBaht2(priced.resolvedSummary.total);
+    const serverResolvedTotalBaht = roundCheckoutBahtWhole(priced.resolvedSummary.total);
     const clientDeclaredTotalBaht = clientTotals.total;
     if (!sameBahtSatang(summary.total, priced.resolvedSummary.total)) {
       console.warn("[promptpay-payload] POST validation (informational): body summary.total≠server recomputed", {

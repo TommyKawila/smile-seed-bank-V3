@@ -24,6 +24,11 @@ export function quantizeBaht2(baht: number): number {
   return satangIntToBaht(bahtToSatangInt(baht));
 }
 
+/** Checkout discount/shipping/total: whole Baht only (no fractional satang). */
+export function roundCheckoutBahtWhole(baht: number): number {
+  return Math.round(quantizeBaht2(baht));
+}
+
 export function sameBahtSatang(a: number, b: number): boolean {
   return bahtToSatangInt(a) === bahtToSatangInt(b);
 }

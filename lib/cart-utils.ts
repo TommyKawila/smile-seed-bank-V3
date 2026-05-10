@@ -13,7 +13,7 @@ import {
   resolveExclusiveCartDiscounts,
   type PromoInfo as DiscountPromoInfo,
 } from "@/lib/discount-utils";
-import { bahtToSatangInt, quantizeBaht2, satangIntToBaht } from "@/lib/money-thb";
+import { bahtToSatangInt, roundCheckoutBahtWhole, satangIntToBaht } from "@/lib/money-thb";
 
 export type { TieredDiscountRule };
 export { evaluateTieredDiscountBySpend, evaluateDiscountTier };
@@ -103,7 +103,7 @@ export function calculateCartSummary(
   const subtotalSatang = items
     .filter((i) => !i.isFreeGift)
     .reduce((sum, i) => sum + bahtToSatangInt(i.price * i.quantity), 0);
-  const subtotal = quantizeBaht2(satangIntToBaht(subtotalSatang));
+  const subtotal = roundCheckoutBahtWhole(satangIntToBaht(subtotalSatang));
 
   const rules = tieredRules?.length ? tieredRules : [];
   const exclusive = resolveExclusiveCartDiscounts({
@@ -116,17 +116,19 @@ export function calculateCartSummary(
   const { tierDiscount, promoDiscount: promoDiscountAmount, eligibleTierPercent } = exclusive;
   const discountSatang =
     bahtToSatangInt(tierDiscount) + bahtToSatangInt(promoDiscountAmount);
-  const discount = quantizeBaht2(satangIntToBaht(discountSatang));
-  const normalizedDiscountSatang = bahtToSatangInt(discount);
+  const discount = roundCheckoutBahtWhole(satangIntToBaht(discountSatang));
+  const normalizedDiscountSatang = discount * 100;
   const merchSatang = subtotalSatang - normalizedDiscountSatang;
-  const netAmountBeforeShipping = quantizeBaht2(satangIntToBaht(merchSatang));
-  const shipping = calculateShipping(primaryCategory, netAmountBeforeShipping, shippingRules);
+  const netAmountBeforeShipping = roundCheckoutBahtWhole(satangIntToBaht(merchSatang));
+  const shipping = roundCheckoutBahtWhole(
+    calculateShipping(primaryCategory, netAmountBeforeShipping, shippingRules),
+  );
 
   const appliedTier = evaluateDiscountTier(subtotal, tiers);
 
   const grandSatang =
     merchSatang + bahtToSatangInt(shipping);
-  const total = quantizeBaht2(satangIntToBaht(grandSatang));
+  const total = roundCheckoutBahtWhole(satangIntToBaht(grandSatang));
 
   return {
     subtotal,

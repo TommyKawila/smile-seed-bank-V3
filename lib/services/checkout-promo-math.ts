@@ -15,12 +15,14 @@ export function satangDiscountToBaht(discSatang: number): number {
   return quantizeBaht2(satangIntToBaht(Math.round(discSatang)));
 }
 
+/** Percent off subtotal → discount rounded to nearest whole Baht; satang always ends in 00. */
 function computePercentDiscountSatang(subtotalSatang: number, percentPoints: number): number {
   const subSat = Math.round(Number(subtotalSatang));
   const pct = Number(percentPoints);
   if (!Number.isFinite(subSat) || subSat <= 0 || !Number.isFinite(pct) || pct <= 0) return 0;
-  const roundedDiscountSatang = Math.round(subSat * (pct / 100));
-  return bahtToSatangInt(quantizeBaht2(satangIntToBaht(roundedDiscountSatang)));
+  const subtotalBaht = quantizeBaht2(satangIntToBaht(subSat));
+  const discountBaht = Math.round(subtotalBaht * (pct / 100));
+  return discountBaht * 100;
 }
 
 /** Coupon discount in integer satang from subtotal BAHT (canonical for % and fixed cap). */

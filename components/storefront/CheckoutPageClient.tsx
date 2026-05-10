@@ -35,7 +35,7 @@ import { SavedCouponsCheckoutSection } from "@/components/storefront/checkout/Ch
 import { OrderSummary } from "@/components/storefront/checkout/OrderSummary";
 import { PaymentSection } from "@/components/storefront/checkout/PaymentSection";
 import { CheckoutSlipUploadSection } from "@/components/storefront/checkout/CheckoutSlipUploadSection";
-import { quantizeBaht2 } from "@/lib/money-thb";
+import { quantizeBaht2, roundCheckoutBahtWhole } from "@/lib/money-thb";
 import type { CartItem, CartSummary } from "@/types/supabase";
 import { ShippingSection } from "@/components/storefront/checkout/ShippingSection";
 import type { CheckoutPendingRestorePayload } from "@/lib/services/order-service";
@@ -85,10 +85,10 @@ function placedFromRestorePayload(data: CheckoutPendingRestorePayload): PlacedCh
     breederLogoUrl: it.breederLogoUrl,
   }));
 
-  const sub = quantizeBaht2(data.merchSubtotalBaht);
-  const ship = quantizeBaht2(data.shippingBaht);
-  const tot = quantizeBaht2(data.totalBaht);
-  const flatDisc = quantizeBaht2(data.flatDiscountBaht);
+  const sub = roundCheckoutBahtWhole(data.merchSubtotalBaht);
+  const ship = roundCheckoutBahtWhole(data.shippingBaht);
+  const tot = roundCheckoutBahtWhole(data.totalBaht);
+  const flatDisc = roundCheckoutBahtWhole(data.flatDiscountBaht);
 
   const summarySnapshot: CartSummary = {
     subtotal: sub,
@@ -410,10 +410,10 @@ export function CheckoutPageClient({
         ? promo.code.id
         : null;
     const checkoutSummary = {
-      subtotal: quantizeBaht2(summary.subtotal),
-      discount: quantizeBaht2(summary.discount),
-      shipping: quantizeBaht2(summary.shipping),
-      total: quantizeBaht2(summary.total),
+      subtotal: roundCheckoutBahtWhole(summary.subtotal),
+      discount: roundCheckoutBahtWhole(summary.discount),
+      shipping: roundCheckoutBahtWhole(summary.shipping),
+      total: roundCheckoutBahtWhole(summary.total),
     };
 
     setIsSubmitting(true);

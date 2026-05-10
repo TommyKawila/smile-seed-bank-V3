@@ -6,7 +6,7 @@ import {
   isCouponPercentageType,
   satangDiscountToBaht,
 } from "@/lib/services/checkout-promo-math";
-import { bahtToSatangInt } from "@/lib/money-thb";
+import { bahtToSatangInt, roundCheckoutBahtWhole } from "@/lib/money-thb";
 
 /** Spend-based tiers (THB). Highest matching `min_spend` wins. */
 export interface TieredDiscountRule {
@@ -51,9 +51,9 @@ export function evaluateDiscountTier(subtotal: number, tiers: DiscountTier[]): D
   );
 }
 
-/** Matches `lib/services/checkout-promo-math` / `coupon-service` (satang-safe). */
+/** Matches `lib/services/checkout-promo-math` / `coupon-service` (satang-safe, whole-baht discount). */
 export function computeCouponDiscountOnSubtotal(subtotal: number, promoInfo: PromoInfo): number {
-  return satangDiscountToBaht(computeCouponDiscountSatang(subtotal, promoInfo));
+  return roundCheckoutBahtWhole(satangDiscountToBaht(computeCouponDiscountSatang(subtotal, promoInfo)));
 }
 
 export type ExclusiveDiscountResolution = {
@@ -86,7 +86,7 @@ export function resolveExclusiveCartDiscounts(input: {
     appliedTier?.discount_percentage ?? 0
   );
   const tierDiscountSat = computePercentOfSubtotalDiscountSatang(subSat, eligibleTierPercent);
-  const tierDiscount = satangDiscountToBaht(tierDiscountSat);
+  const tierDiscount = roundCheckoutBahtWhole(satangDiscountToBaht(tierDiscountSat));
 
   if (!promoInfo) {
     return {
@@ -99,7 +99,7 @@ export function resolveExclusiveCartDiscounts(input: {
   }
 
   const couponDiscountSat = computeCouponDiscountSatang(subtotal, promoInfo);
-  const couponDiscount = satangDiscountToBaht(couponDiscountSat);
+  const couponDiscount = roundCheckoutBahtWhole(satangDiscountToBaht(couponDiscountSat));
   const merchAfterTierSat = subSat - tierDiscountSat;
   const merchAfterCouponSat = subSat - couponDiscountSat;
 

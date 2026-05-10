@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate";
-import { quantizeBaht2 } from "@/lib/money-thb";
+import { quantizeBaht2, roundCheckoutBahtWhole } from "@/lib/money-thb";
 import { createOrder, fetchEmailItems } from "@/lib/services/order-service";
 import { sendOrderConfirmationEmail } from "@/services/email-service";
 
@@ -12,6 +12,12 @@ const MoneyAmountSchema = z.coerce
   .finite()
   .nonnegative()
   .transform((value) => quantizeBaht2(value));
+
+const CheckoutWholeBahtSchema = z.coerce
+  .number()
+  .finite()
+  .nonnegative()
+  .transform((value) => roundCheckoutBahtWhole(value));
 
 const CheckoutSchema = z.object({
   customer: z.object({
@@ -32,10 +38,10 @@ const CheckoutSchema = z.object({
     )
     .min(1, "ต้องมีสินค้าอย่างน้อย 1 รายการ"),
   summary: z.object({
-    subtotal: MoneyAmountSchema,
-    discount: MoneyAmountSchema,
-    shipping: MoneyAmountSchema,
-    total: MoneyAmountSchema,
+    subtotal: CheckoutWholeBahtSchema,
+    discount: CheckoutWholeBahtSchema,
+    shipping: CheckoutWholeBahtSchema,
+    total: CheckoutWholeBahtSchema,
   }),
   payment_method: z.string().min(1),
   customer_id: z.string().uuid().nullable().optional(),

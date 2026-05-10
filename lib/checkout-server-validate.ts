@@ -6,6 +6,7 @@ import type { CartItem, DiscountTier, Promotion, ShippingRule } from "@/types/su
 import {
   bahtToSatangInt,
   quantizeBaht2,
+  roundCheckoutBahtWhole,
   sameBahtSatang,
   satangIntToBaht,
 } from "@/lib/money-thb";
@@ -79,7 +80,7 @@ function grandTotalFromSummaryParts(summary: Pick<CheckoutSummary, "subtotal" | 
     bahtToSatangInt(summary.subtotal) -
     bahtToSatangInt(summary.discount) +
     bahtToSatangInt(summary.shipping);
-  return quantizeBaht2(satangIntToBaht(satang));
+  return roundCheckoutBahtWhole(satangIntToBaht(satang));
 }
 
 function sortGiftTuples(rows: { variantId: number; quantity: number }[]): string {
@@ -108,10 +109,10 @@ function sameBahtWithinTolerance(a: number, b: number): boolean {
 
 function snapSummary(summary: CheckoutSummary): CheckoutSummary {
   return {
-    subtotal: quantizeBaht2(summary.subtotal),
-    discount: quantizeBaht2(summary.discount),
-    shipping: quantizeBaht2(summary.shipping),
-    total: quantizeBaht2(summary.total),
+    subtotal: roundCheckoutBahtWhole(summary.subtotal),
+    discount: roundCheckoutBahtWhole(summary.discount),
+    shipping: roundCheckoutBahtWhole(summary.shipping),
+    total: roundCheckoutBahtWhole(summary.total),
   };
 }
 
@@ -224,7 +225,7 @@ export async function validateStorefrontCheckoutTotals(input: {
     );
   }
 
-  const paidSubtotal = quantizeBaht2(
+  const paidSubtotal = roundCheckoutBahtWhole(
     satangIntToBaht(
       paidCartItems.reduce((s, i) => s + bahtToSatangInt(i.price * i.quantity), 0)
     )
@@ -330,18 +331,20 @@ export async function validateStorefrontCheckoutTotals(input: {
     });
   }
 
-  const calculatedSubtotal = quantizeBaht2(serverSummaryRaw.subtotal);
-  const calculatedDiscount = quantizeBaht2(serverSummaryRaw.discount);
-  const netAmountBeforeShipping = quantizeBaht2(
+  const calculatedSubtotal = roundCheckoutBahtWhole(serverSummaryRaw.subtotal);
+  const calculatedDiscount = roundCheckoutBahtWhole(serverSummaryRaw.discount);
+  const netAmountBeforeShipping = roundCheckoutBahtWhole(
     satangIntToBaht(
       bahtToSatangInt(calculatedSubtotal) - bahtToSatangInt(calculatedDiscount)
     )
   );
-  const calculatedShipping = quantizeBaht2(shippingFeeForSubtotal(netAmountBeforeShipping));
-  const finalBackendExpectedTotal = quantizeBaht2(
+  const calculatedShipping = roundCheckoutBahtWhole(
+    shippingFeeForSubtotal(netAmountBeforeShipping),
+  );
+  const finalBackendExpectedTotal = roundCheckoutBahtWhole(
     satangIntToBaht(
-      bahtToSatangInt(netAmountBeforeShipping) + bahtToSatangInt(calculatedShipping)
-    )
+      bahtToSatangInt(netAmountBeforeShipping) + bahtToSatangInt(calculatedShipping),
+    ),
   );
 
   const serverSummary: CheckoutSummary = {
