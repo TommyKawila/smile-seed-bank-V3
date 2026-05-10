@@ -7,10 +7,17 @@ import { randomUUID } from "crypto";
 import { generateOrderNumber } from "@/lib/order-utils";
 import { sendLowStockAlert } from "@/services/line-messaging";
 import { deductVariantStockForOrderItems, InsufficientStockError } from "@/lib/order-inventory";
+import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 
 /** Matches `orders.status` string values used by POS / claim (DB column is String, not Prisma enum). */
 const POS_ORDER_STATUS = ["PENDING", "PENDING_INFO", "COMPLETED", "CANCELLED"] as const;
 type PosOrderStatus = (typeof POS_ORDER_STATUS)[number];
+
+const wholeBahtNonNeg = z
+  .coerce.number()
+  .finite()
+  .nonnegative()
+  .transform((v) => roundCheckoutBahtWhole(v));
 
 const CreateOrderSchema = z.object({
   items: z
@@ -26,13 +33,13 @@ const CreateOrderSchema = z.object({
     )
     .min(1),
   status: z.enum(POS_ORDER_STATUS).default("COMPLETED"),
-  totalAmount: z.number().nonnegative().optional(),
+  totalAmount: wholeBahtNonNeg.optional(),
   points_redeemed: z.number().int().min(0).optional(),
-  points_discount_amount: z.number().nonnegative().optional(),
+  points_discount_amount: wholeBahtNonNeg.optional(),
   promotion_rule_id: z.number().int().positive().optional().nullable(),
-  promotion_discount_amount: z.number().nonnegative().optional(),
+  promotion_discount_amount: wholeBahtNonNeg.optional(),
   /** Manual POS discount (THB), e.g. VIP % off subtotal — stored in `orders.discount_amount` */
-  discount_amount: z.number().nonnegative().optional(),
+  discount_amount: wholeBahtNonNeg.optional(),
   customer_profile_id: z.number().int().positive().optional().nullable(),
   customer: z
     .object({
@@ -70,7 +77,9 @@ export async function POST(req: NextRequest) {
       customer_profile_id,
       customer,
     } = parsed.data;
-    const totalAmount = overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0);
+    const totalAmount = roundCheckoutBahtWhole(
+      overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0)
+    );
     const claimToken = status === "PENDING_INFO" ? randomUUID() : null;
     const deductStock = status === "COMPLETED" || status === "PENDING_INFO";
 

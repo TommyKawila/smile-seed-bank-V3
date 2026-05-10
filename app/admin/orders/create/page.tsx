@@ -42,6 +42,7 @@ import {
   generateOrderSummary,
 } from "@/lib/utils/format-order";
 import { resolvePosVariantUnitPrice } from "@/lib/pos-pricing";
+import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 
 type PosLastCopyPack = {
   orderNumber: string;
@@ -243,7 +244,9 @@ export default function CreateOrderPage() {
 
   const availablePoints = selectedCustomer?.points ?? 0;
   const manualDiscountPercentClamped = Math.min(100, Math.max(0, manualDiscountPercent));
-  const manualDiscountAmount = (summary.subtotal * manualDiscountPercentClamped) / 100;
+  const manualDiscountAmount = roundCheckoutBahtWhole(
+    (summary.subtotal * manualDiscountPercentClamped) / 100
+  );
   const maxRedeemable = Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount));
   const effectivePointsRedeemed = Math.min(
     pointsToRedeem,
@@ -251,7 +254,9 @@ export default function CreateOrderPage() {
     Math.floor(Math.max(0, summary.total - manualDiscountAmount))
   );
   const pointsDiscountAmount = effectivePointsRedeemed;
-  const grandTotal = Math.max(0, summary.total - manualDiscountAmount - pointsDiscountAmount);
+  const grandTotal = roundCheckoutBahtWhole(
+    Math.max(0, summary.total - manualDiscountAmount - pointsDiscountAmount)
+  );
   const pointsToAdd = Math.floor(grandTotal / 100);
   const balanceAfterPurchase = availablePoints - effectivePointsRedeemed + pointsToAdd;
 
