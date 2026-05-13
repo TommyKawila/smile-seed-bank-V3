@@ -115,7 +115,14 @@ export async function POST(req: NextRequest) {
       promo_code_id: effectivePromoId,
     });
     if (!priced.ok) {
-      return NextResponse.json({ error: priced.error }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: priced.error,
+          code: priced.details ? "AMOUNT_MISMATCH" : undefined,
+          details: priced.details,
+        },
+        { status: 400 }
+      );
     }
 
     const { data, error } = await createOrder({

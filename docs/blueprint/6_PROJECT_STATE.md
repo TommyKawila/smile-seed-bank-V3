@@ -4,6 +4,9 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-14
+- **Checkout strict grand total:** `lib/checkout-server-validate.ts` คิดยอดจาก `products.price` (fallback `product_variants.price`) ไม่ใช้ราคาจาก client; pipeline เดียวกับ `calculateCartSummary` (subtotal → exclusive discount → net → `shippingFeeForSubtotal` → total); `order_create` เทียบ `summary.total` กับ server แบบเต็มบาท เท่ากันทุกบิท ไม่ผ่านคืน 400 + `code: AMOUNT_MISMATCH` + `details`; fail ใช้ `console.error` รวม `clientValues`/`serverValues`/`dbPrices`; `lib/cart-utils.ts` sync net/total เป็น `net = subtotal − discount` แล้วบวกค่าส่ง; `app/api/storefront/orders/route.ts` ส่ง `details` กลับเมื่อ mismatch
+
 ### บันทึกการทำงาน — 2026-05-10
 - **Checkout strict integer Baht (client = server):** `calculateCartSummary` ใช้ยอดสินค้า/s ค่าจัดส่งสุทธิ/ยอดรวมเป็นจำนวนเต็มบาท (`roundCheckoutBahtWhole`); `resolveExclusiveCartDiscounts` คืน `tierDiscount`/`coupon` เป็นจำนวนเต็ม; `checkout-server-validate` snap `subtotal` + `grandTotalFromSummaryParts` เป็นเต็มบาท; POST `/api/storefront/orders` `summary.subtotal` ใช้ `CheckoutWholeBahtSchema`; `promptpay-payload` Zod summary + `clientTotals` เต็มบาท; `CheckoutPageClient` restore + payload summary เต็มบาท
 

@@ -117,18 +117,23 @@ export function calculateCartSummary(
   const discountSatang =
     bahtToSatangInt(tierDiscount) + bahtToSatangInt(promoDiscountAmount);
   const discount = roundCheckoutBahtWhole(satangIntToBaht(discountSatang));
-  const normalizedDiscountSatang = discount * 100;
-  const merchSatang = subtotalSatang - normalizedDiscountSatang;
-  const netAmountBeforeShipping = roundCheckoutBahtWhole(satangIntToBaht(merchSatang));
+  const netAmountBeforeShipping = Math.max(
+    0,
+    roundCheckoutBahtWhole(
+      satangIntToBaht(bahtToSatangInt(subtotal) - bahtToSatangInt(discount)),
+    ),
+  );
   const shipping = roundCheckoutBahtWhole(
     calculateShipping(primaryCategory, netAmountBeforeShipping, shippingRules),
   );
 
   const appliedTier = evaluateDiscountTier(subtotal, tiers);
 
-  const grandSatang =
-    merchSatang + bahtToSatangInt(shipping);
-  const total = roundCheckoutBahtWhole(satangIntToBaht(grandSatang));
+  const total = roundCheckoutBahtWhole(
+    satangIntToBaht(
+      bahtToSatangInt(netAmountBeforeShipping) + bahtToSatangInt(shipping),
+    ),
+  );
 
   return {
     subtotal,
