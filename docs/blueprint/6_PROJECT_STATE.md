@@ -4,6 +4,31 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-14 (Cart / checkout line brand price UI)
+- **`cartItemBrandLineDisplay`** (`lib/cart-utils.ts`) — `resolveListingUnitAfterBrand` ต่อบรรทัด × จำนวน; **`CartSheet`** + **`CheckoutPageClient` `OrderItemRow`** แสดงราคาหลังแบรนด์ + ขีดฆ่าราคาเต็มเมื่อมีโปรแบรนด์; restore payment summary ไม่ส่ง rules (แสดงยอดจาก snapshot เดิม)
+
+### บันทึกการทำงาน — 2026-05-14 (Catalog card vs `seeds` filter)
+- **`pickVariantForSeedPackSlugs`** (`lib/shop-attribute-filters.ts`) — เลือก variant ตรงแพ็กจาก URL; **`getPackSizeLabelFromUnitLabel`** (`lib/product-utils.ts`) — ข้อความแพ็กเดียวกับการ์ด
+- **`ProductCard` `catalogSeedsFilter`** — ราคา/ strike / แบรนด์ลด (คำนวณจากราคา variant ที่เลือกเมื่อมี filter; ไม่ใช้ slice `brand_listing_*` จาก starting variant) / ป้าย % / แพ็กบรรทัดล่าง / add-to-cart ตาม variant นั้น
+- **`GeneticVaultProductGrid` + `ShopSpotlightCard`** รับ `catalogSeedsFilter` จาก `ShopPageClient` (`seeds`)
+
+### บันทึกการทำงาน — 2026-05-14 (Sale + sidebar filters server-side)
+- **`getActiveProducts` `quick=sale`:** ใน sale scan หลัง enrich ใช้ **`productMatchesShopAttributeFilters`** (genetics / difficulty / THC / CBD / sex / yield / seeds) คัดตั้งแต่ chunk; **`productPassesSaleAfterPackRule`** — ถ้ามี `seeds` คัดเฉพาะ variant ที่ตรงแพ็ก **และ** `resolveListingUnitAfterBrand` ได้ effective &lt; base; ไม่มี seeds ยังใช้ **`productPassesBrandPromoSaleFilter`** แบบเดิม — **`catalogTotalCount`** = จำนวนที่ผ่าน sale + sidebar
+- **SSR / API / client:** `shop/page.tsx`, `GET /api/products`, `ShopPageClient` (hydrate key + fetch + load more) ส่ง **`genetics`/`difficulty`/`thc`/`cbd`/`sex`/`seeds`/`yield`** เข้า service
+
+### บันทึกการทำงาน — 2026-05-14 (Sale filter UX)
+- **`getActiveProducts` `quick=sale` (non–price sort):** หลังรวบรวม `saleRows` เรียง **`brand_promotion_percent` DESC** แล้ว **`id` DESC** — แบรนด์ส่วนลดใหญ่ (เช่น 50%) ขึ้นหน้าแรกก่อน
+- **`ShopPageClient`:** ลบ `shopScopedProducts` ซ้ำ; **`catalogFloweringScope`** เมื่อ `quick=sale` ใช้ **`shopScopedProducts`** (breeder + `ft` + category + search) ให้จำนวนชิป Auto/Photo สอดคล้องกับชุด sale ที่โหลด; sidebar counts ยังจาก `calculateFilterCounts(shopScopedProducts)`
+
+### บันทึกการทำงาน — 2026-05-14 (Brand / breeder quick filters)
+- **Journal paths:** `parseJournalBreederSlugFromPathname` + `journalBreederCatalogBasePath` — `/brand/[slug]` ใช้ `shop/page` เดียวกับ `/seeds/[slug]`; `ShopPageClient` `replaceCatalog` / clear / numeric-id redirect รักษา prefix `/brand` vs `/seeds`
+- **Query:** `resolveCatalogFtFromUrl` + `filter` shorthand (`filter=auto` …) ใน SSR / `GET /api/products` / client; บน `/brand/` ชิป Photo/Auto เขียน `filter=` (ไม่บังคับ `ft`)
+- **Routes:** `app/(storefront)/brand/[slug]/page.tsx`, `robots.ts` allow `/brand/`
+
+### บันทึกการทำงาน — 2026-05-14 (Shop quick filters)
+- **Quick filter bar:** `components/storefront/ShopQuickFilterBar.tsx` + `ShopPageClient` sticky strip — URL `quick=new|sale`, `sort=price_asc|price_desc`, ชิป Photo/Auto ใช้ `ft`, Regular ใช้ `sex=regular` คู่กับ sidebar
+- **Catalog API / service:** `getActiveProducts` — `new_arrivals` order (pinned / priority / `created_at`), `quick=sale` หลัง brand enrich (`Number(effective) < Number(base)`), **chunked DB scan** (ไม่จำกัดแค่หน้าแรกของ `CATALOG_ENRICH_CAP`) จนได้แถวตามหน้า / pool ราคา; price sort ด้วย `getCatalogCardSortPrice`; ชนิดแถว `ProductWithBreederMaybeVariants` ให้เข้ากับ variants + sort; `GET /api/products` รับ `quick`, `pmin`/`pmax`, `sort` เพิ่ม; SSR `shop/page.tsx` ส่ง params เดียวกัน
+
 ### บันทึกการทำงาน — 2026-05-16
 - **Admin brand Prisma delegate:** `app/api/admin/promotions/brands/route.ts` + `[id]/route.ts` / `app/api/storefront/brand-promotions/route.ts` ใช้ **`prisma.brand_promotions`** เท่านั้น (สอดคล้อง `model brand_promotions`: `id`, `brand_name`, `discount_percent`, `is_active`, `created_at`, `updated_at`) — **ห้าม** `prisma.brand_promotion` (singular); หลังแก้ `schema.prisma` ต้อง **`npx prisma generate`** + รีสตาร์ท dev กัน `undefined.findMany`
 - **Checkout variant net price:** `resolveListingUnitBaht` ใช้ `coerceDbPriceBaht`; ลำดับ `product_variants.price` ก่อน `products.price`; ต่อด้วยกฎ `brand_promotions` ต่อ `breeders.name` (source `brand_promotion` เมื่อจับคู่)

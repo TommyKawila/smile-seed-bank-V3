@@ -242,6 +242,21 @@ export function getEffectiveListingPrice(product: ClearanceProductSlice): number
   return Number.isFinite(p) ? p : 0;
 }
 
+type BrandListingSortSlice = {
+  brand_listing_base_baht?: number;
+  brand_listing_effective_baht?: number;
+};
+
+/** Card-aligned “from” price for catalog sorting (brand promo effective, else clearance/list). */
+export function getCatalogCardSortPrice(
+  product: ClearanceProductSlice & BrandListingSortSlice
+): number {
+  const base = Number(product.brand_listing_base_baht ?? 0);
+  const eff = Number(product.brand_listing_effective_baht ?? 0);
+  if (base > 0 && eff > 0 && eff < base) return eff;
+  return getEffectiveListingPrice(product);
+}
+
 /**
  * Per-pack price when clearance: scales each variant list price by sale / starting price
  * so multi-pack tiers keep the same discount ratio.
@@ -335,7 +350,16 @@ export function getStartingVariantLabel(
 ): string | null {
   const v = getStartingVariant(variants);
   if (!v) return null;
-  const n = parsePackFromUnitLabel(v.unit_label);
+  return getPackSizeLabelFromUnitLabel(v.unit_label, locale);
+}
+
+/** TH/EN pack line from `unit_label` (same template as catalog card). */
+export function getPackSizeLabelFromUnitLabel(
+  unitLabel: string | null | undefined,
+  locale: "th" | "en"
+): string | null {
+  if (!unitLabel?.trim()) return null;
+  const n = parsePackFromUnitLabel(unitLabel);
   const template =
     getMessage(locale, "product.card_seeds_pack") ??
     (locale === "th" ? "แพ็กเกจ {n} เมล็ด" : "{n} Seeds Pack");

@@ -705,10 +705,12 @@ export type Database = {
           is_active: boolean | null
           is_clearance: boolean | null
           is_featured: boolean | null
+          is_pinned_new_arrival: boolean | null
           lineage: string | null
           master_sku: string | null
           medical_benefits: Json | null
           name: string
+          new_arrival_priority: number | null
           slug: string | null
           price: number | null
           sale_price: number | null
@@ -750,10 +752,12 @@ export type Database = {
           is_active?: boolean | null
           is_clearance?: boolean | null
           is_featured?: boolean | null
+          is_pinned_new_arrival?: boolean | null
           lineage?: string | null
           master_sku?: string | null
           medical_benefits?: Json | null
           name: string
+          new_arrival_priority?: number | null
           slug?: string | null
           price?: number | null
           sale_price?: number | null
@@ -795,10 +799,12 @@ export type Database = {
           is_active?: boolean | null
           is_clearance?: boolean | null
           is_featured?: boolean | null
+          is_pinned_new_arrival?: boolean | null
           lineage?: string | null
           master_sku?: string | null
           medical_benefits?: Json | null
           name?: string
+          new_arrival_priority?: number | null
           slug?: string | null
           price?: number | null
           sale_price?: number | null

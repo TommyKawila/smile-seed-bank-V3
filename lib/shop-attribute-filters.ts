@@ -150,6 +150,40 @@ export function productMatchesSeedsPackFilter(
   return false;
 }
 
+/**
+ * Catalog / card: one variant to display when URL `seeds=` slugs are active.
+ * Same bucket rules as {@link productMatchesSeedsPackFilter}; prefers in-stock,
+ * then lowest list price, then smallest pack.
+ */
+export function pickVariantForSeedPackSlugs<
+  T extends {
+    unit_label: string;
+    price?: number | null;
+    stock?: number | null;
+    is_active?: boolean | null;
+  },
+>(variants: T[] | null | undefined, selectedSlugs: string[]): T | null {
+  if (!selectedSlugs.length) return null;
+  const active = (variants ?? []).filter((v) => v.is_active !== false);
+  const matched = active.filter((v) => productMatchesSeedsPackFilter([v], selectedSlugs));
+  if (matched.length === 0) return null;
+  type Row = { v: T; price: number; stock: number; pack: number };
+  const rows: Row[] = matched.map((v) => ({
+    v,
+    price: Number(v.price ?? 0),
+    stock: Number(v.stock ?? 0),
+    pack: parsePackFromUnitLabel(v.unit_label),
+  }));
+  const priced = rows.filter((r) => r.price > 0);
+  if (priced.length === 0) return null;
+  const inStock = priced.filter((r) => r.stock > 0);
+  const pool = inStock.length > 0 ? inStock : priced;
+  const minPrice = Math.min(...pool.map((r) => r.price));
+  const tied = pool.filter((r) => r.price === minPrice);
+  tied.sort((a, b) => a.pack - b.pack);
+  return tied[0]?.v ?? null;
+}
+
 function seedPackBucketsForVariants(
   variants: { unit_label: string; is_active?: boolean | null }[] | null | undefined
 ): Set<string> {

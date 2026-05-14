@@ -7,6 +7,8 @@ const FieldSchema = z.object({
   image_url: z.string().url().nullable().optional(),
   is_featured: z.boolean().optional(),
   featured_priority: z.coerce.number().int().min(0).max(9999).nullable().optional(),
+  is_pinned_new_arrival: z.boolean().optional(),
+  new_arrival_priority: z.coerce.number().int().min(0).max(9999).nullable().optional(),
 });
 
 export async function PATCH(

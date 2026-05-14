@@ -21,19 +21,21 @@ import {
   getClearancePercentOff,
   getEffectiveListingPrice,
   getEffectiveVariantPrice,
+  getPackSizeLabelFromUnitLabel,
   getStartingVariant,
   getStartingVariantLabel,
+  productDetailHref,
 } from "@/lib/product-utils";
-import { roundCheckoutBahtWhole } from "@/lib/money-thb";
-import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
-import { getProductAggregateStock } from "@/lib/product-stock";
-import { productDetailHref } from "@/lib/product-utils";
 import { seedsBreederHref } from "@/lib/breeder-slug";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { StockAlert } from "@/components/storefront/StockAlert";
 import { toast } from "sonner";
+import { pickVariantForSeedPackSlugs, parseListParam } from "@/lib/shop-attribute-filters";
+import { roundCheckoutBahtWhole } from "@/lib/money-thb";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import { getProductAggregateStock } from "@/lib/product-stock";
 
 const shopCardVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -147,6 +149,8 @@ type ProductCardProps = {
   imagePriority?: boolean;
   /** When parent already wraps this card in `<motion.div variants={…}>`, omit inner motion (avoids nested variant trees / runtime issues). */
   disableOuterMotion?: boolean;
+  /** Raw `seeds` URL param: when set, card price/pack/badge follow the matching variant (catalog alignment). */
+  catalogSeedsFilter?: string | null;
 };
 
 function ProductCardBase({
@@ -154,16 +158,22 @@ function ProductCardBase({
   variant = "shop",
   imagePriority = false,
   disableOuterMotion = false,
+  catalogSeedsFilter = null,
 }: ProductCardProps) {
   const { addToCart, openCart, brandPromotionRules } = useCartContext();
   const { t, locale } = useLanguage();
   const loc = locale as "th" | "en";
+  const seedsSel = parseListParam(catalogSeedsFilter);
+  const displayVariant =
+    seedsSel.length > 0
+      ? pickVariantForSeedPackSlugs(product.product_variants ?? null, seedsSel) ??
+        getDefaultVariant(product)
+      : getDefaultVariant(product);
   const aggregateStock = getProductAggregateStock(product);
   const isActuallyOut = aggregateStock <= 0;
   const outOfStock = isActuallyOut;
   const lastOneLeft = !isActuallyOut && aggregateStock === 1;
   const lowStock = !isActuallyOut && aggregateStock > 1 && aggregateStock <= 5;
-  const defaultVariant = getDefaultVariant(product);
   const cardImage = getPrimaryImage(product);
   const pm = product as ProductWithMeta;
 
@@ -183,22 +193,22 @@ function ProductCardBase({
 
   const handleAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
     stopNavBubble(e);
-    if (defaultVariant) {
-      const variantListPrice = Number(defaultVariant.price ?? 0);
+    if (displayVariant) {
+      const variantListPrice = Number(displayVariant.price ?? 0);
       const unit = roundCheckoutBahtWhole(variantListPrice);
       if (typeof addToCart !== "function") {
         toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
         return;
       }
       const { error } = addToCart({
-        variantId: defaultVariant.id,
+        variantId: displayVariant.id,
         productId: product.id,
         productName: product.name,
         productImage: cardImage,
-        unitLabel: defaultVariant.unit_label,
+        unitLabel: displayVariant.unit_label,
         price: unit,
         quantity: 1,
-        stock_quantity: defaultVariant.stock ?? 0,
+        stock_quantity: displayVariant.stock ?? 0,
         masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
         breeder_id: product.breeder_id ?? null,
         breederLogoUrl: product.breeders?.logo_url ?? null,
@@ -254,26 +264,32 @@ function ProductCardBase({
   };
   const pb = product as WithBrandListing;
   const rawListForBrand = (() => {
-    const vp = Number(defaultVariant?.price ?? 0);
+    const vp = Number(displayVariant?.price ?? 0);
     if (vp > 0) return vp;
     return Number((product as { price?: number | null }).price ?? 0) || 0;
   })();
 
-  const brandResolved =
-    pb.brand_listing_base_baht != null && pb.brand_listing_effective_baht != null
-      ? {
-          baseBaht: pb.brand_listing_base_baht,
-          effectiveBaht: pb.brand_listing_effective_baht,
-          brandDiscountPercent: pb.brand_promotion_percent ?? null,
-        }
-      : resolveListingUnitAfterBrand(rawListForBrand, product.breeders?.name, brandPromotionRules);
+  const useServerBrandListingSlice =
+    seedsSel.length === 0 &&
+    pb.brand_listing_base_baht != null &&
+    pb.brand_listing_effective_baht != null;
+
+  const brandResolved = useServerBrandListingSlice
+    ? {
+        baseBaht: pb.brand_listing_base_baht!,
+        effectiveBaht: pb.brand_listing_effective_baht!,
+        brandDiscountPercent: pb.brand_promotion_percent ?? null,
+      }
+    : resolveListingUnitAfterBrand(rawListForBrand, product.breeders?.name, brandPromotionRules);
 
   const hasBrandSale =
     brandResolved.effectiveBaht < brandResolved.baseBaht && brandResolved.baseBaht > 0;
 
   const listingFallbackPrice = getEffectiveListingPrice(product);
-  const listRegular = Number(defaultVariant?.price ?? computeStartingPrice(product.product_variants));
-  const listFrom = defaultVariant
+  const listRegular = Number(
+    displayVariant?.price ?? computeStartingPrice(product.product_variants)
+  );
+  const listFrom = displayVariant
     ? getEffectiveVariantPrice(product, listRegular)
     : listingFallbackPrice;
   const clearancePct = getClearancePercentOff(product);
@@ -295,9 +311,11 @@ function ProductCardBase({
     ? brandResolved.brandDiscountPercent ??
       Math.round((1 - brandResolved.effectiveBaht / brandResolved.baseBaht) * 100)
     : clearancePct;
-  const seedsPackLabel = getStartingVariantLabel(product.product_variants, locale);
-  const stockAlert = defaultVariant && !outOfStock ? (
-    <StockAlert quantity={defaultVariant.stock} locale={locale} className="h-5 text-[10px]" />
+  const seedsPackLabel = displayVariant
+    ? getPackSizeLabelFromUnitLabel(displayVariant.unit_label, locale)
+    : getStartingVariantLabel(product.product_variants, locale);
+  const stockAlert = displayVariant && !outOfStock ? (
+    <StockAlert quantity={displayVariant.stock} locale={locale} className="h-5 text-[10px]" />
   ) : null;
 
   const cardInner = (
@@ -463,7 +481,7 @@ function ProductCardBase({
               </div>
               <Button
                 type="button"
-                disabled={!defaultVariant}
+                disabled={!displayVariant}
                 onClick={handleAdd}
                 onPointerDown={(e) => e.stopPropagation()}
                 className="relative z-20 mt-1.5 h-10 w-full shrink-0 border-0 bg-gradient-to-b from-emerald-500 to-emerald-700 p-0 font-sans text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(16,185,129,0.5)] transition hover:from-emerald-500 hover:to-emerald-800 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
@@ -535,7 +553,7 @@ function ProductCardBase({
                   <Button
                     type="button"
                     size="icon"
-                    disabled={!defaultVariant}
+                    disabled={!displayVariant}
                     onClick={handleAdd}
                     onPointerDown={(e) => {
                       e.stopPropagation();

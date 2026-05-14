@@ -12,6 +12,9 @@ import {
   computeStartingPrice,
   getClearancePercentOff,
   getEffectiveListingPrice,
+  getEffectiveVariantPrice,
+  getPackSizeLabelFromUnitLabel,
+  getStartingVariant,
   getStartingVariantLabel,
 } from "@/lib/product-utils";
 import { formatPrice } from "@/lib/utils";
@@ -19,6 +22,7 @@ import { plainTextFromHtml, truncateMetaDescription } from "@/lib/magazine-seo";
 import type { ProductVariantRow, ProductWithBreeder } from "@/lib/supabase/types";
 import type { FloweringType } from "@/types/supabase";
 import { useLanguage } from "@/context/LanguageContext";
+import { parseListParam, pickVariantForSeedPackSlugs } from "@/lib/shop-attribute-filters";
 
 function excerpt(product: ProductWithBreeder): string {
   const raw = product.description_th ?? product.description_en ?? "";
@@ -40,26 +44,43 @@ function asMicroGeneticsProduct(product: ProductWithBreeder): ProductWithBreeder
 export function ShopSpotlightCard({
   product,
   variants,
+  catalogSeedsFilter = null,
 }: {
   product: ProductWithBreeder;
   variants?: import("framer-motion").Variants;
+  catalogSeedsFilter?: string | null;
 }) {
   const { t, locale } = useLanguage();
   const img = getListingThumbnailUrl(product);
   const ex = excerpt(product);
   const variantsList = (product as ProductWithBreeder & { product_variants?: ProductVariantRow[] | null })
     .product_variants;
-  const listFrom = getEffectiveListingPrice({
-    ...product,
-    product_variants: variantsList ?? null,
-  });
-  const listRegular = computeStartingPrice(variantsList);
+  const seedsSel = parseListParam(catalogSeedsFilter);
+  const displayVariant =
+    seedsSel.length > 0
+      ? pickVariantForSeedPackSlugs(variantsList ?? null, seedsSel) ??
+        getStartingVariant(variantsList ?? null)
+      : getStartingVariant(variantsList ?? null);
+  const listRegular = Number(
+    displayVariant?.price ?? computeStartingPrice(variantsList ?? null)
+  );
+  const listFrom = displayVariant
+    ? getEffectiveVariantPrice(
+        { ...product, product_variants: variantsList ?? null },
+        listRegular
+      )
+    : getEffectiveListingPrice({
+        ...product,
+        product_variants: variantsList ?? null,
+      });
   const clearancePct = getClearancePercentOff({
     ...product,
     product_variants: variantsList ?? null,
   });
   const showStrike = clearancePct != null && listRegular > listFrom;
-  const seedsPackLabel = getStartingVariantLabel(variantsList ?? null, locale);
+  const seedsPackLabel = displayVariant
+    ? getPackSizeLabelFromUnitLabel(displayVariant.unit_label, locale)
+    : getStartingVariantLabel(variantsList ?? null, locale);
 
   return (
     <motion.div

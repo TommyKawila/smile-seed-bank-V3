@@ -138,6 +138,8 @@ const emptyForm: Partial<ProductFormData> = {
   is_featured: false,
   featured_priority: 0,
   featured_tagline: null,
+  is_pinned_new_arrival: false,
+  new_arrival_priority: 0,
   is_clearance: false,
   sale_price: null as number | null,
   variants: [{ ...emptyVariant }],
@@ -222,6 +224,10 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         featured_priority:
           (p as { featured_priority?: number | null }).featured_priority ?? 0,
         featured_tagline: (p as { featured_tagline?: string | null }).featured_tagline ?? null,
+        is_pinned_new_arrival:
+          (p as { is_pinned_new_arrival?: boolean | null }).is_pinned_new_arrival ?? false,
+        new_arrival_priority:
+          (p as { new_arrival_priority?: number | null }).new_arrival_priority ?? 0,
         is_clearance: (p as { is_clearance?: boolean | null }).is_clearance ?? false,
         sale_price:
           (p as { sale_price?: number | string | null }).sale_price != null
@@ -877,6 +883,51 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 />
                 <p className="text-[10px] text-zinc-500">
                   แสดงบนการ์ดสไลด์ — ถ้าว่าง ระบบจะใช้ข้อความสั้นจากรายละเอียดสินค้าแทน
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-3 rounded-sm border border-violet-200/80 border-l-4 border-l-violet-500 bg-gradient-to-br from-violet-50/80 via-white to-violet-50/40 px-4 py-3 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <Label className="text-sm font-medium text-violet-950">
+                  New Arrivals (แถวสินค้าใหม่ — ไม่ใช่สไลด์แนะนำ)
+                </Label>
+                <p className="text-xs text-violet-900/75">
+                  ปักหมุดที่ส่วน New Arrivals — ตัวเลขมากแสดงก่อน (Priority สูงจะได้ขึ้นต้น)
+                </p>
+              </div>
+              <Switch
+                checked={form.is_pinned_new_arrival === true}
+                onCheckedChange={(v) => {
+                  setField("is_pinned_new_arrival", v);
+                  if (!v) setField("new_arrival_priority", 0);
+                }}
+                aria-label="Pin to new arrivals"
+              />
+            </div>
+            {form.is_pinned_new_arrival === true && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-violet-200/60 pt-3">
+                <Label htmlFor="new_arrival_priority" className="text-xs font-medium whitespace-nowrap text-violet-900">
+                  คะแนนลำดับ (มากก่อน)
+                </Label>
+                <Input
+                  id="new_arrival_priority"
+                  type="number"
+                  min={0}
+                  max={9999}
+                  className="h-9 w-24 border-violet-200 bg-white focus-visible:ring-violet-400"
+                  value={form.new_arrival_priority ?? 0}
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    setField(
+                      "new_arrival_priority",
+                      Number.isFinite(n) ? Math.min(9999, Math.max(0, n)) : 0,
+                    );
+                  }}
+                />
+                <p className="w-full text-[10px] text-violet-800/80 sm:w-auto">
+                  ต่างจากสไลด์แนะนำด้านบน (เลขน้อยขึ้นก่อน) — ที่นี่เลขมากขึ้นก่อน
                 </p>
               </div>
             )}

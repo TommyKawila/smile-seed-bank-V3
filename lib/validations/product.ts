@@ -90,6 +90,9 @@ export const ProductSchema = z.object({
   /** Homepage carousel (lower priority = earlier) */
   is_featured: z.boolean().default(false).optional(),
   featured_priority: z.number().int().min(0).max(9999).default(0).optional(),
+  /** Homepage «New arrivals» rail: pin + priority, remainder filled by recency server-side */
+  is_pinned_new_arrival: z.boolean().default(false).optional(),
+  new_arrival_priority: z.number().int().min(0).max(9999).default(0).optional(),
   featured_tagline: z
     .preprocess(
       (v) => (v === "" || v === undefined || v === null ? null : v),

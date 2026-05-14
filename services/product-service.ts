@@ -18,12 +18,18 @@ import {
   computeTotalStock,
   generateSlug,
   getEffectiveListingPrice,
+  getCatalogCardSortPrice,
   getStartingVariant,
   getStartingVariantLabel,
   isLowStock,
   resolveProductSlugFromName,
 } from "@/lib/product-utils";
-import { parseListParam, productMatchesSeedsPackFilter } from "@/lib/shop-attribute-filters";
+import {
+  parseListParam,
+  productMatchesSeedsPackFilter,
+  productMatchesShopAttributeFilters,
+} from "@/lib/shop-attribute-filters";
+import { resolveListingUnitAfterBrand, type BrandPromotionRuleRow } from "@/lib/brand-promotion-checkout";
 import { resolveBreederFromShopParam } from "@/lib/breeder-slug";
 import { stripEmbeddedColorMarkup } from "@/lib/sanitize-product-text";
 import { buildProductCatalogSearchOrFilter } from "@/lib/product-catalog-search";
@@ -36,7 +42,10 @@ import type {
   ProductVariant,
   ProductFull,
   ProductWithBreeder,
+  ProductWithBreederMaybeVariants,
 } from "@/types/supabase";
+import { bigintToJson } from "@/lib/bigint-json";
+import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
 
 export {
   computeStartingPrice,
@@ -50,6 +59,12 @@ type ServiceResult<T> = { data: T | null; error: string | null };
 
 const DEFAULT_ACTIVE_PRODUCTS_LIMIT = 50;
 const MAX_ACTIVE_PRODUCTS_LIMIT = 100;
+/** Non–price sale: scan DB until exhausted or cap; do not narrow by `breeder_id` — promo matching is JS-only. */
+const SALE_SCAN_CHUNK = 800;
+const SALE_SCAN_MAX_ROUNDS = 600;
+const SALE_PRICE_POOL_MAX = 4500;
+const SALE_SCAN_MIN_SALE_POOL = 280;
+const SALE_SCAN_LOG_EVERY_ROUNDS = 25;
 const MIXED_BREEDER_SQL_DEBUG =
   "WITH ranked AS (SELECT p.*, ROW_NUMBER() OVER (PARTITION BY p.breeder_id ORDER BY COALESCE(p.price, 999999999)::numeric ASC, COALESCE(NULLIF(p.stock, 0), 999999999)::int ASC, p.id DESC) AS deal_rank FROM public.products p LEFT JOIN public.breeders b ON b.id = p.breeder_id WHERE p.is_active IS TRUE AND p.breeder_id IS NOT NULL AND (b.is_active IS DISTINCT FROM FALSE)) SELECT ranked.*, product_variants, product_images WHERE ranked.deal_rank <= $perBreeder LIMIT $limit";
 
@@ -223,22 +238,32 @@ export async function getBreederIdFromShopParam(
   return row ? Number(row.id) : null;
 }
 
-export async function getNewArrivals(limit = 8) {
+export async function getNewArrivals(limit = HOME_NEW_ARRIVALS_LIMIT) {
   try {
     const take = Math.min(MAX_ACTIVE_PRODUCTS_LIMIT, Math.max(1, Math.floor(limit)));
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("products")
-      .select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false, nullsFirst: false })
-      .order("id", { ascending: false })
-      .limit(take);
+    const rows = await prisma.products.findMany({
+      where: { is_active: true },
+      orderBy: [
+        { is_pinned_new_arrival: "desc" },
+        { new_arrival_priority: "desc" },
+        { created_at: "desc" },
+        { id: "desc" },
+      ],
+      take,
+      include: {
+        breeders: { select: { id: true, name: true, logo_url: true } },
+        product_categories: { select: { id: true, name: true } },
+        product_variants: {
+          where: { is_active: true },
+          orderBy: { price: "asc" },
+        },
+        product_images: { orderBy: { sort_order: "asc" } },
+      },
+    });
 
-    if (error) return { data: null, error: error.message };
-    const rows = (data ?? []) as ProductWithBreederAndVariants[];
-    for (const row of rows) sanitizeProductTextFields(row);
-    return { data: await withBrandListingEnrichment(rows), error: null };
+    const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
+    for (const row of mapped) sanitizeProductTextFields(row);
+    return { data: await withBrandListingEnrichment(mapped), error: null };
   } catch (err) {
     logger.error("product-service.getNewArrivals failed", { cause: err });
     return {
@@ -438,16 +463,37 @@ export async function getActiveProducts(opts?: {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
-  sort?: "smart_deal" | "newest" | string;
+  sort?: "smart_deal" | "newest" | "new_arrivals" | "price_asc" | "price_desc" | string;
+  /** `new` → hybrid new-arrival order; `sale` → brand promo effective &lt; base only (after enrich). */
+  quick?: "new" | "sale";
   includeVariants?: boolean;
   /** Comma-separated pack buckets: 1,2,3,5,10,gt10,other — requires variant rows (filtered in memory). */
   seeds_param?: string | null;
+  /** Sidebar Genetic Vault filters (same slugs as storefront URL). Applied in sale scan after row fetch. */
+  genetics_param?: string | null;
+  difficulty_param?: string | null;
+  thc_param?: string | null;
+  cbd_param?: string | null;
+  sex_param?: string | null;
+  yield_param?: string | null;
   /** Genetic Vault flowering pill (?ft=) — narrowed at DB (`autoflower`, `photo_3n`) or supersets + storefront bucket match (`photo`, `photo-ff`). */
   catalog_ft?: string | null;
-}): Promise<ServiceResult<ProductWithBreeder[]> & { catalogHasMore?: boolean }> {
+}): Promise<
+  ServiceResult<ProductWithBreeder[]> & {
+    catalogHasMore?: boolean;
+    /** Rows matching the same server filters as this query (null if unknown / truncated in-memory catalog). */
+    catalogTotalCount?: number | null;
+  }
+> {
   try {
     const supabase = await createClient();
     const seedsSel = parseListParam(opts?.seeds_param ?? null);
+    const geneticsSel = parseListParam(opts?.genetics_param ?? null);
+    const difficultySel = parseListParam(opts?.difficulty_param ?? null);
+    const thcSel = parseListParam(opts?.thc_param ?? null);
+    const cbdSel = parseListParam(opts?.cbd_param ?? null);
+    const sexSel = parseListParam(opts?.sex_param ?? null);
+    const yieldQuickParam = opts?.yield_param?.trim() || null;
     const ftOriginal = opts?.catalog_ft?.trim() ?? "";
     const catalogFtKey = normalizeCatalogFtUrlParam(ftOriginal);
     const memoryFtPassNeeded = catalogFtKey === "photo" || catalogFtKey === "photo-ff";
@@ -460,7 +506,8 @@ export async function getActiveProducts(opts?: {
     let breederIdResolved: number | undefined = opts?.breeder_id;
     if (opts?.breeder_shop_param?.trim()) {
       const idResolved = await getBreederIdFromShopParam(opts.breeder_shop_param);
-      if (idResolved == null) return { data: [], error: null, catalogHasMore: false };
+      if (idResolved == null)
+        return { data: [], error: null, catalogHasMore: false, catalogTotalCount: 0 };
       breederIdResolved = idResolved;
     }
 
@@ -470,6 +517,23 @@ export async function getActiveProducts(opts?: {
     );
     const page = Math.max(1, opts?.page ?? 1);
     const pageEndIndex = page * limit;
+
+    const sortRaw = opts?.sort?.trim();
+    const sortKey =
+      sortRaw === "price_asc" || sortRaw === "price_desc"
+        ? sortRaw
+        : sortRaw === "new_arrivals"
+          ? "new_arrivals"
+          : opts?.quick === "new"
+            ? "new_arrivals"
+            : sortRaw;
+    const saleOnly = opts?.quick === "sale";
+    const useEnrichedCatalog = saleOnly || sortKey === "price_asc" || sortKey === "price_desc";
+
+    const MEM_BREEDER_SMART_CAP = 900;
+    const MEM_SCAN_CHUNK = 140;
+    const MEM_MAX_ROUNDS = 42;
+    const CATALOG_ENRICH_CAP = 2000;
 
     const applyCommonFilters = () => {
       let qb = supabase.from("products").select(selectShape).eq("is_active", true);
@@ -499,27 +563,70 @@ export async function getActiveProducts(opts?: {
       return qb;
     };
 
-    const applySorting = (
+    const canUseExactSqlCatalogCount =
+      seedsSel.length === 0 && !(ftOriginal && memoryFtPassNeeded) && !saleOnly;
+
+    const fetchExactCatalogRowCount = async (): Promise<number | null> => {
+      if (!canUseExactSqlCatalogCount) return null;
+      let qb = supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true);
+      if (opts?.category) qb = qb.eq("category", opts.category);
+      const searchRaw = opts?.search?.trim();
+      const catalogOr = searchRaw ? buildProductCatalogSearchOrFilter(searchRaw) : null;
+      if (catalogOr) qb = qb.or(catalogOr);
+      if (opts?.minPrice != null && Number.isFinite(opts.minPrice)) {
+        qb = qb.gte("price", opts.minPrice);
+      }
+      if (opts?.maxPrice != null && Number.isFinite(opts.maxPrice)) {
+        qb = qb.lte("price", opts.maxPrice);
+      }
+      if (breederIdResolved != null) qb = qb.eq("breeder_id", breederIdResolved);
+      switch (catalogFtKey) {
+        case "auto":
+          qb = qb.eq("flowering_type", "autoflower");
+          break;
+        case "photo-3n":
+          qb = qb.eq("flowering_type", "photo_3n");
+          break;
+        default:
+          break;
+      }
+      const { count, error } = await qb;
+      if (error || count == null || !Number.isFinite(Number(count))) return null;
+      return Number(count);
+    };
+
+    const applySortingForDb = (
       qb: ReturnType<typeof applyCommonFilters>
     ): ReturnType<typeof applyCommonFilters> => {
-      if (opts?.sort === "smart_deal") {
+      if (useEnrichedCatalog) {
+        return qb.order("id", { ascending: false });
+      }
+      if (sortKey === "smart_deal") {
         return qb
           .gt("stock", 0)
           .order("price", { ascending: true, nullsFirst: false })
           .order("stock", { ascending: true, nullsFirst: false })
           .order("id", { ascending: false });
       }
-      if (opts?.sort === "newest") {
+      if (sortKey === "newest") {
         return qb
+          .order("created_at", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: false });
+      }
+      if (sortKey === "new_arrivals") {
+        return qb
+          .order("is_pinned_new_arrival", { ascending: false, nullsFirst: false })
+          .order("new_arrival_priority", { ascending: false, nullsFirst: false })
           .order("created_at", { ascending: false, nullsFirst: false })
           .order("id", { ascending: false });
       }
       return qb.order("id", { ascending: false });
     };
 
-    type Row = ProductWithBreeder & {
-      product_variants?: { unit_label: string; is_active?: boolean | null }[];
-    };
+    type Row = ProductWithBreederMaybeVariants;
 
     const postSeedAndSanitize = (rowsIn: Row[]) => {
       let rows = rowsIn;
@@ -532,8 +639,251 @@ export async function getActiveProducts(opts?: {
       return rows as ProductWithBreeder[];
     };
 
+    const productPassesBrandPromoSaleFilter = (p: ProductWithBrandListing): boolean => {
+      const base = Number(p.brand_listing_base_baht ?? 0);
+      const eff = Number(p.brand_listing_effective_baht ?? 0);
+      return Number.isFinite(base) && Number.isFinite(eff) && base > 0 && eff < base;
+    };
+
+    const rowMatchesSidebarFilters = (row: Row): boolean =>
+      productMatchesShopAttributeFilters(
+        {
+          strain_dominance: row.strain_dominance,
+          growing_difficulty: row.growing_difficulty,
+          thc_percent: row.thc_percent,
+          cbd_percent: row.cbd_percent ?? null,
+          seed_type: row.seed_type ?? null,
+          yield_info: (row as { yield_info?: string | null }).yield_info ?? null,
+          product_variants: row.product_variants ?? null,
+        },
+        geneticsSel,
+        difficultySel,
+        thcSel,
+        cbdSel,
+        sexSel,
+        yieldQuickParam,
+        seedsSel,
+      );
+
+    const finalizeEnrichedRows = async (
+      rawRows: Row[],
+      truncated: boolean,
+      explicitTotal?: number,
+    ) => {
+      let rows = rawRows.filter((p) =>
+        ftOriginal ? productMatchesCatalogFtParam(p, ftOriginal) : true
+      );
+      const sanitized = postSeedAndSanitize(rows);
+      let enriched = await withBrandListingEnrichment(sanitized as Parameters<typeof withBrandListingEnrichment>[0]);
+      if (sortKey === "price_asc" || sortKey === "price_desc") {
+        enriched.sort((a, b) => {
+          const pa = getCatalogCardSortPrice(a);
+          const pb = getCatalogCardSortPrice(b);
+          const d = pa - pb;
+          if (d !== 0) return sortKey === "price_asc" ? d : -d;
+          const idB = Number((b as unknown as ProductWithBreeder).id);
+          const idA = Number((a as unknown as ProductWithBreeder).id);
+          return idB - idA;
+        });
+      }
+      const from = (page - 1) * limit;
+      const slice = enriched.slice(from, from + limit) as unknown as ProductWithBreeder[];
+      const catalogTotalCount =
+        typeof explicitTotal === "number" ? explicitTotal : truncated ? null : enriched.length;
+      const catalogHasMore =
+        from + limit < enriched.length || (truncated && enriched.length >= page * limit);
+      return {
+        data: slice,
+        error: null,
+        catalogHasMore,
+        catalogTotalCount,
+      };
+    };
+
+    if (saleOnly) {
+      const rules = await loadActiveBrandPromotionRules();
+      const productPassesSaleAfterPackRule = (
+        p: Row & ProductWithBrandListing,
+        promoRules: BrandPromotionRuleRow[],
+      ): boolean => {
+        const breederName = p.breeders?.name ?? null;
+        const productFallback = Number(p.price ?? 0) || 0;
+        if (seedsSel.length === 0) {
+          return productPassesBrandPromoSaleFilter(p);
+        }
+        const variants = (p.product_variants ?? []).filter((v) => v.is_active !== false);
+        for (const v of variants) {
+          if (!productMatchesSeedsPackFilter([v], seedsSel)) continue;
+          const raw = Number(v.price ?? 0) || productFallback;
+          if (raw <= 0) continue;
+          const { baseBaht, effectiveBaht } = resolveListingUnitAfterBrand(raw, breederName, promoRules);
+          if (baseBaht > 0 && effectiveBaht < baseBaht) return true;
+        }
+        return false;
+      };
+      const isPriceSale = sortKey === "price_asc" || sortKey === "price_desc";
+      /** Deeper cap for default sale sort so older ids / more brands are included (~960k row cap). */
+      const saleMaxRounds = isPriceSale ? SALE_SCAN_MAX_ROUNDS : SALE_SCAN_MAX_ROUNDS * 2;
+
+      const saleRows: (Row & ProductWithBrandListing)[] = [];
+      let cursorLt: number | null = null;
+      let dbHasMore = false;
+      let rowsScannedTotal = 0;
+
+      for (let round = 0; round < saleMaxRounds; round++) {
+        if (isPriceSale && saleRows.length >= SALE_PRICE_POOL_MAX) break;
+
+        let qb = applyCommonFilters().order("id", { ascending: false });
+        if (cursorLt != null) qb = qb.lt("id", cursorLt);
+        qb = qb.limit(SALE_SCAN_CHUNK);
+        const { data, error } = await qb;
+        if (error) return { data: null, error: error.message };
+        const chunk = (data ?? []) as unknown as Row[];
+        if (chunk.length === 0) {
+          dbHasMore = false;
+          break;
+        }
+        dbHasMore = chunk.length === SALE_SCAN_CHUNK;
+        rowsScannedTotal += chunk.length;
+
+        if (
+          round === 0 ||
+          (round + 1) % SALE_SCAN_LOG_EVERY_ROUNDS === 0 ||
+          chunk.length < SALE_SCAN_CHUNK
+        ) {
+          console.log(
+            `[getActiveProducts] sale scan: round=${round + 1}/${saleMaxRounds} rowsScanned=${rowsScannedTotal} saleItems=${saleRows.length} chunkLen=${chunk.length}`,
+          );
+        }
+
+        let minSeen: number | null = null;
+        for (const row of chunk) {
+          const idNum = Number(row.id);
+          if (Number.isFinite(idNum)) {
+            if (minSeen === null || idNum < minSeen) minSeen = idNum;
+          }
+        }
+
+        const candidates: Row[] = [];
+        for (const row of chunk) {
+          if (!(ftOriginal ? productMatchesCatalogFtParam(row, ftOriginal) : true)) continue;
+          if (!rowMatchesSidebarFilters(row)) continue;
+          candidates.push(row);
+        }
+
+        if (candidates.length > 0) {
+          const sanitized = postSeedAndSanitize(candidates);
+          const enriched = enrichProductsWithBrandListing(
+            sanitized as ListingBaseProduct[],
+            rules,
+          ) as (Row & ProductWithBrandListing)[];
+          for (const p of enriched) {
+            if (!productPassesSaleAfterPackRule(p, rules)) continue;
+            saleRows.push(p);
+            if (isPriceSale && saleRows.length >= SALE_PRICE_POOL_MAX) break;
+          }
+        }
+
+        if (isPriceSale && saleRows.length >= SALE_PRICE_POOL_MAX) break;
+
+        if (chunk.length < SALE_SCAN_CHUNK) {
+          dbHasMore = false;
+          break;
+        }
+        cursorLt = minSeen;
+        if (cursorLt == null || !Number.isFinite(cursorLt)) break;
+      }
+
+      if (!isPriceSale && dbHasMore && saleRows.length < SALE_SCAN_MIN_SALE_POOL) {
+        logger.warn(
+          "[product-service] sale scan ended with DB still having rows but few sale hits — consider data or caps",
+          {
+            saleHits: saleRows.length,
+            minPool: SALE_SCAN_MIN_SALE_POOL,
+            rowsScannedTotal,
+          },
+        );
+      }
+
+      let ordered = [...saleRows];
+      if (isPriceSale) {
+        ordered.sort((a, b) => {
+          const pa = getCatalogCardSortPrice(a);
+          const pb = getCatalogCardSortPrice(b);
+          const d = pa - pb;
+          if (d !== 0) return sortKey === "price_asc" ? d : -d;
+          return Number(b.id) - Number(a.id);
+        });
+      } else {
+        ordered.sort((a, b) => {
+          const da = Number((a as ProductWithBrandListing).brand_promotion_percent ?? 0);
+          const db = Number((b as ProductWithBrandListing).brand_promotion_percent ?? 0);
+          if (db !== da) return db - da;
+          return Number(b.id) - Number(a.id);
+        });
+      }
+
+      const catalogTotalCount = ordered.length;
+      const from = (page - 1) * limit;
+      const slice = ordered.slice(from, from + limit) as unknown as ProductWithBreeder[];
+      const catalogHasMore = from + limit < ordered.length || dbHasMore;
+
+      return {
+        data: slice,
+        error: null,
+        catalogHasMore,
+        catalogTotalCount,
+      };
+    }
+
+    if (useEnrichedCatalog && !memoryFtPassNeeded) {
+      const sqlTotal = await fetchExactCatalogRowCount();
+      let query = applySortingForDb(applyCommonFilters());
+      query = query.limit(CATALOG_ENRICH_CAP);
+      const { data, error } = await query;
+      if (error) return { data: null, error: error.message };
+      const fetched = (data ?? []) as unknown as Row[];
+      return finalizeEnrichedRows(
+        fetched,
+        fetched.length === CATALOG_ENRICH_CAP,
+        sqlTotal ?? undefined,
+      );
+    }
+
+    if (useEnrichedCatalog && memoryFtPassNeeded) {
+      const hits: Row[] = [];
+      let cursorLt: number | null = null;
+      let lastFetchLen = 0;
+      for (let round = 0; round < MEM_MAX_ROUNDS && hits.length < CATALOG_ENRICH_CAP; round++) {
+        let qb = applySortingForDb(applyCommonFilters());
+        if (cursorLt != null) qb = qb.lt("id", cursorLt);
+        qb = qb.limit(MEM_SCAN_CHUNK);
+        const { data, error } = await qb;
+        if (error) return { data: null, error: error.message };
+        const chunk = (data ?? []) as unknown as Row[];
+        lastFetchLen = chunk.length;
+        let minSeen: number | null = null;
+        for (const row of chunk) {
+          const idNum = Number(row.id);
+          if (Number.isFinite(idNum)) {
+            if (minSeen === null || idNum < minSeen) minSeen = idNum;
+          }
+          if (!(ftOriginal ? productMatchesCatalogFtParam(row, ftOriginal) : true)) continue;
+          if (seedsSel.length > 0 && !productMatchesSeedsPackFilter(row.product_variants ?? null, seedsSel)) continue;
+          hits.push(row);
+          if (hits.length >= CATALOG_ENRICH_CAP) break;
+        }
+        if (chunk.length < MEM_SCAN_CHUNK) break;
+        cursorLt = minSeen;
+        if (cursorLt == null || !Number.isFinite(cursorLt)) break;
+      }
+      const truncated = lastFetchLen === MEM_SCAN_CHUNK && hits.length >= CATALOG_ENRICH_CAP;
+      return finalizeEnrichedRows(hits, truncated);
+    }
+
     if (!memoryFtPassNeeded) {
-      let query = applySorting(applyCommonFilters());
+      const sqlTotal = await fetchExactCatalogRowCount();
+      let query = applySortingForDb(applyCommonFilters());
       const from = (page - 1) * limit;
       query = query.range(from, from + limit - 1);
       const { data, error } = await query;
@@ -543,20 +893,18 @@ export async function getActiveProducts(opts?: {
       let rows = fetched.filter((p) =>
         ftOriginal ? productMatchesCatalogFtParam(p, ftOriginal) : true
       );
-      const catalogHasMore = fetched.length === limit;
+      const catalogHasMore =
+        sqlTotal != null ? from + limit < sqlTotal : fetched.length === limit;
       return {
         data: await withBrandListingEnrichment(postSeedAndSanitize(rows)),
         error: null,
         catalogHasMore,
+        catalogTotalCount: sqlTotal,
       };
     }
 
-    const MEM_BREEDER_SMART_CAP = 900;
-    const MEM_SCAN_CHUNK = 140;
-    const MEM_MAX_ROUNDS = 42;
-
-    if (memoryFtPassNeeded && breederIdResolved != null && opts?.sort === "smart_deal") {
-      let qCap = applySorting(applyCommonFilters()).limit(MEM_BREEDER_SMART_CAP);
+    if (memoryFtPassNeeded && breederIdResolved != null && sortKey === "smart_deal") {
+      let qCap = applySortingForDb(applyCommonFilters()).limit(MEM_BREEDER_SMART_CAP);
       const { data, error } = await qCap;
       if (error) return { data: null, error: error.message };
 
@@ -575,6 +923,7 @@ export async function getActiveProducts(opts?: {
         data: await withBrandListingEnrichment(postSeedAndSanitize(slice)),
         error: null,
         catalogHasMore,
+        catalogTotalCount: null,
       };
     }
 
@@ -583,7 +932,7 @@ export async function getActiveProducts(opts?: {
     let lastFetchLen = 0;
 
     for (let round = 0; round < MEM_MAX_ROUNDS && hits.length < pageEndIndex; round++) {
-      let qb = applySorting(applyCommonFilters());
+      let qb = applySortingForDb(applyCommonFilters());
       if (cursorLt != null) qb = qb.lt("id", cursorLt);
       qb = qb.limit(MEM_SCAN_CHUNK);
 
@@ -625,6 +974,7 @@ export async function getActiveProducts(opts?: {
       data: await withBrandListingEnrichment(postSeedAndSanitize(sliced)),
       error: null,
       catalogHasMore,
+      catalogTotalCount: null,
     };
   } catch (err) {
     logger.error("product-service.getActiveProducts failed", {
@@ -635,6 +985,7 @@ export async function getActiveProducts(opts?: {
       data: null,
       error: err instanceof Error ? err.message : String(err),
       catalogHasMore: false,
+      catalogTotalCount: null,
     };
   }
 }

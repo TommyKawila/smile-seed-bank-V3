@@ -13,6 +13,31 @@ export function normalizeBrandKey(name: string | null | undefined): string {
     .replace(/\s+/g, " ");
 }
 
+/** Alphanumeric-only fold for loose matching (e.g. "420 Fast Buds" ↔ "420fastbuds"). */
+function brandKeyLoose(name: string | null | undefined): string {
+  return normalizeBrandKey(name).replace(/[^a-z0-9]+/g, "");
+}
+
+const PROMO_BREEDER_CONTAIN_MIN_LEN = 4;
+
+/** True if an active promo row's `brand_name` refers to this breeder display name (exact, folded, or substring). */
+export function brandPromotionNamesMatch(
+  promoBrandName: string | null | undefined,
+  breederName: string | null | undefined,
+): boolean {
+  const pRaw = String(promoBrandName ?? "").trim();
+  const bRaw = String(breederName ?? "").trim();
+  if (!pRaw || !bRaw) return false;
+  if (normalizeBrandKey(pRaw) === normalizeBrandKey(bRaw)) return true;
+  const lp = brandKeyLoose(pRaw);
+  const lb = brandKeyLoose(bRaw);
+  if (lp.length >= 2 && lb.length >= 2 && lp === lb) return true;
+  if (lp.length >= PROMO_BREEDER_CONTAIN_MIN_LEN && lb.length >= PROMO_BREEDER_CONTAIN_MIN_LEN) {
+    return lb.includes(lp) || lp.includes(lb);
+  }
+  return false;
+}
+
 export function activeBrandRulesFromRows(
   rows: { brand_name: string; discount_percent: number; is_active: boolean | null }[],
 ): BrandPromotionRuleRow[] {
@@ -25,15 +50,14 @@ export function activeBrandRulesFromRows(
     }));
 }
 
-/** First matching rule by normalized breeder name (DB-driven only). */
+/** First matching rule by breeder name (normalized + loose fold / substring). */
 export function matchBrandPromotionRule(
   rules: BrandPromotionRuleRow[],
   breederName: string | null | undefined,
 ): BrandPromotionRuleRow | null {
-  const key = normalizeBrandKey(breederName);
-  if (!key) return null;
+  if (!String(breederName ?? "").trim()) return null;
   for (const r of rules) {
-    if (normalizeBrandKey(r.brand_name) === key) return r;
+    if (brandPromotionNamesMatch(r.brand_name, breederName)) return r;
   }
   return null;
 }

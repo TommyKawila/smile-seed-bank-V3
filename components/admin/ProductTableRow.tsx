@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, Package, PackageX, Pencil, Star, StarOff } from "lucide-react";
+import { AlertTriangle, Package, PackageX, Pencil, Pin, Star, StarOff } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -112,6 +112,7 @@ export function ProductTableRow({
   };
 
   const featuredHighlight = Boolean(product.is_featured);
+  const pinnedNew = Boolean(product.is_pinned_new_arrival);
 
   return (
     <TableRow
@@ -170,6 +171,16 @@ export function ProductTableRow({
             >
               <Star className="mr-0.5 h-3 w-3" aria-hidden />
               Featured
+            </Badge>
+          )}
+          {pinnedNew && (
+            <Badge
+              variant="outline"
+              className="shrink-0 border-violet-500/40 bg-violet-50 text-[10px] font-semibold uppercase tracking-wide text-violet-900"
+              title={`New arrivals pin · priority ${product.new_arrival_priority ?? 0}`}
+            >
+              <Pin className="mr-0.5 h-3 w-3" aria-hidden />
+              New
             </Badge>
           )}
         </div>

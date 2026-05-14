@@ -30,6 +30,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
+import { cartItemBrandLineDisplay } from "@/lib/cart-utils";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const sans = "font-sans";
@@ -135,6 +136,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
     applyPromoCode,
     clearPromoCode,
     itemCount,
+    brandPromotionRules,
   } = useCartContext();
 
   const { t, locale } = useLanguage();
@@ -414,9 +416,32 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                           </div>
                             );
                           })()}
-                          <span className={cn(sansTab, "text-sm font-medium text-zinc-900")}>
-                            {formatPrice(item.price * item.quantity)}
-                          </span>
+                          {(() => {
+                            const { effLine, listLine, showBrandStrike } = cartItemBrandLineDisplay(
+                              item,
+                              brandPromotionRules,
+                            );
+                            return (
+                              <span
+                                className={cn(
+                                  sansTab,
+                                  "flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0 text-sm font-medium text-zinc-900",
+                                )}
+                              >
+                                <span>{formatPrice(effLine)}</span>
+                                {showBrandStrike ? (
+                                  <span
+                                    className={cn(
+                                      sansTab,
+                                      "text-xs font-normal text-zinc-400 line-through",
+                                    )}
+                                  >
+                                    {formatPrice(listLine)}
+                                  </span>
+                                ) : null}
+                              </span>
+                            );
+                          })()}
                         </>
                       )}
                     </div>

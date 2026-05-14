@@ -23,9 +23,11 @@ const cellVariants: Variants = {
 export function GeneticVaultProductGrid({
   products,
   researchPosts,
+  catalogSeedsFilter = null,
 }: {
   products: ProductWithBreeder[];
   researchPosts: MagazinePostPublic[];
+  catalogSeedsFilter?: string | null;
 }) {
   const items = useMemo(
     () => interleaveContent(products, researchPosts),
@@ -48,7 +50,11 @@ export function GeneticVaultProductGrid({
                 variants={cellVariants}
                 className="flex h-full min-h-0 min-w-0 flex-col"
               >
-                <ProductCard product={item.product} disableOuterMotion />
+                <ProductCard
+                  product={item.product}
+                  disableOuterMotion
+                  catalogSeedsFilter={catalogSeedsFilter}
+                />
               </motion.div>
             );
           }
@@ -58,6 +64,7 @@ export function GeneticVaultProductGrid({
                 key={`vault-s-${item.product.id}-${idx}`}
                 product={item.product}
                 variants={cellVariants}
+                catalogSeedsFilter={catalogSeedsFilter}
               />
             );
           }

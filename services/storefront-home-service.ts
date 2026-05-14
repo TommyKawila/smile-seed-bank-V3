@@ -2,6 +2,7 @@ import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/su
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import { getRecentPublishedPosts } from "@/lib/blog-service";
 import { withTimeout } from "@/lib/timeout";
+import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
 import {
   getClearanceStorefrontProducts,
   getFeaturedProducts,
@@ -29,7 +30,6 @@ export const EMPTY_STOREFRONT_HOME_PAYLOAD: StorefrontHomePayload = {
 const FEATURED_POOL = 10;
 const FEATURED_SHOW = 5;
 const CLEARANCE_LIMIT = 24;
-const NEW_ARRIVALS_LIMIT = 8;
 const INSIGHTS_LIMIT = 4;
 const HOME_DATA_TIMEOUT_MS = 5000;
 
@@ -50,7 +50,7 @@ export function normalizeStorefrontHomePayload(
   const newArrivals = Array.isArray(result) ? result : result.newArrivals ?? result.data ?? [];
 
   return {
-    newArrivals: Array.isArray(newArrivals) ? newArrivals.slice(0, 8) : [],
+    newArrivals: Array.isArray(newArrivals) ? newArrivals.slice(0, HOME_NEW_ARRIVALS_LIMIT) : [],
     featured: !Array.isArray(result) && Array.isArray(result.featured) ? result.featured : [],
     clearance: !Array.isArray(result) && Array.isArray(result.clearance) ? result.clearance : [],
     magazine: !Array.isArray(result) && Array.isArray(result.magazine) ? result.magazine : [],
@@ -61,7 +61,7 @@ export async function getStorefrontHomePayload(
   timeoutMs = HOME_DATA_TIMEOUT_MS
 ): Promise<StorefrontHomePayload> {
   const [newArrivals, featured, clearance, insights] = await Promise.all([
-    withTimeout(getNewArrivals(NEW_ARRIVALS_LIMIT), timeoutMs, { data: [], error: null }),
+    withTimeout(getNewArrivals(HOME_NEW_ARRIVALS_LIMIT), timeoutMs, { data: [], error: null }),
     withTimeout(getFeaturedProducts(FEATURED_POOL), timeoutMs, { data: [], error: null }),
     withTimeout(getClearanceStorefrontProducts(CLEARANCE_LIMIT), timeoutMs, { data: [], error: null }),
     withTimeout(getRecentPublishedPosts(INSIGHTS_LIMIT), timeoutMs, []),

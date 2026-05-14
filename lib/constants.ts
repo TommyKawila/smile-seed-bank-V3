@@ -18,3 +18,6 @@ export const CATEGORY_NAME_PLAIN_PHOTO = ["photo", "photoperiod"] as const;
 export const FLOWERING_SLUG_PHOTO_3N = "photo-3n" as const;
 
 export const FLOWERING_LABEL_PHOTO_3N = "Photo 3N";
+
+/** Home page «New Arrivals» rail — hybrid pinned + recent; must match Prisma `take` / UI slices. */
+export const HOME_NEW_ARRIVALS_LIMIT = 12;

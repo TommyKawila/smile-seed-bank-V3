@@ -64,6 +64,9 @@ export interface Product {
   is_featured?: boolean | null;
   featured_priority?: number | null;
   featured_tagline?: string | null;
+  /** Homepage new arrivals: pinned first, then by priority, then by created_at */
+  is_pinned_new_arrival?: boolean | null;
+  new_arrival_priority?: number | null;
   /** Clearance: sale applies to listing price; packs scale from starting variant. */
   is_clearance?: boolean | null;
   sale_price?: number | null;

@@ -63,6 +63,8 @@ export function serializeAdminProductForList(p: AdminProductListPayload) {
     is_featured: p.is_featured,
     featured_priority: p.featured_priority,
     featured_tagline: p.featured_tagline,
+    is_pinned_new_arrival: p.is_pinned_new_arrival,
+    new_arrival_priority: p.new_arrival_priority,
     breeders: p.breeders
       ? {
           id: Number(p.breeders.id),

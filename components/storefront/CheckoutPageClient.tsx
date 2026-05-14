@@ -45,6 +45,7 @@ import {
   clearCheckoutPersistence,
 } from "@/lib/checkout-persist";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import { cartItemBrandLineDisplay, type BrandPromotionRuleRow } from "@/lib/cart-utils";
 
 const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
@@ -128,10 +129,23 @@ function placedFromRestorePayload(data: CheckoutPendingRestorePayload): PlacedCh
 function OrderItemRow({
   item,
   locale,
+  brandPromotionRules,
 }: {
   item: CartItem;
   locale: Locale;
+  /** When set (live cart), line totals use brand promo + strikethrough list. Omit for payment-restore rows. */
+  brandPromotionRules?: BrandPromotionRuleRow[] | null;
 }) {
+  const linePricing =
+    brandPromotionRules != null
+      ? cartItemBrandLineDisplay(item, brandPromotionRules)
+      : {
+          effLine: roundCheckoutBahtWhole(item.price * item.quantity),
+          listLine: roundCheckoutBahtWhole(item.price * item.quantity),
+          showBrandStrike: false,
+        };
+  const { effLine, listLine, showBrandStrike } = linePricing;
+
   return (
     <div className="flex items-start gap-3">
       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-sm bg-zinc-100">
@@ -174,9 +188,23 @@ function OrderItemRow({
           {cartItemPackDescription(item, locale, { includeLineQuantity: true })}
         </p>
       </div>
-      <span className={cn(checkoutAmount, "shrink-0 text-sm font-medium text-zinc-900")}>
-        {item.isFreeGift ? "ฟรี" : formatPrice(item.price * item.quantity)}
-      </span>
+      {item.isFreeGift ? (
+        <span className={cn(checkoutAmount, "shrink-0 text-sm font-medium text-zinc-900")}>ฟรี</span>
+      ) : (
+        <span
+          className={cn(
+            checkoutAmount,
+            "flex shrink-0 flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0 text-sm font-medium text-zinc-900",
+          )}
+        >
+          <span>{formatPrice(effLine)}</span>
+          {showBrandStrike ? (
+            <span className={cn(checkoutAmount, "text-xs font-normal text-zinc-400 line-through")}>
+              {formatPrice(listLine)}
+            </span>
+          ) : null}
+        </span>
+      )}
     </div>
   );
 }
@@ -194,7 +222,7 @@ export function CheckoutPageClient({
   promptPay,
   lineId,
 }: CheckoutPageClientProps) {
-  const { items, summary, promo, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount, isLoadingRules } = useCartContext();
+  const { items, summary, promo, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount, isLoadingRules, brandPromotionRules } = useCartContext();
   const { user, customer, isLoading: authLoading } = useAuth();
   const { locale, t } = useLanguage();
 
@@ -597,7 +625,12 @@ export function CheckoutPageClient({
 
                   <div className="max-h-52 space-y-3 overflow-y-auto sm:max-h-60">
                     {items.map((item) => (
-                      <OrderItemRow key={item.variantId} item={item} locale={locale} />
+                      <OrderItemRow
+                        key={item.variantId}
+                        item={item}
+                        locale={locale}
+                        brandPromotionRules={brandPromotionRules}
+                      />
                     ))}
                   </div>
 

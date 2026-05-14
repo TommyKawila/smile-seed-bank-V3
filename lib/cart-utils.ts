@@ -8,6 +8,7 @@ import { STOREFRONT_SHIPPING_CATEGORY } from "@/lib/storefront-shipping";
 import {
   matchBrandPromotionRule,
   applyBrandPercentToUnitBaht,
+  resolveListingUnitAfterBrand,
   type BrandPromotionRuleRow,
   activeBrandRulesFromRows,
 } from "@/lib/brand-promotion-checkout";
@@ -84,6 +85,25 @@ export function evaluateFreeGifts(
         return false;
     }
   });
+}
+
+/** Per-line totals for cart UI: matches `calculateCartSummary` brand math (whole Baht). */
+export function cartItemBrandLineDisplay(
+  item: Pick<CartItem, "price" | "quantity" | "breederName" | "isFreeGift">,
+  brandRules: BrandPromotionRuleRow[],
+): { effLine: number; listLine: number; showBrandStrike: boolean } {
+  if (item.isFreeGift) {
+    return { effLine: 0, listLine: 0, showBrandStrike: false };
+  }
+  const { baseBaht, effectiveBaht } = resolveListingUnitAfterBrand(
+    item.price,
+    item.breederName,
+    brandRules,
+  );
+  const showBrandStrike = baseBaht > 0 && effectiveBaht < baseBaht;
+  const effLine = roundCheckoutBahtWhole(effectiveBaht * item.quantity);
+  const listLine = roundCheckoutBahtWhole(baseBaht * item.quantity);
+  return { effLine, listLine, showBrandStrike };
 }
 
 /** Unit after list price + optional brand % (whole Baht). */

@@ -197,8 +197,8 @@ model brand_promotions {
   brand_name       String    @unique
   discount_percent Int       @default(0)
   is_active        Boolean   @default(true)
-  created_at       DateTime? @default(now()) @db.Timestamptz(6)
   updated_at       DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
 
   @@schema("public")
 }
@@ -360,62 +360,65 @@ model product_categories {
 }
 
 model products {
-  id                 BigInt              @id @default(autoincrement())
-  breeder_id         BigInt?
-  name               String
-  category           String?
-  description_th     String?
-  description_en     String?
-  price              Decimal?            @default(0) @db.Decimal
-  stock              Int?                @default(0)
-  is_active          Boolean?            @default(true)
-  image_url          String?
-  image_url_2        String?
-  image_url_3        String?
-  video_url          String?
-  thc_percent        Decimal?            @db.Decimal
+  id                    BigInt              @id @default(autoincrement())
+  breeder_id            BigInt?
+  name                  String
+  category              String?
+  description_th        String?
+  description_en        String?
+  price                 Decimal?            @default(0) @db.Decimal
+  stock                 Int?                @default(0)
+  is_active             Boolean?            @default(true)
+  image_url             String?
+  image_url_2           String?
+  image_url_3           String?
+  video_url             String?
+  thc_percent           Decimal?            @db.Decimal
   /// Free-form label e.g. "< 1%", "5", "Trace" — not strictly numeric.
-  cbd_percent        String?
-  genetics           String?
-  indica_ratio       Decimal?            @db.Decimal
-  sativa_ratio       Decimal?            @db.Decimal
-  flowering_type     String?
-  seed_type          String?
-  yield_info         String?
-  growing_difficulty String?
-  effects            Json?               @default("[]")
-  flavors            Json?               @default("[]")
-  medical_benefits   Json?               @default("[]")
-  created_at         DateTime?           @default(now()) @db.Timestamptz(6)
-  genetic_ratio      String?
-  sex_type           String?
-  lineage            String?
-  terpenes           Json?
-  image_url_4        String?
-  image_url_5        String?
-  image_urls         Json?               @default("[]")
-  master_sku         String?
-  category_id        BigInt?
-  strain_dominance   String?
-  seo_meta           Json?
+  cbd_percent           String?
+  genetics              String?
+  indica_ratio          Decimal?            @db.Decimal
+  sativa_ratio          Decimal?            @db.Decimal
+  flowering_type        String?
+  seed_type             String?
+  yield_info            String?
+  growing_difficulty    String?
+  effects               Json?               @default("[]")
+  flavors               Json?               @default("[]")
+  medical_benefits      Json?               @default("[]")
+  created_at            DateTime?           @default(now()) @db.Timestamptz(6)
+  genetic_ratio         String?
+  sex_type              String?
+  lineage               String?
+  terpenes              Json?
+  image_url_4           String?
+  image_url_5           String?
+  image_urls            Json?               @default("[]")
+  master_sku            String?
+  category_id           BigInt?
+  strain_dominance      String?
+  seo_meta              Json?
   /// SEO URL segment; unique when set. Run `npx prisma migrate dev` / `db push` after adding column.
-  slug               String?             @unique
-  indica_percent     Int?
-  sativa_percent     Int?
+  slug                  String?             @unique
+  indica_percent        Int?
+  sativa_percent        Int?
   /// Homepage featured carousel
-  is_featured        Boolean?            @default(false)
-  featured_priority  Int?                @default(0)
-  featured_tagline   String?
+  is_featured           Boolean?            @default(false)
+  featured_priority     Int?                @default(0)
+  featured_tagline      String?
   /// Clearance: flat sale aligns to starting (lowest in-stock) variant; other packs scale by ratio.
-  sale_price         Decimal?            @db.Decimal
-  is_clearance       Boolean?            @default(false)
-  product_images     product_images[]
-  product_variants   product_variants[]
-  breeders           breeders?           @relation(fields: [breeder_id], references: [id], onUpdate: NoAction)
-  product_categories product_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  sale_price            Decimal?            @db.Decimal
+  is_clearance          Boolean?            @default(false)
+  is_pinned_new_arrival Boolean?            @default(false)
+  new_arrival_priority  Int?                @default(0)
+  product_images        product_images[]
+  product_variants      product_variants[]
+  breeders              breeders?           @relation(fields: [breeder_id], references: [id], onUpdate: NoAction)
+  product_categories    product_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
 
   @@index([category_id])
   @@index([category_id], map: "idx_products_category_id")
+  @@index([is_pinned_new_arrival(sort: Desc), new_arrival_priority(sort: Desc), created_at(sort: Desc)], map: "idx_products_new_arrival")
   @@schema("public")
 }
 
@@ -499,6 +502,7 @@ model promotion_campaigns {
   @@index([campaign_kind, status, ends_at])
   @@index([breeder_id])
   @@index([campaign_kind, status, created_at])
+  @@index([campaign_kind, status, ends_at], map: "promotion_campaigns_bulk_discount_idx")
   @@schema("public")
 }
 
@@ -586,7 +590,7 @@ model homepage_sections {
 }
 
 model dynamic_banners {
-  id               BigInt   @id @default(autoincrement())
+  id               BigInt    @id @default(autoincrement())
   title_th         String?
   title_en         String?
   /// Primary hero image (TH desktop). EN + mobile variants optional; storefront falls back to this.
@@ -595,14 +599,14 @@ model dynamic_banners {
   mobile_image_th  String?
   mobile_image_en  String?
   link_url         String?
+  order_index      Int       @default(0)
+  is_active        Boolean   @default(true)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
   /// Visible from this instant (nullable = no lower bound).
-  start_date DateTime? @map("start_date") @db.Timestamptz(6)
+  start_date       DateTime? @map("start_date") @db.Timestamptz(6)
   /// Visible until this instant (nullable = no upper bound).
-  end_date   DateTime? @map("end_date") @db.Timestamptz(6)
-  order_index      Int      @default(0)
-  is_active        Boolean  @default(true)
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  end_date         DateTime? @map("end_date") @db.Timestamptz(6)
 
   @@index([is_active, order_index, id], map: "dynamic_banners_active_order_idx")
   @@schema("public")
@@ -689,18 +693,18 @@ model search_logs {
 
 /// Admin-only wholesale CSV rows. Standalone: NO foreign keys to `products`, `product_variants`, or storefront pricing.
 model bulk_seeds {
-  id           BigInt   @id @default(autoincrement())
-  source_kind  String   @db.VarChar(32)
-  external_id  String   @db.VarChar(128)
-  code         String   @default("") @db.VarChar(128)
-  strain       String   @db.VarChar(512)
-  thc          String   @default("") @db.VarChar(128)
-  cycle        String   @default("") @db.VarChar(128)
-  bulk_type    String   @default("") @db.VarChar(128)
-  flavor       String   @default("") @db.VarChar(256)
-  tier_prices  Json     @default("{}") @db.JsonB
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  id          BigInt   @id @default(autoincrement())
+  source_kind String   @db.VarChar(32)
+  external_id String   @db.VarChar(128)
+  code        String   @default("") @db.VarChar(128)
+  strain      String   @db.VarChar(512)
+  thc         String   @default("") @db.VarChar(128)
+  cycle       String   @default("") @db.VarChar(128)
+  bulk_type   String   @default("") @db.VarChar(128)
+  flavor      String   @default("") @db.VarChar(256)
+  tier_prices Json     @default("{}")
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   @@unique([source_kind, external_id], map: "bulk_seeds_source_external_unique")
   @@index([strain])

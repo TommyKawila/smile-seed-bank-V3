@@ -26,6 +26,7 @@ import type { MagazinePostPublic } from "@/lib/blog-service";
 import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bilingual";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
+import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { BlogHeroSlogan } from "@/components/storefront/magazine/BlogHeroSlogan";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
@@ -271,7 +272,7 @@ async function fetchStorefrontHomeClient(): Promise<StorefrontHomePayload> {
   const result = (await response.json()) as RawHomePayload | ProductWithBreederAndVariants[];
   const newArrivals = Array.isArray(result) ? result : result.newArrivals ?? result.data ?? [];
   return {
-    newArrivals: Array.isArray(newArrivals) ? newArrivals.slice(0, 8) : [],
+    newArrivals: Array.isArray(newArrivals) ? newArrivals.slice(0, HOME_NEW_ARRIVALS_LIMIT) : [],
     featured: !Array.isArray(result) && Array.isArray(result.featured) ? result.featured : [],
     clearance: !Array.isArray(result) && Array.isArray(result.clearance) ? result.clearance : [],
     magazine: !Array.isArray(result) && Array.isArray(result.magazine) ? result.magazine : [],
@@ -431,7 +432,7 @@ function HomePageMain({ sections, initialData, banners = [] }: HomePageClientPro
                 </div>
               ) : hasNewArrivals ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {newArrivals.slice(0, 8).map((product) => (
+                  {newArrivals.slice(0, HOME_NEW_ARRIVALS_LIMIT).map((product) => (
                     <div key={product.id} className="flex h-full min-h-0 min-w-0 flex-col">
                       <ProductCard product={product} variant="showcase" />
                     </div>

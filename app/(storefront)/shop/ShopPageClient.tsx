@@ -5,8 +5,6 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   SlidersHorizontal,
-  Search,
-  X,
   PackageX,
   ChevronLeft,
   ChevronDown,
@@ -17,7 +15,6 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useBreeders } from "@/hooks/useBreeders";
 import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
@@ -29,7 +26,14 @@ import {
   resolveBreederFromShopParam,
   seedsBreederHref,
 } from "@/lib/breeder-slug";
-import { parseSeedsBreederSlugFromPathname, isSeedsIndexPath } from "@/lib/catalog-navigation";
+import {
+  parseJournalBreederSlugFromPathname,
+  journalBreederCatalogBasePath,
+  isSeedsIndexPath,
+  resolveCatalogFtFromUrl,
+  resolveCatalogQuickFromFilter,
+  resolveCatalogSortFromFilter,
+} from "@/lib/catalog-navigation";
 import {
   catalogFloweringBucket,
   productMatchesCatalogFtParam,
@@ -52,7 +56,8 @@ import {
   priceFilterActive,
   productMatchesPriceRange,
 } from "@/lib/shop-price-filter";
-import { ShopPriceChipsRow, ShopPriceFilterBottomSheet } from "@/components/storefront/ShopPriceFilter";
+import { ShopPriceFilterBottomSheet } from "@/components/storefront/ShopPriceFilter";
+import { ShopQuickFilterBar } from "@/components/storefront/ShopQuickFilterBar";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { ShopGeneticVaultHero } from "@/components/storefront/ShopGeneticVaultHero";
 import { selectVaultFeaturedProducts } from "@/lib/vault-featured-products";
@@ -147,21 +152,29 @@ function BreederCatalogSeoBlock({
 
 // ─── Shop Page ────────────────────────────────────────────────────────────────
 
-export function ShopPageClient({ initialProducts }: { initialProducts: ProductListItem[] }) {
+export function ShopPageClient({
+  initialProducts,
+  initialCatalogTotal = null,
+}: {
+  initialProducts: ProductListItem[];
+  /** Total rows for current URL filters from server (null if unknown). */
+  initialCatalogTotal?: number | null;
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const seedsPathSlug = parseSeedsBreederSlugFromPathname(pathname);
+  const journalBreederSlug = parseJournalBreederSlugFromPathname(pathname);
+  const journalCatalogBase = journalBreederCatalogBasePath(pathname);
   const breederParam =
-    (seedsPathSlug ?? searchParams.get("breeder"))?.trim() || null;
+    (journalBreederSlug ?? searchParams.get("breeder"))?.trim() || null;
 
   const replaceCatalog = useCallback(
     (mutate: (sp: URLSearchParams) => void) => {
       const sp = new URLSearchParams(searchParams.toString());
       mutate(sp);
       const qs = sp.toString();
-      if (seedsPathSlug) {
-        router.replace(qs ? `/seeds/${seedsPathSlug}?${qs}` : `/seeds/${seedsPathSlug}`, {
+      if (journalCatalogBase) {
+        router.replace(qs ? `${journalCatalogBase}?${qs}` : journalCatalogBase, {
           scroll: false,
         });
         return;
@@ -172,7 +185,7 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
       }
       router.replace(qs ? `/shop?${qs}` : "/shop", { scroll: false });
     },
-    [pathname, router, searchParams, seedsPathSlug]
+    [pathname, router, searchParams, journalCatalogBase]
   );
   const geneticsParam = searchParams.get("genetics") ?? "";
   const difficultyParam = searchParams.get("difficulty") ?? "";
@@ -180,8 +193,26 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
   const cbdParam = searchParams.get("cbd") ?? "";
   const sexParam = searchParams.get("sex") ?? "";
   const seedsParam = searchParams.get("seeds") ?? "";
-  const ftParam = searchParams.get("ft") ?? "";
+  const ftRawQS = searchParams.get("ft") ?? "";
+  const filterQueryParam = searchParams.get("filter") ?? "";
+  const ftParam = useMemo(
+    () => resolveCatalogFtFromUrl({ ft: ftRawQS, filter: filterQueryParam }),
+    [ftRawQS, filterQueryParam]
+  );
+  const quickRawQS = searchParams.get("quick") ?? "";
+  const sortRawQS = searchParams.get("sort") ?? "";
+  const quickEffective = useMemo(() => {
+    const q = quickRawQS.trim();
+    if (q === "new" || q === "sale") return q;
+    return resolveCatalogQuickFromFilter(filterQueryParam) ?? "";
+  }, [quickRawQS, filterQueryParam]);
+  const sortEffective = useMemo(() => {
+    const s = sortRawQS.trim();
+    if (s === "price_asc" || s === "price_desc" || s === "new_arrivals" || s === "newest") return s;
+    return resolveCatalogSortFromFilter(filterQueryParam) ?? "";
+  }, [sortRawQS, filterQueryParam]);
   const qParam = searchParams.get("q") ?? "";
+  const qNorm = qParam.trim().toLowerCase();
   const categoryParam = searchParams.get("category") ?? "";
   const yieldQuickParam = searchParams.get("yield") ?? "";
   const priceRange = useMemo(
@@ -199,6 +230,9 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
         sexParam ||
         seedsParam ||
         ftParam ||
+        quickRawQS ||
+        filterQueryParam ||
+        sortRawQS ||
         categoryParam ||
         yieldQuickParam ||
         qParam ||
@@ -206,9 +240,13 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     );
   const [products, setProducts] = useState<ProductListItem[]>(initialProducts);
   const [isLoading, setIsLoading] = useState(initialProducts.length === 0);
+  const [catalogTotal, setCatalogTotal] = useState<number | null>(initialCatalogTotal ?? null);
   const [loadedPage, setLoadedPage] = useState(1);
   const [hasMoreServerProducts, setHasMoreServerProducts] = useState(
-    initialProducts.length >= SHOP_PAGE_INITIAL
+    () =>
+      initialCatalogTotal != null
+        ? initialProducts.length < initialCatalogTotal
+        : initialProducts.length >= SHOP_PAGE_INITIAL
   );
   const [loadingMore, setLoadingMore] = useState(false);
   const gridTopRef = useRef<HTMLDivElement | null>(null);
@@ -223,15 +261,39 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
   );
   const serverHydrateKey = useMemo(
     () =>
-      `${pathname}|${breederParam ?? ""}|${categoryParam}|${qParam}|${ftParam}|${sortedInitialIdsKey}`,
-    [pathname, breederParam, categoryParam, qParam, ftParam, sortedInitialIdsKey]
+      `${pathname}|${breederParam ?? ""}|${categoryParam}|${qParam}|${ftRawQS}|${filterQueryParam}|${quickRawQS}|${sortRawQS}|${geneticsParam}|${difficultyParam}|${thcParam}|${cbdParam}|${sexParam}|${seedsParam}|${yieldQuickParam}|${priceMin ?? ""}|${priceMax ?? ""}|${sortedInitialIdsKey}`,
+    [
+      pathname,
+      breederParam,
+      categoryParam,
+      qParam,
+      ftRawQS,
+      filterQueryParam,
+      quickRawQS,
+      sortRawQS,
+      geneticsParam,
+      difficultyParam,
+      thcParam,
+      cbdParam,
+      sexParam,
+      seedsParam,
+      yieldQuickParam,
+      priceMin,
+      priceMax,
+      sortedInitialIdsKey,
+    ]
   );
 
   useEffect(() => {
     setProducts(initialProducts);
     setLoadedPage(1);
-    setHasMoreServerProducts(initialProducts.length >= SHOP_PAGE_INITIAL);
-  }, [serverHydrateKey, initialProducts]);
+    setCatalogTotal(initialCatalogTotal ?? null);
+    setHasMoreServerProducts(
+      initialCatalogTotal != null
+        ? initialProducts.length < initialCatalogTotal
+        : initialProducts.length >= SHOP_PAGE_INITIAL
+    );
+  }, [serverHydrateKey, initialProducts, initialCatalogTotal]);
 
   const deferFirstDupClientCatalog = useRef(true);
 
@@ -252,12 +314,30 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
         if (breederParam?.trim()) sp.set("breeder", breederParam.trim());
         const qTrim = qParam.trim();
         if (qTrim) sp.set("q", qTrim);
-        if (ftParam.trim()) sp.set("ft", ftParam.trim());
+        if (ftRawQS.trim()) sp.set("ft", ftRawQS.trim());
+        if (filterQueryParam.trim()) sp.set("filter", filterQueryParam.trim());
+        if (quickRawQS.trim()) sp.set("quick", quickRawQS.trim());
+        if (sortRawQS.trim()) sp.set("sort", sortRawQS.trim());
+        if (seedsParam.trim()) sp.set("seeds", seedsParam.trim());
+        if (geneticsParam.trim()) sp.set("genetics", geneticsParam.trim());
+        if (difficultyParam.trim()) sp.set("difficulty", difficultyParam.trim());
+        if (thcParam.trim()) sp.set("thc", thcParam.trim());
+        if (cbdParam.trim()) sp.set("cbd", cbdParam.trim());
+        if (sexParam.trim()) sp.set("sex", sexParam.trim());
+        if (yieldQuickParam.trim()) sp.set("yield", yieldQuickParam.trim());
+        if (priceMin != null) sp.set(PRICE_PARAM_MIN, String(priceMin));
+        if (priceMax != null) sp.set(PRICE_PARAM_MAX, String(priceMax));
         const res = await fetchWithTimeout(`/api/products?${sp.toString()}`, { cache: "no-store" }, 4000);
-        const json = (await res.json()) as { products?: ProductListItem[]; hasMore?: boolean };
+        const json = (await res.json()) as {
+          products?: ProductListItem[];
+          hasMore?: boolean;
+          total?: number | null;
+        };
         if (cancelled || !res.ok) return;
         setProducts(Array.isArray(json.products) ? json.products : []);
         setLoadedPage(1);
+        if (typeof json.total === "number") setCatalogTotal(json.total);
+        else setCatalogTotal(null);
         setHasMoreServerProducts(Boolean(json.hasMore));
       } catch {
         if (!cancelled) setHasMoreServerProducts(false);
@@ -268,7 +348,25 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     return () => {
       cancelled = true;
     };
-  }, [pathname, breederParam, categoryParam, qParam, ftParam]);
+  }, [
+    pathname,
+    breederParam,
+    categoryParam,
+    qParam,
+    ftRawQS,
+    filterQueryParam,
+    quickRawQS,
+    sortRawQS,
+    seedsParam,
+    geneticsParam,
+    difficultyParam,
+    thcParam,
+    cbdParam,
+    sexParam,
+    yieldQuickParam,
+    priceMin,
+    priceMax,
+  ]);
 
   const priceCap = useMemo(
     () => (products.length > 0 ? computePriceSliderCap(products) : 5000),
@@ -278,10 +376,6 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
   const { locale, t } = useLanguage();
   const { t: tMsg } = useTranslations();
   const isLg = useMediaQuery("(min-width: 1024px)", true);
-  const [searchTerm, setSearchTerm] = useState("");
-  useEffect(() => {
-    setSearchTerm(qParam);
-  }, [qParam]);
   const [showFilter, setShowFilter] = useState(false);
   const [showPriceSheet, setShowPriceSheet] = useState(false);
   const [visibleCount, setVisibleCount] = useState(SHOP_PAGE_INITIAL);
@@ -298,7 +392,12 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     if (!breederParam?.trim() || breedersLoading) return;
     const resolved = resolveBreederFromShopParam(allBreeders, breederParam);
     if (!resolved) {
-      router.replace(seedsPathSlug ? "/seeds" : "/shop", { scroll: false });
+      const fallback = pathname?.startsWith("/brand/")
+        ? "/breeders"
+        : pathname?.startsWith("/seeds/")
+          ? "/seeds"
+          : "/shop";
+      router.replace(fallback, { scroll: false });
       return;
     }
     if (/^\d+$/.test(breederParam.trim())) {
@@ -306,14 +405,15 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
       const sp = new URLSearchParams(searchParams.toString());
       sp.delete("breeder");
       const qs = sp.toString();
-      if (seedsPathSlug) {
-        router.replace(qs ? `/seeds/${slug}?${qs}` : `/seeds/${slug}`, { scroll: false });
+      if (journalCatalogBase) {
+        const prefix = pathname?.startsWith("/brand/") ? "/brand" : "/seeds";
+        router.replace(qs ? `${prefix}/${slug}?${qs}` : `${prefix}/${slug}`, { scroll: false });
       } else {
         sp.set("breeder", slug);
         router.replace(`/shop?${sp.toString()}`, { scroll: false });
       }
     }
-  }, [breederParam, allBreeders, breedersLoading, router, searchParams, seedsPathSlug]);
+  }, [breederParam, allBreeders, breedersLoading, router, searchParams, journalCatalogBase, pathname]);
 
   useEffect(() => {
     if (!searchParams.get("type")) return;
@@ -321,8 +421,6 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
       sp.delete("type");
     });
   }, [searchParams, replaceCatalog]);
-
-  const qNorm = searchTerm.trim().toLowerCase();
 
   // Breeders whose name/summary/description matches the search (for profile cards)
   const matchingBreeders = useMemo(() => {
@@ -359,12 +457,41 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     });
   }, [products, qNorm, matchingBreederIds]);
 
-  /** Flowering pill counts: search + optional breeder scope (not filtered by ft). */
+  /** Breeder + search + flowering (ft) + category — base for sidebar counts & (when sale) pill counts. */
+  const shopScopedProducts = useMemo(() => {
+    const categoryNorm = categoryParam.trim().toLowerCase();
+    return searchFilteredProducts.filter((p) => {
+      let matchBreeder: boolean;
+      if (breederParam?.trim()) {
+        if (breedersLoading) matchBreeder = true;
+        else if (!urlBreeder) matchBreeder = false;
+        else matchBreeder = p.breeder_id === urlBreeder.id;
+      } else {
+        matchBreeder = true;
+      }
+      const matchFt = productMatchesCatalogFtParam(
+        {
+          flowering_type: p.flowering_type,
+          category: p.category,
+          product_categories: p.product_categories,
+        },
+        ftParam
+      );
+      const matchCategory =
+        !categoryNorm ||
+        (p.category ?? "").trim().toLowerCase() === categoryNorm ||
+        (p.product_categories?.name ?? "").trim().toLowerCase() === categoryNorm;
+      return matchBreeder && matchFt && matchCategory;
+    });
+  }, [searchFilteredProducts, urlBreeder, breederParam, breedersLoading, ftParam, categoryParam]);
+
+  /** Flowering pill counts: sale view uses same scope as sidebar (quick + ft + breeder); else search + breeder only. */
   const catalogFloweringScope = useMemo(() => {
+    if (quickEffective === "sale") return shopScopedProducts;
     const base = searchFilteredProducts;
     if (!urlBreeder) return base;
     return base.filter((p) => p.breeder_id === urlBreeder.id);
-  }, [searchFilteredProducts, urlBreeder]);
+  }, [quickEffective, shopScopedProducts, searchFilteredProducts, urlBreeder]);
 
   const catalogFloweringOptions = useMemo(() => {
     const rows: { slug: string; label: string; count: number }[] = [
@@ -399,35 +526,30 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     [catalogFloweringOptions]
   );
 
+  /** Drop only malformed `ft` / `filter` tokens. Do not strip valid buckets just because the
+   * current loaded page slice shows count 0 (would break e.g. `?ft=auto` on /shop). */
   useEffect(() => {
     const raw = ftParam?.trim();
     if (!raw) return;
     const key = normalizeCatalogFtUrlParam(raw);
-    if (!key) {
-      replaceCatalog((sp) => {
-        sp.delete("ft");
-      });
-      return;
-    }
-    const allowed = new Set(catalogFloweringPillOptions.map((o) => o.slug));
-    if (allowed.size > 0 && !allowed.has(key)) {
-      replaceCatalog((sp) => {
-        sp.delete("ft");
-      });
-    }
-  }, [ftParam, replaceCatalog, catalogFloweringPillOptions]);
-
-  useEffect(() => {
-    const tid = setTimeout(() => {
-      const next = searchTerm.trim();
-      if (next === qParam.trim()) return;
-      replaceCatalog((sp) => {
-        if (next) sp.set("q", next);
-        else sp.delete("q");
-      });
-    }, 400);
-    return () => clearTimeout(tid);
-  }, [searchTerm, qParam, replaceCatalog]);
+    if (key) return;
+    replaceCatalog((sp) => {
+      sp.delete("ft");
+      const f = (sp.get("filter") ?? "").trim().toLowerCase();
+      if (
+        f === "auto" ||
+        f === "autoflower" ||
+        f === "photo" ||
+        f === "photoperiod" ||
+        f === "photo-ff" ||
+        f === "photo_ff" ||
+        f === "photo-3n" ||
+        f === "photo_3n"
+      ) {
+        sp.delete("filter");
+      }
+    });
+  }, [ftParam, replaceCatalog]);
 
   const setPriceRange = useCallback(
     (min: number | null, max: number | null) => {
@@ -443,34 +565,6 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     },
     [replaceCatalog, priceCap]
   );
-
-  /** Breeder + search + flowering (ft) scope only — used for sidebar filter option counts. */
-  const shopScopedProducts = useMemo(() => {
-    const categoryNorm = categoryParam.trim().toLowerCase();
-    return searchFilteredProducts.filter((p) => {
-      let matchBreeder: boolean;
-      if (breederParam?.trim()) {
-        if (breedersLoading) matchBreeder = true;
-        else if (!urlBreeder) matchBreeder = false;
-        else matchBreeder = p.breeder_id === urlBreeder.id;
-      } else {
-        matchBreeder = true;
-      }
-      const matchFt = productMatchesCatalogFtParam(
-        {
-          flowering_type: p.flowering_type,
-          category: p.category,
-          product_categories: p.product_categories,
-        },
-        ftParam
-      );
-      const matchCategory =
-        !categoryNorm ||
-        (p.category ?? "").trim().toLowerCase() === categoryNorm ||
-        (p.product_categories?.name ?? "").trim().toLowerCase() === categoryNorm;
-      return matchBreeder && matchFt && matchCategory;
-    });
-  }, [searchFilteredProducts, urlBreeder, breederParam, breedersLoading, ftParam, categoryParam]);
 
   const filterOptionCounts = useMemo(
     () => calculateFilterCounts(shopScopedProducts),
@@ -506,6 +600,16 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
         ) && productMatchesPriceRange(p, priceMin, priceMax)
     );
     if (!breederParam?.trim()) return matches;
+    if (
+      quickEffective === "new" ||
+      quickEffective === "sale" ||
+      sortEffective === "price_asc" ||
+      sortEffective === "price_desc" ||
+      sortEffective === "new_arrivals" ||
+      sortEffective === "newest"
+    ) {
+      return matches;
+    }
     return [...matches].sort((a, b) => {
       const priceA = Number(a.price ?? Number.MAX_SAFE_INTEGER);
       const priceB = Number(b.price ?? Number.MAX_SAFE_INTEGER);
@@ -526,13 +630,15 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     yieldQuickParam,
     priceMin,
     priceMax,
+    quickEffective,
+    sortEffective,
   ]);
 
   const isEn = locale === "en";
 
   /** `/seeds` and `/seeds/[breeder]` use the compact catalog header only (no vault hero). */
   const isSeedsJournalCatalogPath =
-    isSeedsIndexPath(pathname) || Boolean(seedsPathSlug);
+    isSeedsIndexPath(pathname) || Boolean(journalBreederSlug);
 
   const vaultHeroProducts = useMemo(() => {
     if (isSeedsJournalCatalogPath) return [];
@@ -554,7 +660,24 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
       return;
     }
     gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [breederParam, categoryParam, geneticsParam, difficultyParam, thcParam, cbdParam, sexParam, seedsParam, ftParam, qParam, yieldQuickParam, priceMin, priceMax]);
+  }, [
+    breederParam,
+    categoryParam,
+    geneticsParam,
+    difficultyParam,
+    thcParam,
+    cbdParam,
+    sexParam,
+    seedsParam,
+    ftRawQS,
+    filterQueryParam,
+    qParam,
+    quickRawQS,
+    sortRawQS,
+    yieldQuickParam,
+    priceMin,
+    priceMax,
+  ]);
 
   const visibleProducts = useMemo(
     () => filteredProducts.slice(0, visibleCount),
@@ -563,7 +686,21 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
 
   const totalFiltered = filteredProducts.length;
   const shownCount = visibleProducts.length;
-  const hasMoreProducts = shownCount < totalFiltered || hasMoreServerProducts;
+
+  const isNarrowedByClientFilters = totalFiltered < products.length;
+  const footerTotal = isNarrowedByClientFilters
+    ? totalFiltered
+    : catalogTotal != null
+      ? catalogTotal
+      : totalFiltered;
+  const footerShown = Math.min(shownCount, totalFiltered);
+
+  const allServerPagesFetched =
+    catalogTotal != null ? products.length >= catalogTotal : !hasMoreServerProducts;
+
+  const hasMoreProducts =
+    shownCount < totalFiltered ||
+    (!isNarrowedByClientFilters && hasMoreServerProducts && !allServerPagesFetched);
 
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > BACK_TO_TOP_SCROLL_THRESHOLD);
@@ -597,20 +734,34 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
       const nextPage = loadedPage + 1;
       const sp = new URLSearchParams({
         page: String(nextPage),
-        limit: String(SHOP_PAGE_STEP),
+        limit: String(SHOP_PAGE_INITIAL),
         includeVariants: "true",
       });
       if (breederParam?.trim()) sp.set("breeder", breederParam.trim());
       if (categoryParam.trim()) sp.set("category", categoryParam.trim());
       if (qParam.trim()) sp.set("q", qParam.trim());
-      if (ftParam.trim()) sp.set("ft", ftParam.trim());
+      if (ftRawQS.trim()) sp.set("ft", ftRawQS.trim());
+      if (filterQueryParam.trim()) sp.set("filter", filterQueryParam.trim());
+      if (quickRawQS.trim()) sp.set("quick", quickRawQS.trim());
+      if (sortRawQS.trim()) sp.set("sort", sortRawQS.trim());
       if (seedsParam.trim()) sp.set("seeds", seedsParam.trim());
+      if (geneticsParam.trim()) sp.set("genetics", geneticsParam.trim());
+      if (difficultyParam.trim()) sp.set("difficulty", difficultyParam.trim());
+      if (thcParam.trim()) sp.set("thc", thcParam.trim());
+      if (cbdParam.trim()) sp.set("cbd", cbdParam.trim());
+      if (sexParam.trim()) sp.set("sex", sexParam.trim());
+      if (yieldQuickParam.trim()) sp.set("yield", yieldQuickParam.trim());
       if (priceMin != null) sp.set(PRICE_PARAM_MIN, String(priceMin));
       if (priceMax != null) sp.set(PRICE_PARAM_MAX, String(priceMax));
       const res = await fetchWithTimeout(`/api/products?${sp.toString()}`, { cache: "no-store" }, 2000);
-      const json = (await res.json()) as { products?: ProductListItem[]; hasMore?: boolean };
+      const json = (await res.json()) as {
+        products?: ProductListItem[];
+        hasMore?: boolean;
+        total?: number | null;
+      };
       if (!res.ok) throw new Error("Failed to load more products");
       const nextProducts = Array.isArray(json.products) ? json.products : [];
+      if (typeof json.total === "number") setCatalogTotal(json.total);
       setProducts((prev) => {
         const seen = new Set(prev.map((p) => String(p.id)));
         const merged = [...prev];
@@ -624,7 +775,7 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
       });
       setLoadedPage(nextPage);
       setHasMoreServerProducts(Boolean(json.hasMore));
-      setVisibleCount((c) => c + SHOP_PAGE_STEP);
+      setVisibleCount((c) => c + nextProducts.length);
     } catch {
       toast.error(t("โหลดสินค้าเพิ่มไม่สำเร็จ", "Could not load more products"));
     } finally {
@@ -640,15 +791,28 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     categoryParam,
     qParam,
     seedsParam,
-    ftParam,
+    geneticsParam,
+    difficultyParam,
+    thcParam,
+    cbdParam,
+    sexParam,
+    yieldQuickParam,
+    ftRawQS,
+    filterQueryParam,
+    quickRawQS,
+    sortRawQS,
     priceMin,
     priceMax,
     t,
+    catalogTotal,
   ]);
 
   const hasFilters =
-    searchTerm.trim().length > 0 ||
-    !!ftParam?.trim() ||
+    !!qParam.trim() ||
+    !!ftRawQS.trim() ||
+    !!filterQueryParam.trim() ||
+    !!quickRawQS.trim() ||
+    !!sortRawQS.trim() ||
     !!categoryParam.trim() ||
     parseListParam(geneticsParam).length > 0 ||
     parseListParam(difficultyParam).length > 0 ||
@@ -659,17 +823,26 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
     priceFilterActive(priceMin, priceMax);
 
   const clearFilters = () => {
-    setSearchTerm("");
     if (breederParam && urlBreeder) {
       const slug = breederSlugFromName(urlBreeder.name);
-      if (seedsPathSlug) {
+      if (pathname.startsWith("/brand/")) {
+        router.replace(`/brand/${slug}`, { scroll: false });
+      } else if (journalBreederSlug) {
         router.replace(`/seeds/${slug}`, { scroll: false });
       } else {
         router.replace(`/shop?breeder=${encodeURIComponent(slug)}`, { scroll: false });
       }
       return;
     }
-    router.push(seedsPathSlug || isSeedsIndexPath(pathname) ? "/seeds" : "/shop");
+    if (isSeedsIndexPath(pathname) || pathname.startsWith("/seeds/")) {
+      router.push("/seeds");
+      return;
+    }
+    if (pathname.startsWith("/brand/")) {
+      router.push("/breeders");
+      return;
+    }
+    router.push("/shop");
   };
 
   const activeBreederSlug =
@@ -764,27 +937,12 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-0 sm:px-6 lg:pb-8">
         {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
         <div
-          className={`sticky top-20 z-40 -mx-4 mb-3 border-b border-zinc-100 bg-white/95 px-4 pt-2 pb-1.5 backdrop-blur-md sm:-mx-6 sm:top-28 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+          className={`sticky top-20 z-40 -mx-4 mb-3 border-b border-zinc-100 bg-white/95 px-4 pt-1.5 pb-1 backdrop-blur-md sm:-mx-6 sm:top-28 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
         >
-          <div className="flex flex-col gap-2 rounded-2xl border border-zinc-200/60 bg-white p-2 shadow-sm sm:p-2.5">
-            <div className="flex gap-2">
-              <div className="relative min-w-0 flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                <Input
-                  placeholder={t("ค้นหาสายพันธุ์หรือแบรนด์...", "Search strains or brands...")}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-9 w-full min-w-0 rounded-xl border-zinc-200 bg-white py-2 pl-9 text-sm text-zinc-900 placeholder:text-zinc-400"
-                />
-                {searchTerm && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                  >
-                    <X className="h-4 w-4 text-zinc-400 hover:text-zinc-600" />
-                  </button>
-                )}
+          <div className="flex flex-col gap-1.5 rounded-2xl border border-zinc-200/60 bg-white p-2 shadow-sm sm:p-2">
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <ShopQuickFilterBar replaceCatalog={replaceCatalog} t={t} />
               </div>
               <Button
                 variant="outline"
@@ -798,46 +956,31 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
                 {t("ตัวกรอง", "Filters")}
               </Button>
             </div>
-            <div className="relative min-h-[2.25rem]">
-              <div
-                className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 bg-gradient-to-r from-white to-transparent sm:w-6"
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-5 bg-gradient-to-l from-white to-transparent sm:w-6"
-                aria-hidden
-              />
-              <div
-                role="toolbar"
-                aria-label={t("กรองสินค้า", "Shop filters")}
-                className="flex min-h-[2.25rem] items-center gap-2 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 && (
-                  <>
-                    <BreederTypeFilter
-                      appearance="chips"
-                      options={catalogFloweringPillOptions}
-                      allLabel={t("ทั้งหมด", "All")}
-                      paramKey="ft"
-                      ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
-                    />
-                    <div
-                      className="mx-2 h-6 w-px shrink-0 bg-zinc-200"
-                      aria-hidden
-                    />
-                  </>
-                )}
-                <ShopPriceChipsRow
-                  compact
-                  showBahtGlyph
-                  t={t}
-                  cap={priceCap}
-                  min={priceMin}
-                  max={priceMax}
-                  onRangeChange={setPriceRange}
+            {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 ? (
+              <div className="relative min-h-[2rem]">
+                <div
+                  className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 bg-gradient-to-r from-white to-transparent sm:w-6"
+                  aria-hidden
                 />
+                <div
+                  className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-5 bg-gradient-to-l from-white to-transparent sm:w-6"
+                  aria-hidden
+                />
+                <div
+                  role="toolbar"
+                  aria-label={t("กรองสินค้า", "Shop filters")}
+                  className="flex min-h-[2rem] items-center gap-2 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  <BreederTypeFilter
+                    appearance="chips"
+                    options={catalogFloweringPillOptions}
+                    allLabel={t("ทั้งหมด", "All")}
+                    paramKey="ft"
+                    ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
+                  />
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         </div>
 
@@ -985,12 +1128,16 @@ export function ShopPageClient({ initialProducts }: { initialProducts: ProductLi
               </>
             ) : (
               <>
-                <GeneticVaultProductGrid products={visibleProducts} researchPosts={researchPosts} />
+                <GeneticVaultProductGrid
+                  products={visibleProducts}
+                  researchPosts={researchPosts}
+                  catalogSeedsFilter={seedsParam.trim() ? seedsParam : null}
+                />
                 {totalFiltered > 0 && (
                   <p className="mt-6 text-center text-sm text-zinc-500">
                     {t("แสดง {current} จาก {total} สินค้า", "Showing {current} of {total} products")
-                      .replace("{current}", String(shownCount))
-                      .replace("{total}", String(totalFiltered))}
+                      .replace("{current}", String(footerShown))
+                      .replace("{total}", String(footerTotal))}
                   </p>
                 )}
                 {hasMoreProducts && (
