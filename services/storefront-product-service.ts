@@ -12,7 +12,7 @@ import { activeBrandRulesFromRows } from "@/lib/brand-promotion-checkout";
 import {
   attachBrandListingFields,
   type ProductWithBrandListing,
-} from "@/lib/product-brand-listing";
+} from "@/lib/brand-listing-attach";
 import { ProductSchema, type ProductFormData } from "@/lib/validations/product";
 import type { ProductFull } from "@/types/supabase";
 import { withTimeout } from "@/lib/timeout";
