@@ -4,6 +4,7 @@
  */
 import { getSql } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
+import { isPromoQaBypassEmail } from "@/lib/promo-qa-bypass-email";
 import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-promo-math";
 import type { DiscountType } from "@/types/supabase";
 
@@ -255,9 +256,19 @@ export async function getEligibleCoupons(
 ): Promise<EligibleCoupon[]> {
   try {
     const sql = getSql();
+    const qaBypassList = isPromoQaBypassEmail(email);
 
-    // Fetch all active, non-expired, non-fully-used coupons for this user
-    const rows = await sql<EligibleCoupon[]>`
+    const rows = qaBypassList
+      ? await sql<EligibleCoupon[]>`
+          SELECT p.id, p.code, p.discount_type, p.discount_value,
+                 p.min_spend, p.expiry_date, p.first_order_only,
+                 p.is_active, p.badge_url, p.badge_lottie_url
+          FROM promo_codes p
+          WHERE p.is_active = true
+            AND (p.expiry_date IS NULL OR p.expiry_date > now())
+          ORDER BY p.discount_value DESC
+        `
+      : await sql<EligibleCoupon[]>`
       SELECT p.id, p.code, p.discount_type, p.discount_value,
              p.min_spend, p.expiry_date, p.first_order_only,
              p.is_active, p.badge_url, p.badge_lottie_url
@@ -275,8 +286,7 @@ export async function getEligibleCoupons(
       ORDER BY p.discount_value DESC
     `;
 
-    // Post-filter: remove first_order_only coupons when user has a completed order
-    const hasOrder = await _hasCompletedOrder(sql, userId, email);
+    const hasOrder = qaBypassList ? false : await _hasCompletedOrder(sql, userId, email);
     return rows
       .filter((c) => !(c.first_order_only && hasOrder))
       .map((c) => ({

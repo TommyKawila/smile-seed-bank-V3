@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { isPromoQaBypassEmail } from "@/lib/promo-qa-bypass-email";
 
 /**
  * Admin storefront QA bypass for customer-specific coupon gates.
@@ -43,7 +44,7 @@ export function resolveSkipCouponPerUserReuseForAdminSession(opts: {
 
   const emails = bypassEmailAllowlist();
   const em = normalizeEmail(opts.sessionUser?.email ?? undefined);
-  if (em !== null && emails.has(em)) {
+  if (em !== null && (emails.has(em) || isPromoQaBypassEmail(em))) {
     console.log("ADMIN_BYPASS: Admin testing coupon, skipping usage limit check.");
     return true;
   }

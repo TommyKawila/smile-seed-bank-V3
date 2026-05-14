@@ -48,6 +48,8 @@ import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";
+/** Order lines + summary baht figures — brand sans, aligned digits (no mono). */
+const checkoutAmount = cn(serif, "tabular-nums");
 
 const CheckoutFormSchema = z.object({
   full_name: z.string().min(2, "กรุณาระบุชื่อ-นามสกุล"),
@@ -172,7 +174,7 @@ function OrderItemRow({
           {cartItemPackDescription(item, locale, { includeLineQuantity: true })}
         </p>
       </div>
-      <span className={cn(mono, "shrink-0 text-sm font-medium text-zinc-900")}>
+      <span className={cn(checkoutAmount, "shrink-0 text-sm font-medium text-zinc-900")}>
         {item.isFreeGift ? "ฟรี" : formatPrice(item.price * item.quantity)}
       </span>
     </div>
@@ -710,7 +712,9 @@ export function CheckoutPageClient({
                         </span>
                         <span className="flex items-center gap-2">
                           {summary.promoDiscount > 0 ? (
-                            <>-{formatPrice(summary.promoDiscount)}</>
+                            <span className={cn(checkoutAmount, "font-medium")}>
+                              -{formatPrice(summary.promoDiscount)}
+                            </span>
                           ) : summary.promoSupersededByTier ? (
                             <span className="text-xs font-normal text-zinc-500">
                               {t("ไม่ใช้กับยอดนี้", "Not applied")}
@@ -743,7 +747,7 @@ export function CheckoutPageClient({
                       <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
                         {t("ยอดสินค้า", "Subtotal")}
                       </span>
-                      <span className={cn(mono, "font-medium text-zinc-900")}>{formatPrice(summary.subtotal)}</span>
+                      <span className={cn(checkoutAmount, "font-medium text-zinc-900")}>{formatPrice(summary.subtotal)}</span>
                     </div>
                     {summary.tierDiscount > 0 && (
                       <div className="flex justify-between gap-3 text-emerald-800">
@@ -753,7 +757,7 @@ export function CheckoutPageClient({
                             `Auto discount (${summary.discountPercent}%)`
                           )}
                         </span>
-                        <span className={cn(mono, "font-medium")}>-{formatPrice(summary.tierDiscount)}</span>
+                        <span className={cn(checkoutAmount, "font-medium")}>-{formatPrice(summary.tierDiscount)}</span>
                       </div>
                     )}
                     {summary.promoDiscount > 0 && (
@@ -761,14 +765,14 @@ export function CheckoutPageClient({
                         <span className={cn(serif, "text-xs font-medium")}>
                           {t(`ส่วนลดโค้ด (${promo.code?.code ?? ""})`, `Coupon (${promo.code?.code ?? ""})`)}
                         </span>
-                        <span className={cn(mono, "font-medium")}>-{formatPrice(summary.promoDiscount)}</span>
+                        <span className={cn(checkoutAmount, "font-medium")}>-{formatPrice(summary.promoDiscount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between gap-3 text-zinc-600">
                       <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
                         {t("ค่าจัดส่ง", "Shipping")}
                       </span>
-                      <span className={cn(mono, "font-medium text-zinc-900")}>
+                      <span className={cn(checkoutAmount, "font-medium text-zinc-900")}>
                         {summary.shipping === 0 ? t("ฟรี", "Free") : formatPrice(summary.shipping)}
                       </span>
                     </div>
@@ -777,7 +781,7 @@ export function CheckoutPageClient({
                         <Sparkles className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1} />
                         <span>
                           {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
-                          <strong className={cn(mono, "font-semibold")}>
+                          <strong className={cn(checkoutAmount, "font-semibold")}>
                             {formatPrice(summary.tierDiscount + summary.promoDiscount)}
                           </strong>
                         </span>
@@ -789,7 +793,7 @@ export function CheckoutPageClient({
                         <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
                           {t("ยอดสุทธิ", "Net total")}
                         </span>
-                        <span className={cn(mono, "text-xl font-semibold text-emerald-900")}>
+                        <span className={cn(checkoutAmount, "text-xl font-bold text-emerald-900")}>
                           {formatPrice(summary.total)}
                         </span>
                       </div>
@@ -822,7 +826,10 @@ export function CheckoutPageClient({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-12 w-full rounded-sm bg-emerald-800 text-base font-semibold tracking-wide text-white shadow-none hover:bg-emerald-900 active:scale-[0.98]"
+                className={cn(
+                  "h-12 w-full rounded-sm bg-emerald-800 text-base font-semibold tracking-wide text-white shadow-none hover:bg-emerald-900 active:scale-[0.98]",
+                  checkoutAmount,
+                )}
               >
                 {isSubmitting ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("กำลังสร้างออเดอร์...", "Placing order...")}</>
@@ -918,7 +925,7 @@ export function CheckoutPageClient({
                       <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
                         {t("ยอดสินค้า", "Subtotal")}
                       </span>
-                      <span className={cn(mono, "font-medium text-zinc-900")}>
+                      <span className={cn(checkoutAmount, "font-medium text-zinc-900")}>
                         {formatPrice(placed.summarySnapshot.subtotal)}
                       </span>
                     </div>
@@ -932,7 +939,7 @@ export function CheckoutPageClient({
                               )
                             : t("ส่วนลด", "Discount")}
                         </span>
-                        <span className={cn(mono, "font-medium")}>
+                        <span className={cn(checkoutAmount, "font-medium")}>
                           -{formatPrice(placed.restoreFlatDiscountBaht ?? 0)}
                         </span>
                       </div>
@@ -948,7 +955,7 @@ export function CheckoutPageClient({
                                   )
                                 : t("ส่วนลดอัตโนมัติ", "Spend discount")}
                             </span>
-                            <span className={cn(mono, "font-medium")}>
+                            <span className={cn(checkoutAmount, "font-medium")}>
                               -{formatPrice(placed.summarySnapshot.tierDiscount)}
                             </span>
                           </div>
@@ -961,7 +968,7 @@ export function CheckoutPageClient({
                                 `Coupon (${placed.appliedPromo?.code ?? ""})`,
                               )}
                             </span>
-                            <span className={cn(mono, "font-medium")}>
+                            <span className={cn(checkoutAmount, "font-medium")}>
                               -{formatPrice(placed.summarySnapshot.promoDiscount)}
                             </span>
                           </div>
@@ -972,7 +979,7 @@ export function CheckoutPageClient({
                       <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
                         {t("ค่าจัดส่ง", "Shipping")}
                       </span>
-                      <span className={cn(mono, "font-medium text-zinc-900")}>
+                      <span className={cn(checkoutAmount, "font-medium text-zinc-900")}>
                         {placed.summarySnapshot.shipping === 0
                           ? t("ฟรี", "Free")
                           : formatPrice(placed.summarySnapshot.shipping)}
@@ -985,7 +992,7 @@ export function CheckoutPageClient({
                         <Sparkles className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1} aria-hidden />
                         <span>
                           {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
-                          <strong className={cn(mono, "font-semibold")}>
+                          <strong className={cn(checkoutAmount, "font-semibold")}>
                             {formatPrice(
                               placed.summarySource === "restore"
                                 ? placed.restoreFlatDiscountBaht ?? 0
@@ -1002,7 +1009,7 @@ export function CheckoutPageClient({
                         <span className={cn(serif, "text-xs font-medium text-zinc-600")}>
                           {t("ยอดสุทธิ", "Net total")}
                         </span>
-                        <span className={cn(mono, "text-xl font-semibold text-emerald-900")}>
+                        <span className={cn(checkoutAmount, "text-xl font-bold text-emerald-900")}>
                           {formatPrice(placed.totalBaht)}
                         </span>
                       </div>

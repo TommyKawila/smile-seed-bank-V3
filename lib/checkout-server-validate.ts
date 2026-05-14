@@ -14,6 +14,7 @@ import { bahtToSatangInt, roundCheckoutBahtWhole, satangIntToBaht } from "@/lib/
 import { shippingFeeForSubtotal } from "@/lib/order-financials";
 import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-promo-math";
 import { customerHasCompletedOrderForFirstOrderPromo } from "@/lib/services/coupon-service";
+import { isPromoQaBypassEmail } from "@/lib/promo-qa-bypass-email";
 import type { CheckoutItem, CheckoutSummary } from "@/lib/services/order-service";
 
 type LineIn = {
@@ -296,14 +297,16 @@ export async function validateStorefrontCheckoutTotals(input: {
     return { ok: false, error: "Invalid or expired promo code" };
   }
 
-  if (
+  const guardEmail = firstOrderGuard?.customerEmail?.trim() ?? null;
+  const firstOrderBlocked =
     promoRow &&
-    normalizePromoCode(promoRow.code) === WELCOME10_CODE &&
+    !isPromoQaBypassEmail(guardEmail) &&
+    (normalizePromoCode(promoRow.code) === WELCOME10_CODE || promoRow.first_order_only === true) &&
     (await customerHasCompletedOrderForFirstOrderPromo(
       firstOrderGuard?.customerId?.trim() ?? null,
-      firstOrderGuard?.customerEmail?.trim() ?? null,
-    ))
-  ) {
+      guardEmail,
+    ));
+  if (firstOrderBlocked) {
     return {
       ok: false,
       error: "โค้ดนี้สำหรับลูกค้าใหม่ที่สั่งซื้อครั้งแรกเท่านั้น",

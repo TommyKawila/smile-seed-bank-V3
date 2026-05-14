@@ -10,6 +10,7 @@ import {
   activeBrandRulesFromRows,
   type BrandPromotionRuleRow,
 } from "@/lib/cart-utils";
+import { isPromoQaBypassEmail } from "@/lib/promo-qa-bypass-email";
 import { applyWholesalePrice } from "@/lib/wholesale-utils";
 import type {
   CartItem,
@@ -376,15 +377,24 @@ export function useCart(): UseCartReturn {
 
         if (!res.ok) {
           const raw = typeof data?.error === "string" ? data.error : "";
+          const isNewCustomerOnly =
+            raw === "This code is for new customers only" ||
+            raw === "โค้ดนี้สำหรับลูกค้าใหม่ที่สั่งซื้อครั้งแรกเท่านั้น";
           const errMsg =
             raw === "Used"
               ? "This promo code has already been used"
               : raw === "Please login to use this code"
                 ? "Please sign in to use this promo code"
-                : raw === "This code is for new customers only"
-                  ? "This promo code is for new customers only"
-                  : raw || "Unable to apply this promo code";
-          setPromo({ code: null, discountAmount: 0, error: data?.requireLogin ? null : errMsg });
+                : isNewCustomerOnly && isPromoQaBypassEmail(customerEmail)
+                  ? null
+                  : isNewCustomerOnly
+                    ? "โค้ดนี้สำหรับลูกค้าใหม่ที่สั่งซื้อครั้งแรกเท่านั้น"
+                    : raw || "Unable to apply this promo code";
+          setPromo({
+            code: null,
+            discountAmount: 0,
+            error: data?.requireLogin ? null : errMsg,
+          });
           if (res.status === 401 && data?.requireLogin) {
             return { success: false, requireLogin: true, attemptedCode: parsed.data, message: data?.error };
           }
