@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-16
+- **Checkout variant net price:** `resolveListingUnitBaht` ใช้ `coerceDbPriceBaht` สำหรับ Prisma `Decimal`; ลำดับ `product_variants.price` (source `variant`) ก่อน `products.price` (`product_fallback`); JSDoc แก้จากของเก่าที่สลับลำดับ
+
+### บันทึกการทำงาน — 2026-05-15
+- **Shipping env defaults:** `lib/order-financials.ts` — `QUOTATION_SHIPPING_COST` จาก `NEXT_PUBLIC_SHIPPING_FEE` (fallback 50); `QUOTATION_SHIPPING_FREE_THRESHOLD` จาก `NEXT_PUBLIC_FREE_SHIPPING_THRESHOLD` (fallback 1000); parse ด้วย `Number` + finite check
+
 ### บันทึกการทำงาน — 2026-05-14
 - **Checkout strict grand total:** `lib/checkout-server-validate.ts` คิดยอดจาก `products.price` (fallback `product_variants.price`) ไม่ใช้ราคาจาก client; pipeline เดียวกับ `calculateCartSummary` (subtotal → exclusive discount → net → `shippingFeeForSubtotal` → total); `order_create` เทียบ `summary.total` กับ server แบบเต็มบาท เท่ากันทุกบิท ไม่ผ่านคืน 400 + `code: AMOUNT_MISMATCH` + `details`; fail ใช้ `console.error` รวม `clientValues`/`serverValues`/`dbPrices`; `lib/cart-utils.ts` sync net/total เป็น `net = subtotal − discount` แล้วบวกค่าส่ง; `app/api/storefront/orders/route.ts` ส่ง `details` กลับเมื่อ mismatch
 

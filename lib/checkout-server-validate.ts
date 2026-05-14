@@ -22,7 +22,7 @@ export type CheckoutValidationFailureDetails = {
     variantId: number;
     productId: number;
     unitBaht: number;
-    source: "product" | "variant_fallback";
+    source: "variant" | "product_fallback";
   }[];
 };
 
@@ -40,21 +40,34 @@ type VariantRow = {
   products: { id: bigint; name: string; price: unknown } | null;
 };
 
+/** Prisma Decimal / string / number → finite THB or NaN. */
+function coerceDbPriceBaht(raw: unknown): number {
+  if (raw == null) return NaN;
+  if (typeof raw === "object" && raw !== null && typeof (raw as { toString?: () => string }).toString === "function") {
+    const n = Number((raw as { toString: () => string }).toString());
+    return Number.isFinite(n) ? n : NaN;
+  }
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+/**
+ * Net unit price for checkout: `product_variants.price` is the final selling price per package
+ * (e.g. 2-seed line). Use it first; `products.price` is legacy / base fallback only when variant is missing or ≤ 0.
+ */
 function resolveListingUnitBaht(v: VariantRow): {
   unitBaht: number;
-  source: "product" | "variant_fallback";
+  source: "variant" | "product_fallback";
 } {
-  const variantPrice = Number(v.price);
-  const rawProduct =
-    v.products?.price != null && v.products.price !== undefined
-      ? Number(v.products.price)
-      : NaN;
-  if (Number.isFinite(rawProduct) && rawProduct > 0) {
-    return { unitBaht: roundCheckoutBahtWhole(rawProduct), source: "product" };
+  const variantPrice = coerceDbPriceBaht(v.price);
+  if (variantPrice > 0) {
+    return { unitBaht: roundCheckoutBahtWhole(variantPrice), source: "variant" };
   }
+  const rawProduct = coerceDbPriceBaht(v.products?.price);
+  const productPrice = rawProduct > 0 ? rawProduct : 0;
   return {
-    unitBaht: roundCheckoutBahtWhole(variantPrice),
-    source: "variant_fallback",
+    unitBaht: roundCheckoutBahtWhole(productPrice),
+    source: "product_fallback",
   };
 }
 
@@ -117,8 +130,8 @@ function snapSummary(summary: CheckoutSummary): CheckoutSummary {
 }
 
 /**
- * Server-side totals: DB listing prices (products.price, variant fallback), exclusive discounts,
- * whole-baht net, then ฿50 shipping unless net ≥ 1,000 (free).
+ * Server-side totals: `product_variants.price` per line (net package price), exclusive discounts,
+ * whole-baht net, then shipping from `shippingFeeForSubtotal`.
  */
 function buildCheckoutSummaryFromPaidItems(input: {
   paidItems: CartItem[];
@@ -163,7 +176,7 @@ function buildCheckoutSummaryFromPaidItems(input: {
 
 /**
  * Recomputes cart totals from DB prices + rules and rejects tampered payloads / bad grand totals.
- * Client line `price` is ignored for paid rows; totals use `products.price` with variant fallback.
+ * Client line `price` is ignored for paid rows; server uses `product_variants.price` (net per package), then `products.price` fallback.
  */
 export async function validateStorefrontCheckoutTotals(input: {
   items: LineIn[];
