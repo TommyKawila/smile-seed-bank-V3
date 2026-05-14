@@ -128,7 +128,6 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
     items,
     summary,
     promo,
-    tieredDiscountRules,
     isValidatingPromo,
     addToCart,
     removeFromCart,
@@ -443,7 +442,9 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
         {items.length > 0 && (
           <div className="space-y-3 border-t border-zinc-100 px-5 py-4">
             {/* Tier Progress */}
-            <DiscountProgressBar subtotal={summary.subtotal} rules={tieredDiscountRules} />
+            <DiscountProgressBar
+              netBeforeShipping={Math.max(0, summary.subtotal - summary.discount)}
+            />
 
             {/* Promo Code */}
             <div className="space-y-1.5">

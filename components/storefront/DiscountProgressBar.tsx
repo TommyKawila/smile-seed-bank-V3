@@ -1,41 +1,46 @@
 "use client";
 
-import type { TieredDiscountRule } from "@/lib/cart-utils";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatPrice } from "@/lib/utils";
+import { QUOTATION_SHIPPING_FREE_THRESHOLD } from "@/lib/order-financials";
+import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 
 interface DiscountProgressBarProps {
-  subtotal: number;
-  rules: TieredDiscountRule[];
+  /** Subtotal after brand discounts minus coupon (same basis as free-shipping rule). */
+  netBeforeShipping: number;
+  freeShippingThreshold?: number;
 }
 
-export function DiscountProgressBar({ subtotal, rules }: DiscountProgressBarProps) {
+/** Progress toward free shipping threshold (no tiered % discounts). */
+export function DiscountProgressBar({
+  netBeforeShipping,
+  freeShippingThreshold = QUOTATION_SHIPPING_FREE_THRESHOLD,
+}: DiscountProgressBarProps) {
   const { t, locale } = useLanguage();
-  if (!rules.length) return null;
+  const threshold = Math.max(0, Number(freeShippingThreshold) || 0);
+  if (threshold <= 0) return null;
 
-  const sorted = [...rules].sort((a, b) => a.min_spend - b.min_spend);
-  const currentTier = sorted.filter((r) => subtotal >= r.min_spend).pop();
-  const nextTier = sorted.find((r) => r.min_spend > subtotal);
+  const net = Math.max(0, roundCheckoutBahtWhole(netBeforeShipping));
 
-  if (!nextTier) {
-    return currentTier ? (
+  if (net >= threshold) {
+    return (
       <div className="rounded-xl bg-accent px-3 py-2 font-sans text-xs font-medium text-primary">
-        ✓ {t("รับส่วนลด", "You get")} {currentTier.discount_percent}% {t("แล้ว!", "off!")}
+        ✓ {t("คุณได้รับจัดส่งฟรีแล้ว!", "You qualify for free shipping!")}
       </div>
-    ) : null;
+    );
   }
 
-  const progress = Math.min(100, (subtotal / nextTier.min_spend) * 100);
-  const gap = nextTier.min_spend - subtotal;
+  const gap = threshold - net;
+  const progress = Math.min(100, (net / threshold) * 100);
   const hint =
     locale === "th"
-      ? `ซื้ออีก ${formatPrice(gap)} เพื่อรับส่วนลด ${nextTier.discount_percent}%`
-      : `Spend ${formatPrice(gap)} more to get ${nextTier.discount_percent}% off`;
+      ? `ซื้ออีก ${formatPrice(gap)} เพื่อจัดส่งฟรี`
+      : `Add ${formatPrice(gap)} more for free shipping`;
 
   return (
     <div className="space-y-2 font-sans">
       <div className="flex justify-end font-sans text-xs text-zinc-600">
-        <span className="tabular-nums">{formatPrice(nextTier.min_spend)}</span>
+        <span className="tabular-nums">{formatPrice(threshold)}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-zinc-200">
         <div

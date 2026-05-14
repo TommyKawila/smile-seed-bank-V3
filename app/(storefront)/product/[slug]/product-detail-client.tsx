@@ -15,12 +15,12 @@ import { useTranslations } from "@/hooks/use-translations";
 import { labelFloweringType } from "@/lib/cannabis-attributes";
 import { seedTypeDetailShort, sexTypeDetailShort } from "@/lib/seed-type-filter";
 import { cn, formatPrice } from "@/lib/utils";
+import { resolveListingUnitAfterBrand } from "@/lib/brand-promotion-checkout";
+import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 import {
   getClearancePercentOff,
   getDetailDisplayLinePrices,
   getEffectiveVariantPrice,
-  isVariantDiscountActive,
-  normalizeDiscountPercent,
 } from "@/lib/product-utils";
 import { isProductAggregateOutOfStock } from "@/lib/product-stock";
 import { seedsBreederHref } from "@/lib/breeder-slug";
@@ -29,7 +29,6 @@ import { StickyBuyBar } from "@/components/storefront/StickyBuyBar";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
-import { DiscountCountdown } from "@/components/storefront/DiscountCountdown";
 import { StockAlert } from "@/components/storefront/StockAlert";
 import {
   FeminizedSeedSpecChip,
@@ -224,7 +223,7 @@ export default function ProductDetailClient({
 }: {
   initialProduct: ProductFull | null;
 }) {
-  const { addToCart, openCart } = useCartContext();
+  const { addToCart, openCart, brandPromotionRules } = useCartContext();
   const { locale, t } = useLanguage();
   const { t: tMsg } = useTranslations();
 
@@ -280,7 +279,7 @@ export default function ProductDetailClient({
 
   const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (!product || !selectedVariant) return;
-    const unit = getEffectiveVariantPrice(product, Number(selectedVariant.price));
+    const unit = roundCheckoutBahtWhole(Number(selectedVariant.price ?? 0));
     const { error } = addToCart({
       variantId: selectedVariant.id,
       productId: product.id,
@@ -293,6 +292,7 @@ export default function ProductDetailClient({
       masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
       breeder_id: product.breeder_id ?? null,
       breederLogoUrl: product.breeders?.logo_url ?? null,
+      breederName: product.breeders?.name ?? null,
     });
     if (error) {
       toast.error(error);
@@ -367,20 +367,26 @@ export default function ProductDetailClient({
     activeVariants,
     selectedVariant
   );
-  const selectedDiscountActive = selectedVariant
-    ? isVariantDiscountActive(selectedVariant)
-    : false;
-  const selectedDiscountPct = selectedDiscountActive
-    ? normalizeDiscountPercent(selectedVariant?.discount_percent)
+  const rawListRounded = selectedVariant
+    ? roundCheckoutBahtWhole(Number(selectedVariant.price ?? 0))
     : 0;
-  const salePct = selectedDiscountPct > 0 ? selectedDiscountPct : clearancePct;
-  const discountEndsAt = selectedDiscountPct > 0 ? selectedVariant?.discount_ends_at : null;
+  const brandLine = resolveListingUnitAfterBrand(
+    rawListRounded,
+    product.breeders?.name ?? null,
+    brandPromotionRules,
+  );
+  const hasBrandSale =
+    brandLine.effectiveBaht < brandLine.baseBaht && brandLine.baseBaht > 0;
+  const displayEff = hasBrandSale ? brandLine.effectiveBaht : selectedEff;
+  const displayList = hasBrandSale ? brandLine.baseBaht : selectedList;
+  const brandPct = hasBrandSale ? brandLine.brandDiscountPercent : null;
+  const salePct = brandPct ?? clearancePct;
 
   const mainPriceLine =
     !selectedVariant
       ? "—"
-      : selectedEff > 0 || selectedDiscountPct === 100
-        ? formatPrice(selectedEff)
+      : displayEff > 0
+        ? formatPrice(displayEff)
         : t("สอบถาม", "Inquire");
 
   const preferredDesc = locale === "th" ? product.description_th : product.description_en;
@@ -446,20 +452,20 @@ export default function ProductDetailClient({
                 <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                   {salePct != null && salePct > 0 && (
                     <span className="rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/40">
-                      {selectedDiscountPct > 0
-                        ? t(`ลด ${salePct}%`, `${salePct}% OFF`)
+                      {hasBrandSale
+                        ? t(`แบรนด์ −${salePct}%`, `Brand −${salePct}%`)
                         : `−${salePct}%`}
                     </span>
                   )}
                   <div className="flex min-w-0 flex-col">
-                    {selectedVariant && selectedEff > 0 && selectedList > selectedEff && (
+                    {selectedVariant && displayEff > 0 && displayList > displayEff && (
                       <span
                         className={cn(
                           fontSansTabular,
                           "text-sm tabular-nums text-zinc-400 line-through"
                         )}
                       >
-                        {formatPrice(selectedList)}
+                        {formatPrice(displayList)}
                       </span>
                     )}
                     <span
@@ -471,7 +477,6 @@ export default function ProductDetailClient({
                       {mainPriceLine}
                     </span>
                     <div className="mt-1 flex min-h-6 flex-wrap gap-1.5">
-                      <DiscountCountdown endsAt={discountEndsAt} locale={locale} />
                       <StockAlert quantity={selectedVariant?.stock} locale={locale} />
                     </div>
                   </div>

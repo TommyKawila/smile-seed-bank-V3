@@ -136,16 +136,25 @@ export function BulkDiscountDialog({
         <DialogHeader>
           <DialogTitle>Bulk Discount by Breeder</DialogTitle>
           <DialogDescription>
-            ตั้งส่วนลดแบบตรงให้ทุก pack ของ breeder ที่เลือก / Apply direct discount to all packs.
+            เขียนลงคอลัมน์ variant ใน DB — หน้าร้านไม่ใช้คอลัมน์นี้คิดราคาแล้ว / Writes DB columns only; storefront
+            pricing uses{" "}
+            <span className="font-medium">Brand promotions</span>.
           </DialogDescription>
         </DialogHeader>
 
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           <div className="flex gap-2">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>
-              การทำงานนี้จะ override `discount_percent` และ `discount_ends_at` เดิมของ breeder นี้ทั้งหมด.
-            </p>
+            <div className="space-y-2">
+              <p>
+                การทำงานนี้จะเขียน `discount_percent` / `discount_ends_at` ให้ทุก pack ของ breeder นี้ (override ค่าเดิม).
+              </p>
+              <p className="text-amber-950/90">
+                ราคาที่ลูกค้าเห็นและจ่ายใช้กฎที่{" "}
+                <span className="font-medium text-amber-950">Admin → Promotions → Brand promotions</span> เท่านั้น
+                (0% = แสดงราคาเต็มจาก `price`).
+              </p>
+            </div>
           </div>
         </div>
 

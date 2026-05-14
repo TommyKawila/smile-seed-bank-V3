@@ -525,6 +525,14 @@ export default function PromotionsPage() {
         </div>
       </div>
 
+      <p className="rounded-lg border border-primary/15 bg-primary/[0.06] px-3 py-2 text-xs text-zinc-800">
+        <span className="font-medium text-primary">Storefront pricing:</span> ใช้{" "}
+        <Link href="/admin/promotions/brands" className="underline underline-offset-2">
+          Brand promotions
+        </Link>{" "}
+        เท่านั้น — คอลัมน์ส่วนลดบน variant (รวมถึง Bulk Discount ด้านล่าง) ไม่ถูกนำไปคิดราคาหน้าร้านอีกต่อไป
+      </p>
+
       <Card className="border-primary/10">
         <CardHeader className="pb-0">
           <CardTitle className="text-base text-primary">Active Bulk Discount Campaigns</CardTitle>

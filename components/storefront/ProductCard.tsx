@@ -15,17 +15,16 @@ import type {
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { getGeneticPercents } from "@/components/storefront/ProductSpecs";
 import { formatPrice } from "@/lib/utils";
+import { resolveListingUnitAfterBrand } from "@/lib/brand-promotion-checkout";
 import {
-  calculateDiscountedPrice,
   computeStartingPrice,
   getClearancePercentOff,
   getEffectiveListingPrice,
   getEffectiveVariantPrice,
   getStartingVariant,
   getStartingVariantLabel,
-  isVariantDiscountActive,
-  normalizeDiscountPercent,
 } from "@/lib/product-utils";
+import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { getProductAggregateStock } from "@/lib/product-stock";
 import { productDetailHref } from "@/lib/product-utils";
@@ -33,7 +32,6 @@ import { seedsBreederHref } from "@/lib/breeder-slug";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
-import { DiscountCountdown } from "@/components/storefront/DiscountCountdown";
 import { StockAlert } from "@/components/storefront/StockAlert";
 import { toast } from "sonner";
 
@@ -157,7 +155,7 @@ function ProductCardBase({
   imagePriority = false,
   disableOuterMotion = false,
 }: ProductCardProps) {
-  const { addToCart, openCart } = useCartContext();
+  const { addToCart, openCart, brandPromotionRules } = useCartContext();
   const { t, locale } = useLanguage();
   const loc = locale as "th" | "en";
   const aggregateStock = getProductAggregateStock(product);
@@ -187,14 +185,7 @@ function ProductCardBase({
     stopNavBubble(e);
     if (defaultVariant) {
       const variantListPrice = Number(defaultVariant.price ?? 0);
-      const directUnit = isVariantDiscountActive(defaultVariant)
-        ? calculateDiscountedPrice(
-            variantListPrice,
-            defaultVariant.discount_percent,
-            defaultVariant.discount_ends_at
-          )
-        : variantListPrice;
-      const unit = Math.min(getEffectiveVariantPrice(product, variantListPrice), directUnit);
+      const unit = roundCheckoutBahtWhole(variantListPrice);
       if (typeof addToCart !== "function") {
         toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
         return;
@@ -211,6 +202,7 @@ function ProductCardBase({
         masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
         breeder_id: product.breeder_id ?? null,
         breederLogoUrl: product.breeders?.logo_url ?? null,
+        breederName: product.breeders?.name ?? null,
       });
       if (error) {
         toast.error(localizedAddError(error));
@@ -254,50 +246,58 @@ function ProductCardBase({
       : "—";
   const genLetter = cardGeneticsLetter(product);
   const typePill = cardStrainTypeLabel(product) ?? genLetter;
+
+  type WithBrandListing = {
+    brand_listing_base_baht?: number;
+    brand_listing_effective_baht?: number;
+    brand_promotion_percent?: number | null;
+  };
+  const pb = product as WithBrandListing;
+  const rawListForBrand = (() => {
+    const vp = Number(defaultVariant?.price ?? 0);
+    if (vp > 0) return vp;
+    return Number((product as { price?: number | null }).price ?? 0) || 0;
+  })();
+
+  const brandResolved =
+    pb.brand_listing_base_baht != null && pb.brand_listing_effective_baht != null
+      ? {
+          baseBaht: pb.brand_listing_base_baht,
+          effectiveBaht: pb.brand_listing_effective_baht,
+          brandDiscountPercent: pb.brand_promotion_percent ?? null,
+        }
+      : resolveListingUnitAfterBrand(rawListForBrand, product.breeders?.name, brandPromotionRules);
+
+  const hasBrandSale =
+    brandResolved.effectiveBaht < brandResolved.baseBaht && brandResolved.baseBaht > 0;
+
   const listingFallbackPrice = getEffectiveListingPrice(product);
   const listRegular = Number(defaultVariant?.price ?? computeStartingPrice(product.product_variants));
-  const directCardPrice =
-    defaultVariant && isVariantDiscountActive(defaultVariant)
-      ? calculateDiscountedPrice(
-          listRegular,
-          defaultVariant.discount_percent,
-          defaultVariant.discount_ends_at
-        )
-      : listRegular;
   const listFrom = defaultVariant
-    ? Math.min(getEffectiveVariantPrice(product, listRegular), directCardPrice)
+    ? getEffectiveVariantPrice(product, listRegular)
     : listingFallbackPrice;
   const clearancePct = getClearancePercentOff(product);
-  const activeDiscountVariants = (product.product_variants ?? []).filter((variant) => {
-    if (variant.is_active === false || !isVariantDiscountActive(variant)) return false;
-    const listPrice = Number(variant.price ?? 0);
-    const discountedPrice = calculateDiscountedPrice(
-      listPrice,
-      variant.discount_percent,
-      variant.discount_ends_at
-    );
-    return listPrice > 0 && discountedPrice < listPrice;
-  });
-  const directDiscountPct = Math.max(
-    0,
-    ...activeDiscountVariants
-      .map((variant) => normalizeDiscountPercent(variant.discount_percent))
-  );
-  const salePct = directDiscountPct > 0 ? directDiscountPct : clearancePct;
-  const priceLabel = listFrom > 0 || directDiscountPct === 100
-    ? formatPrice(listFrom)
-    : t("สอบถาม", "Inquire");
-  const showStrike = listRegular > listFrom;
+
+  const priceLabel = (() => {
+    if (hasBrandSale) {
+      if (brandResolved.effectiveBaht > 0) return formatPrice(brandResolved.effectiveBaht);
+      return t("สอบถาม", "Inquire");
+    }
+    return listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire");
+  })();
+
+  const showStrike = hasBrandSale
+    ? brandResolved.baseBaht > brandResolved.effectiveBaht
+    : listRegular > listFrom;
+  const strikeDisplay = hasBrandSale ? brandResolved.baseBaht : listRegular;
+
+  const topLeftSalePct = hasBrandSale
+    ? brandResolved.brandDiscountPercent ??
+      Math.round((1 - brandResolved.effectiveBaht / brandResolved.baseBaht) * 100)
+    : clearancePct;
   const seedsPackLabel = getStartingVariantLabel(product.product_variants, locale);
-  const discountEndsAt =
-    defaultVariant && isVariantDiscountActive(defaultVariant)
-      ? defaultVariant.discount_ends_at
-      : null;
   const stockAlert = defaultVariant && !outOfStock ? (
     <StockAlert quantity={defaultVariant.stock} locale={locale} className="h-5 text-[10px]" />
-  ) : null;
-  const countdown = discountEndsAt ? (
-    <DiscountCountdown endsAt={discountEndsAt} locale={locale} className="h-5 text-[10px]" />
   ) : null;
 
   const cardInner = (
@@ -323,10 +323,12 @@ function ProductCardBase({
               />
             )}
           </Link>
-          {salePct ? (
+          {topLeftSalePct ? (
             <div className="absolute left-2 top-2 z-20">
               <span className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/40">
-                {t(`ลด ${salePct}%`, `Sale ${salePct}%`)}
+                {hasBrandSale
+                  ? t(`แบรนด์ −${topLeftSalePct}%`, `Brand −${topLeftSalePct}%`)
+                  : t(`ลด ${topLeftSalePct}%`, `Sale ${topLeftSalePct}%`)}
               </span>
             </div>
           ) : null}
@@ -361,7 +363,7 @@ function ProductCardBase({
             <Link
               href={seedsBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
-              className={`absolute left-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-white shadow-md ring-2 ring-white transition-transform hover:scale-105 ${salePct ? "top-10" : "top-2"}`}
+              className={`absolute left-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-white shadow-md ring-2 ring-white transition-transform hover:scale-105 ${topLeftSalePct ? "top-10" : "top-2"}`}
               aria-label={product.breeders.name}
             >
               <BreederLogoImage
@@ -447,15 +449,14 @@ function ProductCardBase({
                 ) : null}
                 {showStrike && (
                   <p className="text-xs tabular-nums text-zinc-400 line-through">
-                    {formatPrice(listRegular)}
+                    {formatPrice(strikeDisplay)}
                   </p>
                 )}
                 <p className="text-[15px] font-bold tabular-nums text-primary">
                   {priceLabel}
                 </p>
-                {(countdown || stockAlert) && (
+                {stockAlert && (
                   <div className="mt-1 flex min-h-5 flex-wrap justify-center gap-1">
-                    {countdown}
                     {stockAlert}
                   </div>
                 )}
@@ -487,15 +488,14 @@ function ProductCardBase({
                     ) : null}
                     {showStrike && (
                       <p className="text-xs tabular-nums text-zinc-400 line-through">
-                        {formatPrice(listRegular)}
+                        {formatPrice(strikeDisplay)}
                       </p>
                     )}
                     <p className="text-[15px] font-bold tabular-nums text-zinc-500">
                       {priceLabel}
                     </p>
-                    {(countdown || stockAlert) && (
+                    {stockAlert && (
                       <div className="mt-1 flex min-h-5 flex-wrap justify-center gap-1">
-                        {countdown}
                         {stockAlert}
                       </div>
                     )}
@@ -520,15 +520,14 @@ function ProductCardBase({
                     ) : null}
                     {showStrike && (
                       <p className="text-xs tabular-nums text-zinc-400 line-through">
-                        {formatPrice(listRegular)}
+                        {formatPrice(strikeDisplay)}
                       </p>
                     )}
                     <p className="text-[15px] font-bold tabular-nums text-primary">
                       {priceLabel}
                     </p>
-                    {(countdown || stockAlert) && (
+                    {stockAlert && (
                       <div className="mt-1 flex min-h-5 flex-wrap gap-1">
-                        {countdown}
                         {stockAlert}
                       </div>
                     )}

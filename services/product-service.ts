@@ -5,6 +5,12 @@ import {
   type ProductWithBreederAndVariants,
 } from "@/lib/supabase/types";
 import { logger } from "@/lib/logger";
+import {
+  enrichProductsWithBrandListing,
+  loadActiveBrandPromotionRules,
+  type ListingBaseProduct,
+  type ProductWithBrandListing,
+} from "@/lib/product-brand-listing";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import {
@@ -89,6 +95,14 @@ function sanitizeProductTextFields<T>(row: T): T {
     }
   }
   return row;
+}
+
+async function withBrandListingEnrichment<T extends ListingBaseProduct>(
+  rows: T[],
+): Promise<(T & ProductWithBrandListing)[]> {
+  if (rows.length === 0) return [];
+  const rules = await loadActiveBrandPromotionRules();
+  return enrichProductsWithBrandListing(rows, rules);
 }
 
 function normalizeProductFullRow(data: ProductFull): ProductFull {
@@ -224,7 +238,7 @@ export async function getNewArrivals(limit = 8) {
     if (error) return { data: null, error: error.message };
     const rows = (data ?? []) as ProductWithBreederAndVariants[];
     for (const row of rows) sanitizeProductTextFields(row);
-    return { data: rows, error: null };
+    return { data: await withBrandListingEnrichment(rows), error: null };
   } catch (err) {
     logger.error("product-service.getNewArrivals failed", { cause: err });
     return {
@@ -404,7 +418,7 @@ export async function getMixedBreederProducts(
 
     const out = interleaveBreederRows(rows.map(mapRawMixedBreederRow));
     for (const row of out) sanitizeProductTextFields(row);
-    return { data: out, error: null };
+    return { data: await withBrandListingEnrichment(out), error: null };
   } catch (err) {
     logger.error("product-service.getMixedBreederProducts failed", { cause: err });
     return {
@@ -531,7 +545,7 @@ export async function getActiveProducts(opts?: {
       );
       const catalogHasMore = fetched.length === limit;
       return {
-        data: postSeedAndSanitize(rows),
+        data: await withBrandListingEnrichment(postSeedAndSanitize(rows)),
         error: null,
         catalogHasMore,
       };
@@ -558,7 +572,7 @@ export async function getActiveProducts(opts?: {
         rows.length > pageEndIndex || (Array.isArray(data) && data.length === MEM_BREEDER_SMART_CAP);
       const slice = rows.slice((page - 1) * limit, pageEndIndex);
       return {
-        data: postSeedAndSanitize(slice),
+        data: await withBrandListingEnrichment(postSeedAndSanitize(slice)),
         error: null,
         catalogHasMore,
       };
@@ -608,7 +622,7 @@ export async function getActiveProducts(opts?: {
     catalogHasMore = catalogHasMore || lastFetchLen === MEM_SCAN_CHUNK;
 
     return {
-      data: postSeedAndSanitize(sliced),
+      data: await withBrandListingEnrichment(postSeedAndSanitize(sliced)),
       error: null,
       catalogHasMore,
     };
@@ -657,7 +671,7 @@ export async function getClearanceStorefrontProducts(
     });
     const out = filtered.slice(0, limit);
     for (const row of out) sanitizeProductTextFields(row);
-    return { data: out, error: null };
+    return { data: await withBrandListingEnrichment(out), error: null };
   } catch (err) {
     logger.error("product-service.getClearanceStorefrontProducts failed", { cause: err });
     return {
@@ -684,7 +698,7 @@ export async function getFeaturedProducts(
     if (error) return { data: null, error: error.message };
     const rows = data as ProductWithBreeder[];
     for (const row of rows) sanitizeProductTextFields(row);
-    return { data: rows, error: null };
+    return { data: await withBrandListingEnrichment(rows), error: null };
   } catch (err) {
     logger.error("product-service.getFeaturedProducts failed", {
       cause: err,

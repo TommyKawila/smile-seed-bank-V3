@@ -1,3 +1,9 @@
+/**
+ * Legacy helpers: automatic tier / spend-tier + coupon exclusivity (`resolveExclusiveCartDiscounts`)
+ * are not used for storefront checkout totals — use `brand_promotions` + `promo_codes`
+ * (`lib/cart-utils.ts`, `lib/checkout-server-validate.ts`).
+ * Still used in production: `formatCouponValueDisplay`, `isCouponPercentageType` (admin + storefront coupon UI).
+ */
 import type { DiscountTier } from "@/types/supabase";
 import {
   type PromoInfo,

@@ -192,7 +192,7 @@ export function CheckoutPageClient({
   promptPay,
   lineId,
 }: CheckoutPageClientProps) {
-  const { items, summary, promo, tieredDiscountRules, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount, isLoadingRules } = useCartContext();
+  const { items, summary, promo, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount, isLoadingRules } = useCartContext();
   const { user, customer, isLoading: authLoading } = useAuth();
   const { locale, t } = useLanguage();
 
@@ -601,7 +601,9 @@ export function CheckoutPageClient({
 
                   <Separator />
 
-                  <DiscountProgressBar subtotal={summary.subtotal} rules={tieredDiscountRules} />
+                  <DiscountProgressBar
+                    netBeforeShipping={Math.max(0, summary.subtotal - summary.discount)}
+                  />
 
                   <p className="text-[11px] leading-relaxed text-zinc-500">
                     {t(

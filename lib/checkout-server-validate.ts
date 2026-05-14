@@ -1,10 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { evaluateFreeGifts, type TieredDiscountRule } from "@/lib/cart-utils";
-import { getActiveTieredDiscountRules } from "@/lib/active-tiered-discount-rules";
-import type { CartItem, DiscountTier, Promotion } from "@/types/supabase";
-import { resolveExclusiveCartDiscounts, type PromoInfo } from "@/lib/discount-utils";
+import {
+  evaluateFreeGifts,
+} from "@/lib/cart-utils";
+import type { CartItem, Promotion } from "@/types/supabase";
+import type { PromoInfo } from "@/lib/services/checkout-promo-math";
+import {
+  activeBrandRulesFromRows,
+  applyBrandPercentToUnitBaht,
+  matchBrandPromotionRule,
+  type BrandPromotionRuleRow,
+} from "@/lib/brand-promotion-checkout";
 import { bahtToSatangInt, roundCheckoutBahtWhole, satangIntToBaht } from "@/lib/money-thb";
 import { shippingFeeForSubtotal } from "@/lib/order-financials";
+import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-promo-math";
+import { customerHasCompletedOrderForFirstOrderPromo } from "@/lib/services/coupon-service";
 import type { CheckoutItem, CheckoutSummary } from "@/lib/services/order-service";
 
 type LineIn = {
@@ -15,6 +24,8 @@ type LineIn = {
   productName: string;
 };
 
+export type PriceSource = "variant" | "product_fallback" | "brand_promotion";
+
 export type CheckoutValidationFailureDetails = {
   clientValues: CheckoutSummary;
   serverValues: CheckoutSummary;
@@ -22,7 +33,7 @@ export type CheckoutValidationFailureDetails = {
     variantId: number;
     productId: number;
     unitBaht: number;
-    source: "variant" | "product_fallback";
+    source: PriceSource;
   }[];
 };
 
@@ -37,13 +48,22 @@ type VariantRow = {
   product_id: bigint | null;
   unit_label: string;
   price: unknown;
-  products: { id: bigint; name: string; price: unknown } | null;
+  products: {
+    id: bigint;
+    name: string;
+    price: unknown;
+    breeders: { name: string } | null;
+  } | null;
 };
 
 /** Prisma Decimal / string / number → finite THB or NaN. */
-function coerceDbPriceBaht(raw: unknown): number {
+export function coerceDbPriceBaht(raw: unknown): number {
   if (raw == null) return NaN;
-  if (typeof raw === "object" && raw !== null && typeof (raw as { toString?: () => string }).toString === "function") {
+  if (
+    typeof raw === "object" &&
+    raw !== null &&
+    typeof (raw as { toString?: () => string }).toString === "function"
+  ) {
     const n = Number((raw as { toString: () => string }).toString());
     return Number.isFinite(n) ? n : NaN;
   }
@@ -52,23 +72,34 @@ function coerceDbPriceBaht(raw: unknown): number {
 }
 
 /**
- * Net unit price for checkout: `product_variants.price` is the final selling price per package
- * (e.g. 2-seed line). Use it first; `products.price` is legacy / base fallback only when variant is missing or ≤ 0.
+ * Base unit from variant / product row, then brand % from `brandRules` vs breeder name — round after brand.
  */
-function resolveListingUnitBaht(v: VariantRow): {
-  unitBaht: number;
-  source: "variant" | "product_fallback";
-} {
+function resolveListingUnitBaht(
+  v: VariantRow,
+  brandRules: BrandPromotionRuleRow[],
+): { unitBaht: number; source: PriceSource } {
   const variantPrice = coerceDbPriceBaht(v.price);
+  let base: number;
+  let baseSource: "variant" | "product_fallback";
   if (variantPrice > 0) {
-    return { unitBaht: roundCheckoutBahtWhole(variantPrice), source: "variant" };
+    base = roundCheckoutBahtWhole(variantPrice);
+    baseSource = "variant";
+  } else {
+    const rawProduct = coerceDbPriceBaht(v.products?.price);
+    const productPrice = rawProduct > 0 ? rawProduct : 0;
+    base = roundCheckoutBahtWhole(productPrice);
+    baseSource = "product_fallback";
   }
-  const rawProduct = coerceDbPriceBaht(v.products?.price);
-  const productPrice = rawProduct > 0 ? rawProduct : 0;
-  return {
-    unitBaht: roundCheckoutBahtWhole(productPrice),
-    source: "product_fallback",
-  };
+
+  const breederName = v.products?.breeders?.name ?? null;
+  const rule = matchBrandPromotionRule(brandRules, breederName);
+  if (rule && rule.discount_percent > 0 && base > 0) {
+    return {
+      unitBaht: applyBrandPercentToUnitBaht(base, rule.discount_percent),
+      source: "brand_promotion",
+    };
+  }
+  return { unitBaht: base, source: baseSource };
 }
 
 function mergeCheckoutDuplicateLines(rows: LineIn[]): LineIn[] {
@@ -129,39 +160,25 @@ function snapSummary(summary: CheckoutSummary): CheckoutSummary {
   };
 }
 
-/**
- * Server-side totals: `product_variants.price` per line (net package price), exclusive discounts,
- * whole-baht net, then shipping from `shippingFeeForSubtotal`.
- */
-function buildCheckoutSummaryFromPaidItems(input: {
+function buildStorefrontCheckoutSummary(input: {
   paidItems: CartItem[];
-  tiers: DiscountTier[];
-  tiered: TieredDiscountRule[];
   promoInfo: PromoInfo | null;
 }): CheckoutSummary {
-  const { paidItems, tiers, tiered, promoInfo } = input;
+  const { paidItems, promoInfo } = input;
   const subtotalSatang = paidItems.reduce(
     (s, i) => s + bahtToSatangInt(i.price * i.quantity),
     0,
   );
   const subtotal = roundCheckoutBahtWhole(satangIntToBaht(subtotalSatang));
 
-  const exclusive = resolveExclusiveCartDiscounts({
-    subtotal,
-    tieredRules: tiered,
-    discountTiers: tiers,
-    promoInfo,
-  });
-  const discount = roundCheckoutBahtWhole(
-    satangIntToBaht(
-      bahtToSatangInt(exclusive.tierDiscount) + bahtToSatangInt(exclusive.promoDiscount),
-    ),
-  );
+  const couponDiscount = promoInfo
+    ? roundCheckoutBahtWhole(computeCouponDiscountBahtOnSubtotal(subtotal, promoInfo))
+    : 0;
 
   const netBeforeShipping = Math.max(
     0,
     roundCheckoutBahtWhole(
-      satangIntToBaht(bahtToSatangInt(subtotal) - bahtToSatangInt(discount)),
+      satangIntToBaht(bahtToSatangInt(subtotal) - bahtToSatangInt(couponDiscount)),
     ),
   );
   const shipping = roundCheckoutBahtWhole(shippingFeeForSubtotal(netBeforeShipping));
@@ -171,23 +188,53 @@ function buildCheckoutSummaryFromPaidItems(input: {
     ),
   );
 
-  return { subtotal, discount, shipping, total };
+  return { subtotal, discount: couponDiscount, shipping, total };
+}
+
+const WELCOME10_CODE = "WELCOME10";
+
+function normalizePromoCode(code: string | null | undefined): string {
+  return String(code ?? "")
+    .trim()
+    .toUpperCase();
+}
+
+function clientSummaryMatchesServer(
+  purpose: "order_create" | "prompt_pay_preview",
+  client: CheckoutSummary,
+  server: CheckoutSummary,
+): boolean {
+  if (purpose === "prompt_pay_preview") {
+    return bahtToSatangInt(client.total) === bahtToSatangInt(server.total);
+  }
+  return (
+    bahtToSatangInt(client.subtotal) === bahtToSatangInt(server.subtotal) &&
+    bahtToSatangInt(client.discount) === bahtToSatangInt(server.discount) &&
+    bahtToSatangInt(client.shipping) === bahtToSatangInt(server.shipping) &&
+    bahtToSatangInt(client.total) === bahtToSatangInt(server.total)
+  );
 }
 
 /**
- * Recomputes cart totals from DB prices + rules and rejects tampered payloads / bad grand totals.
- * Client line `price` is ignored for paid rows; server uses `product_variants.price` (net per package), then `products.price` fallback.
+ * Recomputes cart totals from DB (variant → brand rules → coupon → shipping). Client line prices ignored for paid rows.
  */
 export async function validateStorefrontCheckoutTotals(input: {
   items: LineIn[];
   summary: CheckoutSummary;
   promo_code_id: number | null;
   purpose?: "order_create" | "prompt_pay_preview";
+  /** Required for WELCOME10 first-order guard when that promo is applied. */
+  firstOrderGuard?: { customerId: string | null; customerEmail: string | null };
 }): Promise<
   | { ok: true; resolvedItems: CheckoutItem[]; resolvedSummary: CheckoutSummary }
   | { ok: false; error: string; details?: CheckoutValidationFailureDetails }
 > {
-  const { items: rawLines, promo_code_id, purpose = "order_create" } = input;
+  const {
+    items: rawLines,
+    promo_code_id,
+    purpose = "order_create",
+    firstOrderGuard,
+  } = input;
   const clientSummary = snapSummary(input.summary);
 
   for (const row of rawLines) {
@@ -200,20 +247,39 @@ export async function validateStorefrontCheckoutTotals(input: {
   const mergedLines = mergeCheckoutDuplicateLines(rawLines);
   const variantIds = [...new Set(mergedLines.map((l) => l.variantId))].map((id) => BigInt(id));
 
-  const [variants, discountTierRows, promotionRows, tieredRules, promoRow] = await Promise.all([
+  const [variants, promotionRows, promoRow, brandRowsRaw] = await Promise.all([
     prisma.product_variants.findMany({
       where: { id: { in: variantIds }, is_active: true },
-      include: { products: { select: { id: true, name: true, price: true } } },
+      include: {
+        products: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            breeders: { select: { name: true } },
+          },
+        },
+      },
     }),
-    prisma.discount_tiers.findMany({ where: { is_active: true }, orderBy: { min_amount: "asc" } }),
     prisma.promotions.findMany({ where: { is_active: true } }),
-    getActiveTieredDiscountRules(),
     promo_code_id != null
       ? prisma.promo_codes.findFirst({
           where: { id: BigInt(promo_code_id), is_active: true },
         })
       : Promise.resolve(null),
+    prisma.brand_promotions.findMany({
+      where: { is_active: true },
+      orderBy: { id: "asc" },
+    }),
   ]);
+
+  const brandRules = activeBrandRulesFromRows(
+    brandRowsRaw.map((r) => ({
+      brand_name: r.brand_name,
+      discount_percent: r.discount_percent,
+      is_active: r.is_active,
+    })),
+  );
 
   const vmap = new Map<number, VariantRow>();
   for (const v of variants) {
@@ -230,12 +296,26 @@ export async function validateStorefrontCheckoutTotals(input: {
     return { ok: false, error: "Invalid or expired promo code" };
   }
 
+  if (
+    promoRow &&
+    normalizePromoCode(promoRow.code) === WELCOME10_CODE &&
+    (await customerHasCompletedOrderForFirstOrderPromo(
+      firstOrderGuard?.customerId?.trim() ?? null,
+      firstOrderGuard?.customerEmail?.trim() ?? null,
+    ))
+  ) {
+    return {
+      ok: false,
+      error: "โค้ดนี้สำหรับลูกค้าใหม่ที่สั่งซื้อครั้งแรกเท่านั้น",
+    };
+  }
+
   const paidLines = mergedLines.filter((l) => l.isFreeGift !== true);
   const giftLines = mergedLines.filter((l) => l.isFreeGift === true);
 
   const paidCartItemsDraft: CartItem[] = paidLines.map((line) => {
     const v = vmap.get(line.variantId)!;
-    const { unitBaht } = resolveListingUnitBaht(v);
+    const { unitBaht } = resolveListingUnitBaht(v, brandRules);
     const pid = v.product_id != null ? Number(v.product_id) : 0;
 
     return {
@@ -247,6 +327,7 @@ export async function validateStorefrontCheckoutTotals(input: {
       price: unitBaht,
       quantity: line.quantity,
       isFreeGift: false,
+      breederName: v.products?.breeders?.name ?? null,
     };
   });
 
@@ -259,7 +340,7 @@ export async function validateStorefrontCheckoutTotals(input: {
 
   const dbPrices: CheckoutValidationFailureDetails["dbPrices"] = paidCartItems.map((i) => {
     const v = vmap.get(i.variantId)!;
-    const { unitBaht, source } = resolveListingUnitBaht(v);
+    const { unitBaht, source } = resolveListingUnitBaht(v, brandRules);
     return {
       variantId: i.variantId,
       productId: i.productId,
@@ -291,7 +372,7 @@ export async function validateStorefrontCheckoutTotals(input: {
     is_active: p.is_active ?? false,
   }));
 
-  const expectedGifts = evaluateFreeGifts(paidCartItems, promotions, "TRANSFER")
+  const expectedGifts = evaluateFreeGifts(paidCartItems, promotions, "TRANSFER", brandRules)
     .filter((p) => p.reward_variant_id != null)
     .map((p) => ({
       variantId: Number(p.reward_variant_id),
@@ -310,15 +391,6 @@ export async function validateStorefrontCheckoutTotals(input: {
     return { ok: false, error: "ของแถมในตะกร้าไม่ตรงกับโปรโมชัน" };
   }
 
-  const tiers: DiscountTier[] = discountTierRows.map((t) => ({
-    id: Number(t.id),
-    min_amount: Number(t.min_amount),
-    discount_percentage: Number(t.discount_percentage),
-    is_active: t.is_active ?? true,
-  }));
-
-  const tiered: TieredDiscountRule[] = tieredRules;
-
   const promoInfo: PromoInfo | null =
     promoRow && promo_code_id != null
       ? {
@@ -327,29 +399,26 @@ export async function validateStorefrontCheckoutTotals(input: {
         }
       : null;
 
-  const serverSummary = buildCheckoutSummaryFromPaidItems({
+  const serverSummary = buildStorefrontCheckoutSummary({
     paidItems: paidCartItems,
-    tiers,
-    tiered,
     promoInfo,
   });
 
-  const grandTotalMismatch =
-    bahtToSatangInt(clientSummary.total) !== bahtToSatangInt(serverSummary.total);
+  const mismatch = !clientSummaryMatchesServer(purpose, clientSummary, serverSummary);
 
-  if (grandTotalMismatch) {
+  if (mismatch) {
     const details: CheckoutValidationFailureDetails = {
       clientValues: clientSummary,
       serverValues: serverSummary,
       dbPrices,
     };
     if (purpose === "prompt_pay_preview") {
-      console.warn("[checkout-server-validate] PromptPay preview: client grand total ignored", {
+      console.warn("[checkout-server-validate] PromptPay preview: client totals ignored", {
         ...details,
         diffBaht: clientSummary.total - serverSummary.total,
       });
     } else {
-      console.error("[checkout-server-validate] AMOUNT_MISMATCH", JSON.stringify(details));
+      console.error("[checkout-server-validate] CHECKOUT_MISMATCH", JSON.stringify(details));
       return {
         ok: false,
         error: "ยอดเงินไม่ตรงกับระบบ กรุณารีเฟรชหน้าแล้วลองใหม่",
@@ -362,7 +431,7 @@ export async function validateStorefrontCheckoutTotals(input: {
   const resolvedItems: CheckoutItem[] = normalizedForOrder.map((line) => {
     const v = vmap.get(line.variantId)!;
     const gift = line.isFreeGift === true;
-    const { unitBaht } = resolveListingUnitBaht(v);
+    const { unitBaht } = resolveListingUnitBaht(v, brandRules);
     return {
       variantId: line.variantId,
       quantity: line.quantity,

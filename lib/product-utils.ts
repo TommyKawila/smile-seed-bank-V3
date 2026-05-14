@@ -124,11 +124,6 @@ type StartingVariantPick = Pick<
 > &
   Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "final_price">>;
 
-type DiscountVariantPick = Pick<
-  ProductVariant,
-  "price" | "stock" | "is_active"
->;
-
 function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -139,40 +134,33 @@ export function normalizeDiscountPercent(value: unknown): number {
   return Math.min(100, Math.max(0, Math.floor(n)));
 }
 
+/**
+ * @deprecated Storefront and cart ignore `discount_percent` / `discount_ends_at`; use `brand_promotions` + variant `price`.
+ * Kept for backwards compatibility; always false so flash-sale UI does not trigger.
+ */
 export function isVariantDiscountActive(
-  variant: Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at">>,
-  now: Date = new Date()
+  _variant: Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at">>,
+  _now: Date = new Date()
 ): boolean {
-  if (normalizeDiscountPercent(variant.discount_percent) <= 0) return false;
-  const rawEndsAt = variant.discount_ends_at;
-  if (!rawEndsAt) return true;
-  const endsAt = new Date(rawEndsAt);
-  if (Number.isNaN(endsAt.getTime())) return false;
-  return now <= endsAt;
+  return false;
 }
 
+/** List price only (`product_variants.price`). Legacy variant % is ignored — see `brand_promotions`. */
 export function getVariantFinalPrice(
   variant: Pick<ProductVariant, "price"> & Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "final_price">>
 ): number {
   const price = Number(variant.price ?? 0);
   if (!Number.isFinite(price) || price <= 0) return 0;
-  if (!isVariantDiscountActive(variant)) return roundMoney(price);
-  const explicit = Number(variant.final_price ?? 0);
-  if (Number.isFinite(explicit) && explicit > 0) return roundMoney(explicit);
-  const discount = normalizeDiscountPercent(variant.discount_percent);
-  return roundMoney(price * (1 - discount / 100));
+  return roundMoney(price);
 }
 
+/** @deprecated Variant timed discount ignored; returns `roundMoney(price)`. */
 export function calculateDiscountedPrice(
   price: number,
-  discountPercent: unknown,
-  discountEndsAt?: string | null
+  _discountPercent: unknown,
+  _discountEndsAt?: string | null
 ): number {
-  return getVariantFinalPrice({
-    price,
-    discount_percent: normalizeDiscountPercent(discountPercent),
-    discount_ends_at: discountEndsAt ?? null,
-  });
+  return getVariantFinalPrice({ price });
 }
 
 export type TimeRemaining = {
@@ -234,35 +222,6 @@ export function computeStartingPrice(
   return Number(v.price ?? 0);
 }
 
-export function computeStartingFinalPrice(
-  variants: (DiscountVariantPick & Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "final_price" | "unit_label">>)[] | null | undefined
-): number {
-  if (!variants?.length) return 0;
-  const active = variants.filter((v) => v.is_active !== false);
-  const rows = active
-    .map((v) => ({
-      v,
-      finalPrice: getVariantFinalPrice(v),
-      stock: Number(v.stock ?? 0),
-      pack: parsePackFromUnitLabel(v.unit_label ?? ""),
-    }))
-    .filter((row) => row.finalPrice > 0);
-  if (rows.length === 0) return 0;
-  const pool = rows.some((row) => row.stock > 0)
-    ? rows.filter((row) => row.stock > 0)
-    : rows;
-  pool.sort((a, b) => a.finalPrice - b.finalPrice || a.pack - b.pack);
-  return pool[0]?.finalPrice ?? 0;
-}
-
-function hasActiveVariantDiscount(
-  variants: (Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "is_active">>)[] | null | undefined
-): boolean {
-  return Boolean(
-    variants?.some((variant) => variant.is_active !== false && isVariantDiscountActive(variant))
-  );
-}
-
 type ClearanceProductSlice = {
   is_clearance?: boolean | null;
   sale_price?: unknown;
@@ -271,16 +230,14 @@ type ClearanceProductSlice = {
   price?: number | null;
 };
 
-/** Storefront “from” price: clearance sale replaces starting variant price when set. */
+/** Storefront “from” price: list/`price` + optional clearance; variant `discount_percent` is ignored (use `brand_promotions`). */
 export function getEffectiveListingPrice(product: ClearanceProductSlice): number {
   const regular = computeStartingPrice(product.product_variants);
-  const discounted = computeStartingFinalPrice(product.product_variants);
-  const directPrice = hasActiveVariantDiscount(product.product_variants) ? discounted : regular;
   if (product.is_clearance === true) {
     const sale = Number(product.sale_price ?? 0);
-    if (sale > 0) return directPrice > 0 ? Math.min(sale, directPrice) : sale;
+    if (sale > 0) return regular > 0 ? Math.min(sale, regular) : sale;
   }
-  if (directPrice > 0) return directPrice;
+  if (regular > 0) return regular;
   const p = Number(product.price ?? 0);
   return Number.isFinite(p) ? p : 0;
 }

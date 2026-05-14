@@ -1301,6 +1301,13 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 </Button>
               )}
             </div>
+            <p className="mb-2 rounded-md border border-primary/15 bg-primary/[0.04] px-2.5 py-1.5 text-[11px] leading-snug text-zinc-700">
+              ส่วนลดตามแบรนด์ตั้งที่{" "}
+              <Link href="/admin/promotions/brands" className="font-medium text-primary underline-offset-2 hover:underline">
+                Brand promotions
+              </Link>
+              — ระบบไม่ใช้คอลัมน์ส่วนลดบน variant สำหรับราคาหน้าร้าน
+            </p>
             {getFieldError("variants") && (
               <p className="mb-2 text-xs text-red-500">{getFieldError("variants")}</p>
             )}

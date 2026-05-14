@@ -332,6 +332,15 @@ async function _hasCompletedOrder(
   return false;
 }
 
+/** For checkout: true if customer already has a paid/completed web order (e.g. WELCOME10 guard). */
+export async function customerHasCompletedOrderForFirstOrderPromo(
+  userId: string | null,
+  email: string | null
+): Promise<boolean> {
+  const sql = getSql();
+  return _hasCompletedOrder(sql, userId, email);
+}
+
 // ─── hasUserUsedWelcomeCoupon ─────────────────────────────────────────────────
 
 /**

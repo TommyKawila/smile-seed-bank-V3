@@ -8,15 +8,35 @@ import {
 } from "@/lib/supabase/types";
 import { FLOWERING_DB_PHOTO_3N, FLOWERING_DB_PHOTO_PLAIN } from "@/lib/constants";
 import { buildProductCatalogSearchOrFilter } from "@/lib/product-catalog-search";
+import { activeBrandRulesFromRows } from "@/lib/brand-promotion-checkout";
+import {
+  attachBrandListingFields,
+  type ProductWithBrandListing,
+} from "@/lib/product-brand-listing";
 import { ProductSchema, type ProductFormData } from "@/lib/validations/product";
 import type { ProductFull } from "@/types/supabase";
-import { getVariantFinalPrice, normalizeDiscountPercent } from "@/lib/product-utils";
+import { withTimeout } from "@/lib/timeout";
 
 export type CategoryFilterMode = "fk" | "photo_3n" | "plain_photo";
 export type ProductListItem = ProductWithBreeder & {
   product_variants?: (ProductVariantRow & { final_price: number })[];
-};
+} & Partial<ProductWithBrandListing>;
 export type StrainDominance = "Mostly Indica" | "Mostly Sativa" | "Hybrid 50/50";
+
+async function fetchBrandRulesForListing() {
+  return withTimeout(
+    (async () => {
+      const r = await fetch("/api/storefront/brand-promotions", { cache: "no-store" });
+      if (!r.ok) return [];
+      const j = (await r.json()) as {
+        rules?: { brand_name: string; discount_percent: number; is_active: boolean }[];
+      };
+      return activeBrandRulesFromRows(j.rules ?? []);
+    })(),
+    2000,
+    [],
+  );
+}
 
 export interface ProductQueryOptions {
   category?: string;
@@ -103,22 +123,21 @@ export async function fetchProductsForCatalog(opts: ProductQueryOptions): Promis
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return applyDirectDiscounts((data ?? []) as ProductListItem[]);
+  const discounted = applyDirectDiscounts((data ?? []) as ProductListItem[]);
+  const rules = await fetchBrandRulesForListing();
+  return discounted.map((p) => attachBrandListingFields(p, rules));
 }
 
 function applyDirectDiscounts(rows: ProductListItem[]): ProductListItem[] {
   return rows.map((product) => ({
     ...product,
     product_variants: product.product_variants?.map((variant) => {
-      const discount_percent = normalizeDiscountPercent(variant.discount_percent);
+      const list = Number(variant.price ?? 0);
       return {
         ...variant,
-        discount_percent,
-        final_price: getVariantFinalPrice({
-          ...variant,
-          discount_percent,
-          discount_ends_at: variant.discount_ends_at ?? null,
-        }),
+        discount_percent: 0,
+        discount_ends_at: null,
+        final_price: Number.isFinite(list) && list > 0 ? list : 0,
       };
     }),
   }));
@@ -145,15 +164,12 @@ export async function fetchProductFull(idOrSlug: number | string): Promise<Produ
   const product = data as ProductFull;
   product.product_variants = (product.product_variants ?? []).filter((v) => v.is_active);
   product.product_variants = product.product_variants.map((variant) => {
-    const discount_percent = normalizeDiscountPercent(variant.discount_percent);
+    const list = Number(variant.price ?? 0);
     return {
       ...variant,
-      discount_percent,
-      final_price: getVariantFinalPrice({
-        ...variant,
-        discount_percent,
-        discount_ends_at: variant.discount_ends_at ?? null,
-      }),
+      discount_percent: 0,
+      discount_ends_at: null,
+      final_price: Number.isFinite(list) && list > 0 ? list : 0,
     };
   });
   return product;

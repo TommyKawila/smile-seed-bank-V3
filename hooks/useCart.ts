@@ -4,17 +4,16 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import {
-  evaluateDiscountTier,
-  generateUpsellMessage,
   evaluateFreeGifts,
   calculateCartSummary,
-  type TieredDiscountRule,
+  unitBahtAfterBrandForCartItem,
+  activeBrandRulesFromRows,
+  type BrandPromotionRuleRow,
 } from "@/lib/cart-utils";
 import { applyWholesalePrice } from "@/lib/wholesale-utils";
 import type {
   CartItem,
   CartSummary,
-  DiscountTier,
   ShippingRule,
   Promotion,
   PromoCode,
@@ -66,9 +65,9 @@ interface UseCartReturn {
   items: CartItem[];
   summary: CartSummary;
   promo: PromoState;
-  tieredDiscountRules: TieredDiscountRule[];
   isLoadingRules: boolean;
   isValidatingPromo: boolean;
+  brandPromotionRules: BrandPromotionRuleRow[];
   addToCart: (item: Omit<CartItem, "isFreeGift">) => { error: string | null };
   removeFromCart: (variantId: number) => void;
   updateQuantity: (variantId: number, quantity: number) => { ok: boolean; maxStock?: number };
@@ -83,8 +82,7 @@ interface UseCartReturn {
 
 export function useCart(): UseCartReturn {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [discountTiers, setDiscountTiers] = useState<DiscountTier[]>([]);
-  const [tieredDiscountRules, setTieredDiscountRules] = useState<TieredDiscountRule[]>([]);
+  const [brandPromotionRules, setBrandPromotionRules] = useState<BrandPromotionRuleRow[]>([]);
   const [shippingRules, setShippingRules] = useState<ShippingRule[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [isLoadingRules, setIsLoadingRules] = useState(true);
@@ -116,7 +114,7 @@ export function useCart(): UseCartReturn {
     }
   }, [items]);
 
-  // ── Fetch discount tiers, tiered_discounts, shipping rules on mount ───────
+  // ── Fetch shipping rules, promotions, brand promotions on mount ───────────
   const refetchShippingRules = useCallback(async () => {
     try {
       const supabase = createClient();
@@ -133,25 +131,25 @@ export function useCart(): UseCartReturn {
       try {
         const supabase = createClient();
 
-        const [tiersRes, shippingRes, promoRes, tieredRes] = await Promise.all([
-          supabase
-            .from("discount_tiers")
-            .select("*")
-            .eq("is_active", true)
-            .order("min_amount", { ascending: true }),
+        const [shippingRes, promoRes, brandRes] = await Promise.all([
           supabase.from("shipping_rules").select("*"),
           supabase.from("promotions").select("*").eq("is_active", true),
-          fetch("/api/storefront/tiered-discounts").then((r) => (r.ok ? r.json() : [])),
+          fetch("/api/storefront/brand-promotions", { cache: "no-store" }).then((r) =>
+            r.ok ? r.json() : { rules: [] },
+          ),
         ]);
 
-        setDiscountTiers((tiersRes.data as DiscountTier[]) ?? []);
         setShippingRules((shippingRes.data as ShippingRule[]) ?? []);
         setPromotions((promoRes.data as Promotion[]) ?? []);
 
-        const tiered = Array.isArray(tieredRes) ? tieredRes : [];
-        setTieredDiscountRules(tiered);
+        const br =
+          brandRes && typeof brandRes === "object" && "rules" in brandRes
+            ? (brandRes as { rules: { brand_name: string; discount_percent: number; is_active: boolean }[] })
+                .rules
+            : [];
+        setBrandPromotionRules(activeBrandRulesFromRows(br ?? []));
       } catch {
-        setTieredDiscountRules([]);
+        setBrandPromotionRules([]);
       } finally {
         setIsLoadingRules(false);
       }
@@ -169,29 +167,26 @@ export function useCart(): UseCartReturn {
     return () => ch.close();
   }, [refetchShippingRules]);
 
-  // ── Cart summary: auto tier vs coupon are exclusive (best deal in discount-utils) ───
+  // ── Cart summary: brand % + coupon + shipping ─────────────────────────────
   const summary = useMemo((): CartSummary => {
-    const rules = tieredDiscountRules;
     const promoInfo = promo.code?.discount_type && promo.code?.discount_value != null
       ? { discount_type: promo.code.discount_type, discount_value: promo.code.discount_value }
       : null;
     return calculateCartSummary(
       items,
-      discountTiers,
       shippingRules,
       STOREFRONT_SHIPPING_CATEGORY,
-      0,
-      rules,
-      promoInfo
+      promoInfo,
+      brandPromotionRules,
     );
-  }, [items, discountTiers, tieredDiscountRules, shippingRules, promo.code]);
+  }, [items, shippingRules, promo.code, brandPromotionRules]);
 
   // ── Auto-apply free gifts when items change ───────────────────────────────
   useEffect(() => {
     if (promotions.length === 0) return;
 
     const nonGiftItems = items.filter((i) => !i.isFreeGift);
-    const triggeredGifts = evaluateFreeGifts(nonGiftItems, promotions, "TRANSFER");
+    const triggeredGifts = evaluateFreeGifts(nonGiftItems, promotions, "TRANSFER", brandPromotionRules);
 
     // Remove old free gifts, then add newly triggered ones
     const existingGiftIds = new Set(
@@ -225,7 +220,7 @@ export function useCart(): UseCartReturn {
         }));
       return [...withoutOldGifts, ...newGiftItems];
     });
-  }, [items, promotions]);
+  }, [items, promotions, brandPromotionRules]);
 
   // ─── Actions ───────────────────────────────────────────────────────────────
 
@@ -360,7 +355,10 @@ export function useCart(): UseCartReturn {
 
       const subtotal = items
         .filter((i) => !i.isFreeGift)
-        .reduce((s, i) => s + i.price * i.quantity, 0);
+        .reduce((s, i) => {
+          const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules);
+          return s + unit * i.quantity;
+        }, 0);
 
       try {
         const res = await fetch("/api/storefront/coupons/validate", {
@@ -429,7 +427,7 @@ export function useCart(): UseCartReturn {
         setIsValidatingPromo(false);
       }
     },
-    [items]
+    [items, brandPromotionRules]
   );
 
   const clearPromoCode = useCallback(() => {
@@ -463,9 +461,9 @@ export function useCart(): UseCartReturn {
     items,
     summary,
     promo,
-    tieredDiscountRules,
     isLoadingRules,
     isValidatingPromo,
+    brandPromotionRules,
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -476,6 +474,3 @@ export function useCart(): UseCartReturn {
     itemCount,
   };
 }
-
-// ─── Re-export pure helpers (import cart-utils directly for calculateShipping) ─
-export { evaluateDiscountTier, generateUpsellMessage };

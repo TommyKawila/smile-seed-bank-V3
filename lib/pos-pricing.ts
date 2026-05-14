@@ -5,17 +5,17 @@ import type { ProductVariantRow } from "@/lib/supabase/types";
 export type PosVariantPricing = {
   baseList: number;
   finalRetail: number;
-  /** Amount charged per unit after variant campaign + wholesale (cart / API line price). */
+  /** Unit charge after list/final retail + optional wholesale. */
   unitCharge: number;
-  /** List price shown struck-through before campaign (and wholesale on that list figure). */
+  /** Strikethrough list (with wholesale on that figure when applicable). */
   strikeDisplay: number;
-  /** True when struck list figure is materially above `unitCharge` (bulk-only, wholesale-only, or both). */
+  /** True when strikethrough list is above `unitCharge` (e.g. wholesale-only). */
   showListStrike: boolean;
 };
 
 /**
- * POS shelf + cart: align with storefront `getVariantFinalPrice` / `final_price` on variants
- * (bulk breeder discounts, timed `discount_ends_at`, then optional wholesale on top).
+ * POS shelf + cart: list `price` / optional `final_price` from service (no variant-column flash %);
+ * optional wholesale on top.
  */
 export function resolvePosVariantUnitPrice(
   variant: ProductVariantRow & { final_price?: number },

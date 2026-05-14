@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
     total: roundCheckoutBahtWhole(summary.total),
   };
 
+  let promptPaySessionEmail: string | null = null;
   if (resolvedCustomerId) {
     const supabase = await createClient();
     const {
@@ -137,6 +138,7 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
+    promptPaySessionEmail = user.email?.trim() ?? null;
   }
 
   try {
@@ -151,8 +153,11 @@ export async function POST(req: NextRequest) {
       summary,
       promo_code_id: resolvedPromoId,
       purpose: "prompt_pay_preview",
+      firstOrderGuard: {
+        customerId: resolvedCustomerId,
+        customerEmail: promptPaySessionEmail,
+      },
     });
-
     if (!priced.ok) {
       console.error("[promptpay-payload] POST validation failed", {
         PROMPTPAY_MERCHANT_ID: envMasked,

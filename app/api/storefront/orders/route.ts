@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
     const resolvedPromoId =
       resolvedCustomerId == null ? null : (promo_code_id ?? null);
 
+    let sessionUserEmail: string | null = null;
     if (resolvedCustomerId) {
       const supabase = await createClient();
       const {
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
       if (!user || user.id !== resolvedCustomerId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
+      sessionUserEmail = user.email?.trim() ?? null;
     }
 
     const effectivePromoId =
@@ -103,6 +105,8 @@ export async function POST(req: NextRequest) {
             .then((row) => (row ? resolvedPromoId : null))
         : null;
 
+    const firstOrderEmail = customer.email?.trim() || sessionUserEmail;
+
     const priced = await validateStorefrontCheckoutTotals({
       items: items.map((i) => ({
         variantId: i.variantId,
@@ -113,6 +117,10 @@ export async function POST(req: NextRequest) {
       })),
       summary,
       promo_code_id: effectivePromoId,
+      firstOrderGuard: {
+        customerId: resolvedCustomerId,
+        customerEmail: firstOrderEmail,
+      },
     });
     if (!priced.ok) {
       return NextResponse.json(

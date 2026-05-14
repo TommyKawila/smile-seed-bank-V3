@@ -3,7 +3,7 @@ import { getActiveTieredDiscountRules } from "@/lib/active-tiered-discount-rules
 
 export const dynamic = "force-dynamic";
 
-/** No hardcoded discounts — empty when no matching `promotion_rules`. */
+/** @deprecated Storefront cart no longer consumes this route; kept for compatibility. No hardcoded discounts — empty when no matching `promotion_rules`. */
 const FALLBACK: { min_spend: number; discount_percent: number }[] = [];
 
 export async function GET() {

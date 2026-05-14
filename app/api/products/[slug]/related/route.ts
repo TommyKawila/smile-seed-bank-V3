@@ -37,6 +37,6 @@ export async function GET(req: Request) {
 
   return NextResponse.json(
     { products: bigintToJson(result.data ?? []) },
-    { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } }
+    { headers: { "Cache-Control": "private, no-store, max-age=0, must-revalidate" } }
   );
 }
