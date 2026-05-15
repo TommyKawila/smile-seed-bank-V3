@@ -1,6 +1,9 @@
 "use client";
 
-import { BadgeDollarSign, ShoppingBag, TrendingUp, Warehouse } from "lucide-react";
+import BadgeDollarSign from "lucide-react/dist/esm/icons/badge-dollar-sign";
+import ShoppingBag from "lucide-react/dist/esm/icons/shopping-bag";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
+import Warehouse from "lucide-react/dist/esm/icons/warehouse";
 import { Card, CardContent } from "@/components/ui/card";
 
 export type FinancialScorecardStats = {

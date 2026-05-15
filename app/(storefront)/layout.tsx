@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { cookies } from "next/headers";
+import { BreederCatalogProvider } from "@/context/BreederCatalogContext";
 import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { magazineLocaleFromCookie } from "@/lib/magazine-bilingual";
@@ -7,14 +9,41 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import { StorefrontStructuredData } from "@/components/seo/StorefrontStructuredData";
 import { Navbar } from "@/components/storefront/Navbar";
-import { Footer } from "@/components/storefront/Footer";
-import { OfferManager } from "@/components/storefront/OfferManager";
-import { PromotionBanner } from "@/components/storefront/PromotionBanner";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { Toaster } from "@/components/ui/sonner";
-import { CartAnimation } from "@/components/storefront/CartAnimation";
-import { AgeVerificationGate } from "@/components/storefront/age-verification-gate";
-import { BrowserDetectionBanner } from "@/components/storefront/BrowserDetectionBanner";
+import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
+
+const AgeVerificationGate = dynamic(
+  () => import("@/components/storefront/age-verification-gate").then((m) => m.AgeVerificationGate),
+  { ssr: false }
+);
+
+const Footer = dynamic(
+  () => import("@/components/storefront/Footer").then((m) => ({ default: m.Footer })),
+  { ssr: false }
+);
+
+const OfferManager = dynamic(
+  () => import("@/components/storefront/OfferManager").then((m) => ({ default: m.OfferManager })),
+  { ssr: false }
+);
+
+const PromotionBanner = dynamic(
+  () => import("@/components/storefront/PromotionBanner").then((m) => ({ default: m.PromotionBanner })),
+  { ssr: false }
+);
+
+const BrowserDetectionBanner = dynamic(
+  () => import("@/components/storefront/BrowserDetectionBanner").then((m) => ({
+    default: m.BrowserDetectionBanner,
+  })),
+  { ssr: false }
+);
+
+const CartAnimation = dynamic(
+  () => import("@/components/storefront/CartAnimation").then((m) => ({ default: m.CartAnimation })),
+  { ssr: false }
+);
 
 export default async function StorefrontLayout({
   children,
@@ -26,27 +55,31 @@ export default async function StorefrontLayout({
 
   return (
     <LanguageProvider initialLocale={initialLocale}>
-      <AuthProvider>
-        <SiteSettingsProvider>
-          <CartProvider>
-            <CartAnimation />
-            <Toaster />
-            <BrowserDetectionBanner />
-            <AgeVerificationGate />
-            <Suspense fallback={null}>
-              <PromoReturnHandler />
-            </Suspense>
-            <PromotionBanner />
-            <StorefrontStructuredData />
-            <div className="flex min-h-screen flex-col">
-              <Navbar />
-              <main className="flex-1 bg-white">{children}</main>
-              <Footer />
-              <OfferManager />
-            </div>
-          </CartProvider>
-        </SiteSettingsProvider>
-      </AuthProvider>
+      <BreederCatalogProvider>
+        <AuthProvider>
+          <SiteSettingsProvider>
+            <CartProvider>
+              <CartAnimation />
+              <Toaster />
+              <BrowserDetectionBanner />
+              <AgeVerificationGate />
+              <Suspense fallback={null}>
+                <PromoReturnHandler />
+              </Suspense>
+              <PromotionBanner />
+              <StorefrontStructuredData />
+              <div className="flex min-h-screen flex-col">
+                <FramerLazyRoot>
+                  <Navbar />
+                  <main className="flex-1 bg-white pt-20 sm:pt-28">{children}</main>
+                  <Footer />
+                  <OfferManager />
+                </FramerLazyRoot>
+              </div>
+            </CartProvider>
+          </SiteSettingsProvider>
+        </AuthProvider>
+      </BreederCatalogProvider>
     </LanguageProvider>
   );
 }

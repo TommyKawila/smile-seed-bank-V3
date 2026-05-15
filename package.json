@@ -13,6 +13,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "analyze": "ANALYZE=true npm run build",
     "seed": "npx tsx prisma/seed.ts",
     "seed:magazine": "npx tsx prisma/seed-magazine.ts",
     "admin:set-password": "npx tsx scripts/set-admin-password.ts"
@@ -87,6 +88,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^14.2.35",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
     "@types/pg": "^8.18.0",

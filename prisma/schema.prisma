@@ -589,6 +589,7 @@ model homepage_sections {
   @@schema("public")
 }
 
+/// Legacy promo-strip carousel table (unused on storefront; home carousel uses `hero_banners`).
 model dynamic_banners {
   id               BigInt    @id @default(autoincrement())
   title_th         String?
@@ -609,6 +610,46 @@ model dynamic_banners {
   end_date         DateTime? @map("end_date") @db.Timestamptz(6)
 
   @@index([is_active, order_index, id], map: "dynamic_banners_active_order_idx")
+  @@schema("public")
+}
+
+/// Top-of-home fade carousel (`HomeHeroCarousel`); managed via `/admin/banners` + `hero-banner-service`.
+model hero_banners {
+  id          BigInt    @id @default(autoincrement())
+  name        String
+  title_th    String    @default("")
+  title_en    String?
+  active      Boolean   @default(true)
+  sort_order  Int       @default(0)
+  link_url    String?
+  desktop_th  String
+  desktop_en  String?
+  mobile_th   String?
+  mobile_en   String?
+  /// Optional #RRGGBB — fills split-hero panel when image aspect ≠ locked frame (see HomeHeroCarousel).
+  panel_bg_hex String?   @map("panel_bg_hex")
+  starts_at   DateTime? @db.Timestamptz(6)
+  ends_at     DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([active, sort_order, id], map: "hero_banners_active_sort_idx")
+  @@schema("public")
+}
+
+/// Marketing Hub — article body promo strip (`ArticleCampaignBanner`). Independent from `promotion_campaigns` article fields.
+model article_banners {
+  id                 BigInt   @id @default(autoincrement())
+  desktop_image_url  String?
+  mobile_image_url   String?
+  title_alt          String   @default("")
+  destination_url    String   @default("")
+  active             Boolean  @default(true)
+  sort_order         Int      @default(0)
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([active, sort_order, id], map: "article_banners_active_sort_idx")
   @@schema("public")
 }
 

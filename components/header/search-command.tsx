@@ -197,7 +197,7 @@ export function SearchCommand({
           "relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/80",
           triggerClassName
         )}
-        aria-label={t("เปิดการค้นหา", "Open search")}
+        aria-label={t("ค้นหาสินค้าและนำทาง", "Search products and navigate")}
       >
         <Search className="h-5 w-5 text-zinc-800 dark:text-zinc-100" />
         <kbd className="pointer-events-none absolute -bottom-1 left-1/2 hidden -translate-x-1/2 translate-y-full rounded border border-zinc-200 bg-zinc-50 px-1 font-mono text-[9px] text-zinc-500 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-400 sm:block">

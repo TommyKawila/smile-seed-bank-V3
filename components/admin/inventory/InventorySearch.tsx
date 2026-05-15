@@ -1,6 +1,7 @@
 "use client";
 
-import { Filter, Search } from "lucide-react";
+import Filter from "lucide-react/dist/esm/icons/filter";
+import Search from "lucide-react/dist/esm/icons/search";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

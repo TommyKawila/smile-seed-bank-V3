@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Leaf } from "lucide-react";
+import Leaf from "lucide-react/dist/esm/icons/leaf";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/context/LanguageContext";
@@ -89,6 +89,7 @@ export function AgeVerificationGate() {
           >
             <button
               type="button"
+              aria-label="Switch age gate language to Thai"
               onClick={() => setLocale("th")}
               className={cn(
                 "px-2.5 py-1.5 transition-colors",
@@ -101,6 +102,7 @@ export function AgeVerificationGate() {
             </button>
             <button
               type="button"
+              aria-label="Switch age gate language to English"
               onClick={() => setLocale("en")}
               className={cn(
                 "px-2.5 py-1.5 transition-colors",
@@ -120,8 +122,10 @@ export function AgeVerificationGate() {
                 alt="Smile Seed Bank"
                 width={160}
                 height={44}
+                sizes="160px"
                 className="h-10 w-auto object-contain"
-                unoptimized
+                priority={true}
+                fetchPriority="high"
               />
             ) : (
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-sm">

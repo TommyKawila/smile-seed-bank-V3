@@ -1,6 +1,9 @@
 "use client";
 
-import { BookOpen, FlaskConical, MessageSquare, Sparkles } from "lucide-react";
+import BookOpen from "lucide-react/dist/esm/icons/book-open";
+import FlaskConical from "lucide-react/dist/esm/icons/flask-conical";
+import MessageSquare from "lucide-react/dist/esm/icons/message-square";
+import Sparkles from "lucide-react/dist/esm/icons/sparkles";
 import { cn } from "@/lib/utils";
 const serif = "font-sans";
 const mono = "font-[family-name:var(--font-journal-product-mono)] tabular-nums";

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Leaf } from "lucide-react";
+import Leaf from "lucide-react/dist/esm/icons/leaf";
 import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 export function Footer() {
   const { t } = useLanguage();
@@ -40,7 +41,9 @@ export function Footer() {
                   width={120}
                   height={32}
                   className="h-8 w-auto object-contain"
-                  unoptimized
+                  sizes="120px"
+                  quality={78}
+                  unoptimized={shouldOffloadImageOptimization(settings.logo_main_url)}
                 />
               ) : (
                 <>

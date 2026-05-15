@@ -5,7 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Menu, X, Leaf, User, LogOut, Package } from "lucide-react";
+import Leaf from "lucide-react/dist/esm/icons/leaf";
+import LogOut from "lucide-react/dist/esm/icons/log-out";
+import Menu from "lucide-react/dist/esm/icons/menu";
+import Package from "lucide-react/dist/esm/icons/package";
+import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
+import User from "lucide-react/dist/esm/icons/user";
+import X from "lucide-react/dist/esm/icons/x";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -42,7 +48,7 @@ export function Navbar() {
     isCatalogPath ||
     scrolled;
   const { itemCount, isOpen, openCart, closeCart } = useCartContext();
-  const { locale, toggle, t } = useLanguage();
+  const { locale, setLocale, t } = useLanguage();
   const { settings } = useSiteSettings();
   const { user, customer, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -109,9 +115,10 @@ export function Navbar() {
                 alt="Smile Seed Bank"
                 width={224}
                 height={77}
+                priority={true}
+                fetchPriority="high"
+                sizes="(max-width: 640px) min(152px, 46vw), 224px"
                 className="h-11 w-auto max-w-[min(152px,46vw)] object-contain object-left sm:max-w-[200px] sm:h-[3.5rem] lg:max-w-none"
-                unoptimized
-                loading="lazy"
               />
             ) : (
               <>
@@ -142,13 +149,16 @@ export function Navbar() {
 
           {/* Right Side */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
-            {/* Language Toggle */}
-            <button
-              onClick={toggle}
-              className="flex items-center overflow-hidden rounded-sm border border-zinc-200/90 bg-white text-[11px] font-semibold text-zinc-700 shadow-sm transition-colors hover:border-emerald-300/80"
-              aria-label="Switch language"
+            {/* Language Toggle — two targets so each control has a unique accessible name */}
+            <div
+              className="flex overflow-hidden rounded-sm border border-zinc-200/90 bg-white text-[11px] font-semibold text-zinc-700 shadow-sm transition-colors hover:border-emerald-300/80"
+              role="group"
+              aria-label={t("เลือกภาษาเว็บไซต์", "Choose site language")}
             >
-              <span
+              <button
+                type="button"
+                aria-label={t("เปลี่ยนเป็นภาษาไทย", "Switch site language to Thai")}
+                onClick={() => setLocale("th")}
                 className={cn(
                   "px-2.5 py-1.5 transition-colors",
                   locale === "th"
@@ -157,8 +167,11 @@ export function Navbar() {
                 )}
               >
                 TH
-              </span>
-              <span
+              </button>
+              <button
+                type="button"
+                aria-label={t("เปลี่ยนเป็นภาษาอังกฤษ", "Switch site language to English")}
+                onClick={() => setLocale("en")}
                 className={cn(
                   "px-2.5 py-1.5 transition-colors",
                   locale === "en"
@@ -167,8 +180,8 @@ export function Navbar() {
                 )}
               >
                 EN
-              </span>
-            </button>
+              </button>
+            </div>
 
             <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} triggerClassName={iconBtnClass} />
             {/* User — Avatar dropdown or Login link */}
@@ -176,9 +189,10 @@ export function Navbar() {
               {user ? (
                 <>
                   <button
+                    type="button"
                     onClick={() => setUserMenuOpen((v) => !v)}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-900 transition-colors hover:bg-emerald-100"
-                    aria-label="Profile"
+                    aria-label={t("เปิดเมนูโปรไฟล์", "Open profile menu")}
                   >
                     {(customer?.full_name ?? user.email ?? "U").charAt(0).toUpperCase()}
                   </button>
@@ -212,6 +226,8 @@ export function Navbar() {
                           {t("ข้อมูลส่วนตัว", "Profile")}
                         </Link>
                         <button
+                          type="button"
+                          aria-label={t("ออกจากระบบ", "Sign Out")}
                           onClick={() => { void signOut().then(() => { router.push("/"); setUserMenuOpen(false); }); }}
                           className="flex w-full items-center gap-2.5 border-t border-zinc-100 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"
                         >
@@ -239,7 +255,7 @@ export function Navbar() {
               type="button"
               onClick={openCart}
               className={`relative flex h-10 w-10 items-center justify-center ${iconBtnClass}`}
-              aria-label={t("ตะกร้าสินค้า", "Cart")}
+              aria-label={t("เปิดตะกร้าสินค้า", "Open shopping cart")}
             >
               <span
                 className={cn(
@@ -266,9 +282,13 @@ export function Navbar() {
 
             {/* Hamburger — Mobile only */}
             <button
+              type="button"
               onClick={() => setMenuOpen((v) => !v)}
+              aria-expanded={menuOpen}
               className={`flex h-10 w-10 items-center justify-center md:hidden ${iconBtnClass}`}
-              aria-label={t("เมนู", "Menu")}
+              aria-label={
+                menuOpen ? t("ปิดเมนู", "Close menu") : t("เปิดเมนู", "Open menu")
+              }
             >
               {menuOpen ? (
                 <X className="h-5 w-5 text-zinc-800" />
@@ -321,7 +341,12 @@ export function Navbar() {
                       <User className="h-4 w-4 text-emerald-800" />
                       {t("โปรไฟล์ของฉัน", "My Profile")}
                     </Link>
-                    <button onClick={() => void signOut()} className="text-xs text-red-600">
+                    <button
+                      type="button"
+                      aria-label={t("ออกจากระบบ", "Sign Out")}
+                      onClick={() => void signOut()}
+                      className="text-xs text-red-600"
+                    >
                       {t("ออกจากระบบ", "Sign Out")}
                     </button>
                   </div>
@@ -337,18 +362,35 @@ export function Navbar() {
                 )}
               </div>
               {/* Language toggle inside mobile menu */}
-              <div className="mt-2 border-t border-gray-100 pt-2">
+              <div
+                className="mt-2 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-2"
+                role="group"
+                aria-label={t("เลือกภาษาเว็บไซต์", "Choose site language")}
+              >
                 <button
-                  onClick={toggle}
-                  className="flex items-center gap-2 text-sm font-medium text-zinc-600"
+                  type="button"
+                  onClick={() => setLocale("th")}
+                  className={cn(
+                    "text-sm font-medium text-zinc-600 underline-offset-2 hover:underline",
+                    locale === "th" && "font-bold text-emerald-800"
+                  )}
+                  aria-label={t("เปลี่ยนเป็นภาษาไทย", "Switch site language to Thai")}
                 >
-                  <span className={locale === "th" ? "font-bold text-emerald-800" : ""}>
-                    ภาษาไทย
-                  </span>
-                  <span className="text-zinc-300">|</span>
-                  <span className={locale === "en" ? "font-bold text-emerald-800" : ""}>
-                    English
-                  </span>
+                  ภาษาไทย
+                </button>
+                <span className="text-zinc-300" aria-hidden>
+                  |
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLocale("en")}
+                  className={cn(
+                    "text-sm font-medium text-zinc-600 underline-offset-2 hover:underline",
+                    locale === "en" && "font-bold text-emerald-800"
+                  )}
+                  aria-label={t("เปลี่ยนเป็นภาษาอังกฤษ", "Switch site language to English")}
+                >
+                  English
                 </button>
               </div>
             </motion.div>

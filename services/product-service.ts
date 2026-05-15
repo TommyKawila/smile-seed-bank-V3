@@ -59,6 +59,67 @@ type ServiceResult<T> = { data: T | null; error: string | null };
 
 const DEFAULT_ACTIVE_PRODUCTS_LIMIT = 50;
 const MAX_ACTIVE_PRODUCTS_LIMIT = 100;
+
+const STOREFRONT_LISTING_VARIANT_SELECT = {
+  id: true,
+  price: true,
+  stock: true,
+  is_active: true,
+  unit_label: true,
+  discount_percent: true,
+  discount_ends_at: true,
+} satisfies Prisma.product_variantsSelect;
+
+const STOREFRONT_LISTING_IMAGE_SELECT = {
+  id: true,
+  url: true,
+  variant_id: true,
+  is_main: true,
+  sort_order: true,
+} satisfies Prisma.product_imagesSelect;
+
+const STOREFRONT_HOME_CARD_PRODUCT_SELECT = {
+  id: true,
+  slug: true,
+  name: true,
+  price: true,
+  stock: true,
+  /** Already filtered by query `is_active: true`; included for client guards / serialization clarity. */
+  is_active: true,
+  sale_price: true,
+  is_clearance: true,
+  is_featured: true,
+  created_at: true,
+  is_pinned_new_arrival: true,
+  new_arrival_priority: true,
+  strain_dominance: true,
+  genetic_ratio: true,
+  thc_percent: true,
+  indica_ratio: true,
+  sativa_ratio: true,
+  breeder_id: true,
+  image_urls: true,
+  image_url: true,
+  breeders: {
+    select: { id: true, name: true, logo_url: true },
+  },
+  product_variants: {
+    where: { is_active: true },
+    orderBy: { price: "asc" },
+    select: STOREFRONT_LISTING_VARIANT_SELECT,
+  },
+  product_images: {
+    orderBy: { sort_order: "asc" },
+    select: STOREFRONT_LISTING_IMAGE_SELECT,
+  },
+} satisfies Prisma.productsSelect;
+
+const STOREFRONT_HOME_FEATURED_PRODUCT_SELECT = {
+  ...STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+  cbd_percent: true,
+  yield_info: true,
+} satisfies Prisma.productsSelect;
+
 /** Non–price sale: scan DB until exhausted or cap; do not narrow by `breeder_id` — promo matching is JS-only. */
 const SALE_SCAN_CHUNK = 800;
 const SALE_SCAN_MAX_ROUNDS = 600;
@@ -250,15 +311,7 @@ export async function getNewArrivals(limit = HOME_NEW_ARRIVALS_LIMIT) {
         { id: "desc" },
       ],
       take,
-      include: {
-        breeders: { select: { id: true, name: true, logo_url: true } },
-        product_categories: { select: { id: true, name: true } },
-        product_variants: {
-          where: { is_active: true },
-          orderBy: { price: "asc" },
-        },
-        product_images: { orderBy: { sort_order: "asc" } },
-      },
+      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
     });
 
     const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
@@ -995,18 +1048,16 @@ export async function getClearanceStorefrontProducts(
   limit = 24
 ): Promise<ServiceResult<ProductWithBreederAndVariants[]>> {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("products")
-      .select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
-      .eq("is_active", true)
-      .eq("is_clearance", true)
-      .order("id", { ascending: false })
-      .limit(Math.min(80, limit * 3));
+    const fetchTake = Math.min(48, Math.max(limit * 3, limit));
+    const rows = await prisma.products.findMany({
+      where: { is_active: true, is_clearance: true },
+      orderBy: [{ id: "desc" }],
+      take: fetchTake,
+      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+    });
 
-    if (error) return { data: null, error: error.message };
-    const rows = (data ?? []) as ProductWithBreederAndVariants[];
-    const filtered = rows.filter((p) => {
+    const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
+    const filtered = mapped.filter((p) => {
       const stock = computeTotalStock(p.product_variants ?? []);
       return stock > 0 && getEffectiveListingPrice(p) > 0;
     });
@@ -1036,20 +1087,17 @@ export async function getFeaturedProducts(
   limit = 12
 ): Promise<ServiceResult<ProductWithBreeder[]>> {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("products")
-      .select(PRODUCT_SELECT_WITH_BREEDER)
-      .eq("is_active", true)
-      .eq("is_featured", true)
-      .order("featured_priority", { ascending: true })
-      .order("id", { ascending: false })
-      .limit(limit);
+    const take = Math.min(MAX_ACTIVE_PRODUCTS_LIMIT, Math.max(1, Math.floor(limit)));
+    const rows = await prisma.products.findMany({
+      where: { is_active: true, is_featured: true },
+      orderBy: [{ featured_priority: "asc" }, { id: "desc" }],
+      take,
+      select: STOREFRONT_HOME_FEATURED_PRODUCT_SELECT,
+    });
 
-    if (error) return { data: null, error: error.message };
-    const rows = data as ProductWithBreeder[];
-    for (const row of rows) sanitizeProductTextFields(row);
-    return { data: await withBrandListingEnrichment(rows), error: null };
+    const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreeder[];
+    for (const row of mapped) sanitizeProductTextFields(row);
+    return { data: await withBrandListingEnrichment(mapped), error: null };
   } catch (err) {
     logger.error("product-service.getFeaturedProducts failed", {
       cause: err,

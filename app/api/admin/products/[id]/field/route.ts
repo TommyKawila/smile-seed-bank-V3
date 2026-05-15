@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -46,6 +47,7 @@ export async function PATCH(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    revalidateTag("storefront-home");
     return NextResponse.json({ productId });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

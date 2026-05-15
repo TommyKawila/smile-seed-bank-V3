@@ -29,8 +29,8 @@ export const DEFAULT_SECTION_FALLBACK_LABELS: Record<
 > = {
   hero: { label_th: "แบนเนอร์หลัก", label_en: "Hero" },
   promotion_banner: {
-    label_th: "แบนเนอร์โปรโมชัน (Carousel)",
-    label_en: "Promotion Banner",
+    label_th: "แบนเนอร์โปรโมชัน (คงที่ · ไม่ใช้งาน)",
+    label_en: "Promotion banner (legacy · unused)",
   },
   categories: { label_th: "เลือกสไตล์การปลูก", label_en: "Find your grow style" },
   breeder_showcase: {

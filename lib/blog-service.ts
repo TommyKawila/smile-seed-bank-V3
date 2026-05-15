@@ -3,7 +3,27 @@
  * UI stays in app/ and components/; keep queries here.
  */
 
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+
+/** List/card payloads only — excludes TipTap `content` / `raw_input` (large JSON/text). */
+const MAGAZINE_PUBLIC_POST_SELECT = {
+  id: true,
+  title: true,
+  title_en: true,
+  slug: true,
+  excerpt: true,
+  excerpt_en: true,
+  tagline: true,
+  tagline_en: true,
+  featured_image: true,
+  tags: true,
+  view_count: true,
+  published_at: true,
+  blog_categories: {
+    select: { id: true, name: true, slug: true },
+  },
+} satisfies Prisma.blog_postsSelect;
 
 export const MAGAZINE_TRENDING_MODE_KEY = "magazine_trending_mode";
 
@@ -59,7 +79,7 @@ export async function getRecentPublishedPosts(take = 6): Promise<MagazinePostPub
     where: { status: "PUBLISHED" },
     orderBy: { published_at: "desc" },
     take,
-    include: { blog_categories: true },
+    select: MAGAZINE_PUBLIC_POST_SELECT,
   });
   return rows.map(serializePost);
 }
@@ -140,7 +160,7 @@ export async function getHighlightPosts(poolSize = 24, take = 12): Promise<Magaz
     where: { is_highlight: true, status: "PUBLISHED" },
     orderBy: { updated_at: "desc" },
     take: poolSize,
-    include: { blog_categories: true },
+    select: MAGAZINE_PUBLIC_POST_SELECT,
   });
   return shuffle(rows).slice(0, take).map(serializePost);
 }
@@ -156,7 +176,7 @@ export async function getTrendingPosts(
       where: { status: "PUBLISHED" },
       orderBy: [{ manual_rank: "asc" }, { updated_at: "desc" }],
       take,
-      include: { blog_categories: true },
+      select: MAGAZINE_PUBLIC_POST_SELECT,
     });
     return rows.map(serializePost);
   }
@@ -164,7 +184,7 @@ export async function getTrendingPosts(
     where: { status: "PUBLISHED" },
     orderBy: [{ view_count: "desc" }, { published_at: "desc" }],
     take,
-    include: { blog_categories: true },
+    select: MAGAZINE_PUBLIC_POST_SELECT,
   });
   return rows.map(serializePost);
 }
@@ -258,7 +278,7 @@ export async function getRelatedMagazinePosts(
       where: { ...base, blog_categories: { slug: categorySlug } },
       orderBy: { published_at: "desc" },
       take,
-      include: { blog_categories: true },
+      select: MAGAZINE_PUBLIC_POST_SELECT,
     });
     if (fromCat.length >= take) return fromCat.map(serializePost);
     const rest = take - fromCat.length;
@@ -270,7 +290,7 @@ export async function getRelatedMagazinePosts(
       },
       orderBy: { published_at: "desc" },
       take: rest,
-      include: { blog_categories: true },
+      select: MAGAZINE_PUBLIC_POST_SELECT,
     });
     return [...fromCat, ...more].map(serializePost);
   }
@@ -279,7 +299,7 @@ export async function getRelatedMagazinePosts(
     where: base,
     orderBy: { published_at: "desc" },
     take,
-    include: { blog_categories: true },
+    select: MAGAZINE_PUBLIC_POST_SELECT,
   });
   return rows.map(serializePost);
 }

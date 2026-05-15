@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { assertAdmin } from "@/lib/auth-utils";
-import { createBanner, getAdminBanners, normalizeBannerApiBody } from "@/services/banner-service";
+import {
+  createHeroBanner,
+  getAdminHeroBanners,
+} from "@/services/hero-banner-service";
+import { normalizeHeroBannerBody } from "@/lib/hero-banner-admin";
 
-async function readJsonObject(req: Request): Promise<{ ok: true; body: Record<string, unknown> } | { ok: false; error: string }> {
+async function readJsonObject(
+  req: Request
+): Promise<{ ok: true; body: Record<string, unknown> } | { ok: false; error: string }> {
   try {
     const text = await req.text();
     if (!text.trim()) return { ok: true, body: {} };
@@ -20,9 +26,9 @@ async function readJsonObject(req: Request): Promise<{ ok: true; body: Record<st
 export async function GET() {
   try {
     await assertAdmin();
-    return NextResponse.json({ banners: await getAdminBanners() });
+    return NextResponse.json({ banners: await getAdminHeroBanners() });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Failed to load banners";
+    const message = e instanceof Error ? e.message : "Failed to load hero banners";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -36,23 +42,23 @@ export async function POST(req: Request) {
     }
     let normalized;
     try {
-      normalized = normalizeBannerApiBody(read.body);
+      normalized = normalizeHeroBannerBody(read.body);
     } catch (scheduleErr) {
-      const msg =
-        scheduleErr instanceof Error ? scheduleErr.message : "Invalid schedule";
+      const msg = scheduleErr instanceof Error ? scheduleErr.message : "Invalid schedule";
       return NextResponse.json({ error: msg }, { status: 400 });
     }
-    if (!normalized.desktop_image_th) {
-      return NextResponse.json(
-        { error: "Primary Thai desktop image (desktop_image_th) is required" },
-        { status: 400 }
-      );
+    if (!normalized.titleTh.trim()) {
+      return NextResponse.json({ error: "titleTh (Thai title / image alt) is required" }, { status: 400 });
     }
-    const banner = await createBanner(normalized);
+    if (!normalized.desktopTh.trim()) {
+      return NextResponse.json({ error: "desktopTh (Thai desktop image) is required" }, { status: 400 });
+    }
+    const banner = await createHeroBanner(normalized);
     revalidatePath("/");
+    revalidateTag("home-hero-banners");
     return NextResponse.json({ banner });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Failed to save banner";
+    const message = e instanceof Error ? e.message : "Failed to save hero banner";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

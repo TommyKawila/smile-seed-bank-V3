@@ -2,10 +2,14 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react"
+import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
+import X from "lucide-react/dist/esm/icons/x";
+import ZoomIn from "lucide-react/dist/esm/icons/zoom-in";
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { useLanguage } from "@/context/LanguageContext"
 import {
   buildDetailGalleryUrls,
   resolveDetailHeroUrl,
@@ -47,6 +51,7 @@ function Lightbox({
   startIndex: number
   name: string
 }) {
+  const { t } = useLanguage()
   const [index, setIndex] = React.useState(startIndex)
   const [scale, setScale] = React.useState(1)
   const [translate, setTranslate] = React.useState({ x: 0, y: 0 })
@@ -171,7 +176,7 @@ function Lightbox({
               type="button"
               onClick={() => go(-1)}
               className="absolute left-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white md:left-2"
-              aria-label="ก่อนหน้า"
+              aria-label={t("สไลด์ก่อนหน้า", "Previous Slide")}
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -202,7 +207,7 @@ function Lightbox({
               type="button"
               onClick={() => go(1)}
               className="absolute right-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white md:right-2"
-              aria-label="ถัดไป"
+              aria-label={t("สไลด์ถัดไป", "Next Slide")}
             >
               <ChevronRight className="h-6 w-6" />
             </button>
@@ -227,10 +232,11 @@ function Lightbox({
                 >
                   <Image
                     src={g.src}
-                    alt=""
+                    alt={g.alt || name || "Product"}
                     width={64}
                     height={64}
                     className="h-full w-full object-cover"
+                    sizes="64px"
                     unoptimized={shouldOffloadImageOptimization(g.src)}
                   />
                 </button>
@@ -258,6 +264,7 @@ export function ProductGallery({
   showAggregateSoldOut?: boolean
   soldOutLabel?: string
 }) {
+  const productTitle = product.name?.trim() || "Product"
   const images = React.useMemo(
     () => buildDetailGalleryUrls(product, selectedVariantId),
     [product, selectedVariantId]
@@ -271,9 +278,9 @@ export function ProductGallery({
     () =>
       images.map((src, i) => ({
         src,
-        alt: `${product.name} — ${i + 1}`,
+        alt: `${productTitle} — ${i + 1}`,
       })),
-    [images, product.name]
+    [images, productTitle]
   )
 
   const [selected, setSelected] = React.useState(0)
@@ -405,7 +412,7 @@ export function ProductGallery({
         onOpenChange={setLightbox}
         images={gallery}
         startIndex={selected}
-        name={product.name}
+        name={productTitle}
       />
     </div>
   )

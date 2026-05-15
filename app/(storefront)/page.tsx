@@ -1,18 +1,14 @@
 import { Suspense } from "react";
 import { unstable_cache } from "next/cache";
-import { Loader2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { HomeHeroCarouselSlot } from "@/components/storefront/HomeHeroCarouselSlot";
 import { HomePageClient } from "@/components/storefront/HomePageClient";
-import {
-  EMPTY_STOREFRONT_HOME_PAYLOAD,
-  getStorefrontHomePayload,
-} from "@/services/storefront-home-service";
+import { EMPTY_STOREFRONT_HOME_PAYLOAD } from "@/services/storefront-home-service";
 import {
   DEFAULT_HOME_SECTION_KEYS,
   DEFAULT_SECTION_FALLBACK_LABELS,
   type HomePageSectionPayload,
 } from "@/lib/homepage-sections";
-import { getActiveBanners } from "@/services/banner-service";
 
 const getSectionsCached = unstable_cache(
   async (): Promise<HomePageSectionPayload[]> => {
@@ -47,12 +43,14 @@ async function getSections(): Promise<HomePageSectionPayload[]> {
 }
 
 async function HomePageContent() {
-  const [sections, initialData, banners] = await Promise.all([
-    getSections(),
-    getStorefrontHomePayload().catch(() => EMPTY_STOREFRONT_HOME_PAYLOAD),
-    getActiveBanners().catch(() => []),
-  ]);
-  return <HomePageClient sections={sections} initialData={initialData} banners={banners} />;
+  const sections = await getSections();
+  return (
+    <HomePageClient
+      sections={sections}
+      initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
+      heroCarousel={<HomeHeroCarouselSlot />}
+    />
+  );
 }
 
 export default function HomePage() {
@@ -60,7 +58,10 @@ export default function HomePage() {
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 bg-white px-4 py-20">
-          <Loader2 className="h-10 w-10 animate-spin text-emerald-800" aria-hidden />
+          <div
+            className="h-10 w-10 animate-spin rounded-full border-2 border-emerald-800 border-t-transparent"
+            aria-hidden
+          />
           <p className="text-sm text-zinc-600">Loading…</p>
         </div>
       }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   ProductSchema,
@@ -114,6 +115,8 @@ export async function PATCH(
         unit_label: v.unit_label,
       }))
     );
+
+    revalidateTag("storefront-home");
 
     return NextResponse.json({ productId });
   } catch (err) {

@@ -1,7 +1,8 @@
 "use client";
 
 import type { RefObject } from "react";
-import { Search, XCircle } from "lucide-react";
+import Search from "lucide-react/dist/esm/icons/search";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 

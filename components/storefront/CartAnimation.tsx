@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { Sprout } from "lucide-react";
+import Sprout from "lucide-react/dist/esm/icons/sprout";
 import { toast } from "sonner";
 import { CART_FLY_EVENT, CART_HIT_EVENT, type CartFlyEventDetail, getNavCartButtonEl } from "@/lib/cart-fly-events";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";

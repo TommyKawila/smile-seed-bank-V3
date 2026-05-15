@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, Calendar, Tag } from "lucide-react";
+import BookOpen from "lucide-react/dist/esm/icons/book-open";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import Tag from "lucide-react/dist/esm/icons/tag";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatDate } from "@/lib/utils";
 import type { Blog } from "@/types/supabase";

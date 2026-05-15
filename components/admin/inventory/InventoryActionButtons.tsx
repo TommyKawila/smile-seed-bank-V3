@@ -1,6 +1,9 @@
 "use client";
 
-import { Loader2, Plus, RefreshCw, Sparkles } from "lucide-react";
+import Loader2 from "lucide-react/dist/esm/icons/loader-2";
+import Plus from "lucide-react/dist/esm/icons/plus";
+import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
+import Sparkles from "lucide-react/dist/esm/icons/sparkles";
 import { Button } from "@/components/ui/button";
 
 export function InventoryActionButtons({

@@ -4,6 +4,143 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Breeder catalog provider + GA lazyOnload + fetchPriority)
+- **`context/BreederCatalogContext.tsx`:** **`BreederCatalogProvider`** — **`fetchActiveBreeders`** ครั้งเดียวต่อ storefront layout subtree (Navbar / Ribbon / dropdown ใช้ context เดียวกัน)
+- **`hooks/useBreeders.ts`:** มี provider → อ่านจาก context; ไม่มี → fallback fetch เดิม (แอดมินที่อยู่นอก storefront layout)
+- **`app/(storefront)/layout.tsx`:** wrap **`BreederCatalogProvider`** ภายใต้ **`LanguageProvider`**
+- **`app/layout.tsx`:** GA **`next/script`** **`strategy="lazyOnload"`** (inline **`gtag`** config + **`googletagmanager.com/gtag/js`**); ลบ **`@next/third-parties/google`** **`GoogleAnalytics`**
+- **`ProductCard`:** **`fetchPriority="low"`** เมื่อ **`imagePriority`** = false
+- **`HomeInsightSection`:** blog card / featured image **`fetchPriority="low"`** + grid **`loading="lazy"`**
+
+### บันทึกการทำงาน — 2026-05-15 (Breeder fetch dedupe + GA third-parties + font hints)
+- **`services/breeder-service.ts`:** **`fetchActiveBreeders`** in-flight + **memory cache** (TTL **15m**) — ลดซ้ำเมื่อ **`useBreeders`** mount หลายครั้ง (Navbar / Ribbon / dropdown)
+- **`app/layout.tsx`:** **`@next/third-parties/google`** **`GoogleAnalytics`** แทน **`next/script`** คู่ manual; ลบ **`<link rel="preconnect" fonts.googleapis>`** (ฟอนต์ storefront = **`next/font`** self-host)
+- **`BreederDropdownMenu`:** ปุ่ม Seeds เพิ่ม **`aria-label`**
+
+### บันทึกการทำงาน — 2026-05-15 (Perf polish — age gate logo / hero sizes / nav a11y)
+- **`age-verification-gate`:** โลโก้ **`next/image`** ลบ **`unoptimized`** → **`priority`**, **`fetchPriority="high"`**, **`sizes="160px"`**; ปุ่ม TH/EN มี **`aria-label`** แยก
+- **`HeroCarouselSlideImages`:** **`sizes`** mobile **`min(100vw, 391px)`** / desktop cap **`640px`** — **ไม่มี** **`unoptimized`**
+- **`Navbar`:** ภาษา desktop + mobile = **`role="group"`** + ปุ่ม TH/EN แยก (**`type="button"`** + **`aria-label`** ไม่ซ้ำ); โปรไฟล์ / hamburger มี **`type`**
+- **`EMPTY_STOREFRONT_HOME_PAYLOAD`:** JSDoc ยืนยันแค่ array ว่าง; **`page.tsx`** comment ที่ **`initialData`**
+
+### บันทึกการทำงาน — 2026-05-15 (Home payload compact + a11y polish)
+- **`storefront-home-service`:** **`compactHomePayload`** — ตัด **`image_urls`** เมื่อมี **`product_images`**; doc ระบุ **`MAGAZINE_PUBLIC_POST_SELECT`** ไม่ดึง **`content` / `content_en` / `raw_input`**
+- **`Navbar`:** ปุ่ม Sign Out (desktop dropdown + mobile) เพิ่ม **`type="button"`** + **`aria-label`**
+- **`layout`:** **`AgeVerificationGate`** **`dynamic`** จัดบรรทัดให้อ่านง่าย (ยัง **`ssr: false`**)
+- **`HomePageClient`:** ลบ **`console.log`** ชั่วคราว (เก็บ **`console.error`** ใน catch)
+- **`Hero` EST. 2018:** มี **`text-emerald-950`** อยู่แล้วบนบล็อก mono
+
+### บันทึกการทำงาน — 2026-05-15 (Fix empty home rails — HOME_API_LIMIT + API timeout)
+- **`storefront-home-service`:** ประกาศ **`HOME_API_LIMIT`** (`HOME_STOREFRONT_HOME_API_SECTION_LIMIT`) — แก้ **`ReferenceError`** ที่ทำให้ **`/api/storefront/home`** ล้มทั้งก้อน; **`HOME_DATA_TIMEOUT_MS`** = **8000**
+- **`GET /api/storefront/home`:** เรียก **`getStorefrontHomePayload()`** ไม่ส่ง **2000ms** (เดิมทำให้ **`withTimeout`** คืนชุดว่างบ่อย)
+- **`product-service`:** home card select เพิ่ม **`is_active`**, **`image_urls`** (fallback รูป legacy)
+- **`HomePageClient`:** **`console.log("API Response:", …)`**, **`console.error`** ใน catch; **`fetchWithTimeout` 8000ms**
+
+### บันทึกการทำงาน — 2026-05-15 (Home API cap + layout/navbar force-pass)
+- **`lib/constants`:** **`HOME_STOREFRONT_HOME_API_SECTION_LIMIT`** = **4** — `GET /api/storefront/home` ดึง/slice โครงสร้างสูงสุด **4** ต่อ rail
+- **`storefront-home-service`:** `getNewArrivals` / clearance / magazine / featured slice ตาม limit นี้; comment อ้าง **`MAGAZINE_PUBLIC_POST_SELECT`** (ไม่มี `content` / `content_en` / `raw_input`)
+- **`Navbar`:** โลโก้จัดลำดับ prop **`priority`** / **`fetchPriority`** ก่อน **`sizes`** (ไม่มี `unoptimized` / `lazy`)
+- **`app/(storefront)/layout`:** **`AgeVerificationGate`** = **`dynamic(...).then(m => m.AgeVerificationGate)`** บรรทัดเดียว + **`ssr: false`**
+
+### บันทึกการทำงาน — 2026-05-15 (Home hero streaming — carousel Suspense slot)
+- **`services/hero-banner-service.ts`:** **`getHeroCarouselBannersCached`** (`unstable_cache` เดิมจากหน้าแรก)
+- **`HomeHeroCarouselSlot.tsx`:** RSC + **`Suspense`** → carousel โหลดแยก ไม่ถูก **`getSections()`** gate พร้อมกันใน **`Promise.all`**
+- **`app/(storefront)/page.tsx`:** **`heroCarousel={<HomeHeroCarouselSlot />}`** — carousel stream แยกจาก sections
+- **`app/(storefront)/layout.tsx`:** **`dynamic`** **`AgeVerificationGate`** เป็น **`.then((m) => m.AgeVerificationGate)`**
+
+### บันทึกการทำงาน — 2026-05-15 (Home API payload — blog select + slim product cards + hero quality)
+- **`lib/blog-service.ts`:** `MAGAZINE_PUBLIC_POST_SELECT` — list/carousel queries **ไม่ดึง** `content` / `content_en` / `raw_input` / AI fields (แก้ JSON ~MB ใน `/api/storefront/home` magazine slice)
+- **`product-service`:** `STOREFRONT_HOME_CARD_PRODUCT_SELECT` ตัด **`image_urls`**, **`category_id`**, **`product_categories`** (เก็บรายการที่การ์ดจำเป็น + `product_images`)
+- **`HeroCarouselSlideImages`:** mobile **`quality={60}`**, desktop **`65`**
+- **`age-verification-gate`:** Lucide **`leaf`** deep path
+
+### บันทึกการทำงาน — 2026-05-15 (Storefront layout — AgeVerificationGate client-only)
+- **`app/(storefront)/layout.tsx`:** **`AgeVerificationGate`** → **`next/dynamic`** **`{ ssr: false }`** (ไม่บล็อก render แรกของเลย์เอาต์)
+
+### บันทึกการทำงาน — 2026-05-15 (Perf polish — Navbar logo LCP + lucide UI + hero hydration)
+- **`Navbar`:** โลโก้ `next/image` → **`priority`**, **`fetchPriority="high"`**, **`sizes`**, ลบ **`unoptimized`** / **`loading="lazy"`** (ให้โหลดเร็วคู่กับ hero)
+- **`components/ui`:** **`command` / `toast` / `sheet`** → Lucide **`lucide-react/dist/esm/icons/*`** (เหลือ **`LucideIcon` type** ใน **`empty-state`**)
+- **`HomeHeroCarousel`:** wrapper สไลด์แรก **`suppressHydrationWarning`** (ลด mismatch/แฟลชจาก hybrid client tree)
+- **ตรวจ leak:** ไม่มี **`@react-pdf/renderer` / exceljs / jspdf** ใน **`app/(storefront)`**
+
+### บันทึกการทำงาน — 2026-05-15 (Critical perf — LCP hero split + bundle + Prisma home)
+- **`HomeHeroCarousel`:** สไลด์แรก = **`div` + `HeroCarouselSlideImages`** (ไม่มี Framer); สไลด์ 2+ โหลด **`HomeHeroCarouselMotion`** ผ่าน **`next/dynamic` `ssr: false`** แยก chunk
+- **`next.config.mjs`:** **`experimental.optimizePackageImports`** → `lucide-react`, `framer-motion`, `@radix-ui/react-icons`
+- **`services/product-service`:** **`STOREFRONT_HOME_FEATURED_PRODUCT_SELECT`** ตัด **`description_th` / `description_en`** — featured note ใช้ genetics/strain_dominance/THC ใน **`ShopGeneticVaultHero`**
+- **`ShopGeneticVaultHero` / `Hero` / `ClearanceSection` / `SearchCommand`:** contrast + **`aria-label`** (previous PR + restore partial)
+- **`lib/promotion-utils.ts`:** stub **`applyPromotions`** + types — แก้ import หายใน POS create order build
+- **หมายเหตุ:** bulk codemod lucide deep-import เคยทำพังไฟล์ — **คืนจาก git** แล้วพึ่ง **`optimizePackageImports`** + deep path เฉพาะ hero carousel icons
+
+### บันทึกการทำงาน — 2026-05-15 (Perf/a11y — LCP hero + labels + contrast)
+- **`HomeHeroCarousel`:** สไลด์แรก **`initial={false}`** (ไม่ fade-in opacity 0); LCP image **`priority` / `loading="eager"` / `fetchPriority="high"`**; ปุ่ม **`Previous Slide` / `Next Slide`** (ไม่ใช้ blur บนปุ่ม)
+- **`Hero.tsx`:** บรรทัด EST.2018 ใช้ **`text-emerald-950`** ทุก breakpoint; คำอธิบายใต้หัว **`text-zinc-700`**
+- **`ClearanceSection` / `ShopGeneticVaultHero` / `ProductGallery` (lightbox):** **`aria-label`** สไลด์ EN **Previous Slide / Next Slide**
+- **`Navbar` / `SearchCommand`:** **`Open shopping cart`** / **`Search products and navigate`**
+- **`HomePageBelowFold`:** **`dynamic(..., { ssr: false })`** สำหรับ FeaturedProductHero, BreederShowcase, ClearanceSection, BreederRibbon, HomeInsightSection
+- **`app/(storefront)/page.tsx`:** Suspense fallback เป็น spinner CSS (ไม่ import **`lucide-react`**)
+
+### บันทึกการทำงาน — 2026-05-15 (Bundle — layout chunk / TBT)
+- **`FramerLazyRoot`:** `LazyMotion` + async **`domAnimation`** (`strict={false}`) ครอบ Navbar/main/Footer/OfferManager ใน **`app/(storefront)/layout.tsx`** — แยก feature bundle ของ Framer ออกจากโหลดแรก
+- **`app/(storefront)/layout.tsx`:** **`dynamic` `ssr: false`** สำหรับ PromotionBanner, BrowserDetectionBanner, CartAnimation (คง AgeVerificationGate sync)
+- **`HomePageBelowFold`:** **`next/dynamic`** → FeaturedProductHero, BreederShowcase, ClearanceSection, BreederRibbon, **`HomeInsightSection`** (ไฟล์ใหม่); Lucide **`ChevronRight`** แบบ deep path
+- **`Navbar` / `CartAnimation` / `HomeInsightSection`:** Lucide จาก **`lucide-react/dist/esm/icons/*`**
+- **`next.config.mjs` + `package.json`:** **`@next/bundle-analyzer`** + script **`npm run analyze`** (`ANALYZE=true`)
+
+### บันทึกการทำงาน — 2026-05-15 (Home payload — card images + slim Prisma)
+- **`ProductCard`:** `sizes` `(max-width:768px) 50vw, (max-width:1200px) 25vw, 20vw` + **`quality={60}`**; ยัง **`unoptimized` เฉพาะ** URLs ที่ **`shouldOffloadImageOptimization`**
+- **`product-service`:** home/API listing — **`select`** (`STOREFRONT_HOME_CARD_PRODUCT_SELECT` / featured **`+`** description/CBD/yield); **`getClearanceStorefrontProducts`** จำกัด scan **`fetchTake`**; **`getFeaturedProducts`** featured carousel fields ครบ **`VaultHeroSlide`**
+- **`lib/constants`:** **`HOME_NEW_ARRIVALS_LIMIT`** = **8**, เพิ่ม **`HOME_FEATURED_POOL`** (**8**), **`HOME_FEATURED_SHOW`** (**4**), **`HOME_CLEARANCE_LIMIT`** (**8**); **`storefront-home-service`** + **`GET .../featured-products`** sync constants
+- **`Footer`:** โลโก้ผ่าน **`next/image`** (sizes **`120px`**, **`quality`** ~78) + offload เท่าที่จำเป็น — social เป็น SVG อยู่แล้ว
+- **`next.config.mjs`:** **`qualities`** รวม **60**; **`deviceSizes`** ตัดชุดใหญ่ (ไม่มี 1200/1280/1920)
+
+### บันทึกการทำงาน — 2026-05-15 (Perf pass — carousel / TBT / a11y)
+- **`HomeHeroCarousel`:** LCP เฉพาะ **`index === 0`** (`priority` / `eager`); mobile **`quality={65}`**; dot **`aria-label`**; desktop quality 72/68
+- **`HomePageClient`:** **`Suspense`** + **`dynamic(..., { ssr: false })`** สำหรับ below-fold; **`app/(storefront)/layout`** Footer / OfferManager **`ssr: false`**
+- **`app/(storefront)/page.tsx`:** server โหลดแค่ **`getSections` + hero banners** — **`initialData`** ว่าง → client ดึง **`/api/storefront/home`** (ลดงานก่อน hero render); ลบ **`getStorefrontHomeCached`** ออกจากหน้านี้ (แท็ก **`storefront-home`** ยังใช้เวลา revalidate จาก API/cache อื่นได้)
+- **`app/layout.tsx`:** viewport **zoom ได้** (`maximumScale: 5`, `userScalable: true`, `minimumScale: 1`); GA **`strategy="afterInteractive"`**
+- **`Hero`:** founding mono **`lg:text-zinc-800`**; **`Navbar`** hamburger **`aria-expanded`** + **`aria-label`** เปิด/ปิดเมนู; mobile language **`aria-label`**
+
+### บันทึกการทำงาน — 2026-05-15 (Home cache invalidation + fonts)
+- **Admin products mutations:** `revalidateTag('storefront-home')` หลังสำเร็จใน **`PATCH /api/admin/products/[id]`**, **`POST /api/admin/products`**, **`PATCH .../[id]/field`**, **`PATCH .../[id]/status`**, **`PATCH .../bulk-status`**
+- **`app/layout.tsx`:** `<head>` **`preconnect`** → `fonts.googleapis.com` + `fonts.gstatic.com` (`crossOrigin="anonymous"`); **`next/font`** Inter/Prompt คง **`display: 'swap'`**
+- **`product-service`:** **`getFeaturedProducts`** / **`getClearanceStorefrontProducts`** ใช้ **Prisma** แทน Supabase **`createClient()`** เพื่อให้ **`getStorefrontHomeCached`** (`unstable_cache`) ไม่เรียก `cookies()` ระหว่าง build/prerender ของ `/`
+
+### บันทึกการทำงาน — 2026-05-15 (Home perf — Lighthouse)
+- **`HomePageClient`:** hero sync + **`next/dynamic`** → **`HomePageBelowFold`**; **`app/(storefront)/layout.tsx`** **`dynamic`** **`Footer`** / **`OfferManager`**; **`app/layout.tsx`** **`Analytics`** `dynamic(..., { ssr: false })`
+- **`app/(storefront)/page.tsx`:** **`unstable_cache`** แท็ก **`storefront-home`** (`revalidate: 120`) + **`home-hero-banners`**; admin hero CRUD/order → **`revalidateTag('home-hero-banners')`**
+- **`hero-banner-service`:** `findMany` carousel ใช้ **`select`** เฉพาะฟิลด์ที่ map เป็น **`HeroBanner`**
+- **`HomeHeroCarousel`:** `sizes` จำกัดความกว้างโลจิคัล / **`quality`** ต่ำกว่า LCP; จุดสไลด์ hit area ≥44px
+- **`Hero`:** founding mono **`text-emerald-950` / `lg:text-zinc-700`**; **`video`** **`preload="none"`**
+- **`next.config.mjs`:** **`images.qualities`** + ตัด **`deviceSizes`** ลดชุดใหญ่ (ไม่มี 2048/3840)
+
+### บันทึกการทำงาน — 2026-05-15 (Image optimization — AVIF/WebP + config)
+- **`next.config.mjs`:** `deviceSizes` / `imageSizes`, `minimumCacheTTL`, `remotePatterns` เพิ่ม Unsplash + Uploadcare + `NEXT_PUBLIC_IMAGE_REMOTE_HOSTS` (comma-separated hostname); **`shouldOffloadImageOptimization`** เหลือแค่ `data:` / `blob:` เพื่อให้ Supabase/remote ผ่าน `/_next/image`
+- **Hero / carousel / listing:** `HomeHeroCarousel` ลบ `unoptimized`, ปรับ `sizes`; `Hero` static ใช้ alt จาก headline; **`ProductCard`** `sizes` ตามสเปก + alt fallback; **`ProductGallery`** alt/name fallback; **`ProductImageUpload`** เปลี่ยน thumb เป็น `next/image`
+- **แอดมิน:** ข้อความช่วยจำ upload WebP/PNG ใน Hero modal / Article banner modal / Product gallery drop zone
+
+### บันทึกการทำงาน — 2026-05-15 (Article banners hub + API)
+- **ตาราง `article_banners`** — migration `20260515143000_article_banners`; Prisma model + **`services/article-banner-service.ts`** (`getArticleBannerForBlog`, CRUD admin); storefront **`ArticleCampaignBanner`** ใช้แถวนี้ก่อน แล้ว fallback **`promotion_campaigns`** เดิม
+- **API:** `GET`/`POST` `/api/admin/banners/articles`, `PATCH`/`DELETE` `/api/admin/banners/articles/[id]`; ประเภท **`ArticleBannerAdminRow`** อยู่ที่ **`lib/article-banner-admin.ts`** (ให้ client import ได้โดยไม่ผูก `server-only`)
+- **แอดมิน:** `ArticleBannerManagerClient` — ตาราง + สวิตช์ Active + modal เพิ่ม/แก้ไข + อัปโหลด (preset hero); ลบปุ่ม Manage popup campaigns; **`page.tsx`** โหลดจาก **`getAdminArticleBanners`**
+
+### บันทึกการทำงาน — 2026-05-15 (Hero sharp cut — no overlays)
+- **`HomeHeroCarousel`:** ลบ overlay gradient บน mobile; **`Hero`:** ลบ overlay ทั้งหมดบนแผงสื่อ (รวม desktop fade ซ้าย); mobile text column ใช้ **`bg-white`** แทน `bg-gradient-to-t`; คงแค่ ring บน desktop (`max-lg:hidden`)
+
+
+### บันทึกการทำงาน — 2026-05-15 (Storefront fixed nav content offset)
+- **`<main>`** `app/(storefront)/layout.tsx` — `pt-20 sm:pt-28` ให้สอดคล้องแถบใน `Navbar` (`h-20` / `sm:h-28`); **Hero** ตัด `max-lg:-mt-[4.5rem]` ที่ดึง hero เข้าใต้ header
+- **ลบ padding ซ้ำ** ที่เคยชดเชยเอง: `HomePageClient`, `ShopPageClient`, `CheckoutPageClient`, `PaymentPageClient`, `product-detail-client`, `checkout/page` + `loading`, `login`, `profile`, `order-success`
+
+### บันทึกการทำงาน — 2026-05-15 (Hero split layout hints + panel bg)
+- **Split hero UX:** mobile `aspect-[391/429]` + `object-contain`, export **1173×1287** = zero-gap fit; desktop `617:890` + cover; `panel_bg_hex`; carousel rail **ไม่มี padding** / mobile layout **justify-start** (ไม่กึ่งกลางแนวตั้ง)
+- **Admin:** คำแนะนำ desktop 1080² / 1200×1000; ฟิลด์สีพื้นแผง + color picker; `HeroBannerManagerClient` / `hero-banner-admin` / `hero-banner-service` / migration `20260519120000_hero_banners_panel_bg`
+
+### บันทึกการทำงาน — 2026-05-15 (Marketing Hub + hero banners)
+- **Marketing Hub:** `app/admin/banners/page.tsx` — แท็บ **Home banners** = `HeroBannerManagerClient` เท่านั้น (หัวการ์ด **Home Carousel**); แท็บ Article banners; ลบ `BannerManagerClient` + CRUD `/api/admin/banners/*` ยกเว้น `article-campaigns/[id]`
+- **`hero_banners` locale titles:** migration `20260518120000_hero_banners_title_locale`; CRUD `hero-banner-service` sync `name` = `title_th`; `lib/hero-banner-admin.ts`; admin modal preview 4 ช่อง + schedule badges; storefront `altTh`/`altEn` ใน `HomeHeroCarousel`
+- **Storefront home:** `page.tsx` โหลดแบนเนอร์จาก `getActiveHeroBannersForCarousel()` เท่านั้น; `HomePageClient` คีย์ `promotion_banner` = legacy (ไม่เรนเดอร์)
+- **ลบ:** `services/banner-service.ts`, `BannerManagerClient.tsx`, `DynamicHero.tsx`, `PromotionBannerSection.tsx`; ตาราง `dynamic_banners` คงใน DB (legacy)
+
 ### บันทึกการทำงาน — 2026-05-14 (Cart / checkout line brand price UI)
 - **`cartItemBrandLineDisplay`** (`lib/cart-utils.ts`) — `resolveListingUnitAfterBrand` ต่อบรรทัด × จำนวน; **`CartSheet`** + **`CheckoutPageClient` `OrderItemRow`** แสดงราคาหลังแบรนด์ + ขีดฆ่าราคาเต็มเมื่อมีโปรแบรนด์; restore payment summary ไม่ส่ง rules (แสดงยอดจาก snapshot เดิม)
 
@@ -34,7 +171,12 @@
 - **Checkout variant net price:** `resolveListingUnitBaht` ใช้ `coerceDbPriceBaht`; ลำดับ `product_variants.price` ก่อน `products.price`; ต่อด้วยกฎ `brand_promotions` ต่อ `breeders.name` (source `brand_promotion` เมื่อจับคู่)
 - **Brand promotions checkout:** ตาราง `brand_promotions` + admin `/admin/promotions/brands` + API admin/storefront; pipeline **SubtotalAfterBrand → คูปอง (`promo_codes` / `checkout-promo-math`) → ค่าส่ง (`shippingFeeForSubtotal` บน net = subtotal − coupon)** → GrandTotal; **ไม่ใช้** `discount_tiers` / `tiered-discounts` / `resolveExclusiveCartDiscounts` ใน `useCart` หรือ `calculateCartSummary`; WELCOME10 guard ตามเดิม; `generateUpsellMessage` = ข้อความเข้าใกล้จัดส่งฟรีเท่านั้น; `DiscountProgressBar` = progress ฿1,000 ฟรีค่าส่ง; `lib/discount-utils.ts` ทำเครื่องหมาย legacy (ยังใช้ `formatCouponValueDisplay` / `isCouponPercentageType`)
 
+### บันทึกการทำงาน — 2026-05-15 (Bulk discount / promotion_rules admin removal)
+- **ลบระบบ Bulk Discount + CRUD `promotion_rules` จากแอดมิน:** ไม่มีแล้ว `services/admin-service.ts`, `BulkDiscountDialog`, `/api/admin/promotions` (+ `[id]`), `/api/admin/promotions/bulk-discount/*`, `/api/admin/promotions/cancel`, `lib/promotion-utils.ts`, `lib/active-tiered-discount-rules.ts`, `GET /api/storefront/tiered-discounts`; `/admin/promotions` redirect → `/admin/promotions/brands`; Sidebar เหลือลิงก์ส่วนลดแบรนด์ + แคมเปญ; POS ใช้ `/api/admin/promotions/brands` แทน bulk campaigns สำหรับป้าย breeder; ตาราง `promotion_rules` / `promotion_campaigns` / `orders.promotion_rule_id` คงใน DB สำหรับประวัติ
+
 ### บันทึกการทำงาน — 2026-05-15
+- **Hero banners (admin + DB):** `hero_banners` model + migrations (`20260517100000_hero_banners`, `20260518120000_hero_banners_title_locale`); `services/hero-banner-service.ts`; APIs `/api/admin/hero-banners/*`; Marketing Hub **Home banners** = `HeroBannerManagerClient` (**Home Carousel**); `HomeHeroCarousel`; `dynamic_banners` = legacy table only (no admin/storefront UI)
+- **Home hero fade carousel:** `lib/hero-banners.ts` (`DEFAULT_HERO_BANNERS_FALLBACK`, `altTh`/`altEn`); `HomeHeroCarousel` — fade autoplay, TH/EN assets + alt by locale; wired from DB via `getActiveHeroBannersForCarousel()` or fallback when no qualifying rows
 - **Shipping env defaults:** `lib/order-financials.ts` — `QUOTATION_SHIPPING_COST` จาก `NEXT_PUBLIC_SHIPPING_FEE` (fallback 50); `QUOTATION_SHIPPING_FREE_THRESHOLD` จาก `NEXT_PUBLIC_FREE_SHIPPING_THRESHOLD` (fallback 1000); parse ด้วย `Number` + finite check
 
 ### บันทึกการทำงาน — 2026-05-14

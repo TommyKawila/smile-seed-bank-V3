@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import { createProductWithVariants } from "@/services/product-service";
@@ -158,6 +159,8 @@ export async function POST(req: NextRequest) {
         }))
       );
     }
+
+    revalidateTag("storefront-home");
 
     return NextResponse.json(
       { productId: result.data?.productId },

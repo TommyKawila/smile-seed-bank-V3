@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { productDetailHref } from "@/lib/product-utils";
 import { plainTextFromHtml, truncateMetaDescription } from "@/lib/magazine-seo";
@@ -16,19 +17,24 @@ import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 
 const AUTOPLAY_MS = 5500;
 
-function productNote(product: ProductWithBreeder, isEn: boolean): string {
-  const raw = isEn
-    ? (product.description_en ?? product.description_th ?? "")
-    : (product.description_th ?? product.description_en ?? "");
-  const plain = plainTextFromHtml(String(raw));
-  return truncateMetaDescription(plain, 220);
+function productNote(product: ProductWithBreeder): string {
+  const ratio = product.genetic_ratio?.trim();
+  if (ratio) {
+    const plain = plainTextFromHtml(String(ratio));
+    return truncateMetaDescription(plain, 220);
+  }
+  const dom = product.strain_dominance?.trim();
+  if (dom) return truncateMetaDescription(dom, 220);
+  const thc = product.thc_percent;
+  if (thc != null) return truncateMetaDescription(`THC ${thc}%`, 220);
+  return "";
 }
 
 type TFn = (th: string, en: string) => string;
 
 function VaultHeroSlide({
   product,
-  isEn,
+  isEn: _isEn,
   t,
   priorityImage,
 }: {
@@ -38,7 +44,7 @@ function VaultHeroSlide({
   priorityImage: boolean;
 }) {
   const img = getListingThumbnailUrl(product);
-  const note = productNote(product, isEn);
+  const note = productNote(product);
   const thc = product.thc_percent;
   const cbd = product.cbd_percent;
   const yieldInfo = product.yield_info?.trim();
@@ -51,6 +57,7 @@ function VaultHeroSlide({
       <div className="grid gap-6 sm:gap-8 md:grid-cols-2 md:items-stretch md:gap-10 lg:gap-12">
         <Link
           href={productDetailHref(product)}
+          aria-label={`${product.name} — ${t("ดูรูปสายพันธุ์", "Strain image")}`}
           className="group relative order-1 block aspect-[4/3] min-h-[200px] overflow-hidden rounded-sm border border-zinc-100 bg-zinc-50 shadow-sm sm:min-h-[240px] md:min-h-[320px]"
         >
           {img ? (
@@ -77,7 +84,7 @@ function VaultHeroSlide({
             {t("สายพันธุ์เด่น", "FEATURED_STRAIN")}
           </p>
           <h2 className="mt-2 font-sans text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:mt-3 sm:text-3xl md:text-[2.35rem]">
-            <Link href={productDetailHref(product)} className="hover:text-primary">
+            <Link href={productDetailHref(product)} className="hover:text-primary" aria-label={product.name}>
               {product.name}
             </Link>
           </h2>
@@ -119,7 +126,7 @@ function VaultHeroSlide({
           </dl>
 
           <div className="mt-5 sm:mt-6">
-            <p className="font-sans text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-400 sm:text-[10px]">
+            <p className="font-sans text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-600 sm:text-[10px]">
               {t("บันทึกจากผู้ผลิต", "BREEDER'S_NOTE")}
             </p>
             <p className="mt-2 max-w-xl font-sans text-sm font-normal leading-relaxed text-zinc-600">
@@ -129,6 +136,7 @@ function VaultHeroSlide({
 
           <Link
             href={productDetailHref(product)}
+            aria-label={t("เปิดรายงานสายพันธุ์ — รายละเอียดสินค้า", "Open strain dossier — product details")}
             className="mt-5 inline-flex w-fit items-center font-sans text-xs font-semibold tabular-nums text-primary underline-offset-4 hover:underline sm:mt-6"
           >
             {t("เปิดรายงานสายพันธุ์", "Open strain dossier")} →
@@ -216,7 +224,7 @@ export function FeaturedStrainHeroCarousel({
         <>
           <button
             type="button"
-            aria-label={t("สไลด์ก่อนหน้า", "Previous slide")}
+            aria-label={t("สไลด์ก่อนหน้า", "Previous Slide")}
             className="absolute left-0 top-[min(38%,11rem)] z-10 flex h-10 w-10 -translate-x-0 items-center justify-center rounded-full border border-zinc-200/90 bg-white/95 text-zinc-600 shadow-sm transition-colors hover:border-primary/30 hover:text-primary md:-translate-x-1"
             onClick={scrollPrev}
           >
@@ -224,7 +232,7 @@ export function FeaturedStrainHeroCarousel({
           </button>
           <button
             type="button"
-            aria-label={t("สไลด์ถัดไป", "Next slide")}
+            aria-label={t("สไลด์ถัดไป", "Next Slide")}
             className="absolute right-0 top-[min(38%,11rem)] z-10 flex h-10 w-10 translate-x-0 items-center justify-center rounded-full border border-zinc-200/90 bg-white/95 text-zinc-600 shadow-sm transition-colors hover:border-primary/30 hover:text-primary md:translate-x-1"
             onClick={scrollNext}
           >

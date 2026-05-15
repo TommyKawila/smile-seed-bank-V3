@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import MessageCircle from "lucide-react/dist/esm/icons/message-circle";
 import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 import { getLineOaMessageIdForPrefill, lineMeAddFriendUrl } from "@/lib/line-oa-url";

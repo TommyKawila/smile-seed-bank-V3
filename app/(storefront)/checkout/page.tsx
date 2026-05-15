@@ -25,7 +25,7 @@ async function CheckoutWithPaymentData() {
 
 function CheckoutLoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-zinc-50 pt-20">
+    <div className="min-h-screen bg-zinc-50">
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-6 sm:px-6">
         <Skeleton className="h-8 w-56" />
         <Skeleton className="h-64 w-full rounded-xl" />

@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { Blend, Flame, Moon, Sprout, Sun, Trophy, Zap } from "lucide-react";
+import Blend from "lucide-react/dist/esm/icons/blend";
+import Flame from "lucide-react/dist/esm/icons/flame";
+import Moon from "lucide-react/dist/esm/icons/moon";
+import Sprout from "lucide-react/dist/esm/icons/sprout";
+import Sun from "lucide-react/dist/esm/icons/sun";
+import Trophy from "lucide-react/dist/esm/icons/trophy";
+import Zap from "lucide-react/dist/esm/icons/zap";
 import { useLanguage } from "@/context/LanguageContext";
 import {
   resolveSectionHeading,

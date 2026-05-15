@@ -174,7 +174,7 @@ export function ClearanceSection({
                 <div className="mt-3 flex justify-end gap-2">
                   <button
                     type="button"
-                    aria-label={t("ก่อนหน้า", "Previous")}
+                    aria-label={t("สไลด์ก่อนหน้า", "Previous Slide")}
                     disabled={!canPrev}
                     onClick={() => emblaApi?.scrollPrev()}
                     className="rounded-full border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 disabled:opacity-40"
@@ -183,7 +183,7 @@ export function ClearanceSection({
                   </button>
                   <button
                     type="button"
-                    aria-label={t("ถัดไป", "Next")}
+                    aria-label={t("สไลด์ถัดไป", "Next Slide")}
                     disabled={!canNext}
                     onClick={() => emblaApi?.scrollNext()}
                     className="rounded-full border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 disabled:opacity-40"

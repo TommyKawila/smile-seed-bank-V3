@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { deriveProductIsActiveForCatalog } from "@/lib/validations/product";
@@ -72,6 +73,8 @@ export async function PATCH(req: NextRequest) {
         )
       );
     }
+
+    revalidateTag("storefront-home");
 
     return NextResponse.json({
       updated: rows.length,

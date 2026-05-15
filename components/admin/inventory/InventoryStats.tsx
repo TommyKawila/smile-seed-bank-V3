@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutGrid, Package, Plus, ShoppingCart, Sprout } from "lucide-react";
+import LayoutGrid from "lucide-react/dist/esm/icons/layout-grid";
+import Package from "lucide-react/dist/esm/icons/package";
+import Plus from "lucide-react/dist/esm/icons/plus";
+import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
+import Sprout from "lucide-react/dist/esm/icons/sprout";
 import { Button } from "@/components/ui/button";
 
 export function InventoryStats({

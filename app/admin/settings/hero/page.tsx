@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
 import { HeroBackgroundSettings } from "@/components/admin/HeroBackgroundSettings";
 
 export default function AdminHeroSettingsPage() {

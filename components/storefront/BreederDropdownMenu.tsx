@@ -87,6 +87,7 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
         type="button"
         aria-expanded={open}
         aria-haspopup="true"
+        aria-label={t("เปิดเมนูเมล็ดพันธุ์และแบรนด์", "Open seeds and breeder menu")}
         className={cn(
           navLinkClass,
           "inline-flex items-center gap-1 border-0 bg-transparent p-0",

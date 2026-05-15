@@ -176,6 +176,9 @@ function ProductCardBase({
   const lowStock = !isActuallyOut && aggregateStock > 1 && aggregateStock <= 5;
   const cardImage = getPrimaryImage(product);
   const pm = product as ProductWithMeta;
+  const cardImageAlt = product.name?.trim()
+    ? product.name.trim()
+    : t("สินค้า", "Product");
 
   const stopNavBubble = (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -325,12 +328,13 @@ function ProductCardBase({
             {cardImage ? (
               <Image
                 src={cardImage}
-                alt={product.name}
+                alt={cardImageAlt}
                 fill
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+                quality={60}
                 className={`object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "brightness-75 grayscale" : ""}`}
                 priority={imagePriority}
-                fetchPriority={imagePriority ? "high" : "auto"}
+                fetchPriority={imagePriority ? "high" : "low"}
                 loading={imagePriority ? "eager" : "lazy"}
                 unoptimized={shouldOffloadImageOptimization(cardImage)}
               />

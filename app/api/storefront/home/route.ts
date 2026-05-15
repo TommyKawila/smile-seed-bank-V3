@@ -4,11 +4,9 @@ import { getStorefrontHomePayload } from "@/services/storefront-home-service";
 
 export const dynamic = "force-dynamic";
 
-const DATA_TIMEOUT_MS = 2000;
-
 export async function GET() {
   try {
-    const payload = await getStorefrontHomePayload(DATA_TIMEOUT_MS);
+    const payload = await getStorefrontHomePayload();
 
     return NextResponse.json(
       bigintToJson(payload),

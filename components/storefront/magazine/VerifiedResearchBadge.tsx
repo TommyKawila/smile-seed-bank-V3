@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck } from "lucide-react";
+import BadgeCheck from "lucide-react/dist/esm/icons/badge-check";
 import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 

@@ -1,6 +1,10 @@
 "use client";
 
-import { CheckCircle2, Loader2, RotateCcw, Truck, XCircle } from "lucide-react";
+import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2";
+import Loader2 from "lucide-react/dist/esm/icons/loader-2";
+import RotateCcw from "lucide-react/dist/esm/icons/rotate-ccw";
+import Truck from "lucide-react/dist/esm/icons/truck";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

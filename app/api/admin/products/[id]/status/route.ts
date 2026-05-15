@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import { deriveProductIsActiveForCatalog } from "@/lib/validations/product";
@@ -61,6 +62,8 @@ export async function PATCH(
     if (uErr) {
       return NextResponse.json({ error: uErr.message }, { status: 500 });
     }
+
+    revalidateTag("storefront-home");
 
     return NextResponse.json({
       is_active: nextActive,

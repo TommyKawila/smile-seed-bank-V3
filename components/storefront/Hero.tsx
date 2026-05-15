@@ -1,9 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import { JetBrains_Mono } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -29,6 +30,8 @@ function HeroMediaPanel({
   videoUrl,
   staticBgUrl,
   svgHtml,
+  heroCarousel,
+  staticImageAlt,
 }: {
   isLoading: boolean;
   useAnimatedSvg: boolean;
@@ -36,6 +39,8 @@ function HeroMediaPanel({
   videoUrl: string | null;
   staticBgUrl: string;
   svgHtml: string;
+  heroCarousel?: ReactNode;
+  staticImageAlt: string;
 }) {
   if (isLoading) {
     return <Skeleton className="h-full min-h-0 w-full rounded-none bg-zinc-200" />;
@@ -53,6 +58,7 @@ function HeroMediaPanel({
       <video
         className="h-full min-h-0 w-full object-cover"
         src={videoUrl}
+        preload="none"
         autoPlay
         loop
         muted
@@ -61,22 +67,30 @@ function HeroMediaPanel({
       />
     );
   }
+  if (heroCarousel) {
+    return <div className="relative h-full min-h-0 w-full overflow-hidden p-0">{heroCarousel}</div>;
+  }
   return (
     <Image
       src={staticBgUrl}
-      alt=""
+      alt={staticImageAlt.trim() || "Smile Seed Bank"}
       fill
       priority
       fetchPriority="high"
       loading="eager"
       className="object-cover animate-ken-burns"
-      sizes="(max-width: 1023px) 100vw, 50vw"
-      unoptimized
+      sizes="(max-width: 768px) 100vw, 50vw"
     />
   );
 }
 
-export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) {
+export default function Hero({
+  sectionTitle,
+  heroCarousel,
+}: {
+  sectionTitle?: SectionTitle;
+  heroCarousel?: ReactNode;
+}) {
   const { t, locale } = useLanguage();
   const headline = resolveSectionHeading(
     locale,
@@ -101,18 +115,18 @@ export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) 
   return (
     <section
       className={cn(
-        "relative flex min-h-0 w-full flex-col overflow-hidden rounded-none bg-zinc-50 max-lg:-mt-[4.5rem] max-lg:max-h-[100svh] max-lg:w-full lg:mt-0 lg:max-h-none",
+        "relative flex min-h-0 w-full flex-col overflow-hidden rounded-none bg-zinc-50 max-lg:max-h-[100svh] max-lg:w-full lg:max-h-none",
         heroMono.variable
       )}
     >
       <div className="flex min-h-0 flex-1 flex-col lg:grid lg:min-h-[88vh] lg:max-h-none lg:grid-cols-2 lg:items-stretch">
-        <div className="relative z-10 order-2 -mt-20 flex flex-col justify-end bg-gradient-to-t from-white from-0% via-white via-[88%] to-transparent to-100% px-4 pb-5 pt-5 sm:-mt-24 sm:px-8 sm:pb-8 lg:order-1 lg:mt-0 lg:max-w-xl lg:justify-center lg:bg-transparent lg:bg-none lg:px-10 lg:py-24 lg:pl-12 lg:pr-10 lg:pb-24 xl:pl-16 xl:pr-14">
+        <div className="relative z-10 order-2 -mt-20 flex flex-col justify-end bg-white px-4 pb-5 pt-5 sm:-mt-24 sm:px-8 sm:pb-8 lg:order-1 lg:mt-0 lg:max-w-xl lg:justify-center lg:bg-transparent lg:px-10 lg:py-24 lg:pl-12 lg:pr-10 lg:pb-24 xl:pl-16 xl:pr-14">
           <div className="space-y-3 sm:space-y-4 lg:space-y-7 xl:space-y-8">
             <motion.p
-              initial={{ opacity: 0, y: 10 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="font-[family-name:var(--font-hero-mono)] text-[9px] font-semibold leading-relaxed tracking-[0.2em] text-emerald-900/75 sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px] lg:font-medium lg:text-zinc-500"
+              className="font-[family-name:var(--font-hero-mono)] text-[9px] font-bold leading-relaxed tracking-[0.2em] text-emerald-950 sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px]"
             >
               {t(
                 "ก่อตั้ง ค.ศ. 2018 // ร้านเมล็ดพันธุ์แห่งรอยยิ้มยุคแรกของไทย",
@@ -133,7 +147,7 @@ export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) 
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.12, ease: "easeOut" }}
-              className="max-w-md text-sm font-light leading-relaxed tracking-wide text-zinc-500 opacity-90 sm:text-[15px] lg:text-base"
+              className="max-w-md text-sm font-light leading-relaxed tracking-wide text-zinc-700 sm:text-[15px] lg:text-base"
             >
               {t(
                 "จากร้านลับสู่คลังเมล็ดพันธุ์แท้ที่มือโปรวางใจ การันตีคุณภาพจากประสบการณ์จริงเกือบ 10 ปี",
@@ -151,9 +165,12 @@ export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) 
                 asChild
                 className="h-11 min-w-[200px] rounded-sm border border-primary bg-primary px-6 text-sm font-medium text-primary-foreground shadow-none transition-colors hover:bg-primary/90"
               >
-                <Link href="/seeds">
+                <Link
+                  href="/seeds"
+                  aria-label={t("เลือกซื้อเมล็ดพันธุ์ — ไปที่คลังเมล็ด", "Shop seeds — browse catalog")}
+                >
                   {t("เลือกซื้อเมล็ดพันธุ์", "Shop Seeds")}
-                  <ChevronRight className="ml-1 h-4 w-4 opacity-90" strokeWidth={1.75} />
+                  <ChevronRight className="ml-1 h-4 w-4 opacity-90" strokeWidth={1.75} aria-hidden />
                 </Link>
               </Button>
               <Button
@@ -161,7 +178,10 @@ export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) 
                 variant="outline"
                 className="h-11 min-w-[200px] rounded-sm border border-zinc-300 bg-transparent px-6 text-sm font-normal text-zinc-800 shadow-none transition-colors hover:border-primary/40 hover:bg-zinc-50"
               >
-                <Link href="/blog">
+                <Link
+                  href="/blog"
+                  aria-label={t("บทความและคลังความรู้", "Grower's guide — articles")}
+                >
                   {t("บทความ/คลังความรู้", "Grower's Guide")}
                 </Link>
               </Button>
@@ -169,7 +189,7 @@ export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) 
           </div>
         </div>
 
-        <div className="relative order-1 aspect-[4/5] h-[65svh] w-full flex-shrink-0 overflow-hidden lg:order-2 lg:aspect-auto lg:h-auto lg:min-h-[88vh]">
+        <div className="relative order-1 aspect-[4/5] h-[65svh] w-full flex-shrink-0 overflow-hidden bg-zinc-100 lg:order-2 lg:aspect-auto lg:h-auto lg:min-h-[88vh]">
           <HeroMediaPanel
             isLoading={isLoading}
             useAnimatedSvg={Boolean(useAnimatedSvg)}
@@ -177,8 +197,16 @@ export default function Hero({ sectionTitle }: { sectionTitle?: SectionTitle }) 
             videoUrl={videoUrl}
             staticBgUrl={staticBgUrl}
             svgHtml={siteSettings.hero_svg_code ?? ""}
+            heroCarousel={heroCarousel}
+            staticImageAlt={
+              headline.trim()
+                ? headline
+                : t(
+                    "คัดสรรพันธุกรรมระดับโลก สู่มือคุณ",
+                    "World-class genetics, curated for you"
+                  )
+            }
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-900/10 via-transparent to-zinc-900/5 max-lg:from-zinc-900/15 lg:bg-gradient-to-l lg:from-transparent lg:via-transparent lg:to-zinc-50/90" />
           <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-zinc-900/5 max-lg:hidden" />
         </div>
       </div>

@@ -20,7 +20,7 @@ export interface TieredDiscountRule {
   discount_percent: number;
 }
 
-/** Empty by default — spend tiers come from `promotion_rules` via `/api/storefront/tiered-discounts` only. */
+/** Legacy POS tier helpers — storefront cart uses brand % + coupons only (`tierDiscount` stays 0). */
 export const DEFAULT_TIERED_RULES: TieredDiscountRule[] = [];
 
 export type { PromoInfo };
