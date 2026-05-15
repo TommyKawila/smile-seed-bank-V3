@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (ProductGallery: explicit quality 75 on all Images)
+- **`ProductGallery`:** thumb strip + lightbox strip **`quality={75}`** ครบทุก **`next/image`** (เดิมบางจุดพึ่ง default — อาจชน whitelist)
+
+### บันทึกการทำงาน — 2026-05-15 (Fix Image quality vs next.config)
+- **`ProductGallery`:** **`quality={100}`** → **`75`** (ให้ตรง **`images.qualities`** ใน **`next.config.mjs`**)
+- **`Footer`:** **`quality={78}`** → **`75`** (ค่าเดิมไม่อยู่ใน whitelist)
+
 ### บันทึกการทำงาน — 2026-05-15 (Breeder catalog provider + GA lazyOnload + fetchPriority)
 - **`context/BreederCatalogContext.tsx`:** **`BreederCatalogProvider`** — **`fetchActiveBreeders`** ครั้งเดียวต่อ storefront layout subtree (Navbar / Ribbon / dropdown ใช้ context เดียวกัน)
 - **`hooks/useBreeders.ts`:** มี provider → อ่านจาก context; ไม่มี → fallback fetch เดิม (แอดมินที่อยู่นอก storefront layout)

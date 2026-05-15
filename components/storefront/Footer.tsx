@@ -42,7 +42,7 @@ export function Footer() {
                   height={32}
                   className="h-8 w-auto object-contain"
                   sizes="120px"
-                  quality={78}
+                  quality={75}
                   unoptimized={shouldOffloadImageOptimization(settings.logo_main_url)}
                 />
               ) : (

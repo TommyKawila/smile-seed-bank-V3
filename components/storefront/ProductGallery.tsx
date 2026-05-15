@@ -197,7 +197,7 @@ function Lightbox({
                 className="object-contain"
                 loading="lazy"
                 sizes="100vw"
-                quality={100}
+                quality={75}
                 unoptimized={shouldOffloadImageOptimization(current.src)}
               />
             </div>
@@ -237,6 +237,7 @@ function Lightbox({
                     height={64}
                     className="h-full w-full object-cover"
                     sizes="64px"
+                    quality={75}
                     unoptimized={shouldOffloadImageOptimization(g.src)}
                   />
                 </button>
@@ -335,7 +336,7 @@ export function ProductGallery({
               "object-contain p-1 sm:p-2",
               showAggregateSoldOut && "brightness-75 grayscale"
             )}
-            quality={100}
+            quality={75}
             unoptimized={shouldOffloadImageOptimization(current.src)}
           />
         </div>
@@ -400,6 +401,7 @@ export function ProductGallery({
                 className="object-contain p-0.5"
                 sizes="100px"
                 loading="lazy"
+                quality={75}
                 unoptimized={shouldOffloadImageOptimization(img.src)}
               />
             </button>
