@@ -46,7 +46,7 @@ export function SmartTieInStrip({ products }: { products: SmartProductPreview[] 
                   {p.name}
                 </p>
                 {p.breeder_name && (
-                  <p className="mt-1 truncate text-xs text-zinc-500">{p.breeder_name}</p>
+                  <p className="mt-1 truncate text-xs text-zinc-600">{p.breeder_name}</p>
                 )}
               </div>
             </Link>

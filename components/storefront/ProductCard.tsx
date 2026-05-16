@@ -135,7 +135,7 @@ function ProductImageBadges({ product, t }: { product: ProductWithMeta; t: (th: 
         </span>
       )}
       {showNew && (
-        <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/30">
+        <span className="rounded-full bg-emerald-800 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/30">
           {t("ใหม่", "New Arrival")}
         </span>
       )}
@@ -370,7 +370,7 @@ function ProductCardBase({
 
           <ProductImageBadges product={pm} t={t} />
           {clearancePct != null && clearancePct > 0 && (
-            <span className="absolute right-2 top-12 z-20 rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-bold tabular-nums text-white shadow-sm">
+              <span className="absolute right-2 top-12 z-20 rounded-md bg-emerald-800 px-2 py-0.5 text-[10px] font-bold tabular-nums text-white shadow-sm">
               −{clearancePct}%
             </span>
           )}
@@ -435,7 +435,7 @@ function ProductCardBase({
           <div className="flex shrink-0 items-center justify-center">
             <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-bold tabular-nums text-zinc-800 ring-1 ring-zinc-200/80">
               <span className="text-emerald-800">THC {thcPill}</span>
-              <span className="text-zinc-400">·</span>
+              <span className="text-zinc-500">·</span>
               <span className="truncate">{typePill}</span>
             </span>
           </div>
@@ -444,7 +444,7 @@ function ProductCardBase({
             <Link
               href={seedsBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
-              className="line-clamp-1 min-h-[1.25rem] shrink-0 text-center text-[11px] font-medium leading-tight text-emerald-600 hover:text-emerald-700"
+              className="line-clamp-1 min-h-[1.25rem] shrink-0 text-center text-[11px] font-medium leading-tight text-zinc-600 hover:text-emerald-900"
             >
               {product.breeders.name}
             </Link>
@@ -465,12 +465,12 @@ function ProductCardBase({
             <div className="mt-auto flex min-h-0 flex-col border-t border-zinc-100 pt-2">
               <div className="text-center">
                 {seedsPackLabel ? (
-                  <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
+                  <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-800 sm:text-xs">
                     {seedsPackLabel}
                   </p>
                 ) : null}
                 {showStrike && (
-                  <p className="text-xs tabular-nums text-zinc-400 line-through">
+                  <p className="text-xs tabular-nums text-zinc-500 line-through">
                     {formatPrice(strikeDisplay)}
                   </p>
                 )}
@@ -509,7 +509,7 @@ function ProductCardBase({
                       </p>
                     ) : null}
                     {showStrike && (
-                      <p className="text-xs tabular-nums text-zinc-400 line-through">
+                      <p className="text-xs tabular-nums text-zinc-500 line-through">
                         {formatPrice(strikeDisplay)}
                       </p>
                     )}
@@ -536,12 +536,12 @@ function ProductCardBase({
                 <div className="flex min-h-0 items-end justify-between gap-2">
                   <div className="min-w-0">
                     {seedsPackLabel ? (
-                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
+                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-800 sm:text-xs">
                         {seedsPackLabel}
                       </p>
                     ) : null}
                     {showStrike && (
-                      <p className="text-xs tabular-nums text-zinc-400 line-through">
+                      <p className="text-xs tabular-nums text-zinc-500 line-through">
                         {formatPrice(strikeDisplay)}
                       </p>
                     )}

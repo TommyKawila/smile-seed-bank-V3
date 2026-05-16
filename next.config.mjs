@@ -48,7 +48,22 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "framer-motion", "@radix-ui/react-icons"],
+    optimizePackageImports: [
+      "lucide-react",
+      "framer-motion",
+      "@radix-ui/react-icons",
+      "recharts",
+      "cmdk",
+      "sonner",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-scroll-area",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-accordion",
+    ],
   },
   logging: {
     fetches: {

@@ -23,6 +23,10 @@ import {
 } from "@/lib/homepage-section-title";
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
 import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+
+const BELOW_FOLD_CV =
+  "[content-visibility:auto] [contain-intrinsic-size:auto_560px]";
 
 const FeaturedProductHero = dynamic(
   () =>
@@ -134,7 +138,10 @@ export function HomePageBelowFold({
         return (
           <section
             key={sk}
-            className={`mx-auto min-h-[400px] max-w-7xl px-4 py-14 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+            className={cn(
+              `mx-auto min-h-[400px] max-w-7xl px-4 py-14 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`,
+              BELOW_FOLD_CV
+            )}
           >
             <motion.div
               initial={false}
@@ -212,42 +219,37 @@ export function HomePageBelowFold({
       }
       case "categories":
         return (
-          <div key={sk} className="bg-white pb-6 sm:pb-8">
+          <div key={sk} className={cn("bg-white pb-6 sm:pb-8", BELOW_FOLD_CV)}>
             <QuickCategoryNav sectionTitle={st} />
           </div>
         );
       case "breeder_showcase":
         return (
-          <div key={sk} className="bg-white pb-6 sm:pb-10">
+          <div key={sk} className={cn("bg-white pb-6 sm:pb-10", BELOW_FOLD_CV)}>
             <BreederShowcase sectionTitle={st} />
           </div>
         );
       case "clearance":
         return (
-          <ClearanceSection
-            key={sk}
-            products={clearanceProducts}
-            isLoading={clearanceLoading}
-            sectionTitle={st}
-          />
+          <div key={sk} className={BELOW_FOLD_CV}>
+            <ClearanceSection products={clearanceProducts} isLoading={clearanceLoading} sectionTitle={st} />
+          </div>
         );
       case "blog":
         return (
-          <HomeInsightSection
-            key={sk}
-            posts={insights}
-            loading={insightsLoading}
-            sectionTitle={st}
-          />
+          <div key={sk} className={BELOW_FOLD_CV}>
+            <HomeInsightSection posts={insights} loading={insightsLoading} sectionTitle={st} />
+          </div>
         );
       case "featured":
         return (
-          <FeaturedProductHero
-            key={sk}
-            products={featuredProducts}
-            isLoading={featuredLoading}
-            sectionTitle={st}
-          />
+          <div key={sk} className={BELOW_FOLD_CV}>
+            <FeaturedProductHero
+              products={featuredProducts}
+              isLoading={featuredLoading}
+              sectionTitle={st}
+            />
+          </div>
         );
       case "breeders": {
         const breederMain = resolveSectionHeading(
@@ -257,7 +259,7 @@ export function HomePageBelowFold({
           "Choose seeds from leading breeders"
         );
         return (
-          <section key={sk} className="border-b border-zinc-100 bg-white py-12 sm:py-16">
+          <section key={sk} className={cn("border-b border-zinc-100 bg-white py-12 sm:py-16", BELOW_FOLD_CV)}>
             <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
               <div className="mb-8 flex items-end justify-between">
                 <div>
@@ -291,7 +293,10 @@ export function HomePageBelowFold({
       }
       case "trust": {
         return (
-          <section key={sk} className="border-t border-b border-zinc-100 bg-zinc-50/30 py-12 sm:py-16">
+          <section
+            key={sk}
+            className={cn("border-t border-b border-zinc-100 bg-zinc-50/30 py-12 sm:py-16", BELOW_FOLD_CV)}
+          >
             <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
               <div className="grid grid-cols-1 divide-y divide-zinc-100 text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 {features.map((f) => (
@@ -308,7 +313,11 @@ export function HomePageBelowFold({
         );
       }
       case "newsletter": {
-        return <HomeNewsletterSection key={sk} />;
+        return (
+          <div key={sk} className={BELOW_FOLD_CV}>
+            <HomeNewsletterSection />
+          </div>
+        );
       }
       default:
         return null;

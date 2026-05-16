@@ -78,7 +78,7 @@ export function HomeHeroCarousel({ banners }: Props) {
   const slidesMarkup =
     index === 0 ? (
       <div
-        className="absolute inset-0 flex flex-col items-stretch justify-start overflow-hidden bg-zinc-100 md:items-center md:justify-center"
+        className="absolute inset-0 overflow-hidden bg-zinc-100 md:flex md:items-center md:justify-center"
         style={panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
         suppressHydrationWarning
       >

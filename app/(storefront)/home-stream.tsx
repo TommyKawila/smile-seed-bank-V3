@@ -1,12 +1,12 @@
 import "server-only";
 
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { HomeHeroCarousel } from "@/components/storefront/HomeHeroCarousel";
 import { HomeHeroLcpPreload } from "@/components/storefront/HomeHeroLcpPreload";
-import { HomePageClient } from "@/components/storefront/HomePageClient";
-import { HomeHeroCarouselSkeleton } from "@/components/storefront/HomeHeroSkeleton";
+import { HomeHeroCarouselSkeleton, HomeHeroSkeleton } from "@/components/storefront/HomeHeroSkeleton";
 import { EMPTY_STOREFRONT_HOME_PAYLOAD } from "@/services/storefront-home-service";
 import { getHeroCarouselBannersCached } from "@/services/hero-banner-service";
 import {
@@ -15,6 +15,12 @@ import {
   type HomePageSectionPayload,
 } from "@/lib/homepage-sections";
 import type { HeroBanner } from "@/lib/hero-banners";
+
+const HomePageClient = dynamic(
+  () =>
+    import("@/components/storefront/HomePageClient").then((m) => ({ default: m.HomePageClient })),
+  { loading: () => <HomeHeroSkeleton /> }
+);
 
 const getSectionsCached = unstable_cache(
   async (): Promise<HomePageSectionPayload[]> => {

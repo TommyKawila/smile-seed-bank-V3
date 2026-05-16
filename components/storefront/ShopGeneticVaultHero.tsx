@@ -90,7 +90,7 @@ function VaultHeroSlide({
           </h2>
 
           {product.breeders && (
-            <p className="mt-2 font-sans text-[11px] font-normal tabular-nums text-zinc-500 sm:text-xs">
+            <p className="mt-2 font-sans text-[11px] font-normal tabular-nums text-zinc-600 sm:text-xs">
               {product.breeders.name}
             </p>
           )}

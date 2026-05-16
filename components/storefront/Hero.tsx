@@ -71,16 +71,18 @@ function HeroMediaPanel({
     );
   }
   return (
-    <Image
-      src={staticBgUrl}
-      alt={staticImageAlt.trim() || "Smile Seed Bank"}
-      fill
-      priority
-      fetchPriority="high"
-      loading="eager"
-      className="object-cover animate-ken-burns"
-      sizes="(max-width: 768px) 100vw, 50vw"
-    />
+    <div className="relative h-full min-h-0 w-full overflow-hidden">
+      <Image
+        src={staticBgUrl}
+        alt={staticImageAlt.trim() || "Smile Seed Bank"}
+        fill
+        priority
+        fetchPriority="high"
+        loading="eager"
+        className="object-cover animate-ken-burns"
+        sizes="(max-width: 768px) 100vw, 50vw"
+      />
+    </div>
   );
 }
 
@@ -189,7 +191,7 @@ export default function Hero({
           </div>
         </div>
 
-        <div className="relative order-1 aspect-[4/5] h-[65svh] w-full flex-shrink-0 overflow-hidden bg-zinc-100 lg:order-2 lg:aspect-auto lg:h-auto lg:min-h-[88vh]">
+        <div className="relative order-1 aspect-[4/5] h-[65svh] w-full flex-shrink-0 overflow-hidden bg-zinc-100 lg:order-2 lg:aspect-auto lg:h-full lg:min-h-[88vh]">
           <HeroMediaPanel
             isLoading={isLoading}
             useAnimatedSvg={Boolean(useAnimatedSvg)}

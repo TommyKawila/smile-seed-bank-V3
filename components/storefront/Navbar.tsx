@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,13 +17,24 @@ import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth } from "@/hooks/use-auth";
-import { CartSheet } from "./CartSheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
 import { BreederSeedsNav } from "@/components/storefront/BreederDropdownMenu";
-import { SearchCommand } from "@/components/header/search-command";
+
+const CartSheet = dynamic(
+  () => import("./CartSheet").then((m) => ({ default: m.CartSheet })),
+  { ssr: false }
+);
+
+const SearchCommand = dynamic(
+  () =>
+    import("@/components/header/search-command").then((m) => ({
+      default: m.SearchCommand,
+    })),
+  { ssr: false }
+);
 
 export function Navbar() {
   const router = useRouter();

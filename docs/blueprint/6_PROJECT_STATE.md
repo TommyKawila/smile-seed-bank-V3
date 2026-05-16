@@ -4,6 +4,48 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-16 (Hero carousel layout — relative frame + grid height)
+- **`Hero.tsx`:** คอลัมน์สื่อ **`lg:h-full lg:min-h-[88vh]`** (แทน **`lg:h-auto`**) เพื่อให้ **`h-full`** ลูก resolve ใน grid; รูป static (ไม่มี carousel) ห่อ **`relative`** ก่อน **`<Image fill />`**
+- **`HeroCarouselSlideImages`:** โครง **`relative h-full w-full`** + กล่อง **`aspect-[390/429] md:aspect-[16/7]`** ซ้อนรูปมือถือ/เดสก์ท็อป **`fill`** (**`md:hidden` / `hidden md:block`**)
+- **`HomeHeroCarousel` / `HomeHeroCarouselMotion`:** สไลด์ **`absolute inset-0`** ไม่ใช้ **`flex-col`** ที่ทำให้บล็อก aspect เพี้ยน — ใช้ **`md:flex`** center เมื่อมีเล็ตเตอร์บ็อกซ์
+- **`HomeHeroCarouselSkeleton`:** **`min-h-[65svh] lg:min-h-[88vh]`** ให้สอดคล้องโครง Hero
+- **`HomeHeroLcpPreload`:** ความสูง preload คู่กับ aspect **390:429** และ **16:7**
+
+### บันทึกการทำงาน — 2026-05-16 (Storefront a11y — text contrast WCAG)
+- **`ProductCard`:** breeder link **`text-zinc-600`** / hover **`text-emerald-900`**; pack label **`text-emerald-800`**; badge **ใหม่** **`bg-emerald-800 text-white`**; discount ribbon **`bg-emerald-800`**; THC/type separator **`text-zinc-500`**; strike **`text-zinc-500`**
+- **`ShopSpotlightCard`:** pack **`text-emerald-800`**; strike **`text-zinc-500`**
+- **`Footer`:** mono bar + legal **`text-zinc-600`**, **`hover:text-foreground`**
+- **`WelcomeModal`:** หัวกล่องโค้ด **`text-zinc-600`**
+- **`FloatingOfferButton`:** minSpend + footer hint **`text-zinc-600`**
+- **`ShopGeneticVaultHero` / magazine cards:** breeder บรรทัด **`text-zinc-600`**
+- **`CheckoutPageClient` / `CartSheet`:** ลบโค้ด / Sparkles / encryption note / separator / strike / MapPin — **`text-zinc-500`–`600`**
+
+### บันทึกการทำงาน — 2026-05-16 (globals.css prune — drop unused component layers)
+- **`app/globals.css`:** คง **`@tailwind`** + **`:root`** tokens + **`border-border`** + **`body`** (**`@apply font-sans antialiased`** แทน font stack ซ้ำกับ **`tailwind.config.ts`**) + **`.magazine-article-emoji`** + **`@media print`** — ลบ **`btn-primary` / `btn-secondary` / `product-card` / badge utilities** ที่ไม่ถูกอ้างใน repo
+- **`app/layout.tsx`:** **`scroll-smooth`** บน **`<html>`** แทน **`html { scroll-behavior }`** ใน globals
+
+### บันทึกการทำงาน — 2026-05-16 (Unused JS — LazyGoogleAnalytics + dynamic HomePageClient)
+- **`components/third-parties/LazyGoogleAnalytics.tsx`:** mount **`GoogleAnalytics`** หลัง interaction แรก (**scroll / mousemove / touchstart / click / keydown**) — Lighthouse bot ไม่โหลด gtag จนกว่ามี interaction
+- **`app/layout.tsx`:** ใช้ **`LazyGoogleAnalytics`** แทน **`GoogleAnalytics`** ตรงๆ
+- **`app/(storefront)/home-stream.tsx`:** **`HomePageClient`** → **`next/dynamic`** พร้อม **`loading: HomeHeroSkeleton`** — แยก client chunk จากสตรีม RSC (**`Hero`** ยัง static ใน **`HomePageClient`** เพื่อ LCP)
+- **`HomePageBelowFold`** ยัง **`dynamic` + `ssr: false`** ใน **`HomePageClient`** เหมือนเดิม
+
+### บันทึกการทำงาน — 2026-05-16 (JS exec — @next/third-parties GA + Navbar dynamic chunks)
+- **`app/layout.tsx`:** GA ใช้ **`GoogleAnalytics`** จาก **`@next/third-parties/google`** (**`gaId`** = **`GA_MEASUREMENT_ID`** เดิม env+fallback) — ลบ **`next/script`** คู่ manual
+- **`components/storefront/Navbar.tsx`:** **`CartSheet`** + **`SearchCommand`** → **`next/dynamic`** **`{ ssr: false }`** แยก chunk จาก Navbar bundle
+- **`@next/third-parties`:** มีใน **`package.json`** แล้ว — ไม่ต้องติดตั้งเพิ่ม
+- **ตรวจ storefront:** ไม่มี **`lodash`** import ใน **`components/storefront`** / **`app/(storefront)`**; **`AgeVerificationGate`** / **`CartAnimation`** / **`Footer`** dynamic ใน storefront layout อยู่แล้ว
+
+### บันทึกการทำงาน — 2026-05-15 (Main-thread — optimizePackageImports + content-visibility + GA env)
+- **`next.config.mjs`:** **`experimental.optimizePackageImports`** เพิ่ม **`recharts`**, **`cmdk`**, **`sonner`**, **`@radix-ui/react-dialog|dropdown-menu|select|tabs|popover|scroll-area|tooltip|accordion`**
+- **`components/storefront/HomePageBelowFold.tsx`:** wrapper แต่ละ section below-fold ใส่ **`[content-visibility:auto]`** + **`[contain-intrinsic-size:auto_560px]`**; **`cn`** จาก **`@/lib/utils`**
+- **`app/layout.tsx`:** GA ID จาก **`NEXT_PUBLIC_GA_ID`** (trim) fallback **`G-RSY7B2ZH9X`** — script ยัง **`strategy="lazyOnload"`**
+
+### บันทึกการทำงาน — 2026-05-15 (Browserslist + TS target — fewer legacy polyfills)
+- **`package.json`:** เพิ่ม **`browserslist`** (Chrome/Safari/Firefox/Edge ล่าสุด 2 เวอร์ชัน + **`not dead`**) — ไม่มี **`.browserslistrc`** เดิม
+- **`tsconfig.json`:** **`compilerOptions.target`** **`ES2022`** (เดิม **`es2017`**) — ลบ **`downlevelIteration`**
+- **ตรวจ polyfill:** ไม่พบ **`core-js`** / **`regenerator-runtime`** import ในโค้ดโปรเจกต์
+
 ### บันทึกการทำงาน — 2026-05-15 (Hero LCP image — 412px bucket + AVIF + aligned sizes/preload)
 - **`next.config.mjs`:** **`deviceSizes`** เพิ่ม **412**; comment ว่า **`formats`** ใช้ AVIF ก่อน WebP
 - **`hero-carousel-image-sizes.ts`:** ค่าคงที่ **`HERO_CAROUSEL_MOBILE_SIZES`** / **`DESKTOP_SIZES`** ใช้ร่วม preload + **`HeroCarouselSlideImages`**

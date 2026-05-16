@@ -433,7 +433,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                                   <span
                                     className={cn(
                                       sansTab,
-                                      "text-xs font-normal text-zinc-400 line-through",
+                                      "text-xs font-normal text-zinc-500 line-through",
                                     )}
                                   >
                                     {formatPrice(listLine)}
@@ -636,7 +636,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
 
             {summary.tierDiscount + summary.promoDiscount > 0 && (
               <div className="flex items-center justify-center gap-2 rounded-sm border border-zinc-100 bg-zinc-50 px-4 py-3 font-sans text-sm text-zinc-700">
-                <Sparkles className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1} />
+                <Sparkles className="h-4 w-4 shrink-0 text-zinc-600" strokeWidth={1} />
                 <span className="text-xs leading-relaxed">
                   {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
                   <strong className={cn(sansTab, "font-semibold")}>

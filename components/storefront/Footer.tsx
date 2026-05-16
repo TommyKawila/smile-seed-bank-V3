@@ -25,7 +25,7 @@ export function Footer() {
   ];
 
   const monoBar =
-    "font-[family-name:var(--font-journal-product-mono)] text-[10px] uppercase leading-relaxed tracking-wide text-zinc-400 tabular-nums";
+    "font-[family-name:var(--font-journal-product-mono)] text-[10px] uppercase leading-relaxed tracking-wide text-zinc-600 tabular-nums";
 
   return (
     <footer className="no-print border-t border-zinc-100 bg-white">
@@ -138,7 +138,7 @@ export function Footer() {
           </p>
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
             {legalLinks.map((link) => (
-              <Link key={link.href} href={link.href} className={cn(monoBar, "hover:text-zinc-600")}>
+              <Link key={link.href} href={link.href} className={cn(monoBar, "hover:text-foreground")}>
                 {link.label}
               </Link>
             ))}

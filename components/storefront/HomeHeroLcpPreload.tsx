@@ -7,13 +7,14 @@ import {
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 /**
- * Moto G Power–style logical width (~412 CSS px); height keeps hero aspect 391:429 → ~452 px.
- * Matches `HeroCarouselSlideImages` mobile frame + `deviceSizes` bucket **412** in next.config.
+ * Moto G Power–style logical width (~412 CSS px); height matches hero slide aspect **390:429**.
+ * Aligns with `HeroCarouselSlideImages` + `deviceSizes` bucket **412** in next.config.
  */
 const MOBILE_W = 412;
-const MOBILE_H = Math.round((MOBILE_W * 429) / 391);
+const MOBILE_H = Math.round((MOBILE_W * 429) / 390);
 const DESKTOP_W = 640;
-const DESKTOP_H = Math.round((DESKTOP_W * 890) / 617);
+/** Desktop hero frame uses **16:7** (see `HeroCarouselSlideImages`). */
+const DESKTOP_H = Math.round((DESKTOP_W * 7) / 16);
 
 const MOBILE_IMAGE_SIZES_HINT = "(max-width: 767px) 100vw";
 

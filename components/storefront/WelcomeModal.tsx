@@ -197,7 +197,7 @@ export function WelcomeModal() {
 
               {/* Discount box */}
               <div className="mt-5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-4">
-                <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wider text-zinc-600">
                   {t("รหัสส่วนลด 10%", "10% discount code")}
                 </p>
                 <div className="flex items-center justify-center gap-2">

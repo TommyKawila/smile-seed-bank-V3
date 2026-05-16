@@ -14,21 +14,17 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 5% 10%;
 
-    /* Deep Forest Teal */
     --primary: 162 70% 22%;
     --primary-foreground: 0 0% 98%;
 
-    /* Vibrant Electric Mint (genetic bar — Sativa) */
     --sativa: 158 95% 45%;
 
-    /* Rich Lavender (genetic bar — Indica) */
     --secondary: 255 55% 90%;
     --secondary-foreground: 255 45% 35%;
 
     --muted: 240 5% 96%;
     --muted-foreground: 240 4% 46%;
 
-    /* Fresh Mint */
     --accent: 158 60% 94%;
     --accent-foreground: 162 70% 22%;
 
@@ -47,46 +43,14 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-inter), var(--font-prompt), 'Noto Sans Thai', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  html {
-    scroll-behavior: smooth;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 rounded-lg px-6 py-3 font-medium;
-  }
-
-  .btn-secondary {
-    @apply bg-white border border-border text-foreground hover:bg-muted active:scale-[0.98] transition-all duration-200 rounded-lg px-6 py-3 font-medium;
-  }
-
-  .product-card {
-    @apply bg-card rounded-xl overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5;
-  }
-
-  .badge-low-stock {
-    @apply bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full;
-  }
-
-  /* Magazine article body: text fonts + system emoji fonts (iOS / Android / Windows) */
   .magazine-article-emoji {
     font-family: var(--font-magazine), "Prompt", "Noto Sans Thai", "Segoe UI Emoji",
       "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif;
-  }
-
-  .badge-free-gift {
-    @apply bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full;
-  }
-
-  .badge-wholesale {
-    @apply bg-primary/10 text-primary text-xs font-semibold px-2 py-0.5 rounded-full;
   }
 }
 

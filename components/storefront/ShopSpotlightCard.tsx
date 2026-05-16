@@ -122,12 +122,12 @@ export function ShopSpotlightCard({
           )}
           <div className="mt-4 min-w-0 border-t border-zinc-100 pt-3">
             {seedsPackLabel ? (
-              <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-600/80 sm:text-xs">
+              <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-800 sm:text-xs">
                 {seedsPackLabel}
               </p>
             ) : null}
             {showStrike && (
-              <p className="font-sans text-xs tabular-nums text-zinc-400 line-through">
+              <p className="font-sans text-xs tabular-nums text-zinc-500 line-through">
                 {formatPrice(listRegular)}
               </p>
             )}

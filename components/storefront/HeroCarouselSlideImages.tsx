@@ -22,8 +22,8 @@ export function HeroCarouselSlideImages({
 }: HeroCarouselSlideImagesProps) {
   const eager = priority;
   return (
-    <>
-      <div className="relative aspect-[391/429] w-full shrink-0 overflow-hidden p-0 md:hidden">
+    <div className="relative h-full w-full min-h-0 overflow-hidden">
+      <div className="relative mx-auto h-full w-full max-h-full overflow-hidden aspect-[390/429] md:aspect-[16/7]">
         <Image
           src={mobileSrc}
           alt={heroAlt}
@@ -32,11 +32,9 @@ export function HeroCarouselSlideImages({
           fetchPriority={eager ? "high" : "auto"}
           loading={eager ? "eager" : "lazy"}
           quality={60}
-          className="object-contain object-center"
+          className="object-contain object-center md:hidden"
           sizes={HERO_CAROUSEL_MOBILE_SIZES}
         />
-      </div>
-      <div className="relative hidden aspect-[617/890] w-full shrink-0 overflow-hidden p-0 md:block">
         <Image
           src={desktopSrc}
           alt={heroAlt}
@@ -45,10 +43,10 @@ export function HeroCarouselSlideImages({
           fetchPriority={eager ? "high" : "auto"}
           loading={eager ? "eager" : "lazy"}
           quality={65}
-          className="object-cover object-center"
+          className="hidden object-cover object-center md:block"
           sizes={HERO_CAROUSEL_DESKTOP_SIZES}
         />
       </div>
-    </>
+    </div>
   );
 }

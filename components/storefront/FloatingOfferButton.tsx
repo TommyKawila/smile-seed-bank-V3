@@ -110,7 +110,7 @@ export function CouponCard({
           )}
         </div>
         <p className="text-xs text-zinc-500">{discountLabel(coupon)}</p>
-        {minSpend && <p className="text-[11px] text-zinc-400">{minSpend}</p>}
+        {minSpend && <p className="text-[11px] text-zinc-600">{minSpend}</p>}
         {expiry && !used && (
           <p className="mt-0.5 text-[11px] font-medium text-orange-500">{expiry}</p>
         )}
@@ -276,7 +276,7 @@ export function FloatingOfferButton({
                 ))}
               </div>
 
-              <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-zinc-400">
+              <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-zinc-600">
                 <ChevronRight className="h-3 w-3" />
                 คัดลอกโค้ด แล้วใส่ในหน้าตะกร้าสินค้า
               </div>

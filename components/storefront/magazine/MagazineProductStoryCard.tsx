@@ -70,7 +70,7 @@ export function MagazineProductStoryCard({
           {product.name}
         </h3>
         {product.breeder_name && (
-          <p className="text-xs text-zinc-500">{product.breeder_name}</p>
+          <p className="text-xs text-zinc-600">{product.breeder_name}</p>
         )}
         {product.price != null && (
           <p className="text-sm font-medium tabular-nums text-emerald-800">

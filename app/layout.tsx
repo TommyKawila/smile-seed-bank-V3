@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
-import Script from "next/script";
+import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
 import { Inter, Prompt } from "next/font/google";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
@@ -50,7 +50,10 @@ export const viewport = {
 };
 
 const siteUrl = getSiteOrigin();
-const GA_MEASUREMENT_ID = "G-RSY7B2ZH9X";
+const GA_MEASUREMENT_ID =
+  typeof process.env.NEXT_PUBLIC_GA_ID === "string" && process.env.NEXT_PUBLIC_GA_ID.trim()
+    ? process.env.NEXT_PUBLIC_GA_ID.trim()
+    : "G-RSY7B2ZH9X";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -74,22 +77,11 @@ export default function RootLayout({
   children: ReactNode;
 }) {
   return (
-    <html lang="th" suppressHydrationWarning>
+    <html lang="th" className="scroll-smooth" suppressHydrationWarning>
       <head>{supabaseOriginHeadLinks()}</head>
       <body className={`${inter.variable} ${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
         {children}
-        <Script id="ga-init" strategy="lazyOnload">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `}
-        </Script>
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="lazyOnload"
-        />
+        <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />
         <Analytics />
       </body>
     </html>

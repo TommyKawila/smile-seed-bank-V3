@@ -16,7 +16,7 @@ export function HomeHeroSkeleton() {
               </div>
             </div>
           </div>
-          <div className="relative order-1 aspect-[4/5] h-[65svh] w-full flex-shrink-0 overflow-hidden bg-zinc-200 lg:order-2 lg:aspect-auto lg:h-auto lg:min-h-[88vh]">
+          <div className="relative order-1 aspect-[4/5] h-[65svh] w-full flex-shrink-0 overflow-hidden bg-zinc-200 lg:order-2 lg:aspect-auto lg:h-full lg:min-h-[88vh]">
             <div className="absolute inset-0 animate-pulse bg-zinc-200" aria-hidden />
           </div>
         </div>
@@ -29,7 +29,7 @@ export function HomeHeroSkeleton() {
 export function HomeHeroCarouselSkeleton() {
   return (
     <div
-      className="relative h-full min-h-0 w-full animate-pulse bg-zinc-200"
+      className="relative h-full w-full min-h-[65svh] animate-pulse bg-zinc-200 lg:min-h-[88vh]"
       aria-hidden
     />
   );

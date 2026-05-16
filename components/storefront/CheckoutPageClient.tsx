@@ -199,7 +199,7 @@ function OrderItemRow({
         >
           <span>{formatPrice(effLine)}</span>
           {showBrandStrike ? (
-            <span className={cn(checkoutAmount, "text-xs font-normal text-zinc-400 line-through")}>
+            <span className={cn(checkoutAmount, "text-xs font-normal text-zinc-500 line-through")}>
               {formatPrice(listLine)}
             </span>
           ) : null}
@@ -756,7 +756,7 @@ export function CheckoutPageClient({
                           <button
                             type="button"
                             onClick={() => clearPromoCode()}
-                            className="text-xs text-zinc-400 hover:text-red-500"
+            className="text-xs text-zinc-600 hover:text-red-600"
                           >
                             {t("ลบ", "Remove")}
                           </button>
@@ -811,7 +811,7 @@ export function CheckoutPageClient({
                     </div>
                     {summary.tierDiscount + summary.promoDiscount > 0 && (
                       <div className="flex items-center justify-center gap-2 rounded-sm border border-zinc-100 bg-white px-3 py-2.5 text-xs text-zinc-700">
-                        <Sparkles className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1} />
+                        <Sparkles className="h-4 w-4 shrink-0 text-zinc-600" strokeWidth={1} />
                         <span>
                           {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
                           <strong className={cn(checkoutAmount, "font-semibold")}>
@@ -871,7 +871,7 @@ export function CheckoutPageClient({
                 )}
               </Button>
 
-              <p className="text-center text-xs text-zinc-400">
+              <p className="text-center text-xs text-zinc-600">
                 {t("🔒 ข้อมูลของคุณปลอดภัยและถูกเข้ารหัส", "🔒 Your data is encrypted")}
               </p>
           </div>
@@ -880,7 +880,7 @@ export function CheckoutPageClient({
           <div className="mx-auto max-w-3xl space-y-4">
             <div className="flex flex-wrap items-center gap-2 rounded-sm border border-zinc-100 bg-zinc-50/90 px-4 py-3">
               <p className={cn(mono, "text-sm font-semibold text-zinc-900")}>#{placed.orderNumber}</p>
-              <span className="text-zinc-400">·</span>
+              <span className="text-zinc-500">·</span>
               <p className="text-xs text-zinc-600">
                 {t("ชำระเงินและอัปโหลดหลักฐานด้านล่าง", "Pay and upload your proof below")}
               </p>
@@ -891,7 +891,7 @@ export function CheckoutPageClient({
                 <AccordionTrigger className="px-2 hover:no-underline [&>svg]:shrink-0">
                   <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left">
                     <span className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-                      <MapPin className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1.5} aria-hidden />
+                      <MapPin className="h-4 w-4 shrink-0 text-zinc-600" strokeWidth={1.5} aria-hidden />
                       {t("ที่อยู่จัดส่ง", "Shipping address")}
                     </span>
                     <span className="line-clamp-1 w-full text-[11px] font-normal text-zinc-500">
@@ -1022,7 +1022,7 @@ export function CheckoutPageClient({
                       ? (placed.restoreFlatDiscountBaht ?? 0)
                       : placed.summarySnapshot.tierDiscount + placed.summarySnapshot.promoDiscount) > 0 && (
                       <div className="flex items-center justify-center gap-2 rounded-sm border border-zinc-100 bg-white px-3 py-2.5 text-xs text-zinc-700">
-                        <Sparkles className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1} aria-hidden />
+                        <Sparkles className="h-4 w-4 shrink-0 text-zinc-600" strokeWidth={1} aria-hidden />
                         <span>
                           {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
                           <strong className={cn(checkoutAmount, "font-semibold")}>
