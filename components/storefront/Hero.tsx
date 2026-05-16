@@ -42,6 +42,9 @@ function HeroMediaPanel({
   heroCarousel?: ReactNode;
   staticImageAlt: string;
 }) {
+  if (heroCarousel) {
+    return <div className="relative h-full min-h-0 w-full overflow-hidden p-0">{heroCarousel}</div>;
+  }
   if (isLoading) {
     return <Skeleton className="h-full min-h-0 w-full rounded-none bg-zinc-200" />;
   }
@@ -66,9 +69,6 @@ function HeroMediaPanel({
         aria-hidden
       />
     );
-  }
-  if (heroCarousel) {
-    return <div className="relative h-full min-h-0 w-full overflow-hidden p-0">{heroCarousel}</div>;
   }
   return (
     <Image

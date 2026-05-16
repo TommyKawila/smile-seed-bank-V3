@@ -1,14 +1,17 @@
 import { Suspense } from "react";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { HomeHeroCarouselSlot } from "@/components/storefront/HomeHeroCarouselSlot";
+import { HomeHeroCarousel } from "@/components/storefront/HomeHeroCarousel";
+import { HomeHeroLcpPreload } from "@/components/storefront/HomeHeroLcpPreload";
 import { HomePageClient } from "@/components/storefront/HomePageClient";
 import { EMPTY_STOREFRONT_HOME_PAYLOAD } from "@/services/storefront-home-service";
+import { getHeroCarouselBannersCached } from "@/services/hero-banner-service";
 import {
   DEFAULT_HOME_SECTION_KEYS,
   DEFAULT_SECTION_FALLBACK_LABELS,
   type HomePageSectionPayload,
 } from "@/lib/homepage-sections";
+import type { HeroBanner } from "@/lib/hero-banners";
 
 const getSectionsCached = unstable_cache(
   async (): Promise<HomePageSectionPayload[]> => {
@@ -43,13 +46,19 @@ async function getSections(): Promise<HomePageSectionPayload[]> {
 }
 
 async function HomePageContent() {
-  const sections = await getSections();
+  const [sections, heroBanners] = await Promise.all([
+    getSections(),
+    getHeroCarouselBannersCached().catch((): HeroBanner[] => []),
+  ]);
   return (
-    <HomePageClient
-      sections={sections}
-      initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
-      heroCarousel={<HomeHeroCarouselSlot />}
-    />
+    <>
+      <HomeHeroLcpPreload banner={heroBanners[0]} />
+      <HomePageClient
+        sections={sections}
+        initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
+        heroCarousel={<HomeHeroCarousel banners={heroBanners} />}
+      />
+    </>
   );
 }
 

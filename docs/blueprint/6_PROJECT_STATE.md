@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Home LCP — hero preload + no carousel skeleton gate)
+- **`app/(storefront)/page.tsx`:** **`Promise.all(getSections, getHeroCarouselBannersCached)`** — ส่ง **`heroBanners`** เข้า **`HomeHeroCarousel`** โดยตรง (เลิก **`HomeHeroCarouselSlot` / Suspense fallback** ว่าง)
+- **`HomeHeroLcpPreload.tsx`:** **`link rel="preload" as="image"`** สำหรับสไลด์แรก (มือถือ **`w=390,q=60`** / เดสก์ท็อป **`w=640,q=65`**) จาก **`getImageProps`** → URL **`/_next/image?...`** ตรงกับ **`HeroCarouselSlideImages`**
+- **`Hero.tsx`:** ถ้ามี **`heroCarousel`** แสดงทันที — **ไม่รอ** **`useSiteSettings`** skeleton (เดิมบังคับ LCP หลังโหลด settings)
+- **ลบ `HomeHeroCarouselSlot.tsx`**
+
 ### บันทึกการทำงาน — 2026-05-15 (Reflow: rAF scroll + geometry reads)
 - **`lib/subscribe-scroll-y-beyond.ts`:** รวมการอ่าน **`scrollY`** ใน **`requestAnimationFrame`** + ตัด **`setState`** ซ้ำเมื่อค่า boolean เท่าเดิม — ใช้ใน **`Navbar`** และ **`ShopPageClient`**
 - **`CartAnimation`:** **`getBoundingClientRect`** หลังคลิก / ใน **`FlyingItem`** ห่อด้วย **`requestAnimationFrame`**
@@ -63,8 +69,7 @@
 
 ### บันทึกการทำงาน — 2026-05-15 (Home hero streaming — carousel Suspense slot)
 - **`services/hero-banner-service.ts`:** **`getHeroCarouselBannersCached`** (`unstable_cache` เดิมจากหน้าแรก)
-- **`HomeHeroCarouselSlot.tsx`:** RSC + **`Suspense`** → carousel โหลดแยก ไม่ถูก **`getSections()`** gate พร้อมกันใน **`Promise.all`**
-- **`app/(storefront)/page.tsx`:** **`heroCarousel={<HomeHeroCarouselSlot />}`** — carousel stream แยกจาก sections
+- **`HomeHeroCarousel` / หน้าแรก:** **`Promise.all`** sections + **`getHeroCarouselBannersCached`**; **`HomeHeroLcpPreload`** + แคโรเซลไม่ถูก skeleton settings บัง (ดูหัวข้อ LCP ล่าสุด)
 - **`app/(storefront)/layout.tsx`:** **`dynamic`** **`AgeVerificationGate`** เป็น **`.then((m) => m.AgeVerificationGate)`**
 
 ### บันทึกการทำงาน — 2026-05-15 (Home API payload — blog select + slim product cards + hero quality)
