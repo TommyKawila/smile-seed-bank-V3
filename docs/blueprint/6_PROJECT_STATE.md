@@ -4,6 +4,19 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-16 (Cart add — coerce string ids/qty before Zod)
+- **`hooks/useCart.ts`:** **`normalizeAddToCartPayload`** ก่อน **`AddToCartSchema.safeParse`** — แปลง **`variantId` / `productId` / `quantity` / `price` / `stock_quantity` / `breeder_id`** จาก string/เลขทศนิยมให้เป็น integer/number ที่ schema ต้องการ (แก้ toast **expected number, received string** จากปุ่ม last-one / ProductCard)
+
+### บันทึกการทำงาน — 2026-05-16 (Forced reflow — deferred geometric reads)
+- **Audit `components/storefront/`:** พบ **`getBoundingClientRect`** เฉพาะ **`CartAnimation.tsx`** และ **`BreederRibbon.tsx`** (ไม่มี **`ResizeObserver`** candidate จาก **`window.resize`** / **`innerWidth`** ใน storefront)
+- **`lib/schedule-layout-read.ts`:** **`scheduleLayoutRead(cb)`** — double **`requestAnimationFrame`** + cancel เพื่อเลื่อนการอ่าน geometry หลัง layout
+- **`CartAnimation`:** จุดปลายทางการ์ดบิน + **`requestCartFlyAnimation`** ใช้ **`scheduleLayoutRead`**; **`safeFinish`** / unmount เรียก **`cancelLayoutRead`**
+- **`BreederRibbon`:** tooltip **`mouseEnter`** / coalesced **`mousemove`** ใช้ **`scheduleLayoutRead`** หลัง rAF batch เดิม
+
+### บันทึกการทำงาน — 2026-05-16 (Webpack — single client CSS chunk via splitChunks.styles)
+- **`next.config.mjs`:** **`webpack(config, { dev, isServer })`** — production client เพิ่ม **`cacheGroups.styles`** (**`test: /\.css$/`**, **`chunks: 'all'`**, **`enforce: true`**, **`name: 'styles'`**) เพื่อรวม CSS split เป็นชุดเดียว (ลดสาย render-blocking จากหลายไฟล์)
+- **`npm run build`:** ผ่าน (compile + static generation)
+
 ### บันทึกการทำงาน — 2026-05-16 (Hero carousel layout — relative frame + grid height)
 - **`Hero.tsx`:** คอลัมน์สื่อ **`lg:h-full lg:min-h-[88vh]`** (แทน **`lg:h-auto`**) เพื่อให้ **`h-full`** ลูก resolve ใน grid; รูป static (ไม่มี carousel) ห่อ **`relative`** ก่อน **`<Image fill />`**
 - **`HeroCarouselSlideImages`:** โครง **`relative h-full w-full`** + กล่อง **`aspect-[390/429] md:aspect-[16/7]`** ซ้อนรูปมือถือ/เดสก์ท็อป **`fill`** (**`md:hidden` / `hidden md:block`**)

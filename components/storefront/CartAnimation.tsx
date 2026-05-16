@@ -6,6 +6,7 @@ import Image from "next/image";
 import Sprout from "lucide-react/dist/esm/icons/sprout";
 import { toast } from "sonner";
 import { CART_FLY_EVENT, CART_HIT_EVENT, type CartFlyEventDetail, getNavCartButtonEl } from "@/lib/cart-fly-events";
+import { scheduleLayoutRead } from "@/lib/schedule-layout-read";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 type ActiveFly = CartFlyEventDetail & { id: number };
@@ -33,12 +34,14 @@ function FlyingItem({ detail, onDone }: { detail: ActiveFly; onDone: () => void 
     }
 
     let raf = 0;
+    let cancelLayoutRead: (() => void) | undefined;
     let t560: ReturnType<typeof setTimeout> | undefined;
     let t1000: ReturnType<typeof setTimeout> | undefined;
 
     const safeFinish = (opts: { hit: boolean }) => {
       if (doneRef.current) return;
       doneRef.current = true;
+      cancelLayoutRead?.();
       cancelAnimationFrame(raf);
       if (t560 !== undefined) clearTimeout(t560);
       if (t1000 !== undefined) clearTimeout(t1000);
@@ -53,7 +56,7 @@ function FlyingItem({ detail, onDone }: { detail: ActiveFly; onDone: () => void 
     };
 
     try {
-      requestAnimationFrame(() => {
+      cancelLayoutRead = scheduleLayoutRead(() => {
         try {
           const tr = targetEl.getBoundingClientRect();
           const end = center(tr);
@@ -100,6 +103,7 @@ function FlyingItem({ detail, onDone }: { detail: ActiveFly; onDone: () => void 
 
     return () => {
       cancelAnimationFrame(raf);
+      cancelLayoutRead?.();
       if (t560 !== undefined) clearTimeout(t560);
       if (t1000 !== undefined) clearTimeout(t1000);
     };
@@ -216,7 +220,7 @@ export function requestCartFlyAnimation(
     }
     return;
   }
-  window.requestAnimationFrame(() => {
+  scheduleLayoutRead(() => {
     let r: DOMRect;
     try {
       r = startEl.getBoundingClientRect();

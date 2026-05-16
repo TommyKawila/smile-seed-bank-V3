@@ -8,6 +8,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import type { Breeder } from "@/types/supabase";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { breederSlugFromName, seedsBreederHref } from "@/lib/breeder-slug";
+import { scheduleLayoutRead } from "@/lib/schedule-layout-read";
 
 const ITEM_W = 140;
 const ITEM_W_COMPACT = 100;
@@ -263,7 +264,7 @@ function BreederRibbonBase({
                     const el = e.currentTarget;
                     const clientX = e.clientX;
                     tooltipTimer.current = setTimeout(() => {
-                      requestAnimationFrame(() => {
+                      scheduleLayoutRead(() => {
                         const rect = el.getBoundingClientRect();
                         setTooltip({ breeder: b, mx: clientX, my: rect.top });
                       });
@@ -280,14 +281,16 @@ function BreederRibbonBase({
                   if (!tooltipMoveRafRef.current) {
                     tooltipMoveRafRef.current = requestAnimationFrame(() => {
                       tooltipMoveRafRef.current = 0;
-                      const p = tooltipMovePendingRef.current;
-                      if (!p) return;
-                      const rect = p.el.getBoundingClientRect();
-                      setTooltip((prev) =>
-                        prev && prev.breeder.id === p.breederId
-                          ? { ...prev, mx: p.clientX, my: rect.top }
-                          : prev
-                      );
+                      scheduleLayoutRead(() => {
+                        const p = tooltipMovePendingRef.current;
+                        if (!p) return;
+                        const rect = p.el.getBoundingClientRect();
+                        setTooltip((prev) =>
+                          prev && prev.breeder.id === p.breederId
+                            ? { ...prev, mx: p.clientX, my: rect.top }
+                            : prev
+                        );
+                      });
                     });
                   }
                 }}

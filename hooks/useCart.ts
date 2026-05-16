@@ -36,8 +36,8 @@ const PromoCodeSchema = z
   .regex(/^[A-Z0-9_-]+$/, "Use uppercase letters, numbers, hyphen, or underscore only");
 
 const AddToCartSchema = z.object({
-  variantId: z.number().positive(),
-  productId: z.number().positive(),
+  variantId: z.number().int().positive(),
+  productId: z.number().int().positive(),
   productName: z.string().min(1),
   productImage: z.string().nullable(),
   unitLabel: z.string().min(1),
@@ -49,6 +49,37 @@ const AddToCartSchema = z.object({
   breederLogoUrl: z.string().nullable().optional(),
   breederName: z.string().nullable().optional(),
 });
+
+/** Coerce IDs/qty/stock from JSON/API strings before Zod (avoids "expected number, received string"). */
+function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<CartItem, "isFreeGift"> {
+  const variantId = Math.trunc(Number(raw.variantId));
+  const productId = Math.trunc(Number(raw.productId));
+  const q = Math.trunc(Number(raw.quantity ?? 1));
+  const quantity = Number.isFinite(q) && q > 0 ? q : 1;
+  const price = Number(raw.price);
+  const sq = raw.stock_quantity;
+  const stock_quantity =
+    sq === undefined
+      ? undefined
+      : (() => {
+          const n = Math.trunc(Number(sq));
+          return Number.isFinite(n) ? Math.max(0, n) : undefined;
+        })();
+  let breeder_id = raw.breeder_id;
+  if (breeder_id !== undefined && breeder_id !== null) {
+    const b = Math.trunc(Number(breeder_id));
+    breeder_id = Number.isFinite(b) && b > 0 ? b : null;
+  }
+  return {
+    ...raw,
+    variantId,
+    productId,
+    quantity,
+    price,
+    stock_quantity,
+    breeder_id,
+  };
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -227,7 +258,7 @@ export function useCart(): UseCartReturn {
 
   const addToCart = useCallback(
     (itemData: Omit<CartItem, "isFreeGift">): { error: string | null } => {
-      const parsed = AddToCartSchema.safeParse(itemData);
+      const parsed = AddToCartSchema.safeParse(normalizeAddToCartPayload(itemData));
       if (!parsed.success) {
         return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
       }

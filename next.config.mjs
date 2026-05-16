@@ -110,6 +110,19 @@ const nextConfig = {
       },
     ];
   },
+  webpack(config, { dev, isServer }) {
+    if (!dev && !isServer) {
+      if (config.optimization?.splitChunks?.cacheGroups) {
+        config.optimization.splitChunks.cacheGroups.styles = {
+          name: "styles",
+          test: /\.css$/,
+          chunks: "all",
+          enforce: true,
+        };
+      }
+    }
+    return config;
+  },
 };
 
 export default withBundleAnalyzer(nextConfig);
