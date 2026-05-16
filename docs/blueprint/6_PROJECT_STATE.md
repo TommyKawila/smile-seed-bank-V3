@@ -4,6 +4,18 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Reflow: rAF scroll + geometry reads)
+- **`lib/subscribe-scroll-y-beyond.ts`:** รวมการอ่าน **`scrollY`** ใน **`requestAnimationFrame`** + ตัด **`setState`** ซ้ำเมื่อค่า boolean เท่าเดิม — ใช้ใน **`Navbar`** และ **`ShopPageClient`**
+- **`CartAnimation`:** **`getBoundingClientRect`** หลังคลิก / ใน **`FlyingItem`** ห่อด้วย **`requestAnimationFrame`**
+- **`BreederRibbon`:** tooltip **`getBoundingClientRect`** บน **`mousemove`** ผ่าน rAF หนึ่งเฟรมต่อครั้ง; **`mouseEnter`** อ่าน rect ใน rAF หลัง delay
+- **`manual/page` export PNG:** อ่าน **`offsetWidth`/`offsetHeight`** หลัง rAF หนึ่งเฟรม (หลัง style writes + delay)
+
+### บันทึกการทำงาน — 2026-05-15 (Product gallery stacked images + Supabase preconnect + detail perf)
+- **`ProductGallery`:** ซ้อน **`next/image`** ทุกรูปใน hero + lightbox — **`selected` / `index`** ควบคุม **`opacity` / `z-index` / `pointer-events`**; รูปแรก **`priority` + eager`** ที่เหลือ **`lazy`**; **`quality={75}`**
+- **`product-detail-client`:** ลบ **`framer-motion`** จากคอลัมน์หลัก (ลด bundle / CSS ที่เกี่ยวกับ motion)
+- **`SupabaseStoragePreconnect` + `app/layout.tsx`:** **`preconnect`** + **`dns-prefetch`** ไป **`NEXT_PUBLIC_SUPABASE_URL`** origin
+- **`app/(storefront)/layout.tsx`:** comment ว่า App Router ไม่สามารถ inject `<head>` — preconnect อยู่ root layout
+
 ### บันทึกการทำงาน — 2026-05-15 (ProductGallery: explicit quality 75 on all Images)
 - **`ProductGallery`:** thumb strip + lightbox strip **`quality={75}`** ครบทุก **`next/image`** (เดิมบางจุดพึ่ง default — อาจชน whitelist)
 

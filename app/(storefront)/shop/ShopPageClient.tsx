@@ -65,6 +65,7 @@ import { GeneticVaultProductGrid } from "@/components/storefront/GeneticVaultPro
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import { fetchWithTimeout } from "@/lib/timeout";
 import type { ProductListItem } from "@/services/storefront-product-service";
+import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 
 const SHOP_PAGE_INITIAL = 30;
 const SHOP_PAGE_STEP = 24;
@@ -702,12 +703,10 @@ export function ShopPageClient({
     shownCount < totalFiltered ||
     (!isNarrowedByClientFilters && hasMoreServerProducts && !allServerPagesFetched);
 
-  useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > BACK_TO_TOP_SCROLL_THRESHOLD);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  useEffect(
+    () => subscribeScrollYBeyond(BACK_TO_TOP_SCROLL_THRESHOLD, setShowBackToTop),
+    []
+  );
 
   useEffect(() => {
     let cancelled = false;

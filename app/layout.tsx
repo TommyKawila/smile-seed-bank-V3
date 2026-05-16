@@ -4,6 +4,7 @@ import Script from "next/script";
 import { Inter, Prompt } from "next/font/google";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
+import { SupabaseStoragePreconnect } from "@/components/seo/SupabaseStoragePreconnect";
 
 const Analytics = dynamic(
   () => import("@vercel/analytics/react").then((m) => m.Analytics),
@@ -57,6 +58,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="th" suppressHydrationWarning>
+      <head>
+        <SupabaseStoragePreconnect />
+      </head>
       <body className={`${inter.variable} ${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
         {children}
         <Script id="ga-init" strategy="lazyOnload">

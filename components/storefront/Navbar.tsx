@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { CartSheet } from "./CartSheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
 import { BreederSeedsNav } from "@/components/storefront/BreederDropdownMenu";
 import { SearchCommand } from "@/components/header/search-command";
@@ -68,11 +69,7 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  useEffect(() => subscribeScrollYBeyond(12, setScrolled), []);
 
   useEffect(() => {
     let clearT: number | undefined;

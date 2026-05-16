@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ChevronLeft, ShoppingCart, Leaf, FlaskConical, TestTube2, Flower2, Gauge, Sprout, Clock, Dna, GitFork, Package } from "lucide-react";
 type ProductWithSpecs = ProductFull;
 import { Button } from "@/components/ui/button";
@@ -424,26 +423,17 @@ export default function ProductDetailClient({
         {/* Main Layout */}
         <div className="grid gap-4 lg:grid-cols-2 lg:gap-8">
           {/* ── Left: Image Gallery ───────────────────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
+          <div>
             <ProductGallery
               product={product}
               selectedVariantId={selectedVariant?.id ?? null}
               showAggregateSoldOut={aggregateOos}
               soldOutLabel={t("สินค้าหมด / SOLD OUT", "Sold out / SOLD OUT")}
             />
-          </motion.div>
+          </div>
 
           {/* ── Right: Info ───────────────────────────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-            className="flex flex-col gap-2 rounded-2xl border border-zinc-100 bg-white/95 p-4 shadow-sm sm:gap-2.5 sm:p-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"
-          >
+          <div className="flex flex-col gap-2 rounded-2xl border border-zinc-100 bg-white/95 p-4 shadow-sm sm:gap-2.5 sm:p-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
             <div className="flex min-w-0 items-start gap-3 max-lg:gap-2.5">
               <div className="min-w-0 flex-1 space-y-1.5 max-lg:space-y-1">
                 <h1 className="font-sans text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
@@ -636,7 +626,7 @@ export default function ProductDetailClient({
                   ? t("✓ เพิ่มแล้ว!", "✓ Added!")
                   : tMsg("product.add_to_cart", "Add to Cart")}
             </Button>
-          </motion.div>
+          </div>
         </div>
 
         {/* ── Premium Specs Section ─────────────────────────────────────── */}

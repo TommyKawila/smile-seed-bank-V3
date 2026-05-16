@@ -53,41 +53,47 @@ function FlyingItem({ detail, onDone }: { detail: ActiveFly; onDone: () => void 
     };
 
     try {
-      const tr = targetEl.getBoundingClientRect();
-      const end = center(tr);
-      const start = center(detail.startRect);
-      const dx = end.x - start.x;
-      const dy = end.y - start.y;
-      const dist = Math.hypot(dx, dy) || 1;
-      const arcH = Math.min(120, 40 + dist * 0.12);
-      const t0 = performance.now();
-
-      t560 = setTimeout(() => {
-        safeFinish({ hit: true });
-      }, FLY_MS);
-      t1000 = setTimeout(() => {
-        safeFinish({ hit: false });
-      }, FLY_SAFETY_MS);
-
-      const tick = (now: number) => {
+      requestAnimationFrame(() => {
         try {
-          const rawT = Math.min(1, (now - t0) / FLY_MS);
-          const easeT = rawT * rawT * (3 - 2 * rawT);
-          const x = start.x + dx * easeT;
-          const y = start.y + dy * easeT - 4 * arcH * rawT * (1 - rawT);
-          const fade = rawT < 0.88 ? 1 : 1 - (rawT - 0.88) / 0.12;
-          const sc = rawT < 0.88 ? 1 : 1 - 0.45 * ((rawT - 0.88) / 0.12);
-          setPos({ x, y, t: rawT, opacity: fade, scale: sc, trail: rawT });
-          if (rawT < 1) {
-            raf = requestAnimationFrame(tick);
-          } else {
+          const tr = targetEl.getBoundingClientRect();
+          const end = center(tr);
+          const start = center(detail.startRect);
+          const dx = end.x - start.x;
+          const dy = end.y - start.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const arcH = Math.min(120, 40 + dist * 0.12);
+          const t0 = performance.now();
+
+          t560 = setTimeout(() => {
             safeFinish({ hit: true });
-          }
+          }, FLY_MS);
+          t1000 = setTimeout(() => {
+            safeFinish({ hit: false });
+          }, FLY_SAFETY_MS);
+
+          const tick = (now: number) => {
+            try {
+              const rawT = Math.min(1, (now - t0) / FLY_MS);
+              const easeT = rawT * rawT * (3 - 2 * rawT);
+              const x = start.x + dx * easeT;
+              const y = start.y + dy * easeT - 4 * arcH * rawT * (1 - rawT);
+              const fade = rawT < 0.88 ? 1 : 1 - (rawT - 0.88) / 0.12;
+              const sc = rawT < 0.88 ? 1 : 1 - 0.45 * ((rawT - 0.88) / 0.12);
+              setPos({ x, y, t: rawT, opacity: fade, scale: sc, trail: rawT });
+              if (rawT < 1) {
+                raf = requestAnimationFrame(tick);
+              } else {
+                safeFinish({ hit: true });
+              }
+            } catch {
+              safeFinish({ hit: true });
+            }
+          };
+          raf = requestAnimationFrame(tick);
         } catch {
-          safeFinish({ hit: true });
+          safeFinish({ hit: false });
         }
-      };
-      raf = requestAnimationFrame(tick);
+      });
     } catch {
       safeFinish({ hit: false });
     }
@@ -210,17 +216,30 @@ export function requestCartFlyAnimation(
     }
     return;
   }
-  const r = startEl.getBoundingClientRect();
-  window.dispatchEvent(
-    new CustomEvent<CartFlyEventDetail>(CART_FLY_EVENT, {
-      detail: {
-        startRect: { left: r.left, top: r.top, width: r.width, height: r.height },
-        productName: args.productName,
-        productImage: args.productImage,
-      },
-    })
-  );
-  if (live) {
-    live.textContent = args.locale === "th" ? args.announceTh : args.announceEn;
-  }
+  window.requestAnimationFrame(() => {
+    let r: DOMRect;
+    try {
+      r = startEl.getBoundingClientRect();
+    } catch {
+      if (live) live.textContent = args.locale === "th" ? args.announceTh : args.announceEn;
+      if (args.locale === "th") {
+        toast.success("เพิ่มลงตะกร้าแล้ว");
+      } else {
+        toast.success("Added to cart");
+      }
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent<CartFlyEventDetail>(CART_FLY_EVENT, {
+        detail: {
+          startRect: { left: r.left, top: r.top, width: r.width, height: r.height },
+          productName: args.productName,
+          productImage: args.productImage,
+        },
+      })
+    );
+    if (live) {
+      live.textContent = args.locale === "th" ? args.announceTh : args.announceEn;
+    }
+  });
 }

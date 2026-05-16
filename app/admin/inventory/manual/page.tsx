@@ -1380,6 +1380,7 @@ export default function ManualInventoryPage() {
     el.style.zIndex = "99999";
     el.style.pointerEvents = "none";
     await new Promise((r) => setTimeout(r, 800));
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
     const w = el.offsetWidth;
     const h = el.offsetHeight;
     if (w === 0 || h === 0) {

@@ -136,7 +136,6 @@ function Lightbox({
   }
 
   if (!images.length) return null
-  const current = images[index]!
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,7 +174,7 @@ function Lightbox({
             <button
               type="button"
               onClick={() => go(-1)}
-              className="absolute left-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white md:left-2"
+              className="absolute left-1 top-1/2 z-[30] -translate-y-1/2 rounded-full bg-black/50 p-2 text-white md:left-2"
               aria-label={t("สไลด์ก่อนหน้า", "Previous Slide")}
             >
               <ChevronLeft className="h-6 w-6" />
@@ -189,24 +188,31 @@ function Lightbox({
                 transformOrigin: "center center",
               }}
             >
-              <Image
-                key={index}
-                src={current.src}
-                alt={current.alt}
-                fill
-                className="object-contain"
-                loading="lazy"
-                sizes="100vw"
-                quality={75}
-                unoptimized={shouldOffloadImageOptimization(current.src)}
-              />
+              {images.map((img, i) => (
+                <Image
+                  key={`${i}-${img.src}`}
+                  src={img.src}
+                  alt={img.alt}
+                  fill
+                  className={cn(
+                    "absolute inset-0 object-contain",
+                    index === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none"
+                  )}
+                  sizes="100vw"
+                  quality={75}
+                  priority={i === 0}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  fetchPriority={index === i ? (i === 0 ? "high" : "auto") : "low"}
+                  unoptimized={shouldOffloadImageOptimization(img.src)}
+                />
+              ))}
             </div>
           </div>
           {images.length > 1 && (
             <button
               type="button"
               onClick={() => go(1)}
-              className="absolute right-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white md:right-2"
+              className="absolute right-1 top-1/2 z-[30] -translate-y-1/2 rounded-full bg-black/50 p-2 text-white md:right-2"
               aria-label={t("สไลด์ถัดไป", "Next Slide")}
             >
               <ChevronRight className="h-6 w-6" />
@@ -301,7 +307,6 @@ export function ProductGallery({
   }
 
   const hasMultiple = gallery.length > 1
-  const current = gallery[selected] ?? gallery[0]!
 
   return (
     <div>
@@ -324,21 +329,25 @@ export function ProductGallery({
           </span>
         )}
         <div className="absolute inset-0 z-[1]">
-          <Image
-            src={current.src}
-            alt={current.alt}
-            fill
-            priority={selected === 0}
-            fetchPriority={selected === 0 ? "high" : "auto"}
-            loading={selected === 0 ? "eager" : "lazy"}
-            sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 42vw"
-            className={cn(
-              "object-contain p-1 sm:p-2",
-              showAggregateSoldOut && "brightness-75 grayscale"
-            )}
-            quality={75}
-            unoptimized={shouldOffloadImageOptimization(current.src)}
-          />
+          {gallery.map((item, i) => (
+            <Image
+              key={`${i}-${item.src}`}
+              src={item.src}
+              alt={item.alt}
+              fill
+              sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 42vw"
+              quality={75}
+              priority={i === 0}
+              loading={i === 0 ? "eager" : "lazy"}
+              fetchPriority={selected === i ? (i === 0 ? "high" : "auto") : "low"}
+              className={cn(
+                "absolute inset-0 object-contain p-1 sm:p-2",
+                selected === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none",
+                showAggregateSoldOut && "brightness-75 grayscale"
+              )}
+              unoptimized={shouldOffloadImageOptimization(item.src)}
+            />
+          ))}
         </div>
         {showAggregateSoldOut && soldOutLabel ? (
           <div

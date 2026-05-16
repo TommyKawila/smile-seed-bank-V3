@@ -52,6 +52,18 @@ function BreederRibbonBase({
   const captureTargetRef = useRef<HTMLDivElement | null>(null);
   const [tooltip, setTooltip] = useState<BreederTooltipData | null>(null);
   const tooltipTimer = useRef<ReturnType<typeof setTimeout>>();
+  const tooltipMoveRafRef = useRef(0);
+  const tooltipMovePendingRef = useRef<{
+    breederId: number;
+    el: HTMLElement;
+    clientX: number;
+  } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (tooltipMoveRafRef.current) cancelAnimationFrame(tooltipMoveRafRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (totalW > 0) x.set(-totalW);
@@ -248,17 +260,35 @@ function BreederRibbonBase({
                   if (typeof window === "undefined" || !window.matchMedia("(hover: hover)").matches) return;
                   if (!isDraggingRef.current && !isMomentumRef.current && hasTooltip) {
                     clearTimeout(tooltipTimer.current);
-                    const rect = e.currentTarget.getBoundingClientRect();
+                    const el = e.currentTarget;
                     const clientX = e.clientX;
                     tooltipTimer.current = setTimeout(() => {
-                      setTooltip({ breeder: b, mx: clientX, my: rect.top });
+                      requestAnimationFrame(() => {
+                        const rect = el.getBoundingClientRect();
+                        setTooltip({ breeder: b, mx: clientX, my: rect.top });
+                      });
                     }, 120);
                   }
                 }}
                 onMouseMove={(e) => {
-                  if (tooltip?.breeder.id === b.id) {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setTooltip((prev) => prev ? { ...prev, mx: e.clientX, my: rect.top } : null);
+                  if (tooltip?.breeder.id !== b.id) return;
+                  tooltipMovePendingRef.current = {
+                    breederId: b.id,
+                    el: e.currentTarget,
+                    clientX: e.clientX,
+                  };
+                  if (!tooltipMoveRafRef.current) {
+                    tooltipMoveRafRef.current = requestAnimationFrame(() => {
+                      tooltipMoveRafRef.current = 0;
+                      const p = tooltipMovePendingRef.current;
+                      if (!p) return;
+                      const rect = p.el.getBoundingClientRect();
+                      setTooltip((prev) =>
+                        prev && prev.breeder.id === p.breederId
+                          ? { ...prev, mx: p.clientX, my: rect.top }
+                          : prev
+                      );
+                    });
                   }
                 }}
                 onMouseLeave={() => {
