@@ -1,6 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import {
+  HERO_CAROUSEL_DESKTOP_SIZES,
+  HERO_CAROUSEL_MOBILE_SIZES,
+} from "@/components/storefront/hero-carousel-image-sizes";
 
 export type HeroCarouselSlideImagesProps = {
   mobileSrc: string;
@@ -29,7 +33,7 @@ export function HeroCarouselSlideImages({
           loading={eager ? "eager" : "lazy"}
           quality={60}
           className="object-contain object-center"
-          sizes="(max-width: 767px) min(100vw, 391px), 0px"
+          sizes={HERO_CAROUSEL_MOBILE_SIZES}
         />
       </div>
       <div className="relative hidden aspect-[617/890] w-full shrink-0 overflow-hidden p-0 md:block">
@@ -42,7 +46,7 @@ export function HeroCarouselSlideImages({
           loading={eager ? "eager" : "lazy"}
           quality={65}
           className="object-cover object-center"
-          sizes="(max-width: 767px) 0px, min(50vw, 640px)"
+          sizes={HERO_CAROUSEL_DESKTOP_SIZES}
         />
       </div>
     </>

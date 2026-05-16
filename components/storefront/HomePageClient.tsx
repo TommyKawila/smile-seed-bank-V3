@@ -125,7 +125,9 @@ function HomePageMain({ sections, initialData, heroCarousel }: HomePageClientPro
   return (
     <div className="min-h-screen bg-white text-zinc-900">
       {heroSection ? renderHero(heroSection) : null}
-      <Suspense fallback={<div className="h-20 bg-white" aria-hidden />}>
+      <Suspense
+        fallback={<div className="min-h-[28vh] w-full animate-pulse bg-zinc-50" aria-hidden />}
+      >
         <HomePageBelowFold
           sections={belowSections}
           newArrivals={newArrivals}

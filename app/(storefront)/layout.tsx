@@ -53,7 +53,7 @@ export default async function StorefrontLayout({
   const cookieStore = await cookies();
   const initialLocale = magazineLocaleFromCookie(cookieStore.get("locale")?.value);
 
-  /* CDN preconnect for product/storefront images: Supabase origin is emitted from root `app/layout.tsx` (<SupabaseStoragePreconnect />); App Router child layouts cannot inject <head>. */
+  /* CDN preconnect: Supabase origin from root `app/layout.tsx` <head> (React 18 has no ReactDOM.preconnect). */
 
   return (
     <LanguageProvider initialLocale={initialLocale}>

@@ -1,10 +1,27 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Script from "next/script";
 import { Inter, Prompt } from "next/font/google";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
-import { SupabaseStoragePreconnect } from "@/components/seo/SupabaseStoragePreconnect";
+
+function supabaseOriginHeadLinks(): ReactNode {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!raw) return null;
+  let origin: string;
+  try {
+    origin = new URL(raw).origin;
+  } catch {
+    return null;
+  }
+  return (
+    <>
+      <link rel="preconnect" href={origin} crossOrigin="anonymous" />
+      <link rel="dns-prefetch" href={origin} />
+    </>
+  );
+}
 
 const Analytics = dynamic(
   () => import("@vercel/analytics/react").then((m) => m.Analytics),
@@ -54,13 +71,11 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <html lang="th" suppressHydrationWarning>
-      <head>
-        <SupabaseStoragePreconnect />
-      </head>
+      <head>{supabaseOriginHeadLinks()}</head>
       <body className={`${inter.variable} ${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
         {children}
         <Script id="ga-init" strategy="lazyOnload">

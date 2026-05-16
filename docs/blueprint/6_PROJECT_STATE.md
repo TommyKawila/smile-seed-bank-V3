@@ -4,6 +4,19 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Hero LCP image — 412px bucket + AVIF + aligned sizes/preload)
+- **`next.config.mjs`:** **`deviceSizes`** เพิ่ม **412**; comment ว่า **`formats`** ใช้ AVIF ก่อน WebP
+- **`hero-carousel-image-sizes.ts`:** ค่าคงที่ **`HERO_CAROUSEL_MOBILE_SIZES`** / **`DESKTOP_SIZES`** ใช้ร่วม preload + **`HeroCarouselSlideImages`**
+- **`HeroCarouselSlideImages`:** มือถือ **`sizes`** = **`100vw`** (ไม่ cap 391px)
+- **`HomeHeroLcpPreload`:** **`getImageProps`** มือถือ **412×452**, **`sizes`** เดียวกับ carousel; preload ใช้ **`imageSrcSet`** + **`imageSizes`** เมื่อมี **`srcSet`**
+
+### บันทึกการทำงาน — 2026-05-15 (Home streaming + layout preconnect inline)
+- **`app/(storefront)/page.tsx`:** **`Suspense`** คู่ — **`HomeHeroLcpHints`** (preload สไลด์แรก) สตรีมคู่ขนานกับ **`HomeMainStream`** (รอแค่ **`getSections`** แล้วส่ง **`HomePageClient`**); แคโรเซลอยู่ใน **`Suspense`** ภายใน (**`HeroBannersBody`**) + **`HomeHeroCarouselSkeleton`**
+- **`app/(storefront)/home-stream.tsx`:** ย้าย **`getSectionsCached`** / RSC สตรีมออกจาก **`page.tsx`** (**`server-only`**)
+- **`HomeHeroSkeleton.tsx`:** fallback โครง Hero (Tailwind เท่านั้น)
+- **`app/layout.tsx`:** preconnect/dns-prefetch Supabase inline ใน **`<head>`** — ลบ **`SupabaseStoragePreconnect.tsx`** (React 18 ไม่มี **`ReactDOM.preconnect`**)
+- **CSS audit หน้าแรก:** ไม่พบ **`.module.css`** / import **`.css`** นอก **`globals.css`** — chunk CSS เล็กมาจากการแยก bundle ของ **`next/dynamic`** (below-fold) ไม่ใช่ CSS Modules
+
 ### บันทึกการทำงาน — 2026-05-15 (Home LCP — hero preload + no carousel skeleton gate)
 - **`app/(storefront)/page.tsx`:** **`Promise.all(getSections, getHeroCarouselBannersCached)`** — ส่ง **`heroBanners`** เข้า **`HomeHeroCarousel`** โดยตรง (เลิก **`HomeHeroCarouselSlot` / Suspense fallback** ว่าง)
 - **`HomeHeroLcpPreload.tsx`:** **`link rel="preload" as="image"`** สำหรับสไลด์แรก (มือถือ **`w=390,q=60`** / เดสก์ท็อป **`w=640,q=65`**) จาก **`getImageProps`** → URL **`/_next/image?...`** ตรงกับ **`HeroCarouselSlideImages`**
@@ -19,7 +32,7 @@
 ### บันทึกการทำงาน — 2026-05-15 (Product gallery stacked images + Supabase preconnect + detail perf)
 - **`ProductGallery`:** ซ้อน **`next/image`** ทุกรูปใน hero + lightbox — **`selected` / `index`** ควบคุม **`opacity` / `z-index` / `pointer-events`**; รูปแรก **`priority` + eager`** ที่เหลือ **`lazy`**; **`quality={75}`**
 - **`product-detail-client`:** ลบ **`framer-motion`** จากคอลัมน์หลัก (ลด bundle / CSS ที่เกี่ยวกับ motion)
-- **`SupabaseStoragePreconnect` + `app/layout.tsx`:** **`preconnect`** + **`dns-prefetch`** ไป **`NEXT_PUBLIC_SUPABASE_URL`** origin
+- **`app/layout.tsx`:** **`preconnect`** + **`dns-prefetch`** Supabase origin ใน **`<head>`** (inline helper)
 - **`app/(storefront)/layout.tsx`:** comment ว่า App Router ไม่สามารถ inject `<head>` — preconnect อยู่ root layout
 
 ### บันทึกการทำงาน — 2026-05-15 (ProductGallery: explicit quality 75 on all Images)
