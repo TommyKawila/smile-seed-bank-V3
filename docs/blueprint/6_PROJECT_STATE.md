@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Vercel images — Supabase remotePatterns + URL fallback)
+- **`next.config.mjs`:** **`remotePatterns`** สำหรับ Supabase — **`public`** + **`sign`**; host คง **`jysdfxxilyjmjdmhazbu.supabase.co`** + host จาก **`NEXT_PUBLIC_SUPABASE_URL`**
+- **`lib/public-storage-url.ts`:** **`getSupabaseOrigin()`** — **`NEXT_PUBLIC_SUPABASE_URL`** (validate URL) หรือ **`PUBLIC_SUPABASE_FALLBACK_ORIGIN`** — ไม่คืน **`/storage/...`** แบบไม่มีโดเมน
+- **`lib/product-gallery-utils.ts`:** listing/detail URLs ผ่าน **`resolvePublicAssetUrl`**
+
 ### บันทึกการทำงาน — 2026-05-15 (Emergency — Hero layout + cart safeNumber + LazyMotion)
 - **`FramerLazyRoot`:** **`domMax`** + **`strict={false}`** (รูปแบบมินิมอล)
 - **`Hero.tsx`:** ถอด **`min-h-0`** จาก section / grid outer; คอลัมน์ซ้าย **`min-h-[auto]`**, **`visible`**, **`min-w-0`**, **`flex-1`**; media panel / carousel **`min-h-0`** ลดลงเป็น **`h-full w-full`**

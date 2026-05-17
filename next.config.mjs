@@ -5,24 +5,31 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 /** @type {import('next').NextConfig} */
+const SUPABASE_STORAGE_PATHS = [
+  "/storage/v1/object/public/**",
+  "/storage/v1/object/sign/**",
+];
+
 function supabaseStorageRemotePatterns() {
   const hosts = new Set();
-  /** Project ref: `jysdfxxilyjmjdmhazbu` (includes `i` after `xx`). */
+  /** Canonical project host — also used as fallback in `lib/public-storage-url.ts`. */
   hosts.add("jysdfxxilyjmjdmhazbu.supabase.co");
   const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (raw) {
     try {
-      hosts.add(new URL(raw).hostname);
+      hosts.add(new URL(raw.trim()).hostname);
     } catch {
       /* ignore invalid env */
     }
   }
-  return [...hosts].map((hostname) => ({
-    protocol: "https",
-    hostname,
-    port: "",
-    pathname: "/storage/v1/object/public/**",
-  }));
+  return [...hosts].flatMap((hostname) =>
+    SUPABASE_STORAGE_PATHS.map((pathname) => ({
+      protocol: "https",
+      hostname,
+      port: "",
+      pathname,
+    })),
+  );
 }
 
 /** Extra hostnames for next/image (comma-separated), e.g. `mybucket.s3.ap-southeast-1.amazonaws.com`. */

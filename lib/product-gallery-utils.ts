@@ -1,3 +1,5 @@
+import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
+
 /** Embedded row from Supabase `product_images` select */
 export type ProductImageRow = {
   id: number;
@@ -39,12 +41,12 @@ export function getListingThumbnailUrl(product: {
   const rows = normalizeProductImageRows(product.product_images);
   if (rows.length > 0) {
     const main = rows.find((r) => r.is_main) ?? rows[0];
-    if (main?.url) return main.url;
+    if (main?.url) return resolvePublicAssetUrl(main.url);
   }
   if (Array.isArray(product.image_urls) && (product.image_urls as string[]).length > 0) {
-    return (product.image_urls as string[])[0] ?? null;
+    return resolvePublicAssetUrl((product.image_urls as string[])[0] ?? null);
   }
-  return product.image_url ?? null;
+  return resolvePublicAssetUrl(product.image_url ?? null);
 }
 
 /** Detail hero: variant image, else main, else first legacy */
@@ -63,19 +65,19 @@ export function resolveDetailHeroUrl(
   const rows = normalizeProductImageRows(product.product_images);
   if (rows.length > 0 && selectedVariantId != null) {
     const hit = rows.find((r) => r.variant_id === selectedVariantId);
-    if (hit?.url) return hit.url;
+    if (hit?.url) return resolvePublicAssetUrl(hit.url);
     const main = rows.find((r) => r.is_main) ?? rows[0];
-    if (main?.url) return main.url;
+    if (main?.url) return resolvePublicAssetUrl(main.url);
   }
   if (rows.length > 0) {
     const main = rows.find((r) => r.is_main) ?? rows[0];
-    if (main?.url) return main.url;
+    if (main?.url) return resolvePublicAssetUrl(main.url);
   }
   if (Array.isArray(product.image_urls) && (product.image_urls as string[]).length > 0) {
     const u = (product.image_urls as string[]).filter(Boolean);
-    return u[0] ?? null;
+    return resolvePublicAssetUrl(u[0] ?? null);
   }
-  return (
+  return resolvePublicAssetUrl(
     [product.image_url, product.image_url_2, product.image_url_3, product.image_url_4, product.image_url_5].find(
       Boolean
     ) ?? null
@@ -104,11 +106,19 @@ export function buildDetailGalleryUrls(
         ) as string[]);
 
   if (rows.length === 0) {
-    return [...new Set(legacy.map((u) => u.trim()).filter(Boolean))];
+    return [
+      ...new Set(
+        legacy
+          .map((u) => resolvePublicAssetUrl(u.trim()))
+          .filter((u): u is string => Boolean(u))
+      ),
+    ];
   }
 
   const ordered = [...rows].sort((a, b) => a.sort_order - b.sort_order);
-  const urls = ordered.map((r) => r.url.trim()).filter(Boolean);
+  const urls = ordered
+    .map((r) => resolvePublicAssetUrl(r.url.trim()))
+    .filter((u): u is string => Boolean(u));
   const hero = resolveDetailHeroUrl(product, selectedVariantId);
   const merged = hero ? [hero, ...urls.filter((u) => u !== hero)] : urls;
   return [...new Set(merged)];
