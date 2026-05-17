@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import Leaf from "lucide-react/dist/esm/icons/leaf";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -11,6 +10,8 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
 
 const COOKIE_NAME = "smil_age_verified";
+/** Same name as `document.cookie` entry — use from server layout for SSR-aligned initial open state. */
+export const SMIL_AGE_VERIFIED_COOKIE_NAME = COOKIE_NAME;
 const COOKIE_MAX_AGE_SEC = 24 * 60 * 60;
 
 const TITLE_TH = "คุณมีอายุ 20 ปีขึ้นไปหรือไม่?";
@@ -34,28 +35,47 @@ function setAgeCookie(): void {
   }`;
 }
 
-export function AgeVerificationGate() {
+export function AgeVerificationGate({
+  initialVerifiedCookie = false,
+}: {
+  /** Server-read cookie — initial CSS visibility matches SSR (hydration-safe tree). */
+  initialVerifiedCookie?: boolean;
+}) {
   const { user, isLoading } = useAuth();
   const { locale, setLocale } = useLanguage();
   const { settings } = useSiteSettings();
-  const [open, setOpen] = useState(false);
+  /** When true, overlay is hidden via CSS only (DOM stays mounted). */
+  const [isVerified, setIsVerified] = useState(initialVerifiedCookie);
+
+  useEffect(() => {
+    setIsVerified(initialVerifiedCookie);
+  }, [initialVerifiedCookie]);
 
   useEffect(() => {
     if (isLoading) return;
     if (user) {
-      setOpen(false);
+      setIsVerified(true);
       return;
     }
     if (hasAgeCookie()) {
-      setOpen(false);
+      setIsVerified(true);
       return;
     }
-    setOpen(true);
+    setIsVerified(false);
   }, [isLoading, user]);
+
+  useEffect(() => {
+    if (isVerified) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isVerified]);
 
   function onConfirm() {
     setAgeCookie();
-    setOpen(false);
+    setIsVerified(true);
   }
 
   function onExit() {
@@ -63,112 +83,115 @@ export function AgeVerificationGate() {
   }
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={() => {}} modal>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay
-          className={cn(
-            "fixed inset-0 z-[100] bg-zinc-950/80 backdrop-blur-md",
-            "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-          )}
-        />
-        <DialogPrimitive.Content
-          className={cn(
-            "relative fixed left-[50%] top-[50%] z-[100] w-[calc(100%-1.5rem)] max-w-md translate-x-[-50%] translate-y-[-50%]",
-            "rounded-2xl border border-emerald-800/25 bg-white p-6 pt-7 shadow-2xl ring-1 ring-emerald-900/10",
-            "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-            "focus:outline-none"
-          )}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
+    <div
+      className={cn(
+        "fixed inset-0 z-[100] flex items-center justify-center p-3 transition-opacity duration-300",
+        isVerified
+          ? "pointer-events-none invisible opacity-0"
+          : "pointer-events-auto visible opacity-100"
+      )}
+      aria-hidden={isVerified}
+      role="dialog"
+      aria-modal={!isVerified}
+      aria-labelledby="age-gate-title"
+      onKeyDown={(e) => {
+        if (isVerified) return;
+        if (e.key === "Escape") e.preventDefault();
+      }}
+    >
+      <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md" aria-hidden />
+
+      <div
+        className={cn(
+          "relative z-10 w-[calc(100%-1.5rem)] max-w-md rounded-2xl border border-emerald-800/25 bg-white p-6 pt-7 shadow-2xl ring-1 ring-emerald-900/10",
+          "focus:outline-none"
+        )}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div
+          className="absolute right-4 top-4 z-10 flex overflow-hidden rounded-sm border border-zinc-200/90 bg-white text-[11px] font-semibold text-zinc-700 shadow-sm"
+          role="group"
+          aria-label="Language"
         >
-          <div
-            className="absolute right-4 top-4 z-10 flex overflow-hidden rounded-sm border border-zinc-200/90 bg-white text-[11px] font-semibold text-zinc-700 shadow-sm"
-            role="group"
-            aria-label="Language"
-          >
-            <button
-              type="button"
-              aria-label="Switch age gate language to Thai"
-              onClick={() => setLocale("th")}
-              className={cn(
-                "px-2.5 py-1.5 transition-colors",
-                locale === "th"
-                  ? "bg-emerald-700/95 text-white"
-                  : "text-zinc-500 hover:text-zinc-800"
-              )}
-            >
-              TH
-            </button>
-            <button
-              type="button"
-              aria-label="Switch age gate language to English"
-              onClick={() => setLocale("en")}
-              className={cn(
-                "px-2.5 py-1.5 transition-colors",
-                locale === "en"
-                  ? "bg-emerald-700/95 text-white"
-                  : "text-zinc-500 hover:text-zinc-800"
-              )}
-            >
-              EN
-            </button>
-          </div>
-
-          <div className="mb-5 flex justify-center pr-14 sm:pr-16">
-            {settings.logo_main_url ? (
-              <Image
-                src={settings.logo_main_url}
-                alt="Smile Seed Bank"
-                width={160}
-                height={44}
-                sizes="160px"
-                className="h-10 w-auto object-contain"
-                priority={true}
-                fetchPriority="high"
-              />
-            ) : (
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-sm">
-                <Leaf className="h-6 w-6 text-primary-foreground" />
-              </div>
+          <button
+            type="button"
+            aria-label="Switch age gate language to Thai"
+            onClick={() => setLocale("th")}
+            className={cn(
+              "px-2.5 py-1.5 transition-colors",
+              locale === "th"
+                ? "bg-emerald-700/95 text-white"
+                : "text-zinc-500 hover:text-zinc-800"
             )}
-          </div>
+          >
+            TH
+          </button>
+          <button
+            type="button"
+            aria-label="Switch age gate language to English"
+            onClick={() => setLocale("en")}
+            className={cn(
+              "px-2.5 py-1.5 transition-colors",
+              locale === "en"
+                ? "bg-emerald-700/95 text-white"
+                : "text-zinc-500 hover:text-zinc-800"
+            )}
+          >
+            EN
+          </button>
+        </div>
 
-          <DialogPrimitive.Title asChild>
-            <div className="flex flex-col gap-1.5 text-center">
-              <span className="font-sans text-lg font-semibold leading-snug text-zinc-900 sm:text-xl">
-                {TITLE_TH}
-              </span>
-              <span className="font-sans text-base font-medium leading-snug text-zinc-500 sm:text-lg">
-                {TITLE_EN}
-              </span>
+        <div className="mb-5 flex justify-center pr-14 sm:pr-16">
+          {settings.logo_main_url ? (
+            <Image
+              src={settings.logo_main_url}
+              alt="Smile Seed Bank"
+              width={160}
+              height={44}
+              sizes="160px"
+              className="h-10 w-auto object-contain"
+              priority={true}
+              fetchPriority="high"
+            />
+          ) : (
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-sm">
+              <Leaf className="h-6 w-6 text-primary-foreground" />
             </div>
-          </DialogPrimitive.Title>
+          )}
+        </div>
 
-          <div className="mt-5 space-y-2.5 text-center text-sm leading-relaxed">
-            <p className="text-zinc-800">{BODY_TH}</p>
-            <p className="text-zinc-500">{BODY_EN}</p>
-          </div>
+        <div id="age-gate-title" className="flex flex-col gap-1.5 text-center">
+          <span className="font-sans text-lg font-semibold leading-snug text-zinc-900 sm:text-xl">
+            {TITLE_TH}
+          </span>
+          <span className="font-sans text-base font-medium leading-snug text-zinc-500 sm:text-lg">
+            {TITLE_EN}
+          </span>
+        </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button
-              type="button"
-              className="h-11 w-full bg-primary font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 sm:min-w-[180px] sm:w-auto"
-              onClick={onConfirm}
-            >
-              ยืนยัน (I am 20+)
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 w-full border-emerald-800/25 text-zinc-800 hover:bg-emerald-50 sm:min-w-[180px] sm:w-auto"
-              onClick={onExit}
-            >
-              ออก (Exit)
-            </Button>
-          </div>
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+        <div className="mt-5 space-y-2.5 text-center text-sm leading-relaxed">
+          <p className="text-zinc-800">{BODY_TH}</p>
+          <p className="text-zinc-500">{BODY_EN}</p>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button
+            type="button"
+            className="h-11 w-full bg-primary font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 sm:min-w-[180px] sm:w-auto"
+            onClick={onConfirm}
+          >
+            ยืนยัน (I am 20+)
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full border-emerald-800/25 text-zinc-800 hover:bg-emerald-50 sm:min-w-[180px] sm:w-auto"
+            onClick={onExit}
+          >
+            ออก (Exit)
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

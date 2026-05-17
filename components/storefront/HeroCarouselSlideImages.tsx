@@ -20,7 +20,7 @@ export function HeroCarouselSlideImages({
   heroAlt,
   priority,
 }: HeroCarouselSlideImagesProps) {
-  const eager = priority;
+  const isPriority = priority;
   return (
     <div className="relative h-full w-full min-h-0 overflow-hidden">
       <div className="relative mx-auto h-full w-full max-h-full overflow-hidden aspect-[390/429] md:aspect-[16/7]">
@@ -30,9 +30,10 @@ export function HeroCarouselSlideImages({
               src={mobileSrc}
               alt={heroAlt}
               fill
-              priority={priority}
-              fetchPriority={eager ? "high" : "auto"}
-              loading={eager ? "eager" : "lazy"}
+              priority={isPriority}
+              fetchPriority={isPriority ? "high" : "auto"}
+              loading={isPriority ? "eager" : "lazy"}
+              decoding={isPriority ? "sync" : "async"}
               quality={60}
               className="object-contain object-center"
               sizes={HERO_CAROUSEL_MOBILE_SIZES}
@@ -45,9 +46,10 @@ export function HeroCarouselSlideImages({
               src={desktopSrc}
               alt={heroAlt}
               fill
-              priority={priority}
-              fetchPriority={eager ? "high" : "auto"}
-              loading={eager ? "eager" : "lazy"}
+              priority={isPriority}
+              fetchPriority={isPriority ? "high" : "auto"}
+              loading={isPriority ? "eager" : "lazy"}
+              decoding={isPriority ? "sync" : "async"}
               quality={65}
               className="object-cover object-center"
               sizes={HERO_CAROUSEL_DESKTOP_SIZES}

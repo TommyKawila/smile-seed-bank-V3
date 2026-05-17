@@ -4,6 +4,14 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Age gate — CSS visibility, fixed DOM tree)
+- **`age-verification-gate.tsx`:** ถอด Radix Dialog — โครง overlay + การ์ดอยู่ใน DOM เสมอ; ซ่อนด้วย **`invisible opacity-0 pointer-events-none`** เมื่อ **`isVerified`** (เริ่มจาก **`initialVerifiedCookie`** + sync **`useEffect`** / auth); **`overflow: hidden`** บน **`body`** เมื่อเกตโชว์
+
+### บันทึกการทำงาน — 2026-05-15 (LCP — age gate SSR + hero carousel decode priority)
+- **`app/(storefront)/layout.tsx`:** **`AgeVerificationGate`** import แบบปกติ (**ไม่ใช้ `dynamic` `ssr: false`**) — ส่ง **`initialVerifiedCookie`** จาก **`cookies()`** (**`SMIL_AGE_VERIFIED_COOKIE_NAME`**)
+- **`age-verification-gate.tsx`:** **`useState(() => !initialVerifiedCookie)`** แทนเริ่ม **`false`** + **`useEffect`** — เกตเปิดทันทีเมื่อยังไม่ยืนยันตามคุกกี้เซิร์ฟเวอร์; export ชื่อคุกกี้
+- **`HeroCarouselSlideImages`:** เมื่อ **`priority`** — **`fetchPriority="high"`**, **`decoding="sync"`**; **`HomeHeroCarousel`** ส่ง **`priority={true}`** ชัดเจน
+
 ### บันทึกการทำงาน — 2026-05-15 (Hero / floating coupon — hydration-stable badge mount)
 - **`FloatingOfferButton`:** คืน **`FloatingCouponBadgeMedia`** เป็น static import — เลื่อนแค่การ render badge หลัง **`useEffect`** (**`badgeMounted`**) พร้อม placeholder **`h-9 w-9`** (ไม่ใช้ **`next/dynamic`**, **`ssr: false`**)
 - **`Hero.tsx`:** คอลัมน์ซ้าย **`opacity-100 visible shrink-0`** + **`lg:min-w-[min(100%,20rem)]`** + **`w-full min-w-0`** ที่ห่อเนื้อหา — ลดโอกาสโครงหด / motion ค้างที่ opacity 0

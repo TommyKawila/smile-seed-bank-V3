@@ -87,7 +87,7 @@ export function HomeHeroCarousel({ banners }: Props) {
             mobileSrc={mobileSrc}
             desktopSrc={desktopSrc}
             heroAlt={heroAlt}
-            priority
+            priority={true}
           />
         </div>
       </div>

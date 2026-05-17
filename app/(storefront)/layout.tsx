@@ -8,13 +8,13 @@ import { magazineLocaleFromCookie } from "@/lib/magazine-bilingual";
 import { AuthProvider } from "@/hooks/use-auth";
 import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import { StorefrontStructuredData } from "@/components/seo/StorefrontStructuredData";
+import {
+  AgeVerificationGate,
+  SMIL_AGE_VERIFIED_COOKIE_NAME,
+} from "@/components/storefront/age-verification-gate";
 import { Navbar } from "@/components/storefront/Navbar";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { Toaster } from "@/components/ui/sonner";
-const AgeVerificationGate = dynamic(
-  () => import("@/components/storefront/age-verification-gate").then((m) => m.AgeVerificationGate),
-  { ssr: false }
-);
 
 const Footer = dynamic(
   () => import("@/components/storefront/Footer").then((m) => ({ default: m.Footer })),
@@ -50,6 +50,8 @@ export default async function StorefrontLayout({
 }) {
   const cookieStore = await cookies();
   const initialLocale = magazineLocaleFromCookie(cookieStore.get("locale")?.value);
+  const initialAgeVerifiedCookie =
+    cookieStore.get(SMIL_AGE_VERIFIED_COOKIE_NAME)?.value === "1";
 
   /* CDN preconnect: Supabase origin from root `app/layout.tsx` <head> (React 18 has no ReactDOM.preconnect). */
 
@@ -62,7 +64,7 @@ export default async function StorefrontLayout({
               <CartAnimation />
               <Toaster />
               <BrowserDetectionBanner />
-              <AgeVerificationGate />
+              <AgeVerificationGate initialVerifiedCookie={initialAgeVerifiedCookie} />
               <Suspense fallback={null}>
                 <PromoReturnHandler />
               </Suspense>
