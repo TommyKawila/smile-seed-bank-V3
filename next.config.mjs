@@ -41,6 +41,19 @@ function extraImageRemotePatterns() {
 }
 
 const nextConfig = {
+  transpilePackages: [
+    "framer-motion",
+    "embla-carousel-react",
+    "embla-carousel",
+    "lottie-react",
+    "lottie-web",
+    "recharts",
+    "cmdk",
+    "@dnd-kit/core",
+    "@dnd-kit/sortable",
+    "@dnd-kit/utilities",
+    "emoji-picker-react",
+  ],
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -118,6 +131,7 @@ const nextConfig = {
           test: /\.css$/,
           chunks: "all",
           enforce: true,
+          priority: 100, // Dominant override flag to group layout and dynamic streamed CSS together
         };
       }
     }

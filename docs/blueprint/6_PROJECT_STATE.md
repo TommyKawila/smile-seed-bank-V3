@@ -4,6 +4,18 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Next — transpilePackages for legacy vendor bundles)
+- **`next.config.mjs`:** **`transpilePackages`** — **`framer-motion`**, **`embla-carousel-react`**, **`embla-carousel`**, **`lottie-react`**, **`lottie-web`**, **`recharts`**, **`cmdk`**, **`@dnd-kit/*`**, **`emoji-picker-react`** (ให้ SWC แปลง vendor ที่มัก ship ES legacy เป็นโค้ดสมัยใหม่ตาม browserslist)
+
+### บันทึกการทำงาน — 2026-05-15 (Babel config audit — SWC path clear)
+- **Root scan:** ไม่มี **`.babelrc`**, **`.babelrc.json`**, **`babel.config.{js,json,cjs,mjs}`** ที่ root — **ไม่มีไฟล์ให้ลบ**
+- **`package.json`:** ไม่มีคีย์ **`"babel"`** — **ไม่มีให้ตัด**
+- **หมายเหตุ:** มี **`.babelrc`** เฉพาะภายใน **`node_modules`** (เช่น eslint / lottie) — Next ไม่ใช้เป็น config แอป; ถ้า Lighthouse ยังเห็น **`@babel/plugin-transform-*`** ให้ไล่ว่ามาจาก vendor bundle ไหน (ไม่ใช่ config โปรเจกต์)
+- **`next.config.mjs`:** คง **`cacheGroups.styles`** + **`priority: 100`** ตามเดิม
+
+### บันทึกการทำงาน — 2026-05-16 (Webpack styles chunk — priority 100)
+- **`next.config.mjs`:** **`cacheGroups.styles`** เพิ่ม **`priority: 100`** เพื่อให้ชนค่า default ของ App Router และรวม CSS client bundle
+
 ### บันทึกการทำงาน — 2026-05-16 (Cart add — coerce string ids/qty before Zod)
 - **`hooks/useCart.ts`:** **`normalizeAddToCartPayload`** ก่อน **`AddToCartSchema.safeParse`** — แปลง **`variantId` / `productId` / `quantity` / `price` / `stock_quantity` / `breeder_id`** จาก string/เลขทศนิยมให้เป็น integer/number ที่ schema ต้องการ (แก้ toast **expected number, received string** จากปุ่ม last-one / ProductCard)
 
