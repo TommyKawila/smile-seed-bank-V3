@@ -4,6 +4,9 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Next images — global `unoptimized`)
+- **`next.config.mjs`:** **`images.unoptimized: true`** — ข้าม **`/_next/image`** ทั้งแอป ให้โหลดตรงจาก Supabase/remote ที่อนุญาตใน **`remotePatterns`** (คง dynamic Supabase host + **`NEXT_PUBLIC_IMAGE_REMOTE_HOSTS`** + Unsplash / ucarecdn)
+
 ### บันทึกการทำงาน — 2026-05-15 (Vercel image diagnostics — gallery bypass + URL slashes)
 - **`lib/vercel-image-offload.ts`:** **`productGalleryImageUnoptimized(src)`** — รวม **`NEXT_PUBLIC_PRODUCT_IMAGE_UNOPTIMIZED`** (**`true`** / **`1`**) เพื่อส่ง **`unoptimized`** ที่ **`ProductGallery`** ทดสอบว่า optimzier / limit ของ Vercel เป็นสาเหตุหรือไม่
 - **`lib/public-storage-url.ts`:** **`normalizeHttpsUrlSlashes`** — path ที่มี **`//`** ซ้ำหลังโฮสต์ถูกยุบเป็นทางเดียวก่อนคืนจาก **`resolvePublicAssetUrl`**

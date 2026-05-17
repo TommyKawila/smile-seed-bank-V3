@@ -91,12 +91,8 @@ const nextConfig = {
     },
   },
   images: {
-    /** Prefer AVIF when Accept/support allows (falls back to WebP). */
-    formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 2678400,
-    qualities: [60, 65, 68, 70, 72, 74, 75],
-    deviceSizes: [384, 390, 412, 414, 480, 640, 750, 828, 960, 1080],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    /** Serve originals from source hosts; skips `/_next/image` (avoids Vercel optimizer 400s on some WebP streams). Supabase paths often already use `/products/optimized/`. */
+    unoptimized: true,
     remotePatterns: [
       ...supabaseStorageRemotePatterns(),
       ...extraImageRemotePatterns(),
