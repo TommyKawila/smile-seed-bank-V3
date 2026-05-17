@@ -9,7 +9,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { IdleRender } from "@/components/utils/IdleRender";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type RevenueProfitPoint = {
@@ -43,9 +42,8 @@ export function RevenueProfitChart({ data }: { data: RevenueProfitPoint[] }) {
             No paid financial data in this period
           </div>
         ) : (
-          <IdleRender>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey="date"
@@ -85,7 +83,6 @@ export function RevenueProfitChart({ data }: { data: RevenueProfitPoint[] }) {
                 />
               </LineChart>
             </ResponsiveContainer>
-          </IdleRender>
         )}
       </CardContent>
     </Card>

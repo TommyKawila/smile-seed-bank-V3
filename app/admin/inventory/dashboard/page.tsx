@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import {
   DollarSign,
@@ -18,21 +19,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 import { formatPrice } from "@/lib/utils";
-import { IdleRender } from "@/components/utils/IdleRender";
+
+const DynamicInventoryBreederPie = dynamic(
+  () =>
+    import("@/components/admin/inventory/InventoryDashboardCharts").then((m) => ({
+      default: m.InventoryBreederValuePie,
+    })),
+  {
+    ssr: false,
+    loading: () => <div className="h-[280px] animate-pulse rounded-md bg-muted" aria-hidden />,
+  }
+);
+
+const DynamicInventoryCategoryBar = dynamic(
+  () =>
+    import("@/components/admin/inventory/InventoryDashboardCharts").then((m) => ({
+      default: m.InventoryStockByCategoryBar,
+    })),
+  {
+    ssr: false,
+    loading: () => <div className="h-[280px] animate-pulse rounded-md bg-muted" aria-hidden />,
+  }
+);
 
 type Stats = {
   totalInventoryValue: number;
@@ -51,8 +60,6 @@ type Stats = {
     sku: string | null;
   }[];
 };
-
-const EMERALD_COLORS = ["#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0"];
 
 function Scorecard({
   title,
@@ -141,11 +148,7 @@ export default function InventoryDashboardPage() {
     );
   }
 
-  const formatBaht = (v: number) =>
-    `฿${v.toLocaleString("th-TH", { maximumFractionDigits: 0 })}`;
-
   const pieData = stats.valueByBreeder.map((b) => ({ name: b.name, value: b.value }));
-  const totalPie = pieData.reduce((s, d) => s + d.value, 0);
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -187,40 +190,7 @@ export default function InventoryDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {totalPie === 0 ? (
-              <div className="flex h-64 items-center justify-center text-sm text-zinc-400">
-                ยังไม่มีข้อมูล
-              </div>
-            ) : (
-              <IdleRender>
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="45%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {pieData.map((_, i) => (
-                        <Cell key={i} fill={EMERALD_COLORS[i % EMERALD_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number | undefined) => [formatBaht(value ?? 0), "มูลค่า"]}
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border: "1px solid #e4e4e7",
-                        fontSize: "12px",
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: "12px" }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </IdleRender>
-            )}
+            <DynamicInventoryBreederPie pieData={pieData} />
           </CardContent>
         </Card>
 
@@ -232,42 +202,7 @@ export default function InventoryDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {stats.stockByCategory.length === 0 ? (
-              <div className="flex h-64 items-center justify-center text-sm text-zinc-400">
-                ยังไม่มีข้อมูล
-              </div>
-            ) : (
-              <IdleRender>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart
-                    data={stats.stockByCategory}
-                    layout="vertical"
-                    margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: "#71717a" }} />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      width={80}
-                      tick={{ fontSize: 11, fill: "#71717a" }}
-                    />
-                    <Tooltip
-                      formatter={(value: number | undefined) => [
-                        (value ?? 0).toLocaleString(),
-                        "จำนวน",
-                      ]}
-                      contentStyle={{
-                        borderRadius: "8px",
-                        border: "1px solid #e4e4e7",
-                        fontSize: "12px",
-                      }}
-                    />
-                    <Bar dataKey="stock" fill="#047857" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </IdleRender>
-            )}
+            <DynamicInventoryCategoryBar stockByCategory={stats.stockByCategory} />
           </CardContent>
         </Card>
       </div>

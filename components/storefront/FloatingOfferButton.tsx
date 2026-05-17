@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { m, AnimatePresence } from "framer-motion";
 import { X, Copy, Check, ChevronRight, Bookmark } from "lucide-react";
@@ -159,8 +159,13 @@ export function FloatingOfferButton({
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collectingId, setCollectingId] = useState<number | null>(null);
+  const [badgeMounted, setBadgeMounted] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    setBadgeMounted(true);
+  }, []);
 
   const claim = async (promoCodeId: number) => {
     if (!user) {
@@ -215,7 +220,14 @@ export function FloatingOfferButton({
             onClick={() => setDrawerOpen(true)}
             className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-3 py-2.5 text-white shadow-lg transition-transform duration-200 hover:scale-105 active:scale-95"
           >
-            <FloatingCouponBadgeMedia asset={floatingBadge} />
+            {badgeMounted ? (
+              <FloatingCouponBadgeMedia asset={floatingBadge} />
+            ) : (
+              <span
+                className="inline-block h-9 w-9 shrink-0 rounded-md bg-white/20"
+                aria-hidden
+              />
+            )}
             <span className="text-sm font-semibold">
               {coupons.length === 1 ? "1 ส่วนลด" : `${coupons.length} ส่วนลด`}
             </span>

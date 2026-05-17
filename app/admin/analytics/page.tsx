@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -16,19 +17,6 @@ import {
   Sparkles,
   Leaf,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  Cell,
-  Pie,
-  PieChart,
-} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,40 +31,36 @@ import { LowStockWidget } from "@/components/admin/LowStockWidget";
 import { useExecutiveStats } from "@/hooks/useExecutiveStats";
 import { exportOrdersToExcel, type OrderExportRow } from "@/lib/export-utils";
 import { formatPrice, cn } from "@/lib/utils";
-import { IdleRender } from "@/components/utils/IdleRender";
 
-const EMERALD = "#059669";
-const NAVY = "#003366";
-const AMBER = "#d97706";
+const DynamicExecutiveDailyTrendChart = dynamic(
+  () =>
+    import("@/components/admin/analytics/ExecutiveDailyTrendChart").then((m) => ({
+      default: m.ExecutiveDailyTrendChart,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[280px] min-h-[280px] animate-pulse rounded-md bg-muted" aria-hidden />
+    ),
+  }
+);
+
+const DynamicExecutiveStrainPieChart = dynamic(
+  () =>
+    import("@/components/admin/analytics/ExecutiveStrainPieChart").then((m) => ({
+      default: m.ExecutiveStrainPieChart,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] animate-pulse rounded-md bg-muted sm:h-[280px]" aria-hidden />
+    ),
+  }
+);
 
 /** Distinct slice colors for top strains pie */
 const STRAIN_PIE_COLORS = ["#059669", "#003366", "#ca8a04", "#7c3aed", "#e11d48"] as const;
 const UNKNOWN_BREEDER_LABEL = "Unknown Breeder";
-
-function StrainPieTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: Array<{
-    payload?: { strainName?: string; breederName?: string; value?: number };
-  }>;
-}) {
-  if (!active || !payload?.length) return null;
-  const p = payload[0]?.payload;
-  if (!p?.strainName) return null;
-  const breeder =
-    (p.breederName ?? "").trim() || UNKNOWN_BREEDER_LABEL;
-  const title = `${p.strainName} (${breeder})`;
-  return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-lg">
-      <p className="max-w-[240px] break-words font-semibold text-zinc-900">{title}</p>
-      <p className="text-zinc-600">
-        {Number(p.value ?? 0).toLocaleString("th-TH")} หน่วย
-      </p>
-    </div>
-  );
-}
 
 function MetricCard({
   title,
@@ -342,23 +326,7 @@ export default function DashboardPage() {
                     <p className="mt-1 max-w-xs text-xs text-zinc-400">กราฟรายวันจะแสดงเมื่อมีออเดอร์ที่ชำระแล้วในช่วงเวลานี้</p>
                   </div>
                 ) : (
-                  <IdleRender>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data.dailyTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
-                        <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#71717a" />
-                        <YAxis tick={{ fontSize: 10 }} stroke="#71717a" tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
-                        <Tooltip
-                          formatter={(v: number | string | undefined) => formatPrice(Number(v ?? 0))}
-                          labelStyle={{ color: "#27272a" }}
-                        />
-                        <Legend />
-                        <Bar dataKey="revenue" name="รายได้" fill={EMERALD} radius={[2, 2, 0, 0]} maxBarSize={28} />
-                        <Bar dataKey="shipping" name="ค่าจัดส่ง" fill={NAVY} radius={[2, 2, 0, 0]} maxBarSize={28} />
-                        <Bar dataKey="discount" name="ส่วนลด" fill={AMBER} radius={[2, 2, 0, 0]} maxBarSize={28} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </IdleRender>
+                  <DynamicExecutiveDailyTrendChart dailyTrend={data.dailyTrend} />
                 )}
               </CardContent>
             </Card>
@@ -384,54 +352,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="flex h-[300px] flex-col gap-4 sm:h-[280px] sm:flex-row sm:items-center">
-                    <div className="h-[200px] min-h-[180px] w-full flex-1 sm:h-full sm:min-h-0">
-                      <IdleRender>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-                            <Pie
-                              data={pieData}
-                              dataKey="value"
-                              nameKey="legendLabel"
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={46}
-                              outerRadius={82}
-                              paddingAngle={2}
-                              label={({ percent }) =>
-                                typeof percent === "number" && percent > 0.08
-                                  ? `${Math.round(percent * 100)}%`
-                                  : ""
-                              }
-                              labelLine={false}
-                            >
-                              {pieData.map((entry, i) => (
-                                <Cell key={`${entry.legendLabel}-${i}`} fill={entry.color} stroke="#fff" strokeWidth={1.5} />
-                              ))}
-                            </Pie>
-                            <Tooltip content={<StrainPieTooltip />} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </IdleRender>
-                    </div>
-                    <ul className="max-h-[200px] w-full shrink-0 space-y-2 overflow-y-auto text-xs sm:max-h-none sm:w-[min(100%,240px)] sm:border-l sm:border-zinc-100 sm:pl-3">
-                      {pieData.map((d, li) => (
-                        <li key={`${d.legendLabel}-${li}`} className="flex gap-2">
-                          <span
-                            className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-sm ring-1 ring-white"
-                            style={{ backgroundColor: d.color }}
-                            aria-hidden
-                          />
-                          <div className="min-w-0 flex-1 leading-snug">
-                            <p className="break-words font-medium text-zinc-800">{d.legendLabel}</p>
-                            <p className="text-zinc-500">
-                              {d.value.toLocaleString("th-TH")} หน่วย
-                            </p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <DynamicExecutiveStrainPieChart pieData={pieData} />
                 )}
               </CardContent>
             </Card>

@@ -124,8 +124,8 @@ export default function Hero({
       )}
     >
       <div className="flex flex-1 flex-col lg:grid lg:min-h-[88vh] lg:max-h-none lg:grid-cols-2 lg:items-stretch lg:gap-0">
-        <div className="relative z-10 order-2 -mt-20 flex min-h-[auto] w-full min-w-0 flex-1 flex-col justify-end bg-white px-4 pb-5 pt-5 visible sm:-mt-24 sm:px-8 sm:pb-8 md:py-20 lg:order-1 lg:mt-0 lg:max-w-xl lg:w-full lg:flex-none lg:justify-center lg:self-stretch lg:bg-transparent lg:px-10 lg:py-12 lg:pl-12 lg:pr-10 xl:py-20 xl:pl-16 xl:pr-14">
-          <div className="space-y-3 sm:space-y-4 lg:space-y-7 xl:space-y-8">
+        <div className="relative z-10 order-2 -mt-20 flex min-h-[auto] w-full min-w-0 flex-1 shrink-0 flex-col justify-end bg-white px-4 pb-5 pt-5 opacity-100 visible sm:-mt-24 sm:px-8 sm:pb-8 md:py-20 lg:order-1 lg:mt-0 lg:w-full lg:min-w-[min(100%,20rem)] lg:max-w-xl lg:flex-none lg:shrink-0 lg:justify-center lg:self-stretch lg:bg-transparent lg:px-10 lg:py-12 lg:pl-12 lg:pr-10 xl:py-20 xl:pl-16 xl:pr-14">
+          <div className="w-full min-w-0 space-y-3 sm:space-y-4 lg:space-y-7 xl:space-y-8">
             <m.p
               initial={false}
               animate={{ opacity: 1, y: 0 }}

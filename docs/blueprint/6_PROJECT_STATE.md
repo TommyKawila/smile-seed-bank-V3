@@ -4,6 +4,15 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Hero / floating coupon — hydration-stable badge mount)
+- **`FloatingOfferButton`:** คืน **`FloatingCouponBadgeMedia`** เป็น static import — เลื่อนแค่การ render badge หลัง **`useEffect`** (**`badgeMounted`**) พร้อม placeholder **`h-9 w-9`** (ไม่ใช้ **`next/dynamic`**, **`ssr: false`**)
+- **`Hero.tsx`:** คอลัมน์ซ้าย **`opacity-100 visible shrink-0`** + **`lg:min-w-[min(100%,20rem)]`** + **`w-full min-w-0`** ที่ห่อเนื้อหา — ลดโอกาสโครงหด / motion ค้างที่ opacity 0
+
+### บันทึกการทำงาน — 2026-05-15 (Perf — `next/dynamic` admin charts + lazy badge media)
+- **Admin dashboards:** Recharts ย้ายไปโหลดแบบ **`dynamic(..., { ssr: false })`** — **`app/admin/dashboard/page.tsx`**, **`app/admin/analytics/page.tsx`**, **`app/admin/inventory/dashboard/page.tsx`** + ชิ้นส่วนใหม่ใต้ **`components/admin/dashboard/`**, **`components/admin/analytics/`**, **`components/admin/inventory/InventoryDashboardCharts.tsx`**
+- **`RevenueProfitChart`:** ถอด **`IdleRender`** (เลื่อกจากการโหลดแบบ dynamic แล้ว)
+- **`FloatingOfferButton`:** **`FloatingCouponBadgeMedia`** โหลดหลัง **`badgeMounted`** (**`useEffect`**) + placeholder ขนาดคงที่ (**ไม่ใช้ `next/dynamic`** เพื่อคง hydration tree)
+
 ### บันทึกการทำงาน — 2026-05-15 (Next images — global `unoptimized`)
 - **`next.config.mjs`:** **`images.unoptimized: true`** — ข้าม **`/_next/image`** ทั้งแอป ให้โหลดตรงจาก Supabase/remote ที่อนุญาตใน **`remotePatterns`** (คง dynamic Supabase host + **`NEXT_PUBLIC_IMAGE_REMOTE_HOSTS`** + Unsplash / ucarecdn)
 
