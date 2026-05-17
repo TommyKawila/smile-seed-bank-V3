@@ -14,7 +14,7 @@ import {
   buildDetailGalleryUrls,
   resolveDetailHeroUrl,
 } from "@/lib/product-gallery-utils"
-import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload"
+import { productGalleryImageUnoptimized } from "@/lib/vercel-image-offload"
 
 type GalleryItem = { src: string; alt: string; badge?: string }
 
@@ -203,7 +203,7 @@ function Lightbox({
                   priority={i === 0}
                   loading={i === 0 ? "eager" : "lazy"}
                   fetchPriority={index === i ? (i === 0 ? "high" : "auto") : "low"}
-                  unoptimized={shouldOffloadImageOptimization(img.src)}
+                  unoptimized={productGalleryImageUnoptimized(img.src)}
                 />
               ))}
             </div>
@@ -244,7 +244,7 @@ function Lightbox({
                     className="h-full w-full object-cover"
                     sizes="64px"
                     quality={75}
-                    unoptimized={shouldOffloadImageOptimization(g.src)}
+                    unoptimized={productGalleryImageUnoptimized(g.src)}
                   />
                 </button>
               ))}
@@ -345,7 +345,7 @@ export function ProductGallery({
                 selected === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none",
                 showAggregateSoldOut && "brightness-75 grayscale"
               )}
-              unoptimized={shouldOffloadImageOptimization(item.src)}
+              unoptimized={productGalleryImageUnoptimized(item.src)}
             />
           ))}
         </div>
@@ -411,7 +411,7 @@ export function ProductGallery({
                 sizes="100px"
                 loading="lazy"
                 quality={75}
-                unoptimized={shouldOffloadImageOptimization(img.src)}
+                unoptimized={productGalleryImageUnoptimized(img.src)}
               />
             </button>
           ))}

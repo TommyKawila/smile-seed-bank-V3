@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Vercel image diagnostics — gallery bypass + URL slashes)
+- **`lib/vercel-image-offload.ts`:** **`productGalleryImageUnoptimized(src)`** — รวม **`NEXT_PUBLIC_PRODUCT_IMAGE_UNOPTIMIZED`** (**`true`** / **`1`**) เพื่อส่ง **`unoptimized`** ที่ **`ProductGallery`** ทดสอบว่า optimzier / limit ของ Vercel เป็นสาเหตุหรือไม่
+- **`lib/public-storage-url.ts`:** **`normalizeHttpsUrlSlashes`** — path ที่มี **`//`** ซ้ำหลังโฮสต์ถูกยุบเป็นทางเดียวก่อนคืนจาก **`resolvePublicAssetUrl`**
+
 ### บันทึกการทำงาน — 2026-05-15 (Vercel images — Supabase remotePatterns + URL fallback)
 - **`next.config.mjs`:** **`remotePatterns`** สำหรับ Supabase — **`public`** + **`sign`**; host คง **`jysdfxxilyjmjdmhazbu.supabase.co`** + host จาก **`NEXT_PUBLIC_SUPABASE_URL`**
 - **`lib/public-storage-url.ts`:** **`getSupabaseOrigin()`** — **`NEXT_PUBLIC_SUPABASE_URL`** (validate URL) หรือ **`PUBLIC_SUPABASE_FALLBACK_ORIGIN`** — ไม่คืน **`/storage/...`** แบบไม่มีโดเมน

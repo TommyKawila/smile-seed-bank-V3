@@ -20,20 +20,32 @@ function getSupabaseOrigin(): string {
   return PUBLIC_SUPABASE_FALLBACK_ORIGIN.replace(/\/+$/, "");
 }
 
+/** Collapse duplicate path slashes (e.g. `https://host//storage/...`) without touching `https://`. */
+function normalizeHttpsUrlSlashes(url: string): string {
+  try {
+    const u = new URL(url);
+    const nextPath = u.pathname.replace(/\/{2,}/g, "/");
+    if (nextPath !== u.pathname) u.pathname = nextPath;
+    return u.href;
+  } catch {
+    return url.replace(/^(https?:\/\/[^/]+)\/+/, (_, origin: string) => `${origin}/`);
+  }
+}
+
 export function resolvePublicAssetUrl(
   src: string | null | undefined
 ): string | null {
   if (src == null) return null;
   const s = String(src).trim();
   if (!s) return null;
-  if (/^https?:\/\//i.test(s)) return s;
+  if (/^https?:\/\//i.test(s)) return normalizeHttpsUrlSlashes(s);
 
   const base = getSupabaseOrigin();
 
   if (s.startsWith("/storage/v1/object/public/")) {
-    return `${base}${s}`;
+    return normalizeHttpsUrlSlashes(`${base}${s}`);
   }
 
   const path = s.replace(/^\/+/, "");
-  return `${base}/storage/v1/object/public/${path}`;
+  return normalizeHttpsUrlSlashes(`${base}/storage/v1/object/public/${path}`);
 }
