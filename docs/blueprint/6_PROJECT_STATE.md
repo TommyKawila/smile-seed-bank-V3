@@ -4,6 +4,9 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Webpack — drop merged `cacheGroups.styles`)
+- **`next.config.mjs`:** ถอด **`splitChunks.cacheGroups.styles`** (**`priority: 100`**) — ให้ Next แยก CSS ตาม route/chunk ตามค่าเริ่มต้น (ลด stylesheet monolith / render-blocking ชิ้นเดียว)
+
 ### บันทึกการทำงาน — 2026-05-15 (Age gate — CSS visibility, fixed DOM tree)
 - **`age-verification-gate.tsx`:** ถอด Radix Dialog — โครง overlay + การ์ดอยู่ใน DOM เสมอ; ซ่อนด้วย **`invisible opacity-0 pointer-events-none`** เมื่อ **`isVerified`** (เริ่มจาก **`initialVerifiedCookie`** + sync **`useEffect`** / auth); **`overflow: hidden`** บน **`body`** เมื่อเกตโชว์
 

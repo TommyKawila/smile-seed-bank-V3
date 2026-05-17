@@ -126,18 +126,7 @@ const nextConfig = {
       },
     ];
   },
-  webpack(config, { dev, isServer }) {
-    if (!dev && !isServer) {
-      if (config.optimization?.splitChunks?.cacheGroups) {
-        config.optimization.splitChunks.cacheGroups.styles = {
-          name: "styles",
-          test: /\.css$/,
-          chunks: "all",
-          enforce: true,
-          priority: 100, // Dominant override flag to group layout and dynamic streamed CSS together
-        };
-      }
-    }
+  webpack(config) {
     return config;
   },
 };
