@@ -8,6 +8,7 @@ import {
   type FloatingBadgeAsset,
 } from "@/lib/coupon-floating-badge";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import { IdleRender } from "@/components/utils/IdleRender";
 
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
@@ -39,9 +40,11 @@ export function FloatingCouponBadgeMedia({ asset }: { asset: FloatingBadgeAsset 
   if (asset.kind === "lottie") {
     if (animationData) {
       return (
-        <div className="pointer-events-none h-9 w-9 shrink-0 overflow-hidden" aria-hidden>
-          <Lottie animationData={animationData} loop className="h-9 w-9" />
-        </div>
+        <IdleRender>
+          <div className="pointer-events-none h-9 w-9 shrink-0 overflow-hidden" aria-hidden>
+            <Lottie animationData={animationData} loop className="h-9 w-9" />
+          </div>
+        </IdleRender>
       );
     }
     return (

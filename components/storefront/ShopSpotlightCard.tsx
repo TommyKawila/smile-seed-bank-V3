@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { MicroGeneticsBar } from "@/components/storefront/MicroGeneticsBar";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
@@ -83,7 +83,7 @@ export function ShopSpotlightCard({
     : getStartingVariantLabel(variantsList ?? null, locale);
 
   return (
-    <motion.div
+    <m.div
       variants={variants}
       className="col-span-2 flex h-full min-h-0 flex-col font-sans"
     >
@@ -140,6 +140,6 @@ export function ShopSpotlightCard({
           </span>
         </div>
       </Link>
-    </motion.div>
+    </m.div>
   );
 }

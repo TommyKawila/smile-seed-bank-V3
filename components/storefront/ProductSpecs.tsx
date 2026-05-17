@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Mars, Venus } from "lucide-react";
 import type { Product } from "@/types/supabase";
 import { cn } from "@/lib/utils";
@@ -106,13 +106,13 @@ export function GeneticRatioBar({
         <span className="font-bold text-zinc-600">{t(`อินดิกา: ${indica}%`, `Indica: ${indica}%`)}</span>
       </div>
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-zinc-100 sm:h-3.5">
-        <motion.div
+        <m.div
           className="relative z-10 h-full shrink-0 rounded-l-full bg-primary"
           initial={{ width: "0%" }}
           animate={{ width: `${sativa}%` }}
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
         />
-        <motion.div
+        <m.div
           className="relative z-0 h-full shrink-0 rounded-r-full bg-zinc-300"
           initial={{ width: "0%" }}
           animate={{ width: `${indica}%` }}

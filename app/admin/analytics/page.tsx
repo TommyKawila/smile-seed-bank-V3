@@ -43,6 +43,7 @@ import { LowStockWidget } from "@/components/admin/LowStockWidget";
 import { useExecutiveStats } from "@/hooks/useExecutiveStats";
 import { exportOrdersToExcel, type OrderExportRow } from "@/lib/export-utils";
 import { formatPrice, cn } from "@/lib/utils";
+import { IdleRender } from "@/components/utils/IdleRender";
 
 const EMERALD = "#059669";
 const NAVY = "#003366";
@@ -341,21 +342,23 @@ export default function DashboardPage() {
                     <p className="mt-1 max-w-xs text-xs text-zinc-400">กราฟรายวันจะแสดงเมื่อมีออเดอร์ที่ชำระแล้วในช่วงเวลานี้</p>
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data.dailyTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
-                      <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#71717a" />
-                      <YAxis tick={{ fontSize: 10 }} stroke="#71717a" tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
-                      <Tooltip
-                        formatter={(v: number | string | undefined) => formatPrice(Number(v ?? 0))}
-                        labelStyle={{ color: "#27272a" }}
-                      />
-                      <Legend />
-                      <Bar dataKey="revenue" name="รายได้" fill={EMERALD} radius={[2, 2, 0, 0]} maxBarSize={28} />
-                      <Bar dataKey="shipping" name="ค่าจัดส่ง" fill={NAVY} radius={[2, 2, 0, 0]} maxBarSize={28} />
-                      <Bar dataKey="discount" name="ส่วนลด" fill={AMBER} radius={[2, 2, 0, 0]} maxBarSize={28} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <IdleRender>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.dailyTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#71717a" />
+                        <YAxis tick={{ fontSize: 10 }} stroke="#71717a" tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+                        <Tooltip
+                          formatter={(v: number | string | undefined) => formatPrice(Number(v ?? 0))}
+                          labelStyle={{ color: "#27272a" }}
+                        />
+                        <Legend />
+                        <Bar dataKey="revenue" name="รายได้" fill={EMERALD} radius={[2, 2, 0, 0]} maxBarSize={28} />
+                        <Bar dataKey="shipping" name="ค่าจัดส่ง" fill={NAVY} radius={[2, 2, 0, 0]} maxBarSize={28} />
+                        <Bar dataKey="discount" name="ส่วนลด" fill={AMBER} radius={[2, 2, 0, 0]} maxBarSize={28} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </IdleRender>
                 )}
               </CardContent>
             </Card>
@@ -383,31 +386,33 @@ export default function DashboardPage() {
                 ) : (
                   <div className="flex h-[300px] flex-col gap-4 sm:h-[280px] sm:flex-row sm:items-center">
                     <div className="h-[200px] min-h-[180px] w-full flex-1 sm:h-full sm:min-h-0">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-                          <Pie
-                            data={pieData}
-                            dataKey="value"
-                            nameKey="legendLabel"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={46}
-                            outerRadius={82}
-                            paddingAngle={2}
-                            label={({ percent }) =>
-                              typeof percent === "number" && percent > 0.08
-                                ? `${Math.round(percent * 100)}%`
-                                : ""
-                            }
-                            labelLine={false}
-                          >
-                            {pieData.map((entry, i) => (
-                              <Cell key={`${entry.legendLabel}-${i}`} fill={entry.color} stroke="#fff" strokeWidth={1.5} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={<StrainPieTooltip />} />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      <IdleRender>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+                            <Pie
+                              data={pieData}
+                              dataKey="value"
+                              nameKey="legendLabel"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={46}
+                              outerRadius={82}
+                              paddingAngle={2}
+                              label={({ percent }) =>
+                                typeof percent === "number" && percent > 0.08
+                                  ? `${Math.round(percent * 100)}%`
+                                  : ""
+                              }
+                              labelLine={false}
+                            >
+                              {pieData.map((entry, i) => (
+                                <Cell key={`${entry.legendLabel}-${i}`} fill={entry.color} stroke="#fff" strokeWidth={1.5} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<StrainPieTooltip />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </IdleRender>
                     </div>
                     <ul className="max-h-[200px] w-full shrink-0 space-y-2 overflow-y-auto text-xs sm:max-h-none sm:w-[min(100%,240px)] sm:border-l sm:border-zinc-100 sm:pl-3">
                       {pieData.map((d, li) => (

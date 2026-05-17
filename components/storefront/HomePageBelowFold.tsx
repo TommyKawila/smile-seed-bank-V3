@@ -7,7 +7,7 @@
 import { Fragment, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion, type Variants } from "framer-motion";
+import { m, type Variants } from "framer-motion";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
@@ -143,13 +143,13 @@ export function HomePageBelowFold({
               BELOW_FOLD_CV
             )}
           >
-            <motion.div
+            <m.div
               initial={false}
               whileInView="show"
               viewport={{ once: true, margin: "-80px" }}
               variants={staggerContainer}
             >
-              <motion.div
+              <m.div
                 variants={cardVariant}
                 className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
               >
@@ -178,7 +178,7 @@ export function HomePageBelowFold({
                     <ChevronRight className="ml-0.5 h-4 w-4" />
                   </Link>
                 </Button>
-              </motion.div>
+              </m.div>
 
               {newArrivalsLoading ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -213,7 +213,7 @@ export function HomePageBelowFold({
                   {t("ยังไม่มีสินค้าใหม่ในช่วงนี้", "No new arrivals yet.")}
                 </p>
               )}
-            </motion.div>
+            </m.div>
           </section>
         );
       }

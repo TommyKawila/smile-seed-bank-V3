@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, createElement } from "react";
-import { motion, type Variants } from "framer-motion";
+import { m, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -147,7 +147,7 @@ type ProductCardProps = {
   product: ProductListItem;
   variant?: "shop" | "showcase";
   imagePriority?: boolean;
-  /** When parent already wraps this card in `<motion.div variants={…}>`, omit inner motion (avoids nested variant trees / runtime issues). */
+  /** When parent already wraps this card in `<m.div variants={…}>`, omit inner motion (avoids nested variant trees / runtime issues). */
   disableOuterMotion?: boolean;
   /** Raw `seeds` URL param: when set, card price/pack/badge follow the matching variant (catalog alignment). */
   catalogSeedsFilter?: string | null;
@@ -576,7 +576,7 @@ function ProductCardBase({
   );
 
   return createElement(
-    disableOuterMotion ? "div" : motion.div,
+    disableOuterMotion ? "div" : m.div,
     disableOuterMotion ? { className: "h-full" } : { variants: motionVariants, className: "h-full" },
     cardInner
   );

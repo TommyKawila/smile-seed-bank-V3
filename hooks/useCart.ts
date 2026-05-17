@@ -50,25 +50,33 @@ const AddToCartSchema = z.object({
   breederName: z.string().nullable().optional(),
 });
 
+function safeNumber(val: unknown, fallback: number): number {
+  const parsed = Number(val);
+  return Number.isNaN(parsed) ? fallback : Math.trunc(parsed);
+}
+
 /** Coerce IDs/qty/stock from JSON/API strings before Zod (avoids "expected number, received string"). */
 function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<CartItem, "isFreeGift"> {
-  const variantId = Math.trunc(Number(raw.variantId));
-  const productId = Math.trunc(Number(raw.productId));
-  const q = Math.trunc(Number(raw.quantity ?? 1));
+  const variantId = safeNumber(raw.variantId, 0);
+  const productId = safeNumber(raw.productId, 0);
+  const q = safeNumber(raw.quantity ?? 1, 1);
   const quantity = Number.isFinite(q) && q > 0 ? q : 1;
-  const price = Number(raw.price);
+  const priceRaw = Number(raw.price);
+  const price = Number.isFinite(priceRaw) ? priceRaw : 0;
   const sq = raw.stock_quantity;
   const stock_quantity =
     sq === undefined
       ? undefined
       : (() => {
-          const n = Math.trunc(Number(sq));
+          const parsed = Number(sq);
+          if (Number.isNaN(parsed)) return undefined;
+          const n = Math.trunc(parsed);
           return Number.isFinite(n) ? Math.max(0, n) : undefined;
         })();
   let breeder_id = raw.breeder_id;
   if (breeder_id !== undefined && breeder_id !== null) {
-    const b = Math.trunc(Number(breeder_id));
-    breeder_id = Number.isFinite(b) && b > 0 ? b : null;
+    const b = safeNumber(breeder_id, 0);
+    breeder_id = b > 0 ? b : null;
   }
   return {
     ...raw,

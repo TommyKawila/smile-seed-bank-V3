@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import { useLanguage } from "@/context/LanguageContext";
 import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bilingual";
@@ -19,7 +19,7 @@ export function ShopResearchInsightCard({
   const cardTitle = magazineDisplayTitle(post, locale);
   const cardExcerpt = magazineDisplayExcerpt(post, locale);
   return (
-    <motion.article
+    <m.article
       variants={variants}
       className="col-span-2 flex h-full min-h-0 flex-col font-sans"
     >
@@ -56,6 +56,6 @@ export function ShopResearchInsightCard({
           </span>
         </div>
       </Link>
-    </motion.article>
+    </m.article>
   );
 }

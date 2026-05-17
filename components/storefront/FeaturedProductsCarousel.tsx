@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Leaf } from "lucide-react";
@@ -156,7 +156,7 @@ export function FeaturedProductsCarousel({
   return (
     <section className="border-b border-zinc-100 bg-white py-12 sm:py-16">
       <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
-        <motion.header
+        <m.header
           className="mb-10 max-w-3xl space-y-3"
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -175,11 +175,11 @@ export function FeaturedProductsCarousel({
               "Editorial picks with clear lab-style labeling—depth lives on each strain profile."
             )}
           </p>
-        </motion.header>
+        </m.header>
 
         <div className="grid grid-cols-1 gap-6 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {products.map((p, i) => (
-            <motion.div
+            <m.div
               key={p.id}
               className="min-w-0"
               initial={{ opacity: 0, y: 16 }}
@@ -188,7 +188,7 @@ export function FeaturedProductsCarousel({
               transition={{ duration: 0.4, delay: Math.min(0.05 * i, 0.35) }}
             >
               <FeaturedProductInsightCard product={p} priority={i === 0} />
-            </motion.div>
+            </m.div>
           ))}
         </div>
       </div>

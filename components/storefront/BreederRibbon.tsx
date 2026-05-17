@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useMotionValue, useAnimationFrame, AnimatePresence } from "framer-motion";
+import { m, useMotionValue, useAnimationFrame, AnimatePresence } from "framer-motion";
 import { useBreeders } from "@/hooks/useBreeders";
 import { useLanguage } from "@/context/LanguageContext";
 import type { Breeder } from "@/types/supabase";
@@ -210,7 +210,7 @@ function BreederRibbonBase({
 
       <AnimatePresence>
         {tooltip && !isDragging && (
-          <motion.div
+          <m.div
             key="breeder-tip"
             initial={{ opacity: 0, y: 8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -227,12 +227,12 @@ function BreederRibbonBase({
               ).slice(0, 130)}
             </p>
             <div className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-zinc-100 bg-white/90" />
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
       <div className="overflow-hidden">
-        <motion.div
+        <m.div
           style={{ x }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -334,7 +334,7 @@ function BreederRibbonBase({
               </a>
             );
           })}
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

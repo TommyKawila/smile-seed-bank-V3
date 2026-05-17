@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { motion, type Variants } from "framer-motion";
+import { m, type Variants } from "framer-motion";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { ShopSpotlightCard } from "@/components/storefront/ShopSpotlightCard";
 import { ShopResearchInsightCard } from "@/components/storefront/ShopResearchInsightCard";
@@ -36,7 +36,7 @@ export function GeneticVaultProductGrid({
 
   return (
     <div className={JOURNAL_PRODUCT_FONT_VARS}>
-      <motion.div
+      <m.div
         initial="hidden"
         animate="show"
         variants={containerVariants}
@@ -45,7 +45,7 @@ export function GeneticVaultProductGrid({
         {items.map((item, idx) => {
           if (item.type === "product") {
             return (
-              <motion.div
+              <m.div
                 key={`vault-p-${item.product.id}`}
                 variants={cellVariants}
                 className="flex h-full min-h-0 min-w-0 flex-col"
@@ -55,7 +55,7 @@ export function GeneticVaultProductGrid({
                   disableOuterMotion
                   catalogSeedsFilter={catalogSeedsFilter}
                 />
-              </motion.div>
+              </m.div>
             );
           }
           if (item.type === "spotlight") {
@@ -76,7 +76,7 @@ export function GeneticVaultProductGrid({
             />
           );
         })}
-      </motion.div>
+      </m.div>
     </div>
   );
 }

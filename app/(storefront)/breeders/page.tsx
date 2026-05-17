@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Leaf, ChevronRight, Dna, ChevronDown, MapPin, Star, Trophy, Zap } from "lucide-react";
 import { useBreeders } from "@/hooks/useBreeders";
 import { useLanguage } from "@/context/LanguageContext";
@@ -66,7 +66,7 @@ function ExpandableDescription({
       {/* Full story + highlights — animated expand */}
       <AnimatePresence initial={false}>
         {expanded && hasMore && (
-          <motion.div
+          <m.div
             key="full"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -85,7 +85,7 @@ function ExpandableDescription({
                 </>
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -96,13 +96,13 @@ function ExpandableDescription({
           className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary backdrop-blur-sm transition-all duration-200 hover:bg-primary/10 hover:shadow-sm active:scale-95"
         >
           {expanded ? readLessLabel : readMoreLabel}
-          <motion.span
+          <m.span
             animate={{ rotate: expanded ? 180 : 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="inline-flex"
           >
             <ChevronDown className="h-3.5 w-3.5" />
-          </motion.span>
+          </m.span>
         </button>
       )}
     </div>
@@ -167,14 +167,14 @@ export default function BreedersPage() {
 
         {/* Grid */}
         {!isLoading && active.length > 0 && (
-          <motion.div
+          <m.div
             variants={stagger}
             initial="hidden"
             animate="show"
             className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           >
             {active.map((breeder) => (
-              <motion.div
+              <m.div
                 key={breeder.id}
                 variants={cardVariant as import("framer-motion").Variants}
                 className="group flex flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
@@ -271,9 +271,9 @@ export default function BreedersPage() {
                     <ChevronRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
-              </motion.div>
+              </m.div>
             ))}
-          </motion.div>
+          </m.div>
         )}
 
         {/* Back to shop */}

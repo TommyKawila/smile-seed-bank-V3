@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { Loader2, Eye, EyeOff, Mail, Lock, User, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -187,7 +187,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 pt-20">
       <LineInAppGoogleOverlay open={lineGoogleOverlayOpen} onOpenChange={setLineGoogleOverlayOpen} />
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
@@ -322,7 +322,7 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="space-y-3.5">
               <AnimatePresence>
                 {mode === "register" && (
-                  <motion.div
+                  <m.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
@@ -343,7 +343,7 @@ export default function LoginPage() {
                         />
                       </div>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
@@ -429,7 +429,7 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

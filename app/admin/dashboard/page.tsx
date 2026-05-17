@@ -45,6 +45,7 @@ import {
 import { formatPrice, cn } from "@/lib/utils";
 import { FinancialScorecards } from "@/components/admin/dashboard/FinancialScorecards";
 import { RevenueProfitChart } from "@/components/admin/dashboard/RevenueProfitChart";
+import { IdleRender } from "@/components/utils/IdleRender";
 
 type OverviewPayload = {
   range: { preset: string; start: string; end: string };
@@ -208,24 +209,26 @@ export default function AdminDashboardPage() {
                     No orders in this period
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartOrders} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 10 }}
-                        tickFormatter={tickDate}
-                        stroke="#71717a"
-                        interval="preserveStartEnd"
-                      />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 10 }} stroke="#71717a" width={36} />
-                      <Tooltip
-                        labelFormatter={(l) => String(l)}
-                        formatter={(v: number | string | undefined) => [`${Number(v ?? 0)} orders`, "Volume"]}
-                      />
-                      <Bar dataKey="orders" name="Orders" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <IdleRender>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartOrders} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 10 }}
+                          tickFormatter={tickDate}
+                          stroke="#71717a"
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} stroke="#71717a" width={36} />
+                        <Tooltip
+                          labelFormatter={(l) => String(l)}
+                          formatter={(v: number | string | undefined) => [`${Number(v ?? 0)} orders`, "Volume"]}
+                        />
+                        <Bar dataKey="orders" name="Orders" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </IdleRender>
                 )}
               </CardContent>
             </Card>
@@ -244,29 +247,31 @@ export default function AdminDashboardPage() {
                   <p className="text-sm text-zinc-500">No paid orders in range</p>
                 ) : (
                   <div className="h-[200px] w-full max-w-[280px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={data.userTypePie}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={44}
-                          outerRadius={72}
-                          paddingAngle={2}
-                        >
-                          {data.userTypePie.map((entry, i) => (
-                            <Cell key={`${entry.name}-${i}`} fill={entry.fill} stroke="#fff" strokeWidth={1} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(v: number | string | undefined) => [`${Number(v ?? 0)} orders`, ""]} />
-                        <Legend
-                          wrapperStyle={{ fontSize: 12 }}
-                          formatter={(value) => <span className="text-zinc-700">{value}</span>}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <IdleRender>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={data.userTypePie}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={44}
+                            outerRadius={72}
+                            paddingAngle={2}
+                          >
+                            {data.userTypePie.map((entry, i) => (
+                              <Cell key={`${entry.name}-${i}`} fill={entry.fill} stroke="#fff" strokeWidth={1} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(v: number | string | undefined) => [`${Number(v ?? 0)} orders`, ""]} />
+                          <Legend
+                            wrapperStyle={{ fontSize: 12 }}
+                            formatter={(value) => <span className="text-zinc-700">{value}</span>}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </IdleRender>
                   </div>
                 )}
               </CardContent>

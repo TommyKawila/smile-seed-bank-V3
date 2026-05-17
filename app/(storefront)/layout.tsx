@@ -11,8 +11,6 @@ import { StorefrontStructuredData } from "@/components/seo/StorefrontStructuredD
 import { Navbar } from "@/components/storefront/Navbar";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { Toaster } from "@/components/ui/sonner";
-import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
-
 const AgeVerificationGate = dynamic(
   () => import("@/components/storefront/age-verification-gate").then((m) => m.AgeVerificationGate),
   { ssr: false }
@@ -71,12 +69,10 @@ export default async function StorefrontLayout({
               <PromotionBanner />
               <StorefrontStructuredData />
               <div className="flex min-h-screen flex-col">
-                <FramerLazyRoot>
-                  <Navbar />
-                  <main className="flex-1 bg-white pt-20 sm:pt-28">{children}</main>
-                  <Footer />
-                  <OfferManager />
-                </FramerLazyRoot>
+                <Navbar />
+                <main className="flex-1 bg-white pt-20 sm:pt-28">{children}</main>
+                <Footer />
+                <OfferManager />
               </div>
             </CartProvider>
           </SiteSettingsProvider>

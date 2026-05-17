@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { ChevronLeft, CreditCard, Upload, Loader2, CheckCircle2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -130,7 +130,7 @@ export function PaymentPageClient({
           <h1 className="text-xl font-bold text-zinc-900">ชำระเงิน</h1>
         </div>
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-5"
@@ -276,7 +276,7 @@ export function PaymentPageClient({
               }
             />
           </div>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

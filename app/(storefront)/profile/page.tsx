@@ -5,7 +5,7 @@ import { ProfileSkeleton } from "@/components/skeletons/ProfileSkeleton";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import {
   User, MapPin, Phone, Mail, ChevronRight,
   Loader2, LogOut, Check, X, Leaf, ShoppingBag,
@@ -444,19 +444,19 @@ function ProfileContent() {
 
         {/* ── GENOME CIRCLE (MEMBERSHIP) — gated by feature flag or admin preview ── */}
         {showMembershipProgram && tab === "membership" && user ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
             <GenomeCirclePanel
               orders={orders}
               isWholesale={!!customer?.is_wholesale}
               userId={user.id}
               t={t}
             />
-          </motion.div>
+          </m.div>
         ) : null}
 
         {/* ── ORDERS TAB ──────────────────────────────────────────────────────── */}
         {tab === "orders" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
             {ordersLoading ? (
               <div className="flex justify-center py-16">
                 <Loader2 className="h-7 w-7 animate-spin text-primary" />
@@ -483,7 +483,7 @@ function ProfileContent() {
                     order.payment_status
                   );
                   return (
-                    <motion.button
+                    <m.button
                       key={order.id}
                       type="button"
                       onClick={() => setSelectedOrder(order as OrderDetailRow)}
@@ -581,17 +581,17 @@ function ProfileContent() {
                         <span className="text-[11px] text-zinc-400">{t("แตะเพื่อดูรายละเอียด", "Tap for details")}</span>
                         <ChevronRight className="h-3.5 w-3.5 text-zinc-300" />
                       </div>
-                    </motion.button>
+                    </m.button>
                   );
                 })}
               </div>
             )}
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── MY COUPONS TAB (collected codes only) ───────────────────────────── */}
         {tab === "coupons" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
             <div className="space-y-8">
               <MemberCoupons locale={locale} t={t} mono={mono} serif={serif} />
 
@@ -658,12 +658,12 @@ function ProfileContent() {
                 )}
               </div>
             </div>
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── PROFILE TAB ─────────────────────────────────────────────────────── */}
         {tab === "profile" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
             <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm">
               <div className="border-b border-zinc-100 px-5 py-4">
                 <h2 className={cn(serif, "text-lg font-medium text-zinc-900")}>
@@ -781,7 +781,7 @@ function ProfileContent() {
                 </Link>
               ))}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </div>
       <OrderDetailDrawer

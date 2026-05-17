@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, m } from "framer-motion";
 import { ShoppingCart } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -36,7 +36,7 @@ export function StickyBuyBar({
   return (
     <AnimatePresence>
       {visible && (
-        <motion.div
+        <m.div
           key="product-sticky-buy"
           initial={{ y: "110%" }}
           animate={{ y: 0 }}
@@ -81,7 +81,7 @@ export function StickyBuyBar({
               </div>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   )

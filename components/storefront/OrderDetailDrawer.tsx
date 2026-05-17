@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import {
   X, Leaf, MapPin, Truck, Copy, Check,
@@ -230,7 +230,7 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
       {order && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             key="bd"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -241,7 +241,7 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
           />
 
           {/* Panel */}
-          <motion.div
+          <m.div
             key="panel"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -454,7 +454,7 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
               )}
 
             </div>
-          </motion.div>
+          </m.div>
         </>
       )}
     </AnimatePresence>

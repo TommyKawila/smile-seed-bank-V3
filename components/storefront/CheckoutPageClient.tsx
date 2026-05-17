@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { z } from "zod";
 import { Loader2, ShoppingBag, ChevronLeft, ShieldCheck, Tag, Sparkles, MapPin } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -1053,7 +1053,7 @@ export function CheckoutPageClient({
             </OrderSummary>
 
             <AnimatePresence>
-              <motion.div
+              <m.div
                 key={placed.orderNumber}
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1077,7 +1077,7 @@ export function CheckoutPageClient({
                   t={t}
                   serif={serif}
                 />
-              </motion.div>
+              </m.div>
             </AnimatePresence>
 
             <a

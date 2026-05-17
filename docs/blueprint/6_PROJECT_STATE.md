@@ -4,6 +4,31 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-15 (Emergency — Hero layout + cart safeNumber + LazyMotion)
+- **`FramerLazyRoot`:** **`domMax`** + **`strict={false}`** (รูปแบบมินิมอล)
+- **`Hero.tsx`:** ถอด **`min-h-0`** จาก section / grid outer; คอลัมน์ซ้าย **`min-h-[auto]`**, **`visible`**, **`min-w-0`**, **`flex-1`**; media panel / carousel **`min-h-0`** ลดลงเป็น **`h-full w-full`**
+- **`hooks/useCart.ts`:** **`safeNumber(unknown, fallback)`** + **`price`** กันไม่ finite → **0**; **`stock_quantity`** ถ้า parse เป็น NaN → **`undefined`**
+
+### บันทึกการทำงาน — 2026-05-15 (LazyMotion domMax + Hero left column footprint)
+- **`FramerLazyRoot`:** **`features={domMax}`** + **`strict={false}`** — โหลด layout/gesture เต็ม แก้การค้างที่ opacity เริ่มต้นเมื่อขาดฟีเจอร์
+- **`Hero.tsx`:** คอลัมน์ซ้าย **`min-h-[min-content]`**, **`w-full flex-1`**, **`md:py-20`**, **`lg:py-12 xl:py-20`**, **`lg:w-full lg:self-stretch lg:flex-none`**; grid เพิ่ม **`lg:gap-0`**
+
+### บันทึกการทำงาน — 2026-05-15 (LazyMotion — disable strict to stop hydration hard-fail)
+- **Audit:** `components/storefront/`, `components/ui/` — ไม่มี **`motion.*`** / **`import { motion`** (มีแค่ **`m.*`**); ไม่มีโฟลเดอร์ **`components/navigation/`**
+- **`FramerLazyRoot`:** **`strict={false}`** บน **`LazyMotion`** — cushion เมื่อมี **`motion`** หลุดจาก subtree / vendor
+
+### บันทึกการทำงาน — 2026-05-15 (Hero carousel — plain anchors for Image fill)
+- **`HeroCarouselSlideImages`:** แยก mobile/desktop เป็น **`absolute inset-0`** + **`relative … min-h-0 overflow-hidden`** ห่อแต่ละ **`Image fill`** (ไม่ให้โฟลเดอร์ animation เป็น parent ติดกับรูป)
+- **`HomeHeroCarousel` / `HomeHeroCarouselMotion`:** แทรก **`div`** plain **`relative h-full w-full min-h-0`** ระหว่าง **`m.div`** กับ **`HeroCarouselSlideImages`**
+- **`Hero.tsx`:** คอลัมน์สื่อ **`min-h-0`** + **`lg:w-full`** เพื่อโซ่ **`relative`/ความสูง grid** ชัดขึ้น
+
+### บันทึกการทำงาน — 2026-05-15 (Perf — LazyMotion strict + IdleRender for charts/Lottie)
+- **`FramerLazyRoot`:** **`LazyMotion features={domAnimation} strict`** — ย้ายไป **`app/layout.tsx`** ห่อทั้งแอป (admin + storefront); storefront layout ถอดซ้ำ
+- **Storefront:** แปลง **`motion.*` → `m.*`** ในทุกไฟล์ที่ import framer-motion (ข้อกำหนดของ strict)
+- **`components/utils/IdleRender.tsx`:** **`requestIdleCallback`** (timeout 2s) / fallback **`setTimeout(200)`** — defer children หลัง hydration ช่วงแรก
+- **Recharts:** ห่อ **`ResponsiveContainer`** ใน **`IdleRender`** — **`RevenueProfitChart`**, **`ChannelPieChart`**, **`RevenueBarChart`**, **`app/admin/dashboard/page.tsx`**, **`app/admin/analytics/page.tsx`**, **`app/admin/inventory/dashboard/page.tsx`**
+- **`FloatingCouponBadgeMedia`:** ห่อ **`lottie-react`** ด้วย **`IdleRender`**
+
 ### บันทึกการทำงาน — 2026-05-15 (Next — transpilePackages for legacy vendor bundles)
 - **`next.config.mjs`:** **`transpilePackages`** — **`framer-motion`**, **`embla-carousel-react`**, **`embla-carousel`**, **`lottie-react`**, **`lottie-web`**, **`recharts`**, **`cmdk`**, **`@dnd-kit/*`**, **`emoji-picker-react`** (ให้ SWC แปลง vendor ที่มัก ship ES legacy เป็นโค้ดสมัยใหม่ตาม browserslist)
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { HeroCarouselSlideImages } from "@/components/storefront/HeroCarouselSlideImages";
 
 const FADE_DURATION = 0.8;
@@ -24,7 +24,7 @@ export function AnimatedHeroSlide({
   const transition = { duration: FADE_DURATION, ease: "easeInOut" as const };
   return (
     <AnimatePresence mode="wait">
-      <motion.div
+      <m.div
         key={bannerKey}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -33,13 +33,16 @@ export function AnimatedHeroSlide({
         className="absolute inset-0 overflow-hidden bg-zinc-100 md:flex md:items-center md:justify-center"
         style={panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
       >
-        <HeroCarouselSlideImages
-          mobileSrc={mobileSrc}
-          desktopSrc={desktopSrc}
-          heroAlt={heroAlt}
-          priority={false}
-        />
-      </motion.div>
+        {/* Plain anchor between LazyMotion layer and Image fill (layout containment). */}
+        <div className="relative h-full w-full min-h-0 flex-1 overflow-hidden md:flex md:items-center md:justify-center">
+          <HeroCarouselSlideImages
+            mobileSrc={mobileSrc}
+            desktopSrc={desktopSrc}
+            heroAlt={heroAlt}
+            priority={false}
+          />
+        </div>
+      </m.div>
     </AnimatePresence>
   );
 }

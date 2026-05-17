@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { isResearchCategory, magazineCategoryDisplayTh } from "@/lib/blog-research-category";
@@ -76,7 +76,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
   return (
     <div className="relative aspect-video min-h-[260px] w-full overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition-shadow hover:shadow-md">
       <AnimatePresence mode="wait">
-        <motion.div
+        <m.div
           key={current.id}
           initial={false}
           animate={{ opacity: 1 }}
@@ -113,7 +113,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       </AnimatePresence>
       {slides.length > 1 && (
         <div className="absolute bottom-4 right-6 z-10 flex gap-2">

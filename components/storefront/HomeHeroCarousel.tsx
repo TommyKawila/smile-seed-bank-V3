@@ -82,12 +82,14 @@ export function HomeHeroCarousel({ banners }: Props) {
         style={panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
         suppressHydrationWarning
       >
-        <HeroCarouselSlideImages
-          mobileSrc={mobileSrc}
-          desktopSrc={desktopSrc}
-          heroAlt={heroAlt}
-          priority
-        />
+        <div className="relative h-full w-full min-h-0 flex-1 overflow-hidden md:flex md:items-center md:justify-center">
+          <HeroCarouselSlideImages
+            mobileSrc={mobileSrc}
+            desktopSrc={desktopSrc}
+            heroAlt={heroAlt}
+            priority
+          />
+        </div>
       </div>
     ) : (
       <AnimatedHeroSlide
@@ -107,7 +109,7 @@ export function HomeHeroCarousel({ banners }: Props) {
           aria-label={heroAlt}
           className="absolute inset-0 z-0 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-0"
         >
-          <div className="relative h-full w-full p-0">{slidesMarkup}</div>
+          <div className="relative h-full min-h-0 w-full p-0">{slidesMarkup}</div>
         </Link>
       ) : (
         slidesMarkup

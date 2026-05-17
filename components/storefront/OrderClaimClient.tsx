@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { lineOaUrlWithOrderHint } from "@/lib/line-oa-url";
 
@@ -179,7 +179,7 @@ export function OrderClaimClient({ token }: { token: string }) {
     const orderNo = preview?.order_number?.trim() ?? "";
     const lineTrackHref = orderNo ? lineOaUrlWithOrderHint(orderNo) : "";
     return (
-      <motion.div
+      <m.div
         ref={successBlockRef}
         className="mx-auto max-w-md scroll-mt-4 space-y-4 rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-5 text-center shadow-sm sm:space-y-5 sm:p-7"
         initial={{ opacity: 0, y: 20 }}
@@ -230,7 +230,7 @@ export function OrderClaimClient({ token }: { token: string }) {
         <p className="text-[11px] text-emerald-900/70">
           เก็บลิงก์สถานะไว้ดูเลขพัสดุภายหลัง
         </p>
-      </motion.div>
+      </m.div>
     );
   }
 

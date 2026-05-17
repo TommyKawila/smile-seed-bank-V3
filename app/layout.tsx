@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
+import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
 import { Inter, Prompt } from "next/font/google";
 import "./globals.css";
@@ -80,9 +81,11 @@ export default function RootLayout({
     <html lang="th" className="scroll-smooth" suppressHydrationWarning>
       <head>{supabaseOriginHeadLinks()}</head>
       <body className={`${inter.variable} ${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
-        {children}
-        <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />
-        <Analytics />
+        <FramerLazyRoot>
+          {children}
+          <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />
+          <Analytics />
+        </FramerLazyRoot>
       </body>
     </html>
   );

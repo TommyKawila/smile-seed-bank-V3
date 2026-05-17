@@ -32,6 +32,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatPrice } from "@/lib/utils";
+import { IdleRender } from "@/components/utils/IdleRender";
 
 type Stats = {
   totalInventoryValue: number;
@@ -191,32 +192,34 @@ export default function InventoryDashboardPage() {
                 ยังไม่มีข้อมูล
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="45%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={EMERALD_COLORS[i % EMERALD_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number | undefined) => [formatBaht(value ?? 0), "มูลค่า"]}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "1px solid #e4e4e7",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "12px" }} />
-                </PieChart>
-              </ResponsiveContainer>
+              <IdleRender>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {pieData.map((_, i) => (
+                        <Cell key={i} fill={EMERALD_COLORS[i % EMERALD_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number | undefined) => [formatBaht(value ?? 0), "มูลค่า"]}
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border: "1px solid #e4e4e7",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "12px" }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </IdleRender>
             )}
           </CardContent>
         </Card>
@@ -234,34 +237,36 @@ export default function InventoryDashboardPage() {
                 ยังไม่มีข้อมูล
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart
-                  data={stats.stockByCategory}
-                  layout="vertical"
-                  margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
-                  <XAxis type="number" tick={{ fontSize: 11, fill: "#71717a" }} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={80}
-                    tick={{ fontSize: 11, fill: "#71717a" }}
-                  />
-                  <Tooltip
-                    formatter={(value: number | undefined) => [
-                      (value ?? 0).toLocaleString(),
-                      "จำนวน",
-                    ]}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "1px solid #e4e4e7",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Bar dataKey="stock" fill="#047857" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <IdleRender>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart
+                    data={stats.stockByCategory}
+                    layout="vertical"
+                    margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: "#71717a" }} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={80}
+                      tick={{ fontSize: 11, fill: "#71717a" }}
+                    />
+                    <Tooltip
+                      formatter={(value: number | undefined) => [
+                        (value ?? 0).toLocaleString(),
+                        "จำนวน",
+                      ]}
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border: "1px solid #e4e4e7",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Bar dataKey="stock" fill="#047857" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </IdleRender>
             )}
           </CardContent>
         </Card>

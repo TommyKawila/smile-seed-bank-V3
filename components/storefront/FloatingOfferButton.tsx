@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { X, Copy, Check, ChevronRight, Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -206,7 +206,7 @@ export function FloatingOfferButton({
     <>
       <AnimatePresence>
         {!drawerOpen && (
-          <motion.button
+          <m.button
             type="button"
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -222,14 +222,14 @@ export function FloatingOfferButton({
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/25 text-xs font-bold">
               {coupons.length}
             </span>
-          </motion.button>
+          </m.button>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {drawerOpen && (
           <>
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -238,7 +238,7 @@ export function FloatingOfferButton({
               onClick={() => setDrawerOpen(false)}
             />
 
-            <motion.div
+            <m.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -280,7 +280,7 @@ export function FloatingOfferButton({
                 <ChevronRight className="h-3 w-3" />
                 คัดลอกโค้ด แล้วใส่ในหน้าตะกร้าสินค้า
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

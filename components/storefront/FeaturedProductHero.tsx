@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
 import { FeaturedStrainHeroCarousel } from "@/components/storefront/ShopGeneticVaultHero";
 import { resolveSectionHeading, type SectionTitle } from "@/lib/homepage-section-title";
@@ -59,7 +59,7 @@ export function FeaturedProductHero({
   return (
     <section className="border-b border-zinc-100 bg-zinc-50/50 py-10 font-sans sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <motion.header
+        <m.header
           className="mb-8 max-w-3xl space-y-2 sm:mb-10 sm:space-y-3"
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -78,7 +78,7 @@ export function FeaturedProductHero({
               "Editorial picks with clear lab-style labeling—depth lives on each strain profile."
             )}
           </p>
-        </motion.header>
+        </m.header>
 
         <FeaturedStrainHeroCarousel products={products} isEn={isEn} t={t} />
       </div>

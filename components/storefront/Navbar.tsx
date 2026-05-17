@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import Leaf from "lucide-react/dist/esm/icons/leaf";
 import LogOut from "lucide-react/dist/esm/icons/log-out";
 import Menu from "lucide-react/dist/esm/icons/menu";
@@ -207,7 +207,7 @@ export function Navbar() {
                   </button>
                   <AnimatePresence>
                     {userMenuOpen && (
-                      <motion.div
+                      <m.div
                         initial={{ opacity: 0, y: -6, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -6, scale: 0.97 }}
@@ -243,7 +243,7 @@ export function Navbar() {
                           <LogOut className="h-4 w-4" />
                           {t("ออกจากระบบ", "Sign Out")}
                         </button>
-                      </motion.div>
+                      </m.div>
                     )}
                   </AnimatePresence>
                 </>
@@ -278,14 +278,14 @@ export function Navbar() {
                 <ShoppingCart className="h-5 w-5 text-zinc-800" />
               </span>
               {itemCount > 0 && (
-                <motion.span
+                <m.span
                   key={itemCount}
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   className="pointer-events-none absolute -right-0.5 -top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-sm ring-1 ring-white/20"
                 >
                   {itemCount > 99 ? "99+" : itemCount}
-                </motion.span>
+                </m.span>
               )}
             </button>
 
@@ -311,7 +311,7 @@ export function Navbar() {
         {/* Mobile Dropdown Menu */}
         <AnimatePresence>
           {menuOpen && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
@@ -402,7 +402,7 @@ export function Navbar() {
                   English
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </header>

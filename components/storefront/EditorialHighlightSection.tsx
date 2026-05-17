@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { ChevronRight, Clock } from "lucide-react";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
@@ -169,13 +169,13 @@ export function EditorialHighlightSection() {
         <span className="mb-3 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
           #{badgeLabel(main)}
         </span>
-        <motion.h3
+        <m.h3
           className="font-sans text-2xl font-bold leading-tight text-emerald-950 sm:text-3xl lg:text-[1.85rem] lg:leading-snug"
           whileHover={{ color: "rgb(5 46 22)" }}
           transition={{ duration: 0.35 }}
         >
           {mainTitle}
-        </motion.h3>
+        </m.h3>
         {mainExcerpt ? (
           <p className="mt-2 line-clamp-2 text-sm text-zinc-600">{mainExcerpt}</p>
         ) : null}
@@ -189,7 +189,7 @@ export function EditorialHighlightSection() {
 
   if (posts.length === 1) {
     return (
-      <motion.section
+      <m.section
         className="border-b border-zinc-100 bg-gradient-to-b from-zinc-50/90 to-white py-14 sm:py-16"
         initial={{ opacity: 0, y: 36 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -200,12 +200,12 @@ export function EditorialHighlightSection() {
           {headerBlock}
           <div className="mx-auto max-w-4xl">{mainCard}</div>
         </div>
-      </motion.section>
+      </m.section>
     );
   }
 
   return (
-    <motion.section
+    <m.section
       className="border-b border-zinc-100 bg-gradient-to-b from-zinc-50/90 to-white py-14 sm:py-16"
       initial={{ opacity: 0, y: 36 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -222,7 +222,7 @@ export function EditorialHighlightSection() {
           </div>
 
           {/* Side list — 2/5 */}
-          <motion.div
+          <m.div
             className="flex flex-col gap-4 lg:col-span-2"
             variants={sideListVariants}
             initial="hidden"
@@ -234,7 +234,7 @@ export function EditorialHighlightSection() {
               const sideExcerpt = magazineDisplayExcerpt(post, locale);
               const mins = estimateReadingMinutes(sideExcerpt, sideTitle);
               return (
-                <motion.div key={post.id} variants={sideItemVariants}>
+                <m.div key={post.id} variants={sideItemVariants}>
                   <Link
                     href={`/blog/${post.slug}`}
                     className="group/side flex gap-4 overflow-hidden rounded-xl border border-zinc-200/80 bg-white p-3 shadow-sm transition-shadow duration-300 hover:border-primary/25 hover:shadow-md"
@@ -246,25 +246,25 @@ export function EditorialHighlightSection() {
                       <span className="inline-flex w-fit rounded-full border border-emerald-700/15 bg-emerald-700/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary backdrop-blur-sm">
                         #{badgeLabel(post)}
                       </span>
-                      <motion.h4
+                      <m.h4
                         className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-900"
                         whileHover={{ color: "rgb(4 120 87)" }}
                         transition={{ duration: 0.3 }}
                       >
                         {sideTitle}
-                      </motion.h4>
+                      </m.h4>
                       <p className="flex items-center gap-1 text-[11px] text-zinc-500">
                         <Clock className="h-3 w-3 shrink-0" aria-hidden />
                         {mins} {t("นาทีในการอ่าน", "min read")}
                       </p>
                     </div>
                   </Link>
-                </motion.div>
+                </m.div>
               );
             })}
-          </motion.div>
+          </m.div>
         </div>
       </div>
-    </motion.section>
+    </m.section>
   );
 }
