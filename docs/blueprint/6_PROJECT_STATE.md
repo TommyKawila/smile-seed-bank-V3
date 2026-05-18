@@ -4,6 +4,9 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-18 (Age gate — LCP / paint)
+- **`age-verification-gate.tsx`:** โอเวอร์เลย์ **`bg-zinc-950/95`** แทน **`backdrop-blur-*`**; การ์ดโมดัล **`[font-family:ui-sans-serif,system-ui,…]`** + ปุ่ม **`[font-family:inherit]`** (ไม่ดึง **`font-sans`** จาก **`Button`** / next/font); หัวข้อ **`text-xl md:text-2xl font-bold`**
+
 ### บันทึกการทำงาน — 2026-05-18 (Build targets — browserslist + TS es2022)
 - **Root:** ไม่มี **`.babelrc` / `babel.config.*`** (SWC ไม่ถูกสลับไป Babel)
 - **`package.json`:** **`browserslist`** → **`defaults and supports es6-module`**, **`not ie 11`** (**`not lt ie 11`** ไม่รองรับใน Browserslist ที่ Next bundle), **`not dead`**

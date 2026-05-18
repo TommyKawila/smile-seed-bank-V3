@@ -99,12 +99,13 @@ export function AgeVerificationGate({
         if (e.key === "Escape") e.preventDefault();
       }}
     >
-      <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md" aria-hidden />
+      <div className="absolute inset-0 bg-zinc-950/95" aria-hidden />
 
       <div
         className={cn(
           "relative z-10 w-[calc(100%-1.5rem)] max-w-md rounded-2xl border border-emerald-800/25 bg-white p-6 pt-7 shadow-2xl ring-1 ring-emerald-900/10",
-          "focus:outline-none"
+          "focus:outline-none",
+          "[font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe_UI,Roboto,Helvetica_Neue,Arial,sans-serif]"
         )}
         onPointerDown={(e) => e.stopPropagation()}
       >
@@ -161,23 +162,23 @@ export function AgeVerificationGate({
         </div>
 
         <div id="age-gate-title" className="flex flex-col gap-1.5 text-center">
-          <span className="font-sans text-lg font-semibold leading-snug text-zinc-900 sm:text-xl">
+          <span className="font-bold text-xl leading-snug text-foreground md:text-2xl">
             {TITLE_TH}
           </span>
-          <span className="font-sans text-base font-medium leading-snug text-zinc-500 sm:text-lg">
+          <span className="text-lg font-semibold leading-snug text-muted-foreground md:text-xl">
             {TITLE_EN}
           </span>
         </div>
 
-        <div className="mt-5 space-y-2.5 text-center text-sm leading-relaxed">
-          <p className="text-zinc-800">{BODY_TH}</p>
-          <p className="text-zinc-500">{BODY_EN}</p>
+        <div className="mt-5 space-y-2.5 text-center text-sm leading-relaxed md:text-base">
+          <p className="text-foreground">{BODY_TH}</p>
+          <p className="text-muted-foreground">{BODY_EN}</p>
         </div>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button
             type="button"
-            className="h-11 w-full bg-primary font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 sm:min-w-[180px] sm:w-auto"
+            className="h-11 w-full bg-primary font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 [font-family:inherit] sm:min-w-[180px] sm:w-auto"
             onClick={onConfirm}
           >
             ยืนยัน (I am 20+)
@@ -185,7 +186,7 @@ export function AgeVerificationGate({
           <Button
             type="button"
             variant="outline"
-            className="h-11 w-full border-emerald-800/25 text-zinc-800 hover:bg-emerald-50 sm:min-w-[180px] sm:w-auto"
+            className="h-11 w-full border-emerald-800/25 text-zinc-800 [font-family:inherit] hover:bg-emerald-50 sm:min-w-[180px] sm:w-auto"
             onClick={onExit}
           >
             ออก (Exit)
