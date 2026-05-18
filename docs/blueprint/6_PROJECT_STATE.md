@@ -4,6 +4,23 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-18 (Build targets — browserslist + TS es2022)
+- **Root:** ไม่มี **`.babelrc` / `babel.config.*`** (SWC ไม่ถูกสลับไป Babel)
+- **`package.json`:** **`browserslist`** → **`defaults and supports es6-module`**, **`not ie 11`** (**`not lt ie 11`** ไม่รองรับใน Browserslist ที่ Next bundle), **`not dead`**
+- **`tsconfig.json`:** **`compilerOptions.target`** = **`es2022`** (คง **`lib`**: **`esnext`**)
+
+### บันทึกการทำงาน — 2026-05-18 (Hero / floating offers — layout rebalance)
+- **`Hero.tsx`:** คอลัมน์สื่อคืน **`aspect-[4/5] h-[65svh]`** ทั้งโหมด carousel และ static — ตัดแยก ratio แคโรเซลที่ทำให้ grid/flex ชนกัน; คอลัมน์ซ้าย **`lg:min-w-0`**, **`break-words`**, ถอด **`shrink-0` / `lg:flex-none` / `lg:min-w-[min(100%,20rem)]`**
+- **`FloatingOfferButton`:** **`FloatingCouponBadgeMedia`** อยู่ใน DOM เสมอ — เปิดด้วย **`opacity` / `invisible`** หลัง **`useEffect`** (**`badgeReveal`**)
+- **`HomeHeroSkeleton`:** แผงขวา **`aspect-[4/5] h-[65svh]`** สอดคล้อง Hero
+
+### บันทึกการทำงาน — 2026-05-15 (Hero carousel — aspect lock + rAF autoplay)
+- **`Hero.tsx`:** คอลัมน์สื่อเมื่อมี **`heroCarousel`** → **`aspect-[390/429]`** / **`md:aspect-[16/7]`** + **`h-auto`** (ไม่พึ่ง **`h-[65svh]`** คู่กับ ratio ซ้อน)
+- **`HeroCarouselSlideImages`:** ตัด nested **`aspect`** — **`Image`** **`fill`** ใน **`absolute inset-0`** ภายใต้ viewport ที่ถูกล็อกจาก Hero แล้ว
+- **`HomeHeroCarousel`:** autoplay เลื่อนสไลด์ใน **`requestAnimationFrame`**; **`isolate`** บน root viewport
+- **`HomeHeroCarouselMotion`:** **`will-change-[opacity]`** บนสไลด์ที่มี Framer fade
+- **`HomeHeroSkeleton` / `HomeHeroCarouselSkeleton`:** skeleton สอดคล้อง aspect carousel
+
 ### บันทึกการทำงาน — 2026-05-15 (Webpack — drop merged `cacheGroups.styles`)
 - **`next.config.mjs`:** ถอด **`splitChunks.cacheGroups.styles`** (**`priority: 100`**) — ให้ Next แยก CSS ตาม route/chunk ตามค่าเริ่มต้น (ลด stylesheet monolith / render-blocking ชิ้นเดียว)
 
@@ -105,6 +122,21 @@
 ### บันทึกการทำงาน — 2026-05-16 (globals.css prune — drop unused component layers)
 - **`app/globals.css`:** คง **`@tailwind`** + **`:root`** tokens + **`border-border`** + **`body`** (**`@apply font-sans antialiased`** แทน font stack ซ้ำกับ **`tailwind.config.ts`**) + **`.magazine-article-emoji`** + **`@media print`** — ลบ **`btn-primary` / `btn-secondary` / `product-card` / badge utilities** ที่ไม่ถูกอ้างใน repo
 - **`app/layout.tsx`:** **`scroll-smooth`** บน **`<html>`** แทน **`html { scroll-behavior }`** ใน globals
+
+### บันทึกการทำงาน — 2026-05-18 (Hero — CSS animate-in คอลัมน์ซ้าย + Suspense แคโรเซลแยก)
+- **`components/storefront/Hero.tsx`:** คอลัมน์ซ้ายเลิก **`framer-motion`** (`m.p` / `m.h1` / `m.div`) → **`animate-in fade-in slide-in-from-left-5 duration-500 fill-mode-both`** บน wrapper (**`tailwindcss-animate`**)
+- **`app/(storefront)/home-stream.tsx`:** **`HeroCarouselStream`** + **`HeroCarouselSuspenseFallback`** (`aspect-[4/5] h-[65svh] …`) — แยก lifecycle การสตรีม **`HomeHeroCarousel`**
+
+### บันทึกการทำงาน — 2026-05-15 (SWC / polyfills — browserslist modern-only)
+- **สแกนโปรเจกต์:** ไม่มี **`.babelrc`**, **`babel.config.*`**, หรือ **`babel`** ใน **`package.json`** — Next ใช้ SWC ตามปกติ
+- **`package.json`:** **`browserslist`** = **`defaults and supports es6-module`**, **`not ie 11`** (สตริง **`not lt ie 11`** ไม่รองรับใน Browserslist ที่ Next bundle — build error), **`not dead`**
+- **`tsconfig.json`:** **`compilerOptions.target`** คง **`ES2022`**
+- **`next.config.mjs`:** ไม่มี **`compiler.babel`** / override ที่ปิด SWC; **`swcMinify`** ไม่จำเป็นใน Next 14 (ค่าเริ่มต้น minify ด้วย SWC)
+
+### บันทึกการทำงาน — 2026-05-15 (Home — route-level dynamic imports / micro CSS decouple)
+- **`app/(storefront)/page.tsx`:** **`Suspense`** เดิม — แต่ **`HomeHeroLcpHints`** / **`HomeMainStream`** โหลดผ่าน **`await import("./home-lcp-hints")`** และ **`await import("./home-stream")`** (ไม่ static import สตรีม); fallback หลัก = **`min-h-[100svh] bg-zinc-50`** (ไม่ **`HomeHeroSkeleton`**)
+- **`app/(storefront)/home-lcp-hints.tsx`:** (ใหม่) **`server-only`** — **`HomeHeroLcpPreload`** + **`getHeroCarouselBannersCached`** แยก chunk จาก **`home-stream`**
+- **`app/(storefront)/home-stream.tsx`:** **`HomePageClient`** **`dynamic`** `loading` = placeholder Tailwind; **`HeroBannersBody`** **`import()`** **`HomeHeroCarousel`**; Suspense แคโรเซล fallback = div **`animate-pulse`** inline (ไม่ **`HomeHeroCarouselSkeleton`** / **`HomeHeroSkeleton`**)
 
 ### บันทึกการทำงาน — 2026-05-16 (Unused JS — LazyGoogleAnalytics + dynamic HomePageClient)
 - **`components/third-parties/LazyGoogleAnalytics.tsx`:** mount **`GoogleAnalytics`** หลัง interaction แรก (**scroll / mousemove / touchstart / click / keydown**) — Lighthouse bot ไม่โหลด gtag จนกว่ามี interaction

@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { m } from "framer-motion";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import { JetBrains_Mono } from "next/font/google";
 import { Button } from "@/components/ui/button";
@@ -123,48 +122,33 @@ export default function Hero({
         heroMono.variable
       )}
     >
-      <div className="flex flex-1 flex-col lg:grid lg:min-h-[88vh] lg:max-h-none lg:grid-cols-2 lg:items-stretch lg:gap-0">
-        <div className="relative z-10 order-2 -mt-20 flex min-h-[auto] w-full min-w-0 flex-1 shrink-0 flex-col justify-end bg-white px-4 pb-5 pt-5 opacity-100 visible sm:-mt-24 sm:px-8 sm:pb-8 md:py-20 lg:order-1 lg:mt-0 lg:w-full lg:min-w-[min(100%,20rem)] lg:max-w-xl lg:flex-none lg:shrink-0 lg:justify-center lg:self-stretch lg:bg-transparent lg:px-10 lg:py-12 lg:pl-12 lg:pr-10 xl:py-20 xl:pl-16 xl:pr-14">
-          <div className="w-full min-w-0 space-y-3 sm:space-y-4 lg:space-y-7 xl:space-y-8">
-            <m.p
-              initial={false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="font-[family-name:var(--font-hero-mono)] text-[9px] font-bold leading-relaxed tracking-[0.2em] text-emerald-950 sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px]"
-            >
+      <div className="flex flex-1 flex-col lg:grid lg:min-h-[88vh] lg:max-h-none lg:grid-cols-2 lg:items-stretch lg:gap-0 lg:min-w-0">
+        <div className="relative z-10 order-2 -mt-20 flex min-h-[auto] w-full min-w-0 flex-1 flex-col justify-end bg-white px-4 pb-5 pt-5 sm:-mt-24 sm:px-8 sm:pb-8 md:py-20 lg:order-1 lg:mt-0 lg:min-w-0 lg:max-w-xl lg:w-full lg:justify-center lg:self-stretch lg:bg-transparent lg:px-10 lg:py-12 lg:pl-12 lg:pr-10 xl:py-20 xl:pl-16 xl:pr-14">
+          <div
+            className={cn(
+              "w-full lg:min-w-0 space-y-3 break-words sm:space-y-4 lg:space-y-7 xl:space-y-8",
+              "animate-in fade-in slide-in-from-left-5 duration-500 fill-mode-both"
+            )}
+          >
+            <p className="font-[family-name:var(--font-hero-mono)] text-[9px] font-bold leading-relaxed tracking-[0.2em] text-emerald-950 break-words sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px]">
               {t(
                 "ก่อตั้ง ค.ศ. 2018 // ร้านเมล็ดพันธุ์แห่งรอยยิ้มยุคแรกของไทย",
                 "EST. 2018 // THAILAND'S FIRST SMILE-ERA SEED SHOP"
               )}
-            </m.p>
+            </p>
 
-            <m.h1
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.05, ease: "easeOut" }}
-              className="font-sans text-[1.65rem] font-bold leading-[1.3] tracking-tight text-zinc-900 sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]"
-            >
+            <h1 className="font-sans text-[1.65rem] font-bold leading-[1.3] tracking-tight text-zinc-900 break-words sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]">
               {headline}
-            </m.h1>
+            </h1>
 
-            <m.p
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.12, ease: "easeOut" }}
-              className="max-w-md text-sm font-light leading-relaxed tracking-wide text-zinc-700 sm:text-[15px] lg:text-base"
-            >
+            <p className="max-w-md text-sm font-light leading-relaxed tracking-wide text-zinc-700 break-words sm:text-[15px] lg:text-base">
               {t(
                 "จากร้านลับสู่คลังเมล็ดพันธุ์แท้ที่มือโปรวางใจ การันตีคุณภาพจากประสบการณ์จริงเกือบ 10 ปี",
                 "From underground roots to a vault of authentic genetics. Quality backed by a decade of real experience."
               )}
-            </m.p>
+            </p>
 
-            <m.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.2, ease: "easeOut" }}
-              className="flex flex-col gap-2.5 pt-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 sm:pt-2"
-            >
+            <div className="flex flex-col gap-2.5 pt-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 sm:pt-2">
               <Button
                 asChild
                 className="h-11 min-w-[200px] rounded-sm border border-primary bg-primary px-6 text-sm font-medium text-primary-foreground shadow-none transition-colors hover:bg-primary/90"
@@ -189,11 +173,11 @@ export default function Hero({
                   {t("บทความ/คลังความรู้", "Grower's Guide")}
                 </Link>
               </Button>
-            </m.div>
+            </div>
           </div>
         </div>
 
-        <div className="relative order-1 aspect-[4/5] h-[65svh] w-full shrink-0 overflow-hidden bg-zinc-100 lg:order-2 lg:aspect-auto lg:h-full lg:min-h-[88vh] lg:w-full">
+        <div className="relative order-1 aspect-[4/5] h-[65svh] w-full min-h-0 shrink-0 overflow-hidden bg-zinc-100 lg:order-2 lg:aspect-auto lg:h-full lg:min-h-[88vh] lg:w-full lg:min-w-0">
           <HeroMediaPanel
             isLoading={isLoading}
             useAnimatedSvg={Boolean(useAnimatedSvg)}

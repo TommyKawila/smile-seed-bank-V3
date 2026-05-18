@@ -52,10 +52,17 @@ export function HomeHeroCarousel({ banners }: Props) {
 
   useEffect(() => {
     if (slides.length <= 1) return;
-    const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % slides.length);
+    let rafId = 0;
+    const intervalId = window.setInterval(() => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        setIndex((i) => (i + 1) % slides.length);
+      });
     }, AUTOPLAY_INTERVAL);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(intervalId);
+      cancelAnimationFrame(rafId);
+    };
   }, [slides.length]);
 
   if (!current) {
@@ -102,7 +109,7 @@ export function HomeHeroCarousel({ banners }: Props) {
     );
 
   return (
-    <div className="relative h-full min-h-0 w-full overflow-hidden bg-zinc-100 p-0">
+    <div className="relative isolate h-full min-h-0 w-full overflow-hidden bg-zinc-100 p-0">
       {href ? (
         <Link
           href={href}

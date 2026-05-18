@@ -4,9 +4,6 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { HomeHeroCarousel } from "@/components/storefront/HomeHeroCarousel";
-import { HomeHeroLcpPreload } from "@/components/storefront/HomeHeroLcpPreload";
-import { HomeHeroCarouselSkeleton, HomeHeroSkeleton } from "@/components/storefront/HomeHeroSkeleton";
 import { EMPTY_STOREFRONT_HOME_PAYLOAD } from "@/services/storefront-home-service";
 import { getHeroCarouselBannersCached } from "@/services/hero-banner-service";
 import {
@@ -19,7 +16,11 @@ import type { HeroBanner } from "@/lib/hero-banners";
 const HomePageClient = dynamic(
   () =>
     import("@/components/storefront/HomePageClient").then((m) => ({ default: m.HomePageClient })),
-  { loading: () => <HomeHeroSkeleton /> }
+  {
+    loading: () => (
+      <div className="min-h-[100svh] bg-white" aria-hidden />
+    ),
+  }
 );
 
 const getSectionsCached = unstable_cache(
@@ -54,14 +55,20 @@ async function getSections(): Promise<HomePageSectionPayload[]> {
   return getSectionsCached();
 }
 
-/** Parallel stream: LCP preload hints (same cached banner query as carousel body). */
-export async function HomeHeroLcpHints() {
-  const banners = await getHeroCarouselBannersCached().catch((): HeroBanner[] => []);
-  return <HomeHeroLcpPreload banner={banners[0]} />;
+function HeroCarouselSuspenseFallback() {
+  return (
+    <div
+      className="w-full aspect-[4/5] h-[65svh] bg-zinc-100 animate-pulse rounded-lg"
+      aria-hidden
+    />
+  );
 }
 
-async function HeroBannersBody() {
-  const banners = await getHeroCarouselBannersCached().catch((): HeroBanner[] => []);
+async function HeroCarouselStream() {
+  const [{ HomeHeroCarousel }, banners] = await Promise.all([
+    import("@/components/storefront/HomeHeroCarousel"),
+    getHeroCarouselBannersCached().catch((): HeroBanner[] => []),
+  ]);
   return <HomeHeroCarousel banners={banners} />;
 }
 
@@ -73,8 +80,8 @@ export async function HomeMainStream() {
       sections={sections}
       initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
       heroCarousel={
-        <Suspense fallback={<HomeHeroCarouselSkeleton />}>
-          <HeroBannersBody />
+        <Suspense fallback={<HeroCarouselSuspenseFallback />}>
+          <HeroCarouselStream />
         </Suspense>
       }
     />
