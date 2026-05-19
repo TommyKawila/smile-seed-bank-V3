@@ -1,10 +1,11 @@
 import "server-only";
 
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { HomeHeroCarousel } from "@/components/storefront/HomeHeroCarousel";
 import { HomePageHeroClient } from "@/components/storefront/HomePageHeroClient";
+import { HomePageBelowFoldHost } from "@/components/storefront/HomePageBelowFoldHost";
 import { EMPTY_STOREFRONT_HOME_PAYLOAD } from "@/services/storefront-home-service";
 import { getHeroCarouselBannersCached } from "@/services/hero-banner-service";
 import {
@@ -13,19 +14,6 @@ import {
   type HomePageSectionPayload,
 } from "@/lib/homepage-sections";
 import type { HeroBanner } from "@/lib/hero-banners";
-
-const HomePageBelowFoldHost = dynamic(
-  () =>
-    import("@/components/storefront/HomePageBelowFoldHost").then((m) => ({
-      default: m.HomePageBelowFoldHost,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="min-h-[50vh] w-full animate-pulse bg-zinc-50" aria-hidden />
-    ),
-  }
-);
 
 const getSectionsCached = unstable_cache(
   async (): Promise<HomePageSectionPayload[]> => {
@@ -69,14 +57,11 @@ function HeroCarouselSuspenseFallback() {
 }
 
 async function HeroCarouselStream() {
-  const [{ HomeHeroCarousel }, banners] = await Promise.all([
-    import("@/components/storefront/HomeHeroCarousel"),
-    getHeroCarouselBannersCached().catch((): HeroBanner[] => []),
-  ]);
+  const banners = await getHeroCarouselBannersCached().catch((): HeroBanner[] => []);
   return <HomeHeroCarousel banners={banners} />;
 }
 
-/** Sections first → hero SSR; below-fold client-only chunk (`ssr: false`) skips head CSS links. */
+/** Hero SSR + below-fold static client tree (`content-visibility` skip paint off-screen). */
 export async function HomeMainStream() {
   const sections = await getSections();
   const belowSections = sections.filter((s) => s.key !== "hero");

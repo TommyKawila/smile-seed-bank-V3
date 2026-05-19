@@ -73,17 +73,9 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "fade-in-up": {
-          from: { opacity: "0", transform: "translateY(16px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
-        },
         "ken-burns": {
           from: { transform: "scale(1)" },
           to: { transform: "scale(1.08)" },
-        },
-        "slide-in-right": {
-          from: { transform: "translateX(100%)" },
-          to: { transform: "translateX(0)" },
         },
         /** ~0.5s nod in first 14.3% of 3.5s cycle, then 3s rest (rhythmic cart pulse) */
         "cart-nod": {
@@ -122,9 +114,7 @@ const config: Config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in-up": "fade-in-up 0.5s ease-out both",
         "ken-burns": "ken-burns 8s ease-in-out infinite alternate",
-        "slide-in-right": "slide-in-right 0.3s ease-out",
         "cart-nod": "cart-nod 3.5s ease-in-out infinite",
         "cart-hit": "cart-hit 0.45s ease-out both",
         "shimmer-urgent": "shimmer-urgent 2.2s ease-in-out infinite",

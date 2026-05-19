@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Below-fold home sections (loaded via `HomePageBelowFoldHost`; `dynamic` + `ssr: false` from `home-stream`).
+ * Below-fold home sections (static import via `HomePageBelowFoldHost`; per-section `content-visibility`).
  */
 
 import { Fragment, type ReactNode } from "react";

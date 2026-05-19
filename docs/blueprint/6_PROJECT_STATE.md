@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-20 (Home — static below-fold re-unify / chunk desync fix)
+- **`page.tsx`:** static import **`HomeHeroLcpHints`** + **`HomeMainStream`** (เลิก **`await import()`**)
+- **`home-stream.tsx`:** static **`HomePageBelowFoldHost`** + **`HomeHeroCarousel`** (เลิก **`next/dynamic` `ssr: false`**)
+- **`HomePageBelowFoldHost`:** static **`HomePageBelowFold`**; wrapper **`[content-visibility:auto] [contain-intrinsic-size:0_1000px]`**
+
+### บันทึกการทำงาน — 2026-05-20 (Perf — unused keyframes / hero image CLS / carousel CPU)
+- **`tailwind.config.ts`:** ลบ **`fade-in-up`** + **`slide-in-right`** (ไม่มีการใช้ใน repo)
+- **`HeroCarouselSlideImages`:** มือถือ **`width`/`height`** intrinsic (**780×858**) + **`aspect-[4/5]`**; เดสก์ท็อปยัง **`fill`** + **`object-cover`**
+- **`HomeHeroCarousel`:** **`useMemo`** สำหรับ URL/alt/href หลัง **`layoutReady`**; placeholder จับ **`aspect-[4/5] h-[65svh]`** ให้สอดคล้องคอลัมน์ Hero; **`priority`** เฉพาะ **`index === 0`**; autoplay ยังผูก **`layoutReady`**
+
 ### บันทึกการทำงาน — 2026-05-18 (Home — below-fold `dynamic` `ssr: false` จาก `home-stream`)
 - **`app/(storefront)/home-stream.tsx`:** **`HomePageHeroClient`** SSR + **`dynamic(HomePageBelowFoldHost, { ssr: false })`** + **`loading`** `min-h-[50vh] animate-pulse` — ตัด below-fold CSS ออกจาก head stream เดิม
 - **`HomePageHeroClient.tsx` / `HomePageBelowFoldHost.tsx`:** แยกจาก **`HomePageClient.tsx`** (เหลือ re-export แบบ deprecated)

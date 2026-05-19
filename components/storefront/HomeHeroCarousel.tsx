@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
@@ -53,6 +53,21 @@ export function HomeHeroCarousel({ banners }: Props) {
   /** Multi-slide only: defer subtree until after paint to avoid lazy-chunk mount reflow. */
   const [layoutReady, setLayoutReady] = useState(!multiSlide);
 
+  const slideVisual = useMemo(() => {
+    if (!current || !layoutReady) return null;
+    const linkTrim = current.link.trim();
+    return {
+      href: linkTrim ? getLocalizedPath(linkTrim, locale) : null,
+      mobileSrc: resolveHeroAsset(current, locale, "mobile"),
+      desktopSrc: resolveHeroAsset(current, locale, "desktop"),
+      heroAlt: resolveHeroAlt(current, locale),
+      panelBackdrop:
+        current.panelBgHex && /^#[0-9A-Fa-f]{6}$/.test(current.panelBgHex)
+          ? current.panelBgHex
+          : undefined,
+    };
+  }, [current, locale, layoutReady]);
+
   useEffect(() => {
     if (!multiSlide) {
       setLayoutReady(true);
@@ -95,23 +110,18 @@ export function HomeHeroCarousel({ banners }: Props) {
   if (!layoutReady) {
     return (
       <div
-        className="relative isolate h-full min-h-0 w-full overflow-hidden bg-zinc-100 p-0"
+        className="relative isolate aspect-[4/5] h-[65svh] w-full min-h-0 shrink-0 overflow-hidden bg-zinc-100 p-0 lg:aspect-auto lg:h-full lg:min-h-[88vh] lg:w-full lg:min-w-0"
         aria-hidden
       />
     );
   }
 
-  const href = current.link.trim()
-    ? getLocalizedPath(current.link, locale)
-    : null;
+  if (!slideVisual) {
+    return <div className="h-full min-h-0 w-full bg-zinc-100" />;
+  }
 
-  const mobileSrc = resolveHeroAsset(current, locale, "mobile");
-  const desktopSrc = resolveHeroAsset(current, locale, "desktop");
-  const heroAlt = resolveHeroAlt(current, locale);
-  const panelBackdrop =
-    current.panelBgHex && /^#[0-9A-Fa-f]{6}$/.test(current.panelBgHex)
-      ? current.panelBgHex
-      : undefined;
+  const { href, mobileSrc, desktopSrc, heroAlt, panelBackdrop } = slideVisual;
+  const firstSlide = index === 0;
 
   /** Slide 0: zero Framer Motion — dynamic chunk loads only after leaving slide 0. */
   const slidesMarkup =
@@ -126,7 +136,7 @@ export function HomeHeroCarousel({ banners }: Props) {
             mobileSrc={mobileSrc}
             desktopSrc={desktopSrc}
             heroAlt={heroAlt}
-            priority={true}
+            priority={firstSlide}
           />
         </div>
       </div>

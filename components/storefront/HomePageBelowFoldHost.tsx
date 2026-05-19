@@ -1,21 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import { HomePageBelowFold } from "@/components/storefront/HomePageBelowFold";
 import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
 import { fetchWithTimeout } from "@/lib/timeout";
 import type { StorefrontHomePayload } from "@/services/storefront-home-service";
-
-const HomePageBelowFold = dynamic(
-  () => import("./HomePageBelowFold").then((m) => m.HomePageBelowFold),
-  {
-    ssr: false,
-    loading: () => <div className="h-20 bg-white" aria-hidden />,
-  }
-);
 
 type RawHomePayload = Partial<StorefrontHomePayload> & {
   data?: ProductWithBreederAndVariants[];
@@ -96,16 +88,18 @@ export function HomePageBelowFoldHost({ belowSections, initialData }: HomePageBe
   }, [hasInitialData]);
 
   return (
-    <HomePageBelowFold
-      sections={belowSections}
-      newArrivals={newArrivals}
-      newArrivalsLoading={newArrivalsLoading}
-      featuredProducts={featuredProducts}
-      featuredLoading={featuredLoading}
-      insights={insights}
-      insightsLoading={insightsLoading}
-      clearanceProducts={clearanceProducts}
-      clearanceLoading={clearanceLoading}
-    />
+    <div className="w-full [content-visibility:auto] [contain-intrinsic-size:0_1000px]">
+      <HomePageBelowFold
+        sections={belowSections}
+        newArrivals={newArrivals}
+        newArrivalsLoading={newArrivalsLoading}
+        featuredProducts={featuredProducts}
+        featuredLoading={featuredLoading}
+        insights={insights}
+        insightsLoading={insightsLoading}
+        clearanceProducts={clearanceProducts}
+        clearanceLoading={clearanceLoading}
+      />
+    </div>
   );
 }
