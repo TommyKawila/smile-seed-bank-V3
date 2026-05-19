@@ -1,10 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import {
-  HERO_CAROUSEL_DESKTOP_SIZES,
-  HERO_CAROUSEL_MOBILE_SIZES,
-} from "@/components/storefront/hero-carousel-image-sizes";
+import { HERO_CAROUSEL_BANNER_SIZES } from "@/components/storefront/hero-carousel-image-sizes";
 
 /** Same ratio as hero mobile column (390×429 artboard). */
 const MOBILE_INTRINSIC_W = 780;
@@ -39,8 +36,8 @@ export function HeroCarouselSlideImages({
             loading={isPriority ? "eager" : "lazy"}
             decoding={isPriority ? "sync" : "async"}
             quality={60}
-            sizes={HERO_CAROUSEL_MOBILE_SIZES}
-            className="h-full w-full object-contain object-center"
+            sizes={HERO_CAROUSEL_BANNER_SIZES}
+            className="h-full w-full object-contain object-center duration-500 fill-mode-both"
           />
         </div>
       </div>
@@ -55,7 +52,7 @@ export function HeroCarouselSlideImages({
           decoding={isPriority ? "sync" : "async"}
           quality={65}
           className="object-cover object-center"
-          sizes={HERO_CAROUSEL_DESKTOP_SIZES}
+          sizes={HERO_CAROUSEL_BANNER_SIZES}
         />
       </div>
     </div>

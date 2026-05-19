@@ -16,7 +16,7 @@ const DESKTOP_W = 640;
 /** Desktop hero frame uses **16:7** (see `HeroCarouselSlideImages`). */
 const DESKTOP_H = Math.round((DESKTOP_W * 7) / 16);
 
-const MOBILE_IMAGE_SIZES_HINT = "(max-width: 767px) 100vw";
+const MOBILE_IMAGE_SIZES_HINT = HERO_CAROUSEL_MOBILE_SIZES;
 
 /** Thai-default assets for LCP (matches server-first paint before client locale hydrates). */
 function firstBannerSources(b: HeroBanner): { mobile: string; desktop: string } {

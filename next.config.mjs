@@ -68,10 +68,11 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   experimental: {
+    /** Tree-shake dense icon/motion vendors into smaller per-route chunks. */
     optimizePackageImports: [
       "lucide-react",
-      "framer-motion",
       "@radix-ui/react-icons",
+      "framer-motion",
       "recharts",
       "cmdk",
       "sonner",
