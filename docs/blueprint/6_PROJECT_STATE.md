@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-18 (Home — below-fold `dynamic` `ssr: false` จาก `home-stream`)
+- **`app/(storefront)/home-stream.tsx`:** **`HomePageHeroClient`** SSR + **`dynamic(HomePageBelowFoldHost, { ssr: false })`** + **`loading`** `min-h-[50vh] animate-pulse` — ตัด below-fold CSS ออกจาก head stream เดิม
+- **`HomePageHeroClient.tsx` / `HomePageBelowFoldHost.tsx`:** แยกจาก **`HomePageClient.tsx`** (เหลือ re-export แบบ deprecated)
+
+### บันทึกการทำงาน — 2026-05-18 (Hero carousel — defer multi-slide mount reflow)
+- **`HomeHeroCarousel.tsx`:** เมื่อมีหลายสไลด์ → **`layoutReady`** หลัง **double `requestAnimationFrame`** ก่อนเรนเดอร์ **`HeroCarouselSlideImages`** / ปุ่ม; autoplay เริ่มเมื่อ **`layoutReady`** — พาทสไลด์เดียวไม่หน่วง LCP
+
 ### บันทึกการทำงาน — 2026-05-18 (Age gate — LCP / paint)
 - **`age-verification-gate.tsx`:** โอเวอร์เลย์ **`bg-zinc-950/95`** แทน **`backdrop-blur-*`**; การ์ดโมดัล **`[font-family:ui-sans-serif,system-ui,…]`** + ปุ่ม **`[font-family:inherit]`** (ไม่ดึง **`font-sans`** จาก **`Button`** / next/font); หัวข้อ **`text-xl md:text-2xl font-bold`**
 

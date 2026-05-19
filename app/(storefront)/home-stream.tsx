@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { HomePageHeroClient } from "@/components/storefront/HomePageHeroClient";
 import { EMPTY_STOREFRONT_HOME_PAYLOAD } from "@/services/storefront-home-service";
 import { getHeroCarouselBannersCached } from "@/services/hero-banner-service";
 import {
@@ -13,12 +14,15 @@ import {
 } from "@/lib/homepage-sections";
 import type { HeroBanner } from "@/lib/hero-banners";
 
-const HomePageClient = dynamic(
+const HomePageBelowFoldHost = dynamic(
   () =>
-    import("@/components/storefront/HomePageClient").then((m) => ({ default: m.HomePageClient })),
+    import("@/components/storefront/HomePageBelowFoldHost").then((m) => ({
+      default: m.HomePageBelowFoldHost,
+    })),
   {
+    ssr: false,
     loading: () => (
-      <div className="min-h-[100svh] bg-white" aria-hidden />
+      <div className="min-h-[50vh] w-full animate-pulse bg-zinc-50" aria-hidden />
     ),
   }
 );
@@ -72,18 +76,23 @@ async function HeroCarouselStream() {
   return <HomeHeroCarousel banners={banners} />;
 }
 
-/** Sections first → shell streams; carousel resolves in its own Suspense. */
+/** Sections first → hero SSR; below-fold client-only chunk (`ssr: false`) skips head CSS links. */
 export async function HomeMainStream() {
   const sections = await getSections();
+  const belowSections = sections.filter((s) => s.key !== "hero");
+  const heroCarousel = (
+    <Suspense fallback={<HeroCarouselSuspenseFallback />}>
+      <HeroCarouselStream />
+    </Suspense>
+  );
+
   return (
-    <HomePageClient
-      sections={sections}
-      initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
-      heroCarousel={
-        <Suspense fallback={<HeroCarouselSuspenseFallback />}>
-          <HeroCarouselStream />
-        </Suspense>
-      }
-    />
+    <div className="min-h-screen bg-white text-zinc-900">
+      <HomePageHeroClient sections={sections} heroCarousel={heroCarousel} />
+      <HomePageBelowFoldHost
+        belowSections={belowSections}
+        initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
+      />
+    </div>
   );
 }

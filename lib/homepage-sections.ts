@@ -1,4 +1,4 @@
-/** Keys must match `homepage_sections.key` and `HomePageClient` section map. */
+/** Keys must match `homepage_sections.key` and home section render map (`HomePageBelowFold` / hero). */
 export const DEFAULT_HOME_SECTION_KEYS = [
   "hero",
   "promotion_banner",
@@ -15,7 +15,7 @@ export const DEFAULT_HOME_SECTION_KEYS = [
 
 export type HomepageSectionKey = (typeof DEFAULT_HOME_SECTION_KEYS)[number];
 
-/** Server → `HomePageClient`: active sections with admin labels. */
+/** Server → home layout: active sections with admin labels. */
 export type HomePageSectionPayload = {
   key: string;
   label_th: string;

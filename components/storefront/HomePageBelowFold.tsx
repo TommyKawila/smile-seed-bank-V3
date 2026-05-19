@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Below-fold home sections (code-split from `HomePageClient` for smaller initial JS).
+ * Below-fold home sections (loaded via `HomePageBelowFoldHost`; `dynamic` + `ssr: false` from `home-stream`).
  */
 
 import { Fragment, type ReactNode } from "react";

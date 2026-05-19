@@ -49,9 +49,32 @@ export function HomeHeroCarousel({ banners }: Props) {
   const [index, setIndex] = useState(0);
   const slides = banners.length ? banners : [];
   const current = slides[index];
+  const multiSlide = slides.length > 1;
+  /** Multi-slide only: defer subtree until after paint to avoid lazy-chunk mount reflow. */
+  const [layoutReady, setLayoutReady] = useState(!multiSlide);
 
   useEffect(() => {
-    if (slides.length <= 1) return;
+    if (!multiSlide) {
+      setLayoutReady(true);
+      return;
+    }
+    setLayoutReady(false);
+    let disposed = false;
+    let innerRaf = 0;
+    const outerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(() => {
+        if (!disposed) setLayoutReady(true);
+      });
+    });
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(outerRaf);
+      cancelAnimationFrame(innerRaf);
+    };
+  }, [multiSlide]);
+
+  useEffect(() => {
+    if (!layoutReady || slides.length <= 1) return;
     let rafId = 0;
     const intervalId = window.setInterval(() => {
       cancelAnimationFrame(rafId);
@@ -63,10 +86,19 @@ export function HomeHeroCarousel({ banners }: Props) {
       window.clearInterval(intervalId);
       cancelAnimationFrame(rafId);
     };
-  }, [slides.length]);
+  }, [layoutReady, slides.length]);
 
   if (!current) {
     return <div className="h-full min-h-0 w-full bg-zinc-100" />;
+  }
+
+  if (!layoutReady) {
+    return (
+      <div
+        className="relative isolate h-full min-h-0 w-full overflow-hidden bg-zinc-100 p-0"
+        aria-hidden
+      />
+    );
   }
 
   const href = current.link.trim()
