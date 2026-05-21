@@ -88,8 +88,7 @@ export function HomePageBelowFoldHost({ belowSections, initialData }: HomePageBe
   }, [hasInitialData]);
 
   return (
-    <div className="w-full [content-visibility:auto] [contain-intrinsic-size:0_1000px]">
-      <HomePageBelowFold
+    <HomePageBelowFold
         sections={belowSections}
         newArrivals={newArrivals}
         newArrivalsLoading={newArrivalsLoading}
@@ -99,7 +98,6 @@ export function HomePageBelowFoldHost({ belowSections, initialData }: HomePageBe
         insightsLoading={insightsLoading}
         clearanceProducts={clearanceProducts}
         clearanceLoading={clearanceLoading}
-      />
-    </div>
+    />
   );
 }

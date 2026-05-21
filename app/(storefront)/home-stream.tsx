@@ -74,10 +74,12 @@ export async function HomeMainStream() {
   return (
     <div className="min-h-screen bg-white text-zinc-900">
       <HomePageHeroClient sections={sections} heroCarousel={heroCarousel} />
-      <HomePageBelowFoldHost
-        belowSections={belowSections}
-        initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
-      />
+      <div className="w-full [content-visibility:auto] [contain-intrinsic-size:0_600px] overflow-hidden">
+        <HomePageBelowFoldHost
+          belowSections={belowSections}
+          initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
+        />
+      </div>
     </div>
   );
 }

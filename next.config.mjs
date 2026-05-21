@@ -73,6 +73,8 @@ const nextConfig = {
       "lucide-react",
       "@radix-ui/react-icons",
       "framer-motion",
+      "clsx",
+      "tailwind-merge",
       "recharts",
       "cmdk",
       "sonner",
@@ -92,8 +94,8 @@ const nextConfig = {
     },
   },
   images: {
-    /** Serve originals from source hosts; skips `/_next/image` (avoids Vercel optimizer 400s on some WebP streams). Supabase paths often already use `/products/optimized/`. */
-    unoptimized: true,
+    /** Serve via `/_next/image` when allowed; per-`Image` `unoptimized` only for data/blob URLs. */
+    unoptimized: false,
     remotePatterns: [
       ...supabaseStorageRemotePatterns(),
       ...extraImageRemotePatterns(),

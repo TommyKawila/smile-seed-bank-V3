@@ -4,10 +4,15 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-20 (Home perf Step 3 — content-visibility isolation + clean build)
+- **`home-stream.tsx`:** ห่อ **`HomePageBelowFoldHost`** ด้วย **`w-full [content-visibility:auto] [contain-intrinsic-size:0_600px] overflow-hidden`** — แยก paint below-fold ออกจาก hero 100vh แรก
+- **`HomePageBelowFoldHost.tsx`:** ถอด wrapper CV ซ้ำ (ย้ายไป parent ใน **`home-stream`**)
+- **Build:** **`rm -rf .next && npm run build`** ผ่าน — **`/`** First Load JS **253 kB**
+
 ### บันทึกการทำงาน — 2026-05-20 (Home — static below-fold re-unify / chunk desync fix)
 - **`page.tsx`:** static import **`HomeHeroLcpHints`** + **`HomeMainStream`** (เลิก **`await import()`**)
 - **`home-stream.tsx`:** static **`HomePageBelowFoldHost`** + **`HomeHeroCarousel`** (เลิก **`next/dynamic` `ssr: false`**)
-- **`HomePageBelowFoldHost`:** static **`HomePageBelowFold`**; wrapper **`[content-visibility:auto] [contain-intrinsic-size:0_1000px]`**
+- **`HomePageBelowFoldHost`:** static **`HomePageBelowFold`** (CV wrapper ย้ายไป **`home-stream`** ใน Step 3)
 
 ### บันทึกการทำงาน — 2026-05-20 (Perf — unused keyframes / hero image CLS / carousel CPU)
 - **`tailwind.config.ts`:** ลบ **`fade-in-up`** + **`slide-in-right`** (ไม่มีการใช้ใน repo)
