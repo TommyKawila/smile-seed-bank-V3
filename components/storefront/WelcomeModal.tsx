@@ -7,10 +7,14 @@ import { X, Copy, Check, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/context/LanguageContext";
-import { createClient } from "@/lib/supabase/client";
 
 const DISCOUNT_CODE = "WELCOME10";
 const WELCOME10_API = "/api/storefront/promo/welcome10";
+
+async function getSupabaseClient() {
+  const { createClient } = await import("@/lib/supabase/client");
+  return createClient();
+}
 
 /** localStorage key: stores ISO timestamp of when user dismissed the modal. */
 function dismissKey(userId?: string) {
@@ -69,7 +73,7 @@ export function WelcomeModal() {
         setEligible(false);
         // Silently mark as seen in DB so future loads skip the DB check too
         if (uid && data.has_used) {
-          const supabase = createClient();
+          const supabase = await getSupabaseClient();
           void supabase
             .from("customers")
             .upsert({ id: uid, has_seen_welcome: true }, { onConflict: "id" });
@@ -124,7 +128,7 @@ export function WelcomeModal() {
     if (!user) return;
 
     setUpdating(true);
-    const supabase = createClient();
+    const supabase = await getSupabaseClient();
     await supabase.from("customers").upsert(
       {
         id: user.id,

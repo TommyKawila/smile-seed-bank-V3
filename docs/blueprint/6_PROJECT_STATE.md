@@ -13,14 +13,20 @@
 | Next.js | `15.5.x` |
 | `experimental.inlineCss` | `true` (อย่า A/B ปิดโดยไม่วัด) |
 | Font | `lib/fonts/prompt.ts` self-hosted woff2 (400/600/700) |
-| Hero LCP | `(home)/layout` preload · `home-stream` ไม่มี Suspense · `resolveHeroCarouselBanners` |
-| Supabase JS | ห้าม sync `createClient` ใน layout chain — ใช้ `/api/storefront/cart-rules` + `/api/storefront/breeders/active` + `scheduleIdleWork` |
+| Hero LCP | `(home)/layout` preload · mobile-only `priority` (viewport hook) · `sizes: 412px` · desktop hero `lazy` on mobile |
+| Supabase JS | ห้าม sync `createClient` ใน layout chain · `OfferManager` idle 5s · auth idle 5s · `/api/storefront/cart-rules` |
 | jsPDF / Cart / Search | dynamic import / lazy mount ตาม Phase 0–2 |
 | Embla | `embla-storefront-options` + near-viewport carousels |
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97)
 
 ---
+
+### บันทึกการทำงาน — 2026-05-23 (Perf — restore 97 after A11y regression)
+- **Hero LCP:** mobile-only `priority` (`useHeroViewportIsMobile`) — desktop slide `lazy` on mobile (fix 750px overserve ~36 KiB)
+- **`sizes`:** mobile cap `412px` · LCP quality 45
+- **Supabase chunk 5890:** defer `OfferManager` 5s idle · `WelcomeModal` dynamic `createClient` · auth idle 5s
+- **ไฟล์:** `HeroCarouselSlideImages.tsx`, `hero-carousel-image-sizes.ts`, `StorefrontLayoutClient.tsx`, `WelcomeModal.tsx`, `use-auth.ts`
 
 ### บันทึกการทำงาน — 2026-05-23 (A11y — home PSI 90→target)
 - **Contrast:** `BreederRibbon` label `text-zinc-400` → `text-zinc-600`; trust strip `bg-zinc-50` + `text-zinc-900`

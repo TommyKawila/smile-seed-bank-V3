@@ -69,8 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const idleId =
       typeof requestIdleCallback !== "undefined"
-        ? requestIdleCallback(() => void boot(), { timeout: 2000 })
-        : window.setTimeout(() => void boot(), 50);
+        ? requestIdleCallback(() => void boot(), { timeout: 5000 })
+        : window.setTimeout(() => void boot(), 100);
 
     return () => {
       cancelled = true;

@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { AgeVerificationGate } from "@/components/storefront/age-verification-gate";
 import { Navbar } from "@/components/storefront/Navbar";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
+import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
 const Toaster = dynamic(
   () => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })),
@@ -41,6 +42,12 @@ export function StorefrontLayoutClient({
   children: React.ReactNode;
   initialAgeVerifiedCookie: boolean;
 }) {
+  const [mountOffers, setMountOffers] = useState(false);
+
+  useEffect(() => {
+    return scheduleIdleWork(() => setMountOffers(true), 5000);
+  }, []);
+
   return (
     <>
       <CartAnimation />
@@ -55,7 +62,7 @@ export function StorefrontLayoutClient({
         <Navbar />
         <main className="flex-1 bg-white pt-20 sm:pt-28">{children}</main>
         <Footer />
-        <OfferManager />
+        {mountOffers ? <OfferManager /> : null}
       </div>
     </>
   );
