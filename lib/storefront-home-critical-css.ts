@@ -20,8 +20,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:transparent}
 .border-b{border-bottom-width:1px}.border-gray-100{border-color:#f3f4f6}
 .shadow-sm{box-shadow:0 1px 2px 0 rgb(0 0 0/.05)}
 .order-1{order:1}.order-2{order:2}
-.aspect-\\[4\\/5\\]{aspect-ratio:4/5}
-.h-\\[65svh\\]{height:65svh}
+.aspect-\\[392\\/429\\]{aspect-ratio:392/429}
 .object-cover{object-fit:cover}.object-contain{object-fit:contain}.object-center{object-position:center}
 .font-bold{font-weight:700}
 .font-sans{font-family:var(--font-prompt,ui-sans-serif,system-ui,sans-serif)}
@@ -57,6 +56,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:transparent}
 .sm\\:text-4xl{font-size:2.25rem;line-height:2.5rem}
 .sm\\:flex-row{flex-direction:row}.sm\\:gap-4{gap:1rem}
 .sm\\:h-28{height:7rem}.sm\\:gap-3{gap:.75rem}.sm\\:px-5{padding-left:1.25rem;padding-right:1.25rem}
+.sm\\:h-14{height:3.5rem}.sm\\:max-w-\\[12\\.5rem\\]{max-width:12.5rem}
 }
 @media(min-width:768px){
 .md\\:hidden{display:none}.md\\:block{display:block}.md\\:flex{display:flex}
@@ -64,9 +64,9 @@ button{font:inherit;color:inherit;cursor:pointer;background:transparent}
 }
 @media(min-width:1024px){
 .lg\\:grid{display:grid}.lg\\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-.lg\\:min-h-\\[88vh\\]{min-height:88vh}.lg\\:max-h-none{max-height:none}
+.lg\\:max-h-none{max-height:none}
 .lg\\:order-1{order:1}.lg\\:order-2{order:2}.lg\\:mt-0{margin-top:0}
-.lg\\:aspect-auto{aspect-ratio:auto}.lg\\:h-full{height:100%}.lg\\:min-h-\\[88vh\\]{min-height:88vh}
+.lg\\:aspect-\\[617\\/712\\]{aspect-ratio:617/712}.lg\\:h-auto{height:auto}.lg\\:min-h-0{min-height:0}
 .lg\\:bg-transparent{background-color:transparent}.lg\\:justify-center{justify-content:center}
 .lg\\:self-stretch{align-self:stretch}.lg\\:px-10{padding-left:2.5rem;padding-right:2.5rem}
 .lg\\:py-12{padding-top:3rem;padding-bottom:3rem}.lg\\:pl-12{padding-left:3rem}.lg\\:pr-10{padding-right:2.5rem}
@@ -74,6 +74,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:transparent}
 .lg\\:space-y-7>:not([hidden])~:not([hidden]){margin-top:1.75rem}
 .lg\\:gap-0{gap:0}.lg\\:items-stretch{align-items:stretch}.lg\\:min-w-0{min-width:0}
 .lg\\:max-w-xl{max-width:36rem}.lg\\:px-8{padding-left:2rem;padding-right:2rem}
+.lg\\:max-w-\\[14rem\\]{max-width:14rem}
 }
 @media(max-width:1023px){
 .max-lg\\:max-h-\\[100svh\\]{max-height:100svh}.max-lg\\:w-full{width:100%}

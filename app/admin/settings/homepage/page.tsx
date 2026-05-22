@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { HeroCtaButtonsManagerClient } from "@/components/admin/HeroCtaButtonsManagerClient";
 
 type HomepageSectionRow = {
   id: string;
@@ -68,8 +69,8 @@ const HOMEPAGE_SECTION_ROW_ICONS: Partial<Record<string, LucideIcon>> = {
 /** Short hint under the technical `key` in admin list (not stored in DB). */
 const HOMEPAGE_SECTION_KEY_HINTS: Record<string, string> = {
   promotion_banner: "Carousel · dynamic_banners (mobile 4:5 / desktop cinematic)",
-  breeder_showcase: "Icon grid · BreederShowcase",
-  breeders: "Horizontal slider · BreederRibbon",
+  breeder_showcase: "Top 8 grid · strain count · BreederShowcase",
+  breeders: "Full marquee · all logos · BreederRibbon",
   categories: "Quick pills · QuickCategoryNav",
   clearance: "Dark rail · ClearanceSection (carousel / grid)",
   featured: "Hero carousel · FeaturedProductHero (DB featured products)",
@@ -405,6 +406,8 @@ export default function HomepageLayoutSettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <HeroCtaButtonsManagerClient />
     </div>
   );
 }

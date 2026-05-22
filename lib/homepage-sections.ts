@@ -34,8 +34,8 @@ export const DEFAULT_SECTION_FALLBACK_LABELS: Record<
   },
   categories: { label_th: "เลือกสไตล์การปลูก", label_en: "Find your grow style" },
   breeder_showcase: {
-    label_th: "กริด Breeder เด่น (ไอคอน)",
-    label_en: "Featured Breeders Grid (Icons)",
+    label_th: "บรีดเดอร์ยอดนิยม (Top 8 · สต็อกเยอะสุด)",
+    label_en: "Top Breeders (Top 8 · widest stock)",
   },
   clearance: {
     label_th: "คลังล้างสต็อก",
@@ -47,8 +47,8 @@ export const DEFAULT_SECTION_FALLBACK_LABELS: Record<
     label_en: "Featured strain hero",
   },
   breeders: {
-    label_th: "แถบ Breeder บนสุด (สไลด์)",
-    label_en: "Top Breeders Bar (Slider)",
+    label_th: "บรีดเดอร์ลิส (สไลด์ครบทุกแบรนด์)",
+    label_en: "Breeder Directory (full slider)",
   },
   trust: { label_th: "จุดเด่นร้าน (3 คอลัมน์)", label_en: "Trust highlights" },
   new_strains: { label_th: "สายพันธุ์มาใหม่", label_en: "New arrivals grid" },

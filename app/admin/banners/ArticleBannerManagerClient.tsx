@@ -80,7 +80,7 @@ export function ArticleBannerManagerClient({
 }: {
   initialCampaigns: ArticleCampaignBannerAdminRow[];
 }) {
-  const [campaigns, setCampaigns] = useState(initialCampaigns);
+  const [campaigns, setCampaigns] = useState(initialCampaigns ?? []);
   const [form, setForm] = useState<FormState | null>(null);
   const [files, setFiles] = useState<Partial<Record<ImageField, File>>>({});
   const [saving, setSaving] = useState(false);

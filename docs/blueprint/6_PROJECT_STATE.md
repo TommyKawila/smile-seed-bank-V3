@@ -4,6 +4,40 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-22 (Home hero CTA buttons — 4 ปุ่ม + admin)
+- **Storefront:** Hero แสดงปุ่ม 4 รายการจาก DB (เมล็ดพันธุ์ทั้งหมด / มาใหม่ / ลดราคา / บทความน่าสนใจ) — grid 2×2 บน sm+, stack บน mobile; **`getLocalizedPath`** สำหรับ href
+- **Admin:** `/admin/settings/homepage` — การ์ด **ปุ่มเมนู Hero** ลากเรียง แก้ TH/EN, href, variant primary/outline, เปิด/ปิด
+- **DB/API:** `homepage_hero_cta_buttons` + migration seed 4 แถว; **`homepage-hero-cta-service`** + **`/api/admin/settings/homepage/hero-cta`**
+- **ไฟล์:** `Hero.tsx`, `HomePageHeroClient.tsx`, `home-stream.tsx`, `lib/homepage-hero-cta.ts`, `HeroCtaButtonsManagerClient.tsx`, `homepage/page.tsx`, `prisma/schema.prisma`, migration SQL
+
+### บันทึกการทำงาน — 2026-05-22 (Home hero mobile — full-bleed banner)
+- **`HomePageHeroClient.tsx`:** mobile-first `px-0 pt-0` (แก้ `max-lg:` ถูก `px-4` override) — ไม่มี card border/rounded บน mobile
+- **`HeroCarouselSlideImages.tsx`:** mobile `object-cover` แทน `object-contain` — เต็มซ้าย-ขวา
+
+### บันทึกการทำงาน — 2026-05-22 (Navbar logo — home vs other pages)
+- **สาเหตุ:** home critical CSS มี `.h-11` โหลดหลัง Tailwind → override `sm:h-[3.5rem]` บนโลโก้
+- **แก้:** Tailwind utilities ตรงใน `Navbar.tsx` + **`lib/**` ใน content scan** + critical CSS sync `sm:h-14` / max-width
+- **ไฟล์:** `Navbar.tsx`, `storefront-nav-logo.ts`, `globals.css`, `storefront-home-critical-css.ts`
+
+### บันทึกการทำงาน — 2026-05-22 (Home — breeder sections role split B)
+- **`BREEDER_SHOWCASE_LIMIT=8`:** API + grid Top 8 เรียงสต็อก; badge **แบรนด์สต็อกแน่น · Top 8**; CTA → **`/shop`**
+- **`breeders` section:** default **บรีดเดอร์ลิส** + badge **ครบทุกแบรนด์** + subtitle browse; CTA → **`/breeders`**
+- **ไฟล์:** `constants.ts`, `breeder-showcase/route.ts`, `BreederShowcase.tsx`, `HomePageBelowFold.tsx`, `homepage-sections.ts`
+
+### บันทึกการทำงาน — 2026-05-22 (QuickCategoryNav — center icon row)
+- **`QuickCategoryNav.tsx`:** ถอด `sm:grid grid-cols-3/7` → **`flex-wrap justify-center`** (แก้แถวไอคอนชิดซ้ายเมื่อ 7 รายการไม่เต็มความกว้าง / แถวสุดท้ายเหลือ 1 ชิ้น)
+
+### บันทึกการทำงาน — 2026-05-22 (Typography — mono wrapper audit)
+- **ปัญหา:** `JOURNAL_PRODUCT_MONO_CLASS` ถูกใส่ที่ **section wrapper** → Footer / Newsletter / Trust features สืบทอด **system mono** แทน **Prompt** (ไม่ใช่ design intent)
+- **แก้:** ถอด mono จาก wrapper — คง mono เฉพาะ **label/badge** (uppercase h4, NEW ARRIVALS, copyright bar)
+- **ไฟล์:** `Footer.tsx`, `HomeNewsletterSection.tsx`, `HomePageBelowFold.tsx`
+
+### บันทึกการทำงาน — 2026-05-22 (PageSpeed — render-blocking CSS round 2)
+- **`app/layout.tsx`:** คืน **`next/font` Prompt** (latin+thai, **400/600/700**, **`adjustFontFallback`**) — async script ทำให้ font หายบน localhost/prod
+- **`app/layout.tsx`:** defer script ย้ายเข้า **`<head>`** (ถอด **`Script beforeInteractive`**); **`globals.css`** fallback **`--font-prompt`**
+- **`(home)/layout.tsx`:** server **`<style id="home-critical-css">`** ก่อน stream body
+- **`storefront-home-defer-css.ts`:** defer เฉพาะ Tailwind **`/_next/static/css/`**; fix **`l.sheet`** early exit
+
 ### บันทึกการทำงาน — 2026-05-22 (Hero image Phase C — LCP quality tiers)
 - **`hero-carousel-image-sizes.ts`:** quality SSOT — mobile LCP **50**, mobile slide **55**, desktop LCP **60**, desktop slide **55**
 - **`HeroCarouselSlideImages.tsx`:** **`quality`** ตาม **`priority`** (slide 0); non-LCP ยัง **`loading="lazy"`**

@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
-import Script from "next/script";
+import { Prompt } from "next/font/google";
 import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
-import { Prompt } from "next/font/google";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
 import { STOREFRONT_HOME_DEFER_CSS_SCRIPT } from "@/lib/storefront-home-defer-css";
@@ -78,11 +77,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="th" className="scroll-smooth" suppressHydrationWarning>
-      <head>{supabaseOriginHeadLinks()}</head>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: STOREFRONT_HOME_DEFER_CSS_SCRIPT }} />
+        {supabaseOriginHeadLinks()}
+      </head>
       <body className={`${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
-        <Script id="home-defer-css" strategy="beforeInteractive">
-          {STOREFRONT_HOME_DEFER_CSS_SCRIPT}
-        </Script>
         <FramerLazyRoot>
           {children}
           <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />

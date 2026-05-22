@@ -130,10 +130,7 @@ export function HomePageBelowFold({
         return (
           <section
             key={sk}
-            className={cn(
-              `mx-auto min-h-[400px] max-w-7xl px-4 py-14 sm:px-6 ${JOURNAL_PRODUCT_MONO_CLASS}`,
-              BELOW_FOLD_CV
-            )}
+            className={cn("mx-auto min-h-[400px] max-w-7xl px-4 py-14 sm:px-6", BELOW_FOLD_CV)}
           >
             <div className={BELOW_FOLD_REVEAL}>
               <div
@@ -245,20 +242,25 @@ export function HomePageBelowFold({
         const breederMain = resolveSectionHeading(
           locale,
           st,
-          "เลือกเมล็ดพันธุ์จากบรีดเดอร์ชั้นนำ",
-          "Choose seeds from leading breeders"
+          "บรีดเดอร์ลิส",
+          "Breeder Directory"
+        );
+        const breederSub = t(
+          "เลื่อนดูโลโก้ทุกแบรนด์ที่เรามี — แตะเพื่อเลือกสายพันธุ์",
+          "Scroll every brand in our network — tap a logo to shop strains"
         );
         return (
           <section key={sk} className={cn("border-b border-zinc-100 bg-white py-12 sm:py-16", BELOW_FOLD_CV)}>
-            <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_MONO_CLASS}`}>
-              <div className="mb-8 flex items-end justify-between">
-                <div>
+            <div className="mx-auto max-w-7xl px-4 sm:px-6">
+              <div className="mb-8 flex items-end justify-between gap-4">
+                <div className="max-w-2xl">
                   <span className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mb-2 inline-flex items-center rounded-full border border-zinc-100 bg-zinc-50/50 px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-zinc-500")}>
-                    {t("แบรนด์ชั้นนำ", "World-Class Breeders")}
+                    {t("ครบทุกแบรนด์", "Full catalog")}
                   </span>
                   <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl">
                     {breederMain}
                   </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-600">{breederSub}</p>
                 </div>
                 <Link
                   href="/breeders"
@@ -287,12 +289,12 @@ export function HomePageBelowFold({
             key={sk}
             className={cn("border-t border-b border-zinc-100 bg-zinc-50/30 py-12 sm:py-16", BELOW_FOLD_CV)}
           >
-            <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${JOURNAL_PRODUCT_MONO_CLASS}`}>
+            <div className="mx-auto max-w-5xl px-4 sm:px-6">
               <div className="grid grid-cols-1 divide-y divide-zinc-100 text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 {features.map((f) => (
                   <div key={f.label} className="px-6 py-7 sm:py-9">
                     <p className="font-sans text-base font-medium text-zinc-800">{f.label}</p>
-                    <p className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mt-1.5 text-xs font-normal leading-relaxed text-zinc-600")}>
+                    <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">
                       {f.sub}
                     </p>
                   </div>

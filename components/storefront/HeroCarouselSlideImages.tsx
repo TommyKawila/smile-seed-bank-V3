@@ -33,7 +33,6 @@ export function HeroCarouselSlideImages({
   return (
     <div className="relative h-full w-full min-h-0 overflow-hidden">
       <div className="absolute inset-0 md:hidden">
-        <div className="relative aspect-[4/5] h-full w-full min-h-0">
           <Image
             src={mobileSrc}
             alt={alt}
@@ -46,9 +45,8 @@ export function HeroCarouselSlideImages({
             quality={isPriority ? HERO_IMAGE_QUALITY_MOBILE_LCP : HERO_IMAGE_QUALITY_MOBILE}
             sizes={HERO_CAROUSEL_MOBILE_SIZES}
             unoptimized={shouldOffloadImageOptimization(mobileSrc)}
-            className="h-full w-full object-contain object-center"
+            className="h-full w-full object-cover object-center"
           />
-        </div>
       </div>
       <div className="absolute inset-0 hidden min-h-0 md:block">
         <Image

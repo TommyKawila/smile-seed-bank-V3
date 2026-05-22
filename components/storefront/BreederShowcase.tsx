@@ -6,11 +6,13 @@ import { ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
+import { JOURNAL_PRODUCT_MONO_CLASS } from "@/components/storefront/journal-product-mono-class";
 import {
   resolveSectionHeading,
   type SectionTitle,
 } from "@/lib/homepage-section-title";
 import { cn } from "@/lib/utils";
+import { BREEDER_SHOWCASE_LIMIT } from "@/lib/constants";
 import {
   fetchBreederShowcase,
   type BreederShowcaseRow,
@@ -28,9 +30,24 @@ export default function BreederShowcase({
   const mainHeading = resolveSectionHeading(
     locale,
     sectionTitle,
-    "แบรนด์บรีดเดอร์พรีเมียม",
-    "Premium Breeder Brands"
+    "บรีดเดอร์ยอดนิยม",
+    "Top Breeders in Stock"
   );
+
+  const showcaseLabel = t(
+    "แบรนด์สต็อกแน่น · Top 8",
+    "Widest selection · Top 8"
+  );
+
+  const networkLabel =
+    totalBreeders != null && totalBreeders > 0
+      ? locale === "en"
+        ? `${BREEDER_SHOWCASE_LIMIT} brands with the most strains in our vault — from a network of ${totalBreeders}+ breeders`
+        : `${BREEDER_SHOWCASE_LIMIT} แบรนด์ที่มีสายพันธุ์ในคลังมากที่สุด — จากเครือข่าย ${totalBreeders}+ แบรนด์`
+      : t(
+          `${BREEDER_SHOWCASE_LIMIT} แบรนด์ที่มีสายพันธุ์ในคลังมากที่สุด`,
+          `${BREEDER_SHOWCASE_LIMIT} brands with the widest strain selection`
+        );
 
   useEffect(() => {
     let cancelled = false;
@@ -51,16 +68,6 @@ export default function BreederShowcase({
     };
   }, []);
 
-  const networkLabel =
-    totalBreeders != null && totalBreeders > 0
-      ? locale === "en"
-        ? `Explore seeds from over ${totalBreeders}+ world-class breeders`
-        : `สำรวจเมล็ดจากบรีดเดอร์ระดับโลกกว่า ${totalBreeders}+ แบรนด์`
-      : t(
-          "สำรวจเมล็ดจากบรีดเดอร์ระดับชั้นนำ",
-          "Explore seeds from leading breeders"
-        );
-
   return (
     <section
       className="border-b border-zinc-100 bg-zinc-100/50"
@@ -68,6 +75,14 @@ export default function BreederShowcase({
     >
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
         <div className="mb-8 text-center md:mb-10">
+          <span
+            className={cn(
+              JOURNAL_PRODUCT_MONO_CLASS,
+              "mb-3 inline-flex items-center rounded-full border border-emerald-200/60 bg-white px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-emerald-800"
+            )}
+          >
+            {showcaseLabel}
+          </span>
           <h2 className="font-sans text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
             {mainHeading}
           </h2>
@@ -83,8 +98,8 @@ export default function BreederShowcase({
         ) : (
           <ul
             className={cn(
-              "flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:pb-0 lg:grid-cols-6",
-              "[&::-webkit-scrollbar]:hidden"
+              "flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+              "sm:grid sm:grid-cols-4 sm:gap-5 sm:overflow-visible sm:pb-0"
             )}
           >
             {rows.map((b) => (
@@ -129,8 +144,8 @@ export default function BreederShowcase({
             variant="outline"
             className="border-emerald-200 bg-white font-semibold text-emerald-900 hover:bg-emerald-50"
           >
-            <Link href="/breeders" className="inline-flex items-center gap-1">
-              {t("ดูบรีดเดอร์ทั้งหมด", "View All Breeders")}
+            <Link href="/shop" className="inline-flex items-center gap-1">
+              {t("เลือกเมล็ดจากแบรนด์เด่น", "Shop top brands")}
               <ChevronRight className="h-4 w-4" aria-hidden />
             </Link>
           </Button>

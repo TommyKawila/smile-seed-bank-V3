@@ -31,5 +31,8 @@ export const HOME_FEATURED_SHOW = 4;
 /** Clearance rail on home payload only (catalog APIs may use a larger limit). */
 export const HOME_CLEARANCE_LIMIT = 8;
 
+/** Featured breeder icon grid on home — ranked by active strain count (not full catalog). */
+export const BREEDER_SHOWCASE_LIMIT = 8;
+
 /** Max rows per rail in `GET /api/storefront/home` JSON (payload guardrail). */
 export const HOME_STOREFRONT_HOME_API_SECTION_LIMIT = 4 as const;

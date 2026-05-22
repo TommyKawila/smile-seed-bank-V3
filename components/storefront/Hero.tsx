@@ -10,11 +10,15 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { isHeroSvgMarkup, normalizeHeroSvgHtml } from "@/lib/hero-svg";
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
-import { cn } from "@/lib/utils";
+import { cn, getLocalizedPath } from "@/lib/utils";
 import {
   resolveSectionHeading,
   type SectionTitle,
 } from "@/lib/homepage-section-title";
+import {
+  DEFAULT_HERO_CTA_BUTTONS,
+  type HeroCtaButtonPayload,
+} from "@/lib/homepage-hero-cta";
 
 const HERO_MONO =
   "font-[family-name:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace]";
@@ -90,9 +94,11 @@ function HeroMediaPanel({
 export default function Hero({
   sectionTitle,
   heroCarousel,
+  heroCtaButtons,
 }: {
   sectionTitle?: SectionTitle;
   heroCarousel?: ReactNode;
+  heroCtaButtons?: HeroCtaButtonPayload[];
 }) {
   const { t, locale } = useLanguage();
   const headline = resolveSectionHeading(
@@ -115,11 +121,14 @@ export default function Hero({
   const staticBgUrl =
     resolvePublicAssetUrl(siteSettings.hero_static_image_url) ?? STATIC_HERO_FALLBACK;
 
+  const ctaButtons =
+    heroCtaButtons && heroCtaButtons.length > 0 ? heroCtaButtons : DEFAULT_HERO_CTA_BUTTONS;
+
   return (
     <section
       className="relative flex w-full flex-col overflow-hidden rounded-none bg-zinc-50 max-lg:max-h-[100svh] max-lg:w-full lg:max-h-none"
     >
-      <div className="flex flex-1 flex-col lg:grid lg:min-h-[88vh] lg:max-h-none lg:grid-cols-2 lg:items-stretch lg:gap-0 lg:min-w-0">
+      <div className="flex flex-1 flex-col lg:grid lg:min-h-0 lg:max-h-none lg:grid-cols-2 lg:items-stretch lg:gap-0 lg:min-w-0">
         <div className="relative z-10 order-2 -mt-20 flex min-h-[auto] w-full min-w-0 flex-1 flex-col justify-end bg-white px-4 pb-5 pt-5 sm:-mt-24 sm:px-8 sm:pb-8 md:py-20 lg:order-1 lg:mt-0 lg:min-w-0 lg:max-w-xl lg:w-full lg:justify-center lg:self-stretch lg:bg-transparent lg:px-10 lg:py-12 lg:pl-12 lg:pr-10 xl:py-20 xl:pl-16 xl:pr-14">
           <div
             className={cn(
@@ -145,36 +154,37 @@ export default function Hero({
               )}
             </p>
 
-            <div className="flex flex-col gap-2.5 pt-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 sm:pt-2">
-              <Button
-                asChild
-                className="h-11 min-w-[200px] rounded-sm border border-primary bg-primary px-6 text-sm font-medium text-primary-foreground shadow-none transition-colors hover:bg-primary/90"
-              >
-                <Link
-                  href="/seeds"
-                  aria-label={t("เลือกซื้อเมล็ดพันธุ์ — ไปที่คลังเมล็ด", "Shop seeds — browse catalog")}
-                >
-                  {t("เลือกซื้อเมล็ดพันธุ์", "Shop Seeds")}
-                  <ChevronRight className="ml-1 h-4 w-4 opacity-90" strokeWidth={1.75} aria-hidden />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="h-11 min-w-[200px] rounded-sm border border-zinc-300 bg-transparent px-6 text-sm font-normal text-zinc-800 shadow-none transition-colors hover:border-primary/40 hover:bg-zinc-50"
-              >
-                <Link
-                  href="/blog"
-                  aria-label={t("บทความและคลังความรู้", "Grower's guide — articles")}
-                >
-                  {t("บทความ/คลังความรู้", "Grower's Guide")}
-                </Link>
-              </Button>
+            <div className="grid grid-cols-1 gap-2.5 pt-0.5 sm:grid-cols-2 sm:gap-3 sm:pt-2">
+              {ctaButtons.map((btn) => {
+                const label = locale === "en" ? btn.labelEn : btn.labelTh;
+                const href = getLocalizedPath(btn.href, locale);
+                const isPrimary = btn.variant === "primary";
+                return (
+                  <Button
+                    key={btn.id}
+                    asChild
+                    variant={isPrimary ? "default" : "outline"}
+                    className={cn(
+                      "h-11 w-full rounded-sm px-6 text-sm shadow-none transition-colors sm:min-w-0",
+                      isPrimary
+                        ? "border border-primary bg-primary font-medium text-primary-foreground hover:bg-primary/90"
+                        : "border border-zinc-300 bg-transparent font-normal text-zinc-800 hover:border-primary/40 hover:bg-zinc-50"
+                    )}
+                  >
+                    <Link href={href} aria-label={label}>
+                      {label}
+                      {isPrimary ? (
+                        <ChevronRight className="ml-1 h-4 w-4 opacity-90" strokeWidth={1.75} aria-hidden />
+                      ) : null}
+                    </Link>
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        <div className="relative order-1 aspect-[4/5] h-[65svh] w-full min-h-0 shrink-0 overflow-hidden bg-zinc-100 lg:order-2 lg:aspect-auto lg:h-full lg:min-h-[88vh] lg:w-full lg:min-w-0">
+        <div className="relative order-1 w-full shrink-0 overflow-hidden bg-zinc-100 aspect-[392/429] lg:order-2 lg:aspect-[617/712] lg:h-auto lg:min-h-0 lg:w-full lg:min-w-0">
           <HeroMediaPanel
             isLoading={isLoading}
             useAnimatedSvg={Boolean(useAnimatedSvg)}

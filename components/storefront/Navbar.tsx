@@ -18,6 +18,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { NAV_LOGO_INTRINSIC, NAV_LOGO_SIZES } from "@/lib/storefront-nav-logo";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
 import { BreederSeedsNav } from "@/components/storefront/BreederDropdownMenu";
@@ -125,17 +126,17 @@ export function Navbar() {
       >
         <div className="mx-auto flex h-20 w-full min-w-0 max-w-7xl flex-row flex-nowrap items-center justify-between gap-2 px-4 sm:h-28 sm:gap-3 sm:px-5 lg:gap-4 lg:px-8">
           {/* Logo — aligned to nav link cap height */}
-          <Link href="/" className="flex min-w-0 shrink items-center self-center leading-none">
+          <Link href="/" className="flex min-w-0 shrink-0 items-center self-center leading-none">
             {settings.logo_main_url ? (
               <Image
                 src={settings.logo_main_url}
                 alt="Smile Seed Bank"
-                width={224}
-                height={77}
+                width={NAV_LOGO_INTRINSIC.width}
+                height={NAV_LOGO_INTRINSIC.height}
                 priority={true}
                 fetchPriority="high"
-                sizes="(max-width: 640px) min(152px, 46vw), 224px"
-                className="h-11 w-auto max-w-[min(152px,46vw)] object-contain object-left sm:max-w-[200px] sm:h-[3.5rem] lg:max-w-none"
+                sizes={NAV_LOGO_SIZES}
+                className="h-11 w-auto max-w-[min(152px,46vw)] shrink-0 object-contain object-left sm:h-14 sm:max-w-[12.5rem] lg:max-w-[14rem]"
               />
             ) : (
               <>

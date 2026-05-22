@@ -38,6 +38,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { HeroBannerAdmin } from "@/lib/hero-banner-admin";
+import {
+  HERO_DESKTOP_UPLOAD_SPEC,
+  HERO_MOBILE_UPLOAD_SPEC,
+} from "@/components/storefront/hero-carousel-image-sizes";
 import { isBannerExpiringWithin } from "@/lib/banner-schedule";
 import { cn } from "@/lib/utils";
 
@@ -71,26 +75,26 @@ const IMAGE_FIELDS: {
   {
     key: "desktopTh",
     label: "Desktop TH (required)",
-    size: "Recommended 1250x1800 px (exact 617:890)",
-    previewAspect: "aspect-[617/890]",
+    size: `Desktop: ${HERO_DESKTOP_UPLOAD_SPEC}`,
+    previewAspect: "aspect-[617/712]",
   },
   {
     key: "desktopEn",
     label: "Desktop EN (optional)",
-    size: "Recommended 1250x1800 px (exact 617:890)",
-    previewAspect: "aspect-[617/890]",
+    size: `Desktop: ${HERO_DESKTOP_UPLOAD_SPEC}`,
+    previewAspect: "aspect-[617/712]",
   },
   {
     key: "mobileTh",
     label: "Mobile TH (optional)",
-    size: "Mobile: 1173x1287 px (Exact 391:429 ratio for zero-gap fit)",
-    previewAspect: "aspect-[391/429]",
+    size: `Mobile: ${HERO_MOBILE_UPLOAD_SPEC}`,
+    previewAspect: "aspect-[392/429]",
   },
   {
     key: "mobileEn",
     label: "Mobile EN (optional)",
-    size: "Mobile: 1173x1287 px (Exact 391:429 ratio for zero-gap fit)",
-    previewAspect: "aspect-[391/429]",
+    size: `Mobile: ${HERO_MOBILE_UPLOAD_SPEC}`,
+    previewAspect: "aspect-[392/429]",
   },
 ];
 
@@ -235,7 +239,7 @@ function SortableHeroRow({
       >
         <GripVertical className="h-5 w-5" />
       </button>
-      <div className="relative aspect-[617/890] w-[min(100%,106px)] overflow-hidden rounded-lg bg-zinc-100">
+      <div className="relative aspect-[617/712] w-[min(100%,106px)] overflow-hidden rounded-lg bg-zinc-100">
         {banner.desktopTh ? (
           <Image src={banner.desktopTh} alt={banner.titleTh} fill className="object-cover object-center" />
         ) : (
@@ -427,12 +431,12 @@ export function HeroBannerManagerClient({ initialBanners }: { initialBanners: He
             <CardTitle className="text-xl">Home Carousel</CardTitle>
             <p className="mt-1 text-sm text-zinc-500">
               Split hero: desktop{" "}
-              <span className="font-medium text-zinc-600">617:890</span> uses{" "}
+              <span className="font-medium text-zinc-600">617:712</span> uses{" "}
               <span className="font-medium text-zinc-600">cover + center</span>; mobile portrait{" "}
-              <span className="font-medium text-zinc-600">391:429</span> uses{" "}
+              <span className="font-medium text-zinc-600">392:429</span> uses{" "}
               <span className="font-medium text-zinc-600">contain</span>
               — whole image visible (panel color fills letterboxing). Mobile export 1173×1287 px matches
-              391:429 with no bands inside the frame. Drag
+              392:429 with no bands inside the frame. Drag
               to reorder; first qualifying active slide is LCP. Empty schedule uses code fallback.
             </p>
           </div>
@@ -472,12 +476,12 @@ export function HeroBannerManagerClient({ initialBanners }: { initialBanners: He
             <DialogDescription>
               Title TH / Title EN are storefront alt text by locale. Desktop Thai image is required;
               optional slots fall back to Thai assets when empty. Frames are fixed:{" "}
-              <span className="font-medium text-foreground">617:890</span> desktop with centered{" "}
+              <span className="font-medium text-foreground">617:712</span> desktop with centered{" "}
               <span className="font-medium text-foreground">cover</span> when ratio matches;{" "}
-              <span className="font-medium text-foreground">391:429</span> portrait mobile with{" "}
+              <span className="font-medium text-foreground">392:429</span> portrait mobile with{" "}
               <span className="font-medium text-foreground">contain</span> — full image visible. Export mobile
               at <span className="font-medium text-foreground">1173×1287 px</span> for a pixel-perfect{" "}
-              <span className="font-medium text-foreground">391:429</span> frame; desktop sizes are on each
+              <span className="font-medium text-foreground">392:429</span> frame; desktop sizes are on each
               label.
             </DialogDescription>
             <p className="text-xs text-zinc-500">

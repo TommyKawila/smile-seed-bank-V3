@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { BREEDER_SHOWCASE_LIMIT } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { breederSlugFromName } from "@/lib/breeder-slug";
 
@@ -43,7 +44,7 @@ export async function GET() {
     }[] = [];
 
     for (const g of grouped) {
-      if (g.breeder_id == null || breeders.length >= 12) break;
+      if (g.breeder_id == null || breeders.length >= BREEDER_SHOWCASE_LIMIT) break;
       const b = byId.get(String(g.breeder_id));
       if (!b || !(b.logo_url ?? "").trim()) continue;
       breeders.push({

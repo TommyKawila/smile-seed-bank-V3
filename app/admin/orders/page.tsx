@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { useAdminOrders, type AdminOrder } from "@/hooks/useAdminOrders";
 import { formatPrice } from "@/lib/utils";
 import { adminOrderLineSeedsPart, formatAdminOrderLineSummary } from "@/lib/admin-order-line-summary";
+import { generateOrderPackingDetailsText } from "@/lib/admin-order-packing-text";
 import { adminOrderLineFloweringLabel } from "@/lib/seed-type-filter";
 import type { AdminOrderLineItem } from "@/types/admin-order";
 import { cn } from "@/lib/utils";
@@ -39,8 +40,6 @@ import {
   generateOrderSummary,
 } from "@/lib/utils/format-order";
 import { carrierLabelFromCode, carrierTrackingUrl } from "@/lib/shipping-carriers";
-import { generateOrderFlexMessage } from "@/lib/line-flex";
-import { createReceiptDownloadQuery } from "@/lib/receipt-download-token";
 import { fetchPdfSettings } from "@/lib/pdf-settings";
 import { ReceiptPreviewModal } from "@/components/admin/ReceiptPreviewModal";
 import { Switch } from "@/components/ui/switch";
@@ -145,43 +144,6 @@ function formatAdminOrderDetailItemSummary(item: {
       ? item.seedTypeLabel.trim()
       : adminOrderLineFloweringLabel(item.productName, null);
   return `${item.productName} (${seedsPart}) — ${breeder} (${seedType})`;
-}
-
-function buildLineFlexJsonFromOrderDetail(d: {
-  orderNumber: string;
-  customerName: string | null;
-  customerPhone: string | null;
-  shippingAddress: string | null;
-  totalAmount: number;
-  shippingFee: number;
-  discountAmount: number;
-  items: { productName: string; unitLabel: string; breederName: string | null; seedTypeLabel?: string | null; quantity: number; totalPrice: number }[];
-}): string {
-  const origin = getSiteOrigin();
-  const on = encodeURIComponent(d.orderNumber);
-  const q = createReceiptDownloadQuery(d.orderNumber);
-  const receiptDownloadUri =
-    q.t && q.e
-      ? `${origin}/api/storefront/orders/${on}/receipt?t=${encodeURIComponent(q.t)}&e=${encodeURIComponent(q.e)}`
-      : `${origin}/api/storefront/orders/${on}/receipt`;
-  const flex = generateOrderFlexMessage({
-    orderNumber: d.orderNumber,
-    customerName: d.customerName,
-    customerPhone: d.customerPhone,
-    shippingAddress: d.shippingAddress,
-    receiptDownloadUri,
-    totalAmount: d.totalAmount,
-    shippingFee: d.shippingFee,
-    discountAmount: d.discountAmount,
-    items: d.items.map((i) => ({
-      productName: i.productName,
-      unitLabel: i.unitLabel,
-      breederName: i.breederName,
-      quantity: i.quantity,
-      totalPrice: i.totalPrice,
-    })),
-  });
-  return JSON.stringify(flex, null, 2);
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -1351,12 +1313,26 @@ export default function AdminOrdersPage() {
     }
   }, [detailModal, pushToast, summaryLang]);
 
-  const handleCopyLineFlexJson = useCallback(async () => {
+  const handleCopyPackingDetails = useCallback(async () => {
     if (!detailModal) return;
     try {
-      const text = buildLineFlexJsonFromOrderDetail(detailModal);
+      const text = generateOrderPackingDetailsText({
+        orderNumber: detailModal.orderNumber,
+        customerName: detailModal.customerName,
+        customerPhone: detailModal.customerPhone,
+        shippingAddress: detailModal.shippingAddress,
+        customerNote: detailModal.customerNote,
+        items: detailModal.items.map((i) => ({
+          productName: i.productName,
+          unitLabel: i.unitLabel,
+          breederName: i.breederName,
+          seedTypeLabel: i.seedTypeLabel,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+        })),
+      });
       await navigator.clipboard.writeText(text);
-      pushToast("คัดลอก Flex JSON แล้ว", "success");
+      pushToast("คัดลอกรายละเอียดแพคสินค้าแล้ว", "success");
     } catch (err) {
       pushToast(String(err), "error");
     }
@@ -1548,7 +1524,7 @@ export default function AdminOrdersPage() {
                       size="sm"
                       variant="outline"
                       className="h-9 shrink-0 gap-1 border-zinc-300 px-3"
-                      title="คัดลอก Flex JSON หรือ Sales Summary"
+                      title="คัดลอกรายละเอียดแพคสินค้าหรือ Sales Summary"
                     >
                       <Copy className="h-3.5 w-3.5 shrink-0" />
                       <span className="max-[420px]:sr-only">คัดลอก…</span>
@@ -1556,12 +1532,9 @@ export default function AdminOrdersPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem
-                      onClick={() => void handleCopyLineFlexJson()}
-                      title="Backup if automated send fails"
-                    >
+                    <DropdownMenuItem onClick={() => void handleCopyPackingDetails()}>
                       <Copy className="h-4 w-4" />
-                      Copy Flex JSON
+                      Copy Order Details for Packing
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => void handleCopySalesSummary()}>
                       <Copy className="h-4 w-4" />

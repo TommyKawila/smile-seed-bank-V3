@@ -5,8 +5,6 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/context/LanguageContext";
-import { JOURNAL_PRODUCT_MONO_CLASS } from "@/components/storefront/journal-product-mono-class";
-import { cn } from "@/lib/utils";
 
 export function HomeNewsletterSection() {
   const { t, locale } = useLanguage();
@@ -75,12 +73,7 @@ export function HomeNewsletterSection() {
   }
 
   return (
-    <section
-      className={cn(
-        "mx-4 mb-14 overflow-hidden rounded-3xl border border-emerald-800/20 bg-emerald-800 sm:mx-6",
-        JOURNAL_PRODUCT_MONO_CLASS
-      )}
-    >
+    <section className="mx-4 mb-14 overflow-hidden rounded-3xl border border-emerald-800/20 bg-emerald-800 sm:mx-6">
       <div className="mx-auto flex max-w-4xl flex-col items-stretch justify-between gap-8 px-6 py-10 sm:flex-row sm:items-center sm:gap-10">
         <div className="min-w-0 flex-1 text-center sm:text-left">
           <h3 className="font-sans text-xl font-medium leading-snug text-white sm:text-2xl">
@@ -89,7 +82,7 @@ export function HomeNewsletterSection() {
               "Get 10% off your first order"
             )}
           </h3>
-          <p className="mt-2 text-sm font-light leading-relaxed text-white/90">
+          <p className="mt-2 text-sm leading-relaxed text-white/90">
             {t(
               "สมัครรับข่าวสารเพื่อรับโค้ดส่วนลด และเทคนิคการปลูกจากผู้เชี่ยวชาญส่งตรงถึงอีเมลคุณ",
               "Join our newsletter for exclusive growing tips and get your discount code instantly."

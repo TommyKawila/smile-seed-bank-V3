@@ -1,6 +1,6 @@
 import { assertAdmin } from "@/lib/auth-utils";
 import { getAdminHeroBanners } from "@/services/hero-banner-service";
-import { getAdminArticleBanners } from "@/services/article-banner-service";
+import { getAdminArticleCampaignBanners } from "@/services/promotion-campaign-service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArticleBannerManagerClient } from "./ArticleBannerManagerClient";
 import { HeroBannerManagerClient } from "./HeroBannerManagerClient";
@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminBannersPage() {
   await assertAdmin();
-  const [heroBanners, articleBanners] = await Promise.all([
+  const [heroBanners, articleCampaigns] = await Promise.all([
     getAdminHeroBanners(),
-    getAdminArticleBanners(),
+    getAdminArticleCampaignBanners(),
   ]);
 
   return (
@@ -45,7 +45,7 @@ export default async function AdminBannersPage() {
             <HeroBannerManagerClient initialBanners={heroBanners} />
           </TabsContent>
           <TabsContent value="article-banners" className="mt-0">
-            <ArticleBannerManagerClient initialBanners={articleBanners} />
+            <ArticleBannerManagerClient initialCampaigns={articleCampaigns} />
           </TabsContent>
         </Tabs>
       </div>

@@ -34,5 +34,18 @@ function prismaClientSingleton() {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
+function resolvePrismaClient(): PrismaClient {
+  const existing = globalForPrisma.prisma;
+  if (
+    process.env.NODE_ENV === "development" &&
+    existing &&
+    !("homepage_hero_cta_buttons" in existing)
+  ) {
+    console.warn("[prisma] Stale client detected — reinitializing after schema change");
+    return prismaClientSingleton();
+  }
+  return existing ?? prismaClientSingleton();
+}
+
+export const prisma = resolvePrismaClient();
 globalForPrisma.prisma = prisma;

@@ -31,7 +31,7 @@ export function Footer() {
 
   return (
     <footer className="no-print border-t border-zinc-100 bg-white">
-      <div className={`mx-auto max-w-7xl px-4 py-10 sm:px-6 ${JOURNAL_PRODUCT_MONO_CLASS}`}>
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="lg:col-span-2">
@@ -56,7 +56,7 @@ export function Footer() {
                 </>
               )}
             </Link>
-            <p className="max-w-xs text-sm font-light leading-relaxed text-zinc-500">
+            <p className="max-w-xs text-sm leading-relaxed text-zinc-500">
               {t(
                 "แหล่งรวมเมล็ดพันธุ์คุณภาพพรีเมียม คัดสรรจากนักปลูกชั้นนำทั่วโลก บริการด้วยความใส่ใจทุกขั้นตอน",
                 "Premium cannabis seed bank. Curated from the world's best breeders, delivered with care every step of the way."
@@ -110,7 +110,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm font-light text-zinc-600 transition-colors hover:text-emerald-800"
+                    className="text-sm text-zinc-600 transition-colors hover:text-emerald-800"
                   >
                     {link.label}
                   </Link>
@@ -124,7 +124,7 @@ export function Footer() {
             <h4 className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mb-4 text-[10px] font-medium uppercase tracking-widest text-zinc-500")}>
               {t("ติดต่อเรา", "Contact Us")}
             </h4>
-            <ul className="space-y-4 text-sm font-light text-zinc-600">
+            <ul className="space-y-4 text-sm text-zinc-600">
               <li>Line: @smileseedsbank</li>
               <li>Facebook: smileseedbank</li>
               <li>Instagram: @smileseedbank</li>

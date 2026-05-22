@@ -110,15 +110,14 @@ export default function QuickCategoryNav({
 
         <ul
           className={cn(
-            "flex gap-3 overflow-x-auto pb-1 pt-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:grid sm:gap-4 sm:overflow-visible sm:pb-0",
-            "sm:grid-cols-3 lg:grid-cols-7",
-            "[&::-webkit-scrollbar]:hidden"
+            "flex gap-3 overflow-x-auto pb-1 pt-0.5 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            "sm:flex-wrap sm:justify-center sm:overflow-visible sm:gap-4 sm:pb-0"
           )}
         >
           {QUICK_ITEMS.map(({ href, Icon, labelTh, labelEn, iconBg, iconFg }) => (
             <li
               key={href}
-              className="min-w-[5.75rem] shrink-0 snap-start sm:min-w-0"
+              className="w-[5.75rem] shrink-0 snap-start sm:w-[6.25rem]"
             >
               <Link
                 href={href}

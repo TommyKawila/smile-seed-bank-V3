@@ -14,6 +14,7 @@ import {
   type HomePageSectionPayload,
 } from "@/lib/homepage-sections";
 import type { HeroBanner } from "@/lib/hero-banners";
+import { listHeroCtaButtons } from "@/services/homepage-hero-cta-service";
 
 const getSectionsCached = unstable_cache(
   async (): Promise<HomePageSectionPayload[]> => {
@@ -47,10 +48,16 @@ async function getSections(): Promise<HomePageSectionPayload[]> {
   return getSectionsCached();
 }
 
+const getHeroCtaCached = unstable_cache(
+  () => listHeroCtaButtons(true),
+  ["storefront-home-hero-cta"],
+  { tags: ["home-layout"] }
+);
+
 function HeroCarouselSuspenseFallback() {
   return (
     <div
-      className="w-full aspect-[4/5] h-[65svh] bg-zinc-100 animate-pulse rounded-lg"
+      className="w-full aspect-[392/429] bg-zinc-100 animate-pulse"
       aria-hidden
     />
   );
@@ -63,7 +70,14 @@ async function HeroCarouselStream() {
 
 /** Hero SSR + below-fold static client tree (`content-visibility` off-screen paint skip). */
 export async function HomeMainStream() {
-  const sections = await getSections();
+  const [sections, heroCtaButtons] = await Promise.all([getSections(), getHeroCtaCached()]);
+  const heroCtaPayload = heroCtaButtons.map(({ id, labelTh, labelEn, href, variant }) => ({
+    id,
+    labelTh,
+    labelEn,
+    href,
+    variant,
+  }));
   const belowSections = sections.filter((s) => s.key !== "hero");
   const heroCarousel = (
     <Suspense fallback={<HeroCarouselSuspenseFallback />}>
@@ -73,7 +87,7 @@ export async function HomeMainStream() {
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
-      <HomePageHeroClient sections={sections} heroCarousel={heroCarousel} />
+      <HomePageHeroClient sections={sections} heroCarousel={heroCarousel} heroCtaButtons={heroCtaPayload} />
       <div className="w-full [content-visibility:auto] [contain-intrinsic-size:0_600px] overflow-hidden">
         <HomePageBelowFoldHost
           belowSections={belowSections}

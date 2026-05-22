@@ -17,15 +17,6 @@ function stripAppLocaleSegments(pathname: string): string {
   return path;
 }
 
-function pathnameSkipsLocalePrefix(pathname: string): boolean {
-  return (
-    pathname.startsWith("/api/") ||
-    pathname === "/api" ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/_next")
-  );
-}
-
 function splitPathnameAndSuffix(input: string): { pathname: string; suffix: string } {
   const q = input.indexOf("?");
   if (q >= 0) {
@@ -39,14 +30,14 @@ function splitPathnameAndSuffix(input: string): { pathname: string; suffix: stri
 }
 
 /**
- * Internal storefront paths → `/${locale}/...`. Idempotent when `path` already has the correct prefix.
- * Skips localization for absolute URLs (http/https), protocol-relative URLs, mailto/tel, and `/api`, `/admin`, `/_next`.
+ * Normalize internal storefront hrefs for `<Link>` / router.
+ * Language is cookie/context-based — routes are `/seeds`, not `/th/seeds`.
+ * Strips accidental `/th` or `/en` prefixes from admin input.
  */
-export function getLocalizedPath(path: string | null | undefined, locale: AppLocale): string {
-  const seg = locale === "en" ? "en" : "th";
-  if (path == null) return `/${seg}`;
+export function getLocalizedPath(path: string | null | undefined, _locale?: AppLocale): string {
+  if (path == null) return "/";
   const trimmed = path.trim();
-  if (trimmed === "") return `/${seg}`;
+  if (trimmed === "") return "/";
 
   if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("//")) return trimmed;
   if (/^(mailto:|tel:)/i.test(trimmed)) return trimmed;
@@ -56,12 +47,7 @@ export function getLocalizedPath(path: string | null | undefined, locale: AppLoc
   const { pathname: rawPath, suffix } = splitPathnameAndSuffix(trimmed);
   const withSlash = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
   const normalized = stripAppLocaleSegments(withSlash);
-  if (pathnameSkipsLocalePrefix(normalized)) {
-    return `${normalized}${suffix}`;
-  }
-
-  const rest = normalized === "/" ? "" : normalized;
-  return `/${seg}${rest}${suffix}`;
+  return `${normalized}${suffix}`;
 }
 
 export function cn(...inputs: ClassValue[]) {
