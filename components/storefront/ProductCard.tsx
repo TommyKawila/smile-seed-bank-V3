@@ -1,7 +1,6 @@
 "use client";
 
-import { memo, createElement } from "react";
-import { m, type Variants } from "framer-motion";
+import { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -36,16 +35,6 @@ import { pickVariantForSeedPackSlugs, parseListParam } from "@/lib/shop-attribut
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { getProductAggregateStock } from "@/lib/product-stock";
-
-const shopCardVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-};
-
-const showcaseCardVariant: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-};
 
 const glassBadge =
   "rounded-full border border-white/30 bg-white/20 px-2 py-0.5 text-[10px] font-medium backdrop-blur-md";
@@ -147,7 +136,7 @@ type ProductCardProps = {
   product: ProductListItem;
   variant?: "shop" | "showcase";
   imagePriority?: boolean;
-  /** When parent already wraps this card in `<m.div variants={…}>`, omit inner motion (avoids nested variant trees / runtime issues). */
+  /** @deprecated Outer motion removed — kept for call-site compat. */
   disableOuterMotion?: boolean;
   /** Raw `seeds` URL param: when set, card price/pack/badge follow the matching variant (catalog alignment). */
   catalogSeedsFilter?: string | null;
@@ -157,7 +146,6 @@ function ProductCardBase({
   product,
   variant = "shop",
   imagePriority = false,
-  disableOuterMotion = false,
   catalogSeedsFilter = null,
 }: ProductCardProps) {
   const { addToCart, openCart, brandPromotionRules } = useCartContext();
@@ -252,7 +240,6 @@ function ProductCardBase({
     }
   };
 
-  const motionVariants = variant === "showcase" ? showcaseCardVariant : shopCardVariants;
   const thcPill =
     product.thc_percent != null && Number.isFinite(Number(product.thc_percent))
       ? `${Math.round(Number(product.thc_percent))}%`
@@ -575,11 +562,7 @@ function ProductCardBase({
       </div>
   );
 
-  return createElement(
-    disableOuterMotion ? "div" : m.div,
-    disableOuterMotion ? { className: "h-full" } : { variants: motionVariants, className: "h-full" },
-    cardInner
-  );
+  return <div className="h-full">{cardInner}</div>;
 }
 
 export const ProductCard = memo(ProductCardBase);

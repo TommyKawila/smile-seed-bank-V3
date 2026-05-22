@@ -1,4 +1,14 @@
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { createRequire } from "node:module";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+const MODERN_POLYFILL = path.join(__dirname, "lib/next-modern-polyfill.js");
+const NEXT_POLYFILL_MODULE = require.resolve(
+  "next/dist/build/polyfills/polyfill-module.js",
+);
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -131,7 +141,17 @@ const nextConfig = {
       },
     ];
   },
-  webpack(config) {
+  webpack(config, { webpack }) {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      [NEXT_POLYFILL_MODULE]: MODERN_POLYFILL,
+    };
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(
+        /polyfills[\\/]polyfill-module(\.js)?$/,
+        MODERN_POLYFILL,
+      ),
+    );
     return config;
   },
 };

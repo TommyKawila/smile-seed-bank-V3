@@ -32,9 +32,11 @@ const Analytics = dynamic(
 
 const prompt = Prompt({
   subsets: ["latin", "thai"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600", "700"],
   variable: "--font-prompt",
   display: "swap",
+  adjustFontFallback: true,
+  preload: true,
 });
 
 export const viewport = {

@@ -4,6 +4,23 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-20 (PageSpeed Phase 3 — home below-fold Framer strip)
+- **`ProductCard.tsx`:** ถอด **`framer-motion`** ทั้ง outer wrapper — เหลือ static **`<div className="h-full">`**
+- **`HomePageBelowFold.tsx`:** ถอด **`m.div` / stagger variants** → CSS **`motion-safe:animate-in fade-in slide-in-from-bottom-4`**
+- **`FeaturedProductHero.tsx`:** **`m.header` → `<header>`** + CSS reveal (home featured section dynamic chunk)
+
+### บันทึกการทำงาน — 2026-05-20 (PageSpeed Phase 2 — legacy JS polyfill strip)
+- **`lib/next-modern-polyfill.js`:** polyfill เฉพาะ **`URL.canParse`** (Safari 16.4 ขาด; ที่เหลือ native แล้ว)
+- **`next.config.mjs`:** webpack **`resolve.alias`** + **`NormalModuleReplacementPlugin`** แทน **`next/dist/build/polyfills/polyfill-module.js`** (Next 14 hardcode polyfill ไม่ respect **`browserslist`**)
+- **Verify prod chunk `2117`:** ถอด **`Array.at` / `flat` / `fromEntries` / `hasOwn` / `trimStart`** แล้ว (~**−1.4 KiB** min); **`polyfills-*.js`** ยัง **`noModule`** (modern browser ไม่โหลด)
+
+### บันทึกการทำงาน — 2026-05-20 (PageSpeed Phase 1 — LCP / critical path)
+- **`app/(storefront)/(home)/layout.tsx`:** route group ใหม่ — **`HomeHeroLcpPreload`** จาก **`getHeroCarouselBannersCached()`** ก่อน **`children`** (Next hoist `<link rel="preload">` เข้า **`<head>`** ก่อน body stream)
+- **`app/(storefront)/(home)/page.tsx`:** ย้ายจาก **`page.tsx`** — เหลือแค่ **`Suspense` + `HomeMainStream`** (ไม่ fetch banner ซ้ำสำหรับ preload)
+- **ลบ `app/(storefront)/page.tsx`**
+- **`app/layout.tsx`:** **Prompt** เหลือ **`400/600/700`** (ตัด **500**); เพิ่ม **`adjustFontFallback: true`**
+- **Verify prod HTML:** hero image preload **2 ลิงก์** อยู่ใน **`<head>`**; **`optimizeCss`** ยังส่ง stylesheet **2 ไฟล์** (home เป็น dynamic route — critters ยังไม่ inline; Phase 1.4 ถ้าต้องการ)
+
 ### บันทึกการทำงาน — 2026-05-22 (PageSpeed — network dependency tree / preconnect)
 - **`app/layout.tsx`:** Supabase **`preconnect`** ไม่ใส่ **`crossOrigin`** (ให้ตรง non-CORS **`img`** / **`/_next/image`**) — แก้ **Unused preconnect**
 - **`page.tsx`:** **`await getHeroCarouselBannersCached()`** + **`HomeHeroLcpPreload`** sync (ไม่ **`Suspense`**) — preload LCP ใน HTML chunk แรก; ลบ **`home-lcp-hints.tsx`**

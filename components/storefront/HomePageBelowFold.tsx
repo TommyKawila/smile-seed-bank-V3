@@ -7,7 +7,6 @@
 import { Fragment, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { m, type Variants } from "framer-motion";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
@@ -27,6 +26,9 @@ import { cn } from "@/lib/utils";
 
 const BELOW_FOLD_CV =
   "[content-visibility:auto] [contain-intrinsic-size:auto_560px]";
+
+const BELOW_FOLD_REVEAL =
+  "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-500 motion-safe:fill-mode-both";
 
 const FeaturedProductHero = dynamic(
   () =>
@@ -63,16 +65,6 @@ const HomeInsightSection = dynamic(
     })),
   { ssr: false }
 );
-
-const staggerContainer: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
-};
-
-const cardVariant: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-};
 
 export type HomePageBelowFoldProps = {
   sections: HomePageSectionPayload[];
@@ -143,15 +135,13 @@ export function HomePageBelowFold({
               BELOW_FOLD_CV
             )}
           >
-            <m.div
-              initial={false}
-              whileInView="show"
-              viewport={{ once: true, margin: "-80px" }}
-              variants={staggerContainer}
-            >
-              <m.div
-                variants={cardVariant}
-                className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+            <div className={BELOW_FOLD_REVEAL}>
+              <div
+                className={cn(
+                  "mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between",
+                  BELOW_FOLD_REVEAL,
+                  "motion-safe:delay-100"
+                )}
               >
                 <div className="max-w-2xl space-y-2">
                   <p className={cn(JOURNAL_PRODUCT_MONO_CLASS, "text-[11px] font-medium uppercase tracking-widest text-emerald-800")}>
@@ -178,7 +168,7 @@ export function HomePageBelowFold({
                     <ChevronRight className="ml-0.5 h-4 w-4" />
                   </Link>
                 </Button>
-              </m.div>
+              </div>
 
               {newArrivalsLoading ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -213,7 +203,7 @@ export function HomePageBelowFold({
                   {t("ยังไม่มีสินค้าใหม่ในช่วงนี้", "No new arrivals yet.")}
                 </p>
               )}
-            </m.div>
+            </div>
           </section>
         );
       }
