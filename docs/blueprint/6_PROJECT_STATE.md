@@ -20,6 +20,11 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97)
 
+### บันทึกการทำงาน — 2026-05-23 (Fix — รูปสินค้า broken บน Vercel prod)
+- **สาเหตุ:** Vercel Image Optimization คืน **HTTP 402** (`OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED`) ที่ `/_next/image` — local dev ไม่ใช้ service นี้จึงปกติ
+- **แก้:** `next.config.mjs` → `images.unoptimized: true`; `shouldOffloadImageOptimization()` bypass ทุก `http(s)://` URL
+- **ไฟล์:** `next.config.mjs`, `lib/vercel-image-offload.ts`
+
 ---
 
 ### บันทึกการทำงาน — 2026-05-23 (Perf — restore 97 after A11y regression)

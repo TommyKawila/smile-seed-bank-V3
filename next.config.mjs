@@ -108,8 +108,8 @@ const nextConfig = {
     },
   },
   images: {
-    /** Serve via `/_next/image` when allowed; per-`Image` `unoptimized` only for data/blob URLs. */
-    unoptimized: false,
+    /** Bypass Vercel Image Optimization (402 quota) — load Supabase/remote URLs directly. */
+    unoptimized: true,
     formats: ["image/avif", "image/webp"],
     /** Hero LCP bucket **412** + trimmed set — avoids 1920+ overserve on mobile. */
     deviceSizes: [384, 412, 640, 750, 828, 1080],
