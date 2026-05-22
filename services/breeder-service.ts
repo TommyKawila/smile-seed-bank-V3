@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/client";
 import type { Breeder } from "@/types/supabase";
 
 /** Dedupe concurrent + repeat mounts (`Navbar` desktop/mobile ribbons share `useBreeders`). */
@@ -28,23 +27,10 @@ export async function fetchActiveBreeders(): Promise<Breeder[]> {
   if (activeBreedersInflight) return activeBreedersInflight;
 
   activeBreedersInflight = (async () => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("breeders")
-      .select(`
-      id, name, logo_url, is_active,
-      description, description_en,
-      summary_th, summary_en,
-      highlight_origin_th, highlight_origin_en,
-      highlight_specialty_th, highlight_specialty_en,
-      highlight_reputation_th, highlight_reputation_en,
-      highlight_focus_th, highlight_focus_en
-    `)
-      .eq("is_active", true)
-      .order("name");
-
-    if (error) throw new Error(error.message);
-    const rows = (data ?? []) as Breeder[];
+    const res = await fetch("/api/storefront/breeders/active", { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to load breeders");
+    const data = (await res.json()) as { breeders?: Breeder[] };
+    const rows = Array.isArray(data.breeders) ? data.breeders : [];
     activeBreedersCache = rows;
     activeBreedersFetchedAt = Date.now();
     return rows;

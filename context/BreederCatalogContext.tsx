@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { fetchActiveBreeders } from "@/services/breeder-service";
+import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 import type { Breeder } from "@/types/supabase";
 
 export type BreederCatalogContextValue = {
@@ -17,18 +18,21 @@ export function BreederCatalogProvider({ children }: { children: React.ReactNode
 
   useEffect(() => {
     let cancelled = false;
-    fetchActiveBreeders()
-      .then((data) => {
-        if (!cancelled) setBreeders(data);
-      })
-      .catch(() => {
-        if (!cancelled) setBreeders([]);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+    const cancelIdle = scheduleIdleWork(() => {
+      fetchActiveBreeders()
+        .then((data) => {
+          if (!cancelled) setBreeders(data);
+        })
+        .catch(() => {
+          if (!cancelled) setBreeders([]);
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+    });
     return () => {
       cancelled = true;
+      cancelIdle();
     };
   }, []);
 

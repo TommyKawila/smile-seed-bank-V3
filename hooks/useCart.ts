@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/client";
 import {
   evaluateFreeGifts,
   calculateCartSummary,
@@ -23,6 +22,7 @@ import {
   STOREFRONT_SHIPPING_CATEGORY,
   SHIPPING_RULES_BROADCAST_CHANNEL,
 } from "@/lib/storefront-shipping";
+import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
 
@@ -154,48 +154,60 @@ export function useCart(): UseCartReturn {
     }
   }, [items]);
 
-  // ── Fetch shipping rules, promotions, brand promotions on mount ───────────
+  // ── Fetch shipping rules, promotions, brand promotions (idle — off LCP path) ─
   const refetchShippingRules = useCallback(async () => {
     try {
-      const supabase = createClient();
-      const { data } = await supabase.from("shipping_rules").select("*");
-      setShippingRules((data as ShippingRule[]) ?? []);
+      const res = await fetch("/api/storefront/cart-rules", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { shippingRules?: ShippingRule[] };
+      setShippingRules(Array.isArray(data.shippingRules) ? data.shippingRules : []);
     } catch {
       /* keep prior rules */
     }
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadRules = async () => {
       setIsLoadingRules(true);
       try {
-        const supabase = createClient();
-
-        const [shippingRes, promoRes, brandRes] = await Promise.all([
-          supabase.from("shipping_rules").select("*"),
-          supabase.from("promotions").select("*").eq("is_active", true),
-          fetch("/api/storefront/brand-promotions", { cache: "no-store" }).then((r) =>
-            r.ok ? r.json() : { rules: [] },
-          ),
+        const [cartRes, brandRes] = await Promise.all([
+          fetch("/api/storefront/cart-rules", { cache: "no-store" }),
+          fetch("/api/storefront/brand-promotions", { cache: "no-store" }),
         ]);
 
-        setShippingRules((shippingRes.data as ShippingRule[]) ?? []);
-        setPromotions((promoRes.data as Promotion[]) ?? []);
+        if (cancelled) return;
 
-        const br =
-          brandRes && typeof brandRes === "object" && "rules" in brandRes
-            ? (brandRes as { rules: { brand_name: string; discount_percent: number; is_active: boolean }[] })
-                .rules
-            : [];
-        setBrandPromotionRules(activeBrandRulesFromRows(br ?? []));
+        const cartData = cartRes.ok
+          ? ((await cartRes.json()) as { shippingRules?: ShippingRule[]; promotions?: Promotion[] })
+          : { shippingRules: [], promotions: [] };
+
+        setShippingRules(Array.isArray(cartData.shippingRules) ? cartData.shippingRules : []);
+        setPromotions(Array.isArray(cartData.promotions) ? cartData.promotions : []);
+
+        const brandData = brandRes.ok
+          ? ((await brandRes.json()) as {
+              rules?: { brand_name: string; discount_percent: number; is_active: boolean }[];
+            })
+          : { rules: [] };
+        const br = brandData.rules ?? [];
+        setBrandPromotionRules(activeBrandRulesFromRows(br));
       } catch {
-        setBrandPromotionRules([]);
+        if (!cancelled) setBrandPromotionRules([]);
       } finally {
-        setIsLoadingRules(false);
+        if (!cancelled) setIsLoadingRules(false);
       }
     };
 
-    void loadRules();
+    const cancelIdle = scheduleIdleWork(() => {
+      void loadRules();
+    });
+
+    return () => {
+      cancelled = true;
+      cancelIdle();
+    };
   }, []);
 
   useEffect(() => {

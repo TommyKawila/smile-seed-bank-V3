@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-22 (Perf Phase 2 — defer Supabase JS chunk 5890)
+- **`/api/storefront/cart-rules`:** shipping + gift promotions ผ่าน Prisma (แทน `createClient` ใน `useCart`)
+- **`/api/storefront/breeders/active`:** active breeders สำหรับ navbar catalog
+- **`useCart`:** fetch API หลัง `requestIdleCallback` — ถอน sync import `@/lib/supabase/client`
+- **`breeder-service`:** `fetchActiveBreeders` → API; **`BreederCatalogProvider`** idle defer
+- **ไฟล์:** `storefront-cart-rules-service.ts`, `storefront-breeder-catalog-service.ts`, `lib/schedule-idle-work.ts`, `hooks/useCart.ts`, `context/BreederCatalogContext.tsx`
+
 ### บันทึกการทำงาน — 2026-05-22 (Perf Phase 1 — LCP hero)
 - **Preload:** `HomeHeroLcpPreload` ใช้ W/H เดียวกับ `HeroCarouselSlideImages` (392×429 mobile, desktop `fill` + sizes) — แก้ URL mismatch
 - **Hero stream:** ถอน `<Suspense>` + pulse fallback — fetch banners ใน `Promise.all` ส่งตรง `HomeHeroCarousel` (SSR slide 0 ทันที)
