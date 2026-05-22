@@ -1,155 +1,47 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import useEmblaCarousel from "embla-carousel-react";
-import Image from "next/image";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ChevronRight, Leaf } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
-import { emblaStorefrontOptions } from "@/lib/embla-storefront-options";
-import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
-import {
-  computeStartingPrice,
-  computeTotalStock,
-  getClearancePercentOff,
-  getEffectiveListingPrice,
-  productDetailHref,
-} from "@/lib/product-utils";
-import { formatPrice } from "@/lib/utils";
-import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
-import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
+import { useNearViewport } from "@/hooks/use-near-viewport";
+import { ClearanceCard } from "@/components/storefront/ClearanceCard";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { resolveSectionHeading, type SectionTitle } from "@/lib/homepage-section-title";
 
-function ClearanceCard({ product }: { product: ProductWithBreederAndVariants }) {
-  const { t } = useLanguage();
-  const href = productDetailHref(product);
-  const img = getListingThumbnailUrl(product);
-  const pct = getClearancePercentOff(product);
-  const regular = computeStartingPrice(product.product_variants);
-  const sale = getEffectiveListingPrice(product);
-  const totalStock = computeTotalStock(product.product_variants ?? []);
-
-  return (
-    <article
-      className={`flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-lg ${JOURNAL_PRODUCT_FONT_VARS}`}
-    >
-      <Link href={href} className="relative block aspect-[4/3] overflow-hidden bg-zinc-900">
-        {img ? (
-          <Image
-            src={img}
-            alt={product.name}
-            fill
-            sizes="(max-width: 768px) 85vw, 280px"
-            className="object-cover transition duration-500 hover:scale-[1.03]"
-            placeholder="blur"
-            blurDataURL={SHIMMER_BLUR_DATA_URL}
-            unoptimized={shouldOffloadImageOptimization(img)}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center bg-zinc-900">
-            <Leaf className="h-10 w-10 text-zinc-600" />
-          </div>
-        )}
-        {pct != null && pct > 0 && (
-          <span className="absolute left-2 top-2 rounded-md bg-emerald-500 px-2 py-1 text-[11px] font-bold tabular-nums text-white shadow-md">
-            −{pct}%
-          </span>
-        )}
-      </Link>
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <Link href={href} className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100 hover:text-emerald-400">
-          {product.name}
-        </Link>
-        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-zinc-800 pt-2">
-          {regular > sale && (
-            <span className="text-xs tabular-nums text-zinc-500 line-through">{formatPrice(regular)}</span>
-          )}
-          <span className="text-base font-bold tabular-nums text-emerald-400">{formatPrice(sale)}</span>
-        </div>
-        {totalStock > 0 && totalStock < 10 && (
-          <p className="text-[10px] font-medium uppercase tracking-wide text-amber-400/90">
-            {t("สต็อกจำกัด", "Limited stock")}
-          </p>
-        )}
-      </div>
-    </article>
-  );
-}
+const ClearanceMobileCarousel = dynamic(
+  () =>
+    import("@/components/storefront/ClearanceMobileCarousel").then((m) => ({
+      default: m.ClearanceMobileCarousel,
+    })),
+  { ssr: false }
+);
 
 const CLEARANCE_MOBILE_CAROUSEL_MIN = 4;
-const CLEARANCE_SLIDE_CLASS = "min-w-0 shrink-0 grow-0 basis-[85%] sm:basis-[280px]";
 
-function ClearanceMobileCarousel({
+function ClearanceMobileRail({
   products,
   t,
 }: {
   products: ProductWithBreederAndVariants[];
   t: (th: string, en: string) => string;
 }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel(
-    emblaStorefrontOptions({
-      align: "start",
-      dragFree: true,
-      containScroll: "trimSnaps",
-    })
-  );
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(false);
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setCanPrev(emblaApi.canScrollPrev());
-    setCanNext(emblaApi.canScrollNext());
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    onSelect();
-    emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", onSelect);
-    return () => {
-      emblaApi.off("select", onSelect);
-      emblaApi.off("reInit", onSelect);
-    };
-  }, [emblaApi, onSelect]);
+  const { ref, visible } = useNearViewport();
 
   return (
-    <>
-      <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex gap-3 pr-1">
-          {products.map((p) => (
-            <div key={p.id} className={CLEARANCE_SLIDE_CLASS}>
-              <ClearanceCard product={p} />
-            </div>
+    <div ref={ref}>
+      {visible ? (
+        <ClearanceMobileCarousel products={products} t={t} />
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {products.slice(0, 3).map((p) => (
+            <ClearanceCard key={p.id} product={p} />
           ))}
         </div>
-      </div>
-      {(canPrev || canNext) && (
-        <div className="mt-3 flex justify-end gap-2">
-          <button
-            type="button"
-            aria-label={t("สไลด์ก่อนหน้า", "Previous Slide")}
-            disabled={!canPrev}
-            onClick={() => emblaApi?.scrollPrev()}
-            className="rounded-full border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 disabled:opacity-40"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            aria-label={t("สไลด์ถัดไป", "Next Slide")}
-            disabled={!canNext}
-            onClick={() => emblaApi?.scrollNext()}
-            className="rounded-full border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 disabled:opacity-40"
-          >
-            ›
-          </button>
-        </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -214,7 +106,7 @@ export function ClearanceSection({
           <>
             <div className="md:hidden">
               {useMobileCarousel ? (
-                <ClearanceMobileCarousel products={products} t={t} />
+                <ClearanceMobileRail products={products} t={t} />
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {products.map((p) => (

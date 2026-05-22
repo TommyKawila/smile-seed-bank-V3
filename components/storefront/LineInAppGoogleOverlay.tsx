@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { ExternalLink, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
-import { appendLineOpenExternalBrowserParam } from "@/lib/line-flex";
+import { appendLineOpenExternalBrowserParam } from "@/lib/line-open-external-browser";
 import { cn } from "@/lib/utils";
 
 type Props = {

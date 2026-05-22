@@ -9,6 +9,7 @@ import Leaf from "lucide-react/dist/esm/icons/leaf";
 import LogOut from "lucide-react/dist/esm/icons/log-out";
 import Menu from "lucide-react/dist/esm/icons/menu";
 import Package from "lucide-react/dist/esm/icons/package";
+import Search from "lucide-react/dist/esm/icons/search";
 import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
 import User from "lucide-react/dist/esm/icons/user";
 import X from "lucide-react/dist/esm/icons/x";
@@ -68,7 +69,17 @@ export function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [cartHitWobble, setCartHitWobble] = useState(false);
+  const [cartSheetMounted, setCartSheetMounted] = useState(false);
+  const [searchMounted, setSearchMounted] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) setCartSheetMounted(true);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (searchOpen) setSearchMounted(true);
+  }, [searchOpen]);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -201,7 +212,18 @@ export function Navbar() {
               </button>
             </div>
 
-            <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} triggerClassName={iconBtnClass} />
+            {searchMounted ? (
+              <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} triggerClassName={iconBtnClass} />
+            ) : (
+              <button
+                type="button"
+                className={cn(iconBtnClass, "flex h-10 w-10 items-center justify-center")}
+                aria-label={t("ค้นหา", "Search")}
+                onClick={() => setSearchOpen(true)}
+              >
+                <Search className="h-5 w-5 text-zinc-700" strokeWidth={1.75} />
+              </button>
+            )}
             {/* User — Avatar dropdown or Login link */}
             <div className="relative" ref={userMenuRef}>
               {user ? (
@@ -403,7 +425,7 @@ export function Navbar() {
       </header>
 
       {/* CartSheet */}
-      <CartSheet open={isOpen} onClose={closeCart} />
+      {cartSheetMounted ? <CartSheet open={isOpen} onClose={closeCart} /> : null}
 
     </>
   );

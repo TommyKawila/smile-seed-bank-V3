@@ -1,32 +1,10 @@
+export type { OrderFlexMessageInput } from "@/lib/line-flex-types";
+export { appendLineOpenExternalBrowserParam } from "@/lib/line-open-external-browser";
+
 import { getSiteOrigin } from "@/lib/get-url";
-import { computeOrderReceiptFinancials, type OrderReceiptDetailInput } from "@/lib/order-receipt-math";
-
-/**
- * LINE in-app WebView blocks some OAuth flows (e.g. Google). Appending `openExternalBrowser=1`
- * asks many LINE clients to open the URL in the system browser instead of the in-app WebView.
- */
-export function appendLineOpenExternalBrowserParam(url: string): string {
-  const raw = url.trim();
-  if (!raw) return raw;
-  try {
-    const u = new URL(raw);
-    if (u.searchParams.get("openExternalBrowser") === "1") return raw;
-    u.searchParams.set("openExternalBrowser", "1");
-    return u.toString();
-  } catch {
-    if (/[?&]openExternalBrowser=1(?:&|$|#)/.test(raw)) return raw;
-    return raw.includes("?") ? `${raw}&openExternalBrowser=1` : `${raw}?openExternalBrowser=1`;
-  }
-}
-
-export type OrderFlexMessageInput = OrderReceiptDetailInput & {
-  orderNumber: string;
-  customerName: string | null;
-  customerPhone: string | null;
-  shippingAddress: string | null;
-  /** Signed storefront URL to download PDF (from admin line-flex route). */
-  receiptDownloadUri?: string | null;
-};
+import { appendLineOpenExternalBrowserParam } from "@/lib/line-open-external-browser";
+import { computeOrderReceiptFinancials } from "@/lib/order-receipt-math";
+import type { OrderFlexMessageInput } from "@/lib/line-flex-types";
 
 function formatBaht(n: number): string {
   const r = Math.round(n * 100) / 100;

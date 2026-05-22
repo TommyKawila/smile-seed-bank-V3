@@ -4,6 +4,19 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-20 (Perf — unused JS: jsPDF + Supabase defer)
+- **Root cause:** `CartSheet` → `line-flex` → `receipt-pdf` → jsPDF (~90 KiB) โหลดทุกหน้า
+- **`lib/receipt-shared.ts`:** pure receipt helpers แยกจาก jsPDF · `generateReceiptPDF` dynamic `import("jspdf")`
+- **`lib/line-open-external-browser.ts`:** แยกจาก `line-flex` สำหรับ `LineInAppGoogleOverlay`
+- **`hooks/use-auth.ts`:** dynamic import `@/services/auth-service` หลัง idle (ลด Supabase chunk 5890 ตอน LCP)
+- **`Navbar`:** mount `CartSheet` / `SearchCommand` เมื่อเปิดครั้งแรกเท่านั้น
+
+### บันทึกการทำงาน — 2026-05-20 (Perf — Embla forced reflow Phase 2)
+- **`hooks/use-near-viewport.ts`:** IntersectionObserver — mount Embla เมื่อใกล้ viewport
+- **Dynamic import:** `ClearanceMobileCarousel`, `FeaturedStrainHeroCarouselEmbla` แยก chunk (8072 ไม่โหลดตอน LCP)
+- **`ClearanceSection` / `ShopGeneticVaultHero`:** placeholder static จน visible · clearance carousel `watchResize: false`
+- **Extract:** `ClearanceCard.tsx`, `VaultHeroSlide.tsx`
+
 ### บันทึกการทำงาน — 2026-05-20 (Perf — Embla forced reflow Phase 1)
 - **`lib/embla-storefront-options.ts`:** `watchResize` defer ด้วย rAF + `watchSlides: false`
 - **`ClearanceSection`:** carousel เฉพาะ mobile ≥4 ชิ้น; ≤3 ใช้ grid · fixed slide `basis-[85%] sm:basis-[280px]`

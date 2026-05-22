@@ -3,7 +3,7 @@
 // Requires LINE_ADMIN_USER_ID in .env.local (e.g. LINE_ADMIN_USER_ID="Uxxxxxxxxxxxx")
 
 import { getSiteOrigin } from "@/lib/get-url";
-import { appendLineOpenExternalBrowserParam } from "@/lib/line-flex";
+import { appendLineOpenExternalBrowserParam } from "@/lib/line-open-external-browser";
 import { recordLineUserInteraction } from "@/lib/line-user-interaction";
 
 const LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push";

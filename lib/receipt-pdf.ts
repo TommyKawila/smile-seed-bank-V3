@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+import type { jsPDF } from "jspdf";
 import { parsePackCountFromUnitLabel } from "./cart-pack-display";
 import { parsePackFromUnitLabel } from "./sku-utils";
 import type { OrderDisplayLocale } from "./order-receipt-line-format";
@@ -7,18 +7,15 @@ import { getImageDimensionsFromDataUrl } from "./image-data-url-dimensions";
 import { defaultQuotationShippingFee } from "./order-financials";
 import { loadPromptFontBase64ForJsPdf } from "./prompt-font-loader";
 import { formatPhoneNumber } from "./utils";
+import type { ReceiptItem } from "./receipt-shared";
 
-export type ReceiptItem = {
-  productName: string;
-  breeder?: string | null;
-  unitLabel?: string | null;
-  /** Raw `products.flowering_type` for item column label */
-  floweringType?: string | null;
-  quantity: number;
-  price: number;
-  discount: number;
-  subtotal: number;
-};
+export type { ReceiptItem } from "./receipt-shared";
+export {
+  RECEIPT_ELIGIBLE_STATUSES,
+  isReceiptEligibleStatus,
+  allocateOrderDiscountToLines,
+  formatPaymentMethodForPdf,
+} from "./receipt-shared";
 
 export type SocialLink = { platform: string; handle: string };
 
@@ -65,35 +62,6 @@ export type ReceiptPDFOptions = {
   paymentMethod?: string | null;
 };
 
-export const RECEIPT_ELIGIBLE_STATUSES = [
-  "PAID",
-  "COMPLETED",
-  "SHIPPED",
-  "DELIVERED",
-] as const;
-
-export { isReceiptEligibleStatus } from "./order-paid";
-
-/** Split order-level discount across lines by line total (for receipt transparency). */
-export function allocateOrderDiscountToLines(lineTotals: number[], orderDiscount: number): number[] {
-  const n = lineTotals.length;
-  if (n === 0 || orderDiscount <= 0) return lineTotals.map(() => 0);
-  const sum = lineTotals.reduce((a, b) => a + b, 0);
-  if (sum <= 0) return lineTotals.map(() => 0);
-  const shares: number[] = [];
-  let allocated = 0;
-  for (let i = 0; i < n; i++) {
-    if (i === n - 1) {
-      shares.push(Math.round((orderDiscount - allocated) * 100) / 100);
-    } else {
-      const v = Math.round(((orderDiscount * lineTotals[i]) / sum) * 100) / 100;
-      shares.push(v);
-      allocated += v;
-    }
-  }
-  return shares;
-}
-
 function formatBahtPdf(amount: number): string {
   const n = Math.round(amount * 100) / 100;
   const opts: Intl.NumberFormatOptions =
@@ -135,19 +103,6 @@ function packCellLines(
   return { line1: raw, line2: "" };
 }
 
-export function formatPaymentMethodForPdf(m: string | null | undefined): string | null {
-  if (!m) return null;
-  const map: Record<string, string> = {
-    CASH: "เงินสด / Cash",
-    BANK_TRANSFER: "โอนธนาคาร / Bank Transfer",
-    TRANSFER: "โอนเงิน / Bank Transfer",
-    PROMPT_PAY: "พร้อมเพย์ / PromptPay",
-    COD: "เก็บเงินปลายทาง / COD",
-    CREDIT_CARD: "บัตรเครดิต / Credit Card",
-  };
-  return map[m] ?? m;
-}
-
 function registerThaiFont(doc: jsPDF, promptFontBase64: string): void {
   doc.addFileToVFS("Prompt-Regular.ttf", promptFontBase64);
   doc.addFont("Prompt-Regular.ttf", "Prompt", "normal");
@@ -175,6 +130,7 @@ function formatCustomerName(name: string): string {
 }
 
 export async function generateReceiptPDF(opts: ReceiptPDFOptions): Promise<jsPDF> {
+  const { jsPDF } = await import("jspdf");
   const fontB64 = await loadPromptFontBase64ForJsPdf();
   const {
     docType,

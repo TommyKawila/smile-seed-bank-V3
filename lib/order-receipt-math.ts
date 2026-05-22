@@ -1,4 +1,4 @@
-import { allocateOrderDiscountToLines, type ReceiptItem } from "@/lib/receipt-pdf";
+import { allocateOrderDiscountToLines, type ReceiptItem } from "@/lib/receipt-shared";
 import { effectiveOrderItemUnitLabel } from "@/lib/order-receipt-line-format";
 
 export type OrderReceiptLineInput = {

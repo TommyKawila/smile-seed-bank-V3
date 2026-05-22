@@ -7,17 +7,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { Customer } from "@/types/supabase";
-import {
-  fetchCustomerProfile,
-  getCurrentUser,
-  signOutCurrentUser,
-  subscribeToAuthChanges,
-} from "@/services/auth-service";
 
 interface AuthState {
   user: User | null;
@@ -29,38 +24,53 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+type AuthServiceModule = typeof import("@/services/auth-service");
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const authRef = useRef<AuthServiceModule | null>(null);
 
-  const fetchCustomer = useCallback(async (uid: string) => {
-    setCustomer(await fetchCustomerProfile(uid));
+  const getAuth = useCallback(async (): Promise<AuthServiceModule> => {
+    if (!authRef.current) {
+      authRef.current = await import("@/services/auth-service");
+    }
+    return authRef.current;
   }, []);
+
+  const fetchCustomer = useCallback(
+    async (uid: string) => {
+      const auth = await getAuth();
+      setCustomer(await auth.fetchCustomerProfile(uid));
+    },
+    [getAuth]
+  );
 
   useEffect(() => {
     let cancelled = false;
-    const run = () => {
+    let unsub: (() => void) | undefined;
+
+    const boot = async () => {
+      const auth = await getAuth();
       if (cancelled) return;
-      getCurrentUser().then((u) => {
+      const u = await auth.getCurrentUser();
+      if (cancelled) return;
+      setUser(u);
+      if (u) await fetchCustomer(u.id);
+      if (!cancelled) setIsLoading(false);
+      unsub = auth.subscribeToAuthChanges((nextUser) => {
         if (cancelled) return;
-        setUser(u);
-        if (u) fetchCustomer(u.id).finally(() => !cancelled && setIsLoading(false));
-        else setIsLoading(false);
+        setUser(nextUser);
+        if (nextUser) void fetchCustomer(nextUser.id);
+        else setCustomer(null);
       });
     };
 
     const idleId =
       typeof requestIdleCallback !== "undefined"
-        ? requestIdleCallback(run, { timeout: 1500 })
-        : window.setTimeout(run, 0);
-
-    const unsub = subscribeToAuthChanges((u) => {
-      if (cancelled) return;
-      setUser(u);
-      if (u) fetchCustomer(u.id);
-      else setCustomer(null);
-    });
+        ? requestIdleCallback(() => void boot(), { timeout: 2000 })
+        : window.setTimeout(() => void boot(), 50);
 
     return () => {
       cancelled = true;
@@ -69,19 +79,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         window.clearTimeout(idleId);
       }
-      unsub();
+      unsub?.();
     };
-  }, [fetchCustomer]);
+  }, [fetchCustomer, getAuth]);
 
   const refetchCustomer = useCallback(async () => {
     if (user) await fetchCustomer(user.id);
   }, [user, fetchCustomer]);
 
   const signOut = useCallback(async () => {
-    await signOutCurrentUser();
+    const auth = await getAuth();
+    await auth.signOutCurrentUser();
     setUser(null);
     setCustomer(null);
-  }, []);
+  }, [getAuth]);
 
   const value = useMemo(
     () => ({ user, customer, isLoading, signOut, refetchCustomer }),
