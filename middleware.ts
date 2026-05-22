@@ -2,10 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database.types";
 import { supabaseAuthCookieOptions } from "@/lib/supabase/session-cookies";
-import {
-  applyStorefrontDeferCssTransform,
-  shouldApplyStorefrontDeferCss,
-} from "@/lib/storefront-defer-css-middleware";
 
 function adminRoleFromMetadata(user: { user_metadata?: Record<string, unknown> }): string {
   const r = user.user_metadata?.role;
@@ -30,11 +26,6 @@ function isAdminAuthProtected(path: string): boolean {
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isDev = process.env.NODE_ENV === "development";
-
-  if (shouldApplyStorefrontDeferCss(request)) {
-    const transformed = await applyStorefrontDeferCssTransform(request);
-    if (transformed) return transformed;
-  }
 
   /** Public storefront APIs (guest checkout, order helpers) — never redirect to /login. */
   if (path === "/api/storefront" || path.startsWith("/api/storefront/")) {

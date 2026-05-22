@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import dynamic from "next/dynamic";
 import { Prompt } from "next/font/google";
 import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
+import { VercelAnalyticsClient } from "@/components/VercelAnalyticsClient";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
-import {
-  STOREFRONT_CRITICAL_CSS,
-  STOREFRONT_DEFER_CSS_SCRIPT,
-} from "@/lib/storefront-defer-css";
+import { STOREFRONT_CRITICAL_CSS } from "@/lib/storefront-defer-css";
 
 function supabaseOriginHeadLinks(): ReactNode {
   const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,10 +26,7 @@ function supabaseOriginHeadLinks(): ReactNode {
   );
 }
 
-const Analytics = dynamic(
-  () => import("@vercel/analytics/react").then((m) => m.Analytics),
-  { ssr: false }
-);
+const Analytics = VercelAnalyticsClient;
 
 const prompt = Prompt({
   subsets: ["latin", "thai"],
@@ -81,9 +75,9 @@ export default function RootLayout({
   return (
     <html lang="th" className="scroll-smooth" suppressHydrationWarning>
       <head>
-        <style id="ssb-critical" dangerouslySetInnerHTML={{ __html: STOREFRONT_CRITICAL_CSS }} />
-        {/* Edge middleware prepends this before CSS on Vercel prod; layout copy is fallback. */}
-        <script dangerouslySetInnerHTML={{ __html: STOREFRONT_DEFER_CSS_SCRIPT }} />
+        {process.env.NODE_ENV === "development" ? (
+          <style id="ssb-critical" dangerouslySetInnerHTML={{ __html: STOREFRONT_CRITICAL_CSS }} />
+        ) : null}
         {supabaseOriginHeadLinks()}
       </head>
       <body className={`${prompt.variable} min-h-screen bg-white font-sans antialiased`}>

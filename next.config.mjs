@@ -78,6 +78,8 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   experimental: {
+    /** Inline Tailwind into HTML — removes render-blocking `/_next/static/css/*` links (prod only). */
+    inlineCss: true,
     /** Inline above-the-fold CSS; defer the rest to reduce render-blocking Tailwind. */
     optimizeCss: true,
     /** Tree-shake dense icon/motion vendors into smaller per-route chunks. */

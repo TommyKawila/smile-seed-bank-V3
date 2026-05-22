@@ -4,6 +4,15 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-20 (Next.js 15 + inlineCss — render-blocking CSS)
+- **Upgrade:** `next@15.5.18`, `eslint-config-next@15`, `@next/bundle-analyzer@15`, `@next/third-parties@15`
+- **`next.config.mjs`:** `experimental.inlineCss: true` (prod) — CSS เป็น inline `<style>` แทน `<link rel="stylesheet">`
+- **Next 15 SSR fix:** ย้าย `dynamic(..., { ssr: false })` ออกจาก Server Components → client wrappers: `VercelAnalyticsClient`, `StorefrontLayoutClient`, `BulkSeedsAdminClientLazy`
+- **`app/(storefront)/layout.tsx`:** server providers + `StorefrontStructuredData`; client shell แยกไฟล์
+- **`app/layout.tsx`:** ถอน defer CSS script (prod); critical CSS เฉพาะ dev FOUC
+- **`middleware.ts`:** ถอน HTMLRewriter defer CSS transform (ซ้ำซ้อนกับ inlineCss)
+- **Build:** `npm run build` ผ่าน (71 static pages)
+
 ### บันทึกการทำงาน — 2026-05-23 (Shop — ซ่อนชิป Clearance เมื่อไม่มีสินค้า)
 - **`hasStorefrontClearanceProducts()`** — นับ `is_clearance` + active + stock > 0
 - **`ShopQuickFilterBar`:** แสดง «ล้างสต็อก» เฉพาะเมื่อมีสินค้า · ลบ `?quick=clearance` อัตโนมัติถ้าไม่มี
