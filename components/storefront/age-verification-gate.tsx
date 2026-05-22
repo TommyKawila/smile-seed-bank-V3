@@ -66,10 +66,9 @@ export function AgeVerificationGate({
 
   useEffect(() => {
     if (isVerified) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.documentElement.classList.add("overflow-hidden");
     return () => {
-      document.body.style.overflow = prev;
+      document.documentElement.classList.remove("overflow-hidden");
     };
   }, [isVerified]);
 

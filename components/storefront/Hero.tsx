@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
-import { JetBrains_Mono } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useLanguage } from "@/context/LanguageContext";
@@ -17,7 +16,8 @@ import {
   type SectionTitle,
 } from "@/lib/homepage-section-title";
 
-const heroMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-hero-mono" });
+const HERO_MONO =
+  "font-[family-name:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace]";
 
 const STATIC_HERO_FALLBACK =
   "https://images.unsplash.com/photo-1601412436405-1f0c6b50921f?w=1800&q=85";
@@ -117,10 +117,7 @@ export default function Hero({
 
   return (
     <section
-      className={cn(
-        "relative flex w-full flex-col overflow-hidden rounded-none bg-zinc-50 max-lg:max-h-[100svh] max-lg:w-full lg:max-h-none",
-        heroMono.variable
-      )}
+      className="relative flex w-full flex-col overflow-hidden rounded-none bg-zinc-50 max-lg:max-h-[100svh] max-lg:w-full lg:max-h-none"
     >
       <div className="flex flex-1 flex-col lg:grid lg:min-h-[88vh] lg:max-h-none lg:grid-cols-2 lg:items-stretch lg:gap-0 lg:min-w-0">
         <div className="relative z-10 order-2 -mt-20 flex min-h-[auto] w-full min-w-0 flex-1 flex-col justify-end bg-white px-4 pb-5 pt-5 sm:-mt-24 sm:px-8 sm:pb-8 md:py-20 lg:order-1 lg:mt-0 lg:min-w-0 lg:max-w-xl lg:w-full lg:justify-center lg:self-stretch lg:bg-transparent lg:px-10 lg:py-12 lg:pl-12 lg:pr-10 xl:py-20 xl:pl-16 xl:pr-14">
@@ -130,7 +127,7 @@ export default function Hero({
               "animate-in fade-in slide-in-from-left-5 duration-500 fill-mode-both"
             )}
           >
-            <p className="font-[family-name:var(--font-hero-mono)] text-[9px] font-bold leading-relaxed tracking-[0.2em] text-emerald-950 break-words sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px]">
+            <p className={cn(HERO_MONO, "text-[9px] font-bold leading-relaxed tracking-[0.2em] text-emerald-950 break-words sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px]")}>
               {t(
                 "ก่อตั้ง ค.ศ. 2018 // ร้านเมล็ดพันธุ์แห่งรอยยิ้มยุคแรกของไทย",
                 "EST. 2018 // THAILAND'S FIRST SMILE-ERA SEED SHOP"
@@ -141,7 +138,7 @@ export default function Hero({
               {headline}
             </h1>
 
-            <p className="max-w-md text-sm font-light leading-relaxed tracking-wide text-zinc-700 break-words sm:text-[15px] lg:text-base">
+            <p className="max-w-md text-sm font-normal leading-relaxed tracking-wide text-zinc-700 break-words sm:text-[15px] lg:text-base">
               {t(
                 "จากร้านลับสู่คลังเมล็ดพันธุ์แท้ที่มือโปรวางใจ การันตีคุณภาพจากประสบการณ์จริงเกือบ 10 ปี",
                 "From underground roots to a vault of authentic genetics. Quality backed by a decade of real experience."

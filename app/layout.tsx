@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
-import { Inter, Prompt } from "next/font/google";
+import { Prompt } from "next/font/google";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
 
@@ -29,15 +29,9 @@ const Analytics = dynamic(
   { ssr: false }
 );
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
 const prompt = Prompt({
   subsets: ["latin", "thai"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-prompt",
   display: "swap",
 });
@@ -80,7 +74,7 @@ export default function RootLayout({
   return (
     <html lang="th" className="scroll-smooth" suppressHydrationWarning>
       <head>{supabaseOriginHeadLinks()}</head>
-      <body className={`${inter.variable} ${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
+      <body className={`${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
         <FramerLazyRoot>
           {children}
           <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />

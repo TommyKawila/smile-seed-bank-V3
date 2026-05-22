@@ -49,12 +49,9 @@ export function HomeHeroCarousel({ banners }: Props) {
   const [index, setIndex] = useState(0);
   const slides = banners.length ? banners : [];
   const current = slides[index];
-  const multiSlide = slides.length > 1;
-  /** Multi-slide only: defer subtree until after paint to avoid lazy-chunk mount reflow. */
-  const [layoutReady, setLayoutReady] = useState(!multiSlide);
 
   const slideVisual = useMemo(() => {
-    if (!current || !layoutReady) return null;
+    if (!current) return null;
     const linkTrim = current.link.trim();
     return {
       href: linkTrim ? getLocalizedPath(linkTrim, locale) : null,
@@ -66,30 +63,10 @@ export function HomeHeroCarousel({ banners }: Props) {
           ? current.panelBgHex
           : undefined,
     };
-  }, [current, locale, layoutReady]);
+  }, [current, locale]);
 
   useEffect(() => {
-    if (!multiSlide) {
-      setLayoutReady(true);
-      return;
-    }
-    setLayoutReady(false);
-    let disposed = false;
-    let innerRaf = 0;
-    const outerRaf = requestAnimationFrame(() => {
-      innerRaf = requestAnimationFrame(() => {
-        if (!disposed) setLayoutReady(true);
-      });
-    });
-    return () => {
-      disposed = true;
-      cancelAnimationFrame(outerRaf);
-      cancelAnimationFrame(innerRaf);
-    };
-  }, [multiSlide]);
-
-  useEffect(() => {
-    if (!layoutReady || slides.length <= 1) return;
+    if (slides.length <= 1) return;
     let rafId = 0;
     const intervalId = window.setInterval(() => {
       cancelAnimationFrame(rafId);
@@ -101,19 +78,10 @@ export function HomeHeroCarousel({ banners }: Props) {
       window.clearInterval(intervalId);
       cancelAnimationFrame(rafId);
     };
-  }, [layoutReady, slides.length]);
+  }, [slides.length]);
 
   if (!current) {
     return <div className="h-full min-h-0 w-full bg-zinc-100" />;
-  }
-
-  if (!layoutReady) {
-    return (
-      <div
-        className="relative isolate aspect-[4/5] h-[65svh] w-full min-h-0 shrink-0 overflow-hidden bg-zinc-100 p-0 lg:aspect-auto lg:h-full lg:min-h-[88vh] lg:w-full lg:min-w-0"
-        aria-hidden
-      />
-    );
   }
 
   if (!slideVisual) {

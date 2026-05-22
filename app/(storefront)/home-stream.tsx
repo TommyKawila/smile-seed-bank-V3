@@ -61,7 +61,7 @@ async function HeroCarouselStream() {
   return <HomeHeroCarousel banners={banners} />;
 }
 
-/** Hero SSR + below-fold static client tree (`content-visibility` skip paint off-screen). */
+/** Hero SSR + below-fold static client tree (`content-visibility` off-screen paint skip). */
 export async function HomeMainStream() {
   const sections = await getSections();
   const belowSections = sections.filter((s) => s.key !== "hero");

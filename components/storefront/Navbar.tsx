@@ -21,7 +21,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
-import { BreederSeedsNav } from "@/components/storefront/BreederDropdownMenu";
+
+const BreederSeedsNav = dynamic(
+  () =>
+    import("@/components/storefront/BreederDropdownMenu").then((m) => ({
+      default: m.BreederSeedsNav,
+    })),
+  { ssr: false }
+);
 
 const CartSheet = dynamic(
   () => import("./CartSheet").then((m) => ({ default: m.CartSheet })),
@@ -81,7 +88,16 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  useEffect(() => subscribeScrollYBeyond(12, setScrolled), []);
+  useEffect(() => {
+    let unsub = () => {};
+    const bootRaf = requestAnimationFrame(() => {
+      unsub = subscribeScrollYBeyond(12, setScrolled);
+    });
+    return () => {
+      cancelAnimationFrame(bootRaf);
+      unsub();
+    };
+  }, []);
 
   useEffect(() => {
     let clearT: number | undefined;
@@ -278,14 +294,12 @@ export function Navbar() {
                 <ShoppingCart className="h-5 w-5 text-zinc-800" />
               </span>
               {itemCount > 0 && (
-                <m.span
+                <span
                   key={itemCount}
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="pointer-events-none absolute -right-0.5 -top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-sm ring-1 ring-white/20"
+                  className="pointer-events-none absolute -right-0.5 -top-0.5 z-10 flex h-5 w-5 animate-in zoom-in-50 fade-in items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-sm ring-1 ring-white/20 duration-200"
                 >
                   {itemCount > 99 ? "99+" : itemCount}
-                </m.span>
+                </span>
               )}
             </button>
 

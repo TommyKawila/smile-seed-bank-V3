@@ -14,7 +14,11 @@ import {
 } from "@/components/storefront/age-verification-gate";
 import { Navbar } from "@/components/storefront/Navbar";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
-import { Toaster } from "@/components/ui/sonner";
+
+const Toaster = dynamic(
+  () => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })),
+  { ssr: false }
+);
 
 const Footer = dynamic(
   () => import("@/components/storefront/Footer").then((m) => ({ default: m.Footer })),

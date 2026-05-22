@@ -59,9 +59,9 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "var(--font-prompt)", "Noto Sans Thai", "sans-serif"],
+        sans: ["var(--font-prompt)", "Noto Sans Thai", "sans-serif"],
         /** Alias to sans so legacy `font-serif` never selects a transitional serif stack */
-        serif: ["var(--font-inter)", "var(--font-prompt)", "Noto Sans Thai", "sans-serif"],
+        serif: ["var(--font-prompt)", "Noto Sans Thai", "sans-serif"],
         thai: ["var(--font-prompt)", "Noto Sans Thai", "sans-serif"],
       },
       keyframes: {

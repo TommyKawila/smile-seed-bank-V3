@@ -4,6 +4,24 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-22 (PageSpeed — forced reflow mitigation)
+- **`HomeHeroCarousel.tsx`:** ถอด **`layoutReady`** double-rAF placeholder swap — render slide 0 ทันที (ลด DOM swap reflow บน LCP)
+- **`FramerLazyRoot.tsx`:** **`domMax` → `domAnimation`** — ตัด layout-projection measurements
+- **`Navbar.tsx`:** cart badge **`m.span` → CSS `animate-in`**; defer scroll listener หลัง rAF
+- **`subscribe-scroll-y-beyond.ts`:** initial read ผ่าน rAF แทน sync **`flush()`**
+- **`age-verification-gate.tsx`:** **`body.style.overflow` → `html.overflow-hidden` class** (ลด inline style invalidation)
+
+### บันทึกการทำงาน — 2026-05-22 (PageSpeed — render-blocking CSS reduction)
+- **`Hero.tsx`:** ถอด **`JetBrains_Mono`** → system mono stack (ลด font CSS chunk บน LCP)
+- **`app/layout.tsx` + `tailwind.config.ts`:** ถอด **Inter**; **Prompt** เหลือ **`400–700`** (ตัด **300**)
+- **`next.config.mjs`:** **`experimental.optimizeCss: true`** + **`critters`** — inline critical CSS / defer Tailwind ที่เหลือ
+- **`home-stream.tsx`:** static **`HomePageBelowFoldHost`** + CV wrapper (below-fold sub-sections ยัง **`dynamic` `ssr: false`** ภายใน **`HomePageBelowFold`**)
+- **`storefront/layout.tsx`:** **`Toaster`** → **`dynamic` `ssr: false`**
+- **`Navbar.tsx`:** **`BreederSeedsNav`** → **`dynamic` `ssr: false`** (ตัด journal mono CSS ออกจาก critical path)
+
+### บันทึกการทำงาน — 2026-05-20 (Home — below-fold `dynamic` `ssr: true` CSS chunk split)
+- **`home-stream.tsx`:** คืน **static `HomePageBelowFoldHost`** (ถอด `dynamic` wrapper — แก้ chunk **`8948.js`** desync ใน dev/prod)
+
 ### บันทึกการทำงาน — 2026-05-20 (Home perf Step 3 — content-visibility isolation + clean build)
 - **`home-stream.tsx`:** ห่อ **`HomePageBelowFoldHost`** ด้วย **`w-full [content-visibility:auto] [contain-intrinsic-size:0_600px] overflow-hidden`** — แยก paint below-fold ออกจาก hero 100vh แรก
 - **`HomePageBelowFoldHost.tsx`:** ถอด wrapper CV ซ้ำ (ย้ายไป parent ใน **`home-stream`**)

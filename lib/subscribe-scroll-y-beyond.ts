@@ -22,10 +22,11 @@ export function subscribeScrollYBeyond(threshold: number, onBeyond: (beyond: boo
   };
 
   window.addEventListener("scroll", onScroll, { passive: true });
-  flush();
+  const bootRaf = window.requestAnimationFrame(flush);
 
   return () => {
     window.removeEventListener("scroll", onScroll);
+    window.cancelAnimationFrame(bootRaf);
     if (rafId !== 0) window.cancelAnimationFrame(rafId);
   };
 }
