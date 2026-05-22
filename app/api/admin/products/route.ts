@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import { revalidateClearanceStorefront } from "@/lib/revalidate-clearance";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import { createProductWithVariants } from "@/services/product-service";
@@ -9,6 +10,7 @@ import {
   ProductSchema,
   deriveProductIsActiveForCatalog,
 } from "@/lib/validations/product";
+import { deriveClearanceSalePrice } from "@/lib/product-utils";
 import { prisma } from "@/lib/prisma";
 import {
   adminProductsOrderBy,
@@ -127,12 +129,19 @@ export async function POST(req: NextRequest) {
       productData.is_active
     );
 
+    const syncedSalePrice = deriveClearanceSalePrice(
+      productData.is_clearance,
+      variants,
+      productData.sale_price
+    );
+
     // Sanitize: replace undefined optional strings with null for Supabase
     const sanitized = Object.fromEntries(
-      Object.entries({ ...productData, is_active: isActive }).map(([k, v]) => [
-        k,
-        v === undefined ? null : v,
-      ])
+      Object.entries({
+        ...productData,
+        is_active: isActive,
+        sale_price: syncedSalePrice,
+      }).map(([k, v]) => [k, v === undefined ? null : v])
     ) as unknown as ProductInsert;
 
     const result = await createProductWithVariants(
@@ -161,6 +170,7 @@ export async function POST(req: NextRequest) {
     }
 
     revalidateTag("storefront-home");
+    revalidateClearanceStorefront();
 
     return NextResponse.json(
       { productId: result.data?.productId },

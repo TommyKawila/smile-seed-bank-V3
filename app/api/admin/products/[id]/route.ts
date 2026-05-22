@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import { revalidateClearanceStorefront } from "@/lib/revalidate-clearance";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   ProductSchema,
@@ -8,6 +9,7 @@ import {
 import {
   computeStartingPrice,
   computeTotalStock,
+  deriveClearanceSalePrice,
   resolveProductSlugFromName,
 } from "@/lib/product-utils";
 import { ensureUniqueProductSlug } from "@/services/product-service";
@@ -47,12 +49,20 @@ export async function PATCH(
     );
     const slug = await ensureUniqueProductSlug(baseSlug, productId);
 
+    const syncedSalePrice = deriveClearanceSalePrice(
+      productData.is_clearance,
+      variants,
+      productData.sale_price
+    );
+
     // Sanitize: undefined optional → null
     const sanitized = Object.fromEntries(
-      Object.entries({ ...productData, slug, is_active: isActive }).map(([k, v]) => [
-        k,
-        v === undefined ? null : v,
-      ])
+      Object.entries({
+        ...productData,
+        slug,
+        is_active: isActive,
+        sale_price: syncedSalePrice,
+      }).map(([k, v]) => [k, v === undefined ? null : v])
     );
 
     const supabase = await createAdminClient();
@@ -117,6 +127,7 @@ export async function PATCH(
     );
 
     revalidateTag("storefront-home");
+    revalidateClearanceStorefront();
 
     return NextResponse.json({ productId });
   } catch (err) {

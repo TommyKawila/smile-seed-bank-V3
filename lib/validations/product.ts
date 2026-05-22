@@ -13,6 +13,8 @@ export const VariantSchema = z.object({
   unit_label: z.string().min(1, "กรุณาระบุขนาดแพ็กเกจ (เช่น 1 Seed)"),
   /** Draft / pre-pricing: 0 allowed */
   price: z.number().min(0, "ราคาต้องไม่ติดลบ"),
+  /** Per-pack clearance price when product is_clearance */
+  clearance_price: z.number().min(0).nullable().optional(),
   cost_price: z.number().min(0, "ต้นทุนต้องไม่ติดลบ"),
   stock: z.number().int().min(0, "สต็อกต้องไม่ติดลบ"),
   low_stock_threshold: z.number().int().min(0).default(5).optional(),
@@ -101,17 +103,6 @@ export const ProductSchema = z.object({
     .optional(),
   is_clearance: z.boolean().default(false).optional(),
   sale_price: z.number().min(0).nullable().optional(),
-}).superRefine((data, ctx) => {
-  if (data.is_clearance === true) {
-    const s = data.sale_price ?? 0;
-    if (s <= 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "ตั้งราคาเซลเมื่อเปิดโหมดล้างสต็อก / Set a sale price when clearance is on",
-        path: ["sale_price"],
-      });
-    }
-  }
 });
 
 /** Storefront visibility: no packages or zero total stock → not listed as available */

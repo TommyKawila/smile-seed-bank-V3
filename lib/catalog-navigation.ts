@@ -51,12 +51,17 @@ export function resolveCatalogFtFromUrl(parts: {
 }
 
 /** `filter` shorthand → `quick` (exclusive with flowering tokens in same param). */
-export function resolveCatalogQuickFromFilter(filter: string | null | undefined): "new" | "sale" | null {
+export function resolveCatalogQuickFromFilter(
+  filter: string | null | undefined
+): "new" | "sale" | "clearance" | null {
   const f = (filter ?? "").trim().toLowerCase();
   if (f === "new" || f === "new_arrivals") return "new";
+  if (f === "clearance") return "clearance";
   if (f === "sale") return "sale";
   return null;
 }
+
+export type CatalogQuick = "new" | "sale" | "clearance";
 
 /** `filter` shorthand → price sort. */
 export function resolveCatalogSortFromFilter(

@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     }) || undefined;
   const quickRaw = searchParams.get("quick")?.trim();
   const quick =
-    quickRaw === "new" || quickRaw === "sale"
+    quickRaw === "new" || quickRaw === "sale" || quickRaw === "clearance"
       ? quickRaw
       : resolveCatalogQuickFromFilter(filterRaw) ?? undefined;
   const requestedSort = searchParams.get("sort")?.trim();

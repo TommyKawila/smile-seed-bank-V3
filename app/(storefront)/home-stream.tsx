@@ -71,12 +71,12 @@ async function HeroCarouselStream() {
 /** Hero SSR + below-fold static client tree (`content-visibility` off-screen paint skip). */
 export async function HomeMainStream() {
   const [sections, heroCtaButtons] = await Promise.all([getSections(), getHeroCtaCached()]);
-  const heroCtaPayload = heroCtaButtons.map(({ id, labelTh, labelEn, href, variant }) => ({
+  const heroCtaPayload = heroCtaButtons.map(({ id, labelTh, labelEn, href, color }) => ({
     id,
     labelTh,
     labelEn,
     href,
-    variant,
+    color,
   }));
   const belowSections = sections.filter((s) => s.key !== "hero");
   const heroCarousel = (

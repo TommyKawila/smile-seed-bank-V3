@@ -17,6 +17,8 @@ import {
 } from "@/lib/homepage-section-title";
 import {
   DEFAULT_HERO_CTA_BUTTONS,
+  heroCtaButtonClassName,
+  heroCtaShowsChevron,
   type HeroCtaButtonPayload,
 } from "@/lib/homepage-hero-cta";
 
@@ -158,22 +160,20 @@ export default function Hero({
               {ctaButtons.map((btn) => {
                 const label = locale === "en" ? btn.labelEn : btn.labelTh;
                 const href = getLocalizedPath(btn.href, locale);
-                const isPrimary = btn.variant === "primary";
+                const showChevron = heroCtaShowsChevron(btn.color);
                 return (
                   <Button
                     key={btn.id}
                     asChild
-                    variant={isPrimary ? "default" : "outline"}
+                    variant="ghost"
                     className={cn(
                       "h-11 w-full rounded-sm px-6 text-sm shadow-none transition-colors sm:min-w-0",
-                      isPrimary
-                        ? "border border-primary bg-primary font-medium text-primary-foreground hover:bg-primary/90"
-                        : "border border-zinc-300 bg-transparent font-normal text-zinc-800 hover:border-primary/40 hover:bg-zinc-50"
+                      heroCtaButtonClassName(btn.color)
                     )}
                   >
                     <Link href={href} aria-label={label}>
                       {label}
-                      {isPrimary ? (
+                      {showChevron ? (
                         <ChevronRight className="ml-1 h-4 w-4 opacity-90" strokeWidth={1.75} aria-hidden />
                       ) : null}
                     </Link>

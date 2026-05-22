@@ -1,15 +1,20 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
+import {
+  DEFAULT_HERO_CTA_BUTTONS as CLIENT_DEFAULTS,
+  normalizeHeroCtaColor,
+  type HeroCtaColor,
+} from "@/lib/homepage-hero-cta";
 
-export type HeroCtaVariant = "primary" | "outline";
+export type { HeroCtaColor } from "@/lib/homepage-hero-cta";
 
 export type HeroCtaButton = {
   id: string;
   labelTh: string;
   labelEn: string;
   href: string;
-  variant: HeroCtaVariant;
+  color: HeroCtaColor;
   sortOrder: number;
   isActive: boolean;
 };
@@ -19,7 +24,7 @@ export type HeroCtaButtonAdminPatch = {
   label_th: string;
   label_en: string;
   href: string;
-  variant: HeroCtaVariant;
+  color: HeroCtaColor;
   sort_order: number;
   is_active: boolean;
 };
@@ -31,40 +36,14 @@ const DEFAULT_HERO_CTA_SEED_IDS = [
   "hero_cta_blog",
 ] as const;
 
-export const DEFAULT_HERO_CTA_BUTTONS: Omit<HeroCtaButton, "id">[] = [
-  {
-    labelTh: "เมล็ดพันธุ์ทั้งหมด",
-    labelEn: "All Seeds",
-    href: "/seeds",
-    variant: "primary",
-    sortOrder: 0,
-    isActive: true,
-  },
-  {
-    labelTh: "เมล็ดพันธุ์มาใหม่",
-    labelEn: "New Arrivals",
-    href: "/shop?sort=new_arrivals",
-    variant: "outline",
-    sortOrder: 1,
-    isActive: true,
-  },
-  {
-    labelTh: "เมล็ดพันธุ์ลดราคา",
-    labelEn: "Clearance Seeds",
-    href: "/shop",
-    variant: "outline",
-    sortOrder: 2,
-    isActive: true,
-  },
-  {
-    labelTh: "บทความน่าสนใจ",
-    labelEn: "Featured Articles",
-    href: "/blog",
-    variant: "outline",
-    sortOrder: 3,
-    isActive: true,
-  },
-];
+export const DEFAULT_HERO_CTA_BUTTONS: Omit<HeroCtaButton, "id">[] = CLIENT_DEFAULTS.map((b) => ({
+  labelTh: b.labelTh,
+  labelEn: b.labelEn,
+  href: b.href,
+  color: b.color,
+  sortOrder: 0,
+  isActive: true,
+})).map((b, i) => ({ ...b, sortOrder: i }));
 
 type DbRow = {
   id: string;
@@ -77,13 +56,12 @@ type DbRow = {
 };
 
 function mapRow(row: DbRow): HeroCtaButton {
-  const variant: HeroCtaVariant = row.variant === "primary" ? "primary" : "outline";
   return {
     id: row.id,
     labelTh: row.label_th,
     labelEn: row.label_en,
     href: row.href.trim() || "/",
-    variant,
+    color: normalizeHeroCtaColor(row.variant),
     sortOrder: row.sort_order,
     isActive: row.is_active,
   };
@@ -98,7 +76,7 @@ async function seedDefaultsIfEmpty(): Promise<void> {
       label_th: b.labelTh,
       label_en: b.labelEn,
       href: b.href,
-      variant: b.variant,
+      variant: b.color,
       sort_order: b.sortOrder,
       is_active: b.isActive,
     })),
@@ -107,11 +85,12 @@ async function seedDefaultsIfEmpty(): Promise<void> {
 }
 
 function patchToData(b: HeroCtaButtonAdminPatch) {
+  const color = normalizeHeroCtaColor(b.color);
   return {
     label_th: b.label_th.trim(),
     label_en: b.label_en.trim(),
     href: b.href.trim() || "/",
-    variant: b.variant === "primary" ? "primary" : "outline",
+    variant: color,
     sort_order: b.sort_order,
     is_active: b.is_active,
   };

@@ -226,14 +226,73 @@ type ClearanceProductSlice = {
   is_clearance?: boolean | null;
   sale_price?: unknown;
   product_variants?: (Pick<ProductVariant, "price" | "stock" | "is_active"> &
-    Partial<Pick<ProductVariant, "discount_percent" | "discount_ends_at" | "final_price" | "unit_label">>)[] | null;
+    Partial<
+      Pick<
+        ProductVariant,
+        | "discount_percent"
+        | "discount_ends_at"
+        | "final_price"
+        | "unit_label"
+        | "clearance_price"
+      >
+    >)[] | null;
   price?: number | null;
 };
+
+type VariantClearancePick = Pick<ProductVariant, "price"> &
+  Partial<Pick<ProductVariant, "clearance_price">>;
+
+/** Min variant clearance for card/listing; falls back to legacy product.sale_price. */
+export function deriveClearanceSalePrice(
+  isClearance: boolean | null | undefined,
+  variants: { clearance_price?: number | null }[],
+  fallbackSalePrice?: number | null
+): number | null {
+  if (isClearance !== true) return null;
+  const prices = variants
+    .map((v) => Number(v.clearance_price ?? 0))
+    .filter((p) => p > 0);
+  if (prices.length > 0) return Math.min(...prices);
+  const legacy = Number(fallbackSalePrice ?? 0);
+  return legacy > 0 ? legacy : null;
+}
+
+function resolveVariantClearancePrice(
+  variant: VariantClearancePick | undefined,
+  product: ClearanceProductSlice,
+  variantListPrice: number
+): number | null {
+  if (product.is_clearance !== true) return null;
+  const list = Number(variantListPrice);
+  if (!Number.isFinite(list) || list <= 0) return null;
+
+  const explicit = Number(variant?.clearance_price ?? 0);
+  if (explicit > 0) {
+    return roundMoney(Math.min(list, explicit));
+  }
+
+  const sale = Number(product.sale_price ?? 0);
+  if (sale <= 0) return null;
+
+  const base = computeStartingPrice(product.product_variants);
+  if (base <= 0) return roundMoney(Math.min(list, sale));
+  return roundMoney(
+    Math.min(list, Math.max(1, roundMoney(sale * (list / base))))
+  );
+}
 
 /** Storefront “from” price: list/`price` + optional clearance; variant `discount_percent` is ignored (use `brand_promotions`). */
 export function getEffectiveListingPrice(product: ClearanceProductSlice): number {
   const regular = computeStartingPrice(product.product_variants);
   if (product.is_clearance === true) {
+    const starting = getStartingVariant(
+      product.product_variants as StartingVariantPick[] | null | undefined
+    );
+    if (starting) {
+      const list = Number(starting.price ?? 0);
+      const eff = resolveVariantClearancePrice(starting, product, list);
+      if (eff != null && eff > 0) return eff;
+    }
     const sale = Number(product.sale_price ?? 0);
     if (sale > 0) return regular > 0 ? Math.min(sale, regular) : sale;
   }
@@ -258,8 +317,7 @@ export function getCatalogCardSortPrice(
 }
 
 /**
- * Per-pack price when clearance: scales each variant list price by sale / starting price
- * so multi-pack tiers keep the same discount ratio.
+ * Per-pack clearance: uses variant `clearance_price` when set; otherwise legacy ratio from product `sale_price`.
  */
 export function getEffectiveVariantPrice(
   product: ClearanceProductSlice,
@@ -270,20 +328,22 @@ export function getEffectiveVariantPrice(
   );
   const directPrice = variant ? getVariantFinalPrice(variant) : variantListPrice;
   if (product.is_clearance !== true) return directPrice;
-  const sale = Number(product.sale_price ?? 0);
-  if (sale <= 0) return directPrice;
-  const base = computeStartingPrice(product.product_variants);
-  if (base <= 0) return Math.min(directPrice, sale);
-  return Math.min(directPrice, Math.max(1, roundMoney(sale * (variantListPrice / base))));
+  const clearance = resolveVariantClearancePrice(variant, product, variantListPrice);
+  if (clearance != null) return clearance;
+  return directPrice;
 }
 
 export function getClearancePercentOff(product: ClearanceProductSlice): number | null {
   if (product.is_clearance !== true) return null;
-  const sale = Number(product.sale_price ?? 0);
-  if (sale <= 0) return null;
-  const regular = computeStartingPrice(product.product_variants);
-  if (regular <= sale) return null;
-  return Math.round((1 - sale / regular) * 100);
+  const starting = getStartingVariant(
+    product.product_variants as StartingVariantPick[] | null | undefined
+  );
+  if (!starting) return null;
+  const regular = Number(starting.price ?? 0);
+  if (regular <= 0) return null;
+  const eff = resolveVariantClearancePrice(starting, product, regular);
+  if (eff == null || eff <= 0 || regular <= eff) return null;
+  return Math.round((1 - eff / regular) * 100);
 }
 
 /**

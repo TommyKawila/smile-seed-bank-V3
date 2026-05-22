@@ -1,10 +1,15 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
 import { parseListParam } from "@/lib/shop-attribute-filters";
 import { normalizeCatalogFtUrlParam } from "@/lib/seed-type-filter";
-import { resolveCatalogFtFromUrl, resolveCatalogQuickFromFilter, resolveCatalogSortFromFilter } from "@/lib/catalog-navigation";
+import {
+  resolveCatalogFtFromUrl,
+  resolveCatalogQuickFromFilter,
+  resolveCatalogSortFromFilter,
+  type CatalogQuick,
+} from "@/lib/catalog-navigation";
 import { cn } from "@/lib/utils";
 
 const chipBase =
@@ -13,9 +18,11 @@ const chipBase =
 export function ShopQuickFilterBar({
   replaceCatalog,
   t,
+  showClearance = true,
 }: {
   replaceCatalog: (mutate: (sp: URLSearchParams) => void) => void;
   t: (th: string, en: string) => string;
+  showClearance?: boolean;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -30,8 +37,16 @@ export function ShopQuickFilterBar({
   const sexList = parseListParam(searchParams.get("sex"));
   const regularOn = sexList.includes("regular");
 
+  useEffect(() => {
+    if (showClearance || quickEff !== "clearance") return;
+    replaceCatalog((sp) => {
+      sp.delete("quick");
+      if (sp.get("filter")?.trim() === "clearance") sp.delete("filter");
+    });
+  }, [showClearance, quickEff, replaceCatalog]);
+
   const setQuick = useCallback(
-    (val: "new" | "sale") => {
+    (val: CatalogQuick) => {
       replaceCatalog((sp) => {
         const cur = sp.get("quick")?.trim() ?? "";
         if (cur === val) sp.delete("quick");
@@ -103,13 +118,23 @@ export function ShopQuickFilterBar({
       >
         ✨ {t("สินค้ามาใหม่", "New arrivals")}
       </button>
+      {showClearance ? (
+        <button
+          type="button"
+          className={cn(chipBase, quickEff === "clearance" ? on : off)}
+          aria-pressed={quickEff === "clearance"}
+          onClick={() => setQuick("clearance")}
+        >
+          🏷️ {t("ล้างสต็อก", "Clearance")}
+        </button>
+      ) : null}
       <button
         type="button"
         className={cn(chipBase, quickEff === "sale" ? on : off)}
         aria-pressed={quickEff === "sale"}
         onClick={() => setQuick("sale")}
       >
-        🔥 {t("สินค้าลดราคา", "On sale")}
+        🔥 {t("โปรแบรนด์", "Brand deals")}
       </button>
       <button
         type="button"

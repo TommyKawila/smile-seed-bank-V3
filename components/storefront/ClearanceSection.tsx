@@ -145,8 +145,8 @@ export function ClearanceSection({
             size="sm"
             className="shrink-0 self-start border-emerald-500/40 bg-zinc-900 text-emerald-300 hover:bg-zinc-800 hover:text-emerald-200 sm:self-end"
           >
-            <Link href="/shop">
-              {t("ดูสินค้าทั้งหมด", "Browse shop")}
+            <Link href="/seeds?quick=clearance">
+              {t("ดูล้างสต็อกทั้งหมด", "View all clearance")}
               <ChevronRight className="ml-0.5 h-4 w-4" />
             </Link>
           </Button>

@@ -401,17 +401,22 @@ function ProductCardBase({
                 />
               </div>
               <p
-                className="relative box-border flex h-10 min-h-0 items-center justify-center px-1.5 text-center font-sans text-[8px] font-extrabold leading-tight text-white sm:px-2 sm:text-[10px] sm:leading-none"
+                className="relative box-border flex h-10 min-h-0 items-center justify-center px-1.5 text-center font-sans text-[9px] font-extrabold leading-tight text-white sm:px-2 sm:text-[10px] sm:leading-none"
                 title={
                   loc === "th"
                     ? "โอกาสสุดท้าย! เหลือเพียง 1 ชิ้นเท่านั้น"
                     : "LAST ONE! Only 1 left"
                 }
               >
-                <span className="line-clamp-1 [overflow-wrap:anywhere]">
-                  {loc === "th"
-                    ? "🔥 โอกาสสุดท้าย! เหลือเพียง 1 ชิ้นเท่านั้น (ห้ามพลาด!)"
-                    : "🔥 LAST ONE! Only 1 left (Act Now!)"}
+                <span className="line-clamp-2 sm:line-clamp-1 [overflow-wrap:anywhere]">
+                  <span className="sm:hidden">
+                    {loc === "th" ? "🔥 เหลือ 1 ชิ้น!" : "🔥 Last one!"}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {loc === "th"
+                      ? "🔥 โอกาสสุดท้าย! เหลือเพียง 1 ชิ้นเท่านั้น (ห้ามพลาด!)"
+                      : "🔥 LAST ONE! Only 1 left (Act Now!)"}
+                  </span>
                 </span>
               </p>
             </div>
@@ -475,13 +480,16 @@ function ProductCardBase({
                 disabled={!displayVariant}
                 onClick={handleAdd}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="relative z-20 mt-1.5 h-10 w-full shrink-0 border-0 bg-gradient-to-b from-emerald-500 to-emerald-700 p-0 font-sans text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(16,185,129,0.5)] transition hover:from-emerald-500 hover:to-emerald-800 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
+                className="relative z-20 mt-1.5 h-9 w-full shrink-0 border-0 bg-gradient-to-b from-emerald-500 to-emerald-700 p-0 font-sans text-[10px] font-extrabold leading-tight text-white shadow-[0_4px_14px_rgba(16,185,129,0.5)] transition hover:from-emerald-500 hover:to-emerald-800 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:text-sm sm:leading-normal"
                 aria-label={
                   loc === "th" ? "สั่งซื้อก่อนหมด" : "Buy before it is gone"
                 }
               >
-                <span className="inline-flex h-full w-full animate-urgent-cta-blink items-center justify-center gap-1.5 px-1">
-                  {loc === "th" ? "🚀 สั่งซื้อก่อนหมด!" : "🚀 BUY BEFORE IT'S GONE!"}
+                <span className="inline-flex h-full w-full animate-urgent-cta-blink items-center justify-center gap-1 px-1.5 sm:gap-1.5 sm:px-2">
+                  <span className="sm:hidden">{loc === "th" ? "🚀 รีบสั่ง!" : "🚀 Grab it!"}</span>
+                  <span className="hidden sm:inline">
+                    {loc === "th" ? "🚀 สั่งซื้อก่อนหมด!" : "🚀 Buy now!"}
+                  </span>
                 </span>
               </Button>
             </div>

@@ -19,6 +19,7 @@ import {
   generateSlug,
   getEffectiveListingPrice,
   getCatalogCardSortPrice,
+  getClearancePercentOff,
   getStartingVariant,
   getStartingVariantLabel,
   isLowStock,
@@ -68,6 +69,7 @@ const STOREFRONT_LISTING_VARIANT_SELECT = {
   unit_label: true,
   discount_percent: true,
   discount_ends_at: true,
+  clearance_price: true,
 } satisfies Prisma.product_variantsSelect;
 
 const STOREFRONT_LISTING_IMAGE_SELECT = {
@@ -233,6 +235,7 @@ function mapRawMixedBreederRow(row: RawMixedBreederProductRow): MixedBreederProd
         product_id: n(r.product_id),
         cost_price: n(r.cost_price) ?? 0,
         price: n(r.price) ?? 0,
+        clearance_price: n(r.clearance_price),
         discount_percent: n(r.discount_percent) ?? 0,
         discount_ends_at: (r.discount_ends_at as string | null | undefined) ?? null,
         stock: n(r.stock) ?? 0,
@@ -517,8 +520,8 @@ export async function getActiveProducts(opts?: {
   minPrice?: number;
   maxPrice?: number;
   sort?: "smart_deal" | "newest" | "new_arrivals" | "price_asc" | "price_desc" | string;
-  /** `new` → hybrid new-arrival order; `sale` → brand promo effective &lt; base only (after enrich). */
-  quick?: "new" | "sale";
+  /** `new` → hybrid new-arrival order; `sale` → brand promo; `clearance` → `is_clearance` products only. */
+  quick?: "new" | "sale" | "clearance";
   includeVariants?: boolean;
   /** Comma-separated pack buckets: 1,2,3,5,10,gt10,other — requires variant rows (filtered in memory). */
   seeds_param?: string | null;
@@ -581,7 +584,9 @@ export async function getActiveProducts(opts?: {
             ? "new_arrivals"
             : sortRaw;
     const saleOnly = opts?.quick === "sale";
-    const useEnrichedCatalog = saleOnly || sortKey === "price_asc" || sortKey === "price_desc";
+    const clearanceOnly = opts?.quick === "clearance";
+    const useEnrichedCatalog =
+      saleOnly || clearanceOnly || sortKey === "price_asc" || sortKey === "price_desc";
 
     const MEM_BREEDER_SMART_CAP = 900;
     const MEM_SCAN_CHUNK = 140;
@@ -590,6 +595,7 @@ export async function getActiveProducts(opts?: {
 
     const applyCommonFilters = () => {
       let qb = supabase.from("products").select(selectShape).eq("is_active", true);
+      if (clearanceOnly) qb = qb.eq("is_clearance", true);
       if (opts?.category) qb = qb.eq("category", opts.category);
       const searchRaw = opts?.search?.trim();
       const catalogOr = searchRaw ? buildProductCatalogSearchOrFilter(searchRaw) : null;
@@ -625,6 +631,7 @@ export async function getActiveProducts(opts?: {
         .from("products")
         .select("id", { count: "exact", head: true })
         .eq("is_active", true);
+      if (clearanceOnly) qb = qb.eq("is_clearance", true);
       if (opts?.category) qb = qb.eq("category", opts.category);
       const searchRaw = opts?.search?.trim();
       const catalogOr = searchRaw ? buildProductCatalogSearchOrFilter(searchRaw) : null;
@@ -752,6 +759,53 @@ export async function getActiveProducts(opts?: {
         catalogTotalCount,
       };
     };
+
+    if (clearanceOnly) {
+      const sqlTotal = await fetchExactCatalogRowCount();
+      let query = applySortingForDb(applyCommonFilters());
+      query = query.limit(CATALOG_ENRICH_CAP);
+      const { data, error } = await query;
+      if (error) return { data: null, error: error.message };
+      const fetched = (data ?? []) as unknown as Row[];
+      let rows = fetched.filter((row) => {
+        if (!(ftOriginal ? productMatchesCatalogFtParam(row, ftOriginal) : true)) return false;
+        return rowMatchesSidebarFilters(row);
+      });
+      const sanitized = postSeedAndSanitize(rows);
+      let enriched = await withBrandListingEnrichment(
+        sanitized as Parameters<typeof withBrandListingEnrichment>[0]
+      );
+      if (sortKey === "price_asc" || sortKey === "price_desc") {
+        enriched.sort((a, b) => {
+          const pa = getCatalogCardSortPrice(a);
+          const pb = getCatalogCardSortPrice(b);
+          const d = pa - pb;
+          if (d !== 0) return sortKey === "price_asc" ? d : -d;
+          return Number(b.id) - Number(a.id);
+        });
+      } else {
+        enriched.sort((a, b) => {
+          const pctA = getClearancePercentOff(a) ?? 0;
+          const pctB = getClearancePercentOff(b) ?? 0;
+          if (pctB !== pctA) return pctB - pctA;
+          return Number(b.id) - Number(a.id);
+        });
+      }
+      const catalogTotalCount =
+        ftOriginal || geneticsSel.length > 0 || difficultySel.length > 0 || thcSel.length > 0 ||
+        cbdSel.length > 0 || sexSel.length > 0 || yieldQuickParam || seedsSel.length > 0
+          ? enriched.length
+          : (sqlTotal ?? enriched.length);
+      const from = (page - 1) * limit;
+      const slice = enriched.slice(from, from + limit) as unknown as ProductWithBreeder[];
+      const catalogHasMore = from + limit < enriched.length;
+      return {
+        data: slice,
+        error: null,
+        catalogHasMore,
+        catalogTotalCount,
+      };
+    }
 
     if (saleOnly) {
       const rules = await loadActiveBrandPromotionRules();
@@ -1042,7 +1096,19 @@ export async function getActiveProducts(opts?: {
     };
   }
 }
-/** Homepage carousel: active + flagged featured, lowest priority first. */
+/** True when at least one active clearance product is in stock (shop quick-filter chip). */
+export async function hasStorefrontClearanceProducts(): Promise<boolean> {
+  try {
+    const n = await prisma.products.count({
+      where: { is_active: true, is_clearance: true, stock: { gt: 0 } },
+    });
+    return n > 0;
+  } catch (err) {
+    logger.error("product-service.hasStorefrontClearanceProducts failed", { cause: err });
+    return false;
+  }
+}
+
 /** Homepage clearance rail: active, flagged clearance, in stock, sorted by discount depth then id. */
 export async function getClearanceStorefrontProducts(
   limit = 24

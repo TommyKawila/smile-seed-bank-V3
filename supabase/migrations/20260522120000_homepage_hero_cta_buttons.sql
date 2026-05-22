@@ -22,8 +22,8 @@ CREATE POLICY homepage_hero_cta_select_public
 
 INSERT INTO public.homepage_hero_cta_buttons (id, label_th, label_en, href, variant, sort_order, is_active)
 VALUES
-  ('hero_cta_all_seeds', 'เมล็ดพันธุ์ทั้งหมด', 'All Seeds', '/seeds', 'primary', 0, true),
+  ('hero_cta_all_seeds', 'เมล็ดพันธุ์ทั้งหมด', 'All Seeds', '/seeds', 'green', 0, true),
   ('hero_cta_new', 'เมล็ดพันธุ์มาใหม่', 'New Arrivals', '/shop?sort=new_arrivals', 'outline', 1, true),
-  ('hero_cta_clearance', 'เมล็ดพันธุ์ลดราคา', 'Clearance Seeds', '/shop', 'outline', 2, true),
+  ('hero_cta_clearance', 'เมล็ดพันธุ์ลดราคา', 'Clearance Seeds', '/seeds?quick=clearance', 'outline', 2, true),
   ('hero_cta_blog', 'บทความน่าสนใจ', 'Featured Articles', '/blog', 'outline', 3, true)
 ON CONFLICT (id) DO NOTHING;

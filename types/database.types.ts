@@ -626,6 +626,7 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          clearance_price: number | null
           cost_price: number | null
           created_at: string | null
           discount_ends_at: string | null
@@ -640,6 +641,7 @@ export type Database = {
           unit_label: string
         }
         Insert: {
+          clearance_price?: number | null
           cost_price?: number | null
           created_at?: string | null
           discount_ends_at?: string | null
@@ -654,6 +656,7 @@ export type Database = {
           unit_label: string
         }
         Update: {
+          clearance_price?: number | null
           cost_price?: number | null
           created_at?: string | null
           discount_ends_at?: string | null

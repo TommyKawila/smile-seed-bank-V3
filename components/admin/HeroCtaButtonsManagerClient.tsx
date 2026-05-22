@@ -33,14 +33,14 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import type { HeroCtaVariant } from "@/lib/homepage-hero-cta";
+import { HERO_CTA_COLOR_OPTIONS, normalizeHeroCtaColor, type HeroCtaColor } from "@/lib/homepage-hero-cta";
 
 type HeroCtaRow = {
   id: string;
   label_th: string;
   label_en: string;
   href: string;
-  variant: HeroCtaVariant;
+  color: HeroCtaColor;
   sort_order: number;
   is_active: boolean;
 };
@@ -126,19 +126,25 @@ function SortableCtaRow({
           </div>
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <div className="flex items-center gap-2">
-              <Label htmlFor={`cta-variant-${row.id}`} className="text-xs text-zinc-600">
-                สไตล์
+              <Label htmlFor={`cta-color-${row.id}`} className="text-xs text-zinc-600">
+                สีปุ่ม
               </Label>
               <Select
-                value={row.variant}
-                onValueChange={(v) => onPatch(row.id, { variant: v as HeroCtaVariant })}
+                value={row.color}
+                onValueChange={(v) => onPatch(row.id, { color: normalizeHeroCtaColor(v) })}
               >
-                <SelectTrigger id={`cta-variant-${row.id}`} className="h-8 w-[130px] text-xs">
+                <SelectTrigger id={`cta-color-${row.id}`} className="h-8 w-[168px] text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="primary">Primary (เขียว)</SelectItem>
-                  <SelectItem value="outline">Outline (ขาว)</SelectItem>
+                  {HERO_CTA_COLOR_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      <span className="flex items-center gap-2">
+                        <span className={cn("h-3 w-3 shrink-0 rounded-full", opt.swatchClass)} aria-hidden />
+                        {opt.label}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -185,8 +191,15 @@ export function HeroCtaButtonsManagerClient() {
       const res = await fetch("/api/admin/settings/homepage/hero-cta", { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "โหลดไม่สำเร็จ");
-      const rows = (data.buttons ?? []) as HeroCtaRow[];
-      setItems([...rows].sort((a, b) => a.sort_order - b.sort_order));
+      const rows = (data.buttons ?? []) as (HeroCtaRow & { variant?: string })[];
+      setItems(
+        [...rows]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map(({ variant, ...r }) => ({
+            ...r,
+            color: normalizeHeroCtaColor(r.color ?? variant),
+          }))
+      );
     } catch (e) {
       toast({
         title: "โหลดปุ่ม Hero ไม่สำเร็จ",
@@ -230,7 +243,7 @@ export function HeroCtaButtonsManagerClient() {
         label_th: row.label_th.trim(),
         label_en: row.label_en.trim(),
         href: row.href.trim() || "/",
-        variant: row.variant,
+        color: row.color,
         sort_order: index,
         is_active: row.is_active,
       }));

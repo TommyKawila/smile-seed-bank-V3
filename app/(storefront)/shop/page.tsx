@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { ShopSkeleton } from "@/components/skeletons/ShopSkeleton";
 import { ShopPageClient } from "@/app/(storefront)/shop/ShopPageClient";
-import { getActiveProducts } from "@/services/product-service";
+import { getActiveProducts, hasStorefrontClearanceProducts } from "@/services/product-service";
 import { bigintToJson } from "@/lib/bigint-json";
 import { prisma } from "@/lib/prisma";
 import { breederSlugFromName } from "@/lib/breeder-slug";
@@ -56,7 +56,7 @@ export default async function ShopPage({
     }) || "";
   const quickRaw = firstParam(searchParams?.quick)?.trim();
   const quick =
-    quickRaw === "new" || quickRaw === "sale"
+    quickRaw === "new" || quickRaw === "sale" || quickRaw === "clearance"
       ? quickRaw
       : resolveCatalogQuickFromFilter(filterRaw) ?? undefined;
   const sortRaw = firstParam(searchParams?.sort)?.trim();
@@ -73,31 +73,34 @@ export default async function ShopPage({
     get: searchParamsGetter(searchParams),
   });
 
-  const catalog = await getActiveProducts({
-    category: category || undefined,
-    breeder_id: breederId,
-    search: search || undefined,
-    catalog_ft: catalogFt || undefined,
-    includeVariants: true,
-    limit: SHOP_INITIAL_PRODUCTS,
-    page: 1,
-    quick,
-    sort: sort ?? (!quick && breederId != null ? "smart_deal" : undefined),
-    minPrice: priceRange.min ?? undefined,
-    maxPrice: priceRange.max ?? undefined,
-    seeds_param: firstParam(searchParams?.seeds)?.trim() || null,
-    genetics_param: firstParam(searchParams?.genetics)?.trim() || null,
-    difficulty_param: firstParam(searchParams?.difficulty)?.trim() || null,
-    thc_param: firstParam(searchParams?.thc)?.trim() || null,
-    cbd_param: firstParam(searchParams?.cbd)?.trim() || null,
-    sex_param: firstParam(searchParams?.sex)?.trim() || null,
-    yield_param: firstParam(searchParams?.yield)?.trim() || null,
-  }).catch(() => ({
-    data: [] as ProductListItem[],
-    error: "catalog_fetch_failed",
-    catalogHasMore: false,
-    catalogTotalCount: null as number | null,
-  }));
+  const [catalog, showClearanceFilter] = await Promise.all([
+    getActiveProducts({
+      category: category || undefined,
+      breeder_id: breederId,
+      search: search || undefined,
+      catalog_ft: catalogFt || undefined,
+      includeVariants: true,
+      limit: SHOP_INITIAL_PRODUCTS,
+      page: 1,
+      quick,
+      sort: sort ?? (!quick && breederId != null ? "smart_deal" : undefined),
+      minPrice: priceRange.min ?? undefined,
+      maxPrice: priceRange.max ?? undefined,
+      seeds_param: firstParam(searchParams?.seeds)?.trim() || null,
+      genetics_param: firstParam(searchParams?.genetics)?.trim() || null,
+      difficulty_param: firstParam(searchParams?.difficulty)?.trim() || null,
+      thc_param: firstParam(searchParams?.thc)?.trim() || null,
+      cbd_param: firstParam(searchParams?.cbd)?.trim() || null,
+      sex_param: firstParam(searchParams?.sex)?.trim() || null,
+      yield_param: firstParam(searchParams?.yield)?.trim() || null,
+    }).catch(() => ({
+      data: [] as ProductListItem[],
+      error: "catalog_fetch_failed",
+      catalogHasMore: false,
+      catalogTotalCount: null as number | null,
+    })),
+    hasStorefrontClearanceProducts().catch(() => false),
+  ]);
   const initialProducts = catalog.error
     ? []
     : (bigintToJson(catalog.data ?? []) as ProductListItem[]);
@@ -106,7 +109,11 @@ export default async function ShopPage({
 
   return (
     <Suspense fallback={<ShopSkeleton />}>
-      <ShopPageClient initialProducts={initialProducts} initialCatalogTotal={initialCatalogTotal} />
+      <ShopPageClient
+        initialProducts={initialProducts}
+        initialCatalogTotal={initialCatalogTotal}
+        showClearanceFilter={showClearanceFilter}
+      />
     </Suspense>
   );
 }

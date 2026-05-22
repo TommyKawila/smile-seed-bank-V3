@@ -117,6 +117,7 @@ export interface ProductVariant {
   is_active: boolean | null;
   sku?: string | null;
   low_stock_threshold?: number | null;
+  clearance_price?: number | null;
   created_at?: string | null;
   pack_size?: string | null;
 }

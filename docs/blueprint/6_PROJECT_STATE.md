@@ -4,6 +4,23 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-23 (Shop — ซ่อนชิป Clearance เมื่อไม่มีสินค้า)
+- **`hasStorefrontClearanceProducts()`** — นับ `is_clearance` + active + stock > 0
+- **`ShopQuickFilterBar`:** แสดง «ล้างสต็อก» เฉพาะเมื่อมีสินค้า · ลบ `?quick=clearance` อัตโนมัติถ้าไม่มี
+- **ไฟล์:** `product-service.ts`, `shop/page.tsx`, `ShopPageClient.tsx`, `ShopQuickFilterBar.tsx`
+
+### บันทึกการทำงาน — 2026-05-23 (Admin — เมนูสินค้า Clearance แยก)
+- **`/admin/clearance`:** รายการ Clearance · เพิ่มสินค้า · กรอกราคาเซลต่อแพ็ก · ปุ่ม «นำออก» ล้าง `is_clearance` + `sale_price` + `clearance_price`
+- **API:** `GET/POST /api/admin/clearance`, `PATCH/DELETE /api/admin/clearance/[id]` + `revalidateClearanceStorefront()` (home + `/seeds`)
+- **ProductModal:** ถอด toggle Clearance — จัดการที่เมนูใหม่เท่านั้น
+- **ไฟล์:** `ClearanceAdminClient.tsx`, `clearance-admin-service.ts`, `AdminSidebar.tsx`, `lib/revalidate-clearance.ts`
+
+### บันทึกการทำงาน — 2026-05-23 (Clearance — ราคาเซลต่อแพ็ก variant)
+- **DB:** `product_variants.clearance_price` — migration `20260523120000_product_variants_clearance_price.sql`
+- **Admin:** `ProductModal` — เปิดล้างสต็อกแล้วกรอก **ราคาเซล (฿)** ใต้ราคาขายแต่ละแพ็ก (1/3/5/10 …); sync `products.sale_price` = min clearance สำหรับการ์ดร้าน
+- **Storefront:** `lib/product-utils.ts` — `getEffectiveVariantPrice` / listing / % off ใช้ `clearance_price` ต่อแพ็ก; fallback สัดส่วนจาก `sale_price` สำหรับสินค้าเก่า
+- **ไฟล์:** `lib/validations/product.ts`, `ProductModal.tsx`, `product-service.ts`, `serialize-admin-product-list.ts`, `app/api/admin/products/route.ts`, `[id]/route.ts`, `prisma/schema.prisma`, `types/database.types.ts`
+
 ### บันทึกการทำงาน — 2026-05-22 (Home hero CTA buttons — 4 ปุ่ม + admin)
 - **Storefront:** Hero แสดงปุ่ม 4 รายการจาก DB (เมล็ดพันธุ์ทั้งหมด / มาใหม่ / ลดราคา / บทความน่าสนใจ) — grid 2×2 บน sm+, stack บน mobile; **`getLocalizedPath`** สำหรับ href
 - **Admin:** `/admin/settings/homepage` — การ์ด **ปุ่มเมนู Hero** ลากเรียง แก้ TH/EN, href, variant primary/outline, เปิด/ปิด

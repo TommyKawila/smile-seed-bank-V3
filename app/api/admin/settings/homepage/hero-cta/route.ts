@@ -12,7 +12,7 @@ const patchBodySchema = z.object({
       label_th: z.string().min(1).max(120),
       label_en: z.string().min(1).max(120),
       href: z.string().min(1).max(512),
-      variant: z.enum(["primary", "outline"]),
+      color: z.enum(["green", "red", "yellow", "outline"]),
       sort_order: z.number().int().min(0),
       is_active: z.boolean(),
     })
@@ -29,7 +29,7 @@ export async function GET() {
         label_th: b.labelTh,
         label_en: b.labelEn,
         href: b.href,
-        variant: b.variant,
+        color: b.color,
         sort_order: b.sortOrder,
         is_active: b.isActive,
       })),

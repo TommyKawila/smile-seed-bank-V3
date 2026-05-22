@@ -156,10 +156,13 @@ function BreederCatalogSeoBlock({
 export function ShopPageClient({
   initialProducts,
   initialCatalogTotal = null,
+  showClearanceFilter = false,
 }: {
   initialProducts: ProductListItem[];
   /** Total rows for current URL filters from server (null if unknown). */
   initialCatalogTotal?: number | null;
+  /** Hide «ล้างสต็อก» chip when no clearance products in catalog. */
+  showClearanceFilter?: boolean;
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -204,7 +207,7 @@ export function ShopPageClient({
   const sortRawQS = searchParams.get("sort") ?? "";
   const quickEffective = useMemo(() => {
     const q = quickRawQS.trim();
-    if (q === "new" || q === "sale") return q;
+    if (q === "new" || q === "sale" || q === "clearance") return q;
     return resolveCatalogQuickFromFilter(filterQueryParam) ?? "";
   }, [quickRawQS, filterQueryParam]);
   const sortEffective = useMemo(() => {
@@ -486,9 +489,9 @@ export function ShopPageClient({
     });
   }, [searchFilteredProducts, urlBreeder, breederParam, breedersLoading, ftParam, categoryParam]);
 
-  /** Flowering pill counts: sale view uses same scope as sidebar (quick + ft + breeder); else search + breeder only. */
+  /** Flowering pill counts: sale/clearance view uses same scope as sidebar (quick + ft + breeder). */
   const catalogFloweringScope = useMemo(() => {
-    if (quickEffective === "sale") return shopScopedProducts;
+    if (quickEffective === "sale" || quickEffective === "clearance") return shopScopedProducts;
     const base = searchFilteredProducts;
     if (!urlBreeder) return base;
     return base.filter((p) => p.breeder_id === urlBreeder.id);
@@ -604,6 +607,7 @@ export function ShopPageClient({
     if (
       quickEffective === "new" ||
       quickEffective === "sale" ||
+      quickEffective === "clearance" ||
       sortEffective === "price_asc" ||
       sortEffective === "price_desc" ||
       sortEffective === "new_arrivals" ||
@@ -922,7 +926,11 @@ export function ShopPageClient({
         <div className="border-b border-zinc-100 bg-white px-4 py-4 sm:px-6 sm:py-5">
           <div className="mx-auto max-w-7xl">
             <h1 className="font-sans text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
-              {t("คลังเมล็ดพันธุ์รวมทุกค่าย", "Seed vault — all breeders")}
+              {quickEffective === "clearance"
+                ? t("ล้างสต็อก — เมล็ดพันธุ์ลดราคา", "Clearance — discounted seeds")
+                : quickEffective === "sale"
+                  ? t("โปรแบรนด์ — สินค้าลดราคา", "Brand deals — on sale")
+                  : t("คลังเมล็ดพันธุ์รวมทุกค่าย", "Seed vault — all breeders")}
               <span className="ml-2 text-sm font-normal tabular-nums text-zinc-400">
                 {isLoading
                   ? `(${t("กำลังโหลด...", "Loading...")})`
@@ -941,7 +949,11 @@ export function ShopPageClient({
           <div className="flex flex-col gap-1.5 rounded-2xl border border-zinc-200/60 bg-white p-2 shadow-sm sm:p-2">
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
-                <ShopQuickFilterBar replaceCatalog={replaceCatalog} t={t} />
+                <ShopQuickFilterBar
+                  replaceCatalog={replaceCatalog}
+                  t={t}
+                  showClearance={showClearanceFilter}
+                />
               </div>
               <Button
                 variant="outline"

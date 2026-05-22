@@ -65,6 +65,8 @@ export function serializeAdminProductForList(p: AdminProductListPayload) {
     featured_tagline: p.featured_tagline,
     is_pinned_new_arrival: p.is_pinned_new_arrival,
     new_arrival_priority: p.new_arrival_priority,
+    is_clearance: p.is_clearance ?? false,
+    sale_price: dec(p.sale_price),
     breeders: p.breeders
       ? {
           id: Number(p.breeders.id),
@@ -84,6 +86,7 @@ export function serializeAdminProductForList(p: AdminProductListPayload) {
       unit_label: v.unit_label,
       cost_price: dec(v.cost_price),
       price: dec(v.price) ?? 0,
+      clearance_price: dec(v.clearance_price),
       stock: v.stock,
       low_stock_threshold: v.low_stock_threshold,
       is_active: v.is_active ?? true,

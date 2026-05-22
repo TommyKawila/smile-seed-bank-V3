@@ -114,7 +114,16 @@ interface ProductModalProps {
   initialData?: ProductFull | null;
 }
 
-const emptyVariant = { unit_label: "", price: 0, cost_price: 0, stock: 0, low_stock_threshold: 5, is_active: true, sku: null as string | null };
+const emptyVariant = {
+  unit_label: "",
+  price: 0,
+  clearance_price: null as number | null,
+  cost_price: 0,
+  stock: 0,
+  low_stock_threshold: 5,
+  is_active: true,
+  sku: null as string | null,
+};
 const STRAIN_DOMINANCE_VALUES = ["Mostly Indica", "Mostly Sativa", "Hybrid 50/50"] as const;
 
 function toStrainDominance(value: string | null | undefined): ProductFormData["strain_dominance"] {
@@ -262,6 +271,10 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         variants: p.product_variants?.map((v) => ({
           unit_label: v.unit_label,
           price: Number(v.price ?? 0),
+          clearance_price:
+            (v as { clearance_price?: number | string | null }).clearance_price != null
+              ? Number((v as { clearance_price?: number | string | null }).clearance_price)
+              : null,
           cost_price: Number(v.cost_price ?? 0),
           stock: Number(v.stock ?? 0),
           low_stock_threshold: (v as { low_stock_threshold?: number | null }).low_stock_threshold ?? 5,
@@ -929,49 +942,6 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 <p className="w-full text-[10px] text-violet-800/80 sm:w-auto">
                   ต่างจากสไลด์แนะนำด้านบน (เลขน้อยขึ้นก่อน) — ที่นี่เลขมากขึ้นก่อน
                 </p>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col gap-3 rounded-lg border border-amber-200/80 bg-amber-50/40 px-4 py-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <Label className="text-sm font-medium">ล้างสต็อก (Clearance)</Label>
-                <p className="text-xs text-zinc-500">
-                  แสดงราคาเซลบนร้านค้า · แพ็กอื่นคิดส่วนลดตามสัดส่วนราคาแพ็กเริ่มต้น
-                </p>
-              </div>
-              <Switch
-                checked={form.is_clearance === true}
-                onCheckedChange={(v) => {
-                  setField("is_clearance", v);
-                  if (!v) setField("sale_price", null);
-                }}
-                aria-label="Clearance"
-              />
-            </div>
-            {form.is_clearance === true && (
-              <div className="space-y-1 border-t border-amber-100/80 pt-3">
-                <Label htmlFor="sale_price">ราคาเซล (THB) *</Label>
-                <Input
-                  id="sale_price"
-                  type="number"
-                  min={1}
-                  step={1}
-                  className="border-zinc-200 bg-white"
-                  value={form.sale_price ?? ""}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    if (raw === "") {
-                      setField("sale_price", null);
-                      return;
-                    }
-                    const n = parseInt(raw, 10);
-                    setField("sale_price", Number.isFinite(n) ? n : null);
-                  }}
-                />
-                {getFieldError("sale_price") && (
-                  <p className="text-xs text-red-500">{getFieldError("sale_price")}</p>
-                )}
               </div>
             )}
           </div>
