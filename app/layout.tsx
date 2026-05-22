@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Prompt } from "next/font/google";
+import { prompt } from "@/lib/fonts/prompt";
 import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
 import { VercelAnalyticsClient } from "@/components/VercelAnalyticsClient";
@@ -27,15 +27,6 @@ function supabaseOriginHeadLinks(): ReactNode {
 }
 
 const Analytics = VercelAnalyticsClient;
-
-const prompt = Prompt({
-  subsets: ["latin", "thai"],
-  weight: ["400", "600", "700"],
-  variable: "--font-prompt",
-  display: "swap",
-  adjustFontFallback: true,
-  preload: true,
-});
 
 export const viewport = {
   width: "device-width",

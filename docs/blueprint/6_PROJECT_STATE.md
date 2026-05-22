@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-22 (Perf — unused CSS: Prompt @font-face)
+- **Root cause:** `next/font/google` + `subsets: [latin, thai]` + 3 weights → ~26 `@font-face` unicode-range blocks inline ด้วย `inlineCss` (~21 KiB; PSI unused ~19 KiB)
+- **แก้:** self-host `next/font/local` — 3 ไฟล์ woff2 (400/600/700) → 3 กฎ `@font-face` ขนาดเล็ก
+- **ไฟล์:** `lib/fonts/prompt.ts`, `lib/fonts/Prompt-*.woff2`, `app/layout.tsx`
+
 ### บันทึกการทำงาน — 2026-05-20 (Perf — unused JS: jsPDF + Supabase defer)
 - **Root cause:** `CartSheet` → `line-flex` → `receipt-pdf` → jsPDF (~90 KiB) โหลดทุกหน้า
 - **`lib/receipt-shared.ts`:** pure receipt helpers แยกจาก jsPDF · `generateReceiptPDF` dynamic `import("jspdf")`
