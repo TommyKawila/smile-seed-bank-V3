@@ -22,8 +22,11 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "browserslist": [
-    "defaults and supports es6-module",
-    "not ie 11",
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 111",
+    "safari >= 16.4",
+    "ios_saf >= 16.4",
     "not dead"
   ],
   "dependencies": {
