@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-22 (Perf Phase 1 — LCP hero)
+- **Preload:** `HomeHeroLcpPreload` ใช้ W/H เดียวกับ `HeroCarouselSlideImages` (392×429 mobile, desktop `fill` + sizes) — แก้ URL mismatch
+- **Hero stream:** ถอน `<Suspense>` + pulse fallback — fetch banners ใน `Promise.all` ส่งตรง `HomeHeroCarousel` (SSR slide 0 ทันที)
+- **Fallback:** `resolveHeroCarouselBanners()` — DB ว่าง/error → `DEFAULT_HERO_BANNERS_FALLBACK` (layout preload + carousel)
+- **`HeroCarouselSlideImages`:** `decoding="sync"` บน LCP slide
+- **ไฟล์:** `lib/hero-carousel-banners.ts`, `home-stream.tsx`, `(home)/layout.tsx`, `HomeHeroLcpPreload.tsx`, `hero-carousel-image-sizes.ts`
+
 ### บันทึกการทำงาน — 2026-05-22 (Perf — unused CSS: Prompt @font-face)
 - **Root cause:** `next/font/google` + `subsets: [latin, thai]` + 3 weights → ~26 `@font-face` unicode-range blocks inline ด้วย `inlineCss` (~21 KiB; PSI unused ~19 KiB)
 - **แก้:** self-host `next/font/local` — 3 ไฟล์ woff2 (400/600/700) → 3 กฎ `@font-face` ขนาดเล็ก

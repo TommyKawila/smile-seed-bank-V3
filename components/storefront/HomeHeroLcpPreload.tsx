@@ -1,23 +1,15 @@
 import { getImageProps } from "next/image";
 import type { HeroBanner } from "@/lib/hero-banners";
+import { firstBannerThSources } from "@/lib/hero-carousel-banners";
 import {
   HERO_CAROUSEL_DESKTOP_SIZES,
   HERO_CAROUSEL_MOBILE_SIZES,
-  HERO_LCP_PRELOAD_DESKTOP_H,
-  HERO_LCP_PRELOAD_DESKTOP_W,
-  HERO_LCP_PRELOAD_MOBILE_H,
-  HERO_LCP_PRELOAD_MOBILE_W,
   HERO_IMAGE_QUALITY_DESKTOP_LCP,
   HERO_IMAGE_QUALITY_MOBILE_LCP,
+  HERO_MOBILE_ASPECT_H,
+  HERO_MOBILE_ASPECT_W,
 } from "@/components/storefront/hero-carousel-image-sizes";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
-
-/** Thai-default assets for LCP (matches server-first paint before client locale hydrates). */
-function firstBannerSources(b: HeroBanner): { mobile: string; desktop: string } {
-  const desktop = b.desktopSrc.trim();
-  const mobile = (b.mobileSrc?.trim() ? b.mobileSrc : b.desktopSrc).trim();
-  return { mobile, desktop };
-}
 
 function PreloadOptimizedMobile({ src }: { src: string }) {
   if (shouldOffloadImageOptimization(src)) {
@@ -29,8 +21,8 @@ function PreloadOptimizedMobile({ src }: { src: string }) {
     const { props } = getImageProps({
       src: src.trim(),
       alt: "",
-      width: HERO_LCP_PRELOAD_MOBILE_W,
-      height: HERO_LCP_PRELOAD_MOBILE_H,
+      width: HERO_MOBILE_ASPECT_W,
+      height: HERO_MOBILE_ASPECT_H,
       quality: HERO_IMAGE_QUALITY_MOBILE_LCP,
       sizes: HERO_CAROUSEL_MOBILE_SIZES,
     });
@@ -67,8 +59,7 @@ function PreloadOptimizedDesktop({ src }: { src: string }) {
     const { props } = getImageProps({
       src: src.trim(),
       alt: "",
-      width: HERO_LCP_PRELOAD_DESKTOP_W,
-      height: HERO_LCP_PRELOAD_DESKTOP_H,
+      fill: true,
       quality: HERO_IMAGE_QUALITY_DESKTOP_LCP,
       sizes: HERO_CAROUSEL_DESKTOP_SIZES,
     });
@@ -101,7 +92,7 @@ function PreloadOptimizedDesktop({ src }: { src: string }) {
  */
 export function HomeHeroLcpPreload({ banner }: { banner: HeroBanner | undefined }) {
   if (!banner) return null;
-  const { mobile, desktop } = firstBannerSources(banner);
+  const { mobile, desktop } = firstBannerThSources(banner);
   if (!mobile || !desktop) return null;
 
   return (
