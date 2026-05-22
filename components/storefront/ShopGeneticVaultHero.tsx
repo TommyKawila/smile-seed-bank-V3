@@ -12,6 +12,7 @@ import { plainTextFromHtml, truncateMetaDescription } from "@/lib/magazine-seo";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import type { ProductWithBreeder } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
+import { emblaStorefrontOptions } from "@/lib/embla-storefront-options";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 
@@ -158,11 +159,44 @@ export function FeaturedStrainHeroCarousel({
   t: TFn;
   className?: string;
 }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    loop: products.length > 1,
-    align: "start",
-    duration: 22,
-  });
+  if (products.length <= 1) {
+    const product = products[0];
+    if (!product) return null;
+    return (
+      <div className={cn("relative font-sans", className)}>
+        <VaultHeroSlide product={product} isEn={isEn} t={t} priorityImage />
+      </div>
+    );
+  }
+
+  return (
+    <FeaturedStrainHeroCarouselInner
+      products={products}
+      isEn={isEn}
+      t={t}
+      className={className}
+    />
+  );
+}
+
+function FeaturedStrainHeroCarouselInner({
+  products,
+  isEn,
+  t,
+  className,
+}: {
+  products: ProductWithBreeder[];
+  isEn: boolean;
+  t: TFn;
+  className?: string;
+}) {
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    emblaStorefrontOptions({
+      loop: products.length > 1,
+      align: "start",
+      duration: 22,
+    })
+  );
   const [selected, setSelected] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -208,7 +242,7 @@ export function FeaturedStrainHeroCarousel({
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
           {products.map((product, i) => (
-            <div className="min-w-0 flex-[0_0_100%] px-0" key={product.id}>
+            <div className="min-w-0 shrink-0 grow-0 basis-full px-0" key={product.id}>
               <VaultHeroSlide
                 product={product}
                 isEn={isEn}

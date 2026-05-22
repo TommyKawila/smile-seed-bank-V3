@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-20 (Perf — Embla forced reflow Phase 1)
+- **`lib/embla-storefront-options.ts`:** `watchResize` defer ด้วย rAF + `watchSlides: false`
+- **`ClearanceSection`:** carousel เฉพาะ mobile ≥4 ชิ้น; ≤3 ใช้ grid · fixed slide `basis-[85%] sm:basis-[280px]`
+- **`ShopGeneticVaultHero`:** skip Embla เมื่อสินค้าเดียว · shared options
+- **`components/ui/carousel.tsx`:** default merge perf options
+
 ### บันทึกการทำงาน — 2026-05-20 (Next.js 15 + inlineCss — render-blocking CSS)
 - **Upgrade:** `next@15.5.18`, `eslint-config-next@15`, `@next/bundle-analyzer@15`, `@next/third-parties@15`
 - **`next.config.mjs`:** `experimental.inlineCss: true` (prod) — CSS เป็น inline `<style>` แทน `<link rel="stylesheet">`

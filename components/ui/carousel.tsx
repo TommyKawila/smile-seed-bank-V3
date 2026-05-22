@@ -8,6 +8,7 @@ import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
 import ArrowRight from "lucide-react/dist/esm/icons/arrow-right";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { emblaStorefrontOptions } from "@/lib/embla-storefront-options";
 
 type CarouselApi = UseEmblaCarouselType[1];
 type CarouselOptions = Parameters<typeof useEmblaCarousel>[0];
@@ -38,7 +39,7 @@ const Carousel = React.forwardRef<
     setApi?: (api: CarouselApi) => void;
   }
 >(({ opts, plugins, setApi, className, children, ...props }, ref) => {
-  const [carouselRef, api] = useEmblaCarousel(opts, plugins);
+  const [carouselRef, api] = useEmblaCarousel(emblaStorefrontOptions(opts), plugins);
   const [canScrollPrev, setCanScrollPrev] = React.useState(false);
   const [canScrollNext, setCanScrollNext] = React.useState(false);
 
