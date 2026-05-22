@@ -6,7 +6,7 @@ import Leaf from "lucide-react/dist/esm/icons/leaf";
 import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { JOURNAL_PRODUCT_MONO_CLASS } from "@/components/storefront/journal-product-mono-class";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 export function Footer() {
@@ -24,12 +24,14 @@ export function Footer() {
     { href: "/terms", label: t("เงื่อนไขการใช้งาน", "Terms of Service") },
   ];
 
-  const monoBar =
-    "font-[family-name:var(--font-journal-product-mono)] text-[10px] uppercase leading-relaxed tracking-wide text-zinc-600 tabular-nums";
+  const monoBar = cn(
+    JOURNAL_PRODUCT_MONO_CLASS,
+    "text-[10px] uppercase leading-relaxed tracking-wide text-zinc-600 tabular-nums"
+  );
 
   return (
     <footer className="no-print border-t border-zinc-100 bg-white">
-      <div className={`mx-auto max-w-7xl px-4 py-10 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+      <div className={`mx-auto max-w-7xl px-4 py-10 sm:px-6 ${JOURNAL_PRODUCT_MONO_CLASS}`}>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="lg:col-span-2">
@@ -100,7 +102,7 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="mb-4 font-[family-name:var(--font-journal-product-mono)] text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+            <h4 className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mb-4 text-[10px] font-medium uppercase tracking-widest text-zinc-500")}>
               {t("ลิงก์ด่วน", "Quick Links")}
             </h4>
             <ul className="space-y-4">
@@ -119,7 +121,7 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="mb-4 font-[family-name:var(--font-journal-product-mono)] text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+            <h4 className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mb-4 text-[10px] font-medium uppercase tracking-widest text-zinc-500")}>
               {t("ติดต่อเรา", "Contact Us")}
             </h4>
             <ul className="space-y-4 text-sm font-light text-zinc-600">

@@ -66,8 +66,17 @@ export function AgeVerificationGate({
 
   useEffect(() => {
     if (isVerified) return;
-    document.documentElement.classList.add("overflow-hidden");
+    let cancelled = false;
+    let innerRaf = 0;
+    const outerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(() => {
+        if (!cancelled) document.documentElement.classList.add("overflow-hidden");
+      });
+    });
     return () => {
+      cancelled = true;
+      cancelAnimationFrame(outerRaf);
+      cancelAnimationFrame(innerRaf);
       document.documentElement.classList.remove("overflow-hidden");
     };
   }, [isVerified]);

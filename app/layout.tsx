@@ -18,7 +18,8 @@ function supabaseOriginHeadLinks(): ReactNode {
   }
   return (
     <>
-      <link rel="preconnect" href={origin} crossOrigin="anonymous" />
+      {/* No crossorigin: hero/public storage `<img>` and `/_next/image` use non-CORS fetches. */}
+      <link rel="preconnect" href={origin} />
       <link rel="dns-prefetch" href={origin} />
     </>
   );

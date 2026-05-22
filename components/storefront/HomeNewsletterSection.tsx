@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/context/LanguageContext";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { JOURNAL_PRODUCT_MONO_CLASS } from "@/components/storefront/journal-product-mono-class";
 import { cn } from "@/lib/utils";
 
 export function HomeNewsletterSection() {
@@ -78,7 +78,7 @@ export function HomeNewsletterSection() {
     <section
       className={cn(
         "mx-4 mb-14 overflow-hidden rounded-3xl border border-emerald-800/20 bg-emerald-800 sm:mx-6",
-        JOURNAL_PRODUCT_FONT_VARS
+        JOURNAL_PRODUCT_MONO_CLASS
       )}
     >
       <div className="mx-auto flex max-w-4xl flex-col items-stretch justify-between gap-8 px-6 py-10 sm:flex-row sm:items-center sm:gap-10">

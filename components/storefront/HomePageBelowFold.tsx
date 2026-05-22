@@ -15,7 +15,7 @@ import QuickCategoryNav from "@/components/storefront/QuickCategoryNav";
 import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import { HomeNewsletterSection } from "@/components/storefront/HomeNewsletterSection";
 import { ProductCard } from "@/components/storefront/ProductCard";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { JOURNAL_PRODUCT_MONO_CLASS } from "@/components/storefront/journal-product-mono-class";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import {
   resolveSectionHeading,
@@ -139,7 +139,7 @@ export function HomePageBelowFold({
           <section
             key={sk}
             className={cn(
-              `mx-auto min-h-[400px] max-w-7xl px-4 py-14 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`,
+              `mx-auto min-h-[400px] max-w-7xl px-4 py-14 sm:px-6 ${JOURNAL_PRODUCT_MONO_CLASS}`,
               BELOW_FOLD_CV
             )}
           >
@@ -154,7 +154,7 @@ export function HomePageBelowFold({
                 className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
               >
                 <div className="max-w-2xl space-y-2">
-                  <p className="font-[family-name:var(--font-journal-product-mono)] text-[11px] font-medium uppercase tracking-widest text-emerald-800">
+                  <p className={cn(JOURNAL_PRODUCT_MONO_CLASS, "text-[11px] font-medium uppercase tracking-widest text-emerald-800")}>
                     NEW ARRIVALS
                   </p>
                   <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
@@ -260,10 +260,10 @@ export function HomePageBelowFold({
         );
         return (
           <section key={sk} className={cn("border-b border-zinc-100 bg-white py-12 sm:py-16", BELOW_FOLD_CV)}>
-            <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+            <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_MONO_CLASS}`}>
               <div className="mb-8 flex items-end justify-between">
                 <div>
-                  <span className="mb-2 inline-flex items-center rounded-full border border-zinc-100 bg-zinc-50/50 px-3 py-1 font-[family-name:var(--font-journal-product-mono)] text-[11px] font-medium uppercase tracking-widest text-zinc-500">
+                  <span className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mb-2 inline-flex items-center rounded-full border border-zinc-100 bg-zinc-50/50 px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-zinc-500")}>
                     {t("แบรนด์ชั้นนำ", "World-Class Breeders")}
                   </span>
                   <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl">
@@ -297,12 +297,12 @@ export function HomePageBelowFold({
             key={sk}
             className={cn("border-t border-b border-zinc-100 bg-zinc-50/30 py-12 sm:py-16", BELOW_FOLD_CV)}
           >
-            <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+            <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${JOURNAL_PRODUCT_MONO_CLASS}`}>
               <div className="grid grid-cols-1 divide-y divide-zinc-100 text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 {features.map((f) => (
                   <div key={f.label} className="px-6 py-7 sm:py-9">
                     <p className="font-sans text-base font-medium text-zinc-800">{f.label}</p>
-                    <p className="mt-1.5 font-[family-name:var(--font-journal-product-mono)] text-xs font-normal leading-relaxed text-zinc-600">
+                    <p className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mt-1.5 text-xs font-normal leading-relaxed text-zinc-600")}>
                       {f.sub}
                     </p>
                   </div>

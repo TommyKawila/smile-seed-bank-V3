@@ -4,6 +4,15 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-22 (PageSpeed — network dependency tree / preconnect)
+- **`app/layout.tsx`:** Supabase **`preconnect`** ไม่ใส่ **`crossOrigin`** (ให้ตรง non-CORS **`img`** / **`/_next/image`**) — แก้ **Unused preconnect**
+- **`page.tsx`:** **`await getHeroCarouselBannersCached()`** + **`HomeHeroLcpPreload`** sync (ไม่ **`Suspense`**) — preload LCP ใน HTML chunk แรก; ลบ **`home-lcp-hints.tsx`**
+- **`Footer.tsx`:** system mono แทน **`JOURNAL_PRODUCT_FONT_VARS`** (layout dynamic chunk ไม่ดึง JetBrains CSS)
+
+### บันทึกการทำงาน — 2026-05-22 (PageSpeed — layout forced reflow round 2)
+- **`Navbar.tsx`:** ถอด **`framer-motion`** จาก user menu + mobile menu → CSS **`animate-in`** (ตัด chunk **`9467`** layout measurements บน hydrate)
+- **`age-verification-gate.tsx`:** **`overflow-hidden`** บน **`<html>`** ผ่าน double-rAF หลัง paint (ลด sync style invalidation)
+
 ### บันทึกการทำงาน — 2026-05-22 (PageSpeed — legacy JS polyfill trim)
 - **`package.json` `browserslist`:** เปลี่ยนเป็น Next 14 official floor — **`chrome/edge/firefox >= 111`**, **`safari/ios_saf >= 16.4`** (แทน **`defaults and supports es6-module`**) — ตัด polyfill **`Array.at`/`flat`/`flatMap`/`Object.fromEntries`/`hasOwn`/`trimStart`/`trimEnd`** ออกจาก shared chunk **`2117`**
 

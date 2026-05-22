@@ -1,17 +1,20 @@
 import { Suspense } from "react";
-import { HomeHeroLcpHints } from "@/app/(storefront)/home-lcp-hints";
+import { HomeHeroLcpPreload } from "@/components/storefront/HomeHeroLcpPreload";
 import { HomeMainStream } from "@/app/(storefront)/home-stream";
+import { getHeroCarouselBannersCached } from "@/services/hero-banner-service";
+import type { HeroBanner } from "@/lib/hero-banners";
 
 function HomeMainStreamFallback() {
   return <div className="min-h-[100svh] bg-zinc-50" aria-hidden />;
 }
 
-export default function HomePage() {
+/** Preload LCP hero in first HTML chunk — no Suspense gate before `<link rel="preload">`. */
+export default async function HomePage() {
+  const banners = await getHeroCarouselBannersCached().catch((): HeroBanner[] => []);
+
   return (
     <>
-      <Suspense fallback={null}>
-        <HomeHeroLcpHints />
-      </Suspense>
+      <HomeHeroLcpPreload banner={banners[0]} />
       <Suspense fallback={<HomeMainStreamFallback />}>
         <HomeMainStream />
       </Suspense>

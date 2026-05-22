@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { m, AnimatePresence } from "framer-motion";
 import Leaf from "lucide-react/dist/esm/icons/leaf";
 import LogOut from "lucide-react/dist/esm/icons/log-out";
 import Menu from "lucide-react/dist/esm/icons/menu";
@@ -221,14 +220,9 @@ export function Navbar() {
                   >
                     {(customer?.full_name ?? user.email ?? "U").charAt(0).toUpperCase()}
                   </button>
-                  <AnimatePresence>
-                    {userMenuOpen && (
-                      <m.div
-                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-12 z-50 w-48 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-lg"
+                  {userMenuOpen ? (
+                      <div
+                        className="absolute right-0 top-12 z-50 w-48 animate-in fade-in slide-in-from-top-2 zoom-in-95 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-lg duration-150"
                       >
                         <div className="border-b border-zinc-100 px-4 py-3">
                           <p className="truncate text-xs font-semibold text-zinc-800">{customer?.full_name ?? t("ลูกค้า", "Customer")}</p>
@@ -259,9 +253,8 @@ export function Navbar() {
                           <LogOut className="h-4 w-4" />
                           {t("ออกจากระบบ", "Sign Out")}
                         </button>
-                      </m.div>
-                    )}
-                  </AnimatePresence>
+                      </div>
+                    ) : null}
                 </>
               ) : (
                 <Link
@@ -323,14 +316,9 @@ export function Navbar() {
         </div>
 
         {/* Mobile Dropdown Menu */}
-        <AnimatePresence>
-          {menuOpen && (
-            <m.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18 }}
-              className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 sm:px-6 md:hidden"
+        {menuOpen ? (
+            <div
+              className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200 sm:px-6 md:hidden"
             >
               <Link
                 href="/"
@@ -416,9 +404,8 @@ export function Navbar() {
                   English
                 </button>
               </div>
-            </m.div>
-          )}
-        </AnimatePresence>
+            </div>
+        ) : null}
       </header>
 
       {/* CartSheet */}
