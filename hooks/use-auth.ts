@@ -39,17 +39,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    getCurrentUser().then((u) => {
-      setUser(u);
-      if (u) fetchCustomer(u.id).finally(() => setIsLoading(false));
-      else setIsLoading(false);
-    });
+    let cancelled = false;
+    const run = () => {
+      if (cancelled) return;
+      getCurrentUser().then((u) => {
+        if (cancelled) return;
+        setUser(u);
+        if (u) fetchCustomer(u.id).finally(() => !cancelled && setIsLoading(false));
+        else setIsLoading(false);
+      });
+    };
 
-    return subscribeToAuthChanges((u) => {
+    const idleId =
+      typeof requestIdleCallback !== "undefined"
+        ? requestIdleCallback(run, { timeout: 1500 })
+        : window.setTimeout(run, 0);
+
+    const unsub = subscribeToAuthChanges((u) => {
+      if (cancelled) return;
       setUser(u);
       if (u) fetchCustomer(u.id);
       else setCustomer(null);
     });
+
+    return () => {
+      cancelled = true;
+      if (typeof cancelIdleCallback !== "undefined" && typeof idleId === "number") {
+        cancelIdleCallback(idleId);
+      } else {
+        window.clearTimeout(idleId);
+      }
+      unsub();
+    };
   }, [fetchCustomer]);
 
   const refetchCustomer = useCallback(async () => {

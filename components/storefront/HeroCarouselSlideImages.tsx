@@ -37,7 +37,7 @@ export function HeroCarouselSlideImages({
             priority={isPriority}
             fetchPriority={isPriority ? "high" : "auto"}
             loading={isPriority ? "eager" : "lazy"}
-            decoding={isPriority ? "sync" : "async"}
+            decoding="async"
             quality={60}
             sizes={HERO_CAROUSEL_BANNER_SIZES}
             unoptimized={shouldOffloadImageOptimization(mobileSrc)}
@@ -53,7 +53,7 @@ export function HeroCarouselSlideImages({
           priority={isPriority}
           fetchPriority={isPriority ? "high" : "auto"}
           loading={isPriority ? "eager" : "lazy"}
-          decoding={isPriority ? "sync" : "async"}
+          decoding="async"
           quality={65}
           sizes={HERO_CAROUSEL_BANNER_SIZES}
           unoptimized={shouldOffloadImageOptimization(desktopSrc)}

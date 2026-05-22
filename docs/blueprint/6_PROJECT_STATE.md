@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-20 (PageSpeed ส่วนที่ 2 — CSS chain / render-blocking)
+- **`lib/storefront-home-critical-css.ts`:** above-the-fold shell (~hero grid, nav offset, typography, primary button) สำหรับ first paint
+- **`lib/storefront-home-defer-css.ts`:** inline **`beforeInteractive`** script — home **`/`** เท่านั้น: inject critical **`<style>`** + เปลี่ยน **`/_next/static/css/*`** เป็น **`media=print`** + **`onload→all`** + **`MutationObserver`** (critters ไม่ทำงานบน dynamic App Router)
+- **`app/layout.tsx`:** **`Script strategy="beforeInteractive"`** **`home-defer-css`**
+
 ### บันทึกการทำงาน — 2026-05-20 (PageSpeed Phase 3 — home below-fold Framer strip)
 - **`ProductCard.tsx`:** ถอด **`framer-motion`** ทั้ง outer wrapper — เหลือ static **`<div className="h-full">`**
 - **`HomePageBelowFold.tsx`:** ถอด **`m.div` / stagger variants** → CSS **`motion-safe:animate-in fade-in slide-in-from-bottom-4`**

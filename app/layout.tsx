@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import dynamic from "next/dynamic";
+import Script from "next/script";
 import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
 import { Prompt } from "next/font/google";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
+import { STOREFRONT_HOME_DEFER_CSS_SCRIPT } from "@/lib/storefront-home-defer-css";
 
 function supabaseOriginHeadLinks(): ReactNode {
   const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -78,6 +80,9 @@ export default function RootLayout({
     <html lang="th" className="scroll-smooth" suppressHydrationWarning>
       <head>{supabaseOriginHeadLinks()}</head>
       <body className={`${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
+        <Script id="home-defer-css" strategy="beforeInteractive">
+          {STOREFRONT_HOME_DEFER_CSS_SCRIPT}
+        </Script>
         <FramerLazyRoot>
           {children}
           <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />
