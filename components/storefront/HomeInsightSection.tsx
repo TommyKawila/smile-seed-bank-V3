@@ -28,7 +28,11 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
   const cardExcerpt = magazineDisplayExcerpt(post, locale);
   return (
     <article className="flex flex-col overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition hover:shadow-lg">
-      <Link href={`/blog/${post.slug}`} className="relative block aspect-video overflow-hidden bg-zinc-100">
+      <Link
+        href={`/blog/${post.slug}`}
+        className="relative block aspect-video min-h-[11rem] w-full overflow-hidden bg-zinc-100"
+        aria-label={t(`อ่านบทความ: ${cardTitle}`, `Read article: ${cardTitle}`)}
+      >
         {img ? (
           <Image
             src={img}
@@ -171,8 +175,8 @@ export function HomeInsightSection({
                 </div>
                 <Link
                   href={`/blog/${featured.slug}`}
-                  className="relative order-2 block min-h-[260px] w-full overflow-hidden bg-zinc-200 lg:min-h-full"
-                  aria-label={t("อ่านบทความ", "Read article")}
+                  className="relative order-2 block min-h-[260px] min-w-[44px] w-full overflow-hidden bg-zinc-200 lg:min-h-full"
+                  aria-label={t(`อ่านบทความ: ${featuredTitle}`, `Read article: ${featuredTitle}`)}
                 >
                   {featuredImg ? (
                     <Image
@@ -198,7 +202,7 @@ export function HomeInsightSection({
             )}
 
             {rest.length > 0 && (
-              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-3 lg:gap-10">
                 {rest.map((p) => (
                   <InsightGridCard key={p.id} post={p} />
                 ))}

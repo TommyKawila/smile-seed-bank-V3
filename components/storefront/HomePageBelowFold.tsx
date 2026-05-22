@@ -287,13 +287,13 @@ export function HomePageBelowFold({
         return (
           <section
             key={sk}
-            className={cn("border-t border-b border-zinc-100 bg-zinc-50/30 py-12 sm:py-16", BELOW_FOLD_CV)}
+            className={cn("border-t border-b border-zinc-100 bg-zinc-50 py-12 sm:py-16", BELOW_FOLD_CV)}
           >
             <div className="mx-auto max-w-5xl px-4 sm:px-6">
               <div className="grid grid-cols-1 divide-y divide-zinc-100 text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 {features.map((f) => (
                   <div key={f.label} className="px-6 py-7 sm:py-9">
-                    <p className="font-sans text-base font-medium text-zinc-800">{f.label}</p>
+                    <p className="font-sans text-base font-semibold text-zinc-900">{f.label}</p>
                     <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">
                       {f.sub}
                     </p>

@@ -97,7 +97,7 @@ export function HomeNewsletterSection() {
         ) : (
           <form
             onSubmit={(e) => void onSubmit(e)}
-            className="flex w-full flex-col gap-3 sm:max-w-md sm:flex-shrink-0 sm:flex-row sm:items-center"
+            className="flex w-full flex-col gap-4 sm:max-w-md sm:flex-shrink-0 sm:flex-row sm:items-stretch sm:gap-3"
           >
             <label htmlFor="home-newsletter-email" className="sr-only">
               {t("อีเมล", "Email")}
@@ -115,12 +115,12 @@ export function HomeNewsletterSection() {
               }}
               placeholder={t("ใส่อีเมลของคุณ...", "you@email.com")}
               disabled={pending}
-              className="h-11 flex-1 border-white/25 bg-white/95 text-zinc-900 placeholder:text-zinc-500 focus-visible:ring-emerald-300"
+              className="min-h-12 h-12 flex-1 border-white/25 bg-white/95 text-base text-zinc-900 placeholder:text-zinc-600 focus-visible:ring-emerald-300"
             />
             <Button
               type="submit"
               disabled={pending}
-              className="h-11 shrink-0 rounded-sm border-2 border-white bg-white px-6 text-sm font-semibold tracking-wide text-emerald-900 hover:bg-emerald-50 disabled:opacity-60"
+              className="min-h-12 h-12 shrink-0 rounded-sm border-2 border-white bg-white px-6 text-sm font-semibold tracking-wide text-emerald-900 hover:bg-emerald-50 disabled:opacity-60"
             >
               {pending ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

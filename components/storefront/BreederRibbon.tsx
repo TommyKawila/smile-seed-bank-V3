@@ -298,7 +298,8 @@ function BreederRibbonBase({
                   clearTimeout(tooltipTimer.current);
                   setTooltip(null);
                 }}
-                className="group shrink-0 flex flex-col items-center gap-2"
+                className="group shrink-0 flex min-w-[44px] flex-col items-center gap-2 py-1"
+                aria-label={b.name}
               >
                 <div
                   onDragStart={(ev) => ev.preventDefault()}
@@ -328,7 +329,7 @@ function BreederRibbonBase({
                     />
                   </div>
                 </div>
-                <p className={`text-center font-medium text-zinc-400 transition-colors duration-200 group-hover:text-primary ${compact ? "text-[10px]" : "text-[11px]"}`}>
+                <p className={`text-center font-medium text-zinc-600 transition-colors duration-200 group-hover:text-primary ${compact ? "text-[10px]" : "text-[11px]"}`}>
                   {b.name}
                 </p>
               </a>

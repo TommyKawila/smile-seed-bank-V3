@@ -4,6 +4,30 @@
 
 ---
 
+## 🔒 LOCKED — PSI Performance baseline (Mobile, 2026-05-23)
+
+**Score: 97** — ห้าม regression; เปลี่ยน config ด้านล่างต้องรัน PSI ใหม่ก่อน merge
+
+| รายการ | ค่าที่ lock |
+|--------|------------|
+| Next.js | `15.5.x` |
+| `experimental.inlineCss` | `true` (อย่า A/B ปิดโดยไม่วัด) |
+| Font | `lib/fonts/prompt.ts` self-hosted woff2 (400/600/700) |
+| Hero LCP | `(home)/layout` preload · `home-stream` ไม่มี Suspense · `resolveHeroCarouselBanners` |
+| Supabase JS | ห้าม sync `createClient` ใน layout chain — ใช้ `/api/storefront/cart-rules` + `/api/storefront/breeders/active` + `scheduleIdleWork` |
+| jsPDF / Cart / Search | dynamic import / lazy mount ตาม Phase 0–2 |
+| Embla | `embla-storefront-options` + near-viewport carousels |
+
+**Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97)
+
+---
+
+### บันทึกการทำงาน — 2026-05-23 (A11y — home PSI 90→target)
+- **Contrast:** `BreederRibbon` label `text-zinc-400` → `text-zinc-600`; trust strip `bg-zinc-50` + `text-zinc-900`
+- **Link names:** `HomeInsightSection` image links — `aria-label` + meaningful `alt` จากชื่อบทความ
+- **Touch targets:** newsletter input/button `min-h-12`; blog grid `gap-10`; insight card link `min-h-[11rem]`
+- **ไฟล์:** `BreederRibbon.tsx`, `HomeInsightSection.tsx`, `HomeNewsletterSection.tsx`, `HomePageBelowFold.tsx`
+
 ### บันทึกการทำงาน — 2026-05-22 (Perf Phase 2 — defer Supabase JS chunk 5890)
 - **`/api/storefront/cart-rules`:** shipping + gift promotions ผ่าน Prisma (แทน `createClient` ใน `useCart`)
 - **`/api/storefront/breeders/active`:** active breeders สำหรับ navbar catalog
