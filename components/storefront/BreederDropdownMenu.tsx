@@ -8,10 +8,10 @@ import { seedsBreederHref } from "@/lib/breeder-slug";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { JOURNAL_PRODUCT_MONO_CLASS } from "@/components/storefront/journal-product-mono-class";
 
 const serif = "font-sans";
-const mono = "font-[family-name:var(--font-journal-product-mono)]";
+const mono = JOURNAL_PRODUCT_MONO_CLASS;
 
 type Props = {
   navLinkClass: string;
@@ -42,7 +42,7 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
         <p className={cn(mono, "mb-2 mt-1 text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-400")}>
           FIND BY BREEDER
         </p>
-        <ul className={`max-h-56 space-y-3 overflow-y-auto pb-2 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+        <ul className="max-h-56 space-y-3 overflow-y-auto pb-2">
           {isLoading ? (
             <li className="text-xs text-zinc-400">…</li>
           ) : (
@@ -104,9 +104,7 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
 
       {open && (
         <div className="absolute left-1/2 top-full z-50 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 pt-2 lg:left-0 lg:translate-x-0">
-          <div
-            className={`overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-md ${JOURNAL_PRODUCT_FONT_VARS}`}
-          >
+          <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-md">
             <div className="border-b border-zinc-50 px-5 py-3">
               <p className={cn(mono, "text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-400")}>
                 FIND BY BREEDER

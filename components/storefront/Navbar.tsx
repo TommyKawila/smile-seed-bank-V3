@@ -20,14 +20,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
-
-const BreederSeedsNav = dynamic(
-  () =>
-    import("@/components/storefront/BreederDropdownMenu").then((m) => ({
-      default: m.BreederSeedsNav,
-    })),
-  { ssr: false }
-);
+import { BreederSeedsNav } from "@/components/storefront/BreederDropdownMenu";
 
 const CartSheet = dynamic(
   () => import("./CartSheet").then((m) => ({ default: m.CartSheet })),

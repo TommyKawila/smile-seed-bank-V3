@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-22 (Navbar — restore Seeds menu on production)
+- **`Navbar.tsx`:** **`BreederSeedsNav`** กลับเป็น **static import** (ถอด **`dynamic` `ssr: false`**) — prod ไม่ render จน chunk โหลด = เมนู **เมล็ดพันธุ์** หาย
+- **`BreederDropdownMenu.tsx`:** **`JOURNAL_PRODUCT_MONO_CLASS`** แทน **`JOURNAL_PRODUCT_FONT_VARS`** (ไม่ดึง JetBrains **`next/font`** CSS)
+
 ### บันทึกการทำงาน — 2026-05-20 (PageSpeed ส่วนที่ 2 — CSS chain / render-blocking)
 - **`lib/storefront-home-critical-css.ts`:** above-the-fold shell (~hero grid, nav offset, typography, primary button) สำหรับ first paint
 - **`lib/storefront-home-defer-css.ts`:** inline **`beforeInteractive`** script — home **`/`** เท่านั้น: inject critical **`<style>`** + เปลี่ยน **`/_next/static/css/*`** เป็น **`media=print`** + **`onload→all`** + **`MutationObserver`** (critters ไม่ทำงานบน dynamic App Router)
