@@ -2,9 +2,14 @@
 
 import Image from "next/image";
 import {
-  HERO_CAROUSEL_BANNER_SIZES,
-  HERO_CAROUSEL_INTRINSIC_H,
-  HERO_CAROUSEL_INTRINSIC_W,
+  HERO_CAROUSEL_DESKTOP_SIZES,
+  HERO_CAROUSEL_MOBILE_SIZES,
+  HERO_IMAGE_QUALITY_DESKTOP,
+  HERO_IMAGE_QUALITY_DESKTOP_LCP,
+  HERO_IMAGE_QUALITY_MOBILE,
+  HERO_IMAGE_QUALITY_MOBILE_LCP,
+  HERO_MOBILE_ASPECT_H,
+  HERO_MOBILE_ASPECT_W,
 } from "@/components/storefront/hero-carousel-image-sizes";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
@@ -32,14 +37,14 @@ export function HeroCarouselSlideImages({
           <Image
             src={mobileSrc}
             alt={alt}
-            width={HERO_CAROUSEL_INTRINSIC_W}
-            height={HERO_CAROUSEL_INTRINSIC_H}
+            width={HERO_MOBILE_ASPECT_W}
+            height={HERO_MOBILE_ASPECT_H}
             priority={isPriority}
             fetchPriority={isPriority ? "high" : "auto"}
             loading={isPriority ? "eager" : "lazy"}
             decoding="async"
-            quality={60}
-            sizes={HERO_CAROUSEL_BANNER_SIZES}
+            quality={isPriority ? HERO_IMAGE_QUALITY_MOBILE_LCP : HERO_IMAGE_QUALITY_MOBILE}
+            sizes={HERO_CAROUSEL_MOBILE_SIZES}
             unoptimized={shouldOffloadImageOptimization(mobileSrc)}
             className="h-full w-full object-contain object-center"
           />
@@ -54,8 +59,8 @@ export function HeroCarouselSlideImages({
           fetchPriority={isPriority ? "high" : "auto"}
           loading={isPriority ? "eager" : "lazy"}
           decoding="async"
-          quality={65}
-          sizes={HERO_CAROUSEL_BANNER_SIZES}
+          quality={isPriority ? HERO_IMAGE_QUALITY_DESKTOP_LCP : HERO_IMAGE_QUALITY_DESKTOP}
+          sizes={HERO_CAROUSEL_DESKTOP_SIZES}
           unoptimized={shouldOffloadImageOptimization(desktopSrc)}
           className="object-cover object-center"
         />

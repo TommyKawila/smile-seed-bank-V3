@@ -3,20 +3,14 @@ import type { HeroBanner } from "@/lib/hero-banners";
 import {
   HERO_CAROUSEL_DESKTOP_SIZES,
   HERO_CAROUSEL_MOBILE_SIZES,
+  HERO_LCP_PRELOAD_DESKTOP_H,
+  HERO_LCP_PRELOAD_DESKTOP_W,
+  HERO_LCP_PRELOAD_MOBILE_H,
+  HERO_LCP_PRELOAD_MOBILE_W,
+  HERO_IMAGE_QUALITY_DESKTOP_LCP,
+  HERO_IMAGE_QUALITY_MOBILE_LCP,
 } from "@/components/storefront/hero-carousel-image-sizes";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
-
-/**
- * Moto G Power–style logical width (~412 CSS px); height matches hero slide aspect **390:429**.
- * Aligns with `HeroCarouselSlideImages` + `deviceSizes` bucket **412** in next.config.
- */
-const MOBILE_W = 412;
-const MOBILE_H = Math.round((MOBILE_W * 429) / 390);
-const DESKTOP_W = 640;
-/** Desktop hero frame uses **16:7** (see `HeroCarouselSlideImages`). */
-const DESKTOP_H = Math.round((DESKTOP_W * 7) / 16);
-
-const MOBILE_IMAGE_SIZES_HINT = HERO_CAROUSEL_MOBILE_SIZES;
 
 /** Thai-default assets for LCP (matches server-first paint before client locale hydrates). */
 function firstBannerSources(b: HeroBanner): { mobile: string; desktop: string } {
@@ -35,9 +29,9 @@ function PreloadOptimizedMobile({ src }: { src: string }) {
     const { props } = getImageProps({
       src: src.trim(),
       alt: "",
-      width: MOBILE_W,
-      height: MOBILE_H,
-      quality: 60,
+      width: HERO_LCP_PRELOAD_MOBILE_W,
+      height: HERO_LCP_PRELOAD_MOBILE_H,
+      quality: HERO_IMAGE_QUALITY_MOBILE_LCP,
       sizes: HERO_CAROUSEL_MOBILE_SIZES,
     });
     const srcSet = typeof props.srcSet === "string" && props.srcSet.trim() ? props.srcSet.trim() : "";
@@ -48,7 +42,7 @@ function PreloadOptimizedMobile({ src }: { src: string }) {
           rel="preload"
           as="image"
           imageSrcSet={srcSet}
-          imageSizes={MOBILE_IMAGE_SIZES_HINT}
+          imageSizes={HERO_CAROUSEL_MOBILE_SIZES}
           fetchPriority="high"
           media="(max-width: 767px)"
         />
@@ -73,9 +67,9 @@ function PreloadOptimizedDesktop({ src }: { src: string }) {
     const { props } = getImageProps({
       src: src.trim(),
       alt: "",
-      width: DESKTOP_W,
-      height: DESKTOP_H,
-      quality: 65,
+      width: HERO_LCP_PRELOAD_DESKTOP_W,
+      height: HERO_LCP_PRELOAD_DESKTOP_H,
+      quality: HERO_IMAGE_QUALITY_DESKTOP_LCP,
       sizes: HERO_CAROUSEL_DESKTOP_SIZES,
     });
     const srcSet = typeof props.srcSet === "string" && props.srcSet.trim() ? props.srcSet.trim() : "";

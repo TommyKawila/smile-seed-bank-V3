@@ -108,6 +108,11 @@ const nextConfig = {
   images: {
     /** Serve via `/_next/image` when allowed; per-`Image` `unoptimized` only for data/blob URLs. */
     unoptimized: false,
+    formats: ["image/avif", "image/webp"],
+    /** Hero LCP bucket **412** + trimmed set — avoids 1920+ overserve on mobile. */
+    deviceSizes: [384, 412, 640, 750, 828, 1080],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       ...supabaseStorageRemotePatterns(),
       ...extraImageRemotePatterns(),

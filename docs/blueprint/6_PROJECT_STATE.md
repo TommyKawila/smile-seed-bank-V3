@@ -4,6 +4,19 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-22 (Hero image Phase C — LCP quality tiers)
+- **`hero-carousel-image-sizes.ts`:** quality SSOT — mobile LCP **50**, mobile slide **55**, desktop LCP **60**, desktop slide **55**
+- **`HeroCarouselSlideImages.tsx`:** **`quality`** ตาม **`priority`** (slide 0); non-LCP ยัง **`loading="lazy"`**
+- **`HomeHeroLcpPreload.tsx`:** preload sync กับ LCP quality **50/60**
+
+### บันทึกการทำงาน — 2026-05-22 (Hero image Phase B — next/image deviceSizes + AVIF)
+- **`next.config.mjs` `images`:** **`formats`** AVIF→WebP; **`deviceSizes`** `[384,412,640,750,828,1080]` (align **`HERO_LCP_PRELOAD_MOBILE_W=412`**); **`imageSizes`** ถึง **384**; **`minimumCacheTTL`** 1y
+
+### บันทึกการทำงาน — 2026-05-22 (Hero image Phase A — SSOT sizes + preload sync)
+- **`hero-carousel-image-sizes.ts`:** SSOT — mobile **392×429**, desktop **617×890**, แยก **`MOBILE_SIZES` / `DESKTOP_SIZES`**, preload buckets **412×451** / **640×924**
+- **`HeroCarouselSlideImages.tsx`:** mobile **`width/height`** + **`sizes`** จาก SSOT; desktop **`DESKTOP_SIZES`** แยก
+- **`HomeHeroLcpPreload.tsx`:** ใช้ constant เดียวกับ carousel (ถอด hardcode **780×858** / **16:7**)
+
 ### บันทึกการทำงาน — 2026-05-22 (Navbar — restore Seeds menu on production)
 - **`Navbar.tsx`:** **`BreederSeedsNav`** กลับเป็น **static import** (ถอด **`dynamic` `ssr: false`**) — prod ไม่ render จน chunk โหลด = เมนู **เมล็ดพันธุ์** หาย
 - **`BreederDropdownMenu.tsx`:** **`JOURNAL_PRODUCT_MONO_CLASS`** แทน **`JOURNAL_PRODUCT_FONT_VARS`** (ไม่ดึง JetBrains **`next/font`** CSS)
