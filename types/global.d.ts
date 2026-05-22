@@ -43,3 +43,13 @@ interface Bluetooth {
 interface Navigator {
   readonly bluetooth?: Bluetooth;
 }
+
+/** Vercel Edge / Cloudflare — used to prepend defer-css before Next stylesheet links. */
+declare class HTMLRewriter {
+  on(selector: string, handlers: {
+    element?(element: {
+      prepend(content: string, opts?: { html?: boolean }): void;
+    }): void;
+  }): HTMLRewriter;
+  transform(response: Response): Response;
+}

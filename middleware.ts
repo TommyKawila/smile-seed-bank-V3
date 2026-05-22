@@ -2,6 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database.types";
 import { supabaseAuthCookieOptions } from "@/lib/supabase/session-cookies";
+import {
+  applyStorefrontDeferCssTransform,
+  shouldApplyStorefrontDeferCss,
+} from "@/lib/storefront-defer-css-middleware";
 
 function adminRoleFromMetadata(user: { user_metadata?: Record<string, unknown> }): string {
   const r = user.user_metadata?.role;
@@ -14,12 +18,30 @@ function copyCookies(from: NextResponse, to: NextResponse) {
   });
 }
 
+/** Admin/API routes only — storefront and `/login` stay public (no auth redirect). */
+function isAdminAuthProtected(path: string): boolean {
+  if (path === "/admin/login" || path.startsWith("/admin/login/")) return false;
+  if (path === "/admin" || path.startsWith("/admin/")) return true;
+  if (path === "/api/admin" || path.startsWith("/api/admin/")) return true;
+  if (path === "/api/ai" || path.startsWith("/api/ai/")) return true;
+  return false;
+}
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isDev = process.env.NODE_ENV === "development";
 
+  if (shouldApplyStorefrontDeferCss(request)) {
+    const transformed = await applyStorefrontDeferCssTransform(request);
+    if (transformed) return transformed;
+  }
+
   /** Public storefront APIs (guest checkout, order helpers) — never redirect to /login. */
   if (path === "/api/storefront" || path.startsWith("/api/storefront/")) {
+    return NextResponse.next({ request });
+  }
+
+  if (!isAdminAuthProtected(path)) {
     return NextResponse.next({ request });
   }
 
@@ -90,12 +112,7 @@ export async function middleware(request: NextRequest) {
 
   if (!user) {
     const url = request.nextUrl.clone();
-    const isAdminPage = path === "/admin" || path.startsWith("/admin/");
-    if (isAdminPage) {
-      url.pathname = "/admin/login";
-    } else {
-      url.pathname = "/login";
-    }
+    url.pathname = "/admin/login";
     url.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     const redirect = NextResponse.redirect(url);
     copyCookies(supabaseResponse, redirect);
@@ -104,14 +121,8 @@ export async function middleware(request: NextRequest) {
 
   if (adminRoleFromMetadata(user) !== "ADMIN") {
     const url = request.nextUrl.clone();
-    const isAdminPage = path === "/admin" || path.startsWith("/admin/");
-    if (isAdminPage) {
-      url.pathname = "/admin/login";
-      url.searchParams.set("reason", "admin_required");
-    } else {
-      url.pathname = "/login";
-      url.searchParams.set("reason", "admin_required");
-    }
+    url.pathname = "/admin/login";
+    url.searchParams.set("reason", "admin_required");
     const redirect = NextResponse.redirect(url);
     copyCookies(supabaseResponse, redirect);
     return redirect;
@@ -122,6 +133,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\..+$).*)",
     "/admin",
     "/admin/:path*",
     "/api/admin",

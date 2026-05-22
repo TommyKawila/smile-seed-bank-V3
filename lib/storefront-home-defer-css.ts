@@ -1,2 +1,4 @@
-/** Inline in `<head>` — production `/` only: defer Tailwind `/_next/static/css/*` on home. */
-export const STOREFRONT_HOME_DEFER_CSS_SCRIPT = `(function(){var p=(location.pathname.replace(/\\/+$/,"")||"/");var h=location.hostname;if(p!=="/"||h==="localhost"||h==="127.0.0.1")return;function d(l){if(!l||l.dataset.ssbCss||!l.href||l.href.indexOf("/_next/static/css/")===-1)return;l.dataset.ssbCss="1";if(l.sheet)return;l.media="print";l.onload=function(){this.media="all";this.onload=null};setTimeout(function(){if(l.media==="print")l.media="all"},3000)}document.querySelectorAll('link[rel="stylesheet"]').forEach(d);new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType===1&&n.tagName==="LINK"&&n.rel==="stylesheet")d(n)})})}).observe(document.documentElement,{childList:true,subtree:true})})();`;
+/** @deprecated Import from `@/lib/storefront-defer-css` */
+export {
+  STOREFRONT_DEFER_CSS_SCRIPT as STOREFRONT_HOME_DEFER_CSS_SCRIPT,
+} from "@/lib/storefront-defer-css";

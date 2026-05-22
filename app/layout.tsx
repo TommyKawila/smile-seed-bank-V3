@@ -6,7 +6,10 @@ import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
-import { STOREFRONT_HOME_DEFER_CSS_SCRIPT } from "@/lib/storefront-home-defer-css";
+import {
+  STOREFRONT_CRITICAL_CSS,
+  STOREFRONT_DEFER_CSS_SCRIPT,
+} from "@/lib/storefront-defer-css";
 
 function supabaseOriginHeadLinks(): ReactNode {
   const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -78,7 +81,9 @@ export default function RootLayout({
   return (
     <html lang="th" className="scroll-smooth" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: STOREFRONT_HOME_DEFER_CSS_SCRIPT }} />
+        <style id="ssb-critical" dangerouslySetInnerHTML={{ __html: STOREFRONT_CRITICAL_CSS }} />
+        {/* Edge middleware prepends this before CSS on Vercel prod; layout copy is fallback. */}
+        <script dangerouslySetInnerHTML={{ __html: STOREFRONT_DEFER_CSS_SCRIPT }} />
         {supabaseOriginHeadLinks()}
       </head>
       <body className={`${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
