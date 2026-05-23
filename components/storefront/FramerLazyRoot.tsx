@@ -1,11 +1,17 @@
 "use client";
 
-import { LazyMotion, domAnimation } from "framer-motion";
+import { LazyMotion } from "framer-motion";
 import type { ReactNode } from "react";
 
 export function FramerLazyRoot({ children }: { children: ReactNode }) {
   return (
-    <LazyMotion features={domAnimation} strict={false}>
+    <LazyMotion
+      strict={false}
+      features={async () => {
+        const { domAnimation } = await import("framer-motion");
+        return domAnimation;
+      }}
+    >
       {children}
     </LazyMotion>
   );

@@ -3,18 +3,25 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { AgeVerificationGate } from "@/components/storefront/age-verification-gate";
 import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { Navbar } from "@/components/storefront/Navbar";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { FRAMER_MOTION_NEEDED_EVENT } from "@/lib/framer-motion-events";
 import { scheduleIdleWork } from "@/lib/schedule-idle-work";
+import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
 import { CART_FLY_EVENT, type CartFlyEventDetail } from "@/lib/cart-fly-events";
 
 const CART_ANIMATION_IDLE_MS = 8_000;
-const AGE_GATE_AFTER_LCP_IDLE_MS = 2_000;
-const HOME_FRAMER_IDLE_MS = 4_500;
+const AGE_GATE_FALLBACK_MS = 12_000;
+const HOME_FRAMER_FALLBACK_MS = 15_000;
 
+const AgeVerificationGate = dynamic(
+  () =>
+    import("@/components/storefront/age-verification-gate").then((m) => ({
+      default: m.AgeVerificationGate,
+    })),
+  { ssr: false }
+);
 const Toaster = dynamic(
   () => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })),
   { ssr: false }
@@ -43,50 +50,6 @@ const CartAnimation = dynamic(
   { ssr: false }
 );
 
-function scheduleAgeGateMount(onMount: () => void): () => void {
-  let cancelled = false;
-  let idleCancel: (() => void) | null = null;
-  const mount = () => {
-    if (!cancelled) onMount();
-  };
-  const afterLcp = () => {
-    idleCancel = scheduleIdleWork(mount, AGE_GATE_AFTER_LCP_IDLE_MS);
-  };
-
-  if (typeof PerformanceObserver !== "undefined") {
-    try {
-      let lcpHandled = false;
-      const po = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (entry.entryType !== "largest-contentful-paint" || lcpHandled) continue;
-          lcpHandled = true;
-          po.disconnect();
-          afterLcp();
-        }
-      });
-      po.observe({ type: "largest-contentful-paint", buffered: true });
-      const fallback = scheduleIdleWork(() => {
-        if (!lcpHandled && !cancelled) mount();
-      }, 3_500);
-      return () => {
-        cancelled = true;
-        po.disconnect();
-        fallback();
-        idleCancel?.();
-      };
-    } catch {
-      /* fall through */
-    }
-  }
-
-  const cancel = scheduleIdleWork(mount, 2_500);
-  return () => {
-    cancelled = true;
-    cancel();
-    idleCancel?.();
-  };
-}
-
 export function StorefrontLayoutClient({
   children,
   initialAgeVerifiedCookie,
@@ -107,7 +70,7 @@ export function StorefrontLayoutClient({
 
   useEffect(() => {
     if (initialSkipAgeGate) return;
-    return scheduleAgeGateMount(() => setMountAgeGate(true));
+    return scheduleInteractionMount(() => setMountAgeGate(true), AGE_GATE_FALLBACK_MS);
   }, [initialSkipAgeGate]);
 
   useEffect(() => {
@@ -116,12 +79,12 @@ export function StorefrontLayoutClient({
       return;
     }
     if (framerReady) return;
-    const onNeeded = () => setFramerReady(true);
-    window.addEventListener(FRAMER_MOTION_NEEDED_EVENT, onNeeded);
-    const cancelIdle = scheduleIdleWork(() => setFramerReady(true), HOME_FRAMER_IDLE_MS);
+    const arm = () => setFramerReady(true);
+    window.addEventListener(FRAMER_MOTION_NEEDED_EVENT, arm);
+    const cancelInteract = scheduleInteractionMount(arm, HOME_FRAMER_FALLBACK_MS);
     return () => {
-      window.removeEventListener(FRAMER_MOTION_NEEDED_EVENT, onNeeded);
-      cancelIdle();
+      window.removeEventListener(FRAMER_MOTION_NEEDED_EVENT, arm);
+      cancelInteract();
     };
   }, [framerReady, isHomePath]);
 

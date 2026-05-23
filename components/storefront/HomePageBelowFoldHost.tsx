@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HomePageBelowFold } from "@/components/storefront/HomePageBelowFold";
+import { signalFramerMotionNeeded } from "@/lib/framer-motion-events";
 import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
 import type { MagazinePostPublic } from "@/lib/blog-service";
@@ -87,7 +88,26 @@ export function HomePageBelowFoldHost({ belowSections, initialData }: HomePageBe
     };
   }, [hasInitialData]);
 
+  const belowFoldRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = belowFoldRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          signalFramerMotionNeeded();
+          io.disconnect();
+        }
+      },
+      { rootMargin: "240px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
+    <div ref={belowFoldRef}>
     <HomePageBelowFold
         sections={belowSections}
         newArrivals={newArrivals}
@@ -99,5 +119,6 @@ export function HomePageBelowFoldHost({ belowSections, initialData }: HomePageBe
         clearanceProducts={clearanceProducts}
         clearanceLoading={clearanceLoading}
     />
+    </div>
   );
 }
