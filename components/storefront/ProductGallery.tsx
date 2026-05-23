@@ -14,6 +14,11 @@ import {
   buildDetailGalleryUrls,
   resolveDetailHeroUrl,
 } from "@/lib/product-gallery-utils"
+import {
+  productGalleryLightboxUrl,
+  productGalleryMainUrl,
+  productGalleryThumbUrl,
+} from "@/lib/storefront-image-urls"
 import { productGalleryImageUnoptimized } from "@/lib/vercel-image-offload"
 
 type GalleryItem = { src: string; alt: string; badge?: string }
@@ -191,7 +196,7 @@ function Lightbox({
               {images.map((img, i) => (
                 <Image
                   key={`${i}-${img.src}`}
-                  src={img.src}
+                  src={productGalleryLightboxUrl(img.src)}
                   alt={img.alt}
                   fill
                   className={cn(
@@ -203,7 +208,7 @@ function Lightbox({
                   priority={i === 0}
                   loading={i === 0 ? "eager" : "lazy"}
                   fetchPriority={index === i ? (i === 0 ? "high" : "auto") : "low"}
-                  unoptimized={productGalleryImageUnoptimized(img.src)}
+                  unoptimized={productGalleryImageUnoptimized(productGalleryLightboxUrl(img.src))}
                 />
               ))}
             </div>
@@ -237,14 +242,14 @@ function Lightbox({
                   )}
                 >
                   <Image
-                    src={g.src}
+                    src={productGalleryThumbUrl(g.src)}
                     alt={g.alt || name || "Product"}
                     width={64}
                     height={64}
                     className="h-full w-full object-cover"
                     sizes="64px"
                     quality={75}
-                    unoptimized={productGalleryImageUnoptimized(g.src)}
+                    unoptimized={productGalleryImageUnoptimized(productGalleryThumbUrl(g.src))}
                   />
                 </button>
               ))}
@@ -332,7 +337,7 @@ export function ProductGallery({
           {gallery.map((item, i) => (
             <Image
               key={`${i}-${item.src}`}
-              src={item.src}
+              src={productGalleryMainUrl(item.src)}
               alt={item.alt}
               fill
               sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 42vw"
@@ -345,7 +350,7 @@ export function ProductGallery({
                 selected === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none",
                 showAggregateSoldOut && "brightness-75 grayscale"
               )}
-              unoptimized={productGalleryImageUnoptimized(item.src)}
+              unoptimized={productGalleryImageUnoptimized(productGalleryMainUrl(item.src))}
             />
           ))}
         </div>
@@ -404,14 +409,14 @@ export function ProductGallery({
               )}
             >
               <Image
-                src={img.src}
+                src={productGalleryThumbUrl(img.src)}
                 alt={img.alt}
                 fill
                 className="object-contain p-0.5"
                 sizes="100px"
                 loading="lazy"
                 quality={75}
-                unoptimized={productGalleryImageUnoptimized(img.src)}
+                unoptimized={productGalleryImageUnoptimized(productGalleryThumbUrl(img.src))}
               />
             </button>
           ))}

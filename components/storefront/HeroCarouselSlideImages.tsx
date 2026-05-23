@@ -12,6 +12,10 @@ import {
   HERO_MOBILE_ASPECT_H,
   HERO_MOBILE_ASPECT_W,
 } from "@/components/storefront/hero-carousel-image-sizes";
+import {
+  heroCarouselDesktopUrl,
+  heroCarouselMobileUrl,
+} from "@/lib/storefront-image-urls";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 export type HeroCarouselSlideImagesProps = {
@@ -46,12 +50,14 @@ export function HeroCarouselSlideImages({
   const isMobile = useHeroViewportIsMobile();
   const mobilePriority = isLcp && isMobile;
   const desktopPriority = isLcp && !isMobile;
+  const mobileImageSrc = heroCarouselMobileUrl(mobileSrc, mobilePriority);
+  const desktopImageSrc = heroCarouselDesktopUrl(desktopSrc, desktopPriority);
 
   return (
     <div className="relative h-full w-full min-h-0 overflow-hidden">
       <div className="absolute inset-0 md:hidden">
         <Image
-          src={mobileSrc}
+          src={mobileImageSrc}
           alt={alt}
           width={HERO_MOBILE_ASPECT_W}
           height={HERO_MOBILE_ASPECT_H}
@@ -61,13 +67,13 @@ export function HeroCarouselSlideImages({
           decoding={mobilePriority ? "sync" : "async"}
           quality={mobilePriority ? HERO_IMAGE_QUALITY_MOBILE_LCP : HERO_IMAGE_QUALITY_MOBILE}
           sizes={HERO_CAROUSEL_MOBILE_SIZES}
-          unoptimized={shouldOffloadImageOptimization(mobileSrc)}
+          unoptimized={shouldOffloadImageOptimization(mobileImageSrc)}
           className="h-full w-full object-cover object-center"
         />
       </div>
       <div className="absolute inset-0 hidden min-h-0 md:block">
         <Image
-          src={desktopSrc}
+          src={desktopImageSrc}
           alt={alt}
           fill
           priority={desktopPriority}
@@ -76,7 +82,7 @@ export function HeroCarouselSlideImages({
           decoding="async"
           quality={desktopPriority ? HERO_IMAGE_QUALITY_DESKTOP_LCP : HERO_IMAGE_QUALITY_DESKTOP}
           sizes={HERO_CAROUSEL_DESKTOP_SIZES}
-          unoptimized={shouldOffloadImageOptimization(desktopSrc)}
+          unoptimized={shouldOffloadImageOptimization(desktopImageSrc)}
           className="object-cover object-center"
         />
       </div>

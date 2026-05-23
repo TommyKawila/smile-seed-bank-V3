@@ -20,6 +20,12 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97)
 
+### บันทึกการทำงาน — 2026-05-23 (Perf Phase 1 — Supabase render/image pipeline)
+- **`resolveOptimizedAssetUrl()`:** แปลง `object/public` → `render/image/public` + `width`/`quality`/`format=webp` (แทน Vercel `/_next/image` ที่ 402)
+- **Hero LCP:** mobile **412px q45** · desktop **640px q60** — preload + `<Image>` ใช้ URL เดียวกัน
+- **Product gallery:** main **828px** · thumb **160px** · lightbox **1200px** · listing card **384px**
+- **ไฟล์:** `lib/public-storage-url.ts`, `lib/storefront-image-urls.ts`, `HomeHeroLcpPreload.tsx`, `HeroCarouselSlideImages.tsx`, `ProductGallery.tsx`, `lib/product-gallery-utils.ts`, `next.config.mjs`
+
 ### บันทึกการทำงาน — 2026-05-23 (Fix — รูปสินค้า broken บน Vercel prod)
 - **สาเหตุ:** Vercel Image Optimization คืน **HTTP 402** (`OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED`) ที่ `/_next/image` — local dev ไม่ใช้ service นี้จึงปกติ
 - **แก้:** `next.config.mjs` → `images.unoptimized: true`; `shouldOffloadImageOptimization()` bypass ทุก `http(s)://` URL

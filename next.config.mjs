@@ -18,6 +18,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 const SUPABASE_STORAGE_PATHS = [
   "/storage/v1/object/public/**",
   "/storage/v1/object/sign/**",
+  "/storage/v1/render/image/public/**",
 ];
 
 function supabaseStorageRemotePatterns() {

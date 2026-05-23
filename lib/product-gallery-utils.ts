@@ -1,4 +1,5 @@
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
+import { productListingThumbUrl } from "@/lib/storefront-image-urls";
 
 /** Embedded row from Supabase `product_images` select */
 export type ProductImageRow = {
@@ -41,12 +42,12 @@ export function getListingThumbnailUrl(product: {
   const rows = normalizeProductImageRows(product.product_images);
   if (rows.length > 0) {
     const main = rows.find((r) => r.is_main) ?? rows[0];
-    if (main?.url) return resolvePublicAssetUrl(main.url);
+    if (main?.url) return productListingThumbUrl(main.url);
   }
   if (Array.isArray(product.image_urls) && (product.image_urls as string[]).length > 0) {
-    return resolvePublicAssetUrl((product.image_urls as string[])[0] ?? null);
+    return productListingThumbUrl((product.image_urls as string[])[0] ?? "");
   }
-  return resolvePublicAssetUrl(product.image_url ?? null);
+  return productListingThumbUrl(product.image_url ?? "");
 }
 
 /** Detail hero: variant image, else main, else first legacy */
