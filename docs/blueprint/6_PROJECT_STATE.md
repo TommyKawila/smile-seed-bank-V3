@@ -20,6 +20,12 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97)
 
+### บันทึกการทำงาน — 2026-05-23 (Perf Phase 3 — Prompt unused CSS)
+- **`lib/fonts/prompt.ts`:** critical inline เฉพาะ **400 Regular** (ถอน 600/700 จาก `next/font/local`)
+- **`PromptExtendedFaces`:** idle 2.5s inject `@font-face` 600/700 จาก `/public/fonts/*.woff2` ลง family เดียวกับ `--font-prompt`
+- **Hero LCP:** mobile render quality **45 → 40**
+- **ไฟล์:** `prompt.ts`, `inject-prompt-extended-faces.ts`, `PromptExtendedFaces.tsx`, `app/layout.tsx`, `hero-carousel-image-sizes.ts`, `public/fonts/Prompt-*.woff2`
+
 ### บันทึกการทำงาน — 2026-05-23 (Perf Phase 2b — fix PSI 79 regression)
 - **สาเหตุ:** auth boot idle **10s** โหลด chunk 5890 ช่วง PSI ยังวัด → TBT/unused JS แย่ลง
 - **แก้:** หน้า **`/`** ไม่ auto-boot Supabase JS · SSR **`getStorefrontSessionHint()`** สำหรับ navbar/age gate · boot เฉพาะ route อื่น / `ensureAuthLoaded()` (promo)
