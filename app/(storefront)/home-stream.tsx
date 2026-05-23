@@ -1,6 +1,7 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { HomeHeroCarousel } from "@/components/storefront/HomeHeroCarousel";
 import { HomePageHeroClient } from "@/components/storefront/HomePageHeroClient";
@@ -14,6 +15,7 @@ import {
   type HomePageSectionPayload,
 } from "@/lib/homepage-sections";
 import { listHeroCtaButtons } from "@/services/homepage-hero-cta-service";
+import { VIEWPORT_HINT_COOKIE } from "@/lib/viewport-hint-cookie";
 
 const getSectionsCached = unstable_cache(
   async (): Promise<HomePageSectionPayload[]> => {
@@ -69,8 +71,11 @@ export async function HomeMainStream() {
     color,
   }));
   const belowSections = sections.filter((s) => s.key !== "hero");
-  const heroCarousel = <HomeHeroCarousel banners={banners} />;
-
+  const vpHint = cookies().get(VIEWPORT_HINT_COOKIE)?.value;
+  const initialLcpDesktop = vpHint === "d";
+  const heroCarousel = (
+    <HomeHeroCarousel banners={banners} initialLcpDesktop={initialLcpDesktop} />
+  );
   return (
     <div className="min-h-screen bg-white text-zinc-900">
       <HomePageHeroClient sections={sections} heroCarousel={heroCarousel} heroCtaButtons={heroCtaPayload} />

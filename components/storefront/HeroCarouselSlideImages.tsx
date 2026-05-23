@@ -16,22 +16,34 @@ import {
   heroCarouselDesktopUrl,
   heroCarouselMobileUrl,
 } from "@/lib/storefront-image-urls";
-import { readViewportHintDesktopFromCookie } from "@/lib/viewport-hint-cookie";
+import {
+  readViewportHintDesktopFromCookie,
+  subscribeDesktopViewport,
+} from "@/lib/viewport-hint-cookie";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+
+const MQ_DESKTOP = "(min-width: 768px)";
 
 export type HeroCarouselSlideImagesProps = {
   mobileSrc: string;
   desktopSrc: string;
   heroAlt: string;
   priority: boolean;
+  /** From middleware `ssb_vp` cookie — SSR renders one LCP candidate only. */
+  initialLcpDesktop?: boolean;
 };
 
-/** SSR + first client paint = mobile-first; cookie applied after mount (hydration-safe). */
-function useLcpViewportIsDesktop(): boolean {
-  const [isDesktop, setIsDesktop] = useState(false);
+function useLcpViewportIsDesktop(initialLcpDesktop: boolean): boolean {
+  const [isDesktop, setIsDesktop] = useState(initialLcpDesktop);
+
   useEffect(() => {
-    if (readViewportHintDesktopFromCookie() === true) setIsDesktop(true);
+    const hint = readViewportHintDesktopFromCookie();
+    if (hint !== null) setIsDesktop(hint);
+    return subscribeDesktopViewport(() => {
+      setIsDesktop(window.matchMedia(MQ_DESKTOP).matches);
+    });
   }, []);
+
   return isDesktop;
 }
 
@@ -40,47 +52,50 @@ export function HeroCarouselSlideImages({
   desktopSrc,
   heroAlt,
   priority,
+  initialLcpDesktop = false,
 }: HeroCarouselSlideImagesProps) {
   const alt = heroAlt.trim() || "Smile Seed Bank Campaign";
-  const isDesktop = useLcpViewportIsDesktop();
-  const mobilePriority = priority && !isDesktop;
-  const desktopPriority = priority && isDesktop;
-  const mobileImageSrc = heroCarouselMobileUrl(mobileSrc, mobilePriority);
-  const desktopImageSrc = heroCarouselDesktopUrl(desktopSrc, desktopPriority);
+  const isDesktop = useLcpViewportIsDesktop(initialLcpDesktop);
+  const lcpPriority = priority;
+  const mobileImageSrc = heroCarouselMobileUrl(mobileSrc, lcpPriority && !isDesktop);
+  const desktopImageSrc = heroCarouselDesktopUrl(desktopSrc, lcpPriority && isDesktop);
 
-  return (
-    <div className="relative h-full w-full min-h-0 overflow-hidden">
-      <div className="absolute inset-0 md:hidden">
+  if (!isDesktop) {
+    return (
+      <div className="relative h-full w-full min-h-0 overflow-hidden">
         <Image
           src={mobileImageSrc}
           alt={alt}
           width={HERO_MOBILE_ASPECT_W}
           height={HERO_MOBILE_ASPECT_H}
-          priority={mobilePriority}
-          fetchPriority={mobilePriority ? "high" : "auto"}
-          loading={mobilePriority ? "eager" : "lazy"}
-          decoding={mobilePriority ? "sync" : "async"}
-          quality={mobilePriority ? HERO_IMAGE_QUALITY_MOBILE_LCP : HERO_IMAGE_QUALITY_MOBILE}
+          priority={lcpPriority}
+          fetchPriority={lcpPriority ? "high" : "auto"}
+          loading={lcpPriority ? "eager" : "lazy"}
+          decoding={lcpPriority ? "sync" : "async"}
+          quality={lcpPriority ? HERO_IMAGE_QUALITY_MOBILE_LCP : HERO_IMAGE_QUALITY_MOBILE}
           sizes={HERO_CAROUSEL_MOBILE_SIZES}
           unoptimized={shouldOffloadImageOptimization(mobileImageSrc)}
           className="h-full w-full object-cover object-center"
         />
       </div>
-      <div className="absolute inset-0 hidden min-h-0 md:block">
-        <Image
-          src={desktopImageSrc}
-          alt={alt}
-          fill
-          priority={desktopPriority}
-          fetchPriority={desktopPriority ? "high" : "auto"}
-          loading={desktopPriority ? "eager" : "lazy"}
-          decoding={desktopPriority ? "async" : "async"}
-          quality={desktopPriority ? HERO_IMAGE_QUALITY_DESKTOP_LCP : HERO_IMAGE_QUALITY_DESKTOP}
-          sizes={HERO_CAROUSEL_DESKTOP_SIZES}
-          unoptimized={shouldOffloadImageOptimization(desktopImageSrc)}
-          className="object-cover object-center"
-        />
-      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-full w-full min-h-0 overflow-hidden">
+      <Image
+        src={desktopImageSrc}
+        alt={alt}
+        fill
+        priority={lcpPriority}
+        fetchPriority={lcpPriority ? "high" : "auto"}
+        loading={lcpPriority ? "eager" : "lazy"}
+        decoding="async"
+        quality={lcpPriority ? HERO_IMAGE_QUALITY_DESKTOP_LCP : HERO_IMAGE_QUALITY_DESKTOP}
+        sizes={HERO_CAROUSEL_DESKTOP_SIZES}
+        unoptimized={shouldOffloadImageOptimization(desktopImageSrc)}
+        className="object-cover object-center"
+      />
     </div>
   );
 }

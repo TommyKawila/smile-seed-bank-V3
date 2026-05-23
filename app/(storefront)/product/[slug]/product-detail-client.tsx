@@ -14,7 +14,10 @@ import { useTranslations } from "@/hooks/use-translations";
 import { labelFloweringType } from "@/lib/cannabis-attributes";
 import { seedTypeDetailShort, sexTypeDetailShort } from "@/lib/seed-type-filter";
 import { cn, formatPrice } from "@/lib/utils";
-import { resolveListingUnitAfterBrand } from "@/lib/brand-promotion-checkout";
+import {
+  resolveListingUnitAfterBrand,
+  type BrandPromotionRuleRow,
+} from "@/lib/brand-promotion-checkout";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 import {
   getClearancePercentOff,
@@ -60,6 +63,23 @@ function toArray(data: unknown): string[] {
 
 function normalizeSpecCompare(s: string | null | undefined): string {
   return (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Pack button: brand promo first (same as header), else clearance per variant. */
+function resolvePackButtonPrices(
+  product: ProductWithSpecs,
+  variantPrice: number,
+  breederName: string | null | undefined,
+  brandRules: BrandPromotionRuleRow[],
+): { eff: number; list: number } {
+  const listRaw = roundCheckoutBahtWhole(variantPrice);
+  const brandLine = resolveListingUnitAfterBrand(listRaw, breederName ?? null, brandRules);
+  const hasBrandSale = brandLine.effectiveBaht < brandLine.baseBaht && brandLine.baseBaht > 0;
+  if (hasBrandSale) {
+    return { eff: brandLine.effectiveBaht, list: brandLine.baseBaht };
+  }
+  const eff = getEffectiveVariantPrice(product, listRaw);
+  return { eff, list: listRaw };
 }
 
 /** Genetics row: show only when genetic_ratio is set and not redundant vs lineage */
@@ -564,8 +584,12 @@ export default function ProductDetailClient({
                   {activeVariants.map((v) => {
                     const soldOut = (v.stock ?? 0) === 0;
                     const isSelected = selectedVariant?.id === v.id;
-                    const variantEff = getEffectiveVariantPrice(product, Number(v.price));
-                    const variantList = Number(v.price ?? 0);
+                    const { eff: variantEff, list: variantList } = resolvePackButtonPrices(
+                      product,
+                      Number(v.price ?? 0),
+                      product.breeders?.name,
+                      brandPromotionRules,
+                    );
                     const showVariantStrike = variantList > variantEff;
                     return (
                       <button

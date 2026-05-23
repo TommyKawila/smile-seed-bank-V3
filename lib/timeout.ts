@@ -31,20 +31,31 @@ export async function withTimeout<T>(
   }
 }
 
+const FETCH_TIMEOUT_STATUS = 408;
+
+function syntheticTimeoutResponse(timeoutMs: number): Response {
+  return new Response(JSON.stringify({ error: "timeout", timeoutMs }), {
+    status: FETCH_TIMEOUT_STATUS,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+/** Client fetch with timeout — resolves with HTTP 408 on timeout (no throw; dev-overlay safe). */
 export async function fetchWithTimeout(
   url: string | URL | Request,
   options: RequestInit = {},
   timeoutMs = 2000
 ): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let timer: ReturnType<typeof setTimeout> | undefined;
 
   try {
-    return await fetch(url, {
-      ...options,
-      signal: options.signal ?? controller.signal,
-    });
+    return await Promise.race([
+      fetch(url, options),
+      new Promise<Response>((resolve) => {
+        timer = setTimeout(() => resolve(syntheticTimeoutResponse(timeoutMs)), timeoutMs);
+      }),
+    ]);
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
   }
 }

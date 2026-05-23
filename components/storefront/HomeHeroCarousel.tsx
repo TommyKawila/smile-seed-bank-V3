@@ -36,9 +36,9 @@ function resolveHeroAlt(b: HeroBanner, locale: AppLocale): string {
   return th;
 }
 
-type Props = { banners: HeroBanner[] };
+type Props = { banners: HeroBanner[]; initialLcpDesktop?: boolean };
 
-export function HomeHeroCarousel({ banners }: Props) {
+export function HomeHeroCarousel({ banners, initialLcpDesktop = false }: Props) {
   const { locale, t } = useLanguage();
   const [index, setIndex] = useState(0);
   const slides = banners.length ? banners : [];
@@ -104,6 +104,7 @@ export function HomeHeroCarousel({ banners }: Props) {
           desktopSrc={desktopSrc}
           heroAlt={heroAlt}
           priority={index === 0}
+          initialLcpDesktop={initialLcpDesktop}
         />
       </div>
     </div>

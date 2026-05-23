@@ -20,6 +20,18 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97) → Phase 4A–C (PSI Mobile 79→target 90+)
 
+### บันทึกการทำงาน — 2026-05-20 (Perf Phase 4J — PSI 86/93 + SSR single hero LCP)
+- **PSI:** Mobile **86** / Desktop **93** — critical path **4,495ms** จาก `888casino.com` + `bam.nr-data.net` **ไม่มีใน repo/HTML production** (audit third-party / retest pagespeed.web.dev สะอาด)
+- **ของเรา:** hero SSR ยังส่ง mobile+desktop `<img>` พร้อมกัน → mobile แย่ง bandwidth
+- **4J:** อ่าน cookie **`ssb_vp`** ใน `home-stream` → `initialLcpDesktop` → `HeroCarouselSlideImages` render **ฝั่งเดียว** (ไม่ใช้ `md:hidden` คู่)
+- **ไฟล์:** `home-stream.tsx`, `HomeHeroCarousel.tsx`, `HeroCarouselSlideImages.tsx`
+
+### บันทึกการทำงาน — 2026-05-20 (PDP pack selector — brand promo display)
+- **Bug:** หน้า product (เช่น Fastbuds -50%) แสดงราคาหลังลดที่ header ถูก แต่ปุ่ม **เลือกแพ็กเกจ** ยังเป็นราคาเต็ม
+- **สาเหตุ:** variant buttons ใช้ `getEffectiveVariantPrice` (clearance เท่านั้น) ไม่เรียก `resolveListingUnitAfterBrand`
+- **แก้:** helper `resolvePackButtonPrices` — brand % ก่อน แล้ว fallback clearance
+- **ไฟล์:** `app/(storefront)/product/[slug]/product-detail-client.tsx`
+
 ### บันทึกการทำงาน — 2026-05-23 (Perf Phase 4I — revert 4H regression 83/83)
 - **PSI Mobile LCP:** load delay **620ms** (dual priority โหลด desktop+mobile) · render delay **490ms** · chunk **8536** ~20 KiB
 - **4H regression:** `dynamic` Navbar ทำ above-fold ช้า · dual priority แย่ง bandwidth mobile

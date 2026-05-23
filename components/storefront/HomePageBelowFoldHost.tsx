@@ -29,8 +29,14 @@ function hasHomePayload(data: StorefrontHomePayload): boolean {
 }
 
 async function fetchStorefrontHomeClient(): Promise<StorefrontHomePayload> {
-  const response = await fetchWithTimeout("/api/storefront/home", {}, 8000);
-  if (!response.ok) throw new Error(`Failed to load home data (${response.status})`);
+  const empty: StorefrontHomePayload = {
+    newArrivals: [],
+    featured: [],
+    clearance: [],
+    magazine: [],
+  };
+  const response = await fetchWithTimeout("/api/storefront/home", { cache: "no-store" }, 8000);
+  if (!response.ok) return empty;
   const result = (await response.json()) as RawHomePayload | ProductWithBreederAndVariants[];
   const newArrivals = Array.isArray(result) ? result : result.newArrivals ?? result.data ?? [];
   return {
