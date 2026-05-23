@@ -22,6 +22,9 @@ export default async function StorefrontLayout({
     cookieStore.get(SMIL_AGE_VERIFIED_COOKIE_NAME)?.value === "1";
   const initialSessionHint = await getStorefrontSessionHint();
 
+  const initialSkipAgeGate =
+    initialAgeVerifiedCookie || initialSessionHint !== null;
+
   return (
     <LanguageProvider initialLocale={initialLocale}>
       <BreederCatalogProvider>
@@ -29,7 +32,10 @@ export default async function StorefrontLayout({
           <SiteSettingsProvider>
             <CartProvider>
               <StorefrontStructuredData />
-              <StorefrontLayoutClient initialAgeVerifiedCookie={initialAgeVerifiedCookie}>
+              <StorefrontLayoutClient
+                initialAgeVerifiedCookie={initialAgeVerifiedCookie}
+                initialSkipAgeGate={initialSkipAgeGate}
+              >
                 {children}
               </StorefrontLayoutClient>
             </CartProvider>

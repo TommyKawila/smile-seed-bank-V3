@@ -17,6 +17,7 @@ import {
   heroCarouselMobileUrl,
 } from "@/lib/storefront-image-urls";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import { scheduleLayoutRead } from "@/lib/schedule-layout-read";
 
 export type HeroCarouselSlideImagesProps = {
   mobileSrc: string;
@@ -29,11 +30,18 @@ export type HeroCarouselSlideImagesProps = {
 function useHeroViewportIsMobile(): boolean {
   const [mobile, setMobile] = useState(true);
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const sync = () => setMobile(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
+    let mqCleanup: (() => void) | null = null;
+    const cancelLayout = scheduleLayoutRead(() => {
+      const mq = window.matchMedia("(max-width: 767px)");
+      const sync = () => setMobile(mq.matches);
+      sync();
+      mq.addEventListener("change", sync);
+      mqCleanup = () => mq.removeEventListener("change", sync);
+    });
+    return () => {
+      cancelLayout();
+      mqCleanup?.();
+    };
   }, []);
   return mobile;
 }

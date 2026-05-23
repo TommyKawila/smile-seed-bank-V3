@@ -7,5 +7,5 @@ export const prompt = localFont({
   display: "swap",
   preload: true,
   fallback: ["Noto Sans Thai", "sans-serif"],
-  adjustFontFallback: true,
+  adjustFontFallback: false,
 });

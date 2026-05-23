@@ -18,7 +18,14 @@
 | jsPDF / Cart / Search | dynamic import / lazy mount ตาม Phase 0–2 |
 | Embla | `embla-storefront-options` + near-viewport carousels |
 
-**Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97)
+**Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97) → Phase 4A–C (PSI Mobile 79→target 90+)
+
+### บันทึกการทำงาน — 2026-05-20 (Perf Phase 4A–C — Mobile 79→90+ path)
+- **4A Framer off home critical path:** ถอน `FramerLazyRoot` จาก `app/layout.tsx` → `StorefrontLayoutClient` · หน้า `/` defer mount idle **4.5s** หรือ carousel interact (`ssb:framer-motion-needed`) · hero slide 0 CSS `animate-hero-fade-in`
+- **4B Age gate defer LCP:** mount หลัง **LCP + idle 2s** (PerformanceObserver) · skip mount เมื่อ cookie/session hint · logo gate `loading="lazy"` · `overflow-hidden` ผ่าน `scheduleLayoutRead`
+- **4C Prompt CSS:** `adjustFontFallback: false` ใน `lib/fonts/prompt.ts` — ลด unused `@font-face` inline ~20 KiB
+- **4D polish:** hero `matchMedia` defer ด้วย `scheduleLayoutRead`
+- **ไฟล์:** `app/layout.tsx`, `(storefront)/layout.tsx`, `StorefrontLayoutClient.tsx`, `age-verification-gate.tsx`, `HomeHeroCarousel.tsx`, `HeroCarouselSlideImages.tsx`, `lib/framer-motion-events.ts`, `lib/fonts/prompt.ts`, `tailwind.config.ts`
 
 ### บันทึกการทำงาน — 2026-05-23 (Perf Phase 3 — Prompt unused CSS)
 - **`lib/fonts/prompt.ts`:** critical inline เฉพาะ **400 Regular** (ถอน 600/700 จาก `next/font/local`)

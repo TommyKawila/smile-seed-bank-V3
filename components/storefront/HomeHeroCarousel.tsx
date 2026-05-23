@@ -9,6 +9,7 @@ import type { HeroBanner } from "@/lib/hero-banners";
 import { HeroCarouselSlideImages } from "@/components/storefront/HeroCarouselSlideImages";
 import { useLanguage } from "@/context/LanguageContext";
 import { getLocalizedPath, type AppLocale } from "@/lib/utils";
+import { signalFramerMotionNeeded } from "@/lib/framer-motion-events";
 
 const AUTOPLAY_INTERVAL = 5000;
 const FADE_DURATION = 0.8;
@@ -66,6 +67,10 @@ export function HomeHeroCarousel({ banners }: Props) {
   }, [current, locale]);
 
   useEffect(() => {
+    if (index !== 0) signalFramerMotionNeeded();
+  }, [index]);
+
+  useEffect(() => {
     if (slides.length <= 1) return;
     let rafId = 0;
     const intervalId = window.setInterval(() => {
@@ -95,7 +100,7 @@ export function HomeHeroCarousel({ banners }: Props) {
   const slidesMarkup =
     index === 0 ? (
       <div
-        className="absolute inset-0 overflow-hidden bg-zinc-100 md:flex md:items-center md:justify-center"
+        className="absolute inset-0 animate-hero-fade-in overflow-hidden bg-zinc-100 md:flex md:items-center md:justify-center"
         style={panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
         suppressHydrationWarning
       >

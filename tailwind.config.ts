@@ -78,6 +78,10 @@ const config: Config = {
           from: { transform: "scale(1)" },
           to: { transform: "scale(1.08)" },
         },
+        "hero-fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
         /** ~0.5s nod in first 14.3% of 3.5s cycle, then 3s rest (rhythmic cart pulse) */
         "cart-nod": {
           "0%, 100%": { transform: "rotate(0deg) scale(1)" },
@@ -116,6 +120,7 @@ const config: Config = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "ken-burns": "ken-burns 8s ease-in-out infinite alternate",
+        "hero-fade-in": "hero-fade-in 0.8s ease-in-out both",
         "cart-nod": "cart-nod 3.5s ease-in-out infinite",
         "cart-hit": "cart-hit 0.45s ease-out both",
         "shimmer-urgent": "shimmer-urgent 2.2s ease-in-out infinite",

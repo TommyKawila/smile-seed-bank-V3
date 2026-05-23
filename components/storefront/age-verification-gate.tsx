@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
+import { scheduleLayoutRead } from "@/lib/schedule-layout-read";
 
 const COOKIE_NAME = "smil_age_verified";
 /** Same name as `document.cookie` entry — use from server layout for SSR-aligned initial open state. */
@@ -65,19 +66,19 @@ export function AgeVerificationGate({
 
   useEffect(() => {
     if (isVerified) return;
-    let cancelled = false;
-    let innerRaf = 0;
-    const outerRaf = requestAnimationFrame(() => {
-      innerRaf = requestAnimationFrame(() => {
-        if (!cancelled) document.documentElement.classList.add("overflow-hidden");
-      });
+    const cancel = scheduleLayoutRead(() => {
+      document.documentElement.classList.add("overflow-hidden");
     });
     return () => {
-      cancelled = true;
-      cancelAnimationFrame(outerRaf);
-      cancelAnimationFrame(innerRaf);
+      cancel();
       document.documentElement.classList.remove("overflow-hidden");
     };
+  }, [isVerified]);
+
+  useEffect(() => {
+    if (isVerified) {
+      document.documentElement.classList.remove("overflow-hidden");
+    }
   }, [isVerified]);
 
   function onConfirm() {
@@ -158,8 +159,7 @@ export function AgeVerificationGate({
               height={44}
               sizes="160px"
               className="h-10 w-auto object-contain"
-              priority={true}
-              fetchPriority="high"
+              loading="lazy"
             />
           ) : (
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-sm">
