@@ -20,6 +20,11 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97) → Phase 4A–C (PSI Mobile 79→target 90+)
 
+### บันทึกการทำงาน — 2026-05-23 (Perf Phase 4E — LCP lazy carousel + chunk 8536)
+- **Mobile 87 / Desktop 70:** autoplay 5s → สไลด์ 2 (`420 Fast Buds`) กลายเป็น LCP แต่ `loading="lazy"` · Desktop LCP ไม่ได้ priority เพราะ `useHeroViewportIsMobile` default mobile
+- **แก้:** autoplay start delay **20s** · slide 0 priority ทั้ง mobile+desktop (CSS ซ่อนอีกฝั่ง) · ถอน viewport hook · `FramerLazyRoot` → `dynamic()` ตัด sync framer จาก layout chunk
+- **ไฟล์:** `HomeHeroCarousel.tsx`, `HeroCarouselSlideImages.tsx`, `StorefrontLayoutClient.tsx`
+
 ### บันทึกการทำงาน — 2026-05-23 (Perf Phase 4D — PSI regression fix 80/87)
 - **สาเหตุ regression:** age gate mount หลัง LCP+2s → modal กลายเป็น LCP ใหม่ · Framer chunk 8536 โหลด ~4.5s ในช่วง PSI · `/events` Vercel Analytics บน critical path
 - **แก้:** age gate + Framer บน `/` → **`scheduleInteractionMount`** (PSI ไม่ interact = ไม่ mount) · fallback **12s/15s** · hero carousel **CSS-only** (ถอน `HomeHeroCarouselMotion`) · `FramerLazyRoot` async `domAnimation` · Vercel Analytics defer interaction · below-fold IO → `signalFramerMotionNeeded`

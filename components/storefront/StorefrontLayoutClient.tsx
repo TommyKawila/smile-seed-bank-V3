@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { Navbar } from "@/components/storefront/Navbar";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { FRAMER_MOTION_NEEDED_EVENT } from "@/lib/framer-motion-events";
@@ -47,6 +46,10 @@ const BrowserDetectionBanner = dynamic(
 );
 const CartAnimation = dynamic(
   () => import("@/components/storefront/CartAnimation").then((m) => ({ default: m.CartAnimation })),
+  { ssr: false }
+);
+const FramerLazyRoot = dynamic(
+  () => import("@/components/storefront/FramerLazyRoot").then((m) => ({ default: m.FramerLazyRoot })),
   { ssr: false }
 );
 

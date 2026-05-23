@@ -8,8 +8,11 @@ import type { HeroBanner } from "@/lib/hero-banners";
 import { HeroCarouselSlideImages } from "@/components/storefront/HeroCarouselSlideImages";
 import { useLanguage } from "@/context/LanguageContext";
 import { getLocalizedPath, type AppLocale } from "@/lib/utils";
+import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
 const AUTOPLAY_INTERVAL = 5000;
+/** Delay first tick so PSI LCP stays on slide 0 (lazy slide 2 was stealing LCP). */
+const AUTOPLAY_START_DELAY_MS = 20_000;
 const FADE_DURATION = 0.8;
 
 function resolveHeroAsset(b: HeroBanner, locale: AppLocale, device: "desktop" | "mobile"): string {
@@ -58,14 +61,18 @@ export function HomeHeroCarousel({ banners }: Props) {
 
   useEffect(() => {
     if (slides.length <= 1) return;
+    let intervalId = 0;
     let rafId = 0;
-    const intervalId = window.setInterval(() => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        setIndex((i) => (i + 1) % slides.length);
-      });
-    }, AUTOPLAY_INTERVAL);
+    const cancelStart = scheduleIdleWork(() => {
+      intervalId = window.setInterval(() => {
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          setIndex((i) => (i + 1) % slides.length);
+        });
+      }, AUTOPLAY_INTERVAL);
+    }, AUTOPLAY_START_DELAY_MS);
     return () => {
+      cancelStart();
       window.clearInterval(intervalId);
       cancelAnimationFrame(rafId);
     };
