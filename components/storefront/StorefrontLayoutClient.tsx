@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import { Navbar } from "@/components/storefront/Navbar";
+import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { FRAMER_MOTION_NEEDED_EVENT } from "@/lib/framer-motion-events";
 import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
@@ -13,14 +15,6 @@ const AGE_GATE_FALLBACK_MS = 12_000;
 const HOME_FRAMER_FALLBACK_MS = 15_000;
 const HOME_BANNER_IDLE_MS = 2_500;
 
-const Navbar = dynamic(
-  () => import("@/components/storefront/Navbar").then((m) => ({ default: m.Navbar })),
-  { ssr: true }
-);
-const PromoReturnHandler = dynamic(
-  () => import("@/components/storefront/PromoReturnHandler").then((m) => ({ default: m.PromoReturnHandler })),
-  { ssr: false }
-);
 const AgeVerificationGate = dynamic(
   () =>
     import("@/components/storefront/age-verification-gate").then((m) => ({
