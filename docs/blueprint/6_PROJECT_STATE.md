@@ -20,6 +20,12 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97) → Phase 4A–C (PSI Mobile 79→target 90+)
 
+### บันทึกการทำงาน — 2026-05-23 (Perf Phase 4F — Desktop 88→90+)
+- **Mobile 96 locked:** ไม่แตะ mobile LCP path
+- **Desktop LCP breakdown:** element render delay **1,580ms** จาก `animate-hero-fade-in` opacity 0 บนสไลด์ 0 · load delay **1,320ms** จาก eager mobile+desktop พร้อมกัน · hero **91 KiB** (~14 KiB บีบได้)
+- **แก้:** fade เฉพาะสไลด์ 2+ · UA hint `initialIsDesktop` → priority ฝั่งเดียว · desktop LCP quality **60→50** · desktop `decoding="async"`
+- **ไฟล์:** `HomeHeroCarousel.tsx`, `HeroCarouselSlideImages.tsx`, `home-stream.tsx`, `lib/user-agent-viewport.ts`, `hero-carousel-image-sizes.ts`
+
 ### บันทึกการทำงาน — 2026-05-23 (Perf Phase 4E — LCP lazy carousel + chunk 8536)
 - **Mobile 87 / Desktop 70:** autoplay 5s → สไลด์ 2 (`420 Fast Buds`) กลายเป็น LCP แต่ `loading="lazy"` · Desktop LCP ไม่ได้ priority เพราะ `useHeroViewportIsMobile` default mobile
 - **แก้:** autoplay start delay **20s** · slide 0 priority ทั้ง mobile+desktop (CSS ซ่อนอีกฝั่ง) · ถอน viewport hook · `FramerLazyRoot` → `dynamic()` ตัด sync framer จาก layout chunk

@@ -7,7 +7,7 @@ import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import type { HeroBanner } from "@/lib/hero-banners";
 import { HeroCarouselSlideImages } from "@/components/storefront/HeroCarouselSlideImages";
 import { useLanguage } from "@/context/LanguageContext";
-import { getLocalizedPath, type AppLocale } from "@/lib/utils";
+import { cn, getLocalizedPath, type AppLocale } from "@/lib/utils";
 import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
 const AUTOPLAY_INTERVAL = 5000;
@@ -36,9 +36,9 @@ function resolveHeroAlt(b: HeroBanner, locale: AppLocale): string {
   return th;
 }
 
-type Props = { banners: HeroBanner[] };
+type Props = { banners: HeroBanner[]; initialIsDesktop?: boolean };
 
-export function HomeHeroCarousel({ banners }: Props) {
+export function HomeHeroCarousel({ banners, initialIsDesktop = false }: Props) {
   const { locale, t } = useLanguage();
   const [index, setIndex] = useState(0);
   const slides = banners.length ? banners : [];
@@ -91,7 +91,10 @@ export function HomeHeroCarousel({ banners }: Props) {
   const slidesMarkup = (
     <div
       key={current.id}
-      className="absolute inset-0 animate-hero-fade-in overflow-hidden bg-zinc-100 md:flex md:items-center md:justify-center"
+      className={cn(
+        "absolute inset-0 overflow-hidden bg-zinc-100 md:flex md:items-center md:justify-center",
+        index !== 0 && "animate-hero-fade-in"
+      )}
       style={panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
       suppressHydrationWarning
     >
@@ -101,6 +104,7 @@ export function HomeHeroCarousel({ banners }: Props) {
           desktopSrc={desktopSrc}
           heroAlt={heroAlt}
           priority={index === 0}
+          initialIsDesktop={initialIsDesktop}
         />
       </div>
     </div>

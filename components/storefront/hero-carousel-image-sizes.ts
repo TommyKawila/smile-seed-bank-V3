@@ -37,5 +37,5 @@ export const HERO_LCP_PRELOAD_DESKTOP_H = HERO_DESKTOP_ASPECT_H;
 /** Phase C — JPEG/WebP/AVIF quality by slot (LCP slide 0 only gets eager + high fetch). */
 export const HERO_IMAGE_QUALITY_MOBILE_LCP = 35;
 export const HERO_IMAGE_QUALITY_MOBILE = 55;
-export const HERO_IMAGE_QUALITY_DESKTOP_LCP = 60;
+export const HERO_IMAGE_QUALITY_DESKTOP_LCP = 50;
 export const HERO_IMAGE_QUALITY_DESKTOP = 55;

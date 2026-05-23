@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   HERO_CAROUSEL_DESKTOP_SIZES,
@@ -21,19 +22,36 @@ export type HeroCarouselSlideImagesProps = {
   mobileSrc: string;
   desktopSrc: string;
   heroAlt: string;
-  /** Slide 0 only — both breakpoints get eager/high (CSS hides the non-LCP img). */
   priority: boolean;
+  /** Server UA hint — avoids eager mobile fetch on desktop PSI. */
+  initialIsDesktop?: boolean;
 };
+
+function useLcpViewportIsDesktop(initialIsDesktop: boolean): boolean {
+  const [isDesktop, setIsDesktop] = useState(initialIsDesktop);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const sync = () => setIsDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return isDesktop;
+}
 
 export function HeroCarouselSlideImages({
   mobileSrc,
   desktopSrc,
   heroAlt,
   priority,
+  initialIsDesktop = false,
 }: HeroCarouselSlideImagesProps) {
   const alt = heroAlt.trim() || "Smile Seed Bank Campaign";
-  const mobileImageSrc = heroCarouselMobileUrl(mobileSrc, priority);
-  const desktopImageSrc = heroCarouselDesktopUrl(desktopSrc, priority);
+  const isDesktop = useLcpViewportIsDesktop(initialIsDesktop);
+  const mobilePriority = priority && !isDesktop;
+  const desktopPriority = priority && isDesktop;
+  const mobileImageSrc = heroCarouselMobileUrl(mobileSrc, mobilePriority);
+  const desktopImageSrc = heroCarouselDesktopUrl(desktopSrc, desktopPriority);
 
   return (
     <div className="relative h-full w-full min-h-0 overflow-hidden">
@@ -43,11 +61,11 @@ export function HeroCarouselSlideImages({
           alt={alt}
           width={HERO_MOBILE_ASPECT_W}
           height={HERO_MOBILE_ASPECT_H}
-          priority={priority}
-          fetchPriority={priority ? "high" : "auto"}
-          loading={priority ? "eager" : "lazy"}
-          decoding={priority ? "sync" : "async"}
-          quality={priority ? HERO_IMAGE_QUALITY_MOBILE_LCP : HERO_IMAGE_QUALITY_MOBILE}
+          priority={mobilePriority}
+          fetchPriority={mobilePriority ? "high" : "auto"}
+          loading={mobilePriority ? "eager" : "lazy"}
+          decoding={mobilePriority ? "sync" : "async"}
+          quality={mobilePriority ? HERO_IMAGE_QUALITY_MOBILE_LCP : HERO_IMAGE_QUALITY_MOBILE}
           sizes={HERO_CAROUSEL_MOBILE_SIZES}
           unoptimized={shouldOffloadImageOptimization(mobileImageSrc)}
           className="h-full w-full object-cover object-center"
@@ -58,11 +76,11 @@ export function HeroCarouselSlideImages({
           src={desktopImageSrc}
           alt={alt}
           fill
-          priority={priority}
-          fetchPriority={priority ? "high" : "auto"}
-          loading={priority ? "eager" : "lazy"}
-          decoding={priority ? "sync" : "async"}
-          quality={priority ? HERO_IMAGE_QUALITY_DESKTOP_LCP : HERO_IMAGE_QUALITY_DESKTOP}
+          priority={desktopPriority}
+          fetchPriority={desktopPriority ? "high" : "auto"}
+          loading={desktopPriority ? "eager" : "lazy"}
+          decoding={desktopPriority ? "async" : "async"}
+          quality={desktopPriority ? HERO_IMAGE_QUALITY_DESKTOP_LCP : HERO_IMAGE_QUALITY_DESKTOP}
           sizes={HERO_CAROUSEL_DESKTOP_SIZES}
           unoptimized={shouldOffloadImageOptimization(desktopImageSrc)}
           className="object-cover object-center"
