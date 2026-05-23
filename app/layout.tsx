@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { prompt } from "@/lib/fonts/prompt";
-import { PROMPT_EXTENDED_FACES_SCRIPT } from "@/lib/fonts/inject-prompt-extended-faces";
+import { PromptExtendedFacesLoader } from "@/components/storefront/PromptExtendedFacesLoader";
 import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
 import { VercelAnalyticsClient } from "@/components/VercelAnalyticsClient";
 import "./globals.css";
@@ -72,7 +72,7 @@ export default function RootLayout({
         {supabaseOriginHeadLinks()}
       </head>
       <body className={`${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
-        <script dangerouslySetInnerHTML={{ __html: PROMPT_EXTENDED_FACES_SCRIPT }} />
+        <PromptExtendedFacesLoader />
         {children}
         <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />
         <Analytics />

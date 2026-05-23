@@ -20,9 +20,17 @@ import { useAuth, useStorefrontSignedIn } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NAV_LOGO_INTRINSIC, NAV_LOGO_SIZES } from "@/lib/storefront-nav-logo";
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
-import { BreederSeedsNav } from "@/components/storefront/BreederDropdownMenu";
+
+const BreederSeedsNav = dynamic(
+  () =>
+    import("@/components/storefront/BreederDropdownMenu").then((m) => ({
+      default: m.BreederSeedsNav,
+    })),
+  { ssr: false }
+);
 
 const CartSheet = dynamic(
   () => import("./CartSheet").then((m) => ({ default: m.CartSheet })),
@@ -36,6 +44,27 @@ const SearchCommand = dynamic(
     })),
   { ssr: false }
 );
+
+type SeedsNavShellProps = {
+  navLinkClass: string;
+  solidLightNav: boolean;
+  label: string;
+};
+
+function SeedsNavShell({ navLinkClass, solidLightNav, label }: SeedsNavShellProps) {
+  return (
+    <span
+      className={cn(
+        navLinkClass,
+        "inline-flex items-center gap-1",
+        solidLightNav ? "text-zinc-800" : "text-zinc-600"
+      )}
+    >
+      {label}
+      <ChevronDown className="h-3.5 w-3.5 opacity-60" strokeWidth={1.75} aria-hidden />
+    </span>
+  );
+}
 
 export function Navbar() {
   const router = useRouter();
@@ -74,7 +103,12 @@ export function Navbar() {
   const [cartHitWobble, setCartHitWobble] = useState(false);
   const [cartSheetMounted, setCartSheetMounted] = useState(false);
   const [searchMounted, setSearchMounted] = useState(false);
+  const [seedsNavMounted, setSeedsNavMounted] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (menuOpen) setSeedsNavMounted(true);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (isOpen) setCartSheetMounted(true);
@@ -122,6 +156,7 @@ export function Navbar() {
 
   const homeLabel = t("หน้าแรก", "Home");
   const blogLabel = t("คลังความรู้สายเขียว", "Knowledge vault");
+  const seedsLabel = t("เมล็ดพันธุ์", "Seeds");
 
   const navLinkClass = solidLightNav
     ? "text-sm font-normal tracking-[0.06em] text-zinc-800 transition-colors hover:text-emerald-900"
@@ -169,11 +204,25 @@ export function Navbar() {
             <Link href="/" className={navLinkClass}>
               {homeLabel}
             </Link>
-            <BreederSeedsNav
-              navLinkClass={navLinkClass}
-              solidLightNav={solidLightNav}
-              mode="desktop"
-            />
+            <div
+              className="hidden md:block"
+              onMouseEnter={() => setSeedsNavMounted(true)}
+              onFocusCapture={() => setSeedsNavMounted(true)}
+            >
+              {seedsNavMounted ? (
+                <BreederSeedsNav
+                  navLinkClass={navLinkClass}
+                  solidLightNav={solidLightNav}
+                  mode="desktop"
+                />
+              ) : (
+                <SeedsNavShell
+                  navLinkClass={navLinkClass}
+                  solidLightNav={solidLightNav}
+                  label={seedsLabel}
+                />
+              )}
+            </div>
             <Link href="/blog" className={navLinkClass}>
               {blogLabel}
             </Link>
@@ -346,12 +395,22 @@ export function Navbar() {
               >
                 {homeLabel}
               </Link>
-              <BreederSeedsNav
-                navLinkClass={navLinkClass}
-                solidLightNav={solidLightNav}
-                mode="mobile"
-                onNavigate={() => setMenuOpen(false)}
-              />
+              {seedsNavMounted ? (
+                <BreederSeedsNav
+                  navLinkClass={navLinkClass}
+                  solidLightNav={solidLightNav}
+                  mode="mobile"
+                  onNavigate={() => setMenuOpen(false)}
+                />
+              ) : (
+                <Link
+                  href="/seeds"
+                  onClick={() => setMenuOpen(false)}
+                  className="block border-b border-gray-100 py-3 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
+                >
+                  {seedsLabel}
+                </Link>
+              )}
               <Link
                 href="/blog"
                 onClick={() => setMenuOpen(false)}

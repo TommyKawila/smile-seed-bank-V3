@@ -4,7 +4,6 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/storefront/Navbar";
-import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { FRAMER_MOTION_NEEDED_EVENT } from "@/lib/framer-motion-events";
 import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
@@ -53,6 +52,15 @@ const FramerLazyRoot = dynamic(
   () => import("@/components/storefront/FramerLazyRoot").then((m) => ({ default: m.FramerLazyRoot })),
   { ssr: false }
 );
+const PromoReturnHandler = dynamic(
+  () =>
+    import("@/components/storefront/PromoReturnHandler").then((m) => ({
+      default: m.PromoReturnHandler,
+    })),
+  { ssr: false }
+);
+
+const PROMO_HANDLER_IDLE_MS = 2_500;
 
 export function StorefrontLayoutClient({
   children,
@@ -71,7 +79,16 @@ export function StorefrontLayoutClient({
   const [mountHomeBanners, setMountHomeBanners] = useState(!isHomePath);
   const [cartFxMount, setCartFxMount] = useState(false);
   const [cartFxReplay, setCartFxReplay] = useState<CartFlyEventDetail | null>(null);
+  const [mountPromoHandler, setMountPromoHandler] = useState(false);
   const cartFxArmedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("promo=")) {
+      setMountPromoHandler(true);
+      return;
+    }
+    return scheduleIdleWork(() => setMountPromoHandler(true), PROMO_HANDLER_IDLE_MS);
+  }, []);
 
   useEffect(() => {
     if (initialSkipAgeGate) return;
@@ -130,9 +147,11 @@ export function StorefrontLayoutClient({
       {mountAgeGate ? (
         <AgeVerificationGate initialVerifiedCookie={initialAgeVerifiedCookie} />
       ) : null}
-      <Suspense fallback={null}>
-        <PromoReturnHandler />
-      </Suspense>
+      {mountPromoHandler ? (
+        <Suspense fallback={null}>
+          <PromoReturnHandler />
+        </Suspense>
+      ) : null}
       {mountHomeBanners ? <PromotionBanner /> : null}
       <div className="flex min-h-screen flex-col">
         <Navbar />

@@ -20,6 +20,11 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97) → Phase 4A–C (PSI Mobile 79→target 90+)
 
+### บันทึกการทำงาน — 2026-05-20 (Perf Phase 4K — layout chunk trim)
+- **PSI post-4J:** Mobile **84** / Desktop **98** — main-thread 1.6s · unused JS chunk **8536** ~20 KiB · unused Prompt @font-face ~20 KiB
+- **4K:** `dynamic` **`PromoReturnHandler`** (idle 2.5s / `?promo=` immediate) · **`BreederSeedsNav`** lazy on hover / mobile menu · **`PromptExtendedFacesLoader`** แทน inline `<script>` body
+- **ไฟล์:** `StorefrontLayoutClient.tsx`, `Navbar.tsx`, `PromptExtendedFacesLoader.tsx`, `app/layout.tsx`
+
 ### บันทึกการทำงาน — 2026-05-20 (Perf Phase 4J — PSI 86/93 + SSR single hero LCP)
 - **PSI:** Mobile **86** / Desktop **93** — critical path **4,495ms** จาก `888casino.com` + `bam.nr-data.net` **ไม่มีใน repo/HTML production** (audit third-party / retest pagespeed.web.dev สะอาด)
 - **ของเรา:** hero SSR ยังส่ง mobile+desktop `<img>` พร้อมกัน → mobile แย่ง bandwidth
