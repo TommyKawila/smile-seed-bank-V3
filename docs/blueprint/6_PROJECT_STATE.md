@@ -4,21 +4,32 @@
 
 ---
 
-## 🔒 LOCKED — PSI Performance baseline (Mobile, 2026-05-23)
+## 🔒 LOCKED — PSI Performance baseline (2026-05-23)
 
-**Score: 97** — ห้าม regression; เปลี่ยน config ด้านล่างต้องรัน PSI ใหม่ก่อน merge
+**Mobile: 90 · Desktop: 94** — เป้า ≥90 บรรลุ; ห้าม regression; เปลี่ยน config ด้านล่างต้องรัน PSI ใหม่ก่อน merge
 
 | รายการ | ค่าที่ lock |
 |--------|------------|
 | Next.js | `15.5.x` |
 | `experimental.inlineCss` | `true` (อย่า A/B ปิดโดยไม่วัด) |
-| Font | `lib/fonts/prompt.ts` self-hosted woff2 (400/600/700) |
-| Hero LCP | `(home)/layout` preload · mobile-only `priority` (viewport hook) · `sizes: 412px` · desktop hero `lazy` on mobile |
-| Supabase JS | ห้าม sync `createClient` ใน layout chain · `OfferManager` idle 5s · auth idle 5s · `/api/storefront/cart-rules` |
-| jsPDF / Cart / Search | dynamic import / lazy mount ตาม Phase 0–2 |
-| Embla | `embla-storefront-options` + near-viewport carousels |
+| Font | `lib/fonts/prompt.ts` 400 preload · 600/700 via **`PromptExtendedFacesLoader`** idle 3.5s |
+| Hero LCP | **`ssb_vp` cookie** SSR ฝั่งเดียว · mobile q**32** / desktop q**50** · autoplay delay **20s** · fade เฉพาะ slide 2+ |
+| Layout chunk | sync **Navbar** (ไม่ dynamic ทั้งก้อน) · **`BreederSeedsNav`** lazy hover/menu · **`PromoReturnHandler`** dynamic idle 2.5s |
+| Analytics | GA + Vercel **interaction-only** (ไม่มี mousemove / idle fallback) |
+| Supabase JS | ห้าม sync `createClient` ใน layout chain · `OfferManager` idle 5s · auth idle 5s |
+| Age gate / Framer | **`scheduleInteractionMount`** บน `/` (PSI lab ไม่ interact = ไม่ mount) |
 
-**Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97) → Phase 4A–C (PSI Mobile 79→target 90+)
+**Phases deploy จบ perf sprint:** 4I → 4J (SSR single hero) → 4K (layout trim) · commit **`62d7585`**
+
+### บันทึกการทำงาน — 2026-05-23 (A11y — touch targets + duplicate blog links)
+- **PSI A11y 97:** touch targets newsletter input · identical links การ์ด insights (3× same URL)
+- **แก้:** newsletter `gap-5` / 48px targets · `InsightGridCard` ลิงก์เดียวครอบการ์ด · featured hero image `aria-hidden` (CTA ปุ่มเดียว)
+- **ไฟล์:** `HomeNewsletterSection.tsx`, `HomeInsightSection.tsx`
+
+### บันทึกการทำงาน — 2026-05-23 (Perf LOCK — Mobile 90 / Desktop 94 ✅)
+- **PSI หลัง 4K deploy:** Mobile **90** · Desktop **94** · A11y **97** · Best Practices **100** · SEO **100**
+- **Timeline:** 84/98 (pre-4K) → **90/94** (post-4K `62d7585`)
+- **อย่า regression:** dynamic Navbar ทั้งก้อน (4H) · dual hero priority · `headers()` ใน home-stream · GA mousemove
 
 ### บันทึกการทำงาน — 2026-05-20 (Perf Phase 4K — layout chunk trim)
 - **PSI post-4J:** Mobile **84** / Desktop **98** — main-thread 1.6s · unused JS chunk **8536** ~20 KiB · unused Prompt @font-face ~20 KiB

@@ -26,56 +26,56 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
   const research = isResearchCategory(post.category);
   const cardTitle = magazineDisplayTitle(post, locale);
   const cardExcerpt = magazineDisplayExcerpt(post, locale);
+  const href = `/blog/${post.slug}`;
+  const readLabel = t(`อ่านบทความ: ${cardTitle}`, `Read article: ${cardTitle}`);
+
   return (
-    <article className="flex flex-col overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition hover:shadow-lg">
+    <article className="overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition hover:shadow-lg">
       <Link
-        href={`/blog/${post.slug}`}
-        className="relative block aspect-video min-h-[11rem] w-full overflow-hidden bg-zinc-100"
-        aria-label={t(`อ่านบทความ: ${cardTitle}`, `Read article: ${cardTitle}`)}
+        href={href}
+        className="group flex flex-col focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+        aria-label={readLabel}
       >
-        {img ? (
-          <Image
-            src={img}
-            alt=""
-            fill
-            className="object-cover transition duration-500 hover:scale-[1.02]"
-            sizes="(max-width: 1024px) 100vw, 33vw"
-            loading="lazy"
-            fetchPriority="low"
-            placeholder="blur"
-            blurDataURL={SHIMMER_BLUR_DATA_URL}
-            unoptimized={shouldOffloadImageOptimization(img)}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">
-            <Leaf className="h-10 w-10 text-zinc-300" />
-          </div>
-        )}
-      </Link>
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          {post.category && (
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-900">
-              {magazineCategoryLabel(post.category, locale)}
-            </span>
+        <div className="relative aspect-video min-h-[11rem] w-full overflow-hidden bg-zinc-100">
+          {img ? (
+            <Image
+              src={img}
+              alt=""
+              fill
+              className="object-cover transition duration-500 group-hover:scale-[1.02]"
+              sizes="(max-width: 1024px) 100vw, 33vw"
+              loading="lazy"
+              fetchPriority="low"
+              placeholder="blur"
+              blurDataURL={SHIMMER_BLUR_DATA_URL}
+              unoptimized={shouldOffloadImageOptimization(img)}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">
+              <Leaf className="h-10 w-10 text-zinc-300" aria-hidden />
+            </div>
           )}
-          {research && <VerifiedResearchBadge />}
         </div>
-        <h3 className="font-sans line-clamp-2 text-lg font-semibold leading-snug text-zinc-900">
-          <Link href={`/blog/${post.slug}`} className="hover:text-emerald-900">
+        <div className="flex flex-1 flex-col p-5">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            {post.category && (
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-900">
+                {magazineCategoryLabel(post.category, locale)}
+              </span>
+            )}
+            {research && <VerifiedResearchBadge />}
+          </div>
+          <h3 className="font-sans line-clamp-2 text-lg font-semibold leading-snug text-zinc-900 group-hover:text-emerald-900">
             {cardTitle}
-          </Link>
-        </h3>
-        {cardExcerpt && (
-          <p className="mt-2 line-clamp-3 flex-1 text-sm text-zinc-600">{cardExcerpt}</p>
-        )}
-        <Button
-          asChild
-          className="mt-4 min-h-11 w-full bg-emerald-800 font-semibold text-white hover:bg-emerald-900 sm:w-auto"
-        >
-          <Link href={`/blog/${post.slug}`}>{t("อ่านเพิ่มเติม", "Read article")}</Link>
-        </Button>
-      </div>
+          </h3>
+          {cardExcerpt && (
+            <p className="mt-2 line-clamp-3 flex-1 text-sm text-zinc-600">{cardExcerpt}</p>
+          )}
+          <span className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-emerald-800 px-4 text-sm font-semibold text-white group-hover:bg-emerald-900 sm:w-auto sm:self-start">
+            {t("อ่านเพิ่มเติม", "Read article")}
+          </span>
+        </div>
+      </Link>
     </article>
   );
 }
@@ -173,10 +173,9 @@ export function HomeInsightSection({
                     </Button>
                   </div>
                 </div>
-                <Link
-                  href={`/blog/${featured.slug}`}
-                  className="relative order-2 block min-h-[260px] min-w-[44px] w-full overflow-hidden bg-zinc-200 lg:min-h-full"
-                  aria-label={t(`อ่านบทความ: ${featuredTitle}`, `Read article: ${featuredTitle}`)}
+                <div
+                  className="relative order-2 block min-h-[260px] w-full overflow-hidden bg-zinc-200 lg:min-h-full"
+                  aria-hidden
                 >
                   {featuredImg ? (
                     <Image
@@ -197,7 +196,7 @@ export function HomeInsightSection({
                     </div>
                   )}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-900/10 via-transparent to-transparent" />
-                </Link>
+                </div>
               </article>
             )}
 
