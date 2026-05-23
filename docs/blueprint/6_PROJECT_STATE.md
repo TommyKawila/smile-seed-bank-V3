@@ -20,6 +20,11 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97) → Phase 4A–C (PSI Mobile 79→target 90+)
 
+### บันทึกการทำงาน — 2026-05-23 (Perf Phase 4H — Mobile 86→96 path)
+- **Mobile 86 / Desktop 93:** `useSyncExternalStore` + `matchMedia` ใน hero → forced reflow **105ms** · layout chunk **8536** (~20 KiB unused) จาก sync Navbar/PromoReturnHandler
+- **แก้:** คืน slide 0 **dual priority** (Mobile 96 pattern) · ถอน viewport store · `dynamic` Navbar + PromoReturnHandler · defer home banners idle **2.5s** · Vercel Analytics ไม่มี idle fallback
+- **ไฟล์:** `HeroCarouselSlideImages.tsx`, `StorefrontLayoutClient.tsx`, `VercelAnalyticsClient.tsx`
+
 ### บันทึกการทำงาน — 2026-05-23 (Perf Phase 4G — Mobile 88 regression fix)
 - **สลับขั้ว:** Mobile **96→88** · Desktop **88→97** หลัง Phase 4F
 - **สาเหตุ Mobile:** `headers()` ใน `home-stream` → dynamic route ช้า TTFB · GA `mousemove` → `pagead/ping` บน critical path **883ms**

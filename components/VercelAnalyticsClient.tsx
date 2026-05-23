@@ -2,13 +2,13 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
 const Analytics = dynamic(
   () => import("@vercel/analytics/react").then((m) => m.Analytics),
   { ssr: false }
 );
 
+/** Interaction-only — no idle fallback (keeps /events off PSI critical path). */
 export function VercelAnalyticsClient() {
   const [active, setActive] = useState(false);
 
@@ -20,17 +20,15 @@ export function VercelAnalyticsClient() {
       setActive(true);
     };
     const passive = { passive: true } as const;
-    const onInteract = () => scheduleIdleWork(arm, 500);
+    const onInteract = () => arm();
     const events = ["scroll", "pointerdown", "touchstart", "keydown"] as const;
     for (const e of events) {
       window.addEventListener(e, onInteract, passive);
     }
-    const cancel = scheduleIdleWork(arm, 10_000);
     return () => {
       for (const e of events) {
         window.removeEventListener(e, onInteract, passive);
       }
-      cancel();
     };
   }, []);
 

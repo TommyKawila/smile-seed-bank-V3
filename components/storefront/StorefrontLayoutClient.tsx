@@ -3,8 +3,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { Navbar } from "@/components/storefront/Navbar";
-import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { FRAMER_MOTION_NEEDED_EVENT } from "@/lib/framer-motion-events";
 import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
@@ -13,7 +11,16 @@ import { CART_FLY_EVENT, type CartFlyEventDetail } from "@/lib/cart-fly-events";
 const CART_ANIMATION_IDLE_MS = 8_000;
 const AGE_GATE_FALLBACK_MS = 12_000;
 const HOME_FRAMER_FALLBACK_MS = 15_000;
+const HOME_BANNER_IDLE_MS = 2_500;
 
+const Navbar = dynamic(
+  () => import("@/components/storefront/Navbar").then((m) => ({ default: m.Navbar })),
+  { ssr: true }
+);
+const PromoReturnHandler = dynamic(
+  () => import("@/components/storefront/PromoReturnHandler").then((m) => ({ default: m.PromoReturnHandler })),
+  { ssr: false }
+);
 const AgeVerificationGate = dynamic(
   () =>
     import("@/components/storefront/age-verification-gate").then((m) => ({
@@ -67,6 +74,7 @@ export function StorefrontLayoutClient({
   const [mountAgeGate, setMountAgeGate] = useState(false);
   const [framerReady, setFramerReady] = useState(!isHomePath);
   const [mountOffers, setMountOffers] = useState(false);
+  const [mountHomeBanners, setMountHomeBanners] = useState(!isHomePath);
   const [cartFxMount, setCartFxMount] = useState(false);
   const [cartFxReplay, setCartFxReplay] = useState<CartFlyEventDetail | null>(null);
   const cartFxArmedRef = useRef(false);
@@ -90,6 +98,11 @@ export function StorefrontLayoutClient({
       cancelInteract();
     };
   }, [framerReady, isHomePath]);
+
+  useEffect(() => {
+    if (!isHomePath) return;
+    return scheduleIdleWork(() => setMountHomeBanners(true), HOME_BANNER_IDLE_MS);
+  }, [isHomePath]);
 
   useEffect(() => {
     return scheduleIdleWork(() => setMountOffers(true), 5000);
@@ -119,14 +132,14 @@ export function StorefrontLayoutClient({
     <>
       {cartFxMount ? <CartAnimation replay={cartFxReplay} /> : null}
       <Toaster />
-      <BrowserDetectionBanner />
+      {mountHomeBanners ? <BrowserDetectionBanner /> : null}
       {mountAgeGate ? (
         <AgeVerificationGate initialVerifiedCookie={initialAgeVerifiedCookie} />
       ) : null}
       <Suspense fallback={null}>
         <PromoReturnHandler />
       </Suspense>
-      <PromotionBanner />
+      {mountHomeBanners ? <PromotionBanner /> : null}
       <div className="flex min-h-screen flex-col">
         <Navbar />
         <main className="flex-1 bg-white pt-20 sm:pt-28">{children}</main>
