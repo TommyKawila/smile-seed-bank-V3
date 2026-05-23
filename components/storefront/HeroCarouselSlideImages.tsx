@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Image from "next/image";
 import {
   HERO_CAROUSEL_DESKTOP_SIZES,
@@ -16,6 +16,11 @@ import {
   heroCarouselDesktopUrl,
   heroCarouselMobileUrl,
 } from "@/lib/storefront-image-urls";
+import {
+  getDesktopViewportServerSnapshot,
+  getDesktopViewportSnapshot,
+  subscribeDesktopViewport,
+} from "@/lib/viewport-hint-cookie";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 export type HeroCarouselSlideImagesProps = {
@@ -23,20 +28,14 @@ export type HeroCarouselSlideImagesProps = {
   desktopSrc: string;
   heroAlt: string;
   priority: boolean;
-  /** Server UA hint — avoids eager mobile fetch on desktop PSI. */
-  initialIsDesktop?: boolean;
 };
 
-function useLcpViewportIsDesktop(initialIsDesktop: boolean): boolean {
-  const [isDesktop, setIsDesktop] = useState(initialIsDesktop);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const sync = () => setIsDesktop(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-  return isDesktop;
+function useLcpViewportIsDesktop(): boolean {
+  return useSyncExternalStore(
+    subscribeDesktopViewport,
+    getDesktopViewportSnapshot,
+    getDesktopViewportServerSnapshot
+  );
 }
 
 export function HeroCarouselSlideImages({
@@ -44,10 +43,9 @@ export function HeroCarouselSlideImages({
   desktopSrc,
   heroAlt,
   priority,
-  initialIsDesktop = false,
 }: HeroCarouselSlideImagesProps) {
   const alt = heroAlt.trim() || "Smile Seed Bank Campaign";
-  const isDesktop = useLcpViewportIsDesktop(initialIsDesktop);
+  const isDesktop = useLcpViewportIsDesktop();
   const mobilePriority = priority && !isDesktop;
   const desktopPriority = priority && isDesktop;
   const mobileImageSrc = heroCarouselMobileUrl(mobileSrc, mobilePriority);

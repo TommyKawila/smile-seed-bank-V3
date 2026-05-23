@@ -1,13 +1,11 @@
 import "server-only";
 
-import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { HomeHeroCarousel } from "@/components/storefront/HomeHeroCarousel";
 import { HomePageHeroClient } from "@/components/storefront/HomePageHeroClient";
 import { HomePageBelowFoldHost } from "@/components/storefront/HomePageBelowFoldHost";
 import { resolveHeroCarouselBanners } from "@/lib/hero-carousel-banners";
-import { isLikelyDesktopUserAgent } from "@/lib/user-agent-viewport";
 import { EMPTY_STOREFRONT_HOME_PAYLOAD } from "@/services/storefront-home-service";
 import { getHeroCarouselBannersCached } from "@/services/hero-banner-service";
 import {
@@ -71,9 +69,7 @@ export async function HomeMainStream() {
     color,
   }));
   const belowSections = sections.filter((s) => s.key !== "hero");
-  const headerStore = await headers();
-  const initialIsDesktop = isLikelyDesktopUserAgent(headerStore.get("user-agent") ?? "");
-  const heroCarousel = <HomeHeroCarousel banners={banners} initialIsDesktop={initialIsDesktop} />;
+  const heroCarousel = <HomeHeroCarousel banners={banners} />;
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">

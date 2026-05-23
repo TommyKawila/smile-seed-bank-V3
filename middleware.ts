@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database.types";
 import { supabaseAuthCookieOptions } from "@/lib/supabase/session-cookies";
+import { applyViewportHintCookie } from "@/lib/viewport-hint-cookie";
 
 function adminRoleFromMetadata(user: { user_metadata?: Record<string, unknown> }): string {
   const r = user.user_metadata?.role;
@@ -29,11 +30,11 @@ export async function middleware(request: NextRequest) {
 
   /** Public storefront APIs (guest checkout, order helpers) — never redirect to /login. */
   if (path === "/api/storefront" || path.startsWith("/api/storefront/")) {
-    return NextResponse.next({ request });
+    return applyViewportHintCookie(request, NextResponse.next({ request }));
   }
 
   if (!isAdminAuthProtected(path)) {
-    return NextResponse.next({ request });
+    return applyViewportHintCookie(request, NextResponse.next({ request }));
   }
 
   let supabaseResponse = NextResponse.next({ request });

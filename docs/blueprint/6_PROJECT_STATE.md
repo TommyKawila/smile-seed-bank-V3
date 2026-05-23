@@ -20,6 +20,13 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97) → Phase 4A–C (PSI Mobile 79→target 90+)
 
+### บันทึกการทำงาน — 2026-05-23 (Perf Phase 4G — Mobile 88 regression fix)
+- **สลับขั้ว:** Mobile **96→88** · Desktop **88→97** หลัง Phase 4F
+- **สาเหตุ Mobile:** `headers()` ใน `home-stream` → dynamic route ช้า TTFB · GA `mousemove` → `pagead/ping` บน critical path **883ms**
+- **แก้:** ถอน `headers()` · viewport hint ผ่าน **middleware cookie `ssb_vp`** + `useSyncExternalStore` · GA เฉพาะ scroll/touch/click/keydown (ไม่มี mousemove)
+- **Desktop 97:** คง fade-off slide 0 + desktop quality 50 + single-viewport priority
+- **ไฟล์:** `viewport-hint-cookie.ts`, `middleware.ts`, `home-stream.tsx`, `HeroCarouselSlideImages.tsx`, `LazyGoogleAnalytics.tsx`
+
 ### บันทึกการทำงาน — 2026-05-23 (Perf Phase 4F — Desktop 88→90+)
 - **Mobile 96 locked:** ไม่แตะ mobile LCP path
 - **Desktop LCP breakdown:** element render delay **1,580ms** จาก `animate-hero-fade-in` opacity 0 บนสไลด์ 0 · load delay **1,320ms** จาก eager mobile+desktop พร้อมกัน · hero **91 KiB** (~14 KiB บีบได้)
