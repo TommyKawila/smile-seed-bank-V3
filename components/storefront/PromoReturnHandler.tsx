@@ -8,9 +8,14 @@ import { useAuth } from "@/hooks/use-auth";
 export function PromoReturnHandler() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { user, customer } = useAuth();
+  const { user, customer, ensureAuthLoaded } = useAuth();
   const { applyPromoCode, openCart } = useCartContext();
   const appliedRef = useRef(false);
+
+  useEffect(() => {
+    const promo = searchParams.get("promo");
+    if (promo) void ensureAuthLoaded();
+  }, [searchParams, ensureAuthLoaded]);
 
   useEffect(() => {
     const promo = searchParams.get("promo");

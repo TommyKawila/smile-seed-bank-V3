@@ -16,7 +16,7 @@ import X from "lucide-react/dist/esm/icons/x";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, useStorefrontSignedIn } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NAV_LOGO_INTRINSIC, NAV_LOGO_SIZES } from "@/lib/storefront-nav-logo";
@@ -64,8 +64,10 @@ export function Navbar() {
   const { itemCount, isOpen, openCart, closeCart } = useCartContext();
   const { locale, setLocale, t } = useLanguage();
   const { settings } = useSiteSettings();
-  const { user, customer, signOut, isLoading: authLoading } = useAuth();
-  const signedIn = Boolean(user) && !authLoading;
+  const { user, customer, signOut, sessionHint } = useAuth();
+  const signedIn = useStorefrontSignedIn();
+  const displayEmail = user?.email ?? sessionHint?.email ?? null;
+  const displayInitial = (customer?.full_name ?? displayEmail ?? "U").charAt(0).toUpperCase();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -235,7 +237,7 @@ export function Navbar() {
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-900 transition-colors hover:bg-emerald-100"
                     aria-label={t("เปิดเมนูโปรไฟล์", "Open profile menu")}
                   >
-                    {(customer?.full_name ?? user.email ?? "U").charAt(0).toUpperCase()}
+                    {displayInitial}
                   </button>
                   {userMenuOpen ? (
                       <div
@@ -243,7 +245,7 @@ export function Navbar() {
                       >
                         <div className="border-b border-zinc-100 px-4 py-3">
                           <p className="truncate text-xs font-semibold text-zinc-800">{customer?.full_name ?? t("ลูกค้า", "Customer")}</p>
-                          <p className="truncate text-[11px] text-zinc-400">{user.email}</p>
+                          <p className="truncate text-[11px] text-zinc-400">{displayEmail}</p>
                         </div>
                         <Link
                           href="/profile?tab=orders"

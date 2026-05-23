@@ -11,30 +11,45 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import type { Customer } from "@/types/supabase";
+import type { StorefrontSessionHint } from "@/lib/storefront-session-hint";
+import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
 interface AuthState {
   user: User | null;
   customer: Customer | null;
+  sessionHint: StorefrontSessionHint;
   isLoading: boolean;
   signOut: () => Promise<void>;
   refetchCustomer: () => Promise<void>;
+  ensureAuthLoaded: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
-/** Defer Supabase auth chunk off homepage LCP / PSI window. */
-const AUTH_BOOT_IDLE_MS = 10_000;
+/** Non-home routes: boot after idle. Home: interaction / navigation / ensureAuthLoaded only. */
+const AUTH_BOOT_IDLE_MS = 3_000;
 
 type AuthServiceModule = typeof import("@/services/auth-service");
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  children,
+  initialSessionHint = null,
+}: {
+  children: ReactNode;
+  initialSessionHint?: StorefrontSessionHint;
+}) {
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
-  /** Guest-first — avoid blocking navbar / age gate until idle auth boot runs. */
+  const [sessionHint] = useState<StorefrontSessionHint>(initialSessionHint);
   const [isLoading, setIsLoading] = useState(false);
   const authRef = useRef<AuthServiceModule | null>(null);
+  const bootStartedRef = useRef(false);
+  const bootPromiseRef = useRef<Promise<void> | null>(null);
+  const unsubRef = useRef<(() => void) | undefined>(undefined);
 
   const getAuth = useCallback(async (): Promise<AuthServiceModule> => {
     if (!authRef.current) {
@@ -51,57 +66,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [getAuth]
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    let unsub: (() => void) | undefined;
-
-    const boot = async () => {
-      if (!cancelled) setIsLoading(true);
-      const auth = await getAuth();
-      if (cancelled) return;
-      const u = await auth.getCurrentUser();
-      if (cancelled) return;
-      setUser(u);
-      if (u) await fetchCustomer(u.id);
-      if (!cancelled) setIsLoading(false);
-      unsub = auth.subscribeToAuthChanges((nextUser) => {
-        if (cancelled) return;
-        setUser(nextUser);
-        if (nextUser) void fetchCustomer(nextUser.id);
-        else setCustomer(null);
-      });
-    };
-
-    const idleId =
-      typeof requestIdleCallback !== "undefined"
-        ? requestIdleCallback(() => void boot(), { timeout: AUTH_BOOT_IDLE_MS })
-        : window.setTimeout(() => void boot(), AUTH_BOOT_IDLE_MS);
-
-    return () => {
-      cancelled = true;
-      if (typeof cancelIdleCallback !== "undefined" && typeof idleId === "number") {
-        cancelIdleCallback(idleId);
-      } else {
-        window.clearTimeout(idleId);
+  const runBoot = useCallback(async () => {
+    if (bootStartedRef.current && bootPromiseRef.current) {
+      return bootPromiseRef.current;
+    }
+    bootStartedRef.current = true;
+    const promise = (async () => {
+      setIsLoading(true);
+      try {
+        const auth = await getAuth();
+        const u = await auth.getCurrentUser();
+        setUser(u);
+        if (u) await fetchCustomer(u.id);
+        unsubRef.current?.();
+        unsubRef.current = auth.subscribeToAuthChanges((nextUser) => {
+          setUser(nextUser);
+          if (nextUser) void fetchCustomer(nextUser.id);
+          else setCustomer(null);
+        });
+      } finally {
+        setIsLoading(false);
       }
-      unsub?.();
-    };
+    })();
+    bootPromiseRef.current = promise;
+    return promise;
   }, [fetchCustomer, getAuth]);
 
+  const ensureAuthLoaded = useCallback(async () => {
+    await runBoot();
+  }, [runBoot]);
+
+  useEffect(() => {
+    if (pathname === "/") return;
+    return scheduleIdleWork(() => {
+      void runBoot();
+    }, AUTH_BOOT_IDLE_MS);
+  }, [pathname, runBoot]);
+
+  useEffect(() => {
+    return () => {
+      unsubRef.current?.();
+    };
+  }, []);
+
   const refetchCustomer = useCallback(async () => {
+    await ensureAuthLoaded();
     if (user) await fetchCustomer(user.id);
-  }, [user, fetchCustomer]);
+  }, [user, fetchCustomer, ensureAuthLoaded]);
 
   const signOut = useCallback(async () => {
+    await ensureAuthLoaded();
     const auth = await getAuth();
     await auth.signOutCurrentUser();
     setUser(null);
     setCustomer(null);
-  }, [getAuth]);
+  }, [getAuth, ensureAuthLoaded]);
 
   const value = useMemo(
-    () => ({ user, customer, isLoading, signOut, refetchCustomer }),
-    [user, customer, isLoading, signOut, refetchCustomer]
+    () => ({
+      user,
+      customer,
+      sessionHint,
+      isLoading,
+      signOut,
+      refetchCustomer,
+      ensureAuthLoaded,
+    }),
+    [user, customer, sessionHint, isLoading, signOut, refetchCustomer, ensureAuthLoaded]
   );
 
   return createElement(AuthContext.Provider, { value }, children);
@@ -111,4 +142,10 @@ export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
   return ctx;
+}
+
+/** Navbar / gates: SSR hint or hydrated Supabase user. */
+export function useStorefrontSignedIn(): boolean {
+  const { user, sessionHint } = useAuth();
+  return Boolean(user) || Boolean(sessionHint);
 }

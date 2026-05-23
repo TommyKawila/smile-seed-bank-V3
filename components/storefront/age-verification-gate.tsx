@@ -41,7 +41,7 @@ export function AgeVerificationGate({
   /** Server-read cookie — initial CSS visibility matches SSR (hydration-safe tree). */
   initialVerifiedCookie?: boolean;
 }) {
-  const { user, isLoading } = useAuth();
+  const { user, sessionHint, isLoading } = useAuth();
   const { locale, setLocale } = useLanguage();
   const { settings } = useSiteSettings();
   /** When true, overlay is hidden via CSS only (DOM stays mounted). */
@@ -52,7 +52,7 @@ export function AgeVerificationGate({
   }, [initialVerifiedCookie]);
 
   useEffect(() => {
-    if (user) {
+    if (user || sessionHint) {
       setIsVerified(true);
       return;
     }
@@ -61,7 +61,7 @@ export function AgeVerificationGate({
       return;
     }
     if (!isLoading) setIsVerified(false);
-  }, [isLoading, user, initialVerifiedCookie]);
+  }, [isLoading, user, sessionHint, initialVerifiedCookie]);
 
   useEffect(() => {
     if (isVerified) return;

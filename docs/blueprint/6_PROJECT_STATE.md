@@ -20,6 +20,11 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97)
 
+### บันทึกการทำงาน — 2026-05-23 (Perf Phase 2b — fix PSI 79 regression)
+- **สาเหตุ:** auth boot idle **10s** โหลด chunk 5890 ช่วง PSI ยังวัด → TBT/unused JS แย่ลง
+- **แก้:** หน้า **`/`** ไม่ auto-boot Supabase JS · SSR **`getStorefrontSessionHint()`** สำหรับ navbar/age gate · boot เฉพาะ route อื่น / `ensureAuthLoaded()` (promo)
+- **ไฟล์:** `storefront-auth-hint-service.ts`, `lib/storefront-session-hint.ts`, `use-auth.ts`, `(storefront)/layout.tsx`, `Navbar.tsx`, `age-verification-gate.tsx`, `PromoReturnHandler.tsx`
+
 ### บันทึกการทำงาน — 2026-05-23 (Perf Phase 2 — defer Supabase chunk 5890)
 - **`use-auth`:** guest-first `isLoading: false` · auth boot idle **10s** (was 5s)
 - **`age-verification-gate`:** cookie/SSR path ไม่รอ auth boot

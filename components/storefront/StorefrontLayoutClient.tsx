@@ -51,7 +51,7 @@ export function StorefrontLayoutClient({
   const cartFxArmedRef = useRef(false);
 
   useEffect(() => {
-    return scheduleIdleWork(() => setMountOffers(true), 8000);
+    return scheduleIdleWork(() => setMountOffers(true), 5000);
   }, []);
 
   useEffect(() => {
