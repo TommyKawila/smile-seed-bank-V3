@@ -187,6 +187,7 @@ function ProductCardBase({
     if (displayVariant) {
       const variantListPrice = Number(displayVariant.price ?? 0);
       const unit = roundCheckoutBahtWhole(variantListPrice);
+      const clearanceUnit = roundCheckoutBahtWhole(getEffectiveVariantPrice(product, variantListPrice));
       if (typeof addToCart !== "function") {
         toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
         return;
@@ -198,6 +199,7 @@ function ProductCardBase({
         productImage: cardImage,
         unitLabel: displayVariant.unit_label,
         price: unit,
+        clearancePrice: clearanceUnit > 0 && clearanceUnit < unit ? clearanceUnit : null,
         quantity: 1,
         stock_quantity: displayVariant.stock ?? 0,
         masterSku: (product as { master_sku?: string | null }).master_sku ?? null,

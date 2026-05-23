@@ -25,7 +25,7 @@ type LineIn = {
   productName: string;
 };
 
-export type PriceSource = "variant" | "product_fallback" | "brand_promotion";
+export type PriceSource = "variant" | "product_fallback" | "brand_promotion" | "clearance";
 
 export type CheckoutValidationFailureDetails = {
   clientValues: CheckoutSummary;
@@ -44,15 +44,25 @@ function normalizeCheckoutVariantId(v: number): number {
   return Math.trunc(n);
 }
 
+type ProductVariantPriceRow = {
+  price: unknown;
+  stock: number | null;
+  is_active: boolean | null;
+};
+
 type VariantRow = {
   id: bigint;
   product_id: bigint | null;
   unit_label: string;
   price: unknown;
+  clearance_price: unknown;
   products: {
     id: bigint;
     name: string;
     price: unknown;
+    sale_price: unknown;
+    is_clearance: boolean | null;
+    product_variants: ProductVariantPriceRow[];
     breeders: { name: string } | null;
   } | null;
 };
@@ -72,8 +82,37 @@ export function coerceDbPriceBaht(raw: unknown): number {
   return Number.isFinite(n) ? n : NaN;
 }
 
+function checkoutStartingPrice(
+  variants: ProductVariantPriceRow[] | null | undefined,
+): number {
+  if (!variants?.length) return 0;
+  const priced = variants
+    .filter((v) => v.is_active !== false)
+    .map((v) => ({
+      price: coerceDbPriceBaht(v.price),
+      stock: Number(v.stock ?? 0),
+    }))
+    .filter((v) => v.price > 0);
+  if (priced.length === 0) return 0;
+  const inStock = priced.filter((v) => v.stock > 0);
+  const pool = inStock.length > 0 ? inStock : priced;
+  return Math.min(...pool.map((v) => v.price));
+}
+
+function resolveClearanceUnitBaht(v: VariantRow, base: number): number | null {
+  if (v.products?.is_clearance !== true || base <= 0) return null;
+  const explicit = coerceDbPriceBaht(v.clearance_price);
+  if (explicit > 0) return roundCheckoutBahtWhole(Math.min(base, explicit));
+
+  const sale = coerceDbPriceBaht(v.products.sale_price);
+  if (sale <= 0) return null;
+  const starting = checkoutStartingPrice(v.products.product_variants);
+  if (starting <= 0) return roundCheckoutBahtWhole(Math.min(base, sale));
+  return roundCheckoutBahtWhole(Math.min(base, Math.max(1, sale * (base / starting))));
+}
+
 /**
- * Base unit from variant / product row, then brand % from `brandRules` vs breeder name — round after brand.
+ * Base unit from variant / product row, then brand %, then clearance fallback — round whole Baht.
  */
 function resolveListingUnitBaht(
   v: VariantRow,
@@ -99,6 +138,10 @@ function resolveListingUnitBaht(
       unitBaht: applyBrandPercentToUnitBaht(base, rule.discount_percent),
       source: "brand_promotion",
     };
+  }
+  const clearance = resolveClearanceUnitBaht(v, base);
+  if (clearance != null && clearance > 0 && clearance < base) {
+    return { unitBaht: clearance, source: "clearance" };
   }
   return { unitBaht: base, source: baseSource };
 }
@@ -257,6 +300,15 @@ export async function validateStorefrontCheckoutTotals(input: {
             id: true,
             name: true,
             price: true,
+            sale_price: true,
+            is_clearance: true,
+            product_variants: {
+              select: {
+                price: true,
+                stock: true,
+                is_active: true,
+              },
+            },
             breeders: { select: { name: true } },
           },
         },

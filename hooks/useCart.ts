@@ -5,7 +5,7 @@ import { z } from "zod";
 import {
   evaluateFreeGifts,
   calculateCartSummary,
-  unitBahtAfterBrandForCartItem,
+  resolveCartItemCheckoutUnit,
   activeBrandRulesFromRows,
   type BrandPromotionRuleRow,
 } from "@/lib/cart-utils";
@@ -42,6 +42,7 @@ const AddToCartSchema = z.object({
   productImage: z.string().nullable(),
   unitLabel: z.string().min(1),
   price: z.number().positive("ราคาต้องมากกว่า 0"),
+  clearancePrice: z.number().positive().nullable().optional(),
   quantity: z.number().int().positive("จำนวนต้องมากกว่า 0"),
   stock_quantity: z.number().int().min(0).optional(),
   masterSku: z.string().nullable().optional(),
@@ -63,6 +64,11 @@ function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<Cart
   const quantity = Number.isFinite(q) && q > 0 ? q : 1;
   const priceRaw = Number(raw.price);
   const price = Number.isFinite(priceRaw) ? priceRaw : 0;
+  const clearanceRaw = raw.clearancePrice == null ? null : Number(raw.clearancePrice);
+  const clearancePrice =
+    clearanceRaw != null && Number.isFinite(clearanceRaw) && clearanceRaw > 0
+      ? clearanceRaw
+      : null;
   const sq = raw.stock_quantity;
   const stock_quantity =
     sq === undefined
@@ -84,6 +90,7 @@ function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<Cart
     productId,
     quantity,
     price,
+    clearancePrice,
     stock_quantity,
     breeder_id,
   };
@@ -408,7 +415,7 @@ export function useCart(): UseCartReturn {
       const subtotal = items
         .filter((i) => !i.isFreeGift)
         .reduce((s, i) => {
-          const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules);
+          const { unit } = resolveCartItemCheckoutUnit(i, brandPromotionRules);
           return s + unit * i.quantity;
         }, 0);
 
