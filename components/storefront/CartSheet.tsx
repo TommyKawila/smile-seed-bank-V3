@@ -21,7 +21,6 @@ import { Separator } from "@/components/ui/separator";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/use-auth";
-import { createClient } from "@/lib/supabase/client";
 import { getURL } from "@/lib/get-url";
 import { DiscountProgressBar } from "./DiscountProgressBar";
 import { LoginForPromoDialog } from "./LoginForPromoDialog";
@@ -222,6 +221,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
         });
         return;
       }
+      const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
       const redirectTo = loginPromoCode
         ? `${getURL()}?promo=${encodeURIComponent(loginPromoCode)}`

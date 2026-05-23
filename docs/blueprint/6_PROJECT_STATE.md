@@ -20,6 +20,14 @@
 
 **Phases ที่ deploy แล้ว:** Phase 1 (LCP 88) → Phase 2 (97)
 
+### บันทึกการทำงาน — 2026-05-23 (Perf Phase 2 — defer Supabase chunk 5890)
+- **`use-auth`:** guest-first `isLoading: false` · auth boot idle **10s** (was 5s)
+- **`age-verification-gate`:** cookie/SSR path ไม่รอ auth boot
+- **`Navbar`:** `signedIn` เฉพาะเมื่อ auth พร้อม — ไม่ block LCP
+- **`CartSheet`:** dynamic `import("@/lib/supabase/client")` ใน OAuth handler
+- **`StorefrontLayoutClient`:** `CartAnimation` mount idle **8s** หรือ add-to-cart ครั้งแรก · `OfferManager` idle **8s**
+- **ไฟล์:** `use-auth.ts`, `age-verification-gate.tsx`, `Navbar.tsx`, `CartSheet.tsx`, `StorefrontLayoutClient.tsx`, `CartAnimation.tsx`
+
 ### บันทึกการทำงาน — 2026-05-23 (Perf Phase 1 — Supabase render/image pipeline)
 - **`resolveOptimizedAssetUrl()`:** แปลง `object/public` → `render/image/public` + `width`/`quality`/`format=webp` (แทน Vercel `/_next/image` ที่ 402)
 - **Hero LCP:** mobile **412px q45** · desktop **640px q60** — preload + `<Image>` ใช้ URL เดียวกัน

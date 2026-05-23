@@ -152,14 +152,22 @@ function FlyingItem({ detail, onDone }: { detail: ActiveFly; onDone: () => void 
 }
 
 /** Portal: live region + flying “seed pack” chips toward the nav cart button. */
-export function CartAnimation() {
+export function CartAnimation({ replay = null }: { replay?: CartFlyEventDetail | null }) {
   const [mounted, setMounted] = useState(false);
   const [items, setItems] = useState<ActiveFly[]>([]);
   const idRef = useRef(0);
+  const replayedRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!replay?.startRect || replayedRef.current) return;
+    replayedRef.current = true;
+    const id = ++idRef.current;
+    setItems((prev) => [...prev, { ...replay, id }]);
+  }, [replay]);
 
   const onFly = useCallback((ev: Event) => {
     const e = ev as CustomEvent<CartFlyEventDetail>;

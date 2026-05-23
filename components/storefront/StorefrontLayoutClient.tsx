@@ -1,11 +1,14 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AgeVerificationGate } from "@/components/storefront/age-verification-gate";
 import { Navbar } from "@/components/storefront/Navbar";
 import { PromoReturnHandler } from "@/components/storefront/PromoReturnHandler";
 import { scheduleIdleWork } from "@/lib/schedule-idle-work";
+import { CART_FLY_EVENT, type CartFlyEventDetail } from "@/lib/cart-fly-events";
+
+const CART_ANIMATION_IDLE_MS = 8_000;
 
 const Toaster = dynamic(
   () => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })),
@@ -43,14 +46,37 @@ export function StorefrontLayoutClient({
   initialAgeVerifiedCookie: boolean;
 }) {
   const [mountOffers, setMountOffers] = useState(false);
+  const [cartFxMount, setCartFxMount] = useState(false);
+  const [cartFxReplay, setCartFxReplay] = useState<CartFlyEventDetail | null>(null);
+  const cartFxArmedRef = useRef(false);
 
   useEffect(() => {
-    return scheduleIdleWork(() => setMountOffers(true), 5000);
+    return scheduleIdleWork(() => setMountOffers(true), 8000);
+  }, []);
+
+  useEffect(() => {
+    const armCartFx = (replay: CartFlyEventDetail | null) => {
+      if (cartFxArmedRef.current) return;
+      cartFxArmedRef.current = true;
+      setCartFxReplay(replay);
+      setCartFxMount(true);
+    };
+    const onFly = (ev: Event) => {
+      const detail = (ev as CustomEvent<CartFlyEventDetail>).detail;
+      if (!detail?.startRect) return;
+      armCartFx(detail);
+    };
+    window.addEventListener(CART_FLY_EVENT, onFly);
+    const cancelIdle = scheduleIdleWork(() => armCartFx(null), CART_ANIMATION_IDLE_MS);
+    return () => {
+      window.removeEventListener(CART_FLY_EVENT, onFly);
+      cancelIdle();
+    };
   }, []);
 
   return (
     <>
-      <CartAnimation />
+      {cartFxMount ? <CartAnimation replay={cartFxReplay} /> : null}
       <Toaster />
       <BrowserDetectionBanner />
       <AgeVerificationGate initialVerifiedCookie={initialAgeVerifiedCookie} />

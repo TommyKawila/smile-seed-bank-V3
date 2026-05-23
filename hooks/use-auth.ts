@@ -24,12 +24,16 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/** Defer Supabase auth chunk off homepage LCP / PSI window. */
+const AUTH_BOOT_IDLE_MS = 10_000;
+
 type AuthServiceModule = typeof import("@/services/auth-service");
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  /** Guest-first — avoid blocking navbar / age gate until idle auth boot runs. */
+  const [isLoading, setIsLoading] = useState(false);
   const authRef = useRef<AuthServiceModule | null>(null);
 
   const getAuth = useCallback(async (): Promise<AuthServiceModule> => {
@@ -52,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsub: (() => void) | undefined;
 
     const boot = async () => {
+      if (!cancelled) setIsLoading(true);
       const auth = await getAuth();
       if (cancelled) return;
       const u = await auth.getCurrentUser();
@@ -69,8 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const idleId =
       typeof requestIdleCallback !== "undefined"
-        ? requestIdleCallback(() => void boot(), { timeout: 5000 })
-        : window.setTimeout(() => void boot(), 100);
+        ? requestIdleCallback(() => void boot(), { timeout: AUTH_BOOT_IDLE_MS })
+        : window.setTimeout(() => void boot(), AUTH_BOOT_IDLE_MS);
 
     return () => {
       cancelled = true;

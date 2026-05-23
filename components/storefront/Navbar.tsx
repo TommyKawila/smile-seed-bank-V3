@@ -64,7 +64,8 @@ export function Navbar() {
   const { itemCount, isOpen, openCart, closeCart } = useCartContext();
   const { locale, setLocale, t } = useLanguage();
   const { settings } = useSiteSettings();
-  const { user, customer, signOut } = useAuth();
+  const { user, customer, signOut, isLoading: authLoading } = useAuth();
+  const signedIn = Boolean(user) && !authLoading;
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -226,7 +227,7 @@ export function Navbar() {
             )}
             {/* User — Avatar dropdown or Login link */}
             <div className="relative" ref={userMenuRef}>
-              {user ? (
+              {signedIn ? (
                 <>
                   <button
                     type="button"
@@ -358,7 +359,7 @@ export function Navbar() {
               </Link>
               {/* Auth Links — Mobile */}
               <div className="mt-3 border-t border-gray-100 pt-3">
-                {user ? (
+                {signedIn ? (
                   <div className="flex items-center justify-between">
                     <Link
                       href="/profile"

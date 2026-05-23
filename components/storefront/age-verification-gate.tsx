@@ -52,17 +52,16 @@ export function AgeVerificationGate({
   }, [initialVerifiedCookie]);
 
   useEffect(() => {
-    if (isLoading) return;
     if (user) {
       setIsVerified(true);
       return;
     }
-    if (hasAgeCookie()) {
+    if (initialVerifiedCookie || hasAgeCookie()) {
       setIsVerified(true);
       return;
     }
-    setIsVerified(false);
-  }, [isLoading, user]);
+    if (!isLoading) setIsVerified(false);
+  }, [isLoading, user, initialVerifiedCookie]);
 
   useEffect(() => {
     if (isVerified) return;
