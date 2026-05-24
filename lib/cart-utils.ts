@@ -66,7 +66,7 @@ export function evaluateFreeGifts(
   const subtotal = cartItems
     .filter((i) => !i.isFreeGift)
     .reduce((sum, i) => {
-      const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules);
+      const { unit } = resolveCartItemCheckoutUnit(i, brandPromotionRules);
       return sum + unit * i.quantity;
     }, 0);
 
@@ -89,18 +89,16 @@ export function evaluateFreeGifts(
 
 /** Per-line totals for cart UI: matches `calculateCartSummary` brand math (whole Baht). */
 export function cartItemBrandLineDisplay(
-  item: Pick<CartItem, "price" | "quantity" | "breederName" | "isFreeGift">,
+  item: Pick<CartItem, "price" | "clearancePrice" | "quantity" | "breederName" | "isFreeGift">,
   brandRules: BrandPromotionRuleRow[],
 ): { effLine: number; listLine: number; showBrandStrike: boolean } {
   if (item.isFreeGift) {
     return { effLine: 0, listLine: 0, showBrandStrike: false };
   }
-  const { baseBaht, effectiveBaht } = resolveListingUnitAfterBrand(
-    item.price,
-    item.breederName,
-    brandRules,
-  );
-  const showBrandStrike = baseBaht > 0 && effectiveBaht < baseBaht;
+  const { unit, base, discounted } = resolveCartItemCheckoutUnit(item, brandRules);
+  const baseBaht = base;
+  const effectiveBaht = unit;
+  const showBrandStrike = discounted;
   const effLine = roundCheckoutBahtWhole(effectiveBaht * item.quantity);
   const listLine = roundCheckoutBahtWhole(baseBaht * item.quantity);
   return { effLine, listLine, showBrandStrike };
@@ -126,6 +124,28 @@ export function unitBahtAfterBrandForCartItem(
   };
 }
 
+export function resolveCartItemCheckoutUnit(
+  item: Pick<CartItem, "price" | "clearancePrice" | "breederName">,
+  brandRules: BrandPromotionRuleRow[],
+): { unit: number; base: number; discounted: boolean; source: "list" | "brand" | "clearance" } {
+  const base = roundCheckoutBahtWhole(item.price);
+  const { unit: brandUnit, brandApplied } = unitBahtAfterBrandForCartItem(
+    base,
+    item.breederName,
+    brandRules,
+  );
+  if (brandApplied && brandUnit < base) {
+    return { unit: brandUnit, base, discounted: true, source: "brand" };
+  }
+
+  const clearance = roundCheckoutBahtWhole(Number(item.clearancePrice ?? 0));
+  if (clearance > 0 && clearance < base) {
+    return { unit: clearance, base, discounted: true, source: "clearance" };
+  }
+
+  return { unit: base, base, discounted: false, source: "list" };
+}
+
 /**
  * Storefront cart: brand % per line → subtotal → coupon on subtotal → shipping on net → total.
  * GrandTotal = round(netAfterCoupon + shipping) where netAfterCoupon = round(subtotalAfterBrand − couponDiscount).
@@ -142,7 +162,7 @@ export function calculateCartSummary(
   const subtotalSatang = items
     .filter((i) => !i.isFreeGift)
     .reduce((sum, i) => {
-      const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandRules);
+      const { unit } = resolveCartItemCheckoutUnit(i, brandRules);
       return sum + bahtToSatangInt(unit * i.quantity);
     }, 0);
   const subtotal = roundCheckoutBahtWhole(satangIntToBaht(subtotalSatang));

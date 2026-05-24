@@ -284,6 +284,7 @@ export interface CartItem {
   productImage: string | null;
   unitLabel: string;
   price: number;
+  clearancePrice?: number | null;
   quantity: number;
   /** Variant available stock (from `product_variants.stock`) at add-to-cart time */
   stock_quantity?: number;

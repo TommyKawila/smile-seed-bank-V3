@@ -298,7 +298,9 @@ export default function ProductDetailClient({
 
   const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (!product || !selectedVariant) return;
-    const unit = roundCheckoutBahtWhole(Number(selectedVariant.price ?? 0));
+    const variantListPrice = Number(selectedVariant.price ?? 0);
+    const unit = roundCheckoutBahtWhole(variantListPrice);
+    const clearanceUnit = roundCheckoutBahtWhole(getEffectiveVariantPrice(product, variantListPrice));
     const { error } = addToCart({
       variantId: selectedVariant.id,
       productId: product.id,
@@ -306,6 +308,7 @@ export default function ProductDetailClient({
       productImage: resolveDetailHeroUrl(product, selectedVariant.id),
       unitLabel: selectedVariant.unit_label,
       price: unit,
+      clearancePrice: clearanceUnit > 0 && clearanceUnit < unit ? clearanceUnit : null,
       quantity: 1,
       stock_quantity: selectedVariant.stock ?? 0,
       masterSku: (product as { master_sku?: string | null }).master_sku ?? null,

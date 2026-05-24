@@ -21,6 +21,11 @@
 
 **Phases deploy จบ perf sprint:** 4I → 4J (SSR single hero) → 4K (layout trim) · commit **`62d7585`**
 
+### บันทึกการทำงาน — 2026-05-23 (Critical fix — clearance checkout pricing)
+- **Bug:** clearance per-pack price แสดงบน PDP/card แต่ cart + checkout server ใช้ list price
+- **แก้:** cart เก็บ `clearancePrice` แยกจาก list price; summary และ validator ใช้ลำดับ brand promotion ก่อน แล้ว fallback clearance
+- **ไฟล์:** `ProductCard.tsx`, `product-detail-client.tsx`, `cart-utils.ts`, `useCart.ts`, `checkout-server-validate.ts`, `types/supabase.ts`
+
 ### บันทึกการทำงาน — 2026-05-23 (A11y — touch targets + duplicate blog links)
 - **PSI A11y 97:** touch targets newsletter input · identical links การ์ด insights (3× same URL)
 - **แก้:** newsletter `gap-5` / 48px targets · `InsightGridCard` ลิงก์เดียวครอบการ์ด · featured hero image `aria-hidden` (CTA ปุ่มเดียว)
