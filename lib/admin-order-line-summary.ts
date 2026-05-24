@@ -61,6 +61,37 @@ export function formatItemForPacking(li: AdminOrderLineItem): string {
   return `${product} แพคเกจ ${variant} / ค่าย ${brand} (${type}) ราคา ${price} X ${qty} ชิ้น`;
 }
 
+/** Admin order detail drawer line (pack + unit × qty). */
+export type AdminOrderDetailLineItem = {
+  productName: string;
+  unitLabel: string;
+  breederName: string | null;
+  seedTypeLabel: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+};
+
+export function formatAdminOrderDetailLine(item: AdminOrderDetailLineItem): string {
+  const product = (item.productName ?? "").trim() || "—";
+  const packRaw = item.unitLabel?.trim() || "—";
+  const variant = normalizePackingDisplayText(packRaw);
+  let brand = (item.breederName ?? "").trim();
+  if (!brand || brand === "—") brand = "—";
+  const type = shortenTypeLabelForPacking(
+    normalizePackingDisplayText((item.seedTypeLabel ?? "").trim() || "—")
+  );
+  const price = formatPriceBahtShort(item.unitPrice);
+  const qty = item.quantity;
+  return `${product} แพคเกจ ${variant} / ค่าย ${brand} (${type}) ราคา ${price} X ${qty} ชิ้น`;
+}
+
+export function formatAdminOrderDetailLineTotal(item: AdminOrderDetailLineItem): string {
+  const total = Math.round(Number(item.totalPrice));
+  if (item.quantity <= 1) return formatPriceBahtShort(total);
+  return `${formatPriceBahtShort(item.unitPrice)} X ${item.quantity} ชิ้น = ${formatPriceBahtShort(total)}`;
+}
+
 /** Clipboard / packing: summary + ` x {qty} pack(s)` */
 export function formatAdminOrderPackingCopyLine(li: AdminOrderLineItem): string {
   return `${formatAdminOrderLineSummary(li)} x ${li.quantity} pack(s)`;

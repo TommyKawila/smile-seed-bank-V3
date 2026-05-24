@@ -20,9 +20,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAdminOrders, type AdminOrder } from "@/hooks/useAdminOrders";
 import { formatPrice } from "@/lib/utils";
-import { adminOrderLineSeedsPart, formatAdminOrderLineSummary } from "@/lib/admin-order-line-summary";
+import {
+  formatAdminOrderDetailLine,
+  formatAdminOrderDetailLineTotal,
+  formatAdminOrderLineSummary,
+} from "@/lib/admin-order-line-summary";
 import { generateOrderPackingDetailsText } from "@/lib/admin-order-packing-text";
-import { adminOrderLineFloweringLabel } from "@/lib/seed-type-filter";
 import type { AdminOrderLineItem } from "@/types/admin-order";
 import { cn } from "@/lib/utils";
 import { openPackingSlipPrint } from "@/components/admin/PackingSlipPrint";
@@ -125,26 +128,6 @@ const PAYMENT_LABELS: Record<string, string> = {
   CASH: "เงินสด",
   CRYPTO: "คริปโต",
 };
-
-function formatAdminOrderDetailItemSummary(item: {
-  productName: string;
-  unitLabel: string;
-  quantity: number;
-  breederName: string | null;
-  seedTypeLabel?: string | null;
-}): string {
-  const seedsPart = adminOrderLineSeedsPart({
-    unit_label: item.unitLabel && item.unitLabel !== "—" ? item.unitLabel : null,
-    variant_unit_label: null,
-    quantity: item.quantity,
-  });
-  const breeder = item.breederName?.trim() || "—";
-  const seedType =
-    item.seedTypeLabel?.trim() && item.seedTypeLabel !== "—"
-      ? item.seedTypeLabel.trim()
-      : adminOrderLineFloweringLabel(item.productName, null);
-  return `${item.productName} (${seedsPart}) — ${breeder} (${seedType})`;
-}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1628,9 +1611,13 @@ export default function AdminOrdersPage() {
                 <h4 className="mb-2 text-sm font-semibold text-zinc-700">รายการสินค้า</h4>
                 <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
                   {detailModal.items.map((item, i) => (
-                    <div key={i} className="flex justify-between gap-2 text-sm">
-                      <span className="min-w-0 text-zinc-800">{formatAdminOrderDetailItemSummary(item)}</span>
-                      <span className="shrink-0 font-medium text-primary">{formatPrice(item.totalPrice)}</span>
+                    <div key={i} className="flex flex-col gap-0.5 border-b border-zinc-100 pb-2 last:border-0 last:pb-0 sm:flex-row sm:justify-between sm:gap-3">
+                      <span className="min-w-0 text-sm leading-snug text-zinc-800">
+                        {formatAdminOrderDetailLine(item)}
+                      </span>
+                      <span className="shrink-0 text-sm font-medium tabular-nums text-primary sm:text-right">
+                        {formatAdminOrderDetailLineTotal(item)}
+                      </span>
                     </div>
                   ))}
                   <div className="space-y-1 border-t border-zinc-200 pt-2 text-right text-sm text-zinc-600">
