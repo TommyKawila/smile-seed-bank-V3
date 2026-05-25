@@ -1,25 +1,22 @@
 # Smile Seed Bank V3 — Project State & Progress Tracker
 
-*ไฟล์นี้ใช้เพื่อบันทึกสถานะล่าสุดของโปรเจกต์ เพื่อป้องกัน AI ลืม Context*
+*Sprint log only. Perf/A11y/SEO **locks** live in `6_PERF_BUDGETS.md`, `0_PSI_ACCEPTANCE.md`, `8_SEO_SCHEMA.md` — do not duplicate here.*
 
 ---
 
-## 🔒 LOCKED — PSI Performance baseline (2026-05-23)
+### บันทึกการทำงาน — 2026-05-24 (Vercel Speed Insights)
+- **เพิ่ม:** `@vercel/speed-insights` · `<SpeedInsights />` ใน `app/layout.tsx` (RUM Web Vitals)
+- **ไฟล์:** `app/layout.tsx`, `package.json`, `package-lock.json`
 
-**Mobile: 90 · Desktop: 94** — เป้า ≥90 บรรลุ; ห้าม regression; เปลี่ยน config ด้านล่างต้องรัน PSI ใหม่ก่อน merge
+### บันทึกการทำงาน — 2026-05-24 (Blueprint V3.2 governance)
+- **เพิ่ม:** `0_PSI_ACCEPTANCE.md` (DoD + forbidden list) · `6_PERF_BUDGETS.md` (PSI lock + anti-patterns) · `7_A11Y_CHECKLIST.md` · `8_SEO_SCHEMA.md`
+- **Rename:** `6_PROJECT_STATE.md` → **`9_PROJECT_STATE.md`**
+- **อัป:** `1_PRD` NFR · `4_ARCHITECTURE` route tiers · `5_UI` a11y tokens · `.cursorrules` 7 pillars
+- **ไม่กระทบ runtime** — docs/governance only
 
-| รายการ | ค่าที่ lock |
-|--------|------------|
-| Next.js | `15.5.x` |
-| `experimental.inlineCss` | `true` (อย่า A/B ปิดโดยไม่วัด) |
-| Font | `lib/fonts/prompt.ts` 400 preload · 600/700 via **`PromptExtendedFacesLoader`** idle 3.5s |
-| Hero LCP | **`ssb_vp` cookie** SSR ฝั่งเดียว · mobile q**32** / desktop q**50** · autoplay delay **20s** · fade เฉพาะ slide 2+ |
-| Layout chunk | sync **Navbar** (ไม่ dynamic ทั้งก้อน) · **`BreederSeedsNav`** lazy hover/menu · **`PromoReturnHandler`** dynamic idle 2.5s |
-| Analytics | GA + Vercel **interaction-only** (ไม่มี mousemove / idle fallback) |
-| Supabase JS | ห้าม sync `createClient` ใน layout chain · `OfferManager` idle 5s · auth idle 5s |
-| Age gate / Framer | **`scheduleInteractionMount`** บน `/` (PSI lab ไม่ interact = ไม่ mount) |
-
-**Phases deploy จบ perf sprint:** 4I → 4J (SSR single hero) → 4K (layout trim) · commit **`62d7585`**
+### บันทึกการทำงาน — 2026-05-24 (Admin order detail line display)
+- **แก้:** modal รายละเอียดออเดอร์ `/admin/orders` — แสดงแพคเกจ + ราคาต่อชิ้น × qty (เช่น `245.- X 2 ชิ้น = 490.-`)
+- **ไฟล์:** `lib/admin-order-line-summary.ts`, `app/admin/orders/page.tsx` · commit **`cf5cb48`**
 
 ### บันทึกการทำงาน — 2026-05-23 (A11y — touch targets + duplicate blog links)
 - **PSI A11y 97:** touch targets newsletter input · identical links การ์ด insights (3× same URL)
@@ -1145,4 +1142,4 @@ A **premium Seed Bank Management System** with integrated AI Inventory, CRM, POS
 | **Ship → ใบเสนอราคา** | `markShipped` อัปเดต `quotations.status = SHIPPED` (convertedOrderId หรือเลข QT); API ตอบ `quotationStatusSynced`; toast ใน `app/admin/orders/page.tsx`; badge "ส่งแล้ว (ปิดดีล) ✅" — `services/orders-service.ts`, `app/api/admin/orders/[id]/status/route.ts` |
 | **สคริปต์ DB** | `scripts/merge-rainbow-melon-products.sql` — merge duplicate Rainbow Melon / orphan products |
 | **Checkout payment** | `lib/payment-settings-public.ts`, `components/storefront/CheckoutPageClient.tsx`, `app/(storefront)/checkout/page.tsx` + `loading.tsx`; `types/supabase.ts` `payment_settings` |
-| **อื่น** | `types/supabase.ts` Order; zod รองรับ `SHIPPED` บน quotations POST/PATCH; `docs/blueprint/6_PROJECT_STATE.md` (section 2 bullets อัปเดตคู่กับงานด้านบน) |
+| **อื่น** | `types/supabase.ts` Order; zod รองรับ `SHIPPED` บน quotations POST/PATCH; `docs/blueprint/9_PROJECT_STATE.md` (section 2 bullets อัปเดตคู่กับงานด้านบน) |

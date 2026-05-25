@@ -1,4 +1,4 @@
-# Project Directory Architecture (V3.1)
+# Project Directory Architecture (V3.2)
 
 ```text
 app/
@@ -17,3 +17,21 @@ app/
 │   ├── timeout.ts       # Resilience utility (withTimeout)[cite: 8]
 │   └── supabase/        # Server/Client/Admin Clients
 └── types/               # Strict TypeScript Interfaces
+```
+
+## Performance contract (V3.2)
+
+Route tiers — full budgets in `6_PERF_BUDGETS.md`:
+
+| Tier | Routes | Data | JS |
+|------|--------|------|-----|
+| T0 LCP | `/` hero | SSR + `ssb_vp` cookie | no sync third-party |
+| T1 shell | layout, Navbar | cookie hint SSR | Navbar sync · BreederSeedsNav lazy |
+| T2 below-fold | home sections | `withTimeout` 2s | dynamic + idle ≥2.5s |
+| T3 interactive | cart, search, checkout | on demand | `dynamic()` import |
+
+**Service layer (unchanged):** UI thin → `services/` → `lib/timeout.ts` for non-critical.
+
+**Every route segment:** `loading.tsx` + `error.tsx` + one LCP candidate.
+
+**Key perf files:** `home-stream.tsx`, `HeroCarouselSlideImages.tsx`, `StorefrontLayoutClient.tsx`, `lib/timeout.ts`, `lib/fonts/prompt.ts`

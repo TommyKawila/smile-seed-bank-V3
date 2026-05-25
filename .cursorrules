@@ -4,13 +4,17 @@ Your mission is to build "Smile Seed Bank V3" with world-class precision, speed,
 - Always address the user as "บอส" (Boss).[cite: 1]
 - Style: Encouraging, professional, and precise. Provide full file paths and clear logic.[cite: 1]
 
-# MANDATORY CONTEXT: BLUEPRINT V3.1
-Before performing any task, you MUST read and follow these 5 pillars from `docs/blueprint/`:
-1. `1_PRD_PROJECT_OVERVIEW.md` - Core Mission & Tech Stack.[cite: 2]
-2. `2_BUSINESS_LOGIC_RULES.md` - Stock, Discounts, Wholesale, & AI Scanner logic.[cite: 3]
-3. `3_DB_SCHEMA_RLS.md` - Tables (Products, Variants, Orders) & Security.[cite: 4]
-4. `4_ARCHITECTURE_DIRECTORY.md` - Project file structure.[cite: 5]
-5. `5_UI_UX_DESIGN_SYSTEM.md` - Premium Eco-Clinical (Teal/Lavender) & Tokens.[cite: 6]
+# MANDATORY CONTEXT: BLUEPRINT V3.2
+Before performing any task, you MUST read and follow these pillars from `docs/blueprint/`:
+0. `0_PSI_ACCEPTANCE.md` - PSI DoD, forbidden list, PR checklist.[cite: 8]
+1. `6_PERF_BUDGETS.md` - Locked perf config (hero, fonts, chunks).[cite: 8]
+2. `1_PRD_PROJECT_OVERVIEW.md` - Core Mission, Tech Stack, NFR.[cite: 2]
+3. `2_BUSINESS_LOGIC_RULES.md` - Stock, Discounts, Wholesale, & AI Scanner logic.[cite: 3]
+4. `3_DB_SCHEMA_RLS.md` - Tables (Products, Variants, Orders) & Security.[cite: 4]
+5. `4_ARCHITECTURE_DIRECTORY.md` - Project structure + route tiers.[cite: 5]
+6. `5_UI_UX_DESIGN_SYSTEM.md` - Premium Eco-Clinical (Teal/Lavender) & Tokens.[cite: 6]
+7. `7_A11Y_CHECKLIST.md` - Touch targets, single-link cards, focus.[cite: 8]
+8. `8_SEO_SCHEMA.md` - Canonical, sitemap, JSON-LD.[cite: 8]
 
 # TECHNICAL STANDARDS: THE 4 PILLARS (STRICT COMPLIANCE)
 All code generation MUST adhere to these rules:
@@ -25,13 +29,21 @@ All code generation MUST adhere to these rules:
 - Always provide a fallback (Skeleton or empty state) if data fails or times out.[cite: 8]
 
 ## 3. Performance & LCP Optimization
-- Hero/Banner Images: MUST use `next/image` with `priority={true}`.[cite: 8]
+- Hero/Banner Images: MUST use `next/image` with `priority={true}` on the single LCP candidate only.[cite: 8]
+- Never dual mobile+desktop hero priority — use `ssb_vp` SSR single side per `6_PERF_BUDGETS.md`.[cite: 8]
 - CLS Prevention: Every image container MUST have a defined aspect ratio or dimensions.[cite: 8]
 - Use WebP compression as a default standard.[cite: 6]
 
 ## 4. Error & Loading Boundaries
 - Every route MUST have `error.tsx` and `loading.tsx` to handle failures gracefully.[cite: 8]
 - Provide clear, user-friendly error messages using Shadcn UI.[cite: 8]
+
+# PERF & A11Y GUARDRAILS (V3.2)
+- Never `dynamic()` the entire Navbar or root layout shell without PSI retest.[cite: 8]
+- One primary link per card — no duplicate URLs (see `7_A11Y_CHECKLIST.md`).[cite: 8]
+- Interactive targets min 48×48px.[cite: 8]
+- GA/Vercel Analytics: interaction-only load.[cite: 8]
+- Do not chase unscored "unused CSS/JS" diagnostics if PSI ≥90.[cite: 8]
 
 # CORE CODING RULES
 - **Language:** Code & Comments in English. Communication with "บอส" in Thai.[cite: 1]
@@ -41,7 +53,8 @@ All code generation MUST adhere to these rules:
 - **Case-Insensitivity:** Use `.toLowerCase()` for filtering logic consistently.[cite: 8]
 
 # WORKFLOW & AUTOMATION
-- After finishing a task, AUTOMATICALLY update `docs/blueprint/6_PROJECT_STATE.md`.[cite: 1, 8]
+- After finishing a task, AUTOMATICALLY update `docs/blueprint/9_PROJECT_STATE.md` (sprint log only).[cite: 1, 8]
+- Update `6_PERF_BUDGETS.md` ONLY after PSI retest passes — not on every task.[cite: 8]
 - Move tasks to COMPLETED, list exact files changed, and provide a logic summary.
 - If a request contradicts the Blueprint, alert "บอส" immediately before proceeding.[cite: 1]
 

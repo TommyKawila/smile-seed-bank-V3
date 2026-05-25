@@ -1,3 +1,4 @@
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { prompt } from "@/lib/fonts/prompt";
@@ -76,6 +77,7 @@ export default function RootLayout({
         {children}
         <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
