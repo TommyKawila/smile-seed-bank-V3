@@ -16,15 +16,24 @@ const mono = JOURNAL_PRODUCT_MONO_CLASS;
 type Props = {
   navLinkClass: string;
   solidLightNav: boolean;
+  initialOpen?: boolean;
+  autoFocusButton?: boolean;
   /** Close mobile sheet when a link is chosen */
   onNavigate?: () => void;
   mode: "desktop" | "mobile";
 };
 
-export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode }: Props) {
+export function BreederSeedsNav({
+  navLinkClass,
+  solidLightNav,
+  initialOpen = false,
+  autoFocusButton = false,
+  onNavigate,
+  mode,
+}: Props) {
   const { breeders, isLoading } = useBreeders();
   const { t } = useLanguage();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => mode === "desktop" && initialOpen);
 
   const label = t("เมล็ดพันธุ์", "Seeds");
   const catalogLabel = t("คลังเมล็ดพันธุ์ทั้งหมด", "Full seed catalog");
@@ -82,12 +91,25 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
       className="relative"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
+      onBlur={(event) => {
+        const nextTarget = event.relatedTarget;
+        if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+          setOpen(false);
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          setOpen(false);
+        }
+      }}
     >
       <button
         type="button"
         aria-expanded={open}
         aria-haspopup="true"
         aria-label={t("เปิดเมนูเมล็ดพันธุ์และแบรนด์", "Open seeds and breeder menu")}
+        autoFocus={autoFocusButton}
+        onClick={() => setOpen((value) => !value)}
         className={cn(
           navLinkClass,
           "inline-flex items-center gap-1 border-0 bg-transparent p-0",
