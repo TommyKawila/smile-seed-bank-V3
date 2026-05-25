@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-25 (Critical audit — desktop Seeds nav)
+- **Bug:** desktop `Seeds` nav lazy shell เป็น `<span>` ทำให้ keyboard เข้า `/seeds`/breeder menu ไม่ได้ และ dropdown button ไม่มี click/keyboard open path
+- **แก้:** shell เป็นลิงก์ `/seeds` ที่ focus ได้ + lazy-load ไม่กลืน click; dropdown เปิดด้วย click/Space/ArrowDown และปิดด้วย blur/Escape
+- **ไฟล์:** `components/storefront/Navbar.tsx`, `components/storefront/BreederDropdownMenu.tsx`
+
 ### บันทึกการทำงาน — 2026-05-24 (Vercel Speed Insights)
 - **เพิ่ม:** `@vercel/speed-insights` · `<SpeedInsights />` ใน `app/layout.tsx` (RUM Web Vitals)
 - **ไฟล์:** `app/layout.tsx`, `package.json`, `package-lock.json`

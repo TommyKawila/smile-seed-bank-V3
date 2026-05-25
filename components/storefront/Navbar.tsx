@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import type { ComponentType } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
@@ -24,14 +25,6 @@ import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
 
-const BreederSeedsNav = dynamic(
-  () =>
-    import("@/components/storefront/BreederDropdownMenu").then((m) => ({
-      default: m.BreederSeedsNav,
-    })),
-  { ssr: false }
-);
-
 const CartSheet = dynamic(
   () => import("./CartSheet").then((m) => ({ default: m.CartSheet })),
   { ssr: false }
@@ -49,11 +42,30 @@ type SeedsNavShellProps = {
   navLinkClass: string;
   solidLightNav: boolean;
   label: string;
+  onIntent: () => void;
+  onOpenMenu: () => void;
 };
 
-function SeedsNavShell({ navLinkClass, solidLightNav, label }: SeedsNavShellProps) {
+type BreederSeedsNavComponent = ComponentType<{
+  navLinkClass: string;
+  solidLightNav: boolean;
+  initialOpen?: boolean;
+  autoFocusButton?: boolean;
+  onNavigate?: () => void;
+  mode: "desktop" | "mobile";
+}>;
+
+function SeedsNavShell({ navLinkClass, solidLightNav, label, onIntent, onOpenMenu }: SeedsNavShellProps) {
   return (
-    <span
+    <Link
+      href="/seeds"
+      onFocus={onIntent}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowDown" || event.key === " ") {
+          event.preventDefault();
+          onOpenMenu();
+        }
+      }}
       className={cn(
         navLinkClass,
         "inline-flex items-center gap-1",
@@ -62,7 +74,7 @@ function SeedsNavShell({ navLinkClass, solidLightNav, label }: SeedsNavShellProp
     >
       {label}
       <ChevronDown className="h-3.5 w-3.5 opacity-60" strokeWidth={1.75} aria-hidden />
-    </span>
+    </Link>
   );
 }
 
@@ -104,11 +116,38 @@ export function Navbar() {
   const [cartSheetMounted, setCartSheetMounted] = useState(false);
   const [searchMounted, setSearchMounted] = useState(false);
   const [seedsNavMounted, setSeedsNavMounted] = useState(false);
+  const [seedsNavOpenOnMount, setSeedsNavOpenOnMount] = useState(false);
+  const [seedsNavFocusOnMount, setSeedsNavFocusOnMount] = useState(false);
+  const [BreederSeedsNav, setBreederSeedsNav] = useState<BreederSeedsNavComponent | null>(null);
+  const seedsNavLoadingRef = useRef<Promise<void> | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  const preloadSeedsNav = useCallback(() => {
+    if (BreederSeedsNav) return Promise.resolve();
+    if (seedsNavLoadingRef.current) return seedsNavLoadingRef.current;
+
+    const loading = import("@/components/storefront/BreederDropdownMenu")
+      .then((m) => {
+        setBreederSeedsNav(() => m.BreederSeedsNav);
+      })
+      .finally(() => {
+        seedsNavLoadingRef.current = null;
+      });
+
+    seedsNavLoadingRef.current = loading;
+    return loading;
+  }, [BreederSeedsNav]);
+
+  const mountSeedsNav = useCallback((openOnMount = false, focusOnMount = false) => {
+    setSeedsNavMounted(true);
+    setSeedsNavOpenOnMount(openOnMount);
+    setSeedsNavFocusOnMount(focusOnMount);
+    void preloadSeedsNav();
+  }, [preloadSeedsNav]);
+
   useEffect(() => {
-    if (menuOpen) setSeedsNavMounted(true);
-  }, [menuOpen]);
+    if (menuOpen) mountSeedsNav();
+  }, [menuOpen, mountSeedsNav]);
 
   useEffect(() => {
     if (isOpen) setCartSheetMounted(true);
@@ -206,13 +245,19 @@ export function Navbar() {
             </Link>
             <div
               className="hidden md:block"
-              onMouseEnter={() => setSeedsNavMounted(true)}
-              onFocusCapture={() => setSeedsNavMounted(true)}
+              onMouseEnter={() => mountSeedsNav(true)}
+              onMouseLeave={() => {
+                setSeedsNavOpenOnMount(false);
+                setSeedsNavFocusOnMount(false);
+              }}
+              onFocusCapture={preloadSeedsNav}
             >
-              {seedsNavMounted ? (
+              {seedsNavMounted && BreederSeedsNav ? (
                 <BreederSeedsNav
                   navLinkClass={navLinkClass}
                   solidLightNav={solidLightNav}
+                  initialOpen={seedsNavOpenOnMount}
+                  autoFocusButton={seedsNavFocusOnMount}
                   mode="desktop"
                 />
               ) : (
@@ -220,6 +265,8 @@ export function Navbar() {
                   navLinkClass={navLinkClass}
                   solidLightNav={solidLightNav}
                   label={seedsLabel}
+                  onIntent={preloadSeedsNav}
+                  onOpenMenu={() => mountSeedsNav(true, true)}
                 />
               )}
             </div>
@@ -395,7 +442,7 @@ export function Navbar() {
               >
                 {homeLabel}
               </Link>
-              {seedsNavMounted ? (
+              {seedsNavMounted && BreederSeedsNav ? (
                 <BreederSeedsNav
                   navLinkClass={navLinkClass}
                   solidLightNav={solidLightNav}
