@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-26 (Critical fix — clearance checkout pricing)
+- **แก้:** storefront/cart/checkout ใช้ราคา clearance ต่อแพ็กก่อนคำนวณ brand promo; ป้องกัน order คิดราคาเต็มของสินค้าลดล้างสต็อก
+- **ไฟล์:** `lib/product-utils.ts`, `lib/checkout-server-validate.ts`, `lib/brand-listing-attach.ts`, `ProductCard.tsx`, `product-detail-client.tsx`
+
 ### บันทึกการทำงาน — 2026-05-24 (Vercel Speed Insights)
 - **เพิ่ม:** `@vercel/speed-insights` · `<SpeedInsights />` ใน `app/layout.tsx` (RUM Web Vitals)
 - **ไฟล์:** `app/layout.tsx`, `package.json`, `package-lock.json`
