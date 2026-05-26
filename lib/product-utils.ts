@@ -326,6 +326,14 @@ export function getEffectiveVariantPrice(
   const variant = product.product_variants?.find(
     (v) => Number(v.price ?? 0) === Number(variantListPrice)
   );
+  return getEffectiveVariantPriceForVariant(product, variant, variantListPrice);
+}
+
+export function getEffectiveVariantPriceForVariant(
+  product: ClearanceProductSlice,
+  variant: VariantClearancePick | undefined,
+  variantListPrice: number
+): number {
   const directPrice = variant ? getVariantFinalPrice(variant) : variantListPrice;
   if (product.is_clearance !== true) return directPrice;
   const clearance = resolveVariantClearancePrice(variant, product, variantListPrice);

@@ -16,6 +16,7 @@ import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-pro
 import { customerHasCompletedOrderForFirstOrderPromo } from "@/lib/services/coupon-service";
 import { isPromoQaBypassEmail } from "@/lib/promo-qa-bypass-email";
 import type { CheckoutItem, CheckoutSummary } from "@/lib/services/order-service";
+import { getEffectiveVariantPriceForVariant } from "@/lib/product-utils";
 
 type LineIn = {
   variantId: number;
@@ -25,7 +26,7 @@ type LineIn = {
   productName: string;
 };
 
-export type PriceSource = "variant" | "product_fallback" | "brand_promotion";
+export type PriceSource = "variant" | "product_fallback" | "clearance" | "brand_promotion";
 
 export type CheckoutValidationFailureDetails = {
   clientValues: CheckoutSummary;
@@ -49,10 +50,20 @@ type VariantRow = {
   product_id: bigint | null;
   unit_label: string;
   price: unknown;
+  clearance_price: unknown;
   products: {
     id: bigint;
     name: string;
     price: unknown;
+    is_clearance: boolean | null;
+    sale_price: unknown;
+    product_variants: {
+      price: unknown;
+      stock: number | null;
+      is_active: boolean | null;
+      unit_label: string;
+      clearance_price: unknown;
+    }[];
     breeders: { name: string } | null;
   } | null;
 };
@@ -73,7 +84,7 @@ export function coerceDbPriceBaht(raw: unknown): number {
 }
 
 /**
- * Base unit from variant / product row, then brand % from `brandRules` vs breeder name — round after brand.
+ * Base unit from variant / product row, then clearance, then brand % — same pipeline as cart.
  */
 function resolveListingUnitBaht(
   v: VariantRow,
@@ -92,15 +103,36 @@ function resolveListingUnitBaht(
     baseSource = "product_fallback";
   }
 
+  const clearanceBase = roundCheckoutBahtWhole(
+    getEffectiveVariantPriceForVariant(
+      {
+        is_clearance: v.products?.is_clearance ?? false,
+        sale_price: v.products?.sale_price,
+        product_variants: v.products?.product_variants?.map((pv) => ({
+          price: coerceDbPriceBaht(pv.price),
+          stock: pv.stock,
+          is_active: pv.is_active,
+          unit_label: pv.unit_label,
+          clearance_price: coerceDbPriceBaht(pv.clearance_price),
+        })),
+        price: coerceDbPriceBaht(v.products?.price),
+      },
+      { price: base, clearance_price: coerceDbPriceBaht(v.clearance_price) },
+      base,
+    ),
+  );
+  const effectiveBase = clearanceBase > 0 ? clearanceBase : base;
+  const effectiveBaseSource = effectiveBase < base ? "clearance" : baseSource;
+
   const breederName = v.products?.breeders?.name ?? null;
   const rule = matchBrandPromotionRule(brandRules, breederName);
-  if (rule && rule.discount_percent > 0 && base > 0) {
+  if (rule && rule.discount_percent > 0 && effectiveBase > 0) {
     return {
-      unitBaht: applyBrandPercentToUnitBaht(base, rule.discount_percent),
+      unitBaht: applyBrandPercentToUnitBaht(effectiveBase, rule.discount_percent),
       source: "brand_promotion",
     };
   }
-  return { unitBaht: base, source: baseSource };
+  return { unitBaht: effectiveBase, source: effectiveBaseSource };
 }
 
 function mergeCheckoutDuplicateLines(rows: LineIn[]): LineIn[] {
@@ -257,6 +289,18 @@ export async function validateStorefrontCheckoutTotals(input: {
             id: true,
             name: true,
             price: true,
+            is_clearance: true,
+            sale_price: true,
+            product_variants: {
+              where: { is_active: true },
+              select: {
+                price: true,
+                stock: true,
+                is_active: true,
+                unit_label: true,
+                clearance_price: true,
+              },
+            },
             breeders: { select: { name: true } },
           },
         },

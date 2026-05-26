@@ -2,7 +2,11 @@ import {
   resolveListingUnitAfterBrand,
   type BrandPromotionRuleRow,
 } from "@/lib/brand-promotion-checkout";
-import { getStartingVariant } from "@/lib/product-utils";
+import {
+  getEffectiveListingPrice,
+  getEffectiveVariantPriceForVariant,
+  getStartingVariant,
+} from "@/lib/product-utils";
 import type { ProductVariant } from "@/types/supabase";
 
 export type ProductWithBrandListing = {
@@ -13,17 +17,20 @@ export type ProductWithBrandListing = {
 
 export type ListingBaseProduct = {
   price?: number | null;
+  is_clearance?: boolean | null;
+  sale_price?: unknown;
   breeders?: { name?: string | null } | null;
   product_variants?:
-    | (Pick<ProductVariant, "price" | "stock" | "is_active" | "unit_label">)[]
+    | (Pick<ProductVariant, "price" | "stock" | "is_active" | "unit_label"> &
+        Partial<Pick<ProductVariant, "clearance_price">>)[]
     | null;
 };
 
 function listingRawBaseBaht(product: ListingBaseProduct): number {
   const sv = getStartingVariant(product.product_variants ?? null);
   const vp = sv ? Number(sv.price ?? 0) : 0;
-  if (vp > 0) return vp;
-  return Number(product.price ?? 0) || 0;
+  if (vp > 0) return getEffectiveVariantPriceForVariant(product, sv, vp);
+  return getEffectiveListingPrice(product);
 }
 
 export function attachBrandListingFields<P extends ListingBaseProduct>(

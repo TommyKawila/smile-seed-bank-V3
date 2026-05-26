@@ -73,13 +73,9 @@ function resolvePackButtonPrices(
   brandRules: BrandPromotionRuleRow[],
 ): { eff: number; list: number } {
   const listRaw = roundCheckoutBahtWhole(variantPrice);
-  const brandLine = resolveListingUnitAfterBrand(listRaw, breederName ?? null, brandRules);
-  const hasBrandSale = brandLine.effectiveBaht < brandLine.baseBaht && brandLine.baseBaht > 0;
-  if (hasBrandSale) {
-    return { eff: brandLine.effectiveBaht, list: brandLine.baseBaht };
-  }
-  const eff = getEffectiveVariantPrice(product, listRaw);
-  return { eff, list: listRaw };
+  const clearanceBase = roundCheckoutBahtWhole(getEffectiveVariantPrice(product, listRaw));
+  const brandLine = resolveListingUnitAfterBrand(clearanceBase, breederName ?? null, brandRules);
+  return { eff: brandLine.effectiveBaht, list: listRaw };
 }
 
 /** Genetics row: show only when genetic_ratio is set and not redundant vs lineage */
@@ -298,7 +294,7 @@ export default function ProductDetailClient({
 
   const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (!product || !selectedVariant) return;
-    const unit = roundCheckoutBahtWhole(Number(selectedVariant.price ?? 0));
+    const unit = roundCheckoutBahtWhole(selectedEff);
     const { error } = addToCart({
       variantId: selectedVariant.id,
       productId: product.id,
@@ -386,18 +382,15 @@ export default function ProductDetailClient({
     activeVariants,
     selectedVariant
   );
-  const rawListRounded = selectedVariant
-    ? roundCheckoutBahtWhole(Number(selectedVariant.price ?? 0))
-    : 0;
   const brandLine = resolveListingUnitAfterBrand(
-    rawListRounded,
+    selectedEff,
     product.breeders?.name ?? null,
     brandPromotionRules,
   );
   const hasBrandSale =
     brandLine.effectiveBaht < brandLine.baseBaht && brandLine.baseBaht > 0;
   const displayEff = hasBrandSale ? brandLine.effectiveBaht : selectedEff;
-  const displayList = hasBrandSale ? brandLine.baseBaht : selectedList;
+  const displayList = selectedList;
   const brandPct = hasBrandSale ? brandLine.brandDiscountPercent : null;
   const salePct = brandPct ?? clearancePct;
 
