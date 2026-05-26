@@ -185,8 +185,7 @@ function ProductCardBase({
   const handleAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
     stopNavBubble(e);
     if (displayVariant) {
-      const variantListPrice = Number(displayVariant.price ?? 0);
-      const unit = roundCheckoutBahtWhole(variantListPrice);
+      const unit = roundCheckoutBahtWhole(listFrom);
       if (typeof addToCart !== "function") {
         toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
         return;
@@ -253,11 +252,14 @@ function ProductCardBase({
     brand_promotion_percent?: number | null;
   };
   const pb = product as WithBrandListing;
-  const rawListForBrand = (() => {
-    const vp = Number(displayVariant?.price ?? 0);
-    if (vp > 0) return vp;
-    return Number((product as { price?: number | null }).price ?? 0) || 0;
-  })();
+  const listingFallbackPrice = getEffectiveListingPrice(product);
+  const listRegular = Number(
+    displayVariant?.price ?? computeStartingPrice(product.product_variants)
+  );
+  const listFrom = displayVariant
+    ? getEffectiveVariantPrice(product, listRegular)
+    : listingFallbackPrice;
+  const clearancePct = getClearancePercentOff(product);
 
   const useServerBrandListingSlice =
     seedsSel.length === 0 &&
@@ -270,19 +272,10 @@ function ProductCardBase({
         effectiveBaht: pb.brand_listing_effective_baht!,
         brandDiscountPercent: pb.brand_promotion_percent ?? null,
       }
-    : resolveListingUnitAfterBrand(rawListForBrand, product.breeders?.name, brandPromotionRules);
+    : resolveListingUnitAfterBrand(listFrom, product.breeders?.name, brandPromotionRules);
 
   const hasBrandSale =
     brandResolved.effectiveBaht < brandResolved.baseBaht && brandResolved.baseBaht > 0;
-
-  const listingFallbackPrice = getEffectiveListingPrice(product);
-  const listRegular = Number(
-    displayVariant?.price ?? computeStartingPrice(product.product_variants)
-  );
-  const listFrom = displayVariant
-    ? getEffectiveVariantPrice(product, listRegular)
-    : listingFallbackPrice;
-  const clearancePct = getClearancePercentOff(product);
 
   const priceLabel = (() => {
     if (hasBrandSale) {
