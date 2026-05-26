@@ -29,7 +29,7 @@ export type ListingBaseProduct = {
 function listingRawBaseBaht(product: ListingBaseProduct): number {
   const sv = getStartingVariant(product.product_variants ?? null);
   const vp = sv ? Number(sv.price ?? 0) : 0;
-  if (vp > 0) return getEffectiveVariantPriceForVariant(product, sv, vp);
+  if (sv && vp > 0) return getEffectiveVariantPriceForVariant(product, sv, vp);
   return getEffectiveListingPrice(product);
 }
 
