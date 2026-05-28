@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-28 (Perf bug — Speed Insights critical path)
+- **แก้:** `SpeedInsights` เป็น interaction-only wrapper เพื่อไม่โหลด third-party script ใน root layout critical path
+- **ไฟล์:** `app/layout.tsx`, `components/third-parties/LazySpeedInsights.tsx`
+
 ### บันทึกการทำงาน — 2026-05-24 (Vercel Speed Insights)
 - **เพิ่ม:** `@vercel/speed-insights` · `<SpeedInsights />` ใน `app/layout.tsx` (RUM Web Vitals)
 - **ไฟล์:** `app/layout.tsx`, `package.json`, `package-lock.json`
