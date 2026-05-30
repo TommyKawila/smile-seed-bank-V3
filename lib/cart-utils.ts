@@ -6,9 +6,6 @@ import {
 } from "@/lib/order-financials";
 import { STOREFRONT_SHIPPING_CATEGORY } from "@/lib/storefront-shipping";
 import {
-  matchBrandPromotionRule,
-  applyBrandPercentToUnitBaht,
-  resolveListingUnitAfterBrand,
   type BrandPromotionRuleRow,
   activeBrandRulesFromRows,
 } from "@/lib/brand-promotion-checkout";
@@ -18,6 +15,7 @@ import {
   type PromoInfo,
 } from "@/lib/services/checkout-promo-math";
 import { bahtToSatangInt, roundCheckoutBahtWhole, satangIntToBaht } from "@/lib/money-thb";
+import { resolveCheckoutLineUnitBaht } from "@/lib/checkout-line-pricing";
 
 export type { BrandPromotionRuleRow };
 export { activeBrandRulesFromRows };
@@ -66,7 +64,7 @@ export function evaluateFreeGifts(
   const subtotal = cartItems
     .filter((i) => !i.isFreeGift)
     .reduce((sum, i) => {
-      const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules);
+      const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules, i);
       return sum + unit * i.quantity;
     }, 0);
 
@@ -89,19 +87,31 @@ export function evaluateFreeGifts(
 
 /** Per-line totals for cart UI: matches `calculateCartSummary` brand math (whole Baht). */
 export function cartItemBrandLineDisplay(
-  item: Pick<CartItem, "price" | "quantity" | "breederName" | "isFreeGift">,
+  item: Pick<
+    CartItem,
+    | "price"
+    | "quantity"
+    | "breederName"
+    | "isFreeGift"
+    | "isClearance"
+    | "clearancePrice"
+    | "salePrice"
+    | "clearanceBasePrice"
+  >,
   brandRules: BrandPromotionRuleRow[],
 ): { effLine: number; listLine: number; showBrandStrike: boolean } {
   if (item.isFreeGift) {
     return { effLine: 0, listLine: 0, showBrandStrike: false };
   }
-  const { baseBaht, effectiveBaht } = resolveListingUnitAfterBrand(
+  const { unit } = unitBahtAfterBrandForCartItem(
     item.price,
     item.breederName,
     brandRules,
+    item,
   );
-  const showBrandStrike = baseBaht > 0 && effectiveBaht < baseBaht;
-  const effLine = roundCheckoutBahtWhole(effectiveBaht * item.quantity);
+  const baseBaht = roundCheckoutBahtWhole(item.price);
+  const showBrandStrike = baseBaht > 0 && unit < baseBaht;
+  const effLine = roundCheckoutBahtWhole(unit * item.quantity);
   const listLine = roundCheckoutBahtWhole(baseBaht * item.quantity);
   return { effLine, listLine, showBrandStrike };
 }
@@ -111,18 +121,24 @@ export function unitBahtAfterBrandForCartItem(
   baseUnitBaht: number,
   breederName: string | null | undefined,
   brandRules: BrandPromotionRuleRow[],
+  clearance?: Pick<CartItem, "isClearance" | "clearancePrice" | "salePrice" | "clearanceBasePrice">,
 ): { unit: number; brandApplied: boolean } {
-  const rounded = roundCheckoutBahtWhole(baseUnitBaht);
-  if (brandRules.length === 0) {
-    return { unit: rounded, brandApplied: false };
-  }
-  const rule = matchBrandPromotionRule(brandRules, breederName);
-  if (!rule || rule.discount_percent <= 0) {
-    return { unit: rounded, brandApplied: false };
-  }
+  const resolved = resolveCheckoutLineUnitBaht({
+    baseUnitBaht,
+    breederName,
+    brandRules,
+    clearance: clearance
+      ? {
+          isClearance: clearance.isClearance,
+          variantClearancePrice: clearance.clearancePrice,
+          productSalePrice: clearance.salePrice,
+          productStartingPrice: clearance.clearanceBasePrice,
+        }
+      : null,
+  });
   return {
-    unit: applyBrandPercentToUnitBaht(baseUnitBaht, rule.discount_percent),
-    brandApplied: true,
+    unit: resolved.unitBaht,
+    brandApplied: resolved.source === "brand_promotion",
   };
 }
 
@@ -142,7 +158,7 @@ export function calculateCartSummary(
   const subtotalSatang = items
     .filter((i) => !i.isFreeGift)
     .reduce((sum, i) => {
-      const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandRules);
+      const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandRules, i);
       return sum + bahtToSatangInt(unit * i.quantity);
     }, 0);
   const subtotal = roundCheckoutBahtWhole(satangIntToBaht(subtotalSatang));

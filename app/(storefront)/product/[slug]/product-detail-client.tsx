@@ -20,6 +20,7 @@ import {
 } from "@/lib/brand-promotion-checkout";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 import {
+  computeStartingPrice,
   getClearancePercentOff,
   getDetailDisplayLinePrices,
   getEffectiveVariantPrice,
@@ -299,6 +300,9 @@ export default function ProductDetailClient({
   const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (!product || !selectedVariant) return;
     const unit = roundCheckoutBahtWhole(Number(selectedVariant.price ?? 0));
+    const clearancePrice = Number(selectedVariant.clearance_price ?? 0);
+    const salePrice = Number(product.sale_price ?? 0);
+    const clearanceBasePrice = computeStartingPrice(product.product_variants);
     const { error } = addToCart({
       variantId: selectedVariant.id,
       productId: product.id,
@@ -312,6 +316,10 @@ export default function ProductDetailClient({
       breeder_id: product.breeder_id ?? null,
       breederLogoUrl: product.breeders?.logo_url ?? null,
       breederName: product.breeders?.name ?? null,
+      isClearance: product.is_clearance === true,
+      clearancePrice: clearancePrice > 0 ? clearancePrice : null,
+      salePrice: salePrice > 0 ? salePrice : null,
+      clearanceBasePrice: clearanceBasePrice > 0 ? clearanceBasePrice : null,
     });
     if (error) {
       toast.error(error);

@@ -187,6 +187,11 @@ function ProductCardBase({
     if (displayVariant) {
       const variantListPrice = Number(displayVariant.price ?? 0);
       const unit = roundCheckoutBahtWhole(variantListPrice);
+      const clearancePrice = Number(
+        (displayVariant as { clearance_price?: number | null }).clearance_price ?? 0
+      );
+      const salePrice = Number(product.sale_price ?? 0);
+      const clearanceBasePrice = computeStartingPrice(product.product_variants);
       if (typeof addToCart !== "function") {
         toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
         return;
@@ -204,6 +209,10 @@ function ProductCardBase({
         breeder_id: product.breeder_id ?? null,
         breederLogoUrl: product.breeders?.logo_url ?? null,
         breederName: product.breeders?.name ?? null,
+        isClearance: product.is_clearance === true,
+        clearancePrice: clearancePrice > 0 ? clearancePrice : null,
+        salePrice: salePrice > 0 ? salePrice : null,
+        clearanceBasePrice: clearanceBasePrice > 0 ? clearanceBasePrice : null,
       });
       if (error) {
         toast.error(localizedAddError(error));
