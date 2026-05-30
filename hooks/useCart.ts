@@ -67,9 +67,9 @@ function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<Cart
   const quantity = Number.isFinite(q) && q > 0 ? q : 1;
   const priceRaw = Number(raw.price);
   const price = Number.isFinite(priceRaw) ? priceRaw : 0;
-  const clearancePrice = raw.clearancePrice == null ? null : Number(raw.clearancePrice);
-  const salePrice = raw.salePrice == null ? null : Number(raw.salePrice);
-  const clearanceBasePrice = raw.clearanceBasePrice == null ? null : Number(raw.clearanceBasePrice);
+  const clearancePrice = raw.clearancePrice == null ? 0 : Number(raw.clearancePrice);
+  const salePrice = raw.salePrice == null ? 0 : Number(raw.salePrice);
+  const clearanceBasePrice = raw.clearanceBasePrice == null ? 0 : Number(raw.clearanceBasePrice);
   const sq = raw.stock_quantity;
   const stock_quantity =
     sq === undefined

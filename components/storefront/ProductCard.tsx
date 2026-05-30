@@ -187,7 +187,9 @@ function ProductCardBase({
     if (displayVariant) {
       const variantListPrice = Number(displayVariant.price ?? 0);
       const unit = roundCheckoutBahtWhole(variantListPrice);
-      const clearancePrice = Number(displayVariant.clearance_price ?? 0);
+      const clearancePrice = Number(
+        (displayVariant as { clearance_price?: number | null }).clearance_price ?? 0
+      );
       const salePrice = Number(product.sale_price ?? 0);
       const clearanceBasePrice = computeStartingPrice(product.product_variants);
       if (typeof addToCart !== "function") {
