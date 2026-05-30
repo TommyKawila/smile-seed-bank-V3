@@ -48,6 +48,10 @@ const AddToCartSchema = z.object({
   breeder_id: z.number().int().positive().nullable().optional(),
   breederLogoUrl: z.string().nullable().optional(),
   breederName: z.string().nullable().optional(),
+  isClearance: z.boolean().nullable().optional(),
+  clearancePrice: z.number().positive().nullable().optional(),
+  salePrice: z.number().positive().nullable().optional(),
+  clearanceBasePrice: z.number().positive().nullable().optional(),
 });
 
 function safeNumber(val: unknown, fallback: number): number {
@@ -63,6 +67,9 @@ function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<Cart
   const quantity = Number.isFinite(q) && q > 0 ? q : 1;
   const priceRaw = Number(raw.price);
   const price = Number.isFinite(priceRaw) ? priceRaw : 0;
+  const clearancePrice = raw.clearancePrice == null ? null : Number(raw.clearancePrice);
+  const salePrice = raw.salePrice == null ? null : Number(raw.salePrice);
+  const clearanceBasePrice = raw.clearanceBasePrice == null ? null : Number(raw.clearanceBasePrice);
   const sq = raw.stock_quantity;
   const stock_quantity =
     sq === undefined
@@ -84,6 +91,11 @@ function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<Cart
     productId,
     quantity,
     price,
+    isClearance: raw.isClearance === true,
+    clearancePrice: Number.isFinite(clearancePrice) && clearancePrice > 0 ? clearancePrice : null,
+    salePrice: Number.isFinite(salePrice) && salePrice > 0 ? salePrice : null,
+    clearanceBasePrice:
+      Number.isFinite(clearanceBasePrice) && clearanceBasePrice > 0 ? clearanceBasePrice : null,
     stock_quantity,
     breeder_id,
   };
@@ -408,7 +420,7 @@ export function useCart(): UseCartReturn {
       const subtotal = items
         .filter((i) => !i.isFreeGift)
         .reduce((s, i) => {
-          const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules);
+          const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules, i);
           return s + unit * i.quantity;
         }, 0);
 

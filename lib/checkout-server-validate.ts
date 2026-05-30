@@ -6,8 +6,6 @@ import type { CartItem, Promotion } from "@/types/supabase";
 import type { PromoInfo } from "@/lib/services/checkout-promo-math";
 import {
   activeBrandRulesFromRows,
-  applyBrandPercentToUnitBaht,
-  matchBrandPromotionRule,
   type BrandPromotionRuleRow,
 } from "@/lib/brand-promotion-checkout";
 import { bahtToSatangInt, roundCheckoutBahtWhole, satangIntToBaht } from "@/lib/money-thb";
@@ -16,6 +14,11 @@ import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-pro
 import { customerHasCompletedOrderForFirstOrderPromo } from "@/lib/services/coupon-service";
 import { isPromoQaBypassEmail } from "@/lib/promo-qa-bypass-email";
 import type { CheckoutItem, CheckoutSummary } from "@/lib/services/order-service";
+import {
+  coerceCheckoutBaht,
+  resolveCheckoutLineUnitBaht,
+  type CheckoutUnitPriceSource,
+} from "@/lib/checkout-line-pricing";
 
 type LineIn = {
   variantId: number;
@@ -25,7 +28,7 @@ type LineIn = {
   productName: string;
 };
 
-export type PriceSource = "variant" | "product_fallback" | "brand_promotion";
+export type PriceSource = CheckoutUnitPriceSource;
 
 export type CheckoutValidationFailureDetails = {
   clientValues: CheckoutSummary;
@@ -49,27 +52,38 @@ type VariantRow = {
   product_id: bigint | null;
   unit_label: string;
   price: unknown;
+  clearance_price: unknown;
   products: {
     id: bigint;
     name: string;
     price: unknown;
+    is_clearance: boolean | null;
+    sale_price: unknown;
     breeders: { name: string } | null;
+    product_variants: {
+      price: unknown;
+      stock: number | null;
+      is_active: boolean | null;
+    }[];
   } | null;
 };
 
 /** Prisma Decimal / string / number → finite THB or NaN. */
 export function coerceDbPriceBaht(raw: unknown): number {
-  if (raw == null) return NaN;
-  if (
-    typeof raw === "object" &&
-    raw !== null &&
-    typeof (raw as { toString?: () => string }).toString === "function"
-  ) {
-    const n = Number((raw as { toString: () => string }).toString());
-    return Number.isFinite(n) ? n : NaN;
-  }
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : NaN;
+  return coerceCheckoutBaht(raw);
+}
+
+function productStartingPriceBaht(
+  variants: { price: unknown; stock: number | null; is_active: boolean | null }[] | null | undefined,
+): number {
+  const priced = (variants ?? [])
+    .filter((v) => v.is_active !== false)
+    .map((v) => ({ price: coerceDbPriceBaht(v.price), stock: Number(v.stock ?? 0) }))
+    .filter((v) => v.price > 0);
+  if (priced.length === 0) return 0;
+  const inStock = priced.filter((v) => v.stock > 0);
+  const pool = inStock.length > 0 ? inStock : priced;
+  return Math.min(...pool.map((v) => v.price));
 }
 
 /**
@@ -93,14 +107,21 @@ function resolveListingUnitBaht(
   }
 
   const breederName = v.products?.breeders?.name ?? null;
-  const rule = matchBrandPromotionRule(brandRules, breederName);
-  if (rule && rule.discount_percent > 0 && base > 0) {
-    return {
-      unitBaht: applyBrandPercentToUnitBaht(base, rule.discount_percent),
-      source: "brand_promotion",
-    };
-  }
-  return { unitBaht: base, source: baseSource };
+  const resolved = resolveCheckoutLineUnitBaht({
+    baseUnitBaht: base,
+    baseSource,
+    breederName,
+    brandRules,
+    clearance: v.products
+      ? {
+          isClearance: v.products.is_clearance,
+          variantClearancePrice: v.clearance_price,
+          productSalePrice: v.products.sale_price,
+          productStartingPrice: productStartingPriceBaht(v.products.product_variants),
+        }
+      : null,
+  });
+  return { unitBaht: resolved.unitBaht, source: resolved.source };
 }
 
 function mergeCheckoutDuplicateLines(rows: LineIn[]): LineIn[] {
@@ -257,7 +278,16 @@ export async function validateStorefrontCheckoutTotals(input: {
             id: true,
             name: true,
             price: true,
+            is_clearance: true,
+            sale_price: true,
             breeders: { select: { name: true } },
+            product_variants: {
+              select: {
+                price: true,
+                stock: true,
+                is_active: true,
+              },
+            },
           },
         },
       },

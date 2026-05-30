@@ -294,6 +294,10 @@ export interface CartItem {
   breederLogoUrl?: string | null;
   /** From `breeders.name` when item was added (order share / receipts) */
   breederName?: string | null;
+  isClearance?: boolean | null;
+  clearancePrice?: number | null;
+  salePrice?: number | null;
+  clearanceBasePrice?: number | null;
 }
 
 export interface CartSummary {
