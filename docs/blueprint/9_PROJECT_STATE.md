@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-30 (Critical bug — clearance checkout pricing)
+- **Bug:** clearance PDP/card แสดงราคาเซล แต่ cart/checkout server ใช้ราคาเต็มจาก `product_variants.price` → overcharge เงียบ
+- **แก้:** shared checkout line pricing resolver: brand promo ก่อน, ถ้าไม่มีค่อยใช้ `clearance_price`/legacy `sale_price` ratio; cart item เก็บ metadata clearance
+- **ไฟล์:** `lib/checkout-line-pricing.ts`, `lib/checkout-server-validate.ts`, `lib/cart-utils.ts`, `hooks/useCart.ts`, `ProductCard.tsx`, `product-detail-client.tsx`, `types/supabase.ts`
+
 ### บันทึกการทำงาน — 2026-05-24 (Vercel Speed Insights)
 - **เพิ่ม:** `@vercel/speed-insights` · `<SpeedInsights />` ใน `app/layout.tsx` (RUM Web Vitals)
 - **ไฟล์:** `app/layout.tsx`, `package.json`, `package-lock.json`
