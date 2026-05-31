@@ -34,6 +34,10 @@ const AUTH_BOOT_IDLE_MS = 3_000;
 
 type AuthServiceModule = typeof import("@/services/auth-service");
 
+function sessionHintFromUser(user: User | null): StorefrontSessionHint {
+  return user?.id ? { userId: user.id, email: user.email ?? null } : null;
+}
+
 export function AuthProvider({
   children,
   initialSessionHint = null,
@@ -44,12 +48,14 @@ export function AuthProvider({
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [sessionHint] = useState<StorefrontSessionHint>(initialSessionHint);
+  const [sessionHint, setSessionHint] = useState<StorefrontSessionHint>(initialSessionHint);
   const [isLoading, setIsLoading] = useState(false);
   const authRef = useRef<AuthServiceModule | null>(null);
   const bootStartedRef = useRef(false);
   const bootPromiseRef = useRef<Promise<void> | null>(null);
   const unsubRef = useRef<(() => void) | undefined>(undefined);
+  const shouldAwaitSessionBoot =
+    pathname !== "/" && Boolean(sessionHint) && !user && !bootStartedRef.current;
 
   const getAuth = useCallback(async (): Promise<AuthServiceModule> => {
     if (!authRef.current) {
@@ -77,10 +83,12 @@ export function AuthProvider({
         const auth = await getAuth();
         const u = await auth.getCurrentUser();
         setUser(u);
+        setSessionHint(sessionHintFromUser(u));
         if (u) await fetchCustomer(u.id);
         unsubRef.current?.();
         unsubRef.current = auth.subscribeToAuthChanges((nextUser) => {
           setUser(nextUser);
+          setSessionHint(sessionHintFromUser(nextUser));
           if (nextUser) void fetchCustomer(nextUser.id);
           else setCustomer(null);
         });
@@ -98,10 +106,14 @@ export function AuthProvider({
 
   useEffect(() => {
     if (pathname === "/") return;
+    if (sessionHint && !user) {
+      void runBoot();
+      return;
+    }
     return scheduleIdleWork(() => {
       void runBoot();
     }, AUTH_BOOT_IDLE_MS);
-  }, [pathname, runBoot]);
+  }, [pathname, runBoot, sessionHint, user]);
 
   useEffect(() => {
     return () => {
@@ -120,6 +132,7 @@ export function AuthProvider({
     await auth.signOutCurrentUser();
     setUser(null);
     setCustomer(null);
+    setSessionHint(null);
   }, [getAuth, ensureAuthLoaded]);
 
   const value = useMemo(
@@ -127,12 +140,21 @@ export function AuthProvider({
       user,
       customer,
       sessionHint,
-      isLoading,
+      isLoading: isLoading || shouldAwaitSessionBoot,
       signOut,
       refetchCustomer,
       ensureAuthLoaded,
     }),
-    [user, customer, sessionHint, isLoading, signOut, refetchCustomer, ensureAuthLoaded]
+    [
+      user,
+      customer,
+      sessionHint,
+      isLoading,
+      shouldAwaitSessionBoot,
+      signOut,
+      refetchCustomer,
+      ensureAuthLoaded,
+    ]
   );
 
   return createElement(AuthContext.Provider, { value }, children);

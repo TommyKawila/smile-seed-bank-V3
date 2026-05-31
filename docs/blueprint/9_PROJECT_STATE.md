@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-05-31 (Critical auth route redirect)
+- **Bug:** สมาชิกที่มี session hint เข้า `/profile` ถูก redirect ไป `/login` ก่อน auth boot หลัง defer Supabase client
+- **แก้:** `use-auth` รอ session boot บน non-home route, sync/clear session hint จาก auth state และ logout
+- **ไฟล์:** `hooks/use-auth.ts`
+
 ### บันทึกการทำงาน — 2026-05-24 (Vercel Speed Insights)
 - **เพิ่ม:** `@vercel/speed-insights` · `<SpeedInsights />` ใน `app/layout.tsx` (RUM Web Vitals)
 - **ไฟล์:** `app/layout.tsx`, `package.json`, `package-lock.json`
