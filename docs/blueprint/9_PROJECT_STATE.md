@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-01 (Critical bugfix — clearance checkout pricing)
+- **Bug:** สินค้า `is_clearance` แสดงราคาเซลใน storefront แต่ cart/checkout คิดจากราคาเต็มเมื่อไม่มี brand promo
+- **แก้:** ส่ง metadata clearance เข้า cart · cart summary ใช้ clearance เมื่อไม่มี brand promo · server checkout recompute clearance จาก DB ก่อนบันทึกออเดอร์
+- **ไฟล์:** `types/supabase.ts`, `lib/cart-utils.ts`, `hooks/useCart.ts`, `ProductCard.tsx`, `product-detail-client.tsx`, `checkout-server-validate.ts`
+
 ### บันทึกการทำงาน — 2026-05-24 (Vercel Speed Insights)
 - **เพิ่ม:** `@vercel/speed-insights` · `<SpeedInsights />` ใน `app/layout.tsx` (RUM Web Vitals)
 - **ไฟล์:** `app/layout.tsx`, `package.json`, `package-lock.json`

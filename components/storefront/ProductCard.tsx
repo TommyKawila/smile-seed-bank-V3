@@ -204,6 +204,9 @@ function ProductCardBase({
         breeder_id: product.breeder_id ?? null,
         breederLogoUrl: product.breeders?.logo_url ?? null,
         breederName: product.breeders?.name ?? null,
+        isClearance: product.is_clearance === true,
+        clearancePrice:
+          product.is_clearance === true ? getEffectiveVariantPrice(product, variantListPrice) : null,
       });
       if (error) {
         toast.error(localizedAddError(error));

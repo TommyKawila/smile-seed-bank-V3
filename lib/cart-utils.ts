@@ -8,7 +8,6 @@ import { STOREFRONT_SHIPPING_CATEGORY } from "@/lib/storefront-shipping";
 import {
   matchBrandPromotionRule,
   applyBrandPercentToUnitBaht,
-  resolveListingUnitAfterBrand,
   type BrandPromotionRuleRow,
   activeBrandRulesFromRows,
 } from "@/lib/brand-promotion-checkout";
@@ -66,7 +65,12 @@ export function evaluateFreeGifts(
   const subtotal = cartItems
     .filter((i) => !i.isFreeGift)
     .reduce((sum, i) => {
-      const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules);
+      const { unit } = unitBahtAfterBrandForCartItem(
+        i.price,
+        i.breederName,
+        brandPromotionRules,
+        i,
+      );
       return sum + unit * i.quantity;
     }, 0);
 
@@ -89,16 +93,20 @@ export function evaluateFreeGifts(
 
 /** Per-line totals for cart UI: matches `calculateCartSummary` brand math (whole Baht). */
 export function cartItemBrandLineDisplay(
-  item: Pick<CartItem, "price" | "quantity" | "breederName" | "isFreeGift">,
+  item: Pick<
+    CartItem,
+    "price" | "quantity" | "breederName" | "isFreeGift" | "isClearance" | "clearancePrice"
+  >,
   brandRules: BrandPromotionRuleRow[],
 ): { effLine: number; listLine: number; showBrandStrike: boolean } {
   if (item.isFreeGift) {
     return { effLine: 0, listLine: 0, showBrandStrike: false };
   }
-  const { baseBaht, effectiveBaht } = resolveListingUnitAfterBrand(
+  const { baseBaht, effectiveBaht } = resolveCartItemUnitBaht(
     item.price,
     item.breederName,
     brandRules,
+    item,
   );
   const showBrandStrike = baseBaht > 0 && effectiveBaht < baseBaht;
   const effLine = roundCheckoutBahtWhole(effectiveBaht * item.quantity);
@@ -107,22 +115,46 @@ export function cartItemBrandLineDisplay(
 }
 
 /** Unit after list price + optional brand % (whole Baht). */
+export function resolveCartItemUnitBaht(
+  baseUnitBaht: number,
+  breederName: string | null | undefined,
+  brandRules: BrandPromotionRuleRow[],
+  clearance?: Pick<CartItem, "isClearance" | "clearancePrice">,
+): { baseBaht: number; effectiveBaht: number; brandApplied: boolean; clearanceApplied: boolean } {
+  const rounded = roundCheckoutBahtWhole(baseUnitBaht);
+  if (brandRules.length > 0) {
+    const rule = matchBrandPromotionRule(brandRules, breederName);
+    if (rule && rule.discount_percent > 0) {
+      return {
+        baseBaht: rounded,
+        effectiveBaht: applyBrandPercentToUnitBaht(baseUnitBaht, rule.discount_percent),
+        brandApplied: true,
+        clearanceApplied: false,
+      };
+    }
+  }
+  const clearancePrice = roundCheckoutBahtWhole(Number(clearance?.clearancePrice ?? 0));
+  if (clearance?.isClearance === true && clearancePrice > 0 && clearancePrice < rounded) {
+    return {
+      baseBaht: rounded,
+      effectiveBaht: clearancePrice,
+      brandApplied: false,
+      clearanceApplied: true,
+    };
+  }
+  return { baseBaht: rounded, effectiveBaht: rounded, brandApplied: false, clearanceApplied: false };
+}
+
 export function unitBahtAfterBrandForCartItem(
   baseUnitBaht: number,
   breederName: string | null | undefined,
   brandRules: BrandPromotionRuleRow[],
+  clearance?: Pick<CartItem, "isClearance" | "clearancePrice">,
 ): { unit: number; brandApplied: boolean } {
-  const rounded = roundCheckoutBahtWhole(baseUnitBaht);
-  if (brandRules.length === 0) {
-    return { unit: rounded, brandApplied: false };
-  }
-  const rule = matchBrandPromotionRule(brandRules, breederName);
-  if (!rule || rule.discount_percent <= 0) {
-    return { unit: rounded, brandApplied: false };
-  }
+  const resolved = resolveCartItemUnitBaht(baseUnitBaht, breederName, brandRules, clearance);
   return {
-    unit: applyBrandPercentToUnitBaht(baseUnitBaht, rule.discount_percent),
-    brandApplied: true,
+    unit: resolved.effectiveBaht,
+    brandApplied: resolved.brandApplied,
   };
 }
 
@@ -142,7 +174,7 @@ export function calculateCartSummary(
   const subtotalSatang = items
     .filter((i) => !i.isFreeGift)
     .reduce((sum, i) => {
-      const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandRules);
+      const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandRules, i);
       return sum + bahtToSatangInt(unit * i.quantity);
     }, 0);
   const subtotal = roundCheckoutBahtWhole(satangIntToBaht(subtotalSatang));

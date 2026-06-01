@@ -294,6 +294,9 @@ export interface CartItem {
   breederLogoUrl?: string | null;
   /** From `breeders.name` when item was added (order share / receipts) */
   breederName?: string | null;
+  /** Clearance metadata; checkout still verifies from DB. */
+  isClearance?: boolean | null;
+  clearancePrice?: number | null;
 }
 
 export interface CartSummary {
