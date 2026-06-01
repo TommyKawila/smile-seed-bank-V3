@@ -408,7 +408,12 @@ export function useCart(): UseCartReturn {
       const subtotal = items
         .filter((i) => !i.isFreeGift)
         .reduce((s, i) => {
-          const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules);
+          const { unit } = unitBahtAfterBrandForCartItem(
+            i.price,
+            i.breederName,
+            brandPromotionRules,
+            i,
+          );
           return s + unit * i.quantity;
         }, 0);
 

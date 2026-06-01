@@ -16,6 +16,7 @@ import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-pro
 import { customerHasCompletedOrderForFirstOrderPromo } from "@/lib/services/coupon-service";
 import { isPromoQaBypassEmail } from "@/lib/promo-qa-bypass-email";
 import type { CheckoutItem, CheckoutSummary } from "@/lib/services/order-service";
+import { getEffectiveVariantPrice } from "@/lib/product-utils";
 
 type LineIn = {
   variantId: number;
@@ -25,7 +26,7 @@ type LineIn = {
   productName: string;
 };
 
-export type PriceSource = "variant" | "product_fallback" | "brand_promotion";
+export type PriceSource = "variant" | "product_fallback" | "brand_promotion" | "clearance";
 
 export type CheckoutValidationFailureDetails = {
   clientValues: CheckoutSummary;
@@ -49,11 +50,21 @@ type VariantRow = {
   product_id: bigint | null;
   unit_label: string;
   price: unknown;
+  clearance_price: unknown;
   products: {
     id: bigint;
     name: string;
     price: unknown;
+    is_clearance: boolean | null;
+    sale_price: unknown;
     breeders: { name: string } | null;
+    product_variants: {
+      id: bigint;
+      price: unknown;
+      clearance_price: unknown;
+      stock: number | null;
+      is_active: boolean | null;
+    }[];
   } | null;
 };
 
@@ -99,6 +110,37 @@ function resolveListingUnitBaht(
       unitBaht: applyBrandPercentToUnitBaht(base, rule.discount_percent),
       source: "brand_promotion",
     };
+  }
+  if (v.products?.is_clearance === true && variantPrice > 0) {
+    const effective = roundCheckoutBahtWhole(
+      getEffectiveVariantPrice(
+        {
+          is_clearance: v.products.is_clearance,
+          sale_price: coerceDbPriceBaht(v.products.sale_price),
+          price: coerceDbPriceBaht(v.products.price),
+          product_variants: [
+            {
+              price: variantPrice,
+              clearance_price: coerceDbPriceBaht(v.clearance_price),
+              stock: null,
+              is_active: true,
+            },
+            ...v.products.product_variants
+              .filter((pv) => pv.id !== v.id)
+              .map((pv) => ({
+                price: coerceDbPriceBaht(pv.price),
+                clearance_price: coerceDbPriceBaht(pv.clearance_price),
+                stock: pv.stock,
+                is_active: pv.is_active,
+              })),
+          ],
+        },
+        variantPrice,
+      ),
+    );
+    if (effective > 0 && effective < base) {
+      return { unitBaht: effective, source: "clearance" };
+    }
   }
   return { unitBaht: base, source: baseSource };
 }
@@ -257,7 +299,18 @@ export async function validateStorefrontCheckoutTotals(input: {
             id: true,
             name: true,
             price: true,
+            is_clearance: true,
+            sale_price: true,
             breeders: { select: { name: true } },
+            product_variants: {
+              select: {
+                id: true,
+                price: true,
+                clearance_price: true,
+                stock: true,
+                is_active: true,
+              },
+            },
           },
         },
       },
