@@ -71,7 +71,7 @@ export async function HomeMainStream() {
     color,
   }));
   const belowSections = sections.filter((s) => s.key !== "hero");
-  const vpHint = cookies().get(VIEWPORT_HINT_COOKIE)?.value;
+  const vpHint = (await cookies()).get(VIEWPORT_HINT_COOKIE)?.value;
   const initialLcpDesktop = vpHint === "d";
   const heroCarousel = (
     <HomeHeroCarousel banners={banners} initialLcpDesktop={initialLcpDesktop} />

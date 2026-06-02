@@ -15,7 +15,7 @@ export async function listAdminClearanceProducts(): Promise<ProductFull[]> {
     orderBy: [{ id: "desc" }],
     include: adminProductListInclude,
   });
-  return rows.map((p) => serializeAdminProductForList(p) as ProductFull);
+  return rows.map((p) => serializeAdminProductForList(p) as unknown as ProductFull);
 }
 
 export async function addProductToClearance(productId: number): Promise<{ error: string | null }> {

@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-02 (Critical build-blocker fix)
+- **แก้:** Next 15 async `cookies()/headers()` build errors · admin order detail helper type · TS build blockers จาก lucide deep imports/listener options
+- **ไฟล์:** `home-stream.tsx`, blog routes, newsletter route, admin line summary, analytics clients, `types/lucide-react-deep-icons.d.ts`
+
 ### บันทึกการทำงาน — 2026-05-24 (Vercel Speed Insights)
 - **เพิ่ม:** `@vercel/speed-insights` · `<SpeedInsights />` ใน `app/layout.tsx` (RUM Web Vitals)
 - **ไฟล์:** `app/layout.tsx`, `package.json`, `package-lock.json`

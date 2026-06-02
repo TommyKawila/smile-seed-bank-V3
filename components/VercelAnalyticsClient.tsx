@@ -19,7 +19,7 @@ export function VercelAnalyticsClient() {
       done = true;
       setActive(true);
     };
-    const passive = { passive: true } as const;
+    const passive: AddEventListenerOptions = { passive: true };
     const onInteract = () => arm();
     const events = ["scroll", "pointerdown", "touchstart", "keydown"] as const;
     for (const e of events) {

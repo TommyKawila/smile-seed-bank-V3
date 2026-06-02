@@ -10,15 +10,15 @@ const BodySchema = z.object({
   locale: z.enum(["th", "en"]).optional(),
 });
 
-function clientIp(): string {
-  const h = headers();
+async function clientIp(): Promise<string> {
+  const h = await headers();
   const xf = h.get("x-forwarded-for");
   if (xf) return xf.split(",")[0]?.trim() ?? "unknown";
   return h.get("x-real-ip") ?? "unknown";
 }
 
 export async function POST(req: Request) {
-  const ip = clientIp();
+  const ip = await clientIp();
   const limited = rateLimitIp(`newsletter:${ip}`, 8, 15 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
