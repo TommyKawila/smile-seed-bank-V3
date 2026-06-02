@@ -71,9 +71,10 @@ function collectAffiliateIds(segments: ReturnType<typeof parseArticleSegments>):
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const post = await getPublishedPostBySlug(params.slug);
+  const resolvedParams = await params;
+  const post = await getPublishedPostBySlug(resolvedParams.slug);
   if (!post) return { title: "ไม่พบบทความ" };
 
   const locale = magazineLocaleFromCookie((await cookies()).get("locale")?.value);
@@ -134,8 +135,9 @@ export async function generateMetadata({
   };
 }
 
-export default async function BlogArticlePage({ params }: { params: { slug: string } }) {
-  const post = await getPublishedPostBySlug(params.slug);
+export default async function BlogArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params;
+  const post = await getPublishedPostBySlug(resolvedParams.slug);
   if (!post) notFound();
 
   const locale = magazineLocaleFromCookie((await cookies()).get("locale")?.value);

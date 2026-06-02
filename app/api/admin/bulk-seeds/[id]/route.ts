@@ -15,11 +15,12 @@ const PatchSchema = z.object({
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await assertAdmin();
-    const bid = /^\d+$/.test(params.id) ? BigInt(params.id) : null;
+    const bid = /^\d+$/.test(id) ? BigInt(id) : null;
     if (bid == null) {
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
@@ -43,11 +44,12 @@ export async function PATCH(
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await assertAdmin();
-    const bid = /^\d+$/.test(params.id) ? BigInt(params.id) : null;
+    const bid = /^\d+$/.test(id) ? BigInt(id) : null;
     if (bid == null) {
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }

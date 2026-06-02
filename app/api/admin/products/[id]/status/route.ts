@@ -12,9 +12,10 @@ const BodySchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const productId = parseInt(params.id, 10);
+  const { id } = await params;
+  const productId = parseInt(id, 10);
   if (Number.isNaN(productId)) {
     return NextResponse.json({ error: "Invalid product ID" }, { status: 400 });
   }

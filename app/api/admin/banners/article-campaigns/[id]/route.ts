@@ -16,10 +16,11 @@ function campaignId(raw: string): bigint {
   return BigInt(raw);
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   await assertAdmin();
   const parsed = ArticleCampaignBannerSchema.parse(await req.json());
-  const campaign = await updateArticleCampaignBanners(campaignId(params.id), parsed);
+  const campaign = await updateArticleCampaignBanners(campaignId(id), parsed);
   revalidatePath("/blog");
   return NextResponse.json({ campaign });
 }

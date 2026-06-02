@@ -28,8 +28,9 @@ function heroBannerId(raw: string): bigint {
   return BigInt(raw);
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     await assertAdmin();
     const read = await readJsonObject(req);
     if (!read.ok) {
@@ -48,7 +49,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (!normalized.desktopTh.trim()) {
       return NextResponse.json({ error: "desktopTh (Thai desktop image) is required" }, { status: 400 });
     }
-    const banner = await updateHeroBanner(heroBannerId(params.id), normalized);
+    const banner = await updateHeroBanner(heroBannerId(id), normalized);
     revalidatePath("/");
     return NextResponse.json({ banner });
   } catch (e) {
@@ -58,10 +59,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     await assertAdmin();
-    await deleteHeroBanner(heroBannerId(params.id));
+    await deleteHeroBanner(heroBannerId(id));
     revalidatePath("/");
     revalidateTag("home-hero-banners");
     return NextResponse.json({ ok: true });

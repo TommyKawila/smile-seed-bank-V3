@@ -19,7 +19,10 @@ function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function searchParamsGetter(sp: Record<string, string | string[] | undefined> | undefined) {
+type RouteParams = { breederSlug?: string | string[] };
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function searchParamsGetter(sp: SearchParams | undefined) {
   return (key: string) => firstParam(sp?.[key]) ?? null;
 }
 
@@ -41,25 +44,27 @@ export default async function ShopPage({
   params,
   searchParams,
 }: {
-  params?: { breederSlug?: string | string[] };
-  searchParams?: Record<string, string | string[] | undefined>;
+  params?: Promise<RouteParams>;
+  searchParams?: Promise<SearchParams>;
 }) {
-  const breederSlug = firstParam(params?.breederSlug);
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const breederSlug = firstParam(resolvedParams?.breederSlug);
   const breederId = await resolveBreederIdFromSlug(breederSlug);
-  const category = firstParam(searchParams?.category)?.trim() || "";
-  const search = firstParam(searchParams?.q)?.trim() || "";
-  const filterRaw = firstParam(searchParams?.filter)?.trim() || "";
+  const category = firstParam(resolvedSearchParams?.category)?.trim() || "";
+  const search = firstParam(resolvedSearchParams?.q)?.trim() || "";
+  const filterRaw = firstParam(resolvedSearchParams?.filter)?.trim() || "";
   const catalogFt =
     resolveCatalogFtFromUrl({
-      ft: firstParam(searchParams?.ft),
+      ft: firstParam(resolvedSearchParams?.ft),
       filter: filterRaw || undefined,
     }) || "";
-  const quickRaw = firstParam(searchParams?.quick)?.trim();
+  const quickRaw = firstParam(resolvedSearchParams?.quick)?.trim();
   const quick =
     quickRaw === "new" || quickRaw === "sale" || quickRaw === "clearance"
       ? quickRaw
       : resolveCatalogQuickFromFilter(filterRaw) ?? undefined;
-  const sortRaw = firstParam(searchParams?.sort)?.trim();
+  const sortRaw = firstParam(resolvedSearchParams?.sort)?.trim();
   const sortFromParam =
     sortRaw === "price_asc" ||
     sortRaw === "price_desc" ||
@@ -70,7 +75,7 @@ export default async function ShopPage({
   const sortFromFilter = resolveCatalogSortFromFilter(filterRaw);
   const sort = sortFromParam ?? sortFromFilter ?? undefined;
   const priceRange = parsePriceRangeParams({
-    get: searchParamsGetter(searchParams),
+    get: searchParamsGetter(resolvedSearchParams),
   });
 
   const [catalog, showClearanceFilter] = await Promise.all([
@@ -86,13 +91,13 @@ export default async function ShopPage({
       sort: sort ?? (!quick && breederId != null ? "smart_deal" : undefined),
       minPrice: priceRange.min ?? undefined,
       maxPrice: priceRange.max ?? undefined,
-      seeds_param: firstParam(searchParams?.seeds)?.trim() || null,
-      genetics_param: firstParam(searchParams?.genetics)?.trim() || null,
-      difficulty_param: firstParam(searchParams?.difficulty)?.trim() || null,
-      thc_param: firstParam(searchParams?.thc)?.trim() || null,
-      cbd_param: firstParam(searchParams?.cbd)?.trim() || null,
-      sex_param: firstParam(searchParams?.sex)?.trim() || null,
-      yield_param: firstParam(searchParams?.yield)?.trim() || null,
+      seeds_param: firstParam(resolvedSearchParams?.seeds)?.trim() || null,
+      genetics_param: firstParam(resolvedSearchParams?.genetics)?.trim() || null,
+      difficulty_param: firstParam(resolvedSearchParams?.difficulty)?.trim() || null,
+      thc_param: firstParam(resolvedSearchParams?.thc)?.trim() || null,
+      cbd_param: firstParam(resolvedSearchParams?.cbd)?.trim() || null,
+      sex_param: firstParam(resolvedSearchParams?.sex)?.trim() || null,
+      yield_param: firstParam(resolvedSearchParams?.yield)?.trim() || null,
     }).catch(() => ({
       data: [] as ProductListItem[],
       error: "catalog_fetch_failed",
