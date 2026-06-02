@@ -781,14 +781,14 @@ export async function getActiveProducts(opts?: {
           const pb = getCatalogCardSortPrice(b);
           const d = pa - pb;
           if (d !== 0) return sortKey === "price_asc" ? d : -d;
-          return Number(b.id) - Number(a.id);
+          return Number((b as unknown as { id: number }).id) - Number((a as unknown as { id: number }).id);
         });
       } else {
         enriched.sort((a, b) => {
           const pctA = getClearancePercentOff(a) ?? 0;
           const pctB = getClearancePercentOff(b) ?? 0;
           if (pctB !== pctA) return pctB - pctA;
-          return Number(b.id) - Number(a.id);
+          return Number((b as unknown as { id: number }).id) - Number((a as unknown as { id: number }).id);
         });
       }
       const catalogTotalCount =

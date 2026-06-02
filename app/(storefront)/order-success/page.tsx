@@ -1,12 +1,15 @@
 import { redirect } from "next/navigation";
 
 /** Legacy `?order=` URLs → canonical `/order-success/[orderId]`. */
-export default function OrderSuccessLegacyPage({
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function OrderSuccessLegacyPage({
   searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<SearchParams>;
 }) {
-  const raw = searchParams.order;
+  const resolvedSearchParams = await searchParams;
+  const raw = resolvedSearchParams.order;
   const order = typeof raw === "string" ? raw.trim() : "";
   if (order) {
     redirect(`/order-success/${encodeURIComponent(order)}`);

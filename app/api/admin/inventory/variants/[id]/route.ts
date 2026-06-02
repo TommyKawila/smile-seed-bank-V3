@@ -5,9 +5,10 @@ import type { ProductVariant } from "@/types/supabase";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = parseInt(params.id, 10);
+  const resolvedParams = await params;
+  const id = parseInt(resolvedParams.id, 10);
   if (isNaN(id)) return NextResponse.json({ error: "Invalid variant ID" }, { status: 400 });
 
   const body = await req.json();

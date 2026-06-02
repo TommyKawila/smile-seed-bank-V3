@@ -23,8 +23,9 @@ function articleBannerId(raw: string): bigint {
   return BigInt(raw);
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     await assertAdmin();
     const body: unknown = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || Array.isArray(body)) {
@@ -40,7 +41,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (Object.keys(parsed.data).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
-    const banner = await updateArticleBanner(articleBannerId(params.id), parsed.data);
+    const banner = await updateArticleBanner(articleBannerId(id), parsed.data);
     revalidatePath("/blog");
     return NextResponse.json({ banner });
   } catch (e) {
@@ -50,10 +51,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     await assertAdmin();
-    await deleteArticleBanner(articleBannerId(params.id));
+    await deleteArticleBanner(articleBannerId(id));
     revalidatePath("/blog");
     return NextResponse.json({ ok: true });
   } catch (e) {

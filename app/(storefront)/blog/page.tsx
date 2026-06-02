@@ -50,12 +50,14 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-type PageProps = { searchParams: Record<string, string | string[] | undefined> };
+type SearchParams = Record<string, string | string[] | undefined>;
+type PageProps = { searchParams: Promise<SearchParams> };
 
 export default async function BlogMagazinePage({ searchParams }: PageProps) {
-  const raw = searchParams.category;
+  const resolvedSearchParams = await searchParams;
+  const raw = resolvedSearchParams.category;
   const categorySlug = typeof raw === "string" ? raw : undefined;
-  const locale = magazineLocaleFromCookie(cookies().get("locale")?.value);
+  const locale = magazineLocaleFromCookie((await cookies()).get("locale")?.value);
 
   const [highlights, trending, categories, gridPosts] = await Promise.all([
     getHighlightPosts(24, 5),

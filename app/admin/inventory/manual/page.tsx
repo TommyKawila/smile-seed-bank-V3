@@ -113,7 +113,7 @@ function isManualGridRowUnsynced(r: InventoryRow): boolean {
 }
 
 /** Draft / temp ID row not yet linked in main catalog; needs Master SKU before sync. */
-export function isManualGridNewItemReadyToSync(r: InventoryRow): boolean {
+function isManualGridNewItemReadyToSync(r: InventoryRow): boolean {
   if (!r.masterSku?.trim()) return false;
   return r.isNew === true || r.productId < 0;
 }

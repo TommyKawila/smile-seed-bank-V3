@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * - .../spreadsheets/d/[ID]/view
  * - .../spreadsheets/d/[ID]/pubhtml (published)
  */
-export function parseGoogleSheetIdAndGid(input: string): { id: string; gid: string | null } | null {
+function parseGoogleSheetIdAndGid(input: string): { id: string; gid: string | null } | null {
   const trimmed = input.trim();
   const idMatch = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   if (!idMatch?.[1]) return null;
@@ -21,7 +21,7 @@ export function parseGoogleSheetIdAndGid(input: string): { id: string; gid: stri
 }
 
 /** Build the official CSV export URL (same host/path pattern Google uses for export). */
-export function googleSheetUrlToCsvExportUrl(input: string): string | null {
+function googleSheetUrlToCsvExportUrl(input: string): string | null {
   const parsed = parseGoogleSheetIdAndGid(input);
   if (!parsed) return null;
   let u = `https://docs.google.com/spreadsheets/d/${parsed.id}/export?format=csv`;

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
-  params: { breederSlug: string };
-}): Metadata {
-  const breederSlug = encodeURIComponent(params.breederSlug.trim());
+  params: Promise<{ breederSlug: string }>;
+}): Promise<Metadata> {
+  const resolvedParams = await params;
+  const breederSlug = encodeURIComponent(resolvedParams.breederSlug.trim());
   return {
     alternates: {
       canonical: `/seeds/${breederSlug}`,
