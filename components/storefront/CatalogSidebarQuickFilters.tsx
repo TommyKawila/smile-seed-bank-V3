@@ -81,8 +81,8 @@ function QuickPill({
         "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-1.5 py-2 text-center font-sans transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
         presentation === "mobile" ? "min-h-12" : "min-h-11",
         active
-          ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
-          : "border-zinc-200/90 bg-white text-zinc-700 hover:border-primary/30 hover:bg-primary/5"
+          ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25"
+          : "border-primary/15 bg-white text-primary hover:border-primary/35 hover:bg-primary/[0.06]"
       )}
     >
       {Icon ? (
@@ -99,7 +99,7 @@ function QuickPill({
         <span
           className={cn(
             "text-[10px] font-bold tabular-nums",
-            active ? "text-primary-foreground/85" : "text-zinc-400"
+            active ? "text-primary-foreground/85" : "text-primary/45"
           )}
         >
           {count}
@@ -187,12 +187,10 @@ export function CatalogSidebarQuickFilters({
     <div
       className={cn(
         "space-y-4",
-        presentation === "sidebar"
-          ? "rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.06] via-white to-secondary/20 p-4 shadow-sm"
-          : "rounded-2xl border border-primary/15 bg-white p-4 shadow-sm"
+        "rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/[0.06] via-white to-secondary/30 p-4 shadow-sm"
       )}
     >
-      <div className="flex flex-wrap gap-2 border-b border-zinc-100 pb-3">
+      <div className="flex flex-wrap gap-2 border-b border-primary/10 pb-3">
         <ShopQuickFilterBar
           replaceCatalog={replaceCatalog}
           t={t}

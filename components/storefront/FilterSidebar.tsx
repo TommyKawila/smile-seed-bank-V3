@@ -73,29 +73,30 @@ const SEEDS_PACK_ROWS: { slug: string; labelTh: string; labelEn: string; i18n?: 
 
 type FilterPresentation = "sidebar" | "mobile";
 
+/** Eco-Clinical filter panel tokens (primary teal + secondary lavender). */
+const filterCardClass =
+  "rounded-2xl border border-primary/10 bg-white p-4 shadow-sm";
+const filterCardTintClass =
+  "rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/[0.05] via-white to-secondary/25 p-4 shadow-sm";
+const filterLabDividerClass =
+  "flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/[0.06] px-4 py-3";
+
 function FilterSectionHeading({
   icon,
   title,
   subtitle,
-  accentClass,
 }: {
   icon: ReactNode;
   title: string;
   subtitle?: string;
-  accentClass: string;
 }) {
   return (
     <div className="mb-3 flex items-center gap-3">
-      <div
-        className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm",
-          accentClass
-        )}
-      >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-bold leading-tight text-zinc-900">{title}</p>
+        <p className="text-sm font-bold leading-tight text-primary">{title}</p>
         {subtitle ? (
           <p className="mt-0.5 text-xs leading-snug text-zinc-500">{subtitle}</p>
         ) : null}
@@ -156,7 +157,7 @@ export function FilterSidebarContent({
     "peer h-3 w-3 shrink-0 rounded-sm border border-primary/55 text-primary accent-primary focus:ring-1 focus:ring-primary/35 focus:ring-offset-0";
 
   const seedsCheckboxClass =
-    "peer h-3 w-3 shrink-0 rounded-sm border border-emerald-600/45 text-emerald-600 accent-emerald-600 focus:ring-1 focus:ring-emerald-500/35 focus:ring-offset-0";
+    "peer h-3 w-3 shrink-0 rounded-sm border border-primary/55 text-primary accent-primary focus:ring-1 focus:ring-primary/35 focus:ring-offset-0";
 
   const rowClass = (on: boolean, isZero: boolean) =>
     isMobile
@@ -171,19 +172,13 @@ export function FilterSidebarContent({
 
   const seedsRowClass = (on: boolean, isZero: boolean) =>
     isMobile
-      ? cn(
-          "flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl border-2 px-3.5 py-2.5 font-sans transition-all active:scale-[0.98]",
-          isZero ? "opacity-50" : "",
-          on
-            ? "border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
-            : "border-emerald-100 bg-emerald-50/80 text-emerald-950 hover:border-emerald-200"
-        )
+      ? mobileRowClass(on, isZero, "seeds")
       : `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
           isZero ? "opacity-60" : ""
         } ${
           on
-            ? "border-emerald-600/35 bg-emerald-50/60 text-emerald-900"
-            : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
+            ? "border-primary/40 bg-primary/[0.08] text-primary"
+            : "border-zinc-200/90 bg-white text-zinc-600 hover:border-primary/20 hover:bg-primary/[0.04]"
         }`;
 
   const mobileRowClass = (
@@ -197,22 +192,13 @@ export function FilterSidebarContent({
     if (!on) {
       return cn(
         base,
-        tone === "seeds"
-          ? "border-emerald-100 bg-emerald-50/80 text-emerald-950"
-          : "border-zinc-200/90 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+        "border-primary/15 bg-white text-zinc-700 hover:border-primary/30 hover:bg-primary/[0.04]"
       );
     }
     if (tone === "fem")
       return cn(
         base,
-        "border-violet-300 bg-secondary text-zinc-900 shadow-md shadow-secondary/40"
-      );
-    if (tone === "reg")
-      return cn(base, "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25");
-    if (tone === "seeds")
-      return cn(
-        base,
-        "border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+        "border-secondary/80 bg-secondary text-primary shadow-md shadow-secondary/50"
       );
     return cn(base, "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25");
   };
@@ -220,19 +206,14 @@ export function FilterSidebarContent({
   const countBadgeClass = (on: boolean, isZero: boolean, tone: "default" | "fem" | "seeds" = "default") => {
     if (isMobile) {
       if (on) return "rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-bold tabular-nums text-inherit";
-      if (tone === "seeds")
-        return cn(
-          "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
-          isZero ? "bg-zinc-100 text-zinc-400" : "bg-emerald-100 text-emerald-800"
-        );
       if (tone === "fem")
         return cn(
           "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
-          isZero ? "bg-zinc-100 text-zinc-400" : "bg-secondary text-secondary-foreground"
+          isZero ? "bg-primary/5 text-zinc-400" : "bg-primary/10 text-primary"
         );
       return cn(
         "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
-        isZero ? "bg-zinc-100 text-zinc-400" : "bg-zinc-100 text-zinc-600"
+        isZero ? "bg-primary/5 text-zinc-400" : "bg-primary/10 text-primary"
       );
     }
     return cn(
@@ -255,7 +236,7 @@ export function FilterSidebarContent({
         <Check className="h-4 w-4 stroke-[2.5]" aria-hidden />
       </span>
     ) : (
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-zinc-200/90 bg-white" />
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-primary/15 bg-white" />
     );
 
   return (
@@ -272,17 +253,12 @@ export function FilterSidebarContent({
           className="mb-0"
         />
       ) : null}
-      <div
-        className={cn(
-          isMobile && "rounded-2xl border border-emerald-100/80 bg-gradient-to-br from-emerald-50/90 to-white p-4 shadow-sm"
-        )}
-      >
+      <div className={cn(isMobile && filterCardTintClass)}>
         {isMobile ? (
           <FilterSectionHeading
-            icon={<Package className="h-5 w-5 text-emerald-700" strokeWidth={2} />}
+            icon={<Package className="h-5 w-5" strokeWidth={2} />}
             title={t("ขนาดแพ็กเกจ", "Package size")}
             subtitle={t("เลือกจำนวนเมล็ดต่อแพ็ก", "Seeds per pack")}
-            accentClass="bg-emerald-100"
           />
         ) : (
           <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
@@ -320,7 +296,7 @@ export function FilterSidebarContent({
         </div>
       </div>
       {isMobile ? (
-        <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-primary/10 via-secondary/30 to-primary/5 px-4 py-3">
+        <div className={filterLabDividerClass}>
           <FlaskConical className="h-5 w-5 shrink-0 text-primary" aria-hidden />
           <p className="text-sm font-semibold text-primary">
             {t("กรองแบบละเอียด", "Refine your search")}
@@ -332,17 +308,12 @@ export function FilterSidebarContent({
         </p>
       )}
 
-      <div
-        className={cn(
-          isMobile && "rounded-2xl border border-amber-100/80 bg-gradient-to-br from-amber-50/50 to-white p-4 shadow-sm"
-        )}
-      >
+      <div className={cn(isMobile && filterCardClass)}>
         {isMobile ? (
           <FilterSectionHeading
-            icon={<Sparkles className="h-5 w-5 text-amber-700" strokeWidth={2} />}
+            icon={<Sparkles className="h-5 w-5" strokeWidth={2} />}
             title={t("THC & CBD", "THC & CBD")}
             subtitle={t("ความเข้มข้นสารสำคัญ", "Potency ranges")}
-            accentClass="bg-amber-100"
           />
         ) : (
           <p className="mb-2.5 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
@@ -352,7 +323,7 @@ export function FilterSidebarContent({
         <p
           className={cn(
             isMobile
-              ? "mb-2 text-xs font-bold uppercase tracking-wide text-amber-800/80"
+              ? "mb-2 text-xs font-bold uppercase tracking-wide text-primary/80"
               : "mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500"
           )}
         >
@@ -384,7 +355,7 @@ export function FilterSidebarContent({
         <p
           className={cn(
             isMobile
-              ? "mb-2 text-xs font-bold uppercase tracking-wide text-teal-800/80"
+              ? "mb-2 text-xs font-bold uppercase tracking-wide text-primary/70"
               : "mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500"
           )}
         >
@@ -415,17 +386,12 @@ export function FilterSidebarContent({
         </div>
       </div>
 
-      <div
-        className={cn(
-          isMobile && "rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-4 shadow-sm"
-        )}
-      >
+      <div className={cn(isMobile && filterCardClass)}>
         {isMobile ? (
           <FilterSectionHeading
-            icon={<SlidersHorizontal className="h-5 w-5 text-zinc-700" strokeWidth={2} />}
+            icon={<SlidersHorizontal className="h-5 w-5" strokeWidth={2} />}
             title={t("ระดับความยาก", "Difficulty")}
             subtitle={t("เหมาะกับมือใหม่หรือโปร", "Grow skill level")}
-            accentClass="bg-zinc-200/80"
           />
         ) : (
           <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
@@ -515,9 +481,9 @@ export function ShopFilterMobileSheet({
       <SheetContent
         id="shop-filters"
         side="bottom"
-        className="flex max-h-[92dvh] w-full flex-col gap-0 rounded-t-2xl border-t-0 bg-zinc-50/95 p-0 shadow-2xl [&>button]:hidden"
+        className="flex max-h-[92dvh] w-full flex-col gap-0 rounded-t-2xl border-t-0 bg-gradient-to-b from-secondary/20 via-white to-white p-0 shadow-2xl [&>button]:hidden"
       >
-        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-zinc-300/90" aria-hidden />
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-primary/25" aria-hidden />
 
         <div className="relative shrink-0 overflow-hidden rounded-t-2xl bg-gradient-to-br from-primary via-primary to-primary/85 px-4 pb-4 pt-3 text-primary-foreground shadow-md">
           <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-secondary/30 blur-2xl" />
@@ -553,10 +519,10 @@ export function ShopFilterMobileSheet({
           <FilterSidebarContent t={t} counts={counts} presentation="mobile" />
         </div>
 
-        <div className="shrink-0 border-t border-zinc-200/80 bg-white/95 px-4 py-4 shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="shrink-0 border-t border-primary/10 bg-white/98 px-4 py-4 shadow-[0_-8px_24px_rgba(18,70,62,0.1)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
-            className="mb-2.5 h-14 w-full rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
+            className="mb-2.5 h-14 w-full rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
             onClick={() => onOpenChange(false)}
           >
             {t(`ดูสินค้า ${resultCount} รายการ`, `View ${resultCount} products`)}
@@ -564,7 +530,7 @@ export function ShopFilterMobileSheet({
           <Button
             type="button"
             variant="ghost"
-            className="h-11 w-full rounded-xl text-sm font-semibold text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+            className="h-11 w-full rounded-xl text-sm font-semibold text-primary/80 hover:bg-primary/5 hover:text-primary"
             onClick={() => onClearAll()}
           >
             {t("ล้างตัวกรองทั้งหมด", "Clear all filters")}

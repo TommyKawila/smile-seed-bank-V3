@@ -13,6 +13,7 @@ import {
   Zap,
   ArrowUp,
   SlidersHorizontal,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBreeders } from "@/hooks/useBreeders";
@@ -1053,7 +1054,7 @@ export function ShopPageClient({
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-7xl px-4 pb-24 pt-0 sm:px-6 lg:pb-8">
+      <div className="mx-auto max-w-7xl px-4 pb-28 pt-0 sm:px-6 max-lg:pb-[7.25rem] lg:pb-8">
         {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
         <CatalogStickyFilterStrip
           catalogHeading={
@@ -1259,24 +1260,30 @@ export function ShopPageClient({
         </div>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
-        <div className="pointer-events-auto flex w-full max-w-md gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-12 flex-1 rounded-full border-secondary/80 bg-secondary/30 text-sm font-semibold text-primary shadow-md hover:bg-secondary/50"
-            onClick={() => setShowPriceSheet(true)}
-          >
-            {t("กรองราคา", "Price")}
-          </Button>
-          <Button
-            type="button"
-            className="h-12 flex-1 gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
-            onClick={() => setShowFilter(true)}
-          >
-            <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
-            {t("ตัวกรอง", "Filters")}
-          </Button>
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 lg:hidden">
+        <div
+          className="pointer-events-none h-10 bg-gradient-to-t from-white from-40% via-white/90 to-transparent"
+          aria-hidden
+        />
+        <div className="pointer-events-auto border-t border-zinc-200/90 bg-white/98 px-4 py-3 shadow-[0_-8px_32px_rgba(18,70,62,0.14)] backdrop-blur-lg pb-[max(0.875rem,env(safe-area-inset-bottom))]">
+          <div className="mx-auto flex w-full max-w-md gap-3">
+            <Button
+              type="button"
+              className="h-14 min-h-12 flex-1 gap-2 rounded-2xl border-2 border-primary/25 bg-secondary text-base font-bold text-primary shadow-md ring-1 ring-white/80 transition-transform active:scale-[0.98] hover:bg-secondary/90"
+              onClick={() => setShowPriceSheet(true)}
+            >
+              <Tag className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+              {t("กรองราคา", "Price")}
+            </Button>
+            <Button
+              type="button"
+              className="h-14 min-h-12 flex-1 gap-2 rounded-2xl border-2 border-primary/80 bg-primary px-4 text-base font-bold text-primary-foreground shadow-[0_6px_20px_rgba(18,70,62,0.35)] ring-2 ring-primary/20 transition-transform active:scale-[0.98] hover:bg-primary/90"
+              onClick={() => setShowFilter(true)}
+            >
+              <SlidersHorizontal className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+              {t("ตัวกรอง", "Filters")}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -1285,7 +1292,7 @@ export function ShopPageClient({
           type="button"
           aria-label={t("กลับขึ้นด้านบน", "Back to top")}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-8 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-md transition hover:bg-zinc-50 max-lg:bottom-[5.5rem] sm:right-8"
+          className="fixed bottom-8 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-md transition hover:bg-zinc-50 max-lg:bottom-[6.75rem] sm:right-8"
         >
           <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </button>
