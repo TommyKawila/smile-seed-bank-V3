@@ -8,6 +8,7 @@ import { FRAMER_MOTION_NEEDED_EVENT } from "@/lib/framer-motion-events";
 import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
 import { CART_FLY_EVENT, type CartFlyEventDetail } from "@/lib/cart-fly-events";
+import { clearCatalogReturnPath } from "@/lib/catalog-return-path";
 
 const CART_ANIMATION_IDLE_MS = 8_000;
 const AGE_GATE_FALLBACK_MS = 12_000;
@@ -73,6 +74,12 @@ export function StorefrontLayoutClient({
 }) {
   const pathname = usePathname();
   const isHomePath = pathname === "/";
+
+  useEffect(() => {
+    if (pathname === "/blog" || pathname?.startsWith("/blog/")) {
+      clearCatalogReturnPath();
+    }
+  }, [pathname]);
   const [mountAgeGate, setMountAgeGate] = useState(false);
   const [framerReady, setFramerReady] = useState(!isHomePath);
   const [mountOffers, setMountOffers] = useState(false);

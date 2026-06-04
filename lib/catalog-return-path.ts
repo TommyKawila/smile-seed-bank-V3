@@ -16,6 +16,23 @@ export function saveCatalogReturnPath(pathWithSearch: string): void {
   }
 }
 
+export function clearCatalogReturnPath(): void {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Call before navigating to PDP from a catalog grid (SPA-safe). */
+export function touchCatalogReturnFromWindow(): void {
+  if (typeof window === "undefined") return;
+  const { pathname, search } = window.location;
+  if (!isStorefrontCatalogPath(pathname)) return;
+  saveCatalogReturnPath(search ? `${pathname}${search}` : pathname);
+}
+
 export function readCatalogReturnPath(): string | null {
   if (typeof sessionStorage === "undefined") return null;
   try {
@@ -65,7 +82,7 @@ export function resolveProductListBackPath(opts: {
   const stored = readCatalogReturnPath();
 
   if (refPath && isStorefrontCatalogPath(refPath)) return refFull;
-  if (refPath && isBlogArticlePath(refPath)) return refFull;
   if (stored) return stored;
+  if (refPath && isBlogArticlePath(refPath)) return refFull;
   return refFull;
 }

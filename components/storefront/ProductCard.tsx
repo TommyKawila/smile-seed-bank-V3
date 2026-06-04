@@ -26,6 +26,7 @@ import {
   productDetailHref,
 } from "@/lib/product-utils";
 import { seedsBreederHref } from "@/lib/breeder-slug";
+import { touchCatalogReturnFromWindow } from "@/lib/catalog-return-path";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
@@ -310,7 +311,11 @@ function ProductCardBase({
   const cardInner = (
     <div className="group flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:border-zinc-200 hover:shadow-md">
         <div className="relative aspect-square shrink-0 overflow-hidden bg-zinc-50">
-          <Link href={productDetailHref(product)} className="absolute inset-0 block">
+          <Link
+            href={productDetailHref(product)}
+            className="absolute inset-0 block"
+            onClick={touchCatalogReturnFromWindow}
+          >
             {cardImage ? (
               <Image
                 src={cardImage}
@@ -446,6 +451,7 @@ function ProductCardBase({
           <Link
             href={productDetailHref(product)}
             className="flex min-h-[2.5rem] shrink-0 flex-col justify-center"
+            onClick={touchCatalogReturnFromWindow}
           >
             <h3 className="line-clamp-2 text-center font-sans text-[14px] font-bold leading-snug tracking-tight text-zinc-900">
               {product.name}
