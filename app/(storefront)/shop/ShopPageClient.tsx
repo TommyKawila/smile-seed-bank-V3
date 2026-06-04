@@ -28,10 +28,12 @@ import {
   parseJournalBreederSlugFromPathname,
   journalBreederCatalogBasePath,
   isSeedsIndexPath,
+  isStorefrontCatalogPath,
   resolveCatalogFtFromUrl,
   resolveCatalogQuickFromFilter,
   resolveCatalogSortFromFilter,
 } from "@/lib/catalog-navigation";
+import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
 import {
   productMatchesCatalogFtParam,
   normalizeCatalogFtUrlParam,
@@ -192,6 +194,12 @@ export function ShopPageClient({
   const journalCatalogBase = journalBreederCatalogBasePath(pathname);
   const breederParam =
     (journalBreederSlug ?? searchParams.get("breeder"))?.trim() || null;
+
+  useEffect(() => {
+    if (!isStorefrontCatalogPath(pathname)) return;
+    const qs = searchParams.toString();
+    saveCatalogReturnPath(qs ? `${pathname}?${qs}` : pathname);
+  }, [pathname, searchParams]);
 
   const replaceCatalog = useCallback(
     (mutate: (sp: URLSearchParams) => void) => {

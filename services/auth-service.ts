@@ -1,6 +1,11 @@
 import type { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { purgeStaleAuthStorage as purgeStale } from "@/lib/supabase/purge-stale-auth";
 import type { Customer } from "@/types/supabase";
+
+export async function purgeStaleAuthStorage(): Promise<void> {
+  await purgeStale(createClient());
+}
 
 export async function fetchCustomerProfile(uid: string): Promise<Customer | null> {
   const supabase = createClient();
@@ -10,6 +15,7 @@ export async function fetchCustomerProfile(uid: string): Promise<Customer | null
 }
 
 export async function getCurrentUser(): Promise<User | null> {
+  await purgeStaleAuthStorage();
   const supabase = createClient();
   const {
     data: { session },
@@ -17,7 +23,10 @@ export async function getCurrentUser(): Promise<User | null> {
   return session?.user ?? null;
 }
 
-export function subscribeToAuthChanges(onChange: (user: User | null, session: Session | null) => void) {
+export async function subscribeToAuthChanges(
+  onChange: (user: User | null, session: Session | null) => void
+): Promise<() => void> {
+  await purgeStaleAuthStorage();
   const supabase = createClient();
   const {
     data: { subscription },

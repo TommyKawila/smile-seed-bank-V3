@@ -303,7 +303,9 @@ export default function AdminMobileOrdersPage() {
   useEffect(() => {
     const supabase = createClient();
     const tick = () => {
-      void supabase.auth.refreshSession();
+      void supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.refresh_token) void supabase.auth.refreshSession();
+      });
     };
     tick();
     const t = setInterval(tick, 3 * 60 * 1000);

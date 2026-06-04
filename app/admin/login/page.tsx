@@ -37,8 +37,9 @@ export default function AdminLoginPage() {
     const sb = createClient();
     void (async () => {
       const {
-        data: { user },
-      } = await sb.auth.getUser();
+        data: { session },
+      } = await sb.auth.getSession();
+      const user = session?.user;
       if (cancelled || !user) return;
       if (user.user_metadata?.role === "ADMIN") {
         router.replace(nextParam() ?? "/admin/dashboard");

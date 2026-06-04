@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { ChevronDown, Loader2, LogOut } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
+import { purgeStaleAuthStorage } from "@/lib/supabase/purge-stale-auth";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -39,6 +40,12 @@ function roleFromUserMetadata(user: User): string {
   return typeof r === "string" && r.length > 0 ? r : "USER";
 }
 
+function isExpectedGuestAuthError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const name = "name" in err && typeof err.name === "string" ? err.name : "";
+  return name === "AuthSessionMissingError";
+}
+
 type UserNavProps = {
   /** e.g. dark sidebar: `text-zinc-100 hover:bg-zinc-800` */
   triggerClassName?: string;
@@ -54,23 +61,30 @@ export function UserNav({ triggerClassName }: UserNavProps) {
     setLoading(true);
     const supabase = createClient();
     try {
-      await supabase.auth.refreshSession();
-
-      const { data, error } = await supabase.auth.getUser();
-      if (error) throw error;
-
-      const u = data.user;
-      if (!u) {
+      await purgeStaleAuthStorage(supabase);
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError) {
+        await supabase.auth.signOut({ scope: "local" });
+        setUser(null);
+        setRole("USER");
+        return;
+      }
+      if (!session?.user) {
         setUser(null);
         setRole("USER");
         return;
       }
 
-      const userRole = roleFromUserMetadata(u);
+      const u = session.user;
       setUser(u);
-      setRole(userRole);
+      setRole(roleFromUserMetadata(u));
     } catch (err) {
-      console.error("Error loading user session:", err);
+      if (!isExpectedGuestAuthError(err)) {
+        console.error("Error loading user session:", err);
+      }
       setUser(null);
       setRole("USER");
     } finally {

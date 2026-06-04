@@ -77,9 +77,10 @@ export function AuthProvider({
         const auth = await getAuth();
         const u = await auth.getCurrentUser();
         setUser(u);
-        if (u) await fetchCustomer(u.id);
+        if (!u) return;
+        await fetchCustomer(u.id);
         unsubRef.current?.();
-        unsubRef.current = auth.subscribeToAuthChanges((nextUser) => {
+        unsubRef.current = await auth.subscribeToAuthChanges((nextUser) => {
           setUser(nextUser);
           if (nextUser) void fetchCustomer(nextUser.id);
           else setCustomer(null);
@@ -97,11 +98,19 @@ export function AuthProvider({
   }, [runBoot]);
 
   useEffect(() => {
+    void getAuth().then((auth) => auth.purgeStaleAuthStorage());
+  }, [getAuth]);
+
+  useEffect(() => {
+    if (initialSessionHint) {
+      void runBoot();
+      return;
+    }
     if (pathname === "/") return;
     return scheduleIdleWork(() => {
       void runBoot();
     }, AUTH_BOOT_IDLE_MS);
-  }, [pathname, runBoot]);
+  }, [pathname, runBoot, initialSessionHint]);
 
   useEffect(() => {
     return () => {

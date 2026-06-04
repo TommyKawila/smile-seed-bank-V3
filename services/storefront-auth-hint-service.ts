@@ -8,8 +8,14 @@ export async function getStorefrontSessionHint(): Promise<StorefrontSessionHint>
   try {
     const supabase = await createClient();
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
+    if (error) {
+      await supabase.auth.signOut({ scope: "local" });
+      return null;
+    }
+    const user = session?.user;
     if (!user?.id) return null;
     return { userId: user.id, email: user.email ?? null };
   } catch {

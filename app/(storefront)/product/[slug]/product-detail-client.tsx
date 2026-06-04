@@ -26,6 +26,7 @@ import {
 } from "@/lib/product-utils";
 import { isProductAggregateOutOfStock } from "@/lib/product-stock";
 import { seedsBreederHref } from "@/lib/breeder-slug";
+import { resolveProductListBackPath } from "@/lib/catalog-return-path";
 import { ProductGallery } from "@/components/storefront/ProductGallery";
 import { StickyBuyBar } from "@/components/storefront/StickyBuyBar";
 import { ProductCard } from "@/components/storefront/ProductCard";
@@ -217,24 +218,6 @@ function sortVariantsByPriceThenPack<T extends { price: number; unit_label: stri
   });
 }
 
-/** Internal browse URL from document.referrer (same product excluded). */
-function getValidListReferrerPath(): string | null {
-  if (typeof document === "undefined" || !document.referrer) return null;
-  let u: URL;
-  try {
-    u = new URL(document.referrer);
-  } catch {
-    return null;
-  }
-  if (u.origin !== window.location.origin) return null;
-  const path = u.pathname;
-  if (path.startsWith("/api") || path.startsWith("/admin") || path.startsWith("/_next")) {
-    return null;
-  }
-  if (path === window.location.pathname) return null;
-  return u.pathname + (u.search || "") + (u.hash || "");
-}
-
 // ─── Product Detail Page ──────────────────────────────────────────────────────
 
 export default function ProductDetailClient({
@@ -262,7 +245,12 @@ export default function ProductDetailClient({
   const mainAddToCartRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    setListReferrerPath(getValidListReferrerPath());
+    setListReferrerPath(
+      resolveProductListBackPath({
+        currentPathname: window.location.pathname,
+        documentReferrer: document.referrer,
+      })
+    );
   }, [product?.id]);
 
   useEffect(() => {
@@ -372,7 +360,7 @@ export default function ProductDetailClient({
       };
     }
     const fallback = tMsg("common.back_to_shop", "Back to Shop");
-    return { href: "/shop", text: fallback, title: fallback };
+    return { href: "/seeds", text: fallback, title: fallback };
   })();
 
   const activeVariants = sortVariantsByPriceThenPack(
