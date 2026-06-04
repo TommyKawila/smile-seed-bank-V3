@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  SlidersHorizontal,
   PackageX,
   ChevronLeft,
   ChevronDown,
@@ -16,7 +15,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBreeders } from "@/hooks/useBreeders";
-import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/LanguageContext";
@@ -35,15 +33,18 @@ import {
   resolveCatalogSortFromFilter,
 } from "@/lib/catalog-navigation";
 import {
-  catalogFloweringBucket,
   productMatchesCatalogFtParam,
   normalizeCatalogFtUrlParam,
-  type CatalogFloweringBucket,
 } from "@/lib/seed-type-filter";
 import {
-  BreederTypeFilter,
-  geneticsDomPillActiveSlug,
-} from "@/components/storefront/BreederTypeFilter";
+  CatalogStickyFilterStrip,
+  ShopCatalogFilterStrip,
+  type ShopCatalogFilterStripProps,
+} from "@/components/storefront/ShopCatalogFilterStrip";
+import {
+  CATALOG_GENETICS_STRIP_LABELS,
+  CATALOG_GENETICS_STRIP_SLUGS,
+} from "@/lib/catalog-filter-strip-labels";
 import { FilterSidebar, ShopFilterMobileSheet } from "@/components/storefront/FilterSidebar";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
@@ -62,8 +63,6 @@ import {
   productMatchesPriceRange,
 } from "@/lib/shop-price-filter";
 import { ShopPriceFilterBottomSheet } from "@/components/storefront/ShopPriceFilter";
-import { ShopQuickFilterBar } from "@/components/storefront/ShopQuickFilterBar";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { GeneticVaultProductGrid } from "@/components/storefront/GeneticVaultProductGrid";
 import { fetchWithTimeout } from "@/lib/timeout";
 import type { ProductListItem } from "@/services/storefront-product-service";
@@ -529,50 +528,6 @@ export function ShopPageClient({
     });
   }, [searchFilteredProducts, urlBreeder, breederParam, breedersLoading, ftParam, categoryParam]);
 
-  /** Flowering pill counts: sale/clearance view uses same scope as sidebar (quick + ft + breeder). */
-  const catalogFloweringScope = useMemo(() => {
-    if (quickEffective === "sale" || quickEffective === "clearance") return shopScopedProducts;
-    const base = searchFilteredProducts;
-    if (!urlBreeder) return base;
-    return base.filter((p) => p.breeder_id === urlBreeder.id);
-  }, [quickEffective, shopScopedProducts, searchFilteredProducts, urlBreeder]);
-
-  const catalogFloweringOptions = useMemo(() => {
-    const rows: { slug: string; label: string; count: number }[] = [
-      { slug: "auto", label: t("ออโต้", "Auto"), count: 0 },
-      { slug: "photo", label: t("โฟโต้", "Photo"), count: 0 },
-      { slug: "photo-ff", label: t("โฟโต้ FF", "Photo FF"), count: 0 },
-      { slug: "photo-3n", label: tMsg("photo_3n", "Photo 3N"), count: 0 },
-    ];
-    const idx = (b: CatalogFloweringBucket) => {
-      if (b === "auto") return 0;
-      if (b === "photo") return 1;
-      if (b === "photo_ff") return 2;
-      if (b === "photo_3n") return 3;
-      return -1;
-    };
-    for (const p of catalogFloweringScope) {
-      const b = catalogFloweringBucket({
-        flowering_type: p.flowering_type,
-        category: p.category,
-        product_categories: p.product_categories,
-      });
-      if (!b) continue;
-      const i = idx(b);
-      if (i >= 0) rows[i].count += 1;
-    }
-    return rows;
-  }, [catalogFloweringScope, t, tMsg]);
-
-  /** Pills with count > 0 only (bucket via catalogFloweringBucket). */
-  const catalogFloweringPillOptions = useMemo(
-    () => catalogFloweringOptions.filter((o) => o.count > 0),
-    [catalogFloweringOptions]
-  );
-
-  const showGeneticsTopPills =
-    isSeedsIndexPath(pathname) || pathname.startsWith("/seeds/");
-
   /** Drop only malformed `ft` / `filter` tokens. Do not strip valid buckets just because the
    * current loaded page slice shows count 0 (would break e.g. `?ft=auto` on /shop). */
   useEffect(() => {
@@ -683,20 +638,63 @@ export function ShopPageClient({
 
   const filterOptionCounts = filterCountsFromApi ?? clientFilterCountsFallback;
 
+  /** Flowering pills — counts from filter-counts API (scoped catalog), not the first SSR page slice. */
+  const catalogFloweringPillOptions = useMemo(() => {
+    const rows: { slug: string; label: string; count: number }[] = [
+      { slug: "auto", label: t("ออโต้", "Auto"), count: filterOptionCounts.flowering.auto ?? 0 },
+      { slug: "photo", label: t("โฟโต้", "Photo"), count: filterOptionCounts.flowering.photo ?? 0 },
+      {
+        slug: "photo-ff",
+        label: t("โฟโต้ FF", "Photo FF"),
+        count: filterOptionCounts.flowering["photo-ff"] ?? 0,
+      },
+      {
+        slug: "photo-3n",
+        label: tMsg("photo_3n", "Photo 3N"),
+        count: filterOptionCounts.flowering["photo-3n"] ?? 0,
+      },
+    ];
+    return rows.filter((o) => o.count > 0);
+  }, [filterOptionCounts.flowering, t, tMsg]);
+
   const catalogGeneticsPillOptions = useMemo(
-    () => [
-      {
-        slug: "sativa-dom",
-        label: t("ซาติวา", "Sativa"),
-        count: filterOptionCounts.genetics["sativa-dom"] ?? 0,
-      },
-      {
-        slug: "indica-dom",
-        label: t("อินดิกา", "Indica"),
-        count: filterOptionCounts.genetics["indica-dom"] ?? 0,
-      },
-    ],
+    () =>
+      CATALOG_GENETICS_STRIP_SLUGS.map((slug) => {
+        const labels = CATALOG_GENETICS_STRIP_LABELS[slug];
+        return {
+          slug,
+          label: t(labels.th, labels.en),
+          count: filterOptionCounts.genetics[slug] ?? 0,
+        };
+      }),
     [filterOptionCounts, t]
+  );
+
+  const catalogFilterStripProps = useMemo<ShopCatalogFilterStripProps>(
+    () => ({
+      replaceCatalog,
+      t,
+      showClearanceFilter,
+      showFilter,
+      onToggleFilter: () => setShowFilter((v) => !v),
+      catalogFloweringPillOptions,
+      showFloweringTypePills: catalogFloweringPillOptions.length > 0,
+      catalogGeneticsPillOptions,
+      catalogSexCounts: {
+        feminized: filterOptionCounts.sex.feminized ?? 0,
+        regular: filterOptionCounts.sex.regular ?? 0,
+      },
+    }),
+    [
+      replaceCatalog,
+      t,
+      showClearanceFilter,
+      showFilter,
+      catalogFloweringPillOptions,
+      catalogGeneticsPillOptions,
+      filterOptionCounts.sex.feminized,
+      filterOptionCounts.sex.regular,
+    ]
   );
 
   const filteredProducts = useMemo(() => {
@@ -976,9 +974,6 @@ export function ShopPageClient({
     router.push("/shop");
   };
 
-  const activeBreederSlug =
-    urlBreeder && breederParam?.trim() ? breederSlugFromName(urlBreeder.name) : null;
-
   const fullDesc = urlBreeder
     ? (isEn ? (urlBreeder.description_en ?? urlBreeder.description) : (urlBreeder.description ?? urlBreeder.description_en))
     : null;
@@ -996,15 +991,9 @@ export function ShopPageClient({
 
   return (
     <div className="min-h-screen bg-white pt-20 sm:pt-28">
-      {/* Breeder ribbon — scrolls with page (not sticky) */}
-      <div className="border-b border-zinc-100 bg-white px-4 py-3 sm:px-6">
-        <div className="mx-auto max-w-7xl">
-          <BreederRibbon compact activeBreederSlug={activeBreederSlug} scrollOnNav={false} />
-        </div>
-      </div>
       {/* ── Breeder strip: logo + name + count → products ASAP ───────────────── */}
       {urlBreeder ? (
-        <div className="border-b border-zinc-100 bg-white px-4 py-3 sm:px-6">
+        <div className="border-b border-zinc-100 bg-white px-4 py-2 sm:px-6">
           <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
             <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
               <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 sm:h-[4.75rem] sm:w-[4.75rem]">
@@ -1048,101 +1037,29 @@ export function ShopPageClient({
             </Button>
           </div>
         </div>
-      ) : (
-        <div className="border-b border-zinc-100 bg-white px-4 py-4 sm:px-6 sm:py-5">
-          <div className="mx-auto max-w-7xl">
-            <h1 className="font-sans text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
-              {quickEffective === "clearance"
-                ? t("ล้างสต็อก — เมล็ดพันธุ์ลดราคา", "Clearance — discounted seeds")
-                : quickEffective === "sale"
-                  ? t("โปรแบรนด์ — สินค้าลดราคา", "Brand deals — on sale")
-                  : t("คลังเมล็ดพันธุ์รวมทุกค่าย", "Seed vault — all breeders")}
-              <span className="ml-2 text-sm font-normal tabular-nums text-zinc-400">
-                {isLoading
-                  ? `(${t("กำลังโหลด...", "Loading...")})`
-                  : `(${filteredProducts.length} ${t("รายการ", "items")})`}
-              </span>
-            </h1>
-          </div>
-        </div>
-      )}
+      ) : null}
 
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-0 sm:px-6 lg:pb-8">
         {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
-        <div
-          className={`sticky top-20 z-40 -mx-4 mb-3 border-b border-zinc-100 bg-white/95 px-4 pt-1.5 pb-1 backdrop-blur-md sm:-mx-6 sm:top-28 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
-        >
-          <div className="flex flex-col gap-1.5 rounded-2xl border border-zinc-200/60 bg-white p-2 shadow-sm sm:p-2">
-            <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <ShopQuickFilterBar
-                  replaceCatalog={replaceCatalog}
-                  t={t}
-                  showClearance={showClearanceFilter}
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className={`hidden h-9 shrink-0 rounded-xl border-zinc-200 bg-white px-3 text-zinc-700 lg:inline-flex ${showFilter ? "border-primary bg-primary/10 text-primary" : ""}`}
-                onClick={() => setShowFilter((v) => !v)}
-                aria-expanded={showFilter}
-                aria-controls="shop-filters"
-              >
-                <SlidersHorizontal className="mr-1.5 h-4 w-4" />
-                {t("ตัวกรอง", "Filters")}
-              </Button>
-            </div>
-            {((catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1) ||
-              showGeneticsTopPills) ? (
-              <div className="relative min-h-[2rem]">
-                <div
-                  className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 bg-gradient-to-r from-white to-transparent sm:w-6"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-5 bg-gradient-to-l from-white to-transparent sm:w-6"
-                  aria-hidden
-                />
-                <div
-                  role="toolbar"
-                  aria-label={t("กรองสินค้า", "Shop filters")}
-                  className="flex min-h-[2rem] items-center gap-1.5 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                >
-                  {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 ? (
-                    <BreederTypeFilter
-                      appearance="quick-chips"
-                      options={catalogFloweringPillOptions}
-                      allLabel={t("ทั้งหมด", "All")}
-                      paramKey="ft"
-                      ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
-                    />
-                  ) : null}
-                  {showGeneticsTopPills ? (
-                    <>
-                      {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 ? (
-                        <span
-                          className="mx-0.5 h-5 w-px shrink-0 bg-zinc-200"
-                          aria-hidden
-                        />
-                      ) : null}
-                      <BreederTypeFilter
-                        appearance="quick-chips"
-                        options={catalogGeneticsPillOptions}
-                        allLabel={t("ทั้งหมด", "All")}
-                        paramKey="genetics"
-                        ariaLabel={t("พันธุกรรม", "Genetics")}
-                        showAllButton={false}
-                        clearableByReselect
-                        resolveActiveSlug={geneticsDomPillActiveSlug}
-                      />
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
+        <CatalogStickyFilterStrip
+          {...catalogFilterStripProps}
+          catalogHeading={
+            urlBreeder ? undefined : (
+              <h1 className="font-sans text-lg font-bold leading-tight tracking-tight text-zinc-900 sm:text-xl">
+                {quickEffective === "clearance"
+                  ? t("ล้างสต็อก — เมล็ดพันธุ์ลดราคา", "Clearance — discounted seeds")
+                  : quickEffective === "sale"
+                    ? t("โปรแบรนด์ — สินค้าลดราคา", "Brand deals — on sale")
+                    : t("คลังเมล็ดพันธุ์รวมทุกค่าย", "Seed vault — all breeders")}
+                <span className="ml-2 text-sm font-normal tabular-nums text-zinc-400">
+                  {isLoading
+                    ? `(${t("กำลังโหลด...", "Loading...")})`
+                    : `(${filteredProducts.length} ${t("รายการ", "items")})`}
+                </span>
+              </h1>
+            )
+          }
+        />
 
         <div className="flex min-h-0 flex-col lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-stretch lg:gap-8">
           {isLg && (
@@ -1180,6 +1097,12 @@ export function ShopPageClient({
                   onOpenChange={setShowFilter}
                   resultCount={filteredProducts.length}
                   onClearAll={clearFilters}
+                  catalogFilterStrip={
+                    <ShopCatalogFilterStrip
+                      {...catalogFilterStripProps}
+                      hideDesktopFilterToggle
+                    />
+                  }
                 />
               </>
             )}

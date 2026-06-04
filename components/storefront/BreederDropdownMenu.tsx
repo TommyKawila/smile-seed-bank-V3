@@ -26,20 +26,14 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
-  const label = t("เมล็ดพันธุ์", "Seeds");
+  const label = t("บรีดเดอร์", "Breeders");
   const catalogLabel = t("คลังเมล็ดพันธุ์ทั้งหมด", "Full seed catalog");
 
   if (mode === "mobile") {
     return (
       <div className="border-b border-gray-100 py-1">
-        <Link
-          href="/seeds"
-          onClick={onNavigate}
-          className="block py-2.5 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
-        >
-          {label}
-        </Link>
-        <p className={cn(mono, "mb-2 mt-1 text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-400")}>
+        <p className="py-2.5 text-base font-normal tracking-wide text-zinc-800">{label}</p>
+        <p className={cn(mono, "mb-2 text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-400")}>
           FIND BY BREEDER
         </p>
         <ul className="max-h-56 space-y-3 overflow-y-auto pb-2">
@@ -87,7 +81,7 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
         type="button"
         aria-expanded={open}
         aria-haspopup="true"
-        aria-label={t("เปิดเมนูเมล็ดพันธุ์และแบรนด์", "Open seeds and breeder menu")}
+        aria-label={t("เปิดเมนูบรีดเดอร์", "Open breeders menu")}
         className={cn(
           navLinkClass,
           "inline-flex items-center gap-1 border-0 bg-transparent p-0",

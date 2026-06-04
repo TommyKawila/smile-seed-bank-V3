@@ -8,7 +8,6 @@ import { m, AnimatePresence } from "framer-motion";
 import { Leaf, ChevronRight, Dna, ChevronDown, MapPin, Star, Trophy, Zap } from "lucide-react";
 import { useBreeders } from "@/hooks/useBreeders";
 import { useLanguage } from "@/context/LanguageContext";
-import { BreederRibbon } from "@/components/storefront/BreederRibbon";
 import { Loader2 } from "lucide-react";
 import type { Breeder } from "@/types/supabase";
 import { seedsBreederHref } from "@/lib/breeder-slug";
@@ -126,11 +125,6 @@ export default function BreedersPage() {
 
   return (
     <div className="min-h-screen bg-white pb-24 pt-24">
-      <div className="border-b border-zinc-100 bg-zinc-50/50 px-4 py-3 sm:px-6">
-        <div className="mx-auto max-w-7xl">
-          <BreederRibbon compact />
-        </div>
-      </div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
 
         {/* Page Header */}

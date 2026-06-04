@@ -50,14 +50,6 @@ const ClearanceSection = dynamic(
   { ssr: false }
 );
 
-const BreederRibbon = dynamic(
-  () =>
-    import("@/components/storefront/BreederRibbon").then((m) => ({
-      default: m.BreederRibbon,
-    })),
-  { ssr: false }
-);
-
 const HomeInsightSection = dynamic(
   () =>
     import("@/components/storefront/HomeInsightSection").then((m) => ({
@@ -270,7 +262,6 @@ export function HomePageBelowFold({
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
-              <BreederRibbon />
               <div className="mt-6 flex justify-center sm:hidden">
                 <Link href="/breeders" className="inline-flex min-h-11 min-w-[44px] items-center justify-center">
                   <Button variant="outline" size="sm" className="min-h-11 gap-1.5 border-emerald-200 text-emerald-900 hover:bg-emerald-50">

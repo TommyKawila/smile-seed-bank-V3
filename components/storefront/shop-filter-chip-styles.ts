@@ -19,6 +19,8 @@ export function shopFilterChipLeadingGlyph(slug: string): string | null {
       return "🌿";
     case "indica-dom":
       return "💜";
+    case "hybrid":
+      return "⚖️";
     case "auto":
       return "🚀";
     case "photo":

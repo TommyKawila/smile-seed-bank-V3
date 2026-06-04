@@ -27,7 +27,7 @@ type QuickItem = {
 
 const QUICK_ITEMS: QuickItem[] = [
   {
-    href: "/shop?difficulty=easy",
+    href: "/seeds?difficulty=easy",
     Icon: Sprout,
     labelTh: "มือใหม่",
     labelEn: "Beginner",
@@ -35,7 +35,7 @@ const QUICK_ITEMS: QuickItem[] = [
     iconFg: "text-emerald-700",
   },
   {
-    href: "/shop?ft=auto",
+    href: "/seeds?ft=auto",
     Icon: Zap,
     labelTh: "ออโต้ฟลาวเวอร์",
     labelEn: "Autoflower",
@@ -43,7 +43,7 @@ const QUICK_ITEMS: QuickItem[] = [
     iconFg: "text-amber-600",
   },
   {
-    href: "/shop?thc=high",
+    href: "/seeds?thc=high",
     Icon: Flame,
     labelTh: "THC สูง",
     labelEn: "High THC",
@@ -51,7 +51,7 @@ const QUICK_ITEMS: QuickItem[] = [
     iconFg: "text-orange-600",
   },
   {
-    href: "/shop?genetics=indica-dom",
+    href: "/seeds?genetics=indica-dom",
     Icon: Moon,
     labelTh: "อินดิก้า",
     labelEn: "Indica",
@@ -59,7 +59,7 @@ const QUICK_ITEMS: QuickItem[] = [
     iconFg: "text-violet-700",
   },
   {
-    href: "/shop?genetics=sativa-dom",
+    href: "/seeds?genetics=sativa-dom",
     Icon: Sun,
     labelTh: "ซาติว่า",
     labelEn: "Sativa",
@@ -67,7 +67,7 @@ const QUICK_ITEMS: QuickItem[] = [
     iconFg: "text-sky-600",
   },
   {
-    href: "/shop?genetics=hybrid",
+    href: "/seeds?genetics=hybrid",
     Icon: Blend,
     labelTh: "ไฮบริด",
     labelEn: "Hybrid",
@@ -75,7 +75,7 @@ const QUICK_ITEMS: QuickItem[] = [
     iconFg: "text-teal-700",
   },
   {
-    href: "/shop?yield=high",
+    href: "/seeds?yield=high",
     Icon: Trophy,
     labelTh: "ผลผลิตสูง",
     labelEn: "High yield",

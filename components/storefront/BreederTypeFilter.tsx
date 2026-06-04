@@ -12,11 +12,12 @@ import {
 import { floweringTypeToSlug } from "@/lib/seed-type-filter";
 import { cn } from "@/lib/utils";
 
-/** Top-bar genetics pills: `sativa-dom` / `indica-dom` only. */
+/** Top-bar genetics pills: single-slug active state for catalog strip. */
 export function geneticsDomPillActiveSlug(raw: string | null): string {
   const list = parseListParam(raw);
   if (list.includes("sativa-dom")) return "sativa-dom";
   if (list.includes("indica-dom")) return "indica-dom";
+  if (list.includes("hybrid")) return "hybrid";
   return "";
 }
 

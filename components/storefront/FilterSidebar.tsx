@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, type ReactNode } from "react";
 import { Mars, Venus, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { CATALOG_SEX_STRIP_LABELS, CATALOG_SEX_STRIP_SLUGS } from "@/lib/catalog-filter-strip-labels";
 import { parseListParam, type ShopFilterOptionCounts, defaultFilterOptionCounts } from "@/lib/shop-attribute-filters";
 import { useProductFilters } from "@/hooks/use-product-filters";
 import { useTranslations } from "@/hooks/use-translations";
@@ -111,10 +112,13 @@ const CBD_ROWS: { slug: string; labelTh: string; labelEn: string }[] = [
   { slug: "low", labelTh: "ต่ำ (<2%)", labelEn: "Low (<2%)" },
 ];
 
-const SEX_ROWS: { slug: "feminized" | "regular"; labelTh: string; labelEn: string; fem: boolean }[] = [
-  { slug: "feminized", labelTh: "Fem", labelEn: "Fem", fem: true },
-  { slug: "regular", labelTh: "Reg", labelEn: "Reg", fem: false },
-];
+const SEX_ROWS: { slug: "feminized" | "regular"; labelTh: string; labelEn: string; fem: boolean }[] =
+  CATALOG_SEX_STRIP_SLUGS.map((slug) => ({
+    slug,
+    labelTh: CATALOG_SEX_STRIP_LABELS[slug].th,
+    labelEn: CATALOG_SEX_STRIP_LABELS[slug].en,
+    fem: slug === "feminized",
+  }));
 
 const SEEDS_PACK_ROWS: { slug: string; labelTh: string; labelEn: string; i18n?: "pack_2" | "other" }[] = [
   { slug: "1", labelTh: "1 เมล็ด", labelEn: "1 Seeds Pack" },
@@ -517,6 +521,7 @@ export function ShopFilterMobileSheet({
   onOpenChange,
   resultCount,
   onClearAll,
+  catalogFilterStrip,
 }: {
   t: TFn;
   counts: ShopFilterOptionCounts;
@@ -524,6 +529,8 @@ export function ShopFilterMobileSheet({
   onOpenChange: (open: boolean) => void;
   resultCount: number;
   onClearAll: () => void;
+  /** Same chip strip as catalog sticky bar (mobile sheet header). */
+  catalogFilterStrip?: ReactNode;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -547,6 +554,9 @@ export function ShopFilterMobileSheet({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch]">
+          {catalogFilterStrip ? (
+            <div className="mb-4 lg:hidden">{catalogFilterStrip}</div>
+          ) : null}
           <FilterSidebarContent t={t} counts={counts} />
         </div>
 

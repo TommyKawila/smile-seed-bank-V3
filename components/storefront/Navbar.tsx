@@ -32,6 +32,14 @@ const BreederSeedsNav = dynamic(
   { ssr: false }
 );
 
+const GeneticsSeedsNav = dynamic(
+  () =>
+    import("@/components/storefront/GeneticsSeedsNav").then((m) => ({
+      default: m.GeneticsSeedsNav,
+    })),
+  { ssr: false }
+);
+
 const CartSheet = dynamic(
   () => import("./CartSheet").then((m) => ({ default: m.CartSheet })),
   { ssr: false }
@@ -103,11 +111,15 @@ export function Navbar() {
   const [cartHitWobble, setCartHitWobble] = useState(false);
   const [cartSheetMounted, setCartSheetMounted] = useState(false);
   const [searchMounted, setSearchMounted] = useState(false);
-  const [seedsNavMounted, setSeedsNavMounted] = useState(false);
+  const [breederNavMounted, setBreederNavMounted] = useState(false);
+  const [geneticsNavMounted, setGeneticsNavMounted] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (menuOpen) setSeedsNavMounted(true);
+    if (menuOpen) {
+      setBreederNavMounted(true);
+      setGeneticsNavMounted(true);
+    }
   }, [menuOpen]);
 
   useEffect(() => {
@@ -156,7 +168,8 @@ export function Navbar() {
 
   const homeLabel = t("หน้าแรก", "Home");
   const blogLabel = t("คลังความรู้สายเขียว", "Knowledge vault");
-  const seedsLabel = t("เมล็ดพันธุ์", "Seeds");
+  const breedersLabel = t("บรีดเดอร์", "Breeders");
+  const seedsGeneticsLabel = t("เมล็ดพันธุ์", "Seeds");
 
   const navLinkClass = solidLightNav
     ? "text-sm font-normal tracking-[0.06em] text-zinc-800 transition-colors hover:text-emerald-900"
@@ -206,10 +219,10 @@ export function Navbar() {
             </Link>
             <div
               className="hidden md:block"
-              onMouseEnter={() => setSeedsNavMounted(true)}
-              onFocusCapture={() => setSeedsNavMounted(true)}
+              onMouseEnter={() => setBreederNavMounted(true)}
+              onFocusCapture={() => setBreederNavMounted(true)}
             >
-              {seedsNavMounted ? (
+              {breederNavMounted ? (
                 <BreederSeedsNav
                   navLinkClass={navLinkClass}
                   solidLightNav={solidLightNav}
@@ -219,7 +232,26 @@ export function Navbar() {
                 <SeedsNavShell
                   navLinkClass={navLinkClass}
                   solidLightNav={solidLightNav}
-                  label={seedsLabel}
+                  label={breedersLabel}
+                />
+              )}
+            </div>
+            <div
+              className="hidden md:block"
+              onMouseEnter={() => setGeneticsNavMounted(true)}
+              onFocusCapture={() => setGeneticsNavMounted(true)}
+            >
+              {geneticsNavMounted ? (
+                <GeneticsSeedsNav
+                  navLinkClass={navLinkClass}
+                  solidLightNav={solidLightNav}
+                  mode="desktop"
+                />
+              ) : (
+                <SeedsNavShell
+                  navLinkClass={navLinkClass}
+                  solidLightNav={solidLightNav}
+                  label={seedsGeneticsLabel}
                 />
               )}
             </div>
@@ -395,8 +427,20 @@ export function Navbar() {
               >
                 {homeLabel}
               </Link>
-              {seedsNavMounted ? (
+              {breederNavMounted ? (
                 <BreederSeedsNav
+                  navLinkClass={navLinkClass}
+                  solidLightNav={solidLightNav}
+                  mode="mobile"
+                  onNavigate={() => setMenuOpen(false)}
+                />
+              ) : (
+                <span className="block border-b border-gray-100 py-3 text-base font-normal tracking-wide text-zinc-800">
+                  {breedersLabel}
+                </span>
+              )}
+              {geneticsNavMounted ? (
+                <GeneticsSeedsNav
                   navLinkClass={navLinkClass}
                   solidLightNav={solidLightNav}
                   mode="mobile"
@@ -408,7 +452,7 @@ export function Navbar() {
                   onClick={() => setMenuOpen(false)}
                   className="block border-b border-gray-100 py-3 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
                 >
-                  {seedsLabel}
+                  {seedsGeneticsLabel}
                 </Link>
               )}
               <Link

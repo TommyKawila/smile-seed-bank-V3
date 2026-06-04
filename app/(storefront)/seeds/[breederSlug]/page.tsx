@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 
-export function generateMetadata({
+function firstSegment(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export async function generateMetadata({
   params,
 }: {
-  params: { breederSlug: string };
-}): Metadata {
-  const breederSlug = encodeURIComponent(params.breederSlug.trim());
+  params: Promise<{ breederSlug: string | string[] }>;
+}): Promise<Metadata> {
+  const { breederSlug } = await params;
+  const slug = encodeURIComponent((firstSegment(breederSlug) ?? "").trim());
   return {
     alternates: {
-      canonical: `/seeds/${breederSlug}`,
+      canonical: `/seeds/${slug}`,
     },
   };
 }

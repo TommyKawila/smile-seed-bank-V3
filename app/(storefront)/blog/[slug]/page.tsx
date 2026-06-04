@@ -44,7 +44,6 @@ import {
 import { getSiteOrigin } from "@/lib/get-url";
 import { cn } from "@/lib/utils";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
-import { BlogArticleBreederRibbon } from "@/components/storefront/magazine/BlogArticleBreederRibbon";
 import { ArticleCampaignBanner } from "@/components/storefront/ArticleCampaignBanner";
 import {
   magazineDisplayContentJson,
@@ -377,15 +376,6 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
             </ul>
           </section>
         )}
-
-        <section
-          className="relative left-1/2 right-1/2 mt-20 w-screen max-w-[100vw] -translate-x-1/2 border-t border-zinc-100 bg-white py-20"
-          aria-labelledby="blog-post-breeders-heading"
-        >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <BlogArticleBreederRibbon headingId="blog-post-breeders-heading" />
-          </div>
-        </section>
 
         <div className="mx-auto mt-16 max-w-[720px] space-y-10">
           <NewsletterBox />

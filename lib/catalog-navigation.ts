@@ -77,3 +77,15 @@ export function isSeedsIndexPath(pathname: string | null): boolean {
   if (!pathname) return false;
   return pathname === "/seeds" || pathname === "/seeds/";
 }
+
+/** Storefront product catalog routes (shared `ShopPageClient` + filter strip). */
+export function isStorefrontCatalogPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return (
+    pathname === "/shop" ||
+    pathname.startsWith("/shop/") ||
+    pathname === "/seeds" ||
+    pathname.startsWith("/seeds/") ||
+    pathname.startsWith("/brand/")
+  );
+}

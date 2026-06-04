@@ -1287,9 +1287,12 @@ export async function getActiveProducts(opts?: {
     const hits: Row[] = [];
     let cursorLt: number | null = cursorId;
     let lastFetchLen = 0;
-    const memFtScanCap = cursorId != null ? limit : pageEndIndex;
+    let dbExhausted = false;
+    /** Page 1 w/o cursor: scan full scoped set for total + slice; load-more uses cursor + one page. */
+    const needFullScan = page === 1 && cursorId == null;
+    const scanCap = needFullScan ? CATALOG_ENRICH_CAP : limit;
 
-    for (let round = 0; round < MEM_MAX_ROUNDS && hits.length < memFtScanCap; round++) {
+    for (let round = 0; round < MEM_MAX_ROUNDS && hits.length < scanCap; round++) {
       let qb = applySortingForDb(applyCommonFilters());
       if (cursorLt != null) qb = qb.lt("id", cursorLt);
       qb = qb.limit(MEM_SCAN_CHUNK);
@@ -1310,34 +1313,36 @@ export async function getActiveProducts(opts?: {
         if (!(ftOriginal ? productMatchesCatalogFtParam(row, ftOriginal) : true)) continue;
         if (!rowMatchesSidebarFilters(row)) continue;
         hits.push(row);
-        if (hits.length >= memFtScanCap) break;
+        if (hits.length >= scanCap) break;
       }
 
-      if (chunk.length < MEM_SCAN_CHUNK) break;
+      if (chunk.length < MEM_SCAN_CHUNK) {
+        dbExhausted = true;
+        break;
+      }
 
       cursorLt = minSeen;
-      if (cursorLt == null) break;
-
-      if (!Number.isFinite(cursorLt)) break;
+      if (cursorLt == null || !Number.isFinite(cursorLt)) {
+        dbExhausted = true;
+        break;
+      }
     }
 
-    const sliced =
-      cursorId != null ? hits : hits.slice((page - 1) * limit, pageEndIndex);
+    const truncated = needFullScan && !dbExhausted && hits.length >= CATALOG_ENRICH_CAP;
+    const from = needFullScan ? (page - 1) * limit : 0;
+    const sliced = hits.slice(from, from + limit);
 
-    let catalogHasMore =
-      cursorId != null
-        ? hits.length >= limit || lastFetchLen === MEM_SCAN_CHUNK
-        : hits.length > pageEndIndex ||
-          (lastFetchLen === MEM_SCAN_CHUNK && hits.length >= pageEndIndex);
-
-    catalogHasMore = catalogHasMore || lastFetchLen === MEM_SCAN_CHUNK;
+    const catalogTotalCount = needFullScan ? hits.length : null;
+    const catalogHasMore = needFullScan
+      ? from + limit < hits.length || truncated
+      : hits.length >= limit || !dbExhausted;
 
     const enrichedFt = await withBrandListingEnrichment(postSeedAndSanitize(sliced));
     return {
       data: enrichedFt,
       error: null,
       catalogHasMore,
-      catalogTotalCount: null,
+      catalogTotalCount,
       catalogNextCursor: lastRowCursor(sliced),
       catalogUseCursor: true,
     };

@@ -1,6 +1,7 @@
 /** Comma-separated multi-select query params for breeder-context shop filters */
 
 import { parsePackFromUnitLabel } from "@/lib/sku-utils";
+import { catalogFloweringBucket } from "@/lib/seed-type-filter";
 
 export function parseListParam(param: string | null | undefined): string[] {
   if (!param?.trim()) return [];
@@ -491,6 +492,8 @@ export type ShopFilterCountProduct = {
   product_variants?: { unit_label: string; is_active?: boolean | null }[] | null;
 };
 
+export type CatalogFloweringPillSlug = "auto" | "photo" | "photo-ff" | "photo-3n";
+
 export type ShopFilterOptionCounts = {
   genetics: Record<string, number>;
   thc: Record<string, number>;
@@ -498,6 +501,7 @@ export type ShopFilterOptionCounts = {
   difficulty: Record<string, number>;
   sex: Record<string, number>;
   seeds: Record<string, number>;
+  flowering: Record<CatalogFloweringPillSlug, number>;
 };
 
 export function defaultFilterOptionCounts(): ShopFilterOptionCounts {
@@ -508,7 +512,23 @@ export function defaultFilterOptionCounts(): ShopFilterOptionCounts {
     difficulty: { easy: 0, moderate: 0, hard: 0 },
     sex: { feminized: 0, regular: 0 },
     seeds: { "1": 0, "2": 0, "3": 0, "5": 0, "10": 0, gt10: 0, other: 0 },
+    flowering: { auto: 0, photo: 0, "photo-ff": 0, "photo-3n": 0 },
   };
+}
+
+function classifyFloweringPillSlug(
+  p: ShopFilterCountProduct
+): CatalogFloweringPillSlug | null {
+  const b = catalogFloweringBucket({
+    flowering_type: p.flowering_type,
+    category: p.category,
+    product_categories: p.product_categories,
+  });
+  if (b === "auto") return "auto";
+  if (b === "photo") return "photo";
+  if (b === "photo_ff") return "photo-ff";
+  if (b === "photo_3n") return "photo-3n";
+  return null;
 }
 
 function classifyGeneticsSlug(
@@ -576,6 +596,9 @@ export function calculateFilterCounts(products: ShopFilterCountProduct[]): ShopF
     for (const bucket of seedPackBucketsForVariants(p.product_variants ?? null)) {
       if (bucket in c.seeds) c.seeds[bucket] += 1;
     }
+
+    const ft = classifyFloweringPillSlug(p);
+    if (ft) c.flowering[ft] += 1;
   }
   return c;
 }
