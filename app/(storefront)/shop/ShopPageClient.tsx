@@ -40,7 +40,10 @@ import {
   normalizeCatalogFtUrlParam,
   type CatalogFloweringBucket,
 } from "@/lib/seed-type-filter";
-import { BreederTypeFilter } from "@/components/storefront/BreederTypeFilter";
+import {
+  BreederTypeFilter,
+  geneticsDomPillActiveSlug,
+} from "@/components/storefront/BreederTypeFilter";
 import { FilterSidebar, ShopFilterMobileSheet } from "@/components/storefront/FilterSidebar";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
@@ -567,6 +570,9 @@ export function ShopPageClient({
     [catalogFloweringOptions]
   );
 
+  const showGeneticsTopPills =
+    isSeedsIndexPath(pathname) || pathname.startsWith("/seeds/");
+
   /** Drop only malformed `ft` / `filter` tokens. Do not strip valid buckets just because the
    * current loaded page slice shows count 0 (would break e.g. `?ft=auto` on /shop). */
   useEffect(() => {
@@ -676,6 +682,22 @@ export function ShopPageClient({
   ]);
 
   const filterOptionCounts = filterCountsFromApi ?? clientFilterCountsFallback;
+
+  const catalogGeneticsPillOptions = useMemo(
+    () => [
+      {
+        slug: "sativa-dom",
+        label: t("ซาติวา", "Sativa"),
+        count: filterOptionCounts.genetics["sativa-dom"] ?? 0,
+      },
+      {
+        slug: "indica-dom",
+        label: t("อินดิกา", "Indica"),
+        count: filterOptionCounts.genetics["indica-dom"] ?? 0,
+      },
+    ],
+    [filterOptionCounts, t]
+  );
 
   const filteredProducts = useMemo(() => {
     const { genetics: geneticsSel, difficulty: difficultySel, thc: thcSel, cbd: cbdSel, sex: sexSel, seeds: seedsSel, yieldQuick } =
@@ -1071,7 +1093,8 @@ export function ShopPageClient({
                 {t("ตัวกรอง", "Filters")}
               </Button>
             </div>
-            {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 ? (
+            {((catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1) ||
+              showGeneticsTopPills) ? (
               <div className="relative min-h-[2rem]">
                 <div
                   className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 bg-gradient-to-r from-white to-transparent sm:w-6"
@@ -1084,15 +1107,37 @@ export function ShopPageClient({
                 <div
                   role="toolbar"
                   aria-label={t("กรองสินค้า", "Shop filters")}
-                  className="flex min-h-[2rem] items-center gap-2 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  className="flex min-h-[2rem] items-center gap-1.5 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
-                  <BreederTypeFilter
-                    appearance="chips"
-                    options={catalogFloweringPillOptions}
-                    allLabel={t("ทั้งหมด", "All")}
-                    paramKey="ft"
-                    ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
-                  />
+                  {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 ? (
+                    <BreederTypeFilter
+                      appearance="quick-chips"
+                      options={catalogFloweringPillOptions}
+                      allLabel={t("ทั้งหมด", "All")}
+                      paramKey="ft"
+                      ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
+                    />
+                  ) : null}
+                  {showGeneticsTopPills ? (
+                    <>
+                      {catalogFloweringScope.length > 0 && catalogFloweringPillOptions.length > 1 ? (
+                        <span
+                          className="mx-0.5 h-5 w-px shrink-0 bg-zinc-200"
+                          aria-hidden
+                        />
+                      ) : null}
+                      <BreederTypeFilter
+                        appearance="quick-chips"
+                        options={catalogGeneticsPillOptions}
+                        allLabel={t("ทั้งหมด", "All")}
+                        paramKey="genetics"
+                        ariaLabel={t("พันธุกรรม", "Genetics")}
+                        showAllButton={false}
+                        clearableByReselect
+                        resolveActiveSlug={geneticsDomPillActiveSlug}
+                      />
+                    </>
+                  ) : null}
                 </div>
               </div>
             ) : null}

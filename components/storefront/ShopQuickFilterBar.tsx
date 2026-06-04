@@ -10,10 +10,7 @@ import {
   resolveCatalogSortFromFilter,
   type CatalogQuick,
 } from "@/lib/catalog-navigation";
-import { cn } from "@/lib/utils";
-
-const chipBase =
-  "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30";
+import { shopQuickChipClasses } from "@/components/storefront/shop-filter-chip-styles";
 
 export function ShopQuickFilterBar({
   replaceCatalog,
@@ -101,9 +98,6 @@ export function ShopQuickFilterBar({
     });
   }, [replaceCatalog]);
 
-  const off = "border-zinc-200/80 bg-white text-zinc-600 hover:border-primary/25 hover:bg-primary/5";
-  const on = "border-primary bg-primary text-white shadow-sm";
-
   return (
     <div
       role="toolbar"
@@ -112,7 +106,7 @@ export function ShopQuickFilterBar({
     >
       <button
         type="button"
-        className={cn(chipBase, quickEff === "new" ? on : off)}
+        className={shopQuickChipClasses(quickEff === "new")}
         aria-pressed={quickEff === "new"}
         onClick={() => setQuick("new")}
       >
@@ -121,7 +115,7 @@ export function ShopQuickFilterBar({
       {showClearance ? (
         <button
           type="button"
-          className={cn(chipBase, quickEff === "clearance" ? on : off)}
+          className={shopQuickChipClasses(quickEff === "clearance")}
           aria-pressed={quickEff === "clearance"}
           onClick={() => setQuick("clearance")}
         >
@@ -130,7 +124,7 @@ export function ShopQuickFilterBar({
       ) : null}
       <button
         type="button"
-        className={cn(chipBase, quickEff === "sale" ? on : off)}
+        className={shopQuickChipClasses(quickEff === "sale")}
         aria-pressed={quickEff === "sale"}
         onClick={() => setQuick("sale")}
       >
@@ -138,7 +132,7 @@ export function ShopQuickFilterBar({
       </button>
       <button
         type="button"
-        className={cn(chipBase, ftKey === "photo" ? on : off)}
+        className={shopQuickChipClasses(ftKey === "photo")}
         aria-pressed={ftKey === "photo"}
         onClick={() => toggleFt("photo")}
       >
@@ -146,7 +140,7 @@ export function ShopQuickFilterBar({
       </button>
       <button
         type="button"
-        className={cn(chipBase, ftKey === "auto" ? on : off)}
+        className={shopQuickChipClasses(ftKey === "auto")}
         aria-pressed={ftKey === "auto"}
         onClick={() => toggleFt("auto")}
       >
@@ -154,7 +148,7 @@ export function ShopQuickFilterBar({
       </button>
       <button
         type="button"
-        className={cn(chipBase, regularOn ? on : off)}
+        className={shopQuickChipClasses(regularOn)}
         aria-pressed={regularOn}
         onClick={() => toggleRegular()}
       >
@@ -162,7 +156,7 @@ export function ShopQuickFilterBar({
       </button>
       <button
         type="button"
-        className={cn(chipBase, sortEff === "price_asc" ? on : off)}
+        className={shopQuickChipClasses(sortEff === "price_asc")}
         aria-pressed={sortEff === "price_asc"}
         onClick={() => setSortPrice("price_asc")}
       >
@@ -170,7 +164,7 @@ export function ShopQuickFilterBar({
       </button>
       <button
         type="button"
-        className={cn(chipBase, sortEff === "price_desc" ? on : off)}
+        className={shopQuickChipClasses(sortEff === "price_desc")}
         aria-pressed={sortEff === "price_desc"}
         onClick={() => setSortPrice("price_desc")}
       >

@@ -4,8 +4,21 @@ import { useCallback } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Compass, Leaf, Orbit, Sun, Zap } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { parseListParam } from "@/lib/shop-attribute-filters";
+import {
+  shopFilterChipLeadingGlyph,
+  shopQuickChipClasses,
+} from "@/components/storefront/shop-filter-chip-styles";
 import { floweringTypeToSlug } from "@/lib/seed-type-filter";
 import { cn } from "@/lib/utils";
+
+/** Top-bar genetics pills: `sativa-dom` / `indica-dom` only. */
+export function geneticsDomPillActiveSlug(raw: string | null): string {
+  const list = parseListParam(raw);
+  if (list.includes("sativa-dom")) return "sativa-dom";
+  if (list.includes("indica-dom")) return "indica-dom";
+  return "";
+}
 
 export type BreederTypeOption = { slug: string; label: string; count: number };
 
@@ -41,6 +54,9 @@ export function BreederTypeFilter({
   ariaLabel,
   variant = "default",
   appearance = "tabs",
+  showAllButton = true,
+  resolveActiveSlug,
+  clearableByReselect = false,
 }: {
   options: BreederTypeOption[];
   allLabel: string;
@@ -48,14 +64,21 @@ export function BreederTypeFilter({
   ariaLabel?: string;
   /** Kept for API compatibility; styling is unified lab index tabs. */
   variant?: "default" | "journal";
-  /** `chips`: compact pills for merged shop control strip (no icons). */
-  appearance?: "tabs" | "chips";
+  /** `quick-chips`: same pills as `ShopQuickFilterBar`. `chips`: legacy emerald pills. */
+  appearance?: "tabs" | "chips" | "quick-chips";
+  /** Hide “All” chip (e.g. Sativa / Indica-only strip). */
+  showAllButton?: boolean;
+  resolveActiveSlug?: (raw: string | null) => string;
+  /** Second click on active chip clears the param. */
+  clearableByReselect?: boolean;
 }) {
   void variant;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const active = floweringTypeToSlug(searchParams.get(paramKey));
+  const active = resolveActiveSlug
+    ? resolveActiveSlug(searchParams.get(paramKey))
+    : floweringTypeToSlug(searchParams.get(paramKey));
 
   const setType = useCallback(
     (slug: string | null) => {
@@ -68,6 +91,14 @@ export function BreederTypeFilter({
     [pathname, router, searchParams, paramKey]
   );
 
+  const selectSlug = useCallback(
+    (slug: string) => {
+      if (clearableByReselect && active === slug) setType(null);
+      else setType(slug);
+    },
+    [active, clearableByReselect, setType]
+  );
+
   if (options.length === 0) return null;
 
   const tabBase =
@@ -77,18 +108,64 @@ export function BreederTypeFilter({
     "border-zinc-200/90 bg-zinc-50/90 text-zinc-800 hover:border-zinc-300 hover:bg-white";
   const activeStyle = "border-emerald-800/90 bg-emerald-800 text-white shadow-sm";
 
+  if (appearance === "quick-chips") {
+    return (
+      <div className="contents">
+        {showAllButton ? (
+          <button
+            type="button"
+            aria-pressed={!active}
+            aria-label={`${allLabel} — ${ariaLabel ?? "Flowering type"}`}
+            onClick={() => setType(null)}
+            className={shopQuickChipClasses(!active)}
+          >
+            {allLabel}
+          </button>
+        ) : null}
+        {options.map(({ slug, label, count }) => {
+          const isOn = active === slug;
+          const glyph = shopFilterChipLeadingGlyph(slug);
+          return (
+            <button
+              key={slug}
+              type="button"
+              aria-pressed={isOn}
+              aria-label={`${label} (${count})`}
+              onClick={() => selectSlug(slug)}
+              className={shopQuickChipClasses(isOn)}
+            >
+              {glyph ? <span aria-hidden>{glyph}</span> : null}
+              <span>{label}</span>
+              <span
+                className={cn(
+                  mono,
+                  "text-[10px] font-medium tabular-nums",
+                  isOn ? "text-white/85" : "text-zinc-400"
+                )}
+              >
+                ({count})
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   if (appearance === "chips") {
     return (
       <div className="contents">
-        <button
-          type="button"
-          aria-pressed={!active}
-          aria-label={`${allLabel} — ${ariaLabel ?? "Flowering type"}`}
-          onClick={() => setType(null)}
-          className={cn(chipBase, !active ? chipOn : chipOff)}
-        >
-          {allLabel}
-        </button>
+        {showAllButton ? (
+          <button
+            type="button"
+            aria-pressed={!active}
+            aria-label={`${allLabel} — ${ariaLabel ?? "Flowering type"}`}
+            onClick={() => setType(null)}
+            className={cn(chipBase, !active ? chipOn : chipOff)}
+          >
+            {allLabel}
+          </button>
+        ) : null}
         {options.map(({ slug, label, count }) => {
           const isOn = active === slug;
           return (
@@ -97,7 +174,7 @@ export function BreederTypeFilter({
               type="button"
               aria-pressed={isOn}
               aria-label={`${label} (${count})`}
-              onClick={() => setType(slug)}
+              onClick={() => selectSlug(slug)}
               className={cn(chipBase, isOn ? chipOn : chipOff)}
             >
               <span>{label}</span>
@@ -124,20 +201,22 @@ export function BreederTypeFilter({
         aria-label={ariaLabel ?? "Flowering type"}
         className="flex flex-wrap gap-2 border-b border-zinc-100 pb-3"
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={!active}
-          onClick={() => setType(null)}
-          className={cn(tabBase, serif, "font-normal tracking-tight", !active ? activeStyle : inactive)}
-        >
-          <Compass
-            className={cn(iconClass, !active ? "text-white/95" : "text-zinc-500")}
-            strokeWidth={1}
-            aria-hidden
-          />
-          <span>{allLabel}</span>
-        </button>
+        {showAllButton ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!active}
+            onClick={() => setType(null)}
+            className={cn(tabBase, serif, "font-normal tracking-tight", !active ? activeStyle : inactive)}
+          >
+            <Compass
+              className={cn(iconClass, !active ? "text-white/95" : "text-zinc-500")}
+              strokeWidth={1}
+              aria-hidden
+            />
+            <span>{allLabel}</span>
+          </button>
+        ) : null}
         {options.map(({ slug, label, count }) => {
           const isOn = active === slug;
           const iconTone = isOn ? "text-white/95" : "text-zinc-500";
@@ -148,7 +227,7 @@ export function BreederTypeFilter({
               type="button"
               role="tab"
               aria-selected={isOn}
-              onClick={() => setType(slug)}
+              onClick={() => selectSlug(slug)}
               className={cn(tabBase, serif, "font-normal tracking-tight", isOn ? activeStyle : inactive)}
             >
               {slug === "photo-ff" ? (
