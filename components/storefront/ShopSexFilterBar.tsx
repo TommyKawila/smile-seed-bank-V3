@@ -20,10 +20,12 @@ export function ShopSexFilterBar({
   replaceCatalog,
   t,
   sexCounts,
+  compact = false,
 }: {
   replaceCatalog: (mutate: (sp: URLSearchParams) => void) => void;
   t: (th: string, en: string) => string;
   sexCounts?: Partial<Record<CatalogSexStripSlug, number>>;
+  compact?: boolean;
 }) {
   const searchParams = useSearchParams();
   const sexList = parseListParam(searchParams.get("sex"));
@@ -53,7 +55,7 @@ export function ShopSexFilterBar({
     <div className="contents">
       <button
         type="button"
-        className={shopQuickChipClasses(allOn)}
+        className={shopQuickChipClasses(allOn, compact)}
         aria-pressed={allOn}
         onClick={() => setSex("all")}
       >
@@ -67,7 +69,7 @@ export function ShopSexFilterBar({
           <button
             key={slug}
             type="button"
-            className={shopQuickChipClasses(on)}
+            className={shopQuickChipClasses(on, compact)}
             aria-pressed={on}
             aria-label={`${t(labels.th, labels.en)} (${count})`}
             onClick={() => setSex(slug)}

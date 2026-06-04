@@ -13,6 +13,8 @@ import { ShopQuickFilterBar } from "@/components/storefront/ShopQuickFilterBar";
 import { ShopSexFilterBar } from "@/components/storefront/ShopSexFilterBar";
 import type { CatalogSexStripSlug } from "@/lib/catalog-filter-strip-labels";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
 
 export type ShopCatalogFilterStripProps = {
   replaceCatalog: (mutate: (sp: URLSearchParams) => void) => void;
@@ -30,74 +32,105 @@ export type ShopCatalogFilterStripProps = {
   catalogHeading?: ReactNode;
 };
 
+function CatalogFilterToolbar({
+  compact,
+  ...props
+}: ShopCatalogFilterStripProps & { compact: boolean }) {
+  const {
+    replaceCatalog,
+    t,
+    showClearanceFilter,
+    catalogFloweringPillOptions,
+    showFloweringTypePills,
+    catalogGeneticsPillOptions,
+    catalogSexCounts,
+  } = props;
+
+  return (
+    <div
+      role="toolbar"
+      aria-label={t("กรองสินค้า", "Shop filters")}
+      className={cn(
+        "flex items-center gap-1 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        compact
+          ? "min-h-9 flex-nowrap items-center gap-1.5 pr-2"
+          : "min-h-[2.25rem] flex-wrap gap-1.5 pr-6 sm:gap-2"
+      )}
+    >
+      <ShopQuickFilterBar
+        replaceCatalog={replaceCatalog}
+        t={t}
+        showClearance={showClearanceFilter}
+        compact={compact}
+      />
+      <ShopFilterStripDivider label={t("เพศ", "Sex")} compact={compact} />
+      <ShopSexFilterBar
+        replaceCatalog={replaceCatalog}
+        t={t}
+        sexCounts={catalogSexCounts}
+        compact={compact}
+      />
+      {showFloweringTypePills ? (
+        <>
+          <ShopFilterStripDivider label={t("ประเภท", "Type")} compact={compact} />
+          <BreederTypeFilter
+            appearance="quick-chips"
+            options={catalogFloweringPillOptions}
+            allLabel={t("ทั้งหมด", "All")}
+            paramKey="ft"
+            ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
+            compact={compact}
+          />
+        </>
+      ) : null}
+      <ShopFilterStripDivider label={t("พันธุกรรม", "Genetics")} compact={compact} />
+      <BreederTypeFilter
+        appearance="quick-chips"
+        options={catalogGeneticsPillOptions}
+        allLabel={t("ทั้งหมด", "All")}
+        paramKey="genetics"
+        ariaLabel={t("พันธุกรรม", "Genetics")}
+        showAllButton={false}
+        clearableByReselect
+        resolveActiveSlug={geneticsDomPillActiveSlug}
+        compact={compact}
+      />
+    </div>
+  );
+}
+
 /** Unified catalog filter strip — `/shop`, `/seeds`, `/seeds/[slug]`, `/brand/[slug]`. */
 export function ShopCatalogFilterStrip({
-  replaceCatalog,
-  t,
-  showClearanceFilter,
-  showFilter,
-  onToggleFilter,
-  catalogFloweringPillOptions,
-  showFloweringTypePills,
-  catalogGeneticsPillOptions,
-  catalogSexCounts,
   hideDesktopFilterToggle = false,
+  onToggleFilter,
+  showFilter,
+  t,
+  ...toolbarProps
 }: ShopCatalogFilterStripProps) {
+  const isLg = useMediaQuery("(min-width: 1024px)", true);
+  const compact = !isLg;
+
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-zinc-200/80 bg-gradient-to-b from-white to-zinc-50/40 p-2 shadow-sm sm:p-2.5">
-      <div className="relative min-h-[2.25rem] min-w-0 flex-1">
+    <div
+      className={cn(
+        "flex items-center gap-2",
+        compact
+          ? "min-w-0"
+          : "rounded-2xl border border-zinc-200/80 bg-gradient-to-b from-white to-zinc-50/40 p-2 shadow-sm sm:p-2.5"
+      )}
+    >
+      <div className={cn("relative min-w-0 flex-1", compact ? "min-h-9" : "min-h-[2.25rem]")}>
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-6 bg-gradient-to-r from-white via-white/80 to-transparent"
+          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 bg-gradient-to-r from-white via-white/85 to-transparent"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-8 bg-gradient-to-l from-zinc-50/90 via-white/80 to-transparent"
+          className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-6 bg-gradient-to-l from-white via-white/85 to-transparent"
           aria-hidden
         />
-        <div
-          role="toolbar"
-          aria-label={t("กรองสินค้า", "Shop filters")}
-          className="flex min-h-[2.25rem] flex-wrap items-center gap-1.5 overflow-x-auto py-0.5 pr-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-2"
-        >
-          <ShopQuickFilterBar
-            replaceCatalog={replaceCatalog}
-            t={t}
-            showClearance={showClearanceFilter}
-          />
-          <ShopFilterStripDivider label={t("เพศ", "Sex")} />
-          <ShopSexFilterBar
-            replaceCatalog={replaceCatalog}
-            t={t}
-            sexCounts={catalogSexCounts}
-          />
-          {showFloweringTypePills ? (
-            <>
-              <ShopFilterStripDivider label={t("ประเภท", "Type")} />
-              <BreederTypeFilter
-                appearance="quick-chips"
-                options={catalogFloweringPillOptions}
-                allLabel={t("ทั้งหมด", "All")}
-                paramKey="ft"
-                ariaLabel={t("ประเภทการออกดอก", "Flowering type")}
-              />
-            </>
-          ) : null}
-          <>
-            <ShopFilterStripDivider label={t("พันธุกรรม", "Genetics")} />
-            <BreederTypeFilter
-              appearance="quick-chips"
-              options={catalogGeneticsPillOptions}
-              allLabel={t("ทั้งหมด", "All")}
-              paramKey="genetics"
-              ariaLabel={t("พันธุกรรม", "Genetics")}
-              showAllButton={false}
-              clearableByReselect
-              resolveActiveSlug={geneticsDomPillActiveSlug}
-            />
-          </>
-        </div>
+        <CatalogFilterToolbar compact={compact} t={t} onToggleFilter={onToggleFilter} showFilter={showFilter} hideDesktopFilterToggle={hideDesktopFilterToggle} {...toolbarProps} />
       </div>
-      {hideDesktopFilterToggle ? null : (
+      {hideDesktopFilterToggle || compact ? null : (
         <Button
           variant="outline"
           size="sm"
@@ -114,17 +147,22 @@ export function ShopCatalogFilterStrip({
   );
 }
 
-/** Sticky host for catalog pages — single import for shop/seeds/brand catalog UIs. */
+/** Sticky catalog title only — quick filters live in the left sidebar / mobile sheet. */
 export function CatalogStickyFilterStrip({
   catalogHeading,
-  ...stripProps
-}: ShopCatalogFilterStripProps) {
+}: {
+  catalogHeading?: ReactNode;
+}) {
+  if (!catalogHeading) return null;
   return (
     <div
-      className={`sticky top-20 z-40 -mx-4 mb-2 border-b border-zinc-100 bg-white/95 px-4 py-1 backdrop-blur-md sm:-mx-6 sm:top-28 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}
+      className={cn(
+        "sticky z-40 -mx-4 border-b border-zinc-100 bg-white/95 px-4 backdrop-blur-md sm:-mx-6 sm:px-6",
+        JOURNAL_PRODUCT_FONT_VARS,
+        "top-[4.5rem] py-2 max-lg:mb-1 lg:top-28 lg:mb-3 lg:py-2.5"
+      )}
     >
-      {catalogHeading ? <div className="mb-1.5 max-w-7xl">{catalogHeading}</div> : null}
-      <ShopCatalogFilterStrip {...stripProps} />
+      <div className="max-w-7xl max-lg:[&_h1]:text-base max-lg:[&_span]:text-xs">{catalogHeading}</div>
     </div>
   );
 }

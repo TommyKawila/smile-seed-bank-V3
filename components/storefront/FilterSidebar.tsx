@@ -1,9 +1,19 @@
 "use client";
 
 import { useCallback, type ReactNode } from "react";
-import { Mars, Venus, X } from "lucide-react";
+import {
+  Check,
+  FlaskConical,
+  Package,
+  SlidersHorizontal,
+  Sparkles,
+  X,
+} from "lucide-react";
+import {
+  CatalogSidebarQuickFilters,
+  type CatalogSidebarQuickFiltersProps,
+} from "@/components/storefront/CatalogSidebarQuickFilters";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CATALOG_SEX_STRIP_LABELS, CATALOG_SEX_STRIP_SLUGS } from "@/lib/catalog-filter-strip-labels";
 import { parseListParam, type ShopFilterOptionCounts, defaultFilterOptionCounts } from "@/lib/shop-attribute-filters";
 import { useProductFilters } from "@/hooks/use-product-filters";
 import { useTranslations } from "@/hooks/use-translations";
@@ -33,67 +43,6 @@ function toggleListParam(
   router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
 }
 
-const GENETICS_ROWS: {
-  slug: string;
-  labelTh: string;
-  labelEn: string;
-  icon: "hybrid" | "sativa" | "indica";
-}[] = [
-  { slug: "hybrid", labelTh: "ไฮบริด", labelEn: "Hybrid", icon: "hybrid" },
-  { slug: "sativa-dom", labelTh: "เน้นซาติวา", labelEn: "Sativa-dom", icon: "sativa" },
-  { slug: "indica-dom", labelTh: "เน้นอินดิกา", labelEn: "Indica-dom", icon: "indica" },
-];
-
-const GENETICS_ICON_COLORS = {
-  sativa: "text-emerald-500",
-  indica: "text-violet-500",
-  hybrid: "text-teal-600",
-} as const;
-
-function SativaNarrowLeafIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <ellipse cx="12" cy="10" rx="2.25" ry="8.25" fill="currentColor" />
-      <rect x="11" y="17.25" width="2" height="4.5" rx="0.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-function IndicaBroadLeafIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <ellipse cx="12" cy="11" rx="8" ry="5" fill="currentColor" />
-      <rect x="11" y="14.5" width="2" height="4.5" rx="0.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-function HybridBalancedLeafIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <ellipse cx="12" cy="10.5" rx="4.75" ry="7" fill="currentColor" />
-      <rect x="11" y="16.25" width="2" height="4.5" rx="0.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-function GeneticsDominanceIcon({
-  variant,
-  className,
-}: {
-  variant: "hybrid" | "sativa" | "indica";
-  className?: string;
-}) {
-  switch (variant) {
-    case "sativa":
-      return <SativaNarrowLeafIcon className={className} />;
-    case "indica":
-      return <IndicaBroadLeafIcon className={className} />;
-    default:
-      return <HybridBalancedLeafIcon className={className} />;
-  }
-}
-
 const DIFF_ROWS: { slug: string; labelTh: string; labelEn: string }[] = [
   { slug: "easy", labelTh: "ง่าย", labelEn: "Easy" },
   { slug: "moderate", labelTh: "ปานกลาง", labelEn: "Moderate" },
@@ -112,14 +61,6 @@ const CBD_ROWS: { slug: string; labelTh: string; labelEn: string }[] = [
   { slug: "low", labelTh: "ต่ำ (<2%)", labelEn: "Low (<2%)" },
 ];
 
-const SEX_ROWS: { slug: "feminized" | "regular"; labelTh: string; labelEn: string; fem: boolean }[] =
-  CATALOG_SEX_STRIP_SLUGS.map((slug) => ({
-    slug,
-    labelTh: CATALOG_SEX_STRIP_LABELS[slug].th,
-    labelEn: CATALOG_SEX_STRIP_LABELS[slug].en,
-    fem: slug === "feminized",
-  }));
-
 const SEEDS_PACK_ROWS: { slug: string; labelTh: string; labelEn: string; i18n?: "pack_2" | "other" }[] = [
   { slug: "1", labelTh: "1 เมล็ด", labelEn: "1 Seeds Pack" },
   { slug: "2", labelTh: "2 เมล็ด", labelEn: "2 Seeds", i18n: "pack_2" },
@@ -130,11 +71,45 @@ const SEEDS_PACK_ROWS: { slug: string; labelTh: string; labelEn: string; i18n?: 
   { slug: "other", labelTh: "ขนาดอื่นๆ", labelEn: "Other Sizes", i18n: "other" },
 ];
 
+type FilterPresentation = "sidebar" | "mobile";
+
+function FilterSectionHeading({
+  icon,
+  title,
+  subtitle,
+  accentClass,
+}: {
+  icon: ReactNode;
+  title: string;
+  subtitle?: string;
+  accentClass: string;
+}) {
+  return (
+    <div className="mb-3 flex items-center gap-3">
+      <div
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm",
+          accentClass
+        )}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-bold leading-tight text-zinc-900">{title}</p>
+        {subtitle ? (
+          <p className="mt-0.5 text-xs leading-snug text-zinc-500">{subtitle}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /** Shared filter fields (URL-driven). */
 export function FilterSidebarContent({
   t,
   counts = defaultFilterOptionCounts(),
   priceFilter,
+  presentation = "sidebar",
 }: {
   t: TFn;
   counts?: ShopFilterOptionCounts;
@@ -144,17 +119,15 @@ export function FilterSidebarContent({
     max: number | null;
     onRangeChange: (min: number | null, max: number | null) => void;
   };
+  presentation?: FilterPresentation;
 }) {
+  const isMobile = presentation === "mobile";
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { seeds: seedsSelected, toggleSeed } = useProductFilters();
   const { t: tMsg } = useTranslations();
 
-  const geneticsOn = useCallback(
-    (slug: string) => parseListParam(searchParams.get("genetics")).includes(slug),
-    [searchParams]
-  );
   const difficultyOn = useCallback(
     (slug: string) => parseListParam(searchParams.get("difficulty")).includes(slug),
     [searchParams]
@@ -166,15 +139,6 @@ export function FilterSidebarContent({
   const cbdOn = useCallback(
     (slug: string) => parseListParam(searchParams.get("cbd")).includes(slug),
     [searchParams]
-  );
-  const sexOn = useCallback(
-    (slug: string) => parseListParam(searchParams.get("sex")).includes(slug),
-    [searchParams]
-  );
-
-  const toggleG = useCallback(
-    (slug: string) => toggleListParam(router, pathname, searchParams, "genetics", slug),
-    [router, pathname, searchParams]
   );
   const toggleD = useCallback(
     (slug: string) => toggleListParam(router, pathname, searchParams, "difficulty", slug),
@@ -188,11 +152,6 @@ export function FilterSidebarContent({
     (slug: string) => toggleListParam(router, pathname, searchParams, "cbd", slug),
     [router, pathname, searchParams]
   );
-  const toggleS = useCallback(
-    (slug: string) => toggleListParam(router, pathname, searchParams, "sex", slug),
-    [router, pathname, searchParams]
-  );
-
   const checkboxClass =
     "peer h-3 w-3 shrink-0 rounded-sm border border-primary/55 text-primary accent-primary focus:ring-1 focus:ring-primary/35 focus:ring-offset-0";
 
@@ -200,36 +159,107 @@ export function FilterSidebarContent({
     "peer h-3 w-3 shrink-0 rounded-sm border border-emerald-600/45 text-emerald-600 accent-emerald-600 focus:ring-1 focus:ring-emerald-500/35 focus:ring-offset-0";
 
   const rowClass = (on: boolean, isZero: boolean) =>
-    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
-      isZero ? "opacity-60" : ""
-    } ${
-      on
-        ? "border-primary/40 bg-primary/[0.06] text-zinc-900"
-        : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
-    }`;
-
-  const sexRowClass = (on: boolean, isFem: boolean, isZero: boolean) =>
-    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
-      isZero ? "opacity-60" : ""
-    } ${
-      on
-        ? isFem
-          ? "border-zinc-300 bg-secondary/40 text-zinc-900"
-          : "border-primary/40 bg-primary/[0.06] text-primary"
-        : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
-    }`;
+    isMobile
+      ? mobileRowClass(on, isZero, "default")
+      : `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
+          isZero ? "opacity-60" : ""
+        } ${
+          on
+            ? "border-primary/40 bg-primary/[0.06] text-zinc-900"
+            : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
+        }`;
 
   const seedsRowClass = (on: boolean, isZero: boolean) =>
-    `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
-      isZero ? "opacity-60" : ""
-    } ${
-      on
-        ? "border-emerald-600/35 bg-emerald-50/60 text-emerald-900"
-        : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
-    }`;
+    isMobile
+      ? cn(
+          "flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl border-2 px-3.5 py-2.5 font-sans transition-all active:scale-[0.98]",
+          isZero ? "opacity-50" : "",
+          on
+            ? "border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+            : "border-emerald-100 bg-emerald-50/80 text-emerald-950 hover:border-emerald-200"
+        )
+      : `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
+          isZero ? "opacity-60" : ""
+        } ${
+          on
+            ? "border-emerald-600/35 bg-emerald-50/60 text-emerald-900"
+            : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
+        }`;
+
+  const mobileRowClass = (
+    on: boolean,
+    isZero: boolean,
+    tone: "default" | "fem" | "reg" | "seeds"
+  ) => {
+    const base =
+      "flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl border-2 px-3.5 py-2.5 font-sans transition-all active:scale-[0.98]";
+    if (isZero) return cn(base, "opacity-50");
+    if (!on) {
+      return cn(
+        base,
+        tone === "seeds"
+          ? "border-emerald-100 bg-emerald-50/80 text-emerald-950"
+          : "border-zinc-200/90 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+      );
+    }
+    if (tone === "fem")
+      return cn(
+        base,
+        "border-violet-300 bg-secondary text-zinc-900 shadow-md shadow-secondary/40"
+      );
+    if (tone === "reg")
+      return cn(base, "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25");
+    if (tone === "seeds")
+      return cn(
+        base,
+        "border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+      );
+    return cn(base, "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25");
+  };
+
+  const countBadgeClass = (on: boolean, isZero: boolean, tone: "default" | "fem" | "seeds" = "default") => {
+    if (isMobile) {
+      if (on) return "rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-bold tabular-nums text-inherit";
+      if (tone === "seeds")
+        return cn(
+          "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
+          isZero ? "bg-zinc-100 text-zinc-400" : "bg-emerald-100 text-emerald-800"
+        );
+      if (tone === "fem")
+        return cn(
+          "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
+          isZero ? "bg-zinc-100 text-zinc-400" : "bg-secondary text-secondary-foreground"
+        );
+      return cn(
+        "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
+        isZero ? "bg-zinc-100 text-zinc-400" : "bg-zinc-100 text-zinc-600"
+      );
+    }
+    return cn(
+      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
+      isZero ? "text-zinc-400" : "text-zinc-500"
+    );
+  };
+
+  const labelTextClass = (on: boolean) =>
+    isMobile
+      ? cn("text-sm font-semibold leading-tight", on ? "text-inherit" : "text-zinc-800")
+      : cn(
+          "font-sans text-[11px] font-medium tabular-nums tracking-wide",
+          on ? "text-primary" : "text-zinc-600"
+        );
+
+  const mobileCheck = (on: boolean) =>
+    on ? (
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/25">
+        <Check className="h-4 w-4 stroke-[2.5]" aria-hidden />
+      </span>
+    ) : (
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-zinc-200/90 bg-white" />
+    );
 
   return (
-    <div className="space-y-5 font-sans">
+    <div className={cn("font-sans", isMobile ? "space-y-6" : "space-y-5")}>
       {priceFilter ? (
         <ShopPriceFilterPanel
           t={t}
@@ -242,11 +272,24 @@ export function FilterSidebarContent({
           className="mb-0"
         />
       ) : null}
-      <div>
-        <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
-          {t("ขนาดแพ็กเกจ", "Package size")}
-        </p>
-        <div className="space-y-1.5">
+      <div
+        className={cn(
+          isMobile && "rounded-2xl border border-emerald-100/80 bg-gradient-to-br from-emerald-50/90 to-white p-4 shadow-sm"
+        )}
+      >
+        {isMobile ? (
+          <FilterSectionHeading
+            icon={<Package className="h-5 w-5 text-emerald-700" strokeWidth={2} />}
+            title={t("ขนาดแพ็กเกจ", "Package size")}
+            subtitle={t("เลือกจำนวนเมล็ดต่อแพ็ก", "Seeds per pack")}
+            accentClass="bg-emerald-100"
+          />
+        ) : (
+          <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
+            {t("ขนาดแพ็กเกจ", "Package size")}
+          </p>
+        )}
+        <div className={cn(isMobile ? "grid grid-cols-2 gap-2" : "space-y-1.5")}>
           {SEEDS_PACK_ROWS.map(({ slug, labelTh, labelEn, i18n }) => {
             const on = seedsSelected.includes(slug);
             const cnt = counts.seeds[slug] ?? 0;
@@ -260,21 +303,15 @@ export function FilterSidebarContent({
               <label key={slug} className={seedsRowClass(on, cnt === 0)}>
                 <input
                   type="checkbox"
-                  className={seedsCheckboxClass}
+                  className={isMobile ? "sr-only" : seedsCheckboxClass}
                   checked={on}
                   onChange={() => toggleSeed(slug)}
                 />
-                <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-600">
-                    {label}
-                  </span>
-                  <span
-                    className={cn(
-                      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
-                      cnt === 0 ? "text-zinc-400" : "text-zinc-500"
-                    )}
-                  >
-                    ({cnt})
+                {isMobile ? mobileCheck(on) : null}
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span className={labelTextClass(on)}>{label}</span>
+                  <span className={countBadgeClass(on, cnt === 0, "seeds")}>
+                    {isMobile ? cnt : `(${cnt})`}
                   </span>
                 </span>
               </label>
@@ -282,68 +319,46 @@ export function FilterSidebarContent({
           })}
         </div>
       </div>
-      <p className="border-b border-zinc-200/90 pb-2.5 font-sans text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500">
-        {t("ห้องปฏิบัติการกรอง", "THE LAB")}
-      </p>
-      <div>
-        <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
-          {t("พันธุกรรม", "Genetics")}
+      {isMobile ? (
+        <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-primary/10 via-secondary/30 to-primary/5 px-4 py-3">
+          <FlaskConical className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+          <p className="text-sm font-semibold text-primary">
+            {t("กรองแบบละเอียด", "Refine your search")}
+          </p>
+        </div>
+      ) : (
+        <p className="border-b border-zinc-200/90 pb-2.5 font-sans text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500">
+          {t("ห้องปฏิบัติการกรอง", "THE LAB")}
         </p>
-        <div className="space-y-1.5">
-          {GENETICS_ROWS.map(({ slug, labelTh, labelEn, icon }) => {
-            const on = geneticsOn(slug);
-            const tint = GENETICS_ICON_COLORS[icon];
-            const cnt = counts.genetics[slug] ?? 0;
-            return (
-              <label key={slug} className={rowClass(on, cnt === 0)}>
-                <input
-                  type="checkbox"
-                  className={checkboxClass}
-                  checked={on}
-                  onChange={() => toggleG(slug)}
-                />
-                <span className="flex min-w-0 flex-1 items-center gap-2.5">
-                  <span
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center [&_svg]:h-5 [&_svg]:w-5 ${tint} ${
-                      on ? "" : "opacity-40"
-                    }`}
-                    aria-hidden
-                  >
-                    <GeneticsDominanceIcon variant={icon} />
-                  </span>
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <span
-                      className={cn(
-                        "font-sans text-[11px] font-medium leading-tight tabular-nums tracking-wide",
-                        on ? "text-primary" : "text-zinc-600"
-                      )}
-                    >
-                      {t(labelTh, labelEn)}
-                    </span>
-                    <span
-                      className={cn(
-                        "shrink-0 font-sans text-[10px] font-normal tabular-nums",
-                        cnt === 0 ? "text-zinc-400" : "text-zinc-500"
-                      )}
-                    >
-                      ({cnt})
-                    </span>
-                  </span>
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      </div>
+      )}
 
-      <div>
-        <p className="mb-2.5 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
-          {t("THC & CBD", "THC & CBD")}
-        </p>
-        <p className="mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">
+      <div
+        className={cn(
+          isMobile && "rounded-2xl border border-amber-100/80 bg-gradient-to-br from-amber-50/50 to-white p-4 shadow-sm"
+        )}
+      >
+        {isMobile ? (
+          <FilterSectionHeading
+            icon={<Sparkles className="h-5 w-5 text-amber-700" strokeWidth={2} />}
+            title={t("THC & CBD", "THC & CBD")}
+            subtitle={t("ความเข้มข้นสารสำคัญ", "Potency ranges")}
+            accentClass="bg-amber-100"
+          />
+        ) : (
+          <p className="mb-2.5 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
+            {t("THC & CBD", "THC & CBD")}
+          </p>
+        )}
+        <p
+          className={cn(
+            isMobile
+              ? "mb-2 text-xs font-bold uppercase tracking-wide text-amber-800/80"
+              : "mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500"
+          )}
+        >
           THC
         </p>
-        <div className="mb-3 space-y-1.5">
+        <div className={cn("mb-3", isMobile ? "space-y-2" : "space-y-1.5")}>
           {THC_ROWS.map(({ slug, labelTh, labelEn }) => {
             const on = thcOn(slug);
             const cnt = counts.thc[slug] ?? 0;
@@ -351,31 +366,31 @@ export function FilterSidebarContent({
               <label key={`thc-${slug}`} className={rowClass(on, cnt === 0)}>
                 <input
                   type="checkbox"
-                  className={checkboxClass}
+                  className={isMobile ? "sr-only" : checkboxClass}
                   checked={on}
                   onChange={() => toggleT(slug)}
                 />
-                <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-700">
-                    {t(labelTh, labelEn)}
-                  </span>
-                  <span
-                    className={cn(
-                      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
-                      cnt === 0 ? "text-zinc-400" : "text-zinc-500"
-                    )}
-                  >
-                    ({cnt})
+                {isMobile ? mobileCheck(on) : null}
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span className={labelTextClass(on)}>{t(labelTh, labelEn)}</span>
+                  <span className={countBadgeClass(on, cnt === 0)}>
+                    {isMobile ? cnt : `(${cnt})`}
                   </span>
                 </span>
               </label>
             );
           })}
         </div>
-        <p className="mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">
+        <p
+          className={cn(
+            isMobile
+              ? "mb-2 text-xs font-bold uppercase tracking-wide text-teal-800/80"
+              : "mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500"
+          )}
+        >
           CBD
         </p>
-        <div className="space-y-1.5">
+        <div className={cn(isMobile ? "space-y-2" : "space-y-1.5")}>
           {CBD_ROWS.map(({ slug, labelTh, labelEn }) => {
             const on = cbdOn(slug);
             const cnt = counts.cbd[slug] ?? 0;
@@ -383,21 +398,15 @@ export function FilterSidebarContent({
               <label key={`cbd-${slug}`} className={rowClass(on, cnt === 0)}>
                 <input
                   type="checkbox"
-                  className={checkboxClass}
+                  className={isMobile ? "sr-only" : checkboxClass}
                   checked={on}
                   onChange={() => toggleC(slug)}
                 />
-                <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-700">
-                    {t(labelTh, labelEn)}
-                  </span>
-                  <span
-                    className={cn(
-                      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
-                      cnt === 0 ? "text-zinc-400" : "text-zinc-500"
-                    )}
-                  >
-                    ({cnt})
+                {isMobile ? mobileCheck(on) : null}
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span className={labelTextClass(on)}>{t(labelTh, labelEn)}</span>
+                  <span className={countBadgeClass(on, cnt === 0)}>
+                    {isMobile ? cnt : `(${cnt})`}
                   </span>
                 </span>
               </label>
@@ -406,11 +415,24 @@ export function FilterSidebarContent({
         </div>
       </div>
 
-      <div>
-        <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
-          {t("ระดับความยาก", "Difficulty")}
-        </p>
-        <div className="space-y-1.5">
+      <div
+        className={cn(
+          isMobile && "rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-4 shadow-sm"
+        )}
+      >
+        {isMobile ? (
+          <FilterSectionHeading
+            icon={<SlidersHorizontal className="h-5 w-5 text-zinc-700" strokeWidth={2} />}
+            title={t("ระดับความยาก", "Difficulty")}
+            subtitle={t("เหมาะกับมือใหม่หรือโปร", "Grow skill level")}
+            accentClass="bg-zinc-200/80"
+          />
+        ) : (
+          <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
+            {t("ระดับความยาก", "Difficulty")}
+          </p>
+        )}
+        <div className={cn(isMobile ? "space-y-2" : "space-y-1.5")}>
           {DIFF_ROWS.map(({ slug, labelTh, labelEn }) => {
             const on = difficultyOn(slug);
             const cnt = counts.difficulty[slug] ?? 0;
@@ -418,63 +440,15 @@ export function FilterSidebarContent({
               <label key={slug} className={rowClass(on, cnt === 0)}>
                 <input
                   type="checkbox"
-                  className={checkboxClass}
+                  className={isMobile ? "sr-only" : checkboxClass}
                   checked={on}
                   onChange={() => toggleD(slug)}
                 />
-                <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-700">
-                    {t(labelTh, labelEn)}
-                  </span>
-                  <span
-                    className={cn(
-                      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
-                      cnt === 0 ? "text-zinc-400" : "text-zinc-500"
-                    )}
-                  >
-                    ({cnt})
-                  </span>
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
-          {t("ประเภทเพศเมล็ด", "Sex type")}
-        </p>
-        <div className="space-y-1.5">
-          {SEX_ROWS.map(({ slug, labelTh, labelEn, fem }) => {
-            const on = sexOn(slug);
-            const cnt = counts.sex[slug] ?? 0;
-            return (
-              <label key={slug} className={sexRowClass(on, fem, cnt === 0)}>
-                <input
-                  type="checkbox"
-                  className={checkboxClass}
-                  checked={on}
-                  onChange={() => toggleS(slug)}
-                />
-                <span className="flex min-w-0 flex-1 items-center gap-2">
-                  {fem ? (
-                    <Venus className="h-4 w-4 shrink-0 text-secondary-foreground" aria-hidden />
-                  ) : (
-                    <Mars className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-                  )}
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <span className="font-sans text-[11px] font-medium tabular-nums tracking-wide text-zinc-700">
-                      {t(labelTh, labelEn)}
-                    </span>
-                    <span
-                      className={cn(
-                        "shrink-0 font-sans text-[10px] font-normal tabular-nums",
-                        cnt === 0 ? "text-zinc-400" : "text-zinc-500"
-                      )}
-                    >
-                      ({cnt})
-                    </span>
+                {isMobile ? mobileCheck(on) : null}
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span className={labelTextClass(on)}>{t(labelTh, labelEn)}</span>
+                  <span className={countBadgeClass(on, cnt === 0)}>
+                    {isMobile ? cnt : `(${cnt})`}
                   </span>
                 </span>
               </label>
@@ -491,9 +465,11 @@ export function FilterSidebar({
   t,
   counts,
   priceFilter,
+  quickFilters,
 }: {
   t: TFn;
   counts: ShopFilterOptionCounts;
+  quickFilters: CatalogSidebarQuickFiltersProps;
   priceFilter?: {
     cap: number;
     min: number | null;
@@ -504,16 +480,19 @@ export function FilterSidebar({
   return (
     <div
       id="shop-filters-desktop"
-      className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-sm border border-zinc-200/90 bg-white shadow-sm lg:top-[230px] lg:max-h-[calc(100vh-230px)]"
+      className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-2xl border border-zinc-200/90 bg-white shadow-sm lg:top-[11.5rem] lg:max-h-[calc(100vh-11.5rem)]"
     >
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl px-4 pb-5 pt-5 [-webkit-overflow-scrolling:touch]">
+      <div className="shrink-0 px-4 pb-3 pt-4">
+        <CatalogSidebarQuickFilters {...quickFilters} presentation="sidebar" />
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-zinc-100 px-4 pb-5 pt-4 [-webkit-overflow-scrolling:touch]">
         <FilterSidebarContent t={t} counts={counts} priceFilter={priceFilter} />
       </div>
     </div>
   );
 }
 
-/** Mobile sheet with header, scroll, sticky footer. */
+/** Mobile bottom sheet — colorful filter UI with quick chips + lab sections. */
 export function ShopFilterMobileSheet({
   t,
   counts,
@@ -521,7 +500,7 @@ export function ShopFilterMobileSheet({
   onOpenChange,
   resultCount,
   onClearAll,
-  catalogFilterStrip,
+  quickFilters,
 }: {
   t: TFn;
   counts: ShopFilterOptionCounts;
@@ -529,55 +508,67 @@ export function ShopFilterMobileSheet({
   onOpenChange: (open: boolean) => void;
   resultCount: number;
   onClearAll: () => void;
-  /** Same chip strip as catalog sticky bar (mobile sheet header). */
-  catalogFilterStrip?: ReactNode;
+  quickFilters: CatalogSidebarQuickFiltersProps;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         id="shop-filters"
-        side="right"
-        className="flex h-full max-h-[100dvh] w-full max-w-md flex-col gap-0 border-l border-zinc-200/90 bg-white p-0 shadow-xl [&>button]:hidden"
+        side="bottom"
+        className="flex max-h-[92dvh] w-full flex-col gap-0 rounded-t-2xl border-t-0 bg-zinc-50/95 p-0 shadow-2xl [&>button]:hidden"
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/80 bg-white/90 px-4 py-3.5 backdrop-blur-md">
-          <SheetTitle className="text-left text-base font-semibold text-primary">
-            {t("ตัวกรอง", "Filters")}
-          </SheetTitle>
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="rounded-full p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800"
-            aria-label={t("ปิด", "Close")}
-          >
-            <X className="h-5 w-5" />
-          </button>
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-zinc-300/90" aria-hidden />
+
+        <div className="relative shrink-0 overflow-hidden rounded-t-2xl bg-gradient-to-br from-primary via-primary to-primary/85 px-4 pb-4 pt-3 text-primary-foreground shadow-md">
+          <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-secondary/30 blur-2xl" />
+          <div className="relative flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
+                  <SlidersHorizontal className="h-5 w-5" strokeWidth={2} aria-hidden />
+                </span>
+                <SheetTitle className="text-left text-lg font-bold tracking-tight text-primary-foreground">
+                  {t("ตัวกรอง", "Filters")}
+                </SheetTitle>
+              </div>
+              <p className="pl-11 text-xs leading-snug text-primary-foreground/85">
+                {t("ออโต้ · โฟโต้ · พันธุกรรม · เพศ", "Type, genetics & sex")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="shrink-0 rounded-full bg-white/15 p-2.5 text-primary-foreground transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              aria-label={t("ปิด", "Close")}
+            >
+              <X className="h-5 w-5" strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch]">
-          {catalogFilterStrip ? (
-            <div className="mb-4 lg:hidden">{catalogFilterStrip}</div>
-          ) : null}
-          <FilterSidebarContent t={t} counts={counts} />
+          <div className="mb-5">
+            <CatalogSidebarQuickFilters {...quickFilters} presentation="mobile" />
+          </div>
+          <FilterSidebarContent t={t} counts={counts} presentation="mobile" />
         </div>
 
-        <div className="shrink-0 border-t border-zinc-200/80 bg-white/90 p-4 backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full border-zinc-200 sm:flex-1"
-              onClick={() => onClearAll()}
-            >
-              {t("ล้างทั้งหมด", "Clear all")}
-            </Button>
-            <Button
-              type="button"
-              className="w-full bg-primary font-semibold text-primary-foreground hover:bg-primary/90 sm:flex-[1.15]"
-              onClick={() => onOpenChange(false)}
-            >
-              {t(`แสดงผล (${resultCount}) รายการ`, `Show ${resultCount} results`)}
-            </Button>
-          </div>
+        <div className="shrink-0 border-t border-zinc-200/80 bg-white/95 px-4 py-4 shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <Button
+            type="button"
+            className="mb-2.5 h-14 w-full rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
+            onClick={() => onOpenChange(false)}
+          >
+            {t(`ดูสินค้า ${resultCount} รายการ`, `View ${resultCount} products`)}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-11 w-full rounded-xl text-sm font-semibold text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+            onClick={() => onClearAll()}
+          >
+            {t("ล้างตัวกรองทั้งหมด", "Clear all filters")}
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

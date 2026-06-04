@@ -148,6 +148,7 @@ export function DynamicPromptPayQr({
   deferPromptPayFetch = false,
   reloadNonce = 0,
   payeeDisplayName,
+  embedded = false,
   t,
 }: {
   amountBaht: number;
@@ -157,6 +158,8 @@ export function DynamicPromptPayQr({
   reloadNonce?: number;
   /** From `payment_settings.prompt_pay` — never the raw PromptPay ID. */
   payeeDisplayName?: string;
+  /** Receipt / order-success: skip outer PromptPay card chrome. */
+  embedded?: boolean;
   t: (th: string, en: string) => string;
 }) {
   const [payload, setPayload] = useState<string | null>(null);
@@ -256,37 +259,36 @@ export function DynamicPromptPayQr({
     return null;
   }
 
+  const wrap = (node: ReactNode) =>
+    embedded ? <div className="w-full">{node}</div> : <CardShell t={t}>{node}</CardShell>;
+
   if (loading) {
-    return (
-      <CardShell t={t}>
-        <div
-          className="flex w-full flex-col items-center justify-center gap-3 py-6"
-          style={{ minHeight: QR_SIZE + 48 }}
-        >
-          <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
-          <p className="text-xs text-zinc-500">
-            {t("กำลังเตรียม QR พร้อมเพย์...", "Preparing PromptPay QR...")}
-          </p>
-        </div>
-      </CardShell>
+    return wrap(
+      <div
+        className="flex w-full flex-col items-center justify-center gap-3 py-6"
+        style={{ minHeight: embedded ? QR_SIZE : QR_SIZE + 48 }}
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+        <p className="text-xs text-zinc-500">
+          {t("กำลังเตรียม QR พร้อมเพย์...", "Preparing PromptPay QR...")}
+        </p>
+      </div>
     );
   }
 
   if (!payload) {
-    return (
-      <CardShell t={t}>
-        <p className="rounded-lg bg-zinc-100 px-3 py-2 text-center text-sm text-zinc-600">
-          {t(
-            "พร้อมเพย์ไม่พร้อมให้บริการในขณะนี้ — กรุณาใช้ข้อมูลโอนเงินผ่านธนาคารด้านล่าง",
-            "PromptPay is not available — please use the bank transfer details below.",
-          )}
-        </p>
-      </CardShell>
+    return wrap(
+      <p className="rounded-lg bg-zinc-100 px-3 py-2 text-center text-sm text-zinc-600">
+        {t(
+          "พร้อมเพย์ไม่พร้อมให้บริการในขณะนี้ — กรุณาโอนตามเลขบัญชีด้านบน",
+          "PromptPay is not available — please transfer using the account number above.",
+        )}
+      </p>
     );
   }
 
-  return (
-    <CardShell t={t}>
+  return wrap(
+    <>
       <div className="space-y-4 text-sm">
         <div className="flex justify-between gap-3 rounded-2xl border border-zinc-100 bg-zinc-50/80 px-3 py-3">
           <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -334,7 +336,7 @@ export function DynamicPromptPayQr({
           {t("บันทึก QR ลงเครื่อง", "Save QR image")}
         </Button>
       </div>
-    </CardShell>
+    </>
   );
 }
 

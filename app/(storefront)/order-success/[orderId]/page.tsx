@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -28,10 +27,10 @@ import {
   STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO,
   STOREFRONT_KBANK_TRANSFER_NAME_EN,
   STOREFRONT_KBANK_TRANSFER_NAME_TH,
-  STOREFRONT_KBANK_TRANSFER_QR_IMAGE,
   isPrimaryKbankCheckoutAccount,
 } from "@/lib/storefront-payment-shared";
-import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import { DynamicPromptPayQr } from "@/components/storefront/checkout/DynamicPromptPayQr";
+import { PROMPTPAY_CHECKOUT_DISPLAY_NAME } from "@/lib/payment-utils";
 import { fetchStorefrontReceiptPdfSettings } from "@/lib/pdf-settings";
 import { clearCheckoutPersistence } from "@/lib/checkout-persist";
 import { computeOrderReceiptFinancials } from "@/lib/order-receipt-math";
@@ -566,17 +565,13 @@ export default function OrderSuccessDynamicPage() {
               <p className="text-center text-xs text-zinc-500">
                 {t("สแกน QR แล้วโอนตามยอดด้านบน", "Scan the QR and transfer the amount shown above.")}
               </p>
-              <div className="mx-auto flex w-full max-w-[360px] justify-center">
-                <Image
-                  src={STOREFRONT_KBANK_TRANSFER_QR_IMAGE}
-                  alt={t("QR K-Bank Thai QR", "K-Bank Thai QR")}
-                  width={360}
-                  height={360}
-                  className="h-auto w-full max-h-[400px] rounded-xl border border-zinc-200 object-contain"
-                  sizes="(max-width: 480px) 100vw, 360px"
-                  unoptimized={shouldOffloadImageOptimization(STOREFRONT_KBANK_TRANSFER_QR_IMAGE)}
-                />
-              </div>
+              <DynamicPromptPayQr
+                embedded
+                amountBaht={order.total_amount}
+                resolution={{ mode: "order", orderNumber: order.order_number }}
+                payeeDisplayName={PROMPTPAY_CHECKOUT_DISPLAY_NAME}
+                t={t}
+              />
             </div>
 
             {apiBankExtras && (

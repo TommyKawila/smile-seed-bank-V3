@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
+import { OrderTransferQr } from "@/components/storefront/order/OrderTransferQr";
 import { getOrderReceiptCardByClaimToken } from "@/lib/services/order-service";
+import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
 import {
   STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO,
-  STOREFRONT_KBANK_TRANSFER_QR_IMAGE,
   STOREFRONT_KBANK_TRANSFER_NAME_TH,
   STOREFRONT_KBANK_TRANSFER_NAME_EN,
 } from "@/lib/storefront-payment-shared";
@@ -42,8 +42,14 @@ export default async function OrderReceiptPage({
     /* keep raw */
   }
 
-  const { data, error } = await getOrderReceiptCardByClaimToken(token);
+  const [{ data, error }, paymentSettings] = await Promise.all([
+    getOrderReceiptCardByClaimToken(token),
+    fetchCheckoutPaymentSettings(),
+  ]);
   if (error || !data) notFound();
+  const promptPayPayee = paymentSettings.promptPay.isConfigured
+    ? paymentSettings.promptPay.payeeDisplayName
+    : undefined;
 
   const unpaidForQr = ["PENDING_INFO", "PENDING", "PENDING_PAYMENT"].includes(data.status);
 
@@ -167,17 +173,12 @@ export default async function OrderReceiptPage({
                 <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-emerald-800/90">
                   {t.qrCaption}
                 </p>
-                <div className="mx-auto flex w-full max-w-[320px] justify-center">
-                  <Image
-                    src={STOREFRONT_KBANK_TRANSFER_QR_IMAGE}
-                    alt={lang === "th" ? "QR โอน K-Bank" : "K-Bank Thai QR"}
-                    width={320}
-                    height={320}
-                    className="h-auto w-full rounded-2xl border border-white bg-white shadow-md object-contain"
-                    sizes="(max-width: 480px) 100vw, 320px"
-                    unoptimized
-                  />
-                </div>
+                <OrderTransferQr
+                  orderNumber={data.order_number}
+                  amountBaht={data.total_amount}
+                  payeeDisplayName={promptPayPayee}
+                  lang={lang}
+                />
               </div>
             ) : null}
 

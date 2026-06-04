@@ -58,6 +58,7 @@ export function BreederTypeFilter({
   showAllButton = true,
   resolveActiveSlug,
   clearableByReselect = false,
+  compact = false,
 }: {
   options: BreederTypeOption[];
   allLabel: string;
@@ -72,6 +73,8 @@ export function BreederTypeFilter({
   resolveActiveSlug?: (raw: string | null) => string;
   /** Second click on active chip clears the param. */
   clearableByReselect?: boolean;
+  /** Mobile strip: glyph + count, smaller pills. */
+  compact?: boolean;
 }) {
   void variant;
   const router = useRouter();
@@ -118,7 +121,7 @@ export function BreederTypeFilter({
             aria-pressed={!active}
             aria-label={`${allLabel} — ${ariaLabel ?? "Flowering type"}`}
             onClick={() => setType(null)}
-            className={shopQuickChipClasses(!active)}
+            className={shopQuickChipClasses(!active, compact)}
           >
             {allLabel}
           </button>
@@ -133,7 +136,7 @@ export function BreederTypeFilter({
               aria-pressed={isOn}
               aria-label={`${label} (${count})`}
               onClick={() => selectSlug(slug)}
-              className={shopQuickChipClasses(isOn)}
+              className={shopQuickChipClasses(isOn, compact)}
             >
               {glyph ? <span aria-hidden>{glyph}</span> : null}
               <span>{label}</span>

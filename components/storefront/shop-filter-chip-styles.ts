@@ -4,9 +4,11 @@ import { cn } from "@/lib/utils";
 export const shopQuickChipBase =
   "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30";
 
-export function shopQuickChipClasses(active: boolean): string {
+export function shopQuickChipClasses(active: boolean, compact = false): string {
   return cn(
-    shopQuickChipBase,
+    compact
+      ? "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      : shopQuickChipBase,
     active
       ? "border-primary bg-primary text-white shadow-sm"
       : "border-zinc-200/80 bg-white text-zinc-600 hover:border-primary/25 hover:bg-primary/5"

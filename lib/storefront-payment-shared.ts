@@ -11,8 +11,6 @@ export {
   shippingFeeForSubtotal,
 } from "@/lib/order-financials";
 
-export const STOREFRONT_KBANK_TRANSFER_QR_IMAGE = "/payments/kbank-static-qr.png" as const;
-
 export const STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO = "5002021619" as const;
 export const STOREFRONT_KBANK_TRANSFER_NAME_TH = "ธนาคารกสิกรไทย" as const;
 export const STOREFRONT_KBANK_TRANSFER_NAME_EN = "Kasikornbank" as const;

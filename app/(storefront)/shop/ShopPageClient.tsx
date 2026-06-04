@@ -12,6 +12,7 @@ import {
   Trophy,
   Zap,
   ArrowUp,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBreeders } from "@/hooks/useBreeders";
@@ -40,9 +41,8 @@ import {
 } from "@/lib/seed-type-filter";
 import {
   CatalogStickyFilterStrip,
-  ShopCatalogFilterStrip,
-  type ShopCatalogFilterStripProps,
 } from "@/components/storefront/ShopCatalogFilterStrip";
+import type { CatalogSidebarQuickFiltersProps } from "@/components/storefront/CatalogSidebarQuickFilters";
 import {
   CATALOG_GENETICS_STRIP_LABELS,
   CATALOG_GENETICS_STRIP_SLUGS,
@@ -646,24 +646,21 @@ export function ShopPageClient({
 
   const filterOptionCounts = filterCountsFromApi ?? clientFilterCountsFallback;
 
-  /** Flowering pills — counts from filter-counts API (scoped catalog), not the first SSR page slice. */
-  const catalogFloweringPillOptions = useMemo(() => {
-    const rows: { slug: string; label: string; count: number }[] = [
-      { slug: "auto", label: t("ออโต้", "Auto"), count: filterOptionCounts.flowering.auto ?? 0 },
-      { slug: "photo", label: t("โฟโต้", "Photo"), count: filterOptionCounts.flowering.photo ?? 0 },
-      {
-        slug: "photo-ff",
-        label: t("โฟโต้ FF", "Photo FF"),
-        count: filterOptionCounts.flowering["photo-ff"] ?? 0,
-      },
-      {
-        slug: "photo-3n",
-        label: tMsg("photo_3n", "Photo 3N"),
-        count: filterOptionCounts.flowering["photo-3n"] ?? 0,
-      },
-    ];
-    return rows.filter((o) => o.count > 0);
-  }, [filterOptionCounts.flowering, t, tMsg]);
+  const catalogFloweringQuickOptions = useMemo(
+    () =>
+      (
+        [
+          { slug: "auto", label: t("ออโต้", "Auto") },
+          { slug: "photo", label: t("โฟโต้", "Photo") },
+          { slug: "photo-ff", label: t("โฟโต้ FF", "Photo FF") },
+        ] as const
+      ).map(({ slug, label }) => ({
+        slug,
+        label,
+        count: filterOptionCounts.flowering[slug] ?? 0,
+      })),
+    [filterOptionCounts.flowering, t]
+  );
 
   const catalogGeneticsPillOptions = useMemo(
     () =>
@@ -678,17 +675,14 @@ export function ShopPageClient({
     [filterOptionCounts, t]
   );
 
-  const catalogFilterStripProps = useMemo<ShopCatalogFilterStripProps>(
+  const sidebarQuickFilters = useMemo<CatalogSidebarQuickFiltersProps>(
     () => ({
       replaceCatalog,
       t,
       showClearanceFilter,
-      showFilter,
-      onToggleFilter: () => setShowFilter((v) => !v),
-      catalogFloweringPillOptions,
-      showFloweringTypePills: catalogFloweringPillOptions.length > 0,
-      catalogGeneticsPillOptions,
-      catalogSexCounts: {
+      floweringOptions: catalogFloweringQuickOptions,
+      geneticsOptions: catalogGeneticsPillOptions,
+      sexCounts: {
         feminized: filterOptionCounts.sex.feminized ?? 0,
         regular: filterOptionCounts.sex.regular ?? 0,
       },
@@ -697,8 +691,7 @@ export function ShopPageClient({
       replaceCatalog,
       t,
       showClearanceFilter,
-      showFilter,
-      catalogFloweringPillOptions,
+      catalogFloweringQuickOptions,
       catalogGeneticsPillOptions,
       filterOptionCounts.sex.feminized,
       filterOptionCounts.sex.regular,
@@ -807,11 +800,20 @@ export function ShopPageClient({
   const shownCount = visibleProducts.length;
 
   const isNarrowedByClientFilters = totalFiltered < products.length;
-  const footerTotal = isNarrowedByClientFilters
+  /** Unfiltered catalog total from filter-counts API when SQL total is unknown. */
+  const filterCountsScopedTotal = useMemo(() => {
+    const f = filterOptionCounts.flowering;
+    const sum =
+      (f.auto ?? 0) +
+      (f.photo ?? 0) +
+      (f["photo-ff"] ?? 0) +
+      (f["photo-3n"] ?? 0);
+    return sum > 0 ? sum : null;
+  }, [filterOptionCounts.flowering]);
+  const catalogDisplayTotal = isNarrowedByClientFilters
     ? totalFiltered
-    : catalogTotal != null
-      ? catalogTotal
-      : totalFiltered;
+    : catalogTotal ?? filterCountsScopedTotal ?? totalFiltered;
+  const footerTotal = catalogDisplayTotal;
   const footerShown = Math.min(shownCount, totalFiltered);
 
   const allServerPagesFetched =
@@ -1001,9 +1003,28 @@ export function ShopPageClient({
     <div className="min-h-screen bg-white pt-20 sm:pt-28">
       {/* ── Breeder strip: logo + name + count → products ASAP ───────────────── */}
       {urlBreeder ? (
-        <div className="border-b border-zinc-100 bg-white px-4 py-2 sm:px-6">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-            <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+        <div className="border-b border-zinc-100 bg-white px-4 py-2.5 sm:px-6">
+          <div className="mx-auto max-w-7xl space-y-2.5 sm:space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <Link
+                href="/breeders"
+                className="inline-flex min-w-0 shrink items-center gap-1 text-[11px] font-medium text-primary hover:underline sm:text-xs"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                <span className="truncate">{tMsg("breeder.back_to_list", "Back to Breeders")}</span>
+              </Link>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/seeds")}
+                className="h-8 max-w-[min(52%,14rem)] shrink-0 gap-1 border-zinc-200 px-2.5 text-xs text-zinc-600 hover:border-primary hover:text-primary sm:h-9 sm:max-w-none sm:px-3 sm:text-sm"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                <span className="truncate">{tMsg("breeder.view_all_products", "View All Products")}</span>
+              </Button>
+            </div>
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 sm:h-[4.75rem] sm:w-[4.75rem]">
                 <BreederLogoImage
                   src={urlBreeder.logo_url}
@@ -1016,33 +1037,18 @@ export function ShopPageClient({
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <Link
-                  href="/breeders"
-                  className="mb-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                >
-                  <ChevronLeft className="h-3 w-3" aria-hidden />
-                  {tMsg("breeder.back_to_list", "Back to Breeders")}
-                </Link>
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
-                  <h1 className="truncate text-lg font-bold tracking-tight text-zinc-900 sm:text-xl">{urlBreeder.name}</h1>
+                  <h1 className="truncate text-lg font-bold tracking-tight text-zinc-900 sm:text-xl">
+                    {urlBreeder.name}
+                  </h1>
                   <span className="shrink-0 text-xs tabular-nums text-zinc-400" aria-live="polite">
                     {isLoading
                       ? t("กำลังโหลด...", "Loading...")
-                      : `${filteredProducts.length} ${tMsg("breeder.strains_count", "Strains")}`}
+                      : `${catalogDisplayTotal} ${tMsg("breeder.strains_count", "Strains")}`}
                   </span>
                 </div>
               </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/seeds")}
-              className="h-9 w-full shrink-0 gap-1.5 border-zinc-200 text-zinc-600 hover:border-primary hover:text-primary sm:w-auto sm:self-center"
-            >
-              <ChevronLeft className="h-4 w-4" aria-hidden />
-              {tMsg("breeder.view_all_products", "View All Products")}
-            </Button>
           </div>
         </div>
       ) : null}
@@ -1050,7 +1056,6 @@ export function ShopPageClient({
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-0 sm:px-6 lg:pb-8">
         {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
         <CatalogStickyFilterStrip
-          {...catalogFilterStripProps}
           catalogHeading={
             urlBreeder ? undefined : (
               <h1 className="font-sans text-lg font-bold leading-tight tracking-tight text-zinc-900 sm:text-xl">
@@ -1062,7 +1067,7 @@ export function ShopPageClient({
                 <span className="ml-2 text-sm font-normal tabular-nums text-zinc-400">
                   {isLoading
                     ? `(${t("กำลังโหลด...", "Loading...")})`
-                    : `(${filteredProducts.length} ${t("รายการ", "items")})`}
+                    : `(${catalogDisplayTotal} ${t("รายการ", "items")})`}
                 </span>
               </h1>
             )
@@ -1075,6 +1080,7 @@ export function ShopPageClient({
               <FilterSidebar
                 t={t}
                 counts={filterOptionCounts}
+                quickFilters={sidebarQuickFilters}
                 priceFilter={{
                   cap: priceCap,
                   min: priceMin,
@@ -1096,21 +1102,16 @@ export function ShopPageClient({
                   min={priceMin}
                   max={priceMax}
                   onRangeChange={setPriceRange}
-                  resultCount={filteredProducts.length}
+                  resultCount={catalogDisplayTotal}
                 />
                 <ShopFilterMobileSheet
                   t={t}
                   counts={filterOptionCounts}
                   open={showFilter}
                   onOpenChange={setShowFilter}
-                  resultCount={filteredProducts.length}
+                  resultCount={catalogDisplayTotal}
                   onClearAll={clearFilters}
-                  catalogFilterStrip={
-                    <ShopCatalogFilterStrip
-                      {...catalogFilterStripProps}
-                      hideDesktopFilterToggle
-                    />
-                  }
+                  quickFilters={sidebarQuickFilters}
                 />
               </>
             )}
@@ -1263,18 +1264,18 @@ export function ShopPageClient({
           <Button
             type="button"
             variant="outline"
-            className="h-12 flex-1 rounded-full border-zinc-200 bg-white text-sm font-semibold text-emerald-800 shadow-md hover:bg-zinc-50"
+            className="h-12 flex-1 rounded-full border-secondary/80 bg-secondary/30 text-sm font-semibold text-primary shadow-md hover:bg-secondary/50"
             onClick={() => setShowPriceSheet(true)}
           >
-            {t("กรองราคา", "Filter by price")}
+            {t("กรองราคา", "Price")}
           </Button>
           <Button
             type="button"
-            variant="outline"
-            className="h-12 flex-1 rounded-full border-zinc-200 bg-white px-5 text-sm font-semibold text-emerald-800 shadow-md hover:bg-zinc-50"
+            className="h-12 flex-1 gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
             onClick={() => setShowFilter(true)}
           >
-            {t("ตัวกรอง", "Filters")} 🔍
+            <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
+            {t("ตัวกรอง", "Filters")}
           </Button>
         </div>
       </div>

@@ -19,5 +19,5 @@ export const CATALOG_GENETICS_STRIP_LABELS: Record<
 > = {
   "sativa-dom": { th: "ซาติวา", en: "Sativa" },
   "indica-dom": { th: "อินดิกา", en: "Indica" },
-  hybrid: { th: "ไฮบริด 50/50", en: "Hybrid 50/50" },
+  hybrid: { th: "ไฮบริด", en: "Hybrid" },
 };

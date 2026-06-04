@@ -421,11 +421,13 @@ export default function ProductDetailClient({
         {/* Breadcrumb / back — list referrer, else breeder page, else shop */}
         <Link
           href={backNav.href}
-          className="mb-2 inline-flex max-w-full min-w-0 items-center gap-1 text-sm text-zinc-500 hover:text-primary sm:mb-4"
+          className="mb-2 inline-flex w-fit max-w-full min-w-0 items-center gap-1 text-sm text-zinc-500 hover:text-primary sm:mb-4"
           title={backNav.title}
         >
           <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="min-w-0 truncate font-sans">{backNav.text}</span>
+          <span className="line-clamp-2 min-w-0 font-sans leading-snug sm:line-clamp-1 sm:truncate">
+            {backNav.text}
+          </span>
         </Link>
 
         {/* Main Layout */}

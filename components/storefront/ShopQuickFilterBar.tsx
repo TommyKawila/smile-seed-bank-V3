@@ -12,10 +12,12 @@ export function ShopQuickFilterBar({
   replaceCatalog,
   t,
   showClearance = true,
+  compact = false,
 }: {
   replaceCatalog: (mutate: (sp: URLSearchParams) => void) => void;
   t: (th: string, en: string) => string;
   showClearance?: boolean;
+  compact?: boolean;
 }) {
   const searchParams = useSearchParams();
   const quick = searchParams.get("quick")?.trim() ?? "";
@@ -45,7 +47,7 @@ export function ShopQuickFilterBar({
     <div className="contents">
       <button
         type="button"
-        className={shopQuickChipClasses(quickEff === "new")}
+        className={shopQuickChipClasses(quickEff === "new", compact)}
         aria-pressed={quickEff === "new"}
         onClick={() => setQuick("new")}
       >
@@ -54,7 +56,7 @@ export function ShopQuickFilterBar({
       {showClearance ? (
         <button
           type="button"
-          className={shopQuickChipClasses(quickEff === "clearance")}
+          className={shopQuickChipClasses(quickEff === "clearance", compact)}
           aria-pressed={quickEff === "clearance"}
           onClick={() => setQuick("clearance")}
         >
