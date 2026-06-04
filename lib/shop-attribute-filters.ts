@@ -10,18 +10,222 @@ export function parseListParam(param: string | null | undefined): string[] {
     .filter(Boolean);
 }
 
-const GENETICS_SLUG_TO_DB: Record<string, string> = {
+export const GENETICS_SLUG_TO_DB: Record<string, string> = {
   hybrid: "Hybrid 50/50",
   "sativa-dom": "Mostly Sativa",
   "indica-dom": "Mostly Indica",
 };
 
+/** True when every selected slug maps to `products.strain_dominance` (fast SQL filter). */
+export function geneticsSlugsFullyDbMappable(slugs: string[]): boolean {
+  if (slugs.length === 0) return false;
+  return slugs.every((s) => Boolean(GENETICS_SLUG_TO_DB[s]));
+}
+
+export function geneticsDbValuesForSlugs(slugs: string[]): string[] {
+  const out: string[] = [];
+  for (const s of slugs) {
+    const v = GENETICS_SLUG_TO_DB[s];
+    if (v) out.push(v);
+  }
+  return out;
+}
+
+const DIFFICULTY_DB_SLUGS = new Set(["easy", "moderate", "hard"]);
+
+export function difficultySlugsFullyDbMappable(slugs: string[]): boolean {
+  if (slugs.length === 0) return false;
+  return slugs.every((s) => DIFFICULTY_DB_SLUGS.has(s));
+}
+
+const THC_DB_SLUGS = new Set(["high", "mid", "low"]);
+const CBD_DB_SLUGS = new Set(["high", "mid", "low"]);
+const SEX_DB_SLUGS = new Set(["feminized", "regular"]);
+
+export function cbdSlugsFullyDbMappable(slugs: string[]): boolean {
+  if (slugs.length === 0) return false;
+  return slugs.every((s) => CBD_DB_SLUGS.has(s));
+}
+
+/** PostgREST `.or()` for CBD buckets on `cbd_percent_num` (high >5, mid 2–5, low <2). */
+export function cbdOrFilterExpression(slugs: string[]): string | null {
+  const parts: string[] = [];
+  if (slugs.includes("high")) parts.push("cbd_percent_num.gt.5");
+  if (slugs.includes("mid")) parts.push("and(cbd_percent_num.gte.2,cbd_percent_num.lte.5)");
+  if (slugs.includes("low")) parts.push("cbd_percent_num.lt.2");
+  if (!parts.length) return null;
+  return parts.join(",");
+}
+
+export function thcSlugsFullyDbMappable(slugs: string[]): boolean {
+  if (slugs.length === 0) return false;
+  return slugs.every((s) => THC_DB_SLUGS.has(s));
+}
+
+export function sexSlugsFullyDbMappable(slugs: string[]): boolean {
+  if (slugs.length === 0) return false;
+  return slugs.every((s) => SEX_DB_SLUGS.has(s));
+}
+
+/** PostgREST `.or()` for THC buckets (high >20, mid 15–20, low <15). */
+export function thcOrFilterExpression(slugs: string[]): string | null {
+  const parts: string[] = [];
+  if (slugs.includes("high")) parts.push("thc_percent.gt.20");
+  if (slugs.includes("mid")) parts.push("and(thc_percent.gte.15,thc_percent.lte.20)");
+  if (slugs.includes("low")) parts.push("thc_percent.lt.15");
+  if (!parts.length) return null;
+  return parts.join(",");
+}
+
+/** PostgREST `.or()` for `seed_type`. */
+export function sexOrFilterExpression(slugs: string[]): string | null {
+  const parts: string[] = [];
+  if (slugs.includes("feminized")) parts.push("seed_type.eq.FEMINIZED");
+  if (slugs.includes("regular")) parts.push("seed_type.eq.REGULAR");
+  if (!parts.length) return null;
+  return parts.join(",");
+}
+
+export type CatalogAttributeFilterParams = {
+  genetics: string[];
+  difficulty: string[];
+  thc: string[];
+  cbd: string[];
+  sex: string[];
+  yieldQuick: string | null;
+  seeds: string[];
+};
+
+/** `?yield=high` — ILIKE hints on `yield_info` (same spirit as storefront regex). */
+export function yieldQuickIsSqlHighFilter(param: string | null | undefined): boolean {
+  return param?.trim().toLowerCase() === "high";
+}
+
+export function yieldHighOrFilterExpression(): string {
+  return [
+    "yield_info.ilike.%high%",
+    "yield_info.ilike.%xxl%",
+    "yield_info.ilike.%heavy%",
+    "yield_info.ilike.%massive%",
+    "yield_info.ilike.%สูง%",
+    "yield_info.ilike.%yield%",
+  ].join(",");
+}
+
+/** True when sidebar filters must scan rows in memory (packs, ratio genetics, non-high yield). */
+export function catalogFiltersRequireMemoryScan(p: CatalogAttributeFilterParams): boolean {
+  const yieldNeedsMemory =
+    Boolean(p.yieldQuick?.trim()) && !yieldQuickIsSqlHighFilter(p.yieldQuick);
+  return (
+    (p.genetics.length > 0 && !geneticsSlugsFullyDbMappable(p.genetics)) ||
+    (p.difficulty.length > 0 && !difficultySlugsFullyDbMappable(p.difficulty)) ||
+    (p.thc.length > 0 && !thcSlugsFullyDbMappable(p.thc)) ||
+    (p.cbd.length > 0 && !cbdSlugsFullyDbMappable(p.cbd)) ||
+    (p.sex.length > 0 && !sexSlugsFullyDbMappable(p.sex)) ||
+    yieldNeedsMemory ||
+    (p.seeds.length > 0 && !seedsSlugsFullyDbMappable(p.seeds))
+  );
+}
+
+/** Default `id DESC` catalog — cursor pagination (no offset rescan). */
+export function catalogSupportsIdCursorPagination(opts: {
+  needsSidebarFilterScan: boolean;
+  memoryFtPassNeeded: boolean;
+  saleOnly: boolean;
+  clearanceOnly: boolean;
+  useEnrichedCatalog: boolean;
+  sortKey: string | undefined;
+}): boolean {
+  if (
+    opts.needsSidebarFilterScan ||
+    opts.memoryFtPassNeeded ||
+    opts.saleOnly ||
+    opts.clearanceOnly ||
+    opts.useEnrichedCatalog
+  ) {
+    return false;
+  }
+  const sk = opts.sortKey;
+  if (
+    sk === "price_asc" ||
+    sk === "price_desc" ||
+    sk === "smart_deal" ||
+    sk === "new_arrivals" ||
+    sk === "newest"
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/** Sidebar attribute filters are applied on the server (SQL) — client can skip re-filter. */
+export function catalogAttributeFiltersHandledOnServer(p: CatalogAttributeFilterParams): boolean {
+  const hasAttribute =
+    p.genetics.length > 0 ||
+    p.difficulty.length > 0 ||
+    p.thc.length > 0 ||
+    p.cbd.length > 0 ||
+    p.sex.length > 0 ||
+    Boolean(p.yieldQuick?.trim()) ||
+    p.seeds.length > 0;
+  return hasAttribute && !catalogFiltersRequireMemoryScan(p);
+}
+
+/** PostgREST `.or()` expression for `growing_difficulty`. */
+export function difficultyOrFilterExpression(slugs: string[]): string | null {
+  const parts: string[] = [];
+  if (slugs.includes("easy")) parts.push("growing_difficulty.eq.easy");
+  if (slugs.includes("moderate")) parts.push("growing_difficulty.eq.moderate");
+  if (slugs.includes("hard")) parts.push("growing_difficulty.in.(difficult,hard)");
+  if (!parts.length) return null;
+  return parts.join(",");
+}
+
+export type GeneticsFilterProduct = {
+  strain_dominance?: string | null;
+  sativa_ratio?: number | null;
+  indica_ratio?: number | null;
+  genetic_ratio?: string | null;
+  genetics?: string | null;
+};
+
+/** Classify product into genetics URL slug (sidebar / quick nav). */
+export function classifyGeneticsSlugFromProduct(
+  p: GeneticsFilterProduct
+): keyof typeof GENETICS_SLUG_TO_DB | null {
+  const dom = (p.strain_dominance ?? "").trim();
+  if (dom === "Hybrid 50/50") return "hybrid";
+  if (dom === "Mostly Sativa") return "sativa-dom";
+  if (dom === "Mostly Indica") return "indica-dom";
+
+  const sat = Number(p.sativa_ratio);
+  const ind = Number(p.indica_ratio);
+  if (Number.isFinite(sat) && Number.isFinite(ind)) {
+    if (sat >= 60 && sat > ind) return "sativa-dom";
+    if (ind >= 60 && ind > sat) return "indica-dom";
+    if (Math.abs(sat - ind) <= 15) return "hybrid";
+  }
+
+  const text = `${p.genetic_ratio ?? ""} ${p.genetics ?? ""}`.toLowerCase();
+  if (!text.trim()) return null;
+  if (text.includes("hybrid") || text.includes("50/50") || text.includes("balanced")) return "hybrid";
+  if (text.includes("sativa") && !text.includes("indica")) return "sativa-dom";
+  if (text.includes("indica") && !text.includes("sativa")) return "indica-dom";
+  return null;
+}
+
 export function productMatchesGeneticsFilter(
-  strainDominance: string | null | undefined,
+  product: GeneticsFilterProduct | string | null | undefined,
   selectedSlugs: string[]
 ): boolean {
   if (selectedSlugs.length === 0) return true;
-  const dom = (strainDominance ?? "").trim();
+  const fields: GeneticsFilterProduct =
+    typeof product === "string" || product == null
+      ? { strain_dominance: product ?? null }
+      : product;
+  const bucket = classifyGeneticsSlugFromProduct(fields);
+  if (bucket && selectedSlugs.includes(bucket)) return true;
+  const dom = (fields.strain_dominance ?? "").trim();
   for (const slug of selectedSlugs) {
     const want = GENETICS_SLUG_TO_DB[slug];
     if (want && dom === want) return true;
@@ -126,6 +330,32 @@ export function seedPackMatchesOtherBucket(n: number): boolean {
   return Number.isInteger(n) && n >= 1 && n <= 10 && !EXPLICIT_SINGLE_DIGIT_PACKS.has(n);
 }
 
+/** Bucket slugs stored on `products.pack_buckets` (same rules as pack filter). */
+export function packBucketsFromVariants(
+  variants:
+    | { unit_label: string; is_active?: boolean | null }[]
+    | null
+    | undefined
+): string[] {
+  const buckets = new Set<string>();
+  for (const v of (variants ?? []).filter((x) => x.is_active !== false)) {
+    const n = parsePackFromUnitLabel(v.unit_label);
+    if (n === 1) buckets.add("1");
+    else if (n === 2) buckets.add("2");
+    else if (n === 3) buckets.add("3");
+    else if (n === 5) buckets.add("5");
+    else if (n === 10) buckets.add("10");
+    else if (n > 10) buckets.add("gt10");
+    else if (seedPackMatchesOtherBucket(n)) buckets.add("other");
+  }
+  return [...buckets];
+}
+
+export function seedsSlugsFullyDbMappable(slugs: string[]): boolean {
+  if (slugs.length === 0) return false;
+  return slugs.every((s) => (SEED_PACK_FILTER_SLUGS as readonly string[]).includes(s));
+}
+
 export function productMatchesSeedsPackFilter(
   variants:
     | { unit_label: string; is_active?: boolean | null }[]
@@ -148,6 +378,16 @@ export function productMatchesSeedsPackFilter(
     }
   }
   return false;
+}
+
+/** True when every selected pack slug exists on `products.pack_buckets`. */
+export function productMatchesPackBucketsColumn(
+  packBuckets: string[] | null | undefined,
+  selectedSlugs: string[]
+): boolean {
+  if (selectedSlugs.length === 0) return true;
+  const have = new Set(packBuckets ?? []);
+  return selectedSlugs.some((s) => have.has(s));
 }
 
 /**
@@ -205,6 +445,10 @@ function seedPackBucketsForVariants(
 export function productMatchesShopAttributeFilters(
   p: {
     strain_dominance?: string | null;
+    sativa_ratio?: number | null;
+    indica_ratio?: number | null;
+    genetic_ratio?: string | null;
+    genetics?: string | null;
     growing_difficulty?: string | null;
     thc_percent?: number | null;
     cbd_percent?: string | null;
@@ -221,7 +465,7 @@ export function productMatchesShopAttributeFilters(
   seeds?: string[]
 ): boolean {
   return (
-    productMatchesGeneticsFilter(p.strain_dominance, genetics) &&
+    productMatchesGeneticsFilter(p, genetics) &&
     productMatchesDifficultyFilter(p.growing_difficulty, difficulty) &&
     productMatchesThcFilter(p.thc_percent, thc) &&
     productMatchesCbdFilter(p.cbd_percent, cbd) &&
@@ -233,10 +477,17 @@ export function productMatchesShopAttributeFilters(
 
 export type ShopFilterCountProduct = {
   strain_dominance?: string | null;
+  sativa_ratio?: number | null;
+  indica_ratio?: number | null;
+  genetic_ratio?: string | null;
+  genetics?: string | null;
   growing_difficulty?: string | null;
   thc_percent?: number | null;
   cbd_percent?: string | null;
   seed_type?: string | null;
+  flowering_type?: string | null;
+  category?: string | null;
+  product_categories?: { name?: string | null } | null;
   product_variants?: { unit_label: string; is_active?: boolean | null }[] | null;
 };
 
@@ -260,12 +511,14 @@ export function defaultFilterOptionCounts(): ShopFilterOptionCounts {
   };
 }
 
-function classifyGeneticsSlug(strainDominance: string | null | undefined): string | null {
-  const dom = (strainDominance ?? "").trim();
-  if (dom === "Hybrid 50/50") return "hybrid";
-  if (dom === "Mostly Sativa") return "sativa-dom";
-  if (dom === "Mostly Indica") return "indica-dom";
-  return null;
+function classifyGeneticsSlug(
+  product: GeneticsFilterProduct | string | null | undefined
+): string | null {
+  const fields: GeneticsFilterProduct =
+    typeof product === "string" || product == null
+      ? { strain_dominance: product ?? null }
+      : product;
+  return classifyGeneticsSlugFromProduct(fields);
 }
 
 function classifyThcSlug(thcPercent: number | null | undefined): string | null {
@@ -305,7 +558,7 @@ function classifySexSlug(seedType: string | null | undefined): string | null {
 export function calculateFilterCounts(products: ShopFilterCountProduct[]): ShopFilterOptionCounts {
   const c = defaultFilterOptionCounts();
   for (const p of products) {
-    const g = classifyGeneticsSlug(p.strain_dominance);
+    const g = classifyGeneticsSlug(p);
     if (g && g in c.genetics) c.genetics[g] += 1;
 
     const th = classifyThcSlug(p.thc_percent);

@@ -158,10 +158,9 @@ function ProductCardBase({
         getDefaultVariant(product)
       : getDefaultVariant(product);
   const aggregateStock = getProductAggregateStock(product);
-  const isActuallyOut = aggregateStock <= 0;
-  const outOfStock = isActuallyOut;
-  const lastOneLeft = !isActuallyOut && aggregateStock === 1;
-  const lowStock = !isActuallyOut && aggregateStock > 1 && aggregateStock <= 5;
+  const outOfStock = aggregateStock <= 0 || !displayVariant;
+  const lastOneLeft = !outOfStock && aggregateStock === 1;
+  const lowStock = !outOfStock && aggregateStock > 1 && aggregateStock <= 5;
   const cardImage = getPrimaryImage(product);
   const pm = product as ProductWithMeta;
   const cardImageAlt = product.name?.trim()

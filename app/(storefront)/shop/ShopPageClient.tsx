@@ -45,8 +45,10 @@ import { FilterSidebar, ShopFilterMobileSheet } from "@/components/storefront/Fi
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   calculateFilterCounts,
+  catalogAttributeFiltersHandledOnServer,
   parseListParam,
   productMatchesShopAttributeFilters,
+  type ShopFilterOptionCounts,
 } from "@/lib/shop-attribute-filters";
 import {
   PRICE_PARAM_MAX,
@@ -59,16 +61,29 @@ import {
 import { ShopPriceFilterBottomSheet } from "@/components/storefront/ShopPriceFilter";
 import { ShopQuickFilterBar } from "@/components/storefront/ShopQuickFilterBar";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
-import { ShopGeneticVaultHero } from "@/components/storefront/ShopGeneticVaultHero";
-import { selectVaultFeaturedProducts } from "@/lib/vault-featured-products";
 import { GeneticVaultProductGrid } from "@/components/storefront/GeneticVaultProductGrid";
-import type { MagazinePostPublic } from "@/lib/blog-service";
 import { fetchWithTimeout } from "@/lib/timeout";
 import type { ProductListItem } from "@/services/storefront-product-service";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 
 const SHOP_PAGE_INITIAL = 30;
 const SHOP_PAGE_STEP = 24;
+/** Filtered catalog scans multiple DB chunks — allow longer than default 2s rule. */
+const SHOP_CATALOG_FETCH_TIMEOUT_MS = 8000;
+const SHOP_CATALOG_LOAD_MORE_TIMEOUT_MS = 15000;
+
+async function fetchCatalogProductsApi(
+  query: string,
+  timeoutMs: number
+): Promise<Response> {
+  const url = `/api/products?${query}`;
+  let res = await fetchWithTimeout(url, { cache: "no-store" }, timeoutMs);
+  if (res.status === 408) {
+    res = await fetchWithTimeout(url, { cache: "no-store" }, timeoutMs);
+  }
+  return res;
+}
+const SHOP_FILTER_COUNTS_TIMEOUT_MS = 8000;
 const BACK_TO_TOP_SCROLL_THRESHOLD = 400;
 
 function BreederCatalogSeoBlock({
@@ -156,11 +171,15 @@ function BreederCatalogSeoBlock({
 export function ShopPageClient({
   initialProducts,
   initialCatalogTotal = null,
+  initialCatalogNextCursor = null,
+  initialCatalogUseCursor = false,
   showClearanceFilter = false,
 }: {
   initialProducts: ProductListItem[];
   /** Total rows for current URL filters from server (null if unknown). */
   initialCatalogTotal?: number | null;
+  initialCatalogNextCursor?: number | null;
+  initialCatalogUseCursor?: boolean;
   /** Hide «ล้างสต็อก» chip when no clearance products in catalog. */
   showClearanceFilter?: boolean;
 }) {
@@ -246,6 +265,10 @@ export function ShopPageClient({
   const [isLoading, setIsLoading] = useState(initialProducts.length === 0);
   const [catalogTotal, setCatalogTotal] = useState<number | null>(initialCatalogTotal ?? null);
   const [loadedPage, setLoadedPage] = useState(1);
+  const [catalogNextCursor, setCatalogNextCursor] = useState<number | null>(
+    initialCatalogNextCursor
+  );
+  const [catalogUseCursor, setCatalogUseCursor] = useState(initialCatalogUseCursor);
   const [hasMoreServerProducts, setHasMoreServerProducts] = useState(
     () =>
       initialCatalogTotal != null
@@ -291,13 +314,22 @@ export function ShopPageClient({
   useEffect(() => {
     setProducts(initialProducts);
     setLoadedPage(1);
+    setCatalogNextCursor(initialCatalogNextCursor);
+    setCatalogUseCursor(initialCatalogUseCursor);
     setCatalogTotal(initialCatalogTotal ?? null);
     setHasMoreServerProducts(
       initialCatalogTotal != null
         ? initialProducts.length < initialCatalogTotal
         : initialProducts.length >= SHOP_PAGE_INITIAL
     );
-  }, [serverHydrateKey, initialProducts, initialCatalogTotal]);
+    setVisibleCount(SHOP_PAGE_INITIAL);
+  }, [
+    serverHydrateKey,
+    initialProducts,
+    initialCatalogTotal,
+    initialCatalogNextCursor,
+    initialCatalogUseCursor,
+  ]);
 
   const deferFirstDupClientCatalog = useRef(true);
 
@@ -312,8 +344,8 @@ export function ShopPageClient({
       try {
         const sp = new URLSearchParams({
           limit: String(SHOP_PAGE_INITIAL),
-          includeVariants: "true",
         });
+        if (seedsParam.trim()) sp.set("includeVariants", "true");
         if (categoryParam.trim()) sp.set("category", categoryParam.trim());
         if (breederParam?.trim()) sp.set("breeder", breederParam.trim());
         const qTrim = qParam.trim();
@@ -331,17 +363,23 @@ export function ShopPageClient({
         if (yieldQuickParam.trim()) sp.set("yield", yieldQuickParam.trim());
         if (priceMin != null) sp.set(PRICE_PARAM_MIN, String(priceMin));
         if (priceMax != null) sp.set(PRICE_PARAM_MAX, String(priceMax));
-        const res = await fetchWithTimeout(`/api/products?${sp.toString()}`, { cache: "no-store" }, 4000);
+        const res = await fetchWithTimeout(`/api/products?${sp.toString()}`, { cache: "no-store" }, SHOP_CATALOG_FETCH_TIMEOUT_MS);
         const json = (await res.json()) as {
           products?: ProductListItem[];
           hasMore?: boolean;
           total?: number | null;
+          nextCursor?: number | null;
+          useCursor?: boolean;
         };
         if (cancelled || !res.ok) return;
         setProducts(Array.isArray(json.products) ? json.products : []);
         setLoadedPage(1);
         if (typeof json.total === "number") setCatalogTotal(json.total);
         else setCatalogTotal(null);
+        setCatalogNextCursor(
+          typeof json.nextCursor === "number" ? json.nextCursor : null
+        );
+        setCatalogUseCursor(Boolean(json.useCursor));
         setHasMoreServerProducts(Boolean(json.hasMore));
       } catch {
         if (!cancelled) setHasMoreServerProducts(false);
@@ -384,8 +422,6 @@ export function ShopPageClient({
   const [showPriceSheet, setShowPriceSheet] = useState(false);
   const [visibleCount, setVisibleCount] = useState(SHOP_PAGE_INITIAL);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [researchPosts, setResearchPosts] = useState<MagazinePostPublic[]>([]);
-
   // Breeder selected via URL param — slug preferred; numeric id still supported
   const urlBreeder = useMemo(
     () => (breederParam ? resolveBreederFromShopParam(allBreeders, breederParam) : null),
@@ -570,39 +606,106 @@ export function ShopPageClient({
     [replaceCatalog, priceCap]
   );
 
-  const filterOptionCounts = useMemo(
+  const attributeFilterParams = useMemo(
+    () => ({
+      genetics: parseListParam(geneticsParam),
+      difficulty: parseListParam(difficultyParam),
+      thc: parseListParam(thcParam),
+      cbd: parseListParam(cbdParam),
+      sex: parseListParam(sexParam),
+      yieldQuick: yieldQuickParam.trim() || null,
+      seeds: parseListParam(seedsParam),
+    }),
+    [
+      geneticsParam,
+      difficultyParam,
+      thcParam,
+      cbdParam,
+      sexParam,
+      yieldQuickParam,
+      seedsParam,
+    ]
+  );
+
+  const serverHandlesAttributeFilters = useMemo(
+    () => catalogAttributeFiltersHandledOnServer(attributeFilterParams),
+    [attributeFilterParams]
+  );
+
+  const clientFilterCountsFallback = useMemo(
     () => calculateFilterCounts(shopScopedProducts),
     [shopScopedProducts]
   );
 
+  const [filterCountsFromApi, setFilterCountsFromApi] =
+    useState<ShopFilterOptionCounts | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const sp = new URLSearchParams();
+    if (categoryParam.trim()) sp.set("category", categoryParam.trim());
+    if (breederParam?.trim()) sp.set("breeder", breederParam.trim());
+    const qTrim = qParam.trim();
+    if (qTrim) sp.set("q", qTrim);
+    if (ftRawQS.trim()) sp.set("ft", ftRawQS.trim());
+    if (filterQueryParam.trim()) sp.set("filter", filterQueryParam.trim());
+    void (async () => {
+      try {
+        const res = await fetchWithTimeout(
+          `/api/shop/filter-counts?${sp.toString()}`,
+          { cache: "no-store" },
+          SHOP_FILTER_COUNTS_TIMEOUT_MS
+        );
+        const json = (await res.json()) as { counts?: ShopFilterOptionCounts };
+        if (!cancelled && res.ok && json.counts) setFilterCountsFromApi(json.counts);
+        else if (!cancelled) setFilterCountsFromApi(null);
+      } catch {
+        if (!cancelled) setFilterCountsFromApi(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    categoryParam,
+    breederParam,
+    qParam,
+    ftRawQS,
+    filterQueryParam,
+  ]);
+
+  const filterOptionCounts = filterCountsFromApi ?? clientFilterCountsFallback;
+
   const filteredProducts = useMemo(() => {
-    const geneticsSel = parseListParam(geneticsParam);
-    const difficultySel = parseListParam(difficultyParam);
-    const thcSel = parseListParam(thcParam);
-    const cbdSel = parseListParam(cbdParam);
-    const sexSel = parseListParam(sexParam);
-    const seedsSel = parseListParam(seedsParam);
-    const matches = shopScopedProducts.filter(
-      (p) =>
-        productMatchesShopAttributeFilters(
-          {
-            strain_dominance: p.strain_dominance,
-            growing_difficulty: p.growing_difficulty,
-            thc_percent: p.thc_percent,
-            cbd_percent: p.cbd_percent ?? null,
-            seed_type: p.seed_type ?? null,
-            yield_info: (p as { yield_info?: string | null }).yield_info ?? null,
-            product_variants: p.product_variants ?? null,
-          },
-          geneticsSel,
-          difficultySel,
-          thcSel,
-          cbdSel,
-          sexSel,
-          yieldQuickParam.trim() || null,
-          seedsSel
-        ) && productMatchesPriceRange(p, priceMin, priceMax)
-    );
+    const { genetics: geneticsSel, difficulty: difficultySel, thc: thcSel, cbd: cbdSel, sex: sexSel, seeds: seedsSel, yieldQuick } =
+      attributeFilterParams;
+    const matches = shopScopedProducts.filter((p) => {
+      const attrOk = serverHandlesAttributeFilters
+        ? true
+        : productMatchesShopAttributeFilters(
+            {
+              strain_dominance: p.strain_dominance,
+              sativa_ratio: (p as { sativa_ratio?: number | null }).sativa_ratio ?? null,
+              indica_ratio: (p as { indica_ratio?: number | null }).indica_ratio ?? null,
+              genetic_ratio: (p as { genetic_ratio?: string | null }).genetic_ratio ?? null,
+              genetics: (p as { genetics?: string | null }).genetics ?? null,
+              growing_difficulty: p.growing_difficulty,
+              thc_percent: p.thc_percent,
+              cbd_percent: p.cbd_percent ?? null,
+              seed_type: p.seed_type ?? null,
+              yield_info: (p as { yield_info?: string | null }).yield_info ?? null,
+              product_variants: p.product_variants ?? null,
+            },
+            geneticsSel,
+            difficultySel,
+            thcSel,
+            cbdSel,
+            sexSel,
+            yieldQuick,
+            seedsSel
+          );
+      return attrOk && productMatchesPriceRange(p, priceMin, priceMax);
+    });
     if (!breederParam?.trim()) return matches;
     if (
       quickEffective === "new" ||
@@ -626,6 +729,8 @@ export function ShopPageClient({
   }, [
     shopScopedProducts,
     breederParam,
+    attributeFilterParams,
+    serverHandlesAttributeFilters,
     geneticsParam,
     difficultyParam,
     thcParam,
@@ -638,26 +743,6 @@ export function ShopPageClient({
     quickEffective,
     sortEffective,
   ]);
-
-  const isEn = locale === "en";
-
-  /** `/seeds` and `/seeds/[breeder]` use the compact catalog header only (no vault hero). */
-  const isSeedsJournalCatalogPath =
-    isSeedsIndexPath(pathname) || Boolean(journalBreederSlug);
-
-  const vaultHeroProducts = useMemo(() => {
-    if (isSeedsJournalCatalogPath) return [];
-    return selectVaultFeaturedProducts(filteredProducts);
-  }, [filteredProducts, isSeedsJournalCatalogPath]);
-
-  const filteredIdsKey = useMemo(
-    () => filteredProducts.map((p) => p.id).join(","),
-    [filteredProducts]
-  );
-
-  useEffect(() => {
-    setVisibleCount(SHOP_PAGE_INITIAL);
-  }, [filteredIdsKey]);
 
   useEffect(() => {
     if (!didMountScrollRef.current) {
@@ -712,20 +797,6 @@ export function ShopPageClient({
     []
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/storefront/magazine/recent?take=2")
-      .then((r) => r.json())
-      .then((j: { posts?: MagazinePostPublic[] }) => {
-        if (cancelled || !Array.isArray(j?.posts)) return;
-        setResearchPosts(j.posts.slice(0, 2));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const loadMoreProducts = useCallback(async () => {
     if (shownCount < totalFiltered) {
       setVisibleCount((c) => Math.min(c + SHOP_PAGE_STEP, totalFiltered));
@@ -736,10 +807,15 @@ export function ShopPageClient({
     try {
       const nextPage = loadedPage + 1;
       const sp = new URLSearchParams({
-        page: String(nextPage),
         limit: String(SHOP_PAGE_INITIAL),
-        includeVariants: "true",
       });
+      if (catalogUseCursor && catalogNextCursor != null) {
+        sp.set("cursor", String(catalogNextCursor));
+        sp.set("page", "1");
+      } else {
+        sp.set("page", String(nextPage));
+      }
+      if (seedsParam.trim()) sp.set("includeVariants", "true");
       if (breederParam?.trim()) sp.set("breeder", breederParam.trim());
       if (categoryParam.trim()) sp.set("category", categoryParam.trim());
       if (qParam.trim()) sp.set("q", qParam.trim());
@@ -756,15 +832,26 @@ export function ShopPageClient({
       if (yieldQuickParam.trim()) sp.set("yield", yieldQuickParam.trim());
       if (priceMin != null) sp.set(PRICE_PARAM_MIN, String(priceMin));
       if (priceMax != null) sp.set(PRICE_PARAM_MAX, String(priceMax));
-      const res = await fetchWithTimeout(`/api/products?${sp.toString()}`, { cache: "no-store" }, 2000);
+      const res = await fetchCatalogProductsApi(
+        sp.toString(),
+        SHOP_CATALOG_LOAD_MORE_TIMEOUT_MS
+      );
       const json = (await res.json()) as {
         products?: ProductListItem[];
         hasMore?: boolean;
         total?: number | null;
+        nextCursor?: number | null;
+        useCursor?: boolean;
+        error?: string;
       };
-      if (!res.ok) throw new Error("Failed to load more products");
+      if (!res.ok || res.status === 408) {
+        throw new Error(json.error ?? "Failed to load more products");
+      }
       const nextProducts = Array.isArray(json.products) ? json.products : [];
       if (typeof json.total === "number") setCatalogTotal(json.total);
+      if (typeof json.nextCursor === "number") setCatalogNextCursor(json.nextCursor);
+      else setCatalogNextCursor(null);
+      if (typeof json.useCursor === "boolean") setCatalogUseCursor(json.useCursor);
       setProducts((prev) => {
         const seen = new Set(prev.map((p) => String(p.id)));
         const merged = [...prev];
@@ -776,9 +863,24 @@ export function ShopPageClient({
         }
         return merged;
       });
-      setLoadedPage(nextPage);
+      if (!json.useCursor || json.nextCursor == null) {
+        setLoadedPage(nextPage);
+      }
       setHasMoreServerProducts(Boolean(json.hasMore));
-      setVisibleCount((c) => c + nextProducts.length);
+      setVisibleCount((c) => {
+        const seen = new Set(
+          products.map((p) => String(p.id))
+        );
+        let added = 0;
+        for (const product of nextProducts) {
+          const key = String(product.id);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          added += 1;
+        }
+        if (added <= 0) return c;
+        return c + added;
+      });
     } catch {
       toast.error(t("โหลดสินค้าเพิ่มไม่สำเร็จ", "Could not load more products"));
     } finally {
@@ -790,6 +892,8 @@ export function ShopPageClient({
     hasMoreServerProducts,
     loadingMore,
     loadedPage,
+    catalogUseCursor,
+    catalogNextCursor,
     breederParam,
     categoryParam,
     qParam,
@@ -808,6 +912,7 @@ export function ShopPageClient({
     priceMax,
     t,
     catalogTotal,
+    products,
   ]);
 
   const hasFilters =
@@ -920,8 +1025,6 @@ export function ShopPageClient({
             </Button>
           </div>
         </div>
-      ) : vaultHeroProducts.length > 0 ? (
-        <ShopGeneticVaultHero key={filteredIdsKey} products={vaultHeroProducts} isEn={isEn} t={t} />
       ) : (
         <div className="border-b border-zinc-100 bg-white px-4 py-4 sm:px-6 sm:py-5">
           <div className="mx-auto max-w-7xl">
@@ -1141,7 +1244,6 @@ export function ShopPageClient({
               <>
                 <GeneticVaultProductGrid
                   products={visibleProducts}
-                  researchPosts={researchPosts}
                   catalogSeedsFilter={seedsParam.trim() ? seedsParam : null}
                 />
                 {totalFiltered > 0 && (

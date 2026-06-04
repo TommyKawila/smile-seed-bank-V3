@@ -1,6 +1,6 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import {
-  PRODUCT_SELECT_WITH_BREEDER,
+  PRODUCT_SELECT_CATALOG_LIST,
   PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS,
   type ProductWithBreederAndVariants,
 } from "@/lib/supabase/types";
@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import {
   enrichProductsWithBrandListing,
   loadActiveBrandPromotionRules,
+  loadActiveBrandPromotionRulesCached,
   type ListingBaseProduct,
   type ProductWithBrandListing,
 } from "@/lib/product-brand-listing";
@@ -26,15 +27,31 @@ import {
   resolveProductSlugFromName,
 } from "@/lib/product-utils";
 import {
+  catalogFiltersRequireMemoryScan,
+  catalogSupportsIdCursorPagination,
+  cbdOrFilterExpression,
+  cbdSlugsFullyDbMappable,
+  yieldHighOrFilterExpression,
+  yieldQuickIsSqlHighFilter,
+  difficultyOrFilterExpression,
+  difficultySlugsFullyDbMappable,
+  geneticsDbValuesForSlugs,
+  geneticsSlugsFullyDbMappable,
   parseListParam,
   productMatchesSeedsPackFilter,
   productMatchesShopAttributeFilters,
+  seedsSlugsFullyDbMappable,
+  sexOrFilterExpression,
+  sexSlugsFullyDbMappable,
+  thcOrFilterExpression,
+  thcSlugsFullyDbMappable,
 } from "@/lib/shop-attribute-filters";
 import { resolveListingUnitAfterBrand, type BrandPromotionRuleRow } from "@/lib/brand-promotion-checkout";
 import { resolveBreederFromShopParam } from "@/lib/breeder-slug";
 import { stripEmbeddedColorMarkup } from "@/lib/sanitize-product-text";
 import { buildProductCatalogSearchOrFilter } from "@/lib/product-catalog-search";
 import {
+  catalogFtRequiresMemoryPass,
   normalizeCatalogFtUrlParam,
   productMatchesCatalogFtParam,
 } from "@/lib/seed-type-filter";
@@ -179,7 +196,7 @@ async function withBrandListingEnrichment<T extends ListingBaseProduct>(
   rows: T[],
 ): Promise<(T & ProductWithBrandListing)[]> {
   if (rows.length === 0) return [];
-  const rules = await loadActiveBrandPromotionRules();
+  const rules = await loadActiveBrandPromotionRulesCached();
   return enrichProductsWithBrandListing(rows, rules);
 }
 
@@ -534,11 +551,16 @@ export async function getActiveProducts(opts?: {
   yield_param?: string | null;
   /** Genetic Vault flowering pill (?ft=) — narrowed at DB (`autoflower`, `photo_3n`) or supersets + storefront bucket match (`photo`, `photo-ff`). */
   catalog_ft?: string | null;
+  /** Continue `id DESC` scan below this product id (load-more without offset). */
+  cursor_id?: number;
 }): Promise<
   ServiceResult<ProductWithBreeder[]> & {
     catalogHasMore?: boolean;
     /** Rows matching the same server filters as this query (null if unknown / truncated in-memory catalog). */
     catalogTotalCount?: number | null;
+    /** Last row id in this page — pass as `cursor` for the next request when `catalogUseCursor` is true. */
+    catalogNextCursor?: number | null;
+    catalogUseCursor?: boolean;
   }
 > {
   try {
@@ -550,15 +572,34 @@ export async function getActiveProducts(opts?: {
     const cbdSel = parseListParam(opts?.cbd_param ?? null);
     const sexSel = parseListParam(opts?.sex_param ?? null);
     const yieldQuickParam = opts?.yield_param?.trim() || null;
+    const geneticsSqlOk =
+      geneticsSel.length === 0 || geneticsSlugsFullyDbMappable(geneticsSel);
+    const difficultySqlOk =
+      difficultySel.length === 0 || difficultySlugsFullyDbMappable(difficultySel);
+    const thcSqlOk = thcSel.length === 0 || thcSlugsFullyDbMappable(thcSel);
+    const cbdSqlOk = cbdSel.length === 0 || cbdSlugsFullyDbMappable(cbdSel);
+    const sexSqlOk = sexSel.length === 0 || sexSlugsFullyDbMappable(sexSel);
+    const needsSidebarFilterScan = catalogFiltersRequireMemoryScan({
+      genetics: geneticsSel,
+      difficulty: difficultySel,
+      thc: thcSel,
+      cbd: cbdSel,
+      sex: sexSel,
+      yieldQuick: yieldQuickParam,
+      seeds: seedsSel,
+    });
     const ftOriginal = opts?.catalog_ft?.trim() ?? "";
     const catalogFtKey = normalizeCatalogFtUrlParam(ftOriginal);
-    const memoryFtPassNeeded = catalogFtKey === "photo" || catalogFtKey === "photo-ff";
+    const memoryFtPassNeeded = ftOriginal ? catalogFtRequiresMemoryPass(ftOriginal) : false;
+    const seedsSqlOk = seedsSel.length === 0 || seedsSlugsFullyDbMappable(seedsSel);
+    const yieldSqlHigh = yieldQuickIsSqlHighFilter(yieldQuickParam);
+    const cursorId =
+      opts?.cursor_id != null && Number.isFinite(Number(opts.cursor_id))
+        ? Math.floor(Number(opts.cursor_id))
+        : null;
 
-    const selectShape =
-      seedsSel.length > 0 || opts?.includeVariants
-        ? PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS
-        : PRODUCT_SELECT_WITH_BREEDER;
-
+    /** Grid cards need pack variants for add-to-cart; slim list is smaller than `*`. */
+    const selectShape = PRODUCT_SELECT_CATALOG_LIST;
     let breederIdResolved: number | undefined = opts?.breeder_id;
     if (opts?.breeder_shop_param?.trim()) {
       const idResolved = await getBreederIdFromShopParam(opts.breeder_shop_param);
@@ -608,7 +649,33 @@ export async function getActiveProducts(opts?: {
       }
       if (breederIdResolved != null) qb = qb.eq("breeder_id", breederIdResolved);
 
-      /** DB-level ft only where PostgREST stays valid; `photo` / `photo-ff` use memory pass (same bucket rules as storefront). */
+      if (geneticsSel.length > 0 && geneticsSqlOk) {
+        const domValues = geneticsDbValuesForSlugs(geneticsSel);
+        if (domValues.length === 1) qb = qb.eq("strain_dominance", domValues[0]);
+        else if (domValues.length > 1) qb = qb.in("strain_dominance", domValues);
+      }
+      if (difficultySel.length > 0 && difficultySqlOk) {
+        const diffOr = difficultyOrFilterExpression(difficultySel);
+        if (diffOr) qb = qb.or(diffOr);
+      }
+      if (thcSel.length > 0 && thcSqlOk) {
+        const thcOr = thcOrFilterExpression(thcSel);
+        if (thcOr) qb = qb.or(thcOr);
+      }
+      if (sexSel.length > 0 && sexSqlOk) {
+        const sexOr = sexOrFilterExpression(sexSel);
+        if (sexOr) qb = qb.or(sexOr);
+      }
+      if (cbdSel.length > 0 && cbdSqlOk) {
+        const cbdOr = cbdOrFilterExpression(cbdSel);
+        if (cbdOr) qb = qb.or(cbdOr);
+      }
+      if (yieldSqlHigh) {
+        qb = qb.or(yieldHighOrFilterExpression());
+      }
+      /** Pack size: filter via `product_variants` in memory (`pack_buckets` may be un-backfilled). */
+
+      /** DB-level ft; plain `photo` still needs memory pass for FF category split. */
       switch (catalogFtKey) {
         case "auto":
           qb = qb.eq("flowering_type", "autoflower");
@@ -616,14 +683,36 @@ export async function getActiveProducts(opts?: {
         case "photo-3n":
           qb = qb.eq("flowering_type", "photo_3n");
           break;
+        case "photo-ff":
+          qb = qb.eq("flowering_type", "photo_ff");
+          break;
+        case "photo":
+          qb = qb.eq("flowering_type", "photoperiod");
+          break;
         default:
           break;
       }
       return qb;
     };
 
+    const useIdCursorPagination = catalogSupportsIdCursorPagination({
+      needsSidebarFilterScan,
+      memoryFtPassNeeded,
+      saleOnly,
+      clearanceOnly,
+      useEnrichedCatalog,
+      sortKey,
+    });
+
+    const lastRowCursor = (rows: Row[]): number | null => {
+      if (!rows.length) return null;
+      const last = rows[rows.length - 1];
+      const id = Number(last.id);
+      return Number.isFinite(id) ? id : null;
+    };
+
     const canUseExactSqlCatalogCount =
-      seedsSel.length === 0 && !(ftOriginal && memoryFtPassNeeded) && !saleOnly;
+      !needsSidebarFilterScan && !(ftOriginal && memoryFtPassNeeded) && !saleOnly;
 
     const fetchExactCatalogRowCount = async (): Promise<number | null> => {
       if (!canUseExactSqlCatalogCount) return null;
@@ -643,12 +732,42 @@ export async function getActiveProducts(opts?: {
         qb = qb.lte("price", opts.maxPrice);
       }
       if (breederIdResolved != null) qb = qb.eq("breeder_id", breederIdResolved);
+      if (geneticsSel.length > 0 && geneticsSqlOk) {
+        const domValues = geneticsDbValuesForSlugs(geneticsSel);
+        if (domValues.length === 1) qb = qb.eq("strain_dominance", domValues[0]);
+        else if (domValues.length > 1) qb = qb.in("strain_dominance", domValues);
+      }
+      if (difficultySel.length > 0 && difficultySqlOk) {
+        const diffOr = difficultyOrFilterExpression(difficultySel);
+        if (diffOr) qb = qb.or(diffOr);
+      }
+      if (thcSel.length > 0 && thcSqlOk) {
+        const thcOr = thcOrFilterExpression(thcSel);
+        if (thcOr) qb = qb.or(thcOr);
+      }
+      if (sexSel.length > 0 && sexSqlOk) {
+        const sexOr = sexOrFilterExpression(sexSel);
+        if (sexOr) qb = qb.or(sexOr);
+      }
+      if (cbdSel.length > 0 && cbdSqlOk) {
+        const cbdOr = cbdOrFilterExpression(cbdSel);
+        if (cbdOr) qb = qb.or(cbdOr);
+      }
+      if (yieldSqlHigh) {
+        qb = qb.or(yieldHighOrFilterExpression());
+      }
       switch (catalogFtKey) {
         case "auto":
           qb = qb.eq("flowering_type", "autoflower");
           break;
         case "photo-3n":
           qb = qb.eq("flowering_type", "photo_3n");
+          break;
+        case "photo-ff":
+          qb = qb.eq("flowering_type", "photo_ff");
+          break;
+        case "photo":
+          qb = qb.eq("flowering_type", "photoperiod");
           break;
         default:
           break;
@@ -705,10 +824,15 @@ export async function getActiveProducts(opts?: {
       return Number.isFinite(base) && Number.isFinite(eff) && base > 0 && eff < base;
     };
 
+    const seedsForMemoryMatch = seedsSel;
     const rowMatchesSidebarFilters = (row: Row): boolean =>
       productMatchesShopAttributeFilters(
         {
           strain_dominance: row.strain_dominance,
+          sativa_ratio: row.sativa_ratio ?? null,
+          indica_ratio: row.indica_ratio ?? null,
+          genetic_ratio: row.genetic_ratio ?? null,
+          genetics: row.genetics ?? null,
           growing_difficulty: row.growing_difficulty,
           thc_percent: row.thc_percent,
           cbd_percent: row.cbd_percent ?? null,
@@ -722,7 +846,7 @@ export async function getActiveProducts(opts?: {
         cbdSel,
         sexSel,
         yieldQuickParam,
-        seedsSel,
+        seedsForMemoryMatch,
       );
 
     const finalizeEnrichedRows = async (
@@ -730,9 +854,10 @@ export async function getActiveProducts(opts?: {
       truncated: boolean,
       explicitTotal?: number,
     ) => {
-      let rows = rawRows.filter((p) =>
-        ftOriginal ? productMatchesCatalogFtParam(p, ftOriginal) : true
-      );
+      let rows = rawRows.filter((p) => {
+        if (ftOriginal && !productMatchesCatalogFtParam(p, ftOriginal)) return false;
+        return rowMatchesSidebarFilters(p);
+      });
       const sanitized = postSeedAndSanitize(rows);
       let enriched = await withBrandListingEnrichment(sanitized as Parameters<typeof withBrandListingEnrichment>[0]);
       if (sortKey === "price_asc" || sortKey === "price_desc") {
@@ -781,14 +906,18 @@ export async function getActiveProducts(opts?: {
           const pb = getCatalogCardSortPrice(b);
           const d = pa - pb;
           if (d !== 0) return sortKey === "price_asc" ? d : -d;
-          return Number(b.id) - Number(a.id);
+          const idB = Number((b as unknown as ProductWithBreeder).id);
+          const idA = Number((a as unknown as ProductWithBreeder).id);
+          return idB - idA;
         });
       } else {
         enriched.sort((a, b) => {
           const pctA = getClearancePercentOff(a) ?? 0;
           const pctB = getClearancePercentOff(b) ?? 0;
           if (pctB !== pctA) return pctB - pctA;
-          return Number(b.id) - Number(a.id);
+          const idB = Number((b as unknown as ProductWithBreeder).id);
+          const idA = Number((a as unknown as ProductWithBreeder).id);
+          return idB - idA;
         });
       }
       const catalogTotalCount =
@@ -943,6 +1072,102 @@ export async function getActiveProducts(opts?: {
       };
     }
 
+    if (needsSidebarFilterScan && !saleOnly && !clearanceOnly) {
+      const hits: Row[] = [];
+      let cursorLt: number | null = cursorId;
+      let dbExhausted = false;
+      /** Page 1 w/o cursor: full scan for total; load-more passes `cursor_id` + fetches one page only. */
+      const needFullScan = page === 1 && cursorLt == null;
+      const scanCap = needFullScan ? CATALOG_ENRICH_CAP : limit;
+
+      for (let round = 0; round < MEM_MAX_ROUNDS && hits.length < scanCap; round++) {
+        let qb = applySortingForDb(applyCommonFilters());
+        if (cursorLt != null) qb = qb.lt("id", cursorLt);
+        qb = qb.limit(MEM_SCAN_CHUNK);
+        const { data, error } = await qb;
+        if (error) return { data: null, error: error.message };
+        const chunk = (data ?? []) as unknown as Row[];
+        let minSeen: number | null = null;
+        for (const row of chunk) {
+          const idNum = Number(row.id);
+          if (Number.isFinite(idNum)) {
+            minSeen = minSeen == null ? idNum : Math.min(minSeen, idNum);
+          }
+          if (!(ftOriginal ? productMatchesCatalogFtParam(row, ftOriginal) : true)) continue;
+          if (!rowMatchesSidebarFilters(row)) continue;
+          hits.push(row);
+          if (hits.length >= scanCap) break;
+        }
+        if (chunk.length < MEM_SCAN_CHUNK) {
+          dbExhausted = true;
+          break;
+        }
+        cursorLt = minSeen;
+        if (cursorLt == null || !Number.isFinite(cursorLt)) {
+          dbExhausted = true;
+          break;
+        }
+      }
+
+      const truncated = needFullScan && !dbExhausted && hits.length >= CATALOG_ENRICH_CAP;
+      const from = needFullScan ? (page - 1) * limit : 0;
+      const needsEnrichedSort =
+        sortKey === "price_asc" ||
+        sortKey === "price_desc" ||
+        sortKey === "smart_deal";
+
+      let slice: ProductWithBreeder[];
+      if (needsEnrichedSort) {
+        const sanitized = postSeedAndSanitize(hits);
+        let enriched = await withBrandListingEnrichment(
+          sanitized as Parameters<typeof withBrandListingEnrichment>[0]
+        );
+        if (sortKey === "price_asc" || sortKey === "price_desc") {
+          enriched.sort((a, b) => {
+            const pa = getCatalogCardSortPrice(a);
+            const pb = getCatalogCardSortPrice(b);
+            const d = pa - pb;
+            if (d !== 0) return sortKey === "price_asc" ? d : -d;
+            const idB = Number((b as unknown as ProductWithBreeder).id);
+            const idA = Number((a as unknown as ProductWithBreeder).id);
+            return idB - idA;
+          });
+        } else {
+          enriched.sort((a, b) => {
+            const stockA = Number((a as unknown as ProductWithBreeder).stock ?? 0);
+            const stockB = Number((b as unknown as ProductWithBreeder).stock ?? 0);
+            if ((stockA > 0) !== (stockB > 0)) return stockB > 0 ? 1 : -1;
+            const pa = getCatalogCardSortPrice(a);
+            const pb = getCatalogCardSortPrice(b);
+            if (pa !== pb) return pa - pb;
+            const idB = Number((b as unknown as ProductWithBreeder).id);
+            const idA = Number((a as unknown as ProductWithBreeder).id);
+            return idB - idA;
+          });
+        }
+        slice = enriched.slice(from, from + limit) as unknown as ProductWithBreeder[];
+      } else {
+        const pageRows = hits.slice(from, from + limit);
+        slice = (await withBrandListingEnrichment(
+          postSeedAndSanitize(pageRows) as Parameters<typeof withBrandListingEnrichment>[0]
+        )) as unknown as ProductWithBreeder[];
+      }
+
+      const catalogTotalCount = needFullScan ? hits.length : null;
+      const catalogHasMore = needFullScan
+        ? from + limit < hits.length || truncated
+        : hits.length >= limit || !dbExhausted;
+
+      return {
+        data: slice,
+        error: null,
+        catalogHasMore,
+        catalogTotalCount,
+        catalogNextCursor: lastRowCursor(slice as unknown as Row[]),
+        catalogUseCursor: true,
+      };
+    }
+
     if (useEnrichedCatalog && !memoryFtPassNeeded) {
       const sqlTotal = await fetchExactCatalogRowCount();
       let query = applySortingForDb(applyCommonFilters());
@@ -976,7 +1201,7 @@ export async function getActiveProducts(opts?: {
             if (minSeen === null || idNum < minSeen) minSeen = idNum;
           }
           if (!(ftOriginal ? productMatchesCatalogFtParam(row, ftOriginal) : true)) continue;
-          if (seedsSel.length > 0 && !productMatchesSeedsPackFilter(row.product_variants ?? null, seedsSel)) continue;
+          if (!rowMatchesSidebarFilters(row)) continue;
           hits.push(row);
           if (hits.length >= CATALOG_ENRICH_CAP) break;
         }
@@ -989,10 +1214,19 @@ export async function getActiveProducts(opts?: {
     }
 
     if (!memoryFtPassNeeded) {
-      const sqlTotal = await fetchExactCatalogRowCount();
+      const sqlTotal =
+        useIdCursorPagination && cursorId == null ? await fetchExactCatalogRowCount() : null;
       let query = applySortingForDb(applyCommonFilters());
-      const from = (page - 1) * limit;
-      query = query.range(from, from + limit - 1);
+      const fetchLimit = useIdCursorPagination ? limit + 1 : limit;
+
+      if (useIdCursorPagination) {
+        if (cursorId != null) query = query.lt("id", cursorId);
+        query = query.limit(fetchLimit);
+      } else {
+        const from = (page - 1) * limit;
+        query = query.range(from, from + limit - 1);
+      }
+
       const { data, error } = await query;
 
       if (error) return { data: null, error: error.message };
@@ -1000,13 +1234,29 @@ export async function getActiveProducts(opts?: {
       let rows = fetched.filter((p) =>
         ftOriginal ? productMatchesCatalogFtParam(p, ftOriginal) : true
       );
-      const catalogHasMore =
-        sqlTotal != null ? from + limit < sqlTotal : fetched.length === limit;
+
+      let catalogHasMore: boolean;
+      let pageRows = rows;
+      if (useIdCursorPagination) {
+        const hasExtra = fetched.length > limit;
+        pageRows = hasExtra ? rows.slice(0, limit) : rows;
+        catalogHasMore =
+          hasExtra ||
+          (sqlTotal != null && cursorId == null && sqlTotal > limit);
+      } else {
+        const from = (page - 1) * limit;
+        catalogHasMore =
+          sqlTotal != null ? from + limit < sqlTotal : fetched.length === limit;
+      }
+
+      const enriched = await withBrandListingEnrichment(postSeedAndSanitize(pageRows));
       return {
-        data: await withBrandListingEnrichment(postSeedAndSanitize(rows)),
+        data: enriched,
         error: null,
         catalogHasMore,
         catalogTotalCount: sqlTotal,
+        catalogNextCursor: useIdCursorPagination ? lastRowCursor(pageRows) : null,
+        catalogUseCursor: useIdCursorPagination,
       };
     }
 
@@ -1035,10 +1285,11 @@ export async function getActiveProducts(opts?: {
     }
 
     const hits: Row[] = [];
-    let cursorLt: number | null = null;
+    let cursorLt: number | null = cursorId;
     let lastFetchLen = 0;
+    const memFtScanCap = cursorId != null ? limit : pageEndIndex;
 
-    for (let round = 0; round < MEM_MAX_ROUNDS && hits.length < pageEndIndex; round++) {
+    for (let round = 0; round < MEM_MAX_ROUNDS && hits.length < memFtScanCap; round++) {
       let qb = applySortingForDb(applyCommonFilters());
       if (cursorLt != null) qb = qb.lt("id", cursorLt);
       qb = qb.limit(MEM_SCAN_CHUNK);
@@ -1057,9 +1308,9 @@ export async function getActiveProducts(opts?: {
           minSeen = minSeen == null ? idNum : Math.min(minSeen, idNum);
         }
         if (!(ftOriginal ? productMatchesCatalogFtParam(row, ftOriginal) : true)) continue;
-        if (seedsSel.length > 0 && !productMatchesSeedsPackFilter(row.product_variants ?? null, seedsSel)) continue;
+        if (!rowMatchesSidebarFilters(row)) continue;
         hits.push(row);
-        if (hits.length >= pageEndIndex) break;
+        if (hits.length >= memFtScanCap) break;
       }
 
       if (chunk.length < MEM_SCAN_CHUNK) break;
@@ -1070,18 +1321,25 @@ export async function getActiveProducts(opts?: {
       if (!Number.isFinite(cursorLt)) break;
     }
 
-    const sliced = hits.slice((page - 1) * limit, pageEndIndex);
+    const sliced =
+      cursorId != null ? hits : hits.slice((page - 1) * limit, pageEndIndex);
 
     let catalogHasMore =
-      hits.length > pageEndIndex || (lastFetchLen === MEM_SCAN_CHUNK && hits.length >= pageEndIndex);
+      cursorId != null
+        ? hits.length >= limit || lastFetchLen === MEM_SCAN_CHUNK
+        : hits.length > pageEndIndex ||
+          (lastFetchLen === MEM_SCAN_CHUNK && hits.length >= pageEndIndex);
 
     catalogHasMore = catalogHasMore || lastFetchLen === MEM_SCAN_CHUNK;
 
+    const enrichedFt = await withBrandListingEnrichment(postSeedAndSanitize(sliced));
     return {
-      data: await withBrandListingEnrichment(postSeedAndSanitize(sliced)),
+      data: enrichedFt,
       error: null,
       catalogHasMore,
       catalogTotalCount: null,
+      catalogNextCursor: lastRowCursor(sliced),
+      catalogUseCursor: true,
     };
   } catch (err) {
     logger.error("product-service.getActiveProducts failed", {

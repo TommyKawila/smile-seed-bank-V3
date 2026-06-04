@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import {
+  PRODUCT_SELECT_CATALOG_LIST,
   PRODUCT_SELECT_WITH_BREEDER,
   PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS,
   type ProductVariantRow,
@@ -90,7 +91,7 @@ export async function fetchProductsForCatalog(opts: ProductQueryOptions): Promis
 
   const supabase = createClient();
   let query = includeVariants
-    ? supabase.from("products").select(PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS)
+    ? supabase.from("products").select(PRODUCT_SELECT_CATALOG_LIST)
     : supabase.from("products").select(PRODUCT_SELECT_WITH_BREEDER);
 
   if (!includeInactive) query = query.eq("is_active", true);

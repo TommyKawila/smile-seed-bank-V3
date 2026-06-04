@@ -45,3 +45,11 @@ export const PRODUCT_SELECT_WITH_BREEDER =
 
 export const PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS =
   "*, breeders(id, name, logo_url), product_categories(id, name), product_variants(*), product_images(id,url,variant_id,is_main,sort_order)";
+
+/** Filter sidebar counts — attribute fields + pack labels only. */
+export const PRODUCT_SELECT_FILTER_COUNT =
+  "id, strain_dominance, sativa_ratio, indica_ratio, genetic_ratio, genetics, growing_difficulty, thc_percent, cbd_percent, seed_type, flowering_type, category, product_categories(id, name), product_variants(unit_label, is_active)";
+
+/** Shop grid: slim variants (no full `*`) — faster catalog / filter scans. */
+export const PRODUCT_SELECT_CATALOG_LIST =
+  "id, slug, name, price, stock, is_active, sale_price, is_clearance, is_featured, created_at, is_pinned_new_arrival, new_arrival_priority, strain_dominance, genetic_ratio, genetics, thc_percent, cbd_percent, indica_ratio, sativa_ratio, breeder_id, image_urls, image_url, category, flowering_type, seed_type, growing_difficulty, yield_info, pack_buckets, description_th, description_en, breeders(id, name, logo_url), product_categories(id, name), product_variants(id, unit_label, price, stock, is_active, discount_percent, discount_ends_at, clearance_price)";

@@ -19,6 +19,7 @@ function numParam(value: string | null): number | undefined {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, Math.floor(numParam(searchParams.get("page")) ?? 1));
+  const cursorId = numParam(searchParams.get("cursor"));
   const limit = Math.min(100, Math.max(1, Math.floor(numParam(searchParams.get("limit")) ?? 50)));
   const breederParam =
     searchParams.get("breeder")?.trim() ||
@@ -73,6 +74,7 @@ export async function GET(req: Request) {
           maxPrice,
           page,
           limit,
+          cursor_id: cursorId,
           includeVariants,
           sort,
           quick,
@@ -131,6 +133,12 @@ export async function GET(req: Request) {
     "catalogTotalCount" in result && typeof result.catalogTotalCount === "number"
       ? result.catalogTotalCount
       : null;
+  const nextCursor =
+    "catalogNextCursor" in result && typeof result.catalogNextCursor === "number"
+      ? result.catalogNextCursor
+      : null;
+  const useCursor =
+    "catalogUseCursor" in result && result.catalogUseCursor === true;
 
   return NextResponse.json(
     {
@@ -139,6 +147,8 @@ export async function GET(req: Request) {
       pageSize: limit,
       hasMore,
       total,
+      nextCursor,
+      useCursor,
     },
     { headers: { "Cache-Control": "private, no-store, max-age=0, must-revalidate" } }
   );

@@ -41,25 +41,27 @@ export default async function ShopPage({
   params,
   searchParams,
 }: {
-  params?: { breederSlug?: string | string[] };
-  searchParams?: Record<string, string | string[] | undefined>;
+  params?: Promise<{ breederSlug?: string | string[] }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const breederSlug = firstParam(params?.breederSlug);
+  const resolvedParams = params ? await params : undefined;
+  const sp = searchParams ? await searchParams : undefined;
+  const breederSlug = firstParam(resolvedParams?.breederSlug);
   const breederId = await resolveBreederIdFromSlug(breederSlug);
-  const category = firstParam(searchParams?.category)?.trim() || "";
-  const search = firstParam(searchParams?.q)?.trim() || "";
-  const filterRaw = firstParam(searchParams?.filter)?.trim() || "";
+  const category = firstParam(sp?.category)?.trim() || "";
+  const search = firstParam(sp?.q)?.trim() || "";
+  const filterRaw = firstParam(sp?.filter)?.trim() || "";
   const catalogFt =
     resolveCatalogFtFromUrl({
-      ft: firstParam(searchParams?.ft),
+      ft: firstParam(sp?.ft),
       filter: filterRaw || undefined,
     }) || "";
-  const quickRaw = firstParam(searchParams?.quick)?.trim();
+  const quickRaw = firstParam(sp?.quick)?.trim();
   const quick =
     quickRaw === "new" || quickRaw === "sale" || quickRaw === "clearance"
       ? quickRaw
       : resolveCatalogQuickFromFilter(filterRaw) ?? undefined;
-  const sortRaw = firstParam(searchParams?.sort)?.trim();
+  const sortRaw = firstParam(sp?.sort)?.trim();
   const sortFromParam =
     sortRaw === "price_asc" ||
     sortRaw === "price_desc" ||
@@ -70,7 +72,7 @@ export default async function ShopPage({
   const sortFromFilter = resolveCatalogSortFromFilter(filterRaw);
   const sort = sortFromParam ?? sortFromFilter ?? undefined;
   const priceRange = parsePriceRangeParams({
-    get: searchParamsGetter(searchParams),
+    get: searchParamsGetter(sp),
   });
 
   const [catalog, showClearanceFilter] = await Promise.all([
@@ -79,20 +81,20 @@ export default async function ShopPage({
       breeder_id: breederId,
       search: search || undefined,
       catalog_ft: catalogFt || undefined,
-      includeVariants: true,
+      includeVariants: Boolean(firstParam(sp?.seeds)?.trim()),
       limit: SHOP_INITIAL_PRODUCTS,
       page: 1,
       quick,
       sort: sort ?? (!quick && breederId != null ? "smart_deal" : undefined),
       minPrice: priceRange.min ?? undefined,
       maxPrice: priceRange.max ?? undefined,
-      seeds_param: firstParam(searchParams?.seeds)?.trim() || null,
-      genetics_param: firstParam(searchParams?.genetics)?.trim() || null,
-      difficulty_param: firstParam(searchParams?.difficulty)?.trim() || null,
-      thc_param: firstParam(searchParams?.thc)?.trim() || null,
-      cbd_param: firstParam(searchParams?.cbd)?.trim() || null,
-      sex_param: firstParam(searchParams?.sex)?.trim() || null,
-      yield_param: firstParam(searchParams?.yield)?.trim() || null,
+      seeds_param: firstParam(sp?.seeds)?.trim() || null,
+      genetics_param: firstParam(sp?.genetics)?.trim() || null,
+      difficulty_param: firstParam(sp?.difficulty)?.trim() || null,
+      thc_param: firstParam(sp?.thc)?.trim() || null,
+      cbd_param: firstParam(sp?.cbd)?.trim() || null,
+      sex_param: firstParam(sp?.sex)?.trim() || null,
+      yield_param: firstParam(sp?.yield)?.trim() || null,
     }).catch(() => ({
       data: [] as ProductListItem[],
       error: "catalog_fetch_failed",
@@ -106,12 +108,24 @@ export default async function ShopPage({
     : (bigintToJson(catalog.data ?? []) as ProductListItem[]);
   const initialCatalogTotal =
     typeof catalog.catalogTotalCount === "number" ? catalog.catalogTotalCount : null;
+  const initialCatalogUseCursor = catalog.catalogUseCursor === true;
+  const lastRow = initialProducts[initialProducts.length - 1];
+  const initialCatalogNextCursor =
+    initialCatalogUseCursor && lastRow != null && lastRow.id != null
+      ? Number(lastRow.id)
+      : null;
 
   return (
     <Suspense fallback={<ShopSkeleton />}>
       <ShopPageClient
         initialProducts={initialProducts}
         initialCatalogTotal={initialCatalogTotal}
+        initialCatalogNextCursor={
+          Number.isFinite(initialCatalogNextCursor ?? NaN)
+            ? initialCatalogNextCursor
+            : null
+        }
+        initialCatalogUseCursor={initialCatalogUseCursor}
         showClearanceFilter={showClearanceFilter}
       />
     </Suspense>

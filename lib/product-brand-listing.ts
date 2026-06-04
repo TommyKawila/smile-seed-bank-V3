@@ -24,3 +24,17 @@ export async function loadActiveBrandPromotionRules(): Promise<BrandPromotionRul
     })),
   );
 }
+
+const BRAND_RULES_CACHE_TTL_MS = 60_000;
+let brandRulesCache: { rules: BrandPromotionRuleRow[]; at: number } | null = null;
+
+/** Cached brand rules for catalog list (avoids Prisma round-trip per page). */
+export async function loadActiveBrandPromotionRulesCached(): Promise<BrandPromotionRuleRow[]> {
+  const now = Date.now();
+  if (brandRulesCache && now - brandRulesCache.at < BRAND_RULES_CACHE_TTL_MS) {
+    return brandRulesCache.rules;
+  }
+  const rules = await loadActiveBrandPromotionRules();
+  brandRulesCache = { rules, at: now };
+  return rules;
+}

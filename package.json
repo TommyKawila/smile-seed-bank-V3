@@ -16,7 +16,10 @@
     "analyze": "ANALYZE=true npm run build",
     "seed": "npx tsx prisma/seed.ts",
     "seed:magazine": "npx tsx prisma/seed-magazine.ts",
-    "admin:set-password": "npx tsx scripts/set-admin-password.ts"
+    "admin:set-password": "npx tsx scripts/set-admin-password.ts",
+    "backfill:strain-dominance": "npx tsx scripts/backfill-strain-dominance.ts",
+    "backfill:cbd-percent-num": "npx tsx scripts/backfill-cbd-percent-num.ts",
+    "backfill:pack-buckets": "npx tsx scripts/backfill-product-pack-buckets.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

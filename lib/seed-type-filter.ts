@@ -124,6 +124,11 @@ export function catalogFloweringBucket(p: BreederDisplayProductInput): CatalogFl
   return null;
 }
 
+/** Plain `photo` pill needs category/FF split; `photo-ff` / `auto` / `photo-3n` are SQL-safe. */
+export function catalogFtRequiresMemoryPass(ftParam: string | null | undefined): boolean {
+  return normalizeCatalogFtUrlParam(ftParam) === "photo";
+}
+
 /** URL `ft` param (slug) vs product — use for shop grid when a pill is selected. */
 export function productMatchesCatalogFtParam(
   p: BreederDisplayProductInput,

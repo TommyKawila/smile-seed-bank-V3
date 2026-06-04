@@ -4,6 +4,31 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
+- **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
+- **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
+- **Script:** `npm run backfill:pack-buckets`
+- **ไฟล์:** `supabase/migrations/20260604140000_products_pack_buckets.sql`, `scripts/backfill-product-pack-buckets.ts`, `lib/shop-attribute-filters.ts`, `lib/seed-type-filter.ts`, `services/product-service.ts`, `lib/supabase/types.ts`
+
+### บันทึกการทำงาน — 2026-06-04 (Shop catalog P3 — cursor pagination + yield SQL)
+- **Cursor:** `GET /api/products?cursor={id}` — `id DESC` ไม่ rescan offset; memory-scan load-more ใช้ `cursor_id` ต่อจาก id สุดท้าย
+- **Yield:** `?yield=high` → SQL ILIKE บน `yield_info`
+- **SSR:** ส่ง `initialCatalogNextCursor` / `useCursor` เข้า `ShopPageClient`
+- **ไฟล์:** `lib/shop-attribute-filters.ts`, `services/product-service.ts`, `app/api/products/route.ts`, `ShopPageClient.tsx`, `shop/page.tsx`
+
+### บันทึกการทำงาน — 2026-06-04 (Shop catalog P2 — CBD SQL + enrich slice + lean variants)
+- **SQL:** `cbd_percent_num` + migration/backfill · CBD buckets ที่ DB
+- **Perf:** memory-scan enrich เฉพาะแถวของหน้านั้น (ยกเว้น price/smart sort)
+- **Payload:** `includeVariants` เฉพาะเมื่อมี `seeds=` (SSR + client fetch/load-more)
+- **Cache:** filter-counts API 60s in-process
+- **ไฟล์:** `supabase/migrations/20260604130000_products_cbd_percent_num.sql`, `scripts/backfill-cbd-percent-num.ts`, `lib/shop-attribute-filters.ts`, `services/product-service.ts`, `services/shop-catalog-filter-counts.ts`, `ShopPageClient.tsx`, `shop/page.tsx`
+
+### บันทึกการทำงาน — 2026-06-04 (Shop catalog P1 — SQL THC/sex + filter-counts API)
+- **SQL:** `thc_percent` buckets + `seed_type` (feminized/regular) ใน `getActiveProducts` — ลด memory scan เมื่อเลือก THC/sex อย่างเดียว
+- **API:** `GET /api/shop/filter-counts` — counts ตาม breeder/q/ft/category (ไม่รวม sidebar filters)
+- **Client:** `ShopPageClient` โหลด counts จาก API · ข้าม client attribute re-filter เมื่อ server SQL ครบ
+- **ไฟล์:** `lib/shop-attribute-filters.ts`, `lib/supabase/types.ts`, `services/product-service.ts`, `services/shop-catalog-filter-counts.ts`, `app/api/shop/filter-counts/route.ts`, `app/(storefront)/shop/ShopPageClient.tsx`
+
 ### บันทึกการทำงาน — 2026-05-24 (Vercel Speed Insights)
 - **เพิ่ม:** `@vercel/speed-insights` · `<SpeedInsights />` ใน `app/layout.tsx` (RUM Web Vitals)
 - **ไฟล์:** `app/layout.tsx`, `package.json`, `package-lock.json`
