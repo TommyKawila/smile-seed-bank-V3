@@ -416,6 +416,7 @@ export function ShopPageClient({
   );
   const { breeders: allBreeders, isLoading: breedersLoading } = useBreeders();
   const { locale, t } = useLanguage();
+  const isEn = locale === "en";
   const { t: tMsg } = useTranslations();
   const isLg = useMediaQuery("(min-width: 1024px)", true);
   const [showFilter, setShowFilter] = useState(false);
