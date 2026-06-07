@@ -103,6 +103,7 @@ export default async function ShopPage({
       error: "catalog_fetch_failed",
       catalogHasMore: false,
       catalogTotalCount: null as number | null,
+      catalogUseCursor: false,
     })),
     hasStorefrontClearanceProducts().catch(() => false),
   ]);
