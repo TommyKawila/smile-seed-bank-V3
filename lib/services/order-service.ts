@@ -1145,8 +1145,8 @@ export async function submitAdminClaimOnBehalf(
       },
     });
     if (!order) return { data: null, error: "Order not found" };
-    if (order.status !== "PENDING_INFO") {
-      return { data: null, error: "Order is not awaiting customer claim (PENDING_INFO)" };
+    if (order.status !== "PENDING_INFO" && order.status !== "PENDING") {
+      return { data: null, error: "Order is not awaiting payment (PENDING / PENDING_INFO)" };
     }
     if (order.slip_url) return { data: null, error: "Slip already uploaded" };
 

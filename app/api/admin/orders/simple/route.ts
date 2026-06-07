@@ -81,7 +81,8 @@ export async function POST(req: NextRequest) {
       overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0)
     );
     const claimToken = status === "PENDING_INFO" ? randomUUID() : null;
-    const deductStock = status === "COMPLETED" || status === "PENDING_INFO";
+    const deductStock =
+      status === "COMPLETED" || status === "PENDING_INFO" || status === "PENDING";
 
     const orderNumber = generateOrderNumber();
     let totalCostAcc = 0;

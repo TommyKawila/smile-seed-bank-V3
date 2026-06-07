@@ -2,11 +2,11 @@
 
 import { useState, useCallback, useEffect, useRef, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ShoppingCart, Loader2, CheckCircle2, XCircle,
-  ImageIcon, User, RefreshCw, FileText, Clock, BadgeCheck,
-  Truck, Package, Plus, Printer, RotateCcw, Receipt, Copy, MessageCircle, FileUp, ChevronDown,
+  ImageIcon, User, FileText, Clock, BadgeCheck,
+  Truck, Package, Printer, RotateCcw, Receipt, Copy, MessageCircle, FileUp, ChevronDown,
   Send, ScrollText, Unlink,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,10 +63,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { unlinkOrderLineUserId } from "@/app/actions/admin-order-actions";
-import { OrderFilters } from "@/components/admin/orders/OrderFilters";
 import { OrderListTable } from "@/components/admin/orders/OrderListTable";
 import { OrderDetailModal } from "@/components/admin/orders/OrderDetailModal";
 import { OrderStatusActions } from "@/components/admin/orders/OrderStatusActions";
+import { parseOrderListTab } from "@/lib/admin-order-list-tabs";
+import {
+  buildAdminPaymentLinkQuickMessage,
+  buildAdminPaymentReceivedQuickMessage,
+  buildAdminTrackingQuickMessage,
+} from "@/lib/admin-order-quick-messages";
 
 // ─── Shipping providers ────────────────────────────────────────────────────────
 const SHIPPING_PROVIDERS = [
@@ -77,19 +82,6 @@ const SHIPPING_PROVIDERS = [
 ];
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
-
-type OrderListTabId = "" | "waiting" | "paid" | "shipped" | "completed" | "cancelled";
-type OrderListCountKey = "waiting" | "paid" | "shipped" | "completed" | "cancelled";
-
-/** Desktop workflow tabs — same filters as mobile `listOrders` + `countOrdersByListTabs` */
-const ORDER_LIST_TABS: { id: OrderListTabId; label: string; countKey: OrderListCountKey | null }[] = [
-  { id: "", label: "ทั้งหมด", countKey: null },
-  { id: "waiting", label: "รอชำระ / สลิป", countKey: "waiting" },
-  { id: "paid", label: "ชำระแล้ว (แพ็ค)", countKey: "paid" },
-  { id: "shipped", label: "จัดส่งแล้ว", countKey: "shipped" },
-  { id: "completed", label: "เสร็จสิ้น", countKey: "completed" },
-  { id: "cancelled", label: "ยกเลิก / Void", countKey: "cancelled" },
-];
 
 const ORDER_QUICK_MESSAGE_PRESETS = [
   {
@@ -427,7 +419,7 @@ function OrderCard({
             </Button>
           </div>
         )}
-        {order.status === "PENDING_INFO" && (
+        {(order.status === "PENDING" || order.status === "PENDING_INFO") && ps !== "paid" && (
           <div className="mt-3">
             <Button
               size="sm"
@@ -437,7 +429,7 @@ function OrderCard({
               disabled={busy}
             >
               <FileUp className="mr-1.5 h-4 w-4" />
-              แอดมินจัดการแทน
+              อัปโหลดสลิป / แก้ที่อยู่
             </Button>
           </div>
         )}
@@ -645,7 +637,7 @@ function OrderTableRow({
         ) : (
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap gap-1.5">
-              {order.status === "PENDING_INFO" && (
+              {(order.status === "PENDING" || order.status === "PENDING_INFO") && ps !== "paid" && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -654,7 +646,7 @@ function OrderTableRow({
                   disabled={busy}
                 >
                   <FileUp className="mr-1 h-3.5 w-3.5" />
-                  แอดมินจัดการแทน
+                  อัปโหลดสลิป / แก้ที่อยู่
                 </Button>
               )}
               {canReceipt && (
@@ -734,8 +726,9 @@ type OrderDetail = {
 
 export default function AdminOrdersPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const listTab = parseOrderListTab(searchParams.get("tab"));
   const openedOrderFromQuery = useRef(false);
-  const [listTab, setListTab] = useState<OrderListTabId>("waiting");
   const [slipModalUrl, setSlipModalUrl] = useState<string | null>(null);
   const [detailModal, setDetailModal] = useState<OrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -770,10 +763,15 @@ export default function AdminOrdersPage() {
   const [quickMessageBody, setQuickMessageBody] = useState("");
   const [quickMessageSending, setQuickMessageSending] = useState(false);
 
-  const { orders, isLoading, error, refetch, tabCounts } = useAdminOrders({
+  const { orders, isLoading, error, refetch } = useAdminOrders({
     statusTab: listTab === "" ? undefined : listTab,
-    includeTabCounts: true,
   });
+
+  useEffect(() => {
+    const onRefresh = () => void refetch();
+    window.addEventListener("admin-orders-refetch", onRefresh);
+    return () => window.removeEventListener("admin-orders-refetch", onRefresh);
+  }, [refetch]);
 
   useEffect(() => {
     if (!linkLineOpen) return;
@@ -1331,57 +1329,13 @@ export default function AdminOrdersPage() {
     .reduce((s, o) => s + Number(o.total_amount), 0);
 
   return (
-    <div className="space-y-4 pb-20">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold text-zinc-900">ออเดอร์</h1>
-          {!isLoading && (
-            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-              {orders.length}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/admin/quotations/new"
-            className="flex items-center gap-1.5 rounded-lg border border-primary/25 bg-accent px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent"
-          >
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Convert Quote to Order</span>
-          </Link>
-          <Link
-            href="/admin/orders/create"
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">สร้างออเดอร์</span>
-          </Link>
-          <button
-          type="button"
-          onClick={() => void refetch()}
-          disabled={isLoading}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50 disabled:opacity-40"
-        >
-          <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-          <span className="hidden sm:inline">รีเฟรช</span>
-        </button>
-        </div>
-      </div>
-
+    <>
       {!isLoading && orders.length > 0 && (
         <p className="text-sm text-zinc-500">
-          รายได้รวม (ชำระแล้ว/จัดส่งแล้ว/เสร็จสิ้น): <span className="font-semibold text-primary">{formatPrice(totalRevenue)}</span>
+          รายได้รวม (ชำระแล้ว/จัดส่งแล้ว/เสร็จสิ้น):{" "}
+          <span className="font-semibold text-primary">{formatPrice(totalRevenue)}</span>
         </p>
       )}
-
-      <OrderFilters
-        tabs={ORDER_LIST_TABS}
-        activeTab={listTab}
-        counts={tabCounts ?? undefined}
-        onTabChange={setListTab}
-      />
 
       {/* Content */}
       {isLoading ? (
@@ -1541,7 +1495,8 @@ export default function AdminOrdersPage() {
                     Copy Claim Link
                   </Button>
                 )}
-                {detailModal.status === "PENDING_INFO" && (
+                {(detailModal.status === "PENDING" || detailModal.status === "PENDING_INFO") &&
+                  (detailModal.paymentStatus ?? "").toLowerCase() !== "paid" && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -1556,7 +1511,7 @@ export default function AdminOrdersPage() {
                     }
                   >
                     <FileUp className="mr-1.5 h-4 w-4 shrink-0" />
-                    แอดมินจัดการแทน
+                    อัปโหลดสลิป / แก้ที่อยู่
                   </Button>
                 )}
                 {(detailModal.status === "PENDING" || detailModal.status === "PENDING_INFO") &&
@@ -1691,6 +1646,55 @@ export default function AdminOrdersPage() {
                           {p.label}
                         </DropdownMenuItem>
                       ))}
+                      <DropdownMenuItem
+                        key="payment-received"
+                        className="cursor-pointer text-xs leading-snug"
+                        onSelect={() => {
+                          setQuickMessageBody(
+                            buildAdminPaymentReceivedQuickMessage(detailModal.totalAmount)
+                          );
+                          setQuickMessageOpen(true);
+                        }}
+                      >
+                        Order success / ได้รับยอดโอนแล้ว
+                      </DropdownMenuItem>
+                      {detailModal.paymentStatus?.toLowerCase() !== "paid" ? (
+                        <DropdownMenuItem
+                          key="payment-link"
+                          className="cursor-pointer text-xs leading-snug"
+                          onSelect={() => {
+                            setQuickMessageBody(
+                              buildAdminPaymentLinkQuickMessage(
+                                detailModal.orderNumber,
+                                detailModal.totalAmount
+                              )
+                            );
+                            setQuickMessageOpen(true);
+                          }}
+                        >
+                          Payment link / ลิงก์ชำระเงิน
+                        </DropdownMenuItem>
+                      ) : null}
+                      {detailModal.trackingNumber?.trim() &&
+                      (detailModal.status === "SHIPPED" ||
+                        detailModal.status === "DELIVERED") ? (
+                        <DropdownMenuItem
+                          key="tracking"
+                          className="cursor-pointer text-xs leading-snug"
+                          onSelect={() => {
+                            setQuickMessageBody(
+                              buildAdminTrackingQuickMessage({
+                                orderNumber: detailModal.orderNumber,
+                                trackingNumber: detailModal.trackingNumber!.trim(),
+                                shippingProvider: detailModal.shippingProvider ?? "",
+                              })
+                            );
+                            setQuickMessageOpen(true);
+                          }}
+                        >
+                          ส่งเลข tracking สินค้า / Send tracking
+                        </DropdownMenuItem>
+                      ) : null}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="cursor-pointer text-xs font-medium"
@@ -2325,6 +2329,6 @@ export default function AdminOrdersPage() {
 
       {/* ── Toast Stack ── */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
-    </div>
+    </>
   );
 }

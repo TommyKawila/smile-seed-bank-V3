@@ -84,6 +84,27 @@ type PosCustomer = {
   points?: number;
 };
 
+function mapCustomerSearchHit(raw: unknown): PosCustomer | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const id = String(o.id ?? "").trim();
+  const name = String(o.name ?? o.full_name ?? "").trim();
+  const phone = String(o.phone ?? "").trim();
+  if (!id || (!name && !phone)) return null;
+  const tierRaw = String(o.tier ?? "Retail");
+  const tier: PosCustomer["tier"] =
+    tierRaw === "Wholesale" || tierRaw === "VIP" ? tierRaw : "Retail";
+  return {
+    id,
+    name: name || phone || "—",
+    phone,
+    tier,
+    wholesale_discount_percent: Number(o.wholesale_discount_percent ?? 0),
+    address: typeof o.address === "string" ? o.address : null,
+    points: Number(o.points ?? 0),
+  };
+}
+
 interface CustomerInfo {
   full_name: string;
   phone: string;
@@ -269,8 +290,14 @@ export default function CreateOrderPage() {
     setCustomerSearching(true);
     try {
       const res = await fetch(`/api/admin/customers?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      setCustomerResults(Array.isArray(data) ? data : []);
+      const data: unknown = await res.json();
+      if (!res.ok || !Array.isArray(data)) {
+        setCustomerResults([]);
+        return;
+      }
+      setCustomerResults(
+        data.map(mapCustomerSearchHit).filter((c): c is PosCustomer => c != null)
+      );
     } catch {
       setCustomerResults([]);
     } finally {
@@ -456,6 +483,8 @@ export default function CreateOrderPage() {
 
     try {
       const isClaim = mode === "claim";
+      const isCashComplete = !isClaim && customer.payment_method === "CASH";
+      const posOrderStatus = isClaim ? "PENDING_INFO" : isCashComplete ? "COMPLETED" : "PENDING";
       const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -468,10 +497,10 @@ export default function CreateOrderPage() {
             quantity: i.quantity,
             price: i.price,
           })),
-          status: isClaim ? "PENDING_INFO" : "COMPLETED",
+          status: posOrderStatus,
           totalAmount: grandTotal,
-          points_redeemed: isClaim ? 0 : effectivePointsRedeemed,
-          points_discount_amount: isClaim ? 0 : pointsDiscountAmount,
+          points_redeemed: isCashComplete ? effectivePointsRedeemed : 0,
+          points_discount_amount: isCashComplete ? pointsDiscountAmount : 0,
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
@@ -493,6 +522,7 @@ export default function CreateOrderPage() {
 
       const result = await res.json();
       const orderNumber = String(result.orderNumber ?? "");
+      const orderStatus = String(result.status ?? posOrderStatus);
       const orderId =
         result.orderId != null && result.orderId !== ""
           ? String(result.orderId)
@@ -526,6 +556,39 @@ export default function CreateOrderPage() {
           ct
             ? "สร้างออเดอร์แล้ว — คัดลอกลิงก์ด้านล่างส่งให้ลูกค้า (กรอกที่อยู่ + อัปโหลดสลิป)"
             : "สร้างออเดอร์แล้ว — ไม่พบ claim token"
+        );
+        clearCart();
+        setManualDiscountPercent(0);
+        setSelectedCustomer(null);
+        setPointsToRedeem(0);
+        setCustomer({ full_name: "", phone: "", address: "", payment_method: "CASH", note: "" });
+        return;
+      }
+
+      if (orderStatus === "PENDING") {
+        const discountAmt =
+          summary.tierDiscount + summary.promoDiscount + manualDiscountAmount;
+        setLastCopyPack({
+          orderNumber,
+          orderId,
+          claimLink: null,
+          items: items.map((i) => ({
+            name: i.productName,
+            unitLabel: i.unitLabel,
+            quantity: i.quantity,
+            lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+            breederName: i.breederName ?? null,
+          })),
+          subtotal: summary.subtotal,
+          shippingFee: summary.shipping,
+          discountAmount: discountAmt,
+          totalAmount: grandTotal,
+          paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
+          customerName: customer.full_name,
+          customerPhone: customer.phone,
+        });
+        setSubmitSuccess(
+          `สร้างออเดอร์ #${orderNumber} แล้ว — ไปที่แท็บ «รอชำระ / สลิป» เพื่ออัปโหลดสลิป แก้ที่อยู่ และยืนยันการชำระเงิน`
         );
         clearCart();
         setManualDiscountPercent(0);
@@ -587,10 +650,7 @@ export default function CreateOrderPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-zinc-900">สร้างออเดอร์ Manual (POS)</h1>
-        <p className="text-sm text-zinc-500">สำหรับลูกค้าที่สั่งซื้อนอกเว็บไซต์</p>
-      </div>
+      <p className="text-sm text-zinc-500">Manual POS — สำหรับลูกค้าที่สั่งซื้อนอกเว็บไซต์</p>
 
       <div className="grid gap-6 lg:grid-cols-5">
         {/* LEFT — Product Selector */}

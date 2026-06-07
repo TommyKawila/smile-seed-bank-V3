@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
 import { CustomerTier, Prisma } from "@prisma/client";
+import { searchCustomersOmni } from "@/lib/customer-omni-search";
 
 export const dynamic = "force-dynamic";
 
@@ -17,43 +18,6 @@ const CustomerSchema = z.object({
   address: z.string().nullable().optional(),
 });
 
-type OmniRow = {
-  id: string;
-  name: string;
-  phone: string;
-  address: string | null;
-  notes: string | null;
-  email: string | null;
-};
-
-function phoneDigits(s: string) {
-  return s.replace(/\D/g, "");
-}
-
-function dedupeOmni(rows: OmniRow[]): OmniRow[] {
-  const byKey = new Map<string, OmniRow>();
-  for (const r of rows) {
-    const d = phoneDigits(r.phone);
-    const key = d.length >= 9 ? `d:${d}` : `n:${r.name.trim().toLowerCase()}|${r.phone}`;
-    const prev = byKey.get(key);
-    if (!prev) {
-      byKey.set(key, { ...r });
-      continue;
-    }
-    byKey.set(key, {
-      id: prev.id,
-      name: prev.name.length >= r.name.length ? prev.name : r.name,
-      phone: phoneDigits(prev.phone).length >= phoneDigits(r.phone).length ? prev.phone : r.phone,
-      address: prev.address?.trim() || r.address?.trim() || null,
-      notes: prev.notes?.trim() || r.notes?.trim() || null,
-      email: prev.email?.trim() || r.email?.trim() || null,
-    });
-  }
-  return Array.from(byKey.values()).sort((a, b) =>
-    a.name.localeCompare(b.name, "th", { sensitivity: "base" })
-  );
-}
-
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -61,8 +25,6 @@ export async function GET(req: NextRequest) {
     const tier = searchParams.get("tier") ?? "";
     const limitRaw = Number(searchParams.get("limit") ?? 80);
     const limit = Number.isFinite(limitRaw) ? Math.min(100, Math.max(1, limitRaw)) : 80;
-    const qNorm = qRaw.replace(/[\s\-().]/g, "");
-    const qDigits = phoneDigits(qRaw);
 
     if (!qRaw) {
       const where: Prisma.CustomerWhereInput = { is_active: true };
@@ -77,133 +39,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(bigintToJson(customers));
     }
 
-    const wherePos: Prisma.CustomerWhereInput = { is_active: true };
-    if (tier && ["Retail", "Wholesale", "VIP"].includes(tier)) {
-      wherePos.tier = tier as CustomerTier;
-    }
-    const orPos: Prisma.CustomerWhereInput[] = [
-      { name: { contains: qRaw, mode: "insensitive" } },
-      { phone: { contains: qRaw, mode: "insensitive" } },
-    ];
-    if (qNorm && qNorm !== qRaw) {
-      orPos.push({ phone: { contains: qNorm, mode: "insensitive" } });
-    }
-    if (qDigits.length >= 3) {
-      orPos.push({ phone: { contains: qDigits, mode: "insensitive" } });
-    }
-    wherePos.OR = orPos;
-
-    const orWeb: Prisma.customersWhereInput[] = [
-      { full_name: { contains: qRaw, mode: "insensitive" } },
-      { phone: { contains: qRaw, mode: "insensitive" } },
-      { email: { contains: qRaw, mode: "insensitive" } },
-      { address: { contains: qRaw, mode: "insensitive" } },
-    ];
-    if (qNorm && qNorm !== qRaw) {
-      orWeb.push({ phone: { contains: qNorm, mode: "insensitive" } });
-    }
-    if (qDigits.length >= 3) {
-      orWeb.push({ phone: { contains: qDigits, mode: "insensitive" } });
-    }
-
-    const [posList, webList, quoteRows] = await Promise.all([
-      prisma.customer.findMany({
-        where: wherePos,
-        take: limit,
-        orderBy: { name: "asc" },
-      }),
-      prisma.customers.findMany({
-        where: { OR: orWeb },
-        take: limit,
-        select: { id: true, full_name: true, phone: true, email: true, address: true },
-      }),
-      prisma.$queryRaw<
-        { name: string | null; phone: string | null; email: string | null; address: string | null; notes: string | null }[]
-      >`
-        WITH ranked AS (
-          SELECT
-            customer_name,
-            customer_phone,
-            customer_email,
-            customer_address,
-            customer_note,
-            created_at,
-            id,
-            CASE
-              WHEN length(regexp_replace(COALESCE(customer_phone, ''), '[^0-9]', '', 'g')) >= 9
-              THEN regexp_replace(COALESCE(customer_phone, ''), '[^0-9]', '', 'g')
-              ELSE ('id:' || id::text)
-            END AS dedupe_key
-          FROM public.quotations
-          WHERE (
-            COALESCE(TRIM(customer_name), '') <> ''
-            OR COALESCE(TRIM(customer_phone), '') <> ''
-          )
-          AND (
-            COALESCE(customer_name, '') ILIKE '%' || ${qRaw} || '%'
-            OR COALESCE(customer_email, '') ILIKE '%' || ${qRaw} || '%'
-            OR COALESCE(customer_address, '') ILIKE '%' || ${qRaw} || '%'
-            OR COALESCE(customer_phone, '') ILIKE '%' || ${qRaw} || '%'
-            OR (
-              length(${qDigits}) >= 3
-              AND regexp_replace(COALESCE(customer_phone, ''), '[^0-9]', '', 'g') LIKE '%' || ${qDigits} || '%'
-            )
-          )
-        ),
-        picked AS (
-          SELECT
-            customer_name AS name,
-            customer_phone AS phone,
-            customer_email AS email,
-            customer_address AS address,
-            customer_note AS notes,
-            ROW_NUMBER() OVER (PARTITION BY dedupe_key ORDER BY created_at DESC) AS rn
-          FROM ranked
-        )
-        SELECT name, phone, email, address, notes FROM picked WHERE rn = 1
-        LIMIT ${limit}
-      `,
-    ]);
-
-    const merged: OmniRow[] = [];
-
-    for (const c of posList) {
-      merged.push({
-        id: `pos-${c.id}`,
-        name: c.name,
-        phone: c.phone,
-        address: c.address ?? null,
-        notes: c.notes ?? null,
-        email: null,
-      });
-    }
-
-    for (const c of webList) {
-      merged.push({
-        id: `web-${c.id}`,
-        name: (c.full_name ?? "").trim() || (c.phone ?? "").trim() || "—",
-        phone: c.phone ?? "",
-        address: c.address ?? null,
-        notes: null,
-        email: c.email ?? null,
-      });
-    }
-
-    let qi = 0;
-    for (const r of quoteRows) {
-      const phone = (r.phone ?? "").trim();
-      const name = (r.name ?? "").trim() || phone || "—";
-      merged.push({
-        id: `qt-${qi++}`,
-        name,
-        phone,
-        address: r.address ?? null,
-        notes: r.notes ?? null,
-        email: r.email ?? null,
-      });
-    }
-
-    return NextResponse.json(bigintToJson(dedupeOmni(merged)));
+    const hits = await searchCustomersOmni(qRaw, limit);
+    return NextResponse.json(bigintToJson(hits));
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
