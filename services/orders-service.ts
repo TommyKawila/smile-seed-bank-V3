@@ -415,10 +415,18 @@ export async function approvePayment(
         throw new Error("Order not found");
       }
 
-      const order = await tx.orders.update({
-        where: { id: oid },
+      const claimed = await tx.orders.updateMany({
+        where: {
+          id: oid,
+          status: "AWAITING_VERIFICATION",
+          payment_status: { not: "paid" },
+        },
         data: { status: "PENDING", payment_status: "paid", reject_note: null },
       });
+      if (claimed.count !== 1) {
+        throw new Error("Cannot approve - order is not awaiting payment verification");
+      }
+      const order = await tx.orders.findUniqueOrThrow({ where: { id: oid } });
 
       // TODO: Loyalty — accrue points from `order.total_amount` / tier rules (100 THB = 1 pt per blueprint); run inside this transaction when implemented.
 
