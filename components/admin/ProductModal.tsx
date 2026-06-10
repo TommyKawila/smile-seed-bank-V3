@@ -269,6 +269,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         lineage: (p as { lineage?: string | null }).lineage ?? null,
         terpenes: (p as { terpenes?: unknown }).terpenes ?? null,
         variants: p.product_variants?.map((v) => ({
+          id: Number(v.id),
           unit_label: v.unit_label,
           price: Number(v.price ?? 0),
           clearance_price:

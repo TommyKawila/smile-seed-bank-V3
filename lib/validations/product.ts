@@ -10,6 +10,7 @@ export const GalleryEntrySchema = z.object({
 });
 
 export const VariantSchema = z.object({
+  id: z.number().int().positive().nullable().optional(),
   unit_label: z.string().min(1, "กรุณาระบุขนาดแพ็กเกจ (เช่น 1 Seed)"),
   /** Draft / pre-pricing: 0 allowed */
   price: z.number().min(0, "ราคาต้องไม่ติดลบ"),

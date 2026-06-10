@@ -43,7 +43,10 @@ export async function PATCH(
 
     if (action === "approve") {
       const { data, error } = await approvePayment(orderId);
-      if (error) return NextResponse.json({ error }, { status: 500 });
+      if (error) {
+        const status = error === "Order not awaiting payment verification" ? 409 : 500;
+        return NextResponse.json({ error }, { status });
+      }
       if (isMobileAdminUi(req)) {
         await createOrderLog({
           orderId,
