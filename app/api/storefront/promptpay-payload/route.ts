@@ -6,6 +6,7 @@ import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate
 import { buildPromptPayPayload } from "@/lib/payment-utils";
 import { quantizeBaht2, roundCheckoutBahtWhole, sameBahtSatang } from "@/lib/money-thb";
 import { getOrderByNumber } from "@/lib/services/order-service";
+import { orderCanAcceptTransferPayment } from "@/lib/order-paid";
 import { PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
 
 function promptPayUnavailableResponse(): NextResponse {
@@ -267,6 +268,9 @@ export async function GET(req: NextRequest) {
           amountBaht: null,
         });
         return NextResponse.json({ error: "unsupported_payment_method" }, { status: 400 });
+      }
+      if (!orderCanAcceptTransferPayment(order.status, order.payment_status, order.slip_url)) {
+        return NextResponse.json({ error: "order_not_awaiting_payment" }, { status: 409 });
       }
 
       const calculatedTotal = quantizeBaht2(Number(order.total_amount));

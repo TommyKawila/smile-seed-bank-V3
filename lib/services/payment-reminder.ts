@@ -11,6 +11,7 @@ import { createOrderLog } from "@/lib/order-logs";
 import { sendPaymentReminderEmail } from "@/services/email-service";
 import { autoCancelUnpaidOrder24hStale } from "@/services/orders-service";
 import { pushTextToLineUser } from "@/services/line-messaging";
+import type { Prisma } from "@prisma/client";
 
 const MS_HOUR = 60 * 60 * 1000;
 const L1_AGE_MS = 2 * MS_HOUR;
@@ -23,6 +24,12 @@ export const CRON_ORDER_STATUSES = [
   "PENDING",
   "PENDING_INFO",
 ] as const;
+
+const MANUAL_POS_PENDING_EXCLUSION: Prisma.ordersWhereInput = {
+  order_origin: "MANUAL",
+  status: "PENDING",
+  OR: [{ claim_token: null }, { claim_token: "" }],
+};
 
 export type PaymentReminderRunResult = {
   scanned: number;
@@ -168,6 +175,7 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
       notification_level: { lt: 3 },
       created_at: { gte: cutoff24h },
       OR: [{ slip_url: null }, { slip_url: "" }],
+      NOT: [MANUAL_POS_PENDING_EXCLUSION],
     },
     include: {
       customers: { select: { email: true, line_user_id: true } },
@@ -232,6 +240,7 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
       status: { in: [...CRON_ORDER_STATUSES] },
       created_at: { lt: cutoff24h },
       OR: [{ slip_url: null }, { slip_url: "" }],
+      NOT: [MANUAL_POS_PENDING_EXCLUSION],
     },
     include: {
       customers: { select: { email: true, line_user_id: true } },

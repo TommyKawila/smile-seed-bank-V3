@@ -38,6 +38,9 @@ export default async function PaymentPage({
           ? {
               total_amount: Number(order.total_amount),
               payment_method: order.payment_method,
+              status: order.status,
+              payment_status: order.payment_status,
+              slip_url: order.slip_url,
             }
           : null
       }
