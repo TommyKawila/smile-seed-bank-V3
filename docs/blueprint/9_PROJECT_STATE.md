@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-11 (Critical order payment guards)
+- **แก้:** digital receipt crash จาก PromptPay settings source ผิด · กัน POS transfer `MANUAL/PENDING` ถูก cron auto-cancel 24h · กัน QR/slip upload สำหรับ order ที่ไม่รอชำระแล้ว
+- **Validation:** targeted ESLint ผ่าน · `next build` compile ผ่านก่อนหยุดที่ env missing (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) · `tsc --noEmit` ยังติด baseline errors นอก patch
+- **ไฟล์:** `app/(storefront)/order/receipt/[id]/page.tsx`, `app/(storefront)/payment/[orderNumber]/page.tsx`, `app/api/storefront/promptpay-payload/route.ts`, `app/api/storefront/orders/upload-slip/route.ts`, `components/storefront/payment/PaymentPageClient.tsx`, `lib/order-paid.ts`, `lib/services/order-service.ts`, `lib/services/payment-reminder.ts`, `services/orders-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
