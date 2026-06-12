@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
+import { parseBankAccountsJsonToActive } from "@/lib/payment-settings-public";
+import type { Json } from "@/types/supabase";
 
 export const revalidate = 0; // always fresh
 
@@ -15,19 +17,17 @@ export async function GET() {
     `;
     const row = rows[0] ?? null;
 
-    type BankRow = { bankName: string; accountName: string; accountNo: string; isActive: boolean };
-
-    const allBanks = (row?.bank_accounts ?? []) as BankRow[];
     const lineId = (row as { line_id?: string })?.line_id ?? "";
-
     const activeBank =
-      allBanks.find(
-        (b) => b.isActive !== false && b.bankName && b.accountNo,
-      ) ?? null;
+      parseBankAccountsJsonToActive((row?.bank_accounts ?? null) as Json | null)[0] ?? null;
 
     return NextResponse.json({
       bank: activeBank
-        ? { name: activeBank.bankName, accountNo: activeBank.accountNo, accountName: activeBank.accountName }
+        ? {
+            name: activeBank.bank_name,
+            accountNo: activeBank.account_number,
+            accountName: activeBank.account_name ?? "",
+          }
         : null,
       promptPay: null,
       lineId: lineId || null,

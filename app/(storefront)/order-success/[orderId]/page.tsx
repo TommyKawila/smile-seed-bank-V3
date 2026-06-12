@@ -23,12 +23,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatPrice } from "@/lib/utils";
-import {
-  STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO,
-  STOREFRONT_KBANK_TRANSFER_NAME_EN,
-  STOREFRONT_KBANK_TRANSFER_NAME_TH,
-  isPrimaryKbankCheckoutAccount,
-} from "@/lib/storefront-payment-shared";
 import { DynamicPromptPayQr } from "@/components/storefront/checkout/DynamicPromptPayQr";
 import { PROMPTPAY_CHECKOUT_DISPLAY_NAME } from "@/lib/payment-utils";
 import { fetchStorefrontReceiptPdfSettings } from "@/lib/pdf-settings";
@@ -361,11 +355,6 @@ export default function OrderSuccessDynamicPage() {
     order.payment_method === "TRANSFER" &&
     !order.slip_url;
 
-  const apiBankExtras =
-    paySettings.bank && !isPrimaryKbankCheckoutAccount(paySettings.bank.accountNo)
-      ? paySettings.bank
-      : null;
-
   const copyTracking = () => {
     if (!order.tracking_number) return;
     void navigator.clipboard.writeText(order.tracking_number);
@@ -548,20 +537,31 @@ export default function OrderSuccessDynamicPage() {
 
             <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                {t("โอนผ่าน Thai QR / K-Bank", "Thai QR payment (K-Bank)")}
+                {t("โอนผ่าน Thai QR / Bank Transfer", "Thai QR / bank transfer")}
               </p>
-              <div className="grid gap-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
-                  <span className="font-medium text-zinc-800">
-                    {locale === "en" ? STOREFRONT_KBANK_TRANSFER_NAME_EN : STOREFRONT_KBANK_TRANSFER_NAME_TH}
-                  </span>
+              {paySettings.bank ? (
+                <div className="grid gap-2 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
+                    <span className="text-right font-medium text-zinc-800">{paySettings.bank.name}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-zinc-500">{t("เลขบัญชี", "Account no.")}</span>
+                    <span className="font-mono font-semibold text-zinc-900">{paySettings.bank.accountNo}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-zinc-500">{t("ชื่อบัญชี", "Account name")}</span>
+                    <span className="text-right font-medium text-zinc-800">{paySettings.bank.accountName || "—"}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("เลขบัญชี", "Account no.")}</span>
-                  <span className="font-mono font-semibold text-zinc-900">{STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO}</span>
-                </div>
-              </div>
+              ) : (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-center text-sm text-amber-800">
+                  {t(
+                    "ยังไม่มีบัญชีสำหรับแสดง — กรุณาติดต่อร้านเพื่อขอข้อมูลโอนเงิน",
+                    "No active bank account is listed. Please contact the shop for transfer details.",
+                  )}
+                </p>
+              )}
               <p className="text-center text-xs text-zinc-500">
                 {t("สแกน QR แล้วโอนตามยอดด้านบน", "Scan the QR and transfer the amount shown above.")}
               </p>
@@ -574,26 +574,6 @@ export default function OrderSuccessDynamicPage() {
               />
             </div>
 
-            {apiBankExtras && (
-              <div className="grid gap-2 text-sm">
-                <Separator className="bg-zinc-100" />
-                <p className="text-xs font-medium text-zinc-500">
-                  {t("บัญชีสำรอง", "Alternative account")}
-                </p>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
-                  <span className="font-medium text-zinc-800">{apiBankExtras.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("เลขบัญชี", "Account no.")}</span>
-                  <span className="font-mono font-semibold text-zinc-900">{apiBankExtras.accountNo}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("ชื่อบัญชี", "Account name")}</span>
-                  <span className="font-medium text-zinc-800">{apiBankExtras.accountName}</span>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="space-y-4 rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
