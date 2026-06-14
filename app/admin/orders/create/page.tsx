@@ -105,6 +105,22 @@ function mapCustomerSearchHit(raw: unknown): PosCustomer | null {
   };
 }
 
+function customerProfileIdForOrder(customer: PosCustomer | null): number | null {
+  const raw = customer?.id.trim() ?? "";
+  const idText = raw.match(/^pos-(\d+)$/)?.[1] ?? (/^\d+$/.test(raw) ? raw : null);
+  if (!idText) return null;
+  const id = Number(idText);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+function customerUserIdForPromo(customer: PosCustomer | null): string | null {
+  const raw = customer?.id.trim() ?? "";
+  const idText = raw.match(/^web-([0-9a-f-]{36})$/i)?.[1] ?? raw;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idText)
+    ? idText
+    : null;
+}
+
 interface CustomerInfo {
   full_name: string;
   phone: string;
@@ -280,6 +296,8 @@ export default function CreateOrderPage() {
   );
   const pointsToAdd = Math.floor(grandTotal / 100);
   const balanceAfterPurchase = availablePoints - effectivePointsRedeemed + pointsToAdd;
+  const selectedCustomerProfileId = customerProfileIdForOrder(selectedCustomer);
+  const selectedCustomerPromoUserId = customerUserIdForPromo(selectedCustomer);
 
   const fetchCustomers = useCallback(async () => {
     const q = customerSearch.trim();
@@ -504,7 +522,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: selectedCustomerProfileId,
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
@@ -1134,7 +1152,7 @@ export default function CreateOrderPage() {
                           promoInput,
                           null,
                           selectedCustomer?.phone ?? null,
-                          selectedCustomer?.id ?? null,
+                          selectedCustomerPromoUserId,
                         )
                       }
                       disabled={isValidatingPromo || !promoInput || hasPromotionDiscount}
