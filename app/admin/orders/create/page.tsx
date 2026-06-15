@@ -26,6 +26,11 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
+import { cartItemBrandLineDisplay } from "@/lib/cart-utils";
+import {
+  matchBrandPromotionRule,
+  resolveListingUnitAfterBrand,
+} from "@/lib/brand-promotion-checkout";
 import type { ProductWithBreeder, ProductWithBreederMaybeVariants } from "@/types/supabase";
 import type { ProductVariantRow } from "@/lib/supabase/types";
 import { PosLowStockWarning } from "@/components/admin/PosLowStockWarning";
@@ -129,6 +134,7 @@ export default function CreateOrderPage() {
     clearCart,
     applyWholesaleToItems,
     itemCount,
+    brandPromotionRules,
   } = useCart();
 
   const [search, setSearch] = useState("");
@@ -346,6 +352,31 @@ export default function CreateOrderPage() {
   );
   const { promotionDiscount, activePromotion, buyXGetYAlert, freebieAlert } = promoResult;
   const hasPromotionDiscount = summary.tierDiscount > 0;
+
+  const brandDiscountTotal = useMemo(
+    () =>
+      items
+        .filter((i) => !i.isFreeGift)
+        .reduce((sum, i) => {
+          const { effLine, listLine, showBrandStrike } = cartItemBrandLineDisplay(
+            i,
+            brandPromotionRules
+          );
+          return showBrandStrike ? sum + (listLine - effLine) : sum;
+        }, 0),
+    [items, brandPromotionRules]
+  );
+
+  const listSubtotalBeforeBrand = useMemo(
+    () =>
+      items
+        .filter((i) => !i.isFreeGift)
+        .reduce((sum, i) => {
+          const { listLine } = cartItemBrandLineDisplay(i, brandPromotionRules);
+          return sum + listLine;
+        }, 0),
+    [items, brandPromotionRules]
+  );
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -792,7 +823,15 @@ export default function CreateOrderPage() {
                             const pv = variant as ProductVariantRow & { final_price?: number };
                             const posPrice = resolvePosVariantUnitPrice(pv, wholesaleDiscount);
                             const { unitCharge, strikeDisplay, showListStrike } = posPrice;
-                            const saleDisplay = unitCharge;
+                            const brandLine = resolveListingUnitAfterBrand(
+                              unitCharge,
+                              breederName || null,
+                              brandPromotionRules
+                            );
+                            const saleDisplay = brandLine.effectiveBaht;
+                            const showBrandStrike =
+                              brandLine.brandDiscountPercent != null &&
+                              brandLine.baseBaht > brandLine.effectiveBaht;
                             return (
                             <button
                               key={variant.id}
@@ -824,9 +863,19 @@ export default function CreateOrderPage() {
                                     {formatPrice(strikeDisplay)}
                                   </span>
                                 ) : null}
+                                {showBrandStrike ? (
+                                  <span className="text-xs tabular-nums text-zinc-400 line-through">
+                                    {formatPrice(brandLine.baseBaht)}
+                                  </span>
+                                ) : null}
                                 <span className="text-sm font-semibold tabular-nums text-primary">
                                   {formatPrice(saleDisplay)}
                                 </span>
+                                {showBrandStrike && brandLine.brandDiscountPercent != null ? (
+                                  <Badge className="h-5 bg-primary/10 px-1.5 text-[10px] font-semibold text-primary hover:bg-primary/10">
+                                    -{brandLine.brandDiscountPercent}%
+                                  </Badge>
+                                ) : null}
                                 <Plus className="h-4 w-4 shrink-0 text-primary" />
                               </div>
                             </button>
@@ -1041,6 +1090,22 @@ export default function CreateOrderPage() {
                           )}
                         </p>
                         <p className="text-xs text-zinc-500">{item.unitLabel}</p>
+                        {(() => {
+                          const brandRule = matchBrandPromotionRule(
+                            brandPromotionRules,
+                            item.breederName
+                          );
+                          const { showBrandStrike } = cartItemBrandLineDisplay(
+                            item,
+                            brandPromotionRules
+                          );
+                          if (!showBrandStrike || !brandRule) return null;
+                          return (
+                            <p className="text-[10px] font-medium text-primary">
+                              ลด {brandRule.discount_percent}% · {brandRule.brand_name}
+                            </p>
+                          );
+                        })()}
                       </div>
                       {!item.isFreeGift && (
                         <div className="flex items-center gap-1">
@@ -1078,17 +1143,53 @@ export default function CreateOrderPage() {
                         </div>
                       )}
                       <span className="w-24 text-right text-sm font-medium">
-                        {item.isFreeGift ? "ฟรี" : wholesaleDiscount > 0 ? (
-                          <span className="flex flex-col items-end gap-0">
-                            <span className="text-zinc-400 line-through text-xs">
-                              {formatPrice(Math.round((item.price * item.quantity) / (1 - wholesaleDiscount / 100)))}
-                            </span>
-                            <span className="text-primary font-semibold">
-                              {formatPrice(item.price * item.quantity)}
-                            </span>
-                          </span>
+                        {item.isFreeGift ? (
+                          "ฟรี"
                         ) : (
-                          formatPrice(item.price * item.quantity)
+                          (() => {
+                            const { effLine, listLine, showBrandStrike } = cartItemBrandLineDisplay(
+                              item,
+                              brandPromotionRules
+                            );
+                            const brandRule = matchBrandPromotionRule(
+                              brandPromotionRules,
+                              item.breederName
+                            );
+                            if (showBrandStrike) {
+                              return (
+                                <span className="flex flex-col items-end gap-0">
+                                  <span className="text-zinc-400 line-through text-xs">
+                                    {formatPrice(listLine)}
+                                  </span>
+                                  <span className="text-primary font-semibold">
+                                    {formatPrice(effLine)}
+                                  </span>
+                                  {brandRule ? (
+                                    <span className="text-[10px] text-primary">
+                                      -{brandRule.discount_percent}%
+                                    </span>
+                                  ) : null}
+                                </span>
+                              );
+                            }
+                            if (wholesaleDiscount > 0) {
+                              return (
+                                <span className="flex flex-col items-end gap-0">
+                                  <span className="text-zinc-400 line-through text-xs">
+                                    {formatPrice(
+                                      Math.round(
+                                        (item.price * item.quantity) / (1 - wholesaleDiscount / 100)
+                                      )
+                                    )}
+                                  </span>
+                                  <span className="text-primary font-semibold">
+                                    {formatPrice(item.price * item.quantity)}
+                                  </span>
+                                </span>
+                              );
+                            }
+                            return formatPrice(item.price * item.quantity);
+                          })()
                         )}
                       </span>
                       {!item.isFreeGift && (
@@ -1181,6 +1282,20 @@ export default function CreateOrderPage() {
 
               {/* Summary Rows */}
               <div className="space-y-1 text-sm">
+                {brandDiscountTotal > 0 && (
+                  <>
+                    <div className="flex justify-between text-zinc-500 text-xs">
+                      <span>ราคาก่อนส่วนลดค่าย</span>
+                      <span className="line-through tabular-nums">
+                        {formatPrice(listSubtotalBeforeBrand)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-primary">
+                      <span>ส่วนลดโปรค่าย (Brand)</span>
+                      <span className="tabular-nums">-{formatPrice(brandDiscountTotal)}</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between text-zinc-600 items-center gap-2">
                   <span>ยอดรวม</span>
                   <span className="flex items-center gap-1">
