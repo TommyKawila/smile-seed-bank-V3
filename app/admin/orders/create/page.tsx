@@ -110,6 +110,14 @@ function mapCustomerSearchHit(raw: unknown): PosCustomer | null {
   };
 }
 
+function getPosCustomerProfileId(id: string | null | undefined): number | null {
+  const raw = id?.trim() ?? "";
+  const numeric = raw.startsWith("pos-") ? raw.slice(4) : raw;
+  if (!/^\d+$/.test(numeric)) return null;
+  const parsed = Number(numeric);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 interface CustomerInfo {
   full_name: string;
   phone: string;
@@ -535,7 +543,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: getPosCustomerProfileId(selectedCustomer?.id),
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
