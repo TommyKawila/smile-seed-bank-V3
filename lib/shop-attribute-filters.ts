@@ -40,12 +40,11 @@ export function difficultySlugsFullyDbMappable(slugs: string[]): boolean {
 }
 
 const THC_DB_SLUGS = new Set(["high", "mid", "low"]);
-const CBD_DB_SLUGS = new Set(["high", "mid", "low"]);
 const SEX_DB_SLUGS = new Set(["feminized", "regular"]);
 
 export function cbdSlugsFullyDbMappable(slugs: string[]): boolean {
   if (slugs.length === 0) return false;
-  return slugs.every((s) => CBD_DB_SLUGS.has(s));
+  return false;
 }
 
 /** PostgREST `.or()` for CBD buckets on `cbd_percent_num` (high >5, mid 2–5, low <2). */
@@ -354,7 +353,7 @@ export function packBucketsFromVariants(
 
 export function seedsSlugsFullyDbMappable(slugs: string[]): boolean {
   if (slugs.length === 0) return false;
-  return slugs.every((s) => (SEED_PACK_FILTER_SLUGS as readonly string[]).includes(s));
+  return false;
 }
 
 export function productMatchesSeedsPackFilter(

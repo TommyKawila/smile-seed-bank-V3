@@ -684,7 +684,7 @@ export async function getActiveProducts(opts?: {
           qb = qb.eq("flowering_type", "photo_3n");
           break;
         case "photo-ff":
-          qb = qb.eq("flowering_type", "photo_ff");
+          qb = qb.in("flowering_type", ["photo_ff", "photoperiod"]);
           break;
         case "photo":
           qb = qb.eq("flowering_type", "photoperiod");
@@ -764,7 +764,7 @@ export async function getActiveProducts(opts?: {
           qb = qb.eq("flowering_type", "photo_3n");
           break;
         case "photo-ff":
-          qb = qb.eq("flowering_type", "photo_ff");
+          qb = qb.in("flowering_type", ["photo_ff", "photoperiod"]);
           break;
         case "photo":
           qb = qb.eq("flowering_type", "photoperiod");
