@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-16 (Critical bug automation — POS loyalty + catalog filters)
+- **แก้:** POS customer search `pos-*` ไม่หลุด `customer_profile_id`; non-cash/claim ไม่หักคะแนนฟรีจากยอดออเดอร์
+- **แก้:** `photo-ff`, CBD, pack filters กลับไป memory-scan เมื่อข้อมูล legacy/denormalized ยังไม่ครบ
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `lib/seed-type-filter.ts`, `lib/shop-attribute-filters.ts`, `services/product-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
