@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-17 (Critical bug — POS customer search order create)
+- **Bug:** omni customer search คืน id แบบ `pos-123`/`web-*` แต่ POS create ส่ง `Number(id)` → API validation fail เมื่อเลือกลูกค้าจาก search
+- **แก้:** normalize เฉพาะ POS customer profile id; web/order/quote hits ส่ง `null` ไม่ผูก `Customer`
+- **ไฟล์:** `app/admin/orders/create/page.tsx`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
