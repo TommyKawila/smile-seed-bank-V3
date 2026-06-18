@@ -152,25 +152,28 @@ export async function fetchCheckoutPaymentSettings(): Promise<{
   settings: PaymentSetting[];
   error: boolean;
   lineId: string | null;
+  promptPay: StorefrontPromptPayPublic;
 }> {
   try {
     const rows = await getSql()`
-      SELECT bank_accounts, line_id
+      SELECT bank_accounts, line_id, prompt_pay
       FROM payment_settings
       WHERE id = 1
       LIMIT 1
     `;
     const row = rows[0] as
-      | { bank_accounts: Json | null; line_id?: string | null }
+      | { bank_accounts: Json | null; line_id?: string | null; prompt_pay?: Json | null }
       | undefined;
 
     const lineId = row?.line_id?.trim() ? row.line_id.trim() : null;
+    const promptPay = parseStorefrontPromptPayPublic(row?.prompt_pay ?? null);
 
     if (!row) {
       return {
         settings: [],
         error: false,
         lineId,
+        promptPay,
       };
     }
 
@@ -184,13 +187,14 @@ export async function fetchCheckoutPaymentSettings(): Promise<{
       );
     }
 
-    return { settings, error: false, lineId };
+    return { settings, error: false, lineId, promptPay };
   } catch (e) {
     console.error("[fetchCheckoutPaymentSettings]", e);
     return {
       settings: [],
       error: true,
       lineId: null,
+      promptPay: parseStorefrontPromptPayPublic(null),
     };
   }
 }
