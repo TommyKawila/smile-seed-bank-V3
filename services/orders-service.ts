@@ -593,6 +593,9 @@ export async function autoCancelUnpaidOrder24hStale(
       if (s !== "PENDING_PAYMENT" && s !== "PENDING" && s !== "PENDING_INFO") {
         throw new Error(`24h auto-cancel: expected PENDING_PAYMENT|PENDING|PENDING_INFO, got ${s}`);
       }
+      if (order.order_origin === "MANUAL" && s === "PENDING" && !order.claim_token?.trim()) {
+        throw new Error("24h auto-cancel: manual POS pending order");
+      }
       if ((order.payment_status ?? "").toLowerCase() === "paid") {
         throw new Error("24h auto-cancel: payment already confirmed");
       }
@@ -610,7 +613,11 @@ export async function autoCancelUnpaidOrder24hStale(
         where: {
           id: oid,
           status: order.status ?? "",
-          NOT: { status: { in: ["CANCELLED", "VOIDED"] } },
+          NOT: [
+            { status: { in: ["CANCELLED", "VOIDED"] } },
+            { order_origin: "MANUAL", status: "PENDING", claim_token: null },
+            { order_origin: "MANUAL", status: "PENDING", claim_token: "" },
+          ],
           created_at: { lte: new Date(cutoff) },
           payment_status: order.payment_status ?? "pending",
           ...(order.slip_url?.trim()

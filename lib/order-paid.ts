@@ -63,3 +63,26 @@ export function isReceiptEligibleStatus(
     return true;
   return false;
 }
+
+export function orderCanAcceptTransferPayment(
+  status: string | null | undefined,
+  paymentStatus: string | null | undefined,
+  slipUrl?: string | null
+): boolean {
+  const s = (status ?? "").toUpperCase();
+  const ps = (paymentStatus ?? "").toLowerCase();
+  if (ps === "paid" || slipUrl?.trim()) return false;
+  return s === "PENDING" || s === "PENDING_PAYMENT" || s === "PENDING_INFO";
+}
+
+export function orderCanUploadDirectTransferSlip(
+  status: string | null | undefined,
+  paymentStatus: string | null | undefined,
+  slipUrl?: string | null
+): boolean {
+  const s = (status ?? "").toUpperCase();
+  return (
+    orderCanAcceptTransferPayment(status, paymentStatus, slipUrl) &&
+    (s === "PENDING" || s === "PENDING_PAYMENT")
+  );
+}
