@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-18 (Critical bug automation — POS points + receipt QR)
+- **แก้:** POS `pos-*` customer id ไม่หลุดเป็น `null` ตอนสร้างออเดอร์; receipt page ได้ `promptPay` metadata ครบทุก path
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `lib/payment-settings-public.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
