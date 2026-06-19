@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-19 (Critical bug automation — POS loyalty + catalog filters)
+- **แก้:** POS points ใช้ได้เฉพาะ cash-completed, persist coupon discount, conditional customer points update, transfer approve accrue loyalty ก่อน void ย้อนรายการ
+- **แก้:** `seeds=` catalog บังคับ memory scan จาก variants จริง และ SSR `/shop?breeder=` ส่ง breeder param เข้า service
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`, `services/orders-service.ts`, `lib/shop-attribute-filters.ts`, `services/product-service.ts`, `app/(storefront)/shop/page.tsx`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

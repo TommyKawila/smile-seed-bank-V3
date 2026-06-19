@@ -40,7 +40,6 @@ import {
   parseListParam,
   productMatchesSeedsPackFilter,
   productMatchesShopAttributeFilters,
-  seedsSlugsFullyDbMappable,
   sexOrFilterExpression,
   sexSlugsFullyDbMappable,
   thcOrFilterExpression,
@@ -591,7 +590,6 @@ export async function getActiveProducts(opts?: {
     const ftOriginal = opts?.catalog_ft?.trim() ?? "";
     const catalogFtKey = normalizeCatalogFtUrlParam(ftOriginal);
     const memoryFtPassNeeded = ftOriginal ? catalogFtRequiresMemoryPass(ftOriginal) : false;
-    const seedsSqlOk = seedsSel.length === 0 || seedsSlugsFullyDbMappable(seedsSel);
     const yieldSqlHigh = yieldQuickIsSqlHighFilter(yieldQuickParam);
     const cursorId =
       opts?.cursor_id != null && Number.isFinite(Number(opts.cursor_id))

@@ -77,6 +77,18 @@ export async function POST(req: NextRequest) {
       customer_profile_id,
       customer,
     } = parsed.data;
+    if (status !== "COMPLETED" && (points_redeemed > 0 || points_discount_amount > 0)) {
+      return NextResponse.json(
+        { error: "Points can only be redeemed on completed POS orders" },
+        { status: 400 }
+      );
+    }
+    if (points_redeemed !== points_discount_amount) {
+      return NextResponse.json(
+        { error: "Point redemption amount mismatch" },
+        { status: 400 }
+      );
+    }
     const totalAmount = roundCheckoutBahtWhole(
       overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0)
     );
@@ -209,20 +221,19 @@ export async function POST(req: NextRequest) {
         if (status === "COMPLETED" && customer_profile_id) {
           const ptsRedeemed = points_redeemed ?? 0;
           const pointsToAdd = Math.floor(totalAmount / 100);
-          const cust = await tx.customer.findUnique({
-            where: { id: BigInt(customer_profile_id) },
-            select: { points: true },
-          });
-          if (cust && ptsRedeemed > 0 && (cust.points ?? 0) < ptsRedeemed) {
-            throw new Error("Insufficient customer points");
-          }
-          await tx.customer.update({
-            where: { id: BigInt(customer_profile_id) },
+          const customerTouch = await tx.customer.updateMany({
+            where: {
+              id: BigInt(customer_profile_id),
+              ...(ptsRedeemed > 0 ? { points: { gte: ptsRedeemed } } : {}),
+            },
             data: {
               points: { increment: pointsToAdd - ptsRedeemed },
               total_spend: { increment: new Prisma.Decimal(totalAmount) },
             },
           });
+          if (customerTouch.count !== 1) {
+            throw new Error("Insufficient customer points");
+          }
         }
 
         return { orderId: order.id };
