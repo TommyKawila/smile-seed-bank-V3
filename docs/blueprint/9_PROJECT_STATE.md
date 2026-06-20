@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-20 (Critical POS loyalty linkage fix)
+- **แก้:** POS customer search id `pos-*` parse เป็น `customer_profile_id` ถูกต้อง · redeem points render ได้ · free gifts ไม่ทำให้ `/api/admin/orders/simple` 400 · invoice line totals ตรง brand discount
+- **ไฟล์:** `app/admin/orders/create/page.tsx`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
