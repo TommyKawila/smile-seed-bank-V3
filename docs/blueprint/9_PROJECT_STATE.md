@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-21 (Critical bug automation — POS order integrity)
+- **แก้:** POS submit ใช้ราคาต่อหน่วยหลัง brand promotion สำหรับ order lines / copy summary / mini invoice ให้ตรงกับ cart total
+- **แก้:** customer omni-search id `pos-*` parse เป็น `customer_profile_id` เพื่อไม่ให้ profile linkage และ points หายเงียบ
+- **ไฟล์:** `app/admin/orders/create/page.tsx`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
