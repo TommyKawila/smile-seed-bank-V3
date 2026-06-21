@@ -26,12 +26,16 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
-import { cartItemBrandLineDisplay } from "@/lib/cart-utils";
+import {
+  cartItemBrandLineDisplay,
+  unitBahtAfterBrandForCartItem,
+  type BrandPromotionRuleRow,
+} from "@/lib/cart-utils";
 import {
   matchBrandPromotionRule,
   resolveListingUnitAfterBrand,
 } from "@/lib/brand-promotion-checkout";
-import type { ProductWithBreeder, ProductWithBreederMaybeVariants } from "@/types/supabase";
+import type { CartItem, ProductWithBreeder, ProductWithBreederMaybeVariants } from "@/types/supabase";
 import type { ProductVariantRow } from "@/lib/supabase/types";
 import { PosLowStockWarning } from "@/components/admin/PosLowStockWarning";
 import { PosBreederCombobox } from "@/components/admin/PosBreederCombobox";
@@ -108,6 +112,30 @@ function mapCustomerSearchHit(raw: unknown): PosCustomer | null {
     address: typeof o.address === "string" ? o.address : null,
     points: Number(o.points ?? 0),
   };
+}
+
+function posCustomerProfileId(customer: PosCustomer | null): number | null {
+  if (!customer) return null;
+  const id = customer.id.trim();
+  const rawProfileId = id.startsWith("pos-") ? id.slice("pos-".length) : id;
+  if (!/^\d+$/.test(rawProfileId)) return null;
+  const profileId = Number(rawProfileId);
+  return Number.isSafeInteger(profileId) && profileId > 0 ? profileId : null;
+}
+
+function posOrderUnitPrice(
+  item: Pick<CartItem, "price" | "breederName" | "isFreeGift">,
+  brandRules: BrandPromotionRuleRow[],
+): number {
+  if (item.isFreeGift) return 0;
+  return unitBahtAfterBrandForCartItem(item.price, item.breederName, brandRules).unit;
+}
+
+function posOrderLineTotal(
+  item: Pick<CartItem, "price" | "quantity" | "breederName" | "isFreeGift">,
+  brandRules: BrandPromotionRuleRow[],
+): number {
+  return posOrderUnitPrice(item, brandRules) * item.quantity;
 }
 
 interface CustomerInfo {
@@ -526,7 +554,7 @@ export default function CreateOrderPage() {
             productName: i.productName,
             unitLabel: i.unitLabel,
             quantity: i.quantity,
-            price: i.price,
+            price: posOrderUnitPrice(i, brandPromotionRules),
           })),
           status: posOrderStatus,
           totalAmount: grandTotal,
@@ -535,7 +563,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: posCustomerProfileId(selectedCustomer),
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
@@ -572,7 +600,7 @@ export default function CreateOrderPage() {
             name: i.productName,
             unitLabel: i.unitLabel,
             quantity: i.quantity,
-            lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+            lineTotal: posOrderLineTotal(i, brandPromotionRules),
             breederName: i.breederName ?? null,
           })),
           subtotal: summary.subtotal,
@@ -607,7 +635,7 @@ export default function CreateOrderPage() {
             name: i.productName,
             unitLabel: i.unitLabel,
             quantity: i.quantity,
-            lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+            lineTotal: posOrderLineTotal(i, brandPromotionRules),
             breederName: i.breederName ?? null,
           })),
           subtotal: summary.subtotal,
@@ -640,7 +668,7 @@ export default function CreateOrderPage() {
             name: i.productName,
             unitLabel: i.unitLabel,
             quantity: i.quantity,
-            lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+            lineTotal: posOrderLineTotal(i, brandPromotionRules),
             breederName: i.breederName ?? null,
           })),
           subtotal: summary.subtotal,
@@ -657,7 +685,7 @@ export default function CreateOrderPage() {
         productName: i.productName,
         unitLabel: i.unitLabel,
         quantity: i.quantity,
-        lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+        lineTotal: posOrderLineTotal(i, brandPromotionRules),
         isFreeGift: !!i.isFreeGift,
       }));
       setMiniInvoice({
