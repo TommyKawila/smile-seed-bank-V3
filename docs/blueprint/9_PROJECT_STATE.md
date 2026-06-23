@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-23 (Critical POS loyalty linkage fix)
+- **Bug:** POS omni customer id (`pos-*`) ถูกแปลงด้วย `Number(...)` → `NaN`/`null` ทำให้ order ไม่ผูก profile และ point discount ไม่หักแต้ม
+- **แก้:** parse เฉพาะ numeric/`pos-<id>` + API reject point redemption ที่ไม่มี profile หรือยอดแต้มไม่ตรงส่วนลด
+- **ไฟล์:** `lib/pos-customer-profile-id.ts`, `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

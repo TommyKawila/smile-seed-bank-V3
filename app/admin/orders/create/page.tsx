@@ -48,6 +48,7 @@ import {
 } from "@/lib/utils/format-order";
 import { resolvePosVariantUnitPrice } from "@/lib/pos-pricing";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
+import { resolvePosCustomerProfileId } from "@/lib/pos-customer-profile-id";
 
 type PosLastCopyPack = {
   orderNumber: string;
@@ -535,7 +536,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: resolvePosCustomerProfileId(selectedCustomer?.id),
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
