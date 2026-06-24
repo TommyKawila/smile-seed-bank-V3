@@ -200,7 +200,7 @@ export default function QuotationsNewPage() {
     }
     let cancelled = false;
     setCustomerSearchStatus("loading");
-    fetch(`/api/admin/customers?q=${encodeURIComponent(q)}`)
+    fetch(`/api/admin/customers?mode=omni&q=${encodeURIComponent(q)}`)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
@@ -478,7 +478,7 @@ export default function QuotationsNewPage() {
     const d = onlyDigits(p);
     if (d.length !== 10) return;
     try {
-      const res = await fetch(`/api/admin/customers?q=${encodeURIComponent(p)}`);
+      const res = await fetch(`/api/admin/customers?mode=omni&q=${encodeURIComponent(p)}`);
       const list = await res.json().catch(() => []);
       if (!Array.isArray(list) || list.length === 0) return;
       const exact =

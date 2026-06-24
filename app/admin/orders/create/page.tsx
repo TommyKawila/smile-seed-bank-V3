@@ -110,6 +110,12 @@ function mapCustomerSearchHit(raw: unknown): PosCustomer | null {
   };
 }
 
+function parsePosCustomerProfileId(id: string): number | null {
+  const raw = id.startsWith("pos-") ? id.slice(4) : id;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 interface CustomerInfo {
   full_name: string;
   phone: string;
@@ -269,17 +275,22 @@ export default function CreateOrderPage() {
     ? (selectedCustomer.wholesale_discount_percent ?? 0)
     : 0;
 
+  const canRedeemPoints = selectedCustomer != null && customer.payment_method === "CASH";
   const availablePoints = selectedCustomer?.points ?? 0;
   const manualDiscountPercentClamped = Math.min(100, Math.max(0, manualDiscountPercent));
   const manualDiscountAmount = roundCheckoutBahtWhole(
     (summary.subtotal * manualDiscountPercentClamped) / 100
   );
-  const maxRedeemable = Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount));
-  const effectivePointsRedeemed = Math.min(
-    pointsToRedeem,
-    maxRedeemable,
-    Math.floor(Math.max(0, summary.total - manualDiscountAmount))
-  );
+  const maxRedeemable = canRedeemPoints
+    ? Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount))
+    : 0;
+  const effectivePointsRedeemed = canRedeemPoints
+    ? Math.min(
+        pointsToRedeem,
+        maxRedeemable,
+        Math.floor(Math.max(0, summary.total - manualDiscountAmount))
+      )
+    : 0;
   const pointsDiscountAmount = effectivePointsRedeemed;
   const grandTotal = roundCheckoutBahtWhole(
     Math.max(0, summary.total - manualDiscountAmount - pointsDiscountAmount)
@@ -295,7 +306,7 @@ export default function CreateOrderPage() {
     }
     setCustomerSearching(true);
     try {
-      const res = await fetch(`/api/admin/customers?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`/api/admin/customers?mode=omni&q=${encodeURIComponent(q)}`);
       const data: unknown = await res.json();
       if (!res.ok || !Array.isArray(data)) {
         setCustomerResults([]);
@@ -516,6 +527,10 @@ export default function CreateOrderPage() {
       const isClaim = mode === "claim";
       const isCashComplete = !isClaim && customer.payment_method === "CASH";
       const posOrderStatus = isClaim ? "PENDING_INFO" : isCashComplete ? "COMPLETED" : "PENDING";
+      const customerProfileId = selectedCustomer ? parsePosCustomerProfileId(selectedCustomer.id) : null;
+      if (effectivePointsRedeemed > 0 && !customerProfileId) {
+        throw new Error("ใช้คะแนนได้เฉพาะลูกค้า POS ที่บันทึกในระบบ");
+      }
       const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -535,7 +550,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: customerProfileId,
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
@@ -926,7 +941,10 @@ export default function CreateOrderPage() {
                 <Label>ช่องทางชำระเงิน</Label>
                 <select
                   value={customer.payment_method}
-                  onChange={(e) => setCustomerField("payment_method", e.target.value)}
+                  onChange={(e) => {
+                    setCustomerField("payment_method", e.target.value);
+                    if (e.target.value !== "CASH") setPointsToRedeem(0);
+                  }}
                   className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="CASH">เงินสด</option>
@@ -998,47 +1016,6 @@ export default function CreateOrderPage() {
                     >
                       <UserPlus className="h-4 w-4" />
                     </Button>
-                    {selectedCustomer && items.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs text-zinc-500">คะแนนคงเหลือ: <span className="font-medium text-zinc-700">{availablePoints}</span> คะแนน</p>
-                        <div className="flex gap-2">
-                          <Input
-                            type="number"
-                            min={0}
-                            max={maxRedeemable}
-                            value={pointsToRedeem || ""}
-                            onChange={(e) => {
-                              const v = e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
-                              setPointsToRedeem(Math.min(v, maxRedeemable));
-                            }}
-                            placeholder="ใช้คะแนน"
-                            className="h-8 text-sm w-24"
-                            disabled={availablePoints === 0}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8"
-                            onClick={() => setPointsToRedeem(maxRedeemable)}
-                            disabled={availablePoints === 0}
-                          >
-                            ใช้ทั้งหมด
-                          </Button>
-                          {pointsToRedeem > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 text-zinc-500"
-                              onClick={() => setPointsToRedeem(0)}
-                            >
-                              ล้าง
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
                     {customerSearchOpen && (customerSearch.length >= 2 || customerResults.length > 0) && (
                       <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
                         {customerSearching ? (
@@ -1073,6 +1050,50 @@ export default function CreateOrderPage() {
                   </div>
                 )}
               </div>
+              {selectedCustomer && items.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-zinc-500">คะแนนคงเหลือ: <span className="font-medium text-zinc-700">{availablePoints}</span> คะแนน</p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={maxRedeemable}
+                      value={pointsToRedeem || ""}
+                      onChange={(e) => {
+                        const v = e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                        setPointsToRedeem(Math.min(v, maxRedeemable));
+                      }}
+                      placeholder="ใช้คะแนน"
+                      className="h-8 text-sm w-24"
+                      disabled={!canRedeemPoints || availablePoints === 0}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => setPointsToRedeem(maxRedeemable)}
+                      disabled={!canRedeemPoints || availablePoints === 0}
+                    >
+                      ใช้ทั้งหมด
+                    </Button>
+                    {pointsToRedeem > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-zinc-500"
+                        onClick={() => setPointsToRedeem(0)}
+                      >
+                        ล้าง
+                      </Button>
+                    )}
+                  </div>
+                  {!canRedeemPoints && (
+                    <p className="text-[11px] text-zinc-500">ใช้คะแนนได้เฉพาะออเดอร์เงินสดที่ปิดยอดทันที</p>
+                  )}
+                </div>
+              )}
               <Separator />
               {items.length === 0 ? (
                 <p className="py-6 text-center text-sm text-zinc-400">

@@ -22,25 +22,33 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const qRaw = (searchParams.get("q") ?? "").trim();
+    const mode = (searchParams.get("mode") ?? "").trim();
     const tier = searchParams.get("tier") ?? "";
     const limitRaw = Number(searchParams.get("limit") ?? 80);
     const limit = Number.isFinite(limitRaw) ? Math.min(100, Math.max(1, limitRaw)) : 80;
 
-    if (!qRaw) {
-      const where: Prisma.CustomerWhereInput = { is_active: true };
-      if (tier && ["Retail", "Wholesale", "VIP"].includes(tier)) {
-        where.tier = tier as CustomerTier;
-      }
-      const customers = await prisma.customer.findMany({
-        where,
-        take: limit,
-        orderBy: { name: "asc" },
-      });
-      return NextResponse.json(bigintToJson(customers));
+    if (qRaw && mode === "omni") {
+      const hits = await searchCustomersOmni(qRaw, limit);
+      return NextResponse.json(bigintToJson(hits));
     }
 
-    const hits = await searchCustomersOmni(qRaw, limit);
-    return NextResponse.json(bigintToJson(hits));
+    const where: Prisma.CustomerWhereInput = { is_active: true };
+    if (tier && ["Retail", "Wholesale", "VIP"].includes(tier)) {
+      where.tier = tier as CustomerTier;
+    }
+    if (qRaw) {
+      where.OR = [
+        { name: { contains: qRaw, mode: "insensitive" } },
+        { phone: { contains: qRaw } },
+        { line_id: { contains: qRaw, mode: "insensitive" } },
+      ];
+    }
+    const customers = await prisma.customer.findMany({
+      where,
+      take: limit,
+      orderBy: { name: "asc" },
+    });
+    return NextResponse.json(bigintToJson(customers));
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
