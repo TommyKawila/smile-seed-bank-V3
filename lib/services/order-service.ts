@@ -24,6 +24,7 @@ import {
   carrierLabelFromCode,
   carrierTrackingUrl,
 } from "@/lib/shipping-carriers";
+import { orderCanAcceptTransferPayment } from "@/lib/order-paid";
 import { randomUUID } from "crypto";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ export interface OrderPublicView {
   order_number: string;
   payment_method: string | null;
   status: string;
+  payment_status: string | null;
   total_amount: number;
   slip_url: string | null;
 }
@@ -528,7 +530,7 @@ export async function getOrderByNumber(
   try {
     const sql = getSql();
     const rows = await sql<OrderPublicView[]>`
-      SELECT order_number, payment_method, status, total_amount, slip_url
+      SELECT order_number, payment_method, status, payment_status, total_amount, slip_url
       FROM orders
       WHERE order_number = ${orderNumber}
       LIMIT 1
@@ -767,13 +769,15 @@ export async function uploadSlip(
       {
         id: number;
         payment_method: string | null;
+        status: string | null;
+        payment_status: string | null;
         slip_url: string | null;
         total_amount: string;
         customer_name: string | null;
         cust_full: string | null;
       }[]
     >`
-      SELECT o.id, o.payment_method, o.slip_url, o.total_amount::text AS total_amount,
+      SELECT o.id, o.payment_method, o.status, o.payment_status, o.slip_url, o.total_amount::text AS total_amount,
              o.customer_name, c.full_name AS cust_full
       FROM orders o
       LEFT JOIN customers c ON c.id = o.customer_id
@@ -785,6 +789,9 @@ export async function uploadSlip(
     if (order.slip_url) return { data: null, error: "Slip already uploaded" };
     if (order.payment_method !== "TRANSFER") {
       return { data: null, error: "This order does not require slip upload" };
+    }
+    if (!orderCanAcceptTransferPayment(order.status, order.payment_status, order.slip_url)) {
+      return { data: null, error: "Order is not awaiting payment" };
     }
 
     // Guard: file type + size

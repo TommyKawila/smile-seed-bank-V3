@@ -110,6 +110,13 @@ function mapCustomerSearchHit(raw: unknown): PosCustomer | null {
   };
 }
 
+function posCustomerProfileId(id: string): number | null {
+  const raw = id.startsWith("pos-") ? id.slice(4) : id;
+  if (!/^\d+$/.test(raw)) return null;
+  const n = Number(raw);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
 interface CustomerInfo {
   full_name: string;
   phone: string;
@@ -535,7 +542,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: selectedCustomer ? posCustomerProfileId(selectedCustomer.id) : null,
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
@@ -998,47 +1005,6 @@ export default function CreateOrderPage() {
                     >
                       <UserPlus className="h-4 w-4" />
                     </Button>
-                    {selectedCustomer && items.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs text-zinc-500">คะแนนคงเหลือ: <span className="font-medium text-zinc-700">{availablePoints}</span> คะแนน</p>
-                        <div className="flex gap-2">
-                          <Input
-                            type="number"
-                            min={0}
-                            max={maxRedeemable}
-                            value={pointsToRedeem || ""}
-                            onChange={(e) => {
-                              const v = e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
-                              setPointsToRedeem(Math.min(v, maxRedeemable));
-                            }}
-                            placeholder="ใช้คะแนน"
-                            className="h-8 text-sm w-24"
-                            disabled={availablePoints === 0}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8"
-                            onClick={() => setPointsToRedeem(maxRedeemable)}
-                            disabled={availablePoints === 0}
-                          >
-                            ใช้ทั้งหมด
-                          </Button>
-                          {pointsToRedeem > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 text-zinc-500"
-                              onClick={() => setPointsToRedeem(0)}
-                            >
-                              ล้าง
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
                     {customerSearchOpen && (customerSearch.length >= 2 || customerResults.length > 0) && (
                       <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
                         {customerSearching ? (
@@ -1070,6 +1036,47 @@ export default function CreateOrderPage() {
                         )}
                       </div>
                     )}
+                  </div>
+                )}
+                {selectedCustomer && items.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs text-zinc-500">คะแนนคงเหลือ: <span className="font-medium text-zinc-700">{availablePoints}</span> คะแนน</p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={maxRedeemable}
+                        value={pointsToRedeem || ""}
+                        onChange={(e) => {
+                          const v = e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                          setPointsToRedeem(Math.min(v, maxRedeemable));
+                        }}
+                        placeholder="ใช้คะแนน"
+                        className="h-8 text-sm w-24"
+                        disabled={availablePoints === 0}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => setPointsToRedeem(maxRedeemable)}
+                        disabled={availablePoints === 0}
+                      >
+                        ใช้ทั้งหมด
+                      </Button>
+                      {pointsToRedeem > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-zinc-500"
+                          onClick={() => setPointsToRedeem(0)}
+                        >
+                          ล้าง
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

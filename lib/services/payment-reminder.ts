@@ -230,6 +230,7 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
   const staleBatch = await prisma.orders.findMany({
     where: {
       status: { in: [...CRON_ORDER_STATUSES] },
+      order_origin: { not: "MANUAL" },
       created_at: { lt: cutoff24h },
       OR: [{ slip_url: null }, { slip_url: "" }],
     },

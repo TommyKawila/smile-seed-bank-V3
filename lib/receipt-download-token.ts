@@ -1,7 +1,10 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
+const PLACEHOLDER_SECRET = "ssb-receipt-token-v1-set-RECEIPT_DOWNLOAD_SECRET";
+
 function secret(): string {
-  return process.env.RECEIPT_DOWNLOAD_SECRET?.trim() || "ssb-receipt-token-v1-set-RECEIPT_DOWNLOAD_SECRET";
+  const value = process.env.RECEIPT_DOWNLOAD_SECRET?.trim() ?? "";
+  return value && value !== PLACEHOLDER_SECRET ? value : "";
 }
 
 /** Short signed token for LINE / email links (no Supabase cookie). TTL default 90d. */
