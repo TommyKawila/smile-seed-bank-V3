@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-26 (POS brand promo line totals)
+- **Bug:** POS brand promotion ทำให้ `orders.total_amount` หลังลด แต่ `order_items`/mini invoice ยังใช้ราคาเต็ม
+- **แก้:** payload `/api/admin/orders/simple` และ mini invoice ใช้ unit price หลัง brand promotion
+- **ไฟล์:** `app/admin/orders/create/page.tsx`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
