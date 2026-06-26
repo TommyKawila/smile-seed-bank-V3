@@ -26,12 +26,12 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
-import { cartItemBrandLineDisplay } from "@/lib/cart-utils";
+import { cartItemBrandLineDisplay, type BrandPromotionRuleRow } from "@/lib/cart-utils";
 import {
   matchBrandPromotionRule,
   resolveListingUnitAfterBrand,
 } from "@/lib/brand-promotion-checkout";
-import type { ProductWithBreeder, ProductWithBreederMaybeVariants } from "@/types/supabase";
+import type { ProductWithBreeder, ProductWithBreederMaybeVariants, CartItem } from "@/types/supabase";
 import type { ProductVariantRow } from "@/lib/supabase/types";
 import { PosLowStockWarning } from "@/components/admin/PosLowStockWarning";
 import { PosBreederCombobox } from "@/components/admin/PosBreederCombobox";
@@ -45,6 +45,7 @@ import {
   buildPromptPayIoQrUrl,
   claimLinkToDigitalReceiptPageUrl,
   generateOrderSummary,
+  type OrderSummaryLine,
 } from "@/lib/utils/format-order";
 import { resolvePosVariantUnitPrice } from "@/lib/pos-pricing";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
@@ -53,13 +54,7 @@ type PosLastCopyPack = {
   orderNumber: string;
   orderId?: string;
   claimLink: string | null;
-  items: {
-    name: string;
-    unitLabel: string;
-    quantity: number;
-    lineTotal: number;
-    breederName?: string | null;
-  }[];
+  items: OrderSummaryLine[];
   subtotal: number;
   shippingFee: number;
   discountAmount: number;
@@ -68,6 +63,34 @@ type PosLastCopyPack = {
   customerName: string;
   customerPhone: string;
 };
+
+function mapPosCartItemsForSummary(
+  cartItems: CartItem[],
+  brandRules: BrandPromotionRuleRow[],
+): OrderSummaryLine[] {
+  return cartItems.map((i) => {
+    const base = {
+      name: i.productName,
+      unitLabel: i.unitLabel,
+      quantity: i.quantity,
+      breederName: i.breederName ?? null,
+    };
+    if (i.isFreeGift) {
+      return { ...base, lineTotal: 0 };
+    }
+    const { effLine, listLine, showBrandStrike } = cartItemBrandLineDisplay(i, brandRules);
+    const brandRule = matchBrandPromotionRule(brandRules, i.breederName);
+    if (showBrandStrike && brandRule && brandRule.discount_percent > 0) {
+      return {
+        ...base,
+        lineTotal: effLine,
+        originalLineTotal: listLine,
+        discountPercent: brandRule.discount_percent,
+      };
+    }
+    return { ...base, lineTotal: effLine };
+  });
+}
 
 function posPaymentMethodLabelTh(code: string): string {
   const m: Record<string, string> = {
@@ -236,13 +259,7 @@ export default function CreateOrderPage() {
     const text = generateOrderSummary({
       lang: summaryLang,
       orderNumber: lastCopyPack.orderNumber,
-      items: lastCopyPack.items.map((i) => ({
-        name: i.name,
-        unitLabel: i.unitLabel,
-        quantity: i.quantity,
-        lineTotal: i.lineTotal,
-        breederName: i.breederName,
-      })),
+      items: lastCopyPack.items,
       subtotal: lastCopyPack.subtotal,
       shippingFee: lastCopyPack.shippingFee,
       discountAmount: lastCopyPack.discountAmount,
@@ -568,13 +585,7 @@ export default function CreateOrderPage() {
           orderNumber,
           orderId,
           claimLink,
-          items: items.map((i) => ({
-            name: i.productName,
-            unitLabel: i.unitLabel,
-            quantity: i.quantity,
-            lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
-            breederName: i.breederName ?? null,
-          })),
+          items: mapPosCartItemsForSummary(items, brandPromotionRules),
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
           discountAmount: discountAmt,
@@ -603,13 +614,7 @@ export default function CreateOrderPage() {
           orderNumber,
           orderId,
           claimLink: null,
-          items: items.map((i) => ({
-            name: i.productName,
-            unitLabel: i.unitLabel,
-            quantity: i.quantity,
-            lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
-            breederName: i.breederName ?? null,
-          })),
+          items: mapPosCartItemsForSummary(items, brandPromotionRules),
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
           discountAmount: discountAmt,
@@ -636,13 +641,7 @@ export default function CreateOrderPage() {
           orderNumber,
           orderId,
           claimLink: null,
-          items: items.map((i) => ({
-            name: i.productName,
-            unitLabel: i.unitLabel,
-            quantity: i.quantity,
-            lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
-            breederName: i.breederName ?? null,
-          })),
+          items: mapPosCartItemsForSummary(items, brandPromotionRules),
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
           discountAmount: discountAmt,

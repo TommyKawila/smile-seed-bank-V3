@@ -8,6 +8,10 @@ export type OrderSummaryLine = {
   unitLabel?: string | null;
   quantity: number;
   lineTotal?: number;
+  /** List line total before line-level discount (e.g. brand %). */
+  originalLineTotal?: number;
+  /** Line-level discount percent when `originalLineTotal > lineTotal`. */
+  discountPercent?: number;
   /** When set, line shows as `Breeder - Product (unit) × qty` */
   breederName?: string | null;
 };
@@ -67,6 +71,33 @@ function L(lang: OrderSummaryLang, th: string, en: string): string {
   return lang === "en" ? en : th;
 }
 
+/** Thai POS copy style: `490.-` (no ฿ prefix). */
+export function formatSummaryBahtShort(n: number): string {
+  return `${Math.round(n).toLocaleString("th-TH")}.-`;
+}
+
+function formatOrderSummaryLinePrice(row: OrderSummaryLine, lang: OrderSummaryLang): string {
+  const eff = row.lineTotal;
+  const list = row.originalLineTotal;
+  const pct = row.discountPercent;
+  if (
+    eff != null &&
+    list != null &&
+    pct != null &&
+    pct > 0 &&
+    list > eff
+  ) {
+    if (lang === "en") {
+      return ` — ${formatSummaryBahtShort(list)} (${pct}% off → ${formatSummaryBahtShort(eff)})`;
+    }
+    return ` — ${formatSummaryBahtShort(list)} ลด ${pct}% เหลือ ${formatSummaryBahtShort(eff)}`;
+  }
+  if (eff != null && Number.isFinite(eff)) {
+    return ` — ${formatPrice(eff)}`;
+  }
+  return "";
+}
+
 export function generateOrderSummary(input: GenerateOrderSummaryInput): string {
   const lang: OrderSummaryLang = input.lang ?? "th";
   const lines: string[] = [];
@@ -81,10 +112,7 @@ export function generateOrderSummary(input: GenerateOrderSummaryInput): string {
     const breeder = row.breederName?.trim();
     const namePart = breeder ? `${breeder} - ${row.name}` : row.name;
     const unit = row.unitLabel ? ` (${row.unitLabel})` : "";
-    const pricePart =
-      row.lineTotal != null && Number.isFinite(row.lineTotal)
-        ? ` — ${formatPrice(row.lineTotal)}`
-        : "";
+    const pricePart = formatOrderSummaryLinePrice(row, lang);
     lines.push(`  • ${namePart}${unit} × ${row.quantity}${pricePart}`);
   }
   lines.push("");
