@@ -14,6 +14,11 @@ import {
 import { sendLineFlexNotification } from "@/lib/order-line-notifications";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import { createOrderLog } from "@/lib/order-logs";
+import {
+  PAYMENT_GRACE_HOUR_OPTIONS,
+  shouldAutoCancelUnpaidOrder,
+  type PaymentGraceHours,
+} from "@/lib/payment-grace";
 import { pushTextToLineUser } from "@/services/line-messaging";
 import type { AdminOrderLineItem } from "@/types/admin-order";
 
@@ -47,6 +52,7 @@ export interface AdminOrderRow {
   points_discount_amount: number;
   promotion_discount_amount: number;
   line_items: AdminOrderLineItem[];
+  payment_grace_until: string | null;
 }
 
 type RawOrderListRow = {
@@ -71,6 +77,7 @@ type RawOrderListRow = {
   points_discount_amount: unknown;
   promotion_discount_amount: unknown;
   payment_status?: string | null;
+  payment_grace_until?: string | null;
 };
 
 function normalizeOrderListRow(r: RawOrderListRow): AdminOrderRow {
@@ -98,6 +105,7 @@ function normalizeOrderListRow(r: RawOrderListRow): AdminOrderRow {
     points_discount_amount: Number(r.points_discount_amount ?? 0),
     promotion_discount_amount: Number(r.promotion_discount_amount ?? 0),
     line_items: [],
+    payment_grace_until: r.payment_grace_until ?? null,
   };
 }
 
@@ -357,7 +365,8 @@ export async function listOrders(opts?: {
              c.email AS customer_email,
              o.discount_amount,
              o.points_discount_amount,
-             o.promotion_discount_amount
+             o.promotion_discount_amount,
+             o.payment_grace_until
       FROM orders o
       LEFT JOIN customers c ON c.id = o.customer_id`;
 
@@ -568,9 +577,27 @@ export async function rejectPayment(orderId: number, note: string): Promise<Serv
   }
 }
 
-const STALE_24H_MS = 24 * 60 * 60 * 1000;
 const AUTO_CANCEL_24H_NOTE =
   "System: Auto-cancelled after 24 hours (pending payment or incomplete order).";
+
+const PAYMENT_GRACE_ELIGIBLE_STATUSES = ["PENDING_PAYMENT", "PENDING", "PENDING_INFO"] as const;
+
+function assertPaymentGraceEligible(order: {
+  status: string | null;
+  payment_status: string | null;
+  slip_url: string | null;
+}): void {
+  const s = order.status ?? "";
+  if (!PAYMENT_GRACE_ELIGIBLE_STATUSES.includes(s as (typeof PAYMENT_GRACE_ELIGIBLE_STATUSES)[number])) {
+    throw new Error(`Payment grace: expected PENDING_PAYMENT|PENDING|PENDING_INFO, got ${s}`);
+  }
+  if ((order.payment_status ?? "").toLowerCase() === "paid") {
+    throw new Error("Payment grace: payment already confirmed");
+  }
+  if (order.slip_url?.trim()) {
+    throw new Error("Payment grace: payment slip already uploaded");
+  }
+}
 
 /**
  * Cron: unpaid, no slip, `PENDING_PAYMENT` | `PENDING` | `PENDING_INFO`, age ≥ 24h. Stock via `restoreVariantStockForOrderItems`.
@@ -581,7 +608,6 @@ export async function autoCancelUnpaidOrder24hStale(
 ): Promise<ServiceResult<null>> {
   try {
     const oid = BigInt(orderId);
-    const cutoff = asOf.getTime() - STALE_24H_MS;
     await prisma.$transaction(async (tx) => {
       const order = await tx.orders.findUnique({
         where: { id: oid },
@@ -602,8 +628,10 @@ export async function autoCancelUnpaidOrder24hStale(
       if (!order.created_at) {
         throw new Error("24h auto-cancel: order missing created_at");
       }
-      if (order.created_at.getTime() > cutoff) {
-        throw new Error("24h auto-cancel: order not old enough");
+      if (
+        !shouldAutoCancelUnpaidOrder(order.created_at, order.payment_grace_until, asOf)
+      ) {
+        throw new Error("24h auto-cancel: payment grace active or not past deadline");
       }
       const rejectNote = `${AUTO_CANCEL_24H_NOTE}${REJECT_STOCK_NOTE_SUFFIX}`;
       const claimed = await tx.orders.updateMany({
@@ -611,7 +639,6 @@ export async function autoCancelUnpaidOrder24hStale(
           id: oid,
           status: order.status ?? "",
           NOT: { status: { in: ["CANCELLED", "VOIDED"] } },
-          created_at: { lte: new Date(cutoff) },
           payment_status: order.payment_status ?? "pending",
           ...(order.slip_url?.trim()
             ? { slip_url: order.slip_url }
@@ -632,7 +659,90 @@ export async function autoCancelUnpaidOrder24hStale(
   }
 }
 
-/** Cancel only `PENDING` / `PENDING_INFO` (e.g. abandoned manual claim); restores variant stock. */
+/** Admin: extend payment wait — bypass reminders + auto-cancel until grace expires. */
+export async function extendOrderPaymentGrace(
+  orderId: number,
+  hours: PaymentGraceHours | number,
+  note?: string
+): Promise<ServiceResult<{ payment_grace_until: string }>> {
+  try {
+    if (!Number.isFinite(hours) || hours < 1 || hours > 720) {
+      return { data: null, error: "Invalid grace hours (1–720)" };
+    }
+    const oid = BigInt(orderId);
+    const now = new Date();
+    const extendMs = hours * 60 * 60 * 1000;
+    const candidateUntil = new Date(now.getTime() + extendMs);
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const order = await tx.orders.findUnique({ where: { id: oid } });
+      if (!order) throw new Error("Order not found");
+      if (order.status === "CANCELLED") throw new Error("Order is already cancelled");
+      assertPaymentGraceEligible(order);
+
+      const existing = order.payment_grace_until;
+      const paymentGraceUntil =
+        existing && existing.getTime() > candidateUntil.getTime() ? existing : candidateUntil;
+
+      const row = await tx.orders.update({
+        where: { id: oid },
+        data: {
+          payment_grace_until: paymentGraceUntil,
+          notification_level: 0,
+          last_notified_at: null,
+        },
+        select: { payment_grace_until: true },
+      });
+      if (!row.payment_grace_until) throw new Error("Failed to set payment grace");
+      return row.payment_grace_until;
+    });
+
+    const untilIso = updated.toISOString();
+    const trimmedNote = (note ?? "").trim();
+    await createOrderLog({
+      orderId,
+      action: "PAYMENT_GRACE_EXTENDED",
+      messageContent: `+${hours}h until ${untilIso}${trimmedNote ? ` — ${trimmedNote}` : ""}`,
+    });
+
+    return { data: { payment_grace_until: untilIso }, error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[orders-service] extendOrderPaymentGrace error:", msg);
+    return { data: null, error: msg };
+  }
+}
+
+/** Admin: remove payment grace hold — resume normal reminder + auto-cancel schedule. */
+export async function clearOrderPaymentGrace(
+  orderId: number
+): Promise<ServiceResult<null>> {
+  try {
+    const oid = BigInt(orderId);
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.orders.findUnique({ where: { id: oid } });
+      if (!order) throw new Error("Order not found");
+      if (!order.payment_grace_until) throw new Error("No active payment grace on this order");
+      assertPaymentGraceEligible(order);
+      await tx.orders.update({
+        where: { id: oid },
+        data: { payment_grace_until: null },
+      });
+    });
+    await createOrderLog({
+      orderId,
+      action: "PAYMENT_GRACE_CLEARED",
+      messageContent: "Admin cleared payment grace hold",
+    });
+    return { data: null, error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[orders-service] clearOrderPaymentGrace error:", msg);
+    return { data: null, error: msg };
+  }
+}
+
+export { PAYMENT_GRACE_HOUR_OPTIONS };
 export async function cancelPendingOrder(
   orderId: number,
   note?: string

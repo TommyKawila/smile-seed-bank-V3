@@ -25,6 +25,8 @@ export type GenerateOrderSummaryInput = {
   customerPhone?: string | null;
   claimLink?: string | null;
   receiptPageUrl?: string | null;
+  /** Storefront `/payment/{orderNumber}` — manual POS payment reminder. */
+  paymentPageUrl?: string | null;
   bankLines?: string[];
   promptPayQrUrl?: string | null;
 };
@@ -118,6 +120,17 @@ export function generateOrderSummary(input: GenerateOrderSummaryInput): string {
     lines.push("");
     lines.push(L(lang, "🏦 **ช่องทางโอนเงิน:**", "🏦 **Bank transfer:**"));
     for (const b of input.bankLines) lines.push(`  ${b}`);
+  }
+  if (input.paymentPageUrl) {
+    lines.push("");
+    lines.push(
+      L(
+        lang,
+        "🔗 **ลิงก์ชำระเงิน / อัปโหลดสลิป:**",
+        "🔗 **Payment page (pay & upload slip):**",
+      ),
+    );
+    lines.push(`  ${input.paymentPageUrl}`);
   }
   if (input.receiptPageUrl) {
     lines.push("");

@@ -1,6 +1,6 @@
 -- Dedicated article promo banners (Marketing Hub); storefront prefers this over promotion_campaigns.
 
-CREATE TABLE "article_banners" (
+CREATE TABLE IF NOT EXISTS "article_banners" (
     "id" BIGSERIAL NOT NULL,
     "desktop_image_url" TEXT,
     "mobile_image_url" TEXT,
@@ -14,4 +14,4 @@ CREATE TABLE "article_banners" (
     CONSTRAINT "article_banners_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "article_banners_active_sort_idx" ON "article_banners" ("active", "sort_order", "id");
+CREATE INDEX IF NOT EXISTS "article_banners_active_sort_idx" ON "article_banners" ("active", "sort_order", "id");

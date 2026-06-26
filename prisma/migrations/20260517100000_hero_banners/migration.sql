@@ -1,6 +1,6 @@
 -- Hero fade carousel (top-of-home), separate from dynamic_banners promo strip.
 
-CREATE TABLE "hero_banners" (
+CREATE TABLE IF NOT EXISTS "hero_banners" (
     "id" BIGSERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
@@ -18,4 +18,4 @@ CREATE TABLE "hero_banners" (
     CONSTRAINT "hero_banners_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "hero_banners_active_sort_idx" ON "hero_banners" ("active", "sort_order", "id");
+CREATE INDEX IF NOT EXISTS "hero_banners_active_sort_idx" ON "hero_banners" ("active", "sort_order", "id");

@@ -34,6 +34,7 @@ export type AdminOrderDetailPayload = {
   shippingProvider: string | null;
   paymentMethod: string | null;
   createdAt: Date;
+  paymentGraceUntil: Date | null;
   lineUserId: string | null;
   claimToken: string | null;
   items: {
@@ -192,6 +193,7 @@ export async function loadAdminOrderDetail(orderId: number): Promise<AdminOrderD
     shippingProvider: order.shipping_provider,
     paymentMethod: order.payment_method ?? "TRANSFER",
     createdAt: order.created_at ?? new Date(0),
+    paymentGraceUntil: order.payment_grace_until ?? null,
     lineUserId: (() => {
       const o = order.line_user_id?.trim();
       const c = order.customers?.line_user_id?.trim();

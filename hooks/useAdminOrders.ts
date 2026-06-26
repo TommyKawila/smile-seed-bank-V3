@@ -27,6 +27,7 @@ export interface AdminOrder {
   points_discount_amount: number;
   promotion_discount_amount: number;
   line_items: AdminOrderLineItem[];
+  payment_grace_until: string | null;
 }
 
 export type UseAdminOrdersOptions = {

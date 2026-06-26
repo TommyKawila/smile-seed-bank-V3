@@ -8,6 +8,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/get-url";
 import { createOrderLog } from "@/lib/order-logs";
+import { isOrderOnPaymentGrace, shouldAutoCancelUnpaidOrder } from "@/lib/payment-grace";
 import { sendPaymentReminderEmail } from "@/services/email-service";
 import { autoCancelUnpaidOrder24hStale } from "@/services/orders-service";
 import { pushTextToLineUser } from "@/services/line-messaging";
@@ -179,6 +180,10 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
       result.skipped += 1;
       continue;
     }
+    if (isOrderOnPaymentGrace(now, order.payment_grace_until)) {
+      result.skipped += 1;
+      continue;
+    }
 
     result.scanned += 1;
 
@@ -240,6 +245,11 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
 
   for (const order of staleBatch) {
     if (order.slip_url?.trim() || !unpaidFilter(order)) {
+      continue;
+    }
+    if (
+      !shouldAutoCancelUnpaidOrder(order.created_at, order.payment_grace_until, now)
+    ) {
       continue;
     }
 

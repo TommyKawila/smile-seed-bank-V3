@@ -7,7 +7,7 @@ import {
   ShoppingCart, Loader2, CheckCircle2, XCircle,
   ImageIcon, User, FileText, Clock, BadgeCheck,
   Truck, Package, Printer, RotateCcw, Receipt, Copy, MessageCircle, FileUp, ChevronDown,
-  Send, ScrollText, Unlink,
+  Send, ScrollText, Unlink, Timer,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,13 +64,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { unlinkOrderLineUserId } from "@/app/actions/admin-order-actions";
 import { OrderListTable } from "@/components/admin/orders/OrderListTable";
-import { OrderDetailModal } from "@/components/admin/orders/OrderDetailModal";
+import { OrderDetailModal, OrderDetailModalBody, OrderDetailModalHeader } from "@/components/admin/orders/OrderDetailModal";
 import { OrderStatusActions } from "@/components/admin/orders/OrderStatusActions";
 import { parseOrderListTab } from "@/lib/admin-order-list-tabs";
 import {
   buildAdminPaymentLinkQuickMessage,
+  fetchAdminPaymentLinkExtras,
   buildAdminPaymentReceivedQuickMessage,
   buildAdminTrackingQuickMessage,
+  pickBilingualBlock,
+  type OrderSummaryLang,
 } from "@/lib/admin-order-quick-messages";
 
 // ─── Shipping providers ────────────────────────────────────────────────────────
@@ -95,6 +98,13 @@ const ORDER_QUICK_MESSAGE_PRESETS = [
     body: "ที่อยู่จัดส่งยังไม่ครบถ้วน รบกวนแจ้งบ้านเลขที่ ถนน ตำบล/อำเภอ จังหวัด และรหัสไปรษณีย์ให้ครบนะครับ 📍\n\nYour shipping address looks incomplete. Please send your full address (no., street, district, province, postal code). 📍",
   },
 ] as const;
+
+type QuickMessageKind =
+  | "custom"
+  | "preset"
+  | "payment-received"
+  | "payment-link"
+  | "tracking";
 
 function orderLogActionLabel(action: string): string {
   switch (action) {
@@ -164,6 +174,87 @@ function formatRelativeTime(iso: string): string {
   if (hrs < 24) return `${hrs} ชม. ที่แล้ว`;
   return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" })
     .format(new Date(iso));
+}
+
+function canExtendPaymentGrace(status: string, paymentStatus: string | undefined): boolean {
+  const ps = (paymentStatus ?? "").toLowerCase();
+  if (ps === "paid") return false;
+  return status === "PENDING" || status === "PENDING_INFO" || status === "PENDING_PAYMENT";
+}
+
+function isPaymentGraceActive(until: string | null | undefined): boolean {
+  if (!until) return false;
+  return new Date(until).getTime() > Date.now();
+}
+
+function formatPaymentGraceUntil(iso: string): string {
+  return new Intl.DateTimeFormat("th-TH", { dateStyle: "short", timeStyle: "short" }).format(
+    new Date(iso)
+  );
+}
+
+function PaymentGraceActions({
+  orderId,
+  status,
+  paymentStatus,
+  paymentGraceUntil,
+  busy,
+  onExtend,
+  onClear,
+  compact,
+}: {
+  orderId: number;
+  status: string;
+  paymentStatus?: string;
+  paymentGraceUntil: string | null | undefined;
+  busy: boolean;
+  onExtend: (orderId: number, hours: number) => void;
+  onClear: (orderId: number) => void;
+  compact?: boolean;
+}) {
+  if (!canExtendPaymentGrace(status, paymentStatus)) return null;
+  const active = isPaymentGraceActive(paymentGraceUntil);
+  return (
+    <div className={cn("space-y-1.5", compact && "w-full")}>
+      {active && paymentGraceUntil ? (
+        <p className="rounded-md bg-amber-50 px-2 py-1 text-[11px] leading-snug text-amber-900">
+          ขยายเวลาแล้ว · ระบบจะไม่แจ้งเตือน/ยกเลิกออโตจนถึง {formatPaymentGraceUntil(paymentGraceUntil)}
+        </p>
+      ) : null}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className={cn(
+              "border-amber-200 text-amber-900 hover:bg-amber-50 active:scale-[.97]",
+              compact ? "w-full" : "h-8 shrink-0"
+            )}
+            disabled={busy}
+            title="ขยายเวลารอชำระ — ข้ามแจ้งเตือนและยกเลิกออเดอร์อัตโนมัติ"
+          >
+            <Timer className="mr-1.5 h-4 w-4 shrink-0" />
+            {active ? "ขยายเวลาอีก" : "ขยายเวลารอชำระ"}
+            <ChevronDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-60" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-52">
+          <DropdownMenuItem onClick={() => onExtend(orderId, 48)}>+48 ชม. (2 วัน)</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onExtend(orderId, 72)}>+72 ชม. (3 วัน)</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onExtend(orderId, 168)}>+7 วัน</DropdownMenuItem>
+          {active ? (
+            <DropdownMenuItem
+              onClick={() => onClear(orderId)}
+              className="text-red-600 focus:text-red-600"
+            >
+              ยกเลิกการขยายเวลา
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 }
 
 /** LINE recent list: relative / HH:mm / date for last message activity */
@@ -280,6 +371,8 @@ function OrderCard({
   onDetailClick,
   onReceiptPdf,
   onAdminClaim,
+  onExtendPaymentGrace,
+  onClearPaymentGrace,
   isUpdating,
 }: {
   order: AdminOrder;
@@ -292,6 +385,8 @@ function OrderCard({
   onDetailClick: (id: number) => void;
   onReceiptPdf: (id: number) => void;
   onAdminClaim: (id: number, orderNumber: string) => void;
+  onExtendPaymentGrace: (id: number, hours: number) => void;
+  onClearPaymentGrace: (id: number) => void;
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
@@ -433,6 +528,20 @@ function OrderCard({
             </Button>
           </div>
         )}
+        {canExtendPaymentGrace(order.status, order.payment_status) && (
+          <div className="mt-3">
+            <PaymentGraceActions
+              orderId={order.id}
+              status={order.status}
+              paymentStatus={order.payment_status}
+              paymentGraceUntil={order.payment_grace_until}
+              busy={busy}
+              onExtend={onExtendPaymentGrace}
+              onClear={onClearPaymentGrace}
+              compact
+            />
+          </div>
+        )}
         {canCancelPending && (
           <div className="mt-3">
             <Button
@@ -517,6 +626,8 @@ function OrderTableRow({
   onDetailClick,
   onReceiptPdf,
   onAdminClaim,
+  onExtendPaymentGrace,
+  onClearPaymentGrace,
   isUpdating,
 }: {
   order: AdminOrder;
@@ -529,6 +640,8 @@ function OrderTableRow({
   onDetailClick: (id: number) => void;
   onReceiptPdf: (id: number) => void;
   onAdminClaim: (id: number, orderNumber: string) => void;
+  onExtendPaymentGrace: (id: number, hours: number) => void;
+  onClearPaymentGrace: (id: number) => void;
   isUpdating: number | null;
 }) {
   const canAct = order.status === "AWAITING_VERIFICATION";
@@ -649,6 +762,17 @@ function OrderTableRow({
                   อัปโหลดสลิป / แก้ที่อยู่
                 </Button>
               )}
+              {canExtendPaymentGrace(order.status, order.payment_status) && (
+                <PaymentGraceActions
+                  orderId={order.id}
+                  status={order.status}
+                  paymentStatus={order.payment_status}
+                  paymentGraceUntil={order.payment_grace_until}
+                  busy={busy}
+                  onExtend={onExtendPaymentGrace}
+                  onClear={onClearPaymentGrace}
+                />
+              )}
               {canReceipt && (
                 <Button
                   size="sm"
@@ -713,6 +837,7 @@ type OrderDetail = {
   shippingProvider: string | null;
   paymentMethod: string | null;
   createdAt: string;
+  paymentGraceUntil?: string | null;
   lineUserId?: string | null;
   items: { productName: string; unitLabel: string; breederName: string | null; seedTypeLabel?: string | null; quantity: number; unitPrice: number; totalPrice: number }[];
   activityLogs?: {
@@ -762,6 +887,10 @@ export default function AdminOrdersPage() {
   const [quickMessageOpen, setQuickMessageOpen] = useState(false);
   const [quickMessageBody, setQuickMessageBody] = useState("");
   const [quickMessageSending, setQuickMessageSending] = useState(false);
+  const [quickMessageLang, setQuickMessageLang] = useState<OrderSummaryLang>("th");
+  const [quickMessageKind, setQuickMessageKind] = useState<QuickMessageKind>("custom");
+  const [quickMessagePresetBody, setQuickMessagePresetBody] = useState<string | null>(null);
+  const [quickMessageRebuilding, setQuickMessageRebuilding] = useState(false);
 
   const { orders, isLoading, error, refetch } = useAdminOrders({
     statusTab: listTab === "" ? undefined : listTab,
@@ -1030,6 +1159,61 @@ export default function AdminOrdersPage() {
     [pushToast]
   );
 
+  const handleExtendPaymentGrace = useCallback(
+    async (orderId: number, hours: number) => {
+      setUpdatingId(orderId);
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}/payment-grace`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "extend", hours }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? "ขยายเวลาไม่สำเร็จ");
+        const until =
+          typeof data.paymentGraceUntil === "string"
+            ? formatPaymentGraceUntil(data.paymentGraceUntil)
+            : "";
+        pushToast(
+          until
+            ? `ขยายเวลารอชำระ +${hours} ชม. แล้ว (ถึง ${until}) — ระบบจะไม่แจ้งเตือน/ยกเลิกออโต`
+            : `ขยายเวลารอชำระ +${hours} ชม. แล้ว`,
+          "success"
+        );
+        await refetch();
+        if (detailModal?.id === orderId) await refreshOrderDetailOnly(orderId);
+      } catch (err) {
+        pushToast(String(err), "error");
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [pushToast, refetch, detailModal?.id, refreshOrderDetailOnly]
+  );
+
+  const handleClearPaymentGrace = useCallback(
+    async (orderId: number) => {
+      setUpdatingId(orderId);
+      try {
+        const res = await fetch(`/api/admin/orders/${orderId}/payment-grace`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "clear" }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? "ยกเลิกการขยายเวลาไม่สำเร็จ");
+        pushToast("ยกเลิกการขยายเวลาแล้ว — กลับใช้ระบบแจ้งเตือน/ยกเลิกออโตตามปกติ", "success");
+        await refetch();
+        if (detailModal?.id === orderId) await refreshOrderDetailOnly(orderId);
+      } catch (err) {
+        pushToast(String(err), "error");
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [pushToast, refetch, detailModal?.id, refreshOrderDetailOnly]
+  );
+
   const sendQuickMessage = useCallback(
     async (orderId: number) => {
       const trimmed = quickMessageBody.trim();
@@ -1294,6 +1478,86 @@ export default function AdminOrdersPage() {
     }
   }, [detailModal, pushToast, summaryLang]);
 
+  const buildPaymentLinkMessageForDetail = useCallback(
+    async (lang: OrderSummaryLang) => {
+      if (!detailModal) return "";
+      const extras = await fetchAdminPaymentLinkExtras(detailModal.totalAmount);
+      const pm = detailModal.paymentMethod
+        ? PAYMENT_LABELS[detailModal.paymentMethod] ?? detailModal.paymentMethod
+        : null;
+      return buildAdminPaymentLinkQuickMessage({
+        orderNumber: detailModal.orderNumber,
+        totalAmount: detailModal.totalAmount,
+        shippingFee: detailModal.shippingFee,
+        discountAmount: detailModal.discountAmount,
+        items: detailModal.items.map((i) => ({
+          name: i.productName,
+          unitLabel: i.unitLabel,
+          quantity: i.quantity,
+          lineTotal: i.totalPrice,
+          breederName: i.breederName,
+        })),
+        customerName: detailModal.customerName,
+        customerPhone: detailModal.customerPhone,
+        paymentMethodLabel: pm,
+        lang,
+        promptPayQrUrl: extras.promptPayQrUrl,
+        bankLines: extras.bankLines,
+      });
+    },
+    [detailModal]
+  );
+
+  const rebuildQuickMessageForLang = useCallback(
+    async (kind: QuickMessageKind, lang: OrderSummaryLang) => {
+      if (!detailModal) return;
+      if (kind === "payment-link") {
+        const text = await buildPaymentLinkMessageForDetail(lang);
+        setQuickMessageBody(text);
+        return;
+      }
+      if (kind === "payment-received") {
+        setQuickMessageBody(buildAdminPaymentReceivedQuickMessage(detailModal.totalAmount, lang));
+        return;
+      }
+      if (kind === "tracking" && detailModal.trackingNumber?.trim()) {
+        setQuickMessageBody(
+          buildAdminTrackingQuickMessage({
+            orderNumber: detailModal.orderNumber,
+            trackingNumber: detailModal.trackingNumber.trim(),
+            shippingProvider: detailModal.shippingProvider ?? "",
+            lang,
+          })
+        );
+        return;
+      }
+      if (kind === "preset" && quickMessagePresetBody) {
+        setQuickMessageBody(pickBilingualBlock(quickMessagePresetBody, lang));
+      }
+    },
+    [buildPaymentLinkMessageForDetail, detailModal, quickMessagePresetBody]
+  );
+
+  const handleQuickMessageLangChange = useCallback(
+    (lang: OrderSummaryLang) => {
+      setQuickMessageLang(lang);
+      if (quickMessageKind === "custom") return;
+      setQuickMessageRebuilding(true);
+      void rebuildQuickMessageForLang(quickMessageKind, lang).finally(() =>
+        setQuickMessageRebuilding(false)
+      );
+    },
+    [quickMessageKind, rebuildQuickMessageForLang]
+  );
+
+  const resetQuickMessageDialog = useCallback(() => {
+    setQuickMessageBody("");
+    setQuickMessageKind("custom");
+    setQuickMessagePresetBody(null);
+    setQuickMessageLang("th");
+    setQuickMessageRebuilding(false);
+  }, []);
+
   const handleCopyPackingDetails = useCallback(async () => {
     if (!detailModal) return;
     try {
@@ -1372,6 +1636,8 @@ export default function AdminOrdersPage() {
                 onDetailClick={handleDetailClick}
                 onReceiptPdf={openReceiptPreview}
                 onAdminClaim={handleAdminClaimOpen}
+                onExtendPaymentGrace={(id, h) => void handleExtendPaymentGrace(id, h)}
+                onClearPaymentGrace={(id) => void handleClearPaymentGrace(id)}
                 isUpdating={updatingId}
               />
             ))}
@@ -1392,6 +1658,8 @@ export default function AdminOrdersPage() {
                     onDetailClick={handleDetailClick}
                     onReceiptPdf={openReceiptPreview}
                     onAdminClaim={handleAdminClaimOpen}
+                    onExtendPaymentGrace={(id, h) => void handleExtendPaymentGrace(id, h)}
+                    onClearPaymentGrace={(id) => void handleClearPaymentGrace(id)}
                     isUpdating={updatingId}
                   />
                 ))}
@@ -1401,7 +1669,8 @@ export default function AdminOrdersPage() {
 
       {/* ── Order Detail Modal ── */}
       <OrderDetailModal open={!!detailModal || detailLoading} onOpenChange={(o) => !o && !detailLoading && setDetailModal(null)}>
-          <DialogHeader className="space-y-4 pr-10 text-left sm:pr-12">
+          <OrderDetailModalHeader>
+          <DialogHeader className="space-y-4 p-0 text-left">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <DialogTitle className="flex min-w-0 items-center gap-2 text-primary sm:pt-0.5">
                 <ShoppingCart className="h-5 w-5 shrink-0" />
@@ -1526,6 +1795,17 @@ export default function AdminOrdersPage() {
                     ยกเลิกออเดอร์
                   </Button>
                 )}
+                {canExtendPaymentGrace(detailModal.status, detailModal.paymentStatus) && (
+                  <PaymentGraceActions
+                    orderId={detailModal.id}
+                    status={detailModal.status}
+                    paymentStatus={detailModal.paymentStatus}
+                    paymentGraceUntil={detailModal.paymentGraceUntil}
+                    busy={updatingId === detailModal.id}
+                    onExtend={(id, h) => void handleExtendPaymentGrace(id, h)}
+                    onClear={(id) => void handleClearPaymentGrace(id)}
+                  />
+                )}
                 {(detailModal.status === "COMPLETED" ||
                   orderIsReadyToShip(detailModal.status, detailModal.paymentStatus)) && (
                   <Button
@@ -1552,6 +1832,8 @@ export default function AdminOrdersPage() {
               </div>
             )}
           </DialogHeader>
+          </OrderDetailModalHeader>
+          <OrderDetailModalBody>
           {detailLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -1560,22 +1842,34 @@ export default function AdminOrdersPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-lg bg-accent px-3 py-2">
                 <span className="font-mono font-bold text-primary">#{detailModal.orderNumber}</span>
-                <Badge className={statusStyle(detailModal.status, detailModal.paymentStatus)}>{statusLabel(detailModal.status, detailModal.paymentStatus)}</Badge>
+                <div className="flex flex-wrap items-center justify-end gap-1.5">
+                  {isPaymentGraceActive(detailModal.paymentGraceUntil) && detailModal.paymentGraceUntil ? (
+                    <Badge className="border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-50">
+                      ขยายเวลาถึง {formatPaymentGraceUntil(detailModal.paymentGraceUntil)}
+                    </Badge>
+                  ) : null}
+                  <Badge className={statusStyle(detailModal.status, detailModal.paymentStatus)}>{statusLabel(detailModal.status, detailModal.paymentStatus)}</Badge>
+                </div>
               </div>
               <div>
                 <h4 className="mb-2 text-sm font-semibold text-zinc-700">รายการสินค้า</h4>
-                <div className="space-y-2 rounded-lg border border-zinc-200 p-3">
-                  {detailModal.items.map((item, i) => (
-                    <div key={i} className="flex flex-col gap-0.5 border-b border-zinc-100 pb-2 last:border-0 last:pb-0 sm:flex-row sm:justify-between sm:gap-3">
-                      <span className="min-w-0 text-sm leading-snug text-zinc-800">
-                        {formatAdminOrderDetailLine(item)}
-                      </span>
-                      <span className="shrink-0 text-sm font-medium tabular-nums text-primary sm:text-right">
-                        {formatAdminOrderDetailLineTotal(item)}
-                      </span>
-                    </div>
-                  ))}
-                  <div className="space-y-1 border-t border-zinc-200 pt-2 text-right text-sm text-zinc-600">
+                <div className="overflow-hidden rounded-lg border border-zinc-200">
+                  <div className="max-h-[min(40dvh,360px)] space-y-0 overflow-y-auto overscroll-contain p-3">
+                    {detailModal.items.map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex flex-col gap-0.5 border-b border-zinc-100 py-2 last:border-0 last:pb-0 sm:flex-row sm:justify-between sm:gap-3"
+                      >
+                        <span className="min-w-0 text-sm leading-snug text-zinc-800">
+                          {formatAdminOrderDetailLine(item)}
+                        </span>
+                        <span className="shrink-0 text-sm font-medium tabular-nums text-primary sm:text-right">
+                          {formatAdminOrderDetailLineTotal(item)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-1 border-t border-zinc-200 bg-zinc-50/80 p-3 text-right text-sm text-zinc-600">
                     {(detailModal.discountAmount > 0 || detailModal.shippingFee > 0) && (
                       <>
                         <p>
@@ -1639,7 +1933,10 @@ export default function AdminOrdersPage() {
                           key={p.key}
                           className="cursor-pointer text-xs leading-snug"
                           onSelect={() => {
-                            setQuickMessageBody(p.body);
+                            setQuickMessageKind("preset");
+                            setQuickMessagePresetBody(p.body);
+                            setQuickMessageLang(summaryLang);
+                            setQuickMessageBody(pickBilingualBlock(p.body, summaryLang));
                             setQuickMessageOpen(true);
                           }}
                         >
@@ -1650,8 +1947,14 @@ export default function AdminOrdersPage() {
                         key="payment-received"
                         className="cursor-pointer text-xs leading-snug"
                         onSelect={() => {
+                          setQuickMessageKind("payment-received");
+                          setQuickMessagePresetBody(null);
+                          setQuickMessageLang(summaryLang);
                           setQuickMessageBody(
-                            buildAdminPaymentReceivedQuickMessage(detailModal.totalAmount)
+                            buildAdminPaymentReceivedQuickMessage(
+                              detailModal.totalAmount,
+                              summaryLang
+                            )
                           );
                           setQuickMessageOpen(true);
                         }}
@@ -1663,13 +1966,13 @@ export default function AdminOrdersPage() {
                           key="payment-link"
                           className="cursor-pointer text-xs leading-snug"
                           onSelect={() => {
-                            setQuickMessageBody(
-                              buildAdminPaymentLinkQuickMessage(
-                                detailModal.orderNumber,
-                                detailModal.totalAmount
-                              )
-                            );
-                            setQuickMessageOpen(true);
+                            setQuickMessageKind("payment-link");
+                            setQuickMessagePresetBody(null);
+                            setQuickMessageLang(summaryLang);
+                            void buildPaymentLinkMessageForDetail(summaryLang).then((text) => {
+                              setQuickMessageBody(text);
+                              setQuickMessageOpen(true);
+                            });
                           }}
                         >
                           Payment link / ลิงก์ชำระเงิน
@@ -1682,11 +1985,15 @@ export default function AdminOrdersPage() {
                           key="tracking"
                           className="cursor-pointer text-xs leading-snug"
                           onSelect={() => {
+                            setQuickMessageKind("tracking");
+                            setQuickMessagePresetBody(null);
+                            setQuickMessageLang(summaryLang);
                             setQuickMessageBody(
                               buildAdminTrackingQuickMessage({
                                 orderNumber: detailModal.orderNumber,
                                 trackingNumber: detailModal.trackingNumber!.trim(),
                                 shippingProvider: detailModal.shippingProvider ?? "",
+                                lang: summaryLang,
                               })
                             );
                             setQuickMessageOpen(true);
@@ -1699,6 +2006,9 @@ export default function AdminOrdersPage() {
                       <DropdownMenuItem
                         className="cursor-pointer text-xs font-medium"
                         onSelect={() => {
+                          setQuickMessageKind("custom");
+                          setQuickMessagePresetBody(null);
+                          setQuickMessageLang(summaryLang);
                           setQuickMessageBody("");
                           setQuickMessageOpen(true);
                         }}
@@ -1908,13 +2218,14 @@ export default function AdminOrdersPage() {
               </div>
             </div>
           ) : null}
+          </OrderDetailModalBody>
       </OrderDetailModal>
 
       <Dialog
         open={quickMessageOpen}
         onOpenChange={(o) => {
           setQuickMessageOpen(o);
-          if (!o) setQuickMessageBody("");
+          if (!o) resetQuickMessageDialog();
         }}
       >
         <DialogContent className="sm:max-w-lg">
@@ -1924,20 +2235,63 @@ export default function AdminOrdersPage() {
           <p className="text-xs text-zinc-500">
             ส่งเป็นข้อความธรรมดาไปยังลูกค้าผ่าน LINE Official — ต้องมี line_user_id บนออเดอร์
           </p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-zinc-600">ภาษาข้อความ</span>
+            <div
+              className="inline-flex items-center gap-0.5 rounded-lg border border-zinc-200 bg-zinc-50/90 p-0.5"
+              title="Switch message language"
+            >
+              <button
+                type="button"
+                onClick={() => handleQuickMessageLangChange("th")}
+                disabled={quickMessageSending || quickMessageRebuilding}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-[11px] font-semibold leading-none transition-colors",
+                  quickMessageLang === "th" ? "bg-primary text-white" : "text-zinc-600 hover:bg-white"
+                )}
+              >
+                TH
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickMessageLangChange("en")}
+                disabled={quickMessageSending || quickMessageRebuilding}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-[11px] font-semibold leading-none transition-colors",
+                  quickMessageLang === "en" ? "bg-primary text-white" : "text-zinc-600 hover:bg-white"
+                )}
+              >
+                EN
+              </button>
+            </div>
+          </div>
           <Textarea
-            className="min-h-[120px] text-sm"
+            className={cn(
+              "text-sm",
+              quickMessageKind === "payment-link" ? "min-h-[280px] font-mono text-xs" : "min-h-[120px]"
+            )}
             placeholder="พิมพ์ข้อความ…"
             value={quickMessageBody}
-            onChange={(e) => setQuickMessageBody(e.target.value)}
-            disabled={quickMessageSending}
+            onChange={(e) => {
+              setQuickMessageKind("custom");
+              setQuickMessagePresetBody(null);
+              setQuickMessageBody(e.target.value);
+            }}
+            disabled={quickMessageSending || quickMessageRebuilding}
           />
+          {quickMessageRebuilding ? (
+            <p className="flex items-center gap-1.5 text-xs text-zinc-500">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              กำลังสร้างข้อความ…
+            </p>
+          ) : null}
           <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => {
                 setQuickMessageOpen(false);
-                setQuickMessageBody("");
+                resetQuickMessageDialog();
               }}
               disabled={quickMessageSending}
             >
