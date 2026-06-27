@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-27 (Critical POS brand discount persistence)
+- **Bug:** POS บันทึก `order_items.unit_price` เป็นราคาก่อน brand discount แม้ `orders.total_amount` เป็นราคาหลังลด ทำให้รายงาน/line items เพี้ยน
+- **แก้:** ใช้ `posOrderUnitPrice` หลัง brand discount สำหรับ submit payload และ mini-invoice
+- **ไฟล์:** `app/admin/orders/create/page.tsx`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

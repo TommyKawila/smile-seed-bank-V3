@@ -92,6 +92,14 @@ function mapPosCartItemsForSummary(
   });
 }
 
+function posOrderUnitPrice(
+  item: CartItem,
+  brandRules: BrandPromotionRuleRow[],
+): number {
+  if (item.isFreeGift) return 0;
+  return resolveListingUnitAfterBrand(item.price, item.breederName, brandRules).effectiveBaht;
+}
+
 function posPaymentMethodLabelTh(code: string): string {
   const m: Record<string, string> = {
     CASH: "เงินสด",
@@ -543,7 +551,7 @@ export default function CreateOrderPage() {
             productName: i.productName,
             unitLabel: i.unitLabel,
             quantity: i.quantity,
-            price: i.price,
+            price: posOrderUnitPrice(i, brandPromotionRules),
           })),
           status: posOrderStatus,
           totalAmount: grandTotal,
@@ -656,7 +664,7 @@ export default function CreateOrderPage() {
         productName: i.productName,
         unitLabel: i.unitLabel,
         quantity: i.quantity,
-        lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+        lineTotal: posOrderUnitPrice(i, brandPromotionRules) * i.quantity,
         isFreeGift: !!i.isFreeGift,
       }));
       setMiniInvoice({
