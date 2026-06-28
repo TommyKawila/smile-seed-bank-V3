@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-28 (Critical POS points redemption guard)
+- **Bug:** POS omni customer id `pos-*` ถูกแปลงด้วย `Number()` → JSON เป็น `null`; ออเดอร์เงินสดใช้แต้มได้โดยไม่เชื่อมลูกค้า/ไม่ตัดแต้ม
+- **แก้:** map เฉพาะ `pos-*`/numeric เป็น `customer_profile_id` และ API reject การใช้แต้มเมื่อไม่มี profile
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
