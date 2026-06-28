@@ -64,6 +64,13 @@ type PosLastCopyPack = {
   customerPhone: string;
 };
 
+function customerProfileIdFromPosHit(id: string): number | null {
+  const raw = id.startsWith("pos-") ? id.slice(4) : id;
+  if (!/^\d+$/.test(raw)) return null;
+  const n = Number(raw);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
 function mapPosCartItemsForSummary(
   cartItems: CartItem[],
   brandRules: BrandPromotionRuleRow[],
@@ -552,7 +559,9 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: selectedCustomer
+            ? customerProfileIdFromPosHit(selectedCustomer.id)
+            : null,
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
