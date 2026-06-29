@@ -26,7 +26,11 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
-import { cartItemBrandLineDisplay, type BrandPromotionRuleRow } from "@/lib/cart-utils";
+import {
+  cartItemBrandLineDisplay,
+  unitBahtAfterBrandForCartItem,
+  type BrandPromotionRuleRow,
+} from "@/lib/cart-utils";
 import {
   matchBrandPromotionRule,
   resolveListingUnitAfterBrand,
@@ -90,6 +94,24 @@ function mapPosCartItemsForSummary(
     }
     return { ...base, lineTotal: effLine };
   });
+}
+
+function posCustomerProfileId(customerId: string | number | null | undefined): number | null {
+  if (typeof customerId === "number") {
+    return Number.isInteger(customerId) && customerId > 0 ? customerId : null;
+  }
+  const match = customerId?.match(/^pos-(\d+)$/);
+  if (!match) return null;
+  const id = Number(match[1]);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+function posOrderSubmitUnitPrice(
+  item: CartItem,
+  brandRules: BrandPromotionRuleRow[],
+): number {
+  if (item.isFreeGift) return 0;
+  return unitBahtAfterBrandForCartItem(item.price, item.breederName, brandRules).unit;
 }
 
 function posPaymentMethodLabelTh(code: string): string {
@@ -532,6 +554,12 @@ export default function CreateOrderPage() {
     try {
       const isClaim = mode === "claim";
       const isCashComplete = !isClaim && customer.payment_method === "CASH";
+      const customerProfileId = selectedCustomer
+        ? posCustomerProfileId(selectedCustomer.id)
+        : null;
+      if (isCashComplete && effectivePointsRedeemed > 0 && !customerProfileId) {
+        throw new Error("ใช้คะแนนได้เฉพาะลูกค้า POS ที่มีโปรไฟล์คะแนนเท่านั้น");
+      }
       const posOrderStatus = isClaim ? "PENDING_INFO" : isCashComplete ? "COMPLETED" : "PENDING";
       const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
@@ -543,7 +571,7 @@ export default function CreateOrderPage() {
             productName: i.productName,
             unitLabel: i.unitLabel,
             quantity: i.quantity,
-            price: i.price,
+            price: posOrderSubmitUnitPrice(i, brandPromotionRules),
           })),
           status: posOrderStatus,
           totalAmount: grandTotal,
@@ -552,7 +580,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: customerProfileId,
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
@@ -656,7 +684,7 @@ export default function CreateOrderPage() {
         productName: i.productName,
         unitLabel: i.unitLabel,
         quantity: i.quantity,
-        lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+        lineTotal: posOrderSubmitUnitPrice(i, brandPromotionRules) * i.quantity,
         isFreeGift: !!i.isFreeGift,
       }));
       setMiniInvoice({
