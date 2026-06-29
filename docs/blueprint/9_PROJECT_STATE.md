@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-29 (Admin POS — brand discount + points integrity)
+- **แก้:** POS submit บันทึก line item ด้วยราคาหลัง brand discount ให้ตรงกับ order total / mini invoice
+- **กันข้อมูลเพี้ยน:** parse `pos-<id>` เป็น `customer_profile_id` และ API reject point redemption ที่ไม่มี POS profile, ไม่ใช่ `COMPLETED`, หรือยอดแต้มไม่ตรงส่วนลด
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
