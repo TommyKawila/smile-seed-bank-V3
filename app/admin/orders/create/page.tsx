@@ -49,6 +49,10 @@ import {
 } from "@/lib/utils/format-order";
 import { resolvePosVariantUnitPrice } from "@/lib/pos-pricing";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
+import {
+  parsePosCustomerProfileId,
+  validatePosPointRedemption,
+} from "@/lib/pos-order-create";
 
 type PosLastCopyPack = {
   orderNumber: string;
@@ -100,6 +104,16 @@ function posPaymentMethodLabelTh(code: string): string {
     COD: "COD (ประวัติ)",
   };
   return m[code] ?? code;
+}
+
+function posOrderItemUnitPriceAfterBrand(
+  item: CartItem,
+  brandRules: BrandPromotionRuleRow[],
+): number {
+  if (item.isFreeGift) return 0;
+  const qty = Math.max(1, item.quantity);
+  const { effLine } = cartItemBrandLineDisplay(item, brandRules);
+  return roundCheckoutBahtWhole(effLine / qty);
 }
 
 type PosCustomer = {
@@ -533,6 +547,15 @@ export default function CreateOrderPage() {
       const isClaim = mode === "claim";
       const isCashComplete = !isClaim && customer.payment_method === "CASH";
       const posOrderStatus = isClaim ? "PENDING_INFO" : isCashComplete ? "COMPLETED" : "PENDING";
+      const customerProfileId = parsePosCustomerProfileId(selectedCustomer?.id);
+      const pointsError = validatePosPointRedemption({
+        status: posOrderStatus,
+        pointsRedeemed: isCashComplete ? effectivePointsRedeemed : 0,
+        pointsDiscountAmount: isCashComplete ? pointsDiscountAmount : 0,
+        customerProfileId,
+      });
+      if (pointsError) throw new Error(pointsError);
+
       const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -543,7 +566,7 @@ export default function CreateOrderPage() {
             productName: i.productName,
             unitLabel: i.unitLabel,
             quantity: i.quantity,
-            price: i.price,
+            price: posOrderItemUnitPriceAfterBrand(i, brandPromotionRules),
           })),
           status: posOrderStatus,
           totalAmount: grandTotal,
@@ -552,7 +575,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: customerProfileId,
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,

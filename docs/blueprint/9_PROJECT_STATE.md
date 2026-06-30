@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-30 (Critical POS financial bugfix)
+- **Bug:** POS omni-search ids (`pos-*`) ทำให้ point redemption ถูกบันทึกเป็นส่วนลดแต่ไม่หัก wallet; brand discount line price ไม่ persist ลง `order_items`
+- **แก้:** parse เฉพาะ POS customer profile id, validate point redemption ฝั่ง API, และส่ง unit price หลัง brand discount ตอนสร้าง POS order
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`, `lib/pos-order-create.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

@@ -8,6 +8,7 @@ import { generateOrderNumber } from "@/lib/order-utils";
 import { sendLowStockAlert } from "@/services/line-messaging";
 import { deductVariantStockForOrderItems, InsufficientStockError } from "@/lib/order-inventory";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
+import { validatePosPointRedemption } from "@/lib/pos-order-create";
 
 /** Matches `orders.status` string values used by POS / claim (DB column is String, not Prisma enum). */
 const POS_ORDER_STATUS = ["PENDING", "PENDING_INFO", "COMPLETED", "CANCELLED"] as const;
@@ -80,6 +81,16 @@ export async function POST(req: NextRequest) {
     const totalAmount = roundCheckoutBahtWhole(
       overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0)
     );
+    const pointsError = validatePosPointRedemption({
+      status,
+      pointsRedeemed: points_redeemed,
+      pointsDiscountAmount: points_discount_amount,
+      customerProfileId: customer_profile_id,
+    });
+    if (pointsError) {
+      return NextResponse.json({ error: pointsError }, { status: 400 });
+    }
+
     const claimToken = status === "PENDING_INFO" ? randomUUID() : null;
     const deductStock =
       status === "COMPLETED" || status === "PENDING_INFO" || status === "PENDING";
