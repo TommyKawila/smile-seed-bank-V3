@@ -26,7 +26,11 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
-import { cartItemBrandLineDisplay, type BrandPromotionRuleRow } from "@/lib/cart-utils";
+import {
+  cartItemBrandLineDisplay,
+  unitBahtAfterBrandForCartItem,
+  type BrandPromotionRuleRow,
+} from "@/lib/cart-utils";
 import {
   matchBrandPromotionRule,
   resolveListingUnitAfterBrand,
@@ -111,6 +115,14 @@ type PosCustomer = {
   address?: string | null;
   points?: number;
 };
+
+function resolvePosCustomerProfileId(customer: PosCustomer | null): number | null {
+  const id = customer?.id.trim() ?? "";
+  const match = /^pos-(\d+)$/.exec(id) ?? /^(\d+)$/.exec(id);
+  if (!match) return null;
+  const parsed = Number(match[1]);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
 
 function mapCustomerSearchHit(raw: unknown): PosCustomer | null {
   if (!raw || typeof raw !== "object") return null;
@@ -286,12 +298,16 @@ export default function CreateOrderPage() {
     ? (selectedCustomer.wholesale_discount_percent ?? 0)
     : 0;
 
+  const selectedCustomerProfileId = resolvePosCustomerProfileId(selectedCustomer);
   const availablePoints = selectedCustomer?.points ?? 0;
+  const canRedeemPoints = customer.payment_method === "CASH" && selectedCustomerProfileId != null;
   const manualDiscountPercentClamped = Math.min(100, Math.max(0, manualDiscountPercent));
   const manualDiscountAmount = roundCheckoutBahtWhole(
     (summary.subtotal * manualDiscountPercentClamped) / 100
   );
-  const maxRedeemable = Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount));
+  const maxRedeemable = canRedeemPoints
+    ? Math.min(availablePoints, Math.max(0, Math.floor(summary.total - manualDiscountAmount)))
+    : 0;
   const effectivePointsRedeemed = Math.min(
     pointsToRedeem,
     maxRedeemable,
@@ -303,6 +319,14 @@ export default function CreateOrderPage() {
   );
   const pointsToAdd = Math.floor(grandTotal / 100);
   const balanceAfterPurchase = availablePoints - effectivePointsRedeemed + pointsToAdd;
+
+  useEffect(() => {
+    if (!canRedeemPoints && pointsToRedeem !== 0) {
+      setPointsToRedeem(0);
+      return;
+    }
+    if (pointsToRedeem > maxRedeemable) setPointsToRedeem(maxRedeemable);
+  }, [canRedeemPoints, maxRedeemable, pointsToRedeem]);
 
   const fetchCustomers = useCallback(async () => {
     const q = customerSearch.trim();
@@ -533,6 +557,11 @@ export default function CreateOrderPage() {
       const isClaim = mode === "claim";
       const isCashComplete = !isClaim && customer.payment_method === "CASH";
       const posOrderStatus = isClaim ? "PENDING_INFO" : isCashComplete ? "COMPLETED" : "PENDING";
+      const orderPointsRedeemed = isCashComplete ? effectivePointsRedeemed : 0;
+      const orderPointsDiscount = isCashComplete ? pointsDiscountAmount : 0;
+      const orderGrandTotal = roundCheckoutBahtWhole(
+        Math.max(0, summary.total - manualDiscountAmount - orderPointsDiscount)
+      );
       const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -543,16 +572,18 @@ export default function CreateOrderPage() {
             productName: i.productName,
             unitLabel: i.unitLabel,
             quantity: i.quantity,
-            price: i.price,
+            price: i.isFreeGift
+              ? 0
+              : unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules).unit,
           })),
           status: posOrderStatus,
-          totalAmount: grandTotal,
-          points_redeemed: isCashComplete ? effectivePointsRedeemed : 0,
-          points_discount_amount: isCashComplete ? pointsDiscountAmount : 0,
+          totalAmount: orderGrandTotal,
+          points_redeemed: orderPointsRedeemed,
+          points_discount_amount: orderPointsDiscount,
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: selectedCustomerProfileId,
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
@@ -589,7 +620,7 @@ export default function CreateOrderPage() {
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
           discountAmount: discountAmt,
-          totalAmount: grandTotal,
+          totalAmount: orderGrandTotal,
           paymentMethodLabel: posPaymentMethodLabelTh("TRANSFER"),
           customerName: customer.full_name,
           customerPhone: customer.phone,
@@ -618,7 +649,7 @@ export default function CreateOrderPage() {
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
           discountAmount: discountAmt,
-          totalAmount: grandTotal,
+          totalAmount: orderGrandTotal,
           paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
           customerName: customer.full_name,
           customerPhone: customer.phone,
@@ -636,7 +667,7 @@ export default function CreateOrderPage() {
 
       {
         const discountAmt =
-          summary.tierDiscount + summary.promoDiscount + pointsDiscountAmount + manualDiscountAmount;
+          summary.tierDiscount + summary.promoDiscount + orderPointsDiscount + manualDiscountAmount;
         setLastCopyPack({
           orderNumber,
           orderId,
@@ -645,7 +676,7 @@ export default function CreateOrderPage() {
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
           discountAmount: discountAmt,
-          totalAmount: grandTotal,
+          totalAmount: orderGrandTotal,
           paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
           customerName: customer.full_name,
           customerPhone: customer.phone,
@@ -656,14 +687,16 @@ export default function CreateOrderPage() {
         productName: i.productName,
         unitLabel: i.unitLabel,
         quantity: i.quantity,
-        lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
+        lineTotal: i.isFreeGift
+          ? 0
+          : unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules).unit * i.quantity,
         isFreeGift: !!i.isFreeGift,
       }));
       setMiniInvoice({
         orderNumber,
         orderId,
         lines: miniLines,
-        grandTotal,
+        grandTotal: orderGrandTotal,
         paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
       });
       clearCart();
@@ -997,47 +1030,6 @@ export default function CreateOrderPage() {
                     >
                       <UserPlus className="h-4 w-4" />
                     </Button>
-                    {selectedCustomer && items.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs text-zinc-500">คะแนนคงเหลือ: <span className="font-medium text-zinc-700">{availablePoints}</span> คะแนน</p>
-                        <div className="flex gap-2">
-                          <Input
-                            type="number"
-                            min={0}
-                            max={maxRedeemable}
-                            value={pointsToRedeem || ""}
-                            onChange={(e) => {
-                              const v = e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
-                              setPointsToRedeem(Math.min(v, maxRedeemable));
-                            }}
-                            placeholder="ใช้คะแนน"
-                            className="h-8 text-sm w-24"
-                            disabled={availablePoints === 0}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8"
-                            onClick={() => setPointsToRedeem(maxRedeemable)}
-                            disabled={availablePoints === 0}
-                          >
-                            ใช้ทั้งหมด
-                          </Button>
-                          {pointsToRedeem > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 text-zinc-500"
-                              onClick={() => setPointsToRedeem(0)}
-                            >
-                              ล้าง
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
                     {customerSearchOpen && (customerSearch.length >= 2 || customerResults.length > 0) && (
                       <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
                         {customerSearching ? (
@@ -1069,6 +1061,47 @@ export default function CreateOrderPage() {
                         )}
                       </div>
                     )}
+                  </div>
+                )}
+                {selectedCustomer && items.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs text-zinc-500">คะแนนคงเหลือ: <span className="font-medium text-zinc-700">{availablePoints}</span> คะแนน</p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={maxRedeemable}
+                        value={pointsToRedeem || ""}
+                        onChange={(e) => {
+                          const v = e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                          setPointsToRedeem(Math.min(v, maxRedeemable));
+                        }}
+                        placeholder="ใช้คะแนน"
+                        className="h-8 text-sm w-24"
+                        disabled={!canRedeemPoints || availablePoints === 0}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => setPointsToRedeem(maxRedeemable)}
+                        disabled={!canRedeemPoints || availablePoints === 0}
+                      >
+                        ใช้ทั้งหมด
+                      </Button>
+                      {pointsToRedeem > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-zinc-500"
+                          onClick={() => setPointsToRedeem(0)}
+                        >
+                          ล้าง
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
