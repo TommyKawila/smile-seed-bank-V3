@@ -77,6 +77,25 @@ export async function POST(req: NextRequest) {
       customer_profile_id,
       customer,
     } = parsed.data;
+    const hasPointDiscount = points_redeemed > 0 || points_discount_amount > 0;
+    if (hasPointDiscount && status !== "COMPLETED") {
+      return NextResponse.json(
+        { error: "Point redemption is only allowed for completed POS orders" },
+        { status: 400 }
+      );
+    }
+    if (hasPointDiscount && !customer_profile_id) {
+      return NextResponse.json(
+        { error: "Customer profile is required for point redemption" },
+        { status: 400 }
+      );
+    }
+    if (hasPointDiscount && points_redeemed !== points_discount_amount) {
+      return NextResponse.json(
+        { error: "Point redemption amount must match points redeemed" },
+        { status: 400 }
+      );
+    }
     const totalAmount = roundCheckoutBahtWhole(
       overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0)
     );

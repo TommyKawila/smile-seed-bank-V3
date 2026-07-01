@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-01 (Critical POS financial integrity)
+- **แก้:** POS submit ใช้ราคาต่อชิ้นหลัง brand discount ใน payload/mini invoice · parse `pos-<id>` เป็น `customer_profile_id` · block point redemption payload ที่ไม่ใช่ COMPLETED/ไม่มี customer profile
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
