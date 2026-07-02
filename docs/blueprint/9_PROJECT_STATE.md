@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-02 (Critical bug sweep — receipt + POS totals)
+- **แก้:** `/order/receipt/[token]` crash จาก PromptPay settings shape ผิด · ใช้ `fetchActivePromptPay()`
+- **แก้:** POS order submit บันทึก line price หลัง brand discount และ parse `pos-*` customer id เพื่อไม่ให้ loyalty/spend หลุดเป็น `null`
+- **Validation:** ESLint changed files ผ่าน · `tsc --noEmit` ยังติด baseline นอกไฟล์ที่แก้
+- **ไฟล์:** `app/(storefront)/order/receipt/[id]/page.tsx`, `app/admin/orders/create/page.tsx`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
