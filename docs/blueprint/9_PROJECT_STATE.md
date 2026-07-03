@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-03 (Critical bug automation — POS financial integrity)
+- **Bug:** POS brand discount/points flow ทำให้ `orders.total_amount` ไม่ตรงกับ `order_items` และแลกแต้มจาก `pos-*` customer โดยไม่ตัดแต้มได้
+- **แก้:** POS submit ส่ง unit price หลัง brand discount, free gift = 0, mini invoice ใช้ยอดเดียวกัน, parse เฉพาะ numeric/`pos-*` customer profile id, และ API reject point redemption ที่ไม่มี customer profile หรือยอดแต้มไม่ตรง 1:1
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`
+- **Validation:** targeted ESLint ผ่าน; full `tsc --noEmit` ยังติด baseline เดิมนอกไฟล์ที่แก้
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
