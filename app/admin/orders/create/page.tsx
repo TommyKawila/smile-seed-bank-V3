@@ -26,7 +26,11 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
-import { cartItemBrandLineDisplay, type BrandPromotionRuleRow } from "@/lib/cart-utils";
+import {
+  cartItemBrandLineDisplay,
+  unitBahtAfterBrandForCartItem,
+  type BrandPromotionRuleRow,
+} from "@/lib/cart-utils";
 import {
   matchBrandPromotionRule,
   resolveListingUnitAfterBrand,
@@ -111,6 +115,44 @@ type PosCustomer = {
   address?: string | null;
   points?: number;
 };
+
+function parsePosCustomerProfileId(customer: PosCustomer | null): number | null {
+  if (!customer) return null;
+  const raw = customer.id.trim();
+  const idText = raw.startsWith("pos-") ? raw.slice(4) : /^\d+$/.test(raw) ? raw : "";
+  if (!/^\d+$/.test(idText)) return null;
+  const id = Number(idText);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+function posSubmitUnitPrice(item: CartItem, brandRules: BrandPromotionRuleRow[]): number {
+  if (item.isFreeGift) return 0;
+  return unitBahtAfterBrandForCartItem(item.price, item.breederName, brandRules).unit;
+}
+
+function mapPosCartItemsForSubmit(cartItems: CartItem[], brandRules: BrandPromotionRuleRow[]) {
+  return cartItems.map((i) => ({
+    variantId: i.variantId,
+    productId: i.productId,
+    productName: i.productName,
+    unitLabel: i.unitLabel,
+    quantity: i.quantity,
+    price: posSubmitUnitPrice(i, brandRules),
+  }));
+}
+
+function mapPosMiniInvoiceLines(
+  cartItems: CartItem[],
+  brandRules: BrandPromotionRuleRow[]
+): PosMiniInvoiceLine[] {
+  return cartItems.map((i) => ({
+    productName: i.productName,
+    unitLabel: i.unitLabel,
+    quantity: i.quantity,
+    lineTotal: posSubmitUnitPrice(i, brandRules) * i.quantity,
+    isFreeGift: !!i.isFreeGift,
+  }));
+}
 
 function mapCustomerSearchHit(raw: unknown): PosCustomer | null {
   if (!raw || typeof raw !== "object") return null;
@@ -537,14 +579,7 @@ export default function CreateOrderPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: items.map((i) => ({
-            variantId: i.variantId,
-            productId: i.productId,
-            productName: i.productName,
-            unitLabel: i.unitLabel,
-            quantity: i.quantity,
-            price: i.price,
-          })),
+          items: mapPosCartItemsForSubmit(items, brandPromotionRules),
           status: posOrderStatus,
           totalAmount: grandTotal,
           points_redeemed: isCashComplete ? effectivePointsRedeemed : 0,
@@ -552,7 +587,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: parsePosCustomerProfileId(selectedCustomer),
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
@@ -652,13 +687,7 @@ export default function CreateOrderPage() {
         });
       }
 
-      const miniLines: PosMiniInvoiceLine[] = items.map((i) => ({
-        productName: i.productName,
-        unitLabel: i.unitLabel,
-        quantity: i.quantity,
-        lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
-        isFreeGift: !!i.isFreeGift,
-      }));
+      const miniLines = mapPosMiniInvoiceLines(items, brandPromotionRules);
       setMiniInvoice({
         orderNumber,
         orderId,
