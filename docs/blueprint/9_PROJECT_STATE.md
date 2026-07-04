@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-04 (Critical bug investigation — payment/order integrity)
+- **แก้:** public slip upload/claim ต้องเป็น transfer order ที่ยังรอจ่ายเท่านั้น + conditional update กัน resurrect หลัง cancel/auto-cancel
+- **แก้:** POS points redemption เฉพาะ completed cash order + server invariant; auto-cancel claim เคารพ payment grace race
+- **แก้:** PDP Next 15 async params/404 และ public product variant payload ไม่ส่ง internal margin fields
+- **ไฟล์:** `lib/services/order-service.ts`, `services/orders-service.ts`, `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`, `app/(storefront)/product/[slug]/page.tsx`, `app/api/products/[slug]/route.ts`, `lib/supabase/types.ts`, `services/product-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

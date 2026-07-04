@@ -291,12 +291,17 @@ export default function CreateOrderPage() {
   const manualDiscountAmount = roundCheckoutBahtWhole(
     (summary.subtotal * manualDiscountPercentClamped) / 100
   );
-  const maxRedeemable = Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount));
-  const effectivePointsRedeemed = Math.min(
-    pointsToRedeem,
-    maxRedeemable,
-    Math.floor(Math.max(0, summary.total - manualDiscountAmount))
-  );
+  const canRedeemPoints = Boolean(selectedCustomer) && customer.payment_method === "CASH";
+  const maxRedeemable = canRedeemPoints
+    ? Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount))
+    : 0;
+  const effectivePointsRedeemed = canRedeemPoints
+    ? Math.min(
+        pointsToRedeem,
+        maxRedeemable,
+        Math.floor(Math.max(0, summary.total - manualDiscountAmount))
+      )
+    : 0;
   const pointsDiscountAmount = effectivePointsRedeemed;
   const grandTotal = roundCheckoutBahtWhole(
     Math.max(0, summary.total - manualDiscountAmount - pointsDiscountAmount)
@@ -533,6 +538,11 @@ export default function CreateOrderPage() {
       const isClaim = mode === "claim";
       const isCashComplete = !isClaim && customer.payment_method === "CASH";
       const posOrderStatus = isClaim ? "PENDING_INFO" : isCashComplete ? "COMPLETED" : "PENDING";
+      const submittedPointsRedeemed = isCashComplete ? effectivePointsRedeemed : 0;
+      const submittedPointsDiscountAmount = isCashComplete ? pointsDiscountAmount : 0;
+      const submittedGrandTotal = roundCheckoutBahtWhole(
+        Math.max(0, summary.total - manualDiscountAmount - submittedPointsDiscountAmount)
+      );
       const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -546,9 +556,9 @@ export default function CreateOrderPage() {
             price: i.price,
           })),
           status: posOrderStatus,
-          totalAmount: grandTotal,
-          points_redeemed: isCashComplete ? effectivePointsRedeemed : 0,
-          points_discount_amount: isCashComplete ? pointsDiscountAmount : 0,
+          totalAmount: submittedGrandTotal,
+          points_redeemed: submittedPointsRedeemed,
+          points_discount_amount: submittedPointsDiscountAmount,
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
@@ -589,7 +599,7 @@ export default function CreateOrderPage() {
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
           discountAmount: discountAmt,
-          totalAmount: grandTotal,
+          totalAmount: submittedGrandTotal,
           paymentMethodLabel: posPaymentMethodLabelTh("TRANSFER"),
           customerName: customer.full_name,
           customerPhone: customer.phone,
@@ -618,7 +628,7 @@ export default function CreateOrderPage() {
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
           discountAmount: discountAmt,
-          totalAmount: grandTotal,
+          totalAmount: submittedGrandTotal,
           paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
           customerName: customer.full_name,
           customerPhone: customer.phone,
@@ -636,7 +646,7 @@ export default function CreateOrderPage() {
 
       {
         const discountAmt =
-          summary.tierDiscount + summary.promoDiscount + pointsDiscountAmount + manualDiscountAmount;
+          summary.tierDiscount + summary.promoDiscount + submittedPointsDiscountAmount + manualDiscountAmount;
         setLastCopyPack({
           orderNumber,
           orderId,
@@ -645,7 +655,7 @@ export default function CreateOrderPage() {
           subtotal: summary.subtotal,
           shippingFee: summary.shipping,
           discountAmount: discountAmt,
-          totalAmount: grandTotal,
+          totalAmount: submittedGrandTotal,
           paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
           customerName: customer.full_name,
           customerPhone: customer.phone,
@@ -663,7 +673,7 @@ export default function CreateOrderPage() {
         orderNumber,
         orderId,
         lines: miniLines,
-        grandTotal,
+        grandTotal: submittedGrandTotal,
         paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
       });
       clearCart();
@@ -1012,7 +1022,7 @@ export default function CreateOrderPage() {
                             }}
                             placeholder="ใช้คะแนน"
                             className="h-8 text-sm w-24"
-                            disabled={availablePoints === 0}
+                            disabled={!canRedeemPoints || availablePoints === 0}
                           />
                           <Button
                             type="button"
@@ -1020,7 +1030,7 @@ export default function CreateOrderPage() {
                             size="sm"
                             className="h-8"
                             onClick={() => setPointsToRedeem(maxRedeemable)}
-                            disabled={availablePoints === 0}
+                            disabled={!canRedeemPoints || availablePoints === 0}
                           >
                             ใช้ทั้งหมด
                           </Button>

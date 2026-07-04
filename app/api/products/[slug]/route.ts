@@ -4,9 +4,10 @@ import { getProductBySlug } from "@/services/product-service";
 /** Public JSON for product by slug (same normalization + text sanitization as storefront RSC). */
 export async function GET(
   _req: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { data, error } = await getProductBySlug(params.slug);
+  const { slug } = await params;
+  const { data, error } = await getProductBySlug(slug);
   if (error || !data) {
     return NextResponse.json({ error: error ?? "Not found" }, { status: 404 });
   }

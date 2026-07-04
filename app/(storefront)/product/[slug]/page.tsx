@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getProductBySlug } from "@/services/product-service";
 import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
 import ProductDetailClient from "./product-detail-client";
@@ -10,9 +11,10 @@ function cleanProductPath(slug: string): string {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { data } = await getProductBySlug(params.slug);
+  const { slug } = await params;
+  const { data } = await getProductBySlug(slug);
   if (!data) return { title: "Product" };
   const title = data.name;
   const raw = (data.description_th || data.description_en || "")
@@ -20,7 +22,7 @@ export async function generateMetadata({
     .replace(/\s+/g, " ")
     .trim();
   const description = raw ? raw.slice(0, 160) : `${title} — Smile Seed Bank`;
-  const canonical = cleanProductPath(data.slug?.trim() || params.slug);
+  const canonical = cleanProductPath(data.slug?.trim() || slug);
   return {
     title,
     description,
@@ -44,13 +46,15 @@ export async function generateMetadata({
 export default async function ProductPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const { data } = await getProductBySlug(params.slug);
+  const { slug } = await params;
+  const { data } = await getProductBySlug(slug);
+  if (!data) notFound();
   return (
     <>
-      {data ? <ProductJsonLd product={data} /> : null}
-      <ProductDetailClient key={params.slug} initialProduct={data} />
+      <ProductJsonLd product={data} />
+      <ProductDetailClient key={slug} initialProduct={data} />
     </>
   );
 }

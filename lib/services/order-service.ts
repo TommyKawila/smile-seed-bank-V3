@@ -531,6 +531,10 @@ export async function getOrderByNumber(
       SELECT order_number, payment_method, status, total_amount, slip_url
       FROM orders
       WHERE order_number = ${orderNumber}
+        AND payment_method = 'TRANSFER'
+        AND status IN ('PENDING', 'PENDING_PAYMENT', 'PENDING_INFO')
+        AND (payment_status IS NULL OR LOWER(payment_status) <> 'paid')
+        AND (slip_url IS NULL OR TRIM(slip_url) = '')
       LIMIT 1
     `;
     const order = rows[0];
@@ -745,6 +749,13 @@ export async function getCheckoutPendingRestore(
 const SLIP_BUCKET = "payment-slips";
 const ALLOWED_EXT = ["jpg", "jpeg", "png", "webp", "pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const PAYABLE_TRANSFER_STATUSES = ["PENDING", "PENDING_PAYMENT", "PENDING_INFO"] as const;
+
+function isPayableTransferStatus(status: string | null | undefined): boolean {
+  return PAYABLE_TRANSFER_STATUSES.includes(
+    String(status ?? "").toUpperCase() as (typeof PAYABLE_TRANSFER_STATUSES)[number]
+  );
+}
 
 export interface UploadSlipInput {
   orderNumber: string;
@@ -768,12 +779,15 @@ export async function uploadSlip(
         id: number;
         payment_method: string | null;
         slip_url: string | null;
+        status: string | null;
+        payment_status: string | null;
         total_amount: string;
         customer_name: string | null;
         cust_full: string | null;
       }[]
     >`
-      SELECT o.id, o.payment_method, o.slip_url, o.total_amount::text AS total_amount,
+      SELECT o.id, o.payment_method, o.slip_url, o.status, o.payment_status,
+             o.total_amount::text AS total_amount,
              o.customer_name, c.full_name AS cust_full
       FROM orders o
       LEFT JOIN customers c ON c.id = o.customer_id
@@ -785,6 +799,12 @@ export async function uploadSlip(
     if (order.slip_url) return { data: null, error: "Slip already uploaded" };
     if (order.payment_method !== "TRANSFER") {
       return { data: null, error: "This order does not require slip upload" };
+    }
+    if (
+      !isPayableTransferStatus(order.status) ||
+      String(order.payment_status ?? "").toLowerCase() === "paid"
+    ) {
+      return { data: null, error: "Order is not awaiting payment" };
     }
 
     // Guard: file type + size
@@ -814,11 +834,18 @@ export async function uploadSlip(
     const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
     const slipUrl = data.publicUrl;
 
-    // Update order status
-    await sql`
+    const updated = await sql<{ id: number }[]>`
       UPDATE orders SET slip_url = ${slipUrl}, status = 'AWAITING_VERIFICATION'
       WHERE id = ${order.id}
+        AND payment_method = 'TRANSFER'
+        AND status IN ('PENDING', 'PENDING_PAYMENT', 'PENDING_INFO')
+        AND (payment_status IS NULL OR LOWER(payment_status) <> 'paid')
+        AND (slip_url IS NULL OR TRIM(slip_url) = '')
+      RETURNING id
     `;
+    if (updated.length !== 1) {
+      return { data: null, error: "Order is not awaiting payment" };
+    }
 
     const displayName =
       order.customer_name?.trim() || order.cust_full?.trim() || "—";
@@ -1054,8 +1081,12 @@ export async function submitOrderClaim(
     const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
     const slipUrl = data.publicUrl;
 
-    await prisma.orders.update({
-      where: { id: order.id },
+    const updated = await prisma.orders.updateMany({
+      where: {
+        id: order.id,
+        status: "PENDING_INFO",
+        OR: [{ slip_url: null }, { slip_url: "" }],
+      },
       data: {
         shipping_name,
         shipping_address,
@@ -1067,6 +1098,9 @@ export async function submitOrderClaim(
         status: "AWAITING_VERIFICATION",
       },
     });
+    if (updated.count !== 1) {
+      return { data: null, error: "Order already processed" };
+    }
 
     const displayName = shipping_name;
     const totalFmt = Number(order.total_amount).toLocaleString("th-TH", {
@@ -1175,8 +1209,12 @@ export async function submitAdminClaimOnBehalf(
     const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
     const slipUrl = data.publicUrl;
 
-    await prisma.orders.update({
-      where: { id: order.id },
+    const updated = await prisma.orders.updateMany({
+      where: {
+        id: order.id,
+        status: { in: ["PENDING_INFO", "PENDING"] },
+        OR: [{ slip_url: null }, { slip_url: "" }],
+      },
       data: {
         shipping_name,
         shipping_address,
@@ -1188,6 +1226,9 @@ export async function submitAdminClaimOnBehalf(
         status: "AWAITING_VERIFICATION",
       },
     });
+    if (updated.count !== 1) {
+      return { data: null, error: "Order is not awaiting payment (PENDING / PENDING_INFO)" };
+    }
 
     const totalFmt = Number(order.total_amount).toLocaleString("th-TH", {
       maximumFractionDigits: 0,

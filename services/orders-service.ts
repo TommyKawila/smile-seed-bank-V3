@@ -15,6 +15,7 @@ import { sendLineFlexNotification } from "@/lib/order-line-notifications";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import { createOrderLog } from "@/lib/order-logs";
 import {
+  PAYMENT_AUTO_CANCEL_MS,
   PAYMENT_GRACE_HOUR_OPTIONS,
   shouldAutoCancelUnpaidOrder,
   type PaymentGraceHours,
@@ -640,9 +641,13 @@ export async function autoCancelUnpaidOrder24hStale(
           status: order.status ?? "",
           NOT: { status: { in: ["CANCELLED", "VOIDED"] } },
           payment_status: order.payment_status ?? "pending",
-          ...(order.slip_url?.trim()
-            ? { slip_url: order.slip_url }
-            : { OR: [{ slip_url: null }, { slip_url: "" }] }),
+          created_at: { lte: new Date(asOf.getTime() - PAYMENT_AUTO_CANCEL_MS) },
+          AND: [
+            { OR: [{ payment_grace_until: null }, { payment_grace_until: { lte: asOf } }] },
+            order.slip_url?.trim()
+              ? { slip_url: order.slip_url }
+              : { OR: [{ slip_url: null }, { slip_url: "" }] },
+          ],
         },
         data: { status: "CANCELLED", reject_note: rejectNote },
       });
