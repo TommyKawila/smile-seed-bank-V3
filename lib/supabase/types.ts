@@ -33,7 +33,7 @@ export type ProductImageRow = {
   sort_order: number;
 };
 
-/** `.select('*, breeders(...), product_categories(...), product_variants(*)')` */
+/** Public product detail/home variants: no margin or internal inventory-operation fields. */
 export type ProductWithBreederAndVariants = ProductWithBreeder & {
   product_variants: ProductVariantRow[] | null;
   product_images?: ProductImageRow[] | null;
@@ -44,7 +44,7 @@ export const PRODUCT_SELECT_WITH_BREEDER =
   "*, breeders(id, name, logo_url), product_categories(id, name), product_images(id,url,variant_id,is_main,sort_order)";
 
 export const PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS =
-  "*, breeders(id, name, logo_url), product_categories(id, name), product_variants(*), product_images(id,url,variant_id,is_main,sort_order)";
+  "*, breeders(id, name, logo_url), product_categories(id, name), product_variants(id, product_id, unit_label, price, stock, is_active, discount_percent, discount_ends_at, clearance_price), product_images(id,url,variant_id,is_main,sort_order)";
 
 /** Filter sidebar counts — attribute fields + pack labels only. */
 export const PRODUCT_SELECT_FILTER_COUNT =

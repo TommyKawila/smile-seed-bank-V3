@@ -398,6 +398,7 @@ export async function getRelatedProducts({
         product_variants: {
           where: { is_active: true },
           orderBy: { price: "asc" },
+          select: STOREFRONT_LISTING_VARIANT_SELECT,
         },
         product_images: {
           orderBy: { sort_order: "asc" },
@@ -419,6 +420,7 @@ export async function getRelatedProducts({
         product_variants: {
           where: { is_active: true },
           orderBy: { price: "asc" },
+          select: STOREFRONT_LISTING_VARIANT_SELECT,
         },
         product_images: {
           orderBy: { sort_order: "asc" },
