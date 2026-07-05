@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-06 (Critical bugfix — catalog filters)
+- **แก้:** `?ft=photo-ff` / plain `photo` ไม่ให้ SQL ตัด legacy rows ก่อน memory bucket match; `seeds=` กลับไป memory scan จนกว่า `pack_buckets` จะ backfill ครบจริง
+- **ไฟล์:** `lib/seed-type-filter.ts`, `lib/shop-attribute-filters.ts`, `services/product-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

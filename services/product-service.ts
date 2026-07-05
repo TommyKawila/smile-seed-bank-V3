@@ -40,7 +40,6 @@ import {
   parseListParam,
   productMatchesSeedsPackFilter,
   productMatchesShopAttributeFilters,
-  seedsSlugsFullyDbMappable,
   sexOrFilterExpression,
   sexSlugsFullyDbMappable,
   thcOrFilterExpression,
@@ -591,7 +590,6 @@ export async function getActiveProducts(opts?: {
     const ftOriginal = opts?.catalog_ft?.trim() ?? "";
     const catalogFtKey = normalizeCatalogFtUrlParam(ftOriginal);
     const memoryFtPassNeeded = ftOriginal ? catalogFtRequiresMemoryPass(ftOriginal) : false;
-    const seedsSqlOk = seedsSel.length === 0 || seedsSlugsFullyDbMappable(seedsSel);
     const yieldSqlHigh = yieldQuickIsSqlHighFilter(yieldQuickParam);
     const cursorId =
       opts?.cursor_id != null && Number.isFinite(Number(opts.cursor_id))
@@ -675,19 +673,13 @@ export async function getActiveProducts(opts?: {
       }
       /** Pack size: filter via `product_variants` in memory (`pack_buckets` may be un-backfilled). */
 
-      /** DB-level ft; plain `photo` still needs memory pass for FF category split. */
+      /** DB-level ft only for exact buckets; photo/photo-ff need memory bucket matching. */
       switch (catalogFtKey) {
         case "auto":
           qb = qb.eq("flowering_type", "autoflower");
           break;
         case "photo-3n":
           qb = qb.eq("flowering_type", "photo_3n");
-          break;
-        case "photo-ff":
-          qb = qb.eq("flowering_type", "photo_ff");
-          break;
-        case "photo":
-          qb = qb.eq("flowering_type", "photoperiod");
           break;
         default:
           break;
@@ -762,12 +754,6 @@ export async function getActiveProducts(opts?: {
           break;
         case "photo-3n":
           qb = qb.eq("flowering_type", "photo_3n");
-          break;
-        case "photo-ff":
-          qb = qb.eq("flowering_type", "photo_ff");
-          break;
-        case "photo":
-          qb = qb.eq("flowering_type", "photoperiod");
           break;
         default:
           break;

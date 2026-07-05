@@ -124,7 +124,7 @@ export function catalogFiltersRequireMemoryScan(p: CatalogAttributeFilterParams)
     (p.cbd.length > 0 && !cbdSlugsFullyDbMappable(p.cbd)) ||
     (p.sex.length > 0 && !sexSlugsFullyDbMappable(p.sex)) ||
     yieldNeedsMemory ||
-    (p.seeds.length > 0 && !seedsSlugsFullyDbMappable(p.seeds))
+    p.seeds.length > 0
   );
 }
 
