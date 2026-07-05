@@ -291,7 +291,10 @@ export default function CreateOrderPage() {
   const manualDiscountAmount = roundCheckoutBahtWhole(
     (summary.subtotal * manualDiscountPercentClamped) / 100
   );
-  const maxRedeemable = Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount));
+  const pointsCanApplyNow = customer.payment_method === "CASH";
+  const maxRedeemable = pointsCanApplyNow
+    ? Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount))
+    : 0;
   const effectivePointsRedeemed = Math.min(
     pointsToRedeem,
     maxRedeemable,
@@ -368,6 +371,9 @@ export default function CreateOrderPage() {
     [items, promotions, productIdToBreeder]
   );
   const { promotionDiscount, activePromotion, buyXGetYAlert, freebieAlert } = promoResult;
+  const promotionDiscountAmount = roundCheckoutBahtWhole(
+    summary.tierDiscount + summary.promoDiscount
+  );
   const hasPromotionDiscount = summary.tierDiscount > 0;
 
   const brandDiscountTotal = useMemo(
@@ -550,7 +556,7 @@ export default function CreateOrderPage() {
           points_redeemed: isCashComplete ? effectivePointsRedeemed : 0,
           points_discount_amount: isCashComplete ? pointsDiscountAmount : 0,
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
-          promotion_discount_amount: summary.tierDiscount,
+          promotion_discount_amount: promotionDiscountAmount,
           discount_amount: manualDiscountAmount,
           customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
           customer: {
@@ -580,7 +586,7 @@ export default function CreateOrderPage() {
         const ct = result.claimToken != null && result.claimToken !== "" ? String(result.claimToken) : "";
         const claimLink = ct ? `${getSiteOrigin()}/order/claim/${ct}` : null;
         const discountAmt =
-          summary.tierDiscount + summary.promoDiscount + manualDiscountAmount;
+          promotionDiscountAmount + manualDiscountAmount;
         setLastCopyPack({
           orderNumber,
           orderId,
@@ -609,7 +615,7 @@ export default function CreateOrderPage() {
 
       if (orderStatus === "PENDING") {
         const discountAmt =
-          summary.tierDiscount + summary.promoDiscount + manualDiscountAmount;
+          promotionDiscountAmount + manualDiscountAmount;
         setLastCopyPack({
           orderNumber,
           orderId,
@@ -636,7 +642,7 @@ export default function CreateOrderPage() {
 
       {
         const discountAmt =
-          summary.tierDiscount + summary.promoDiscount + pointsDiscountAmount + manualDiscountAmount;
+          promotionDiscountAmount + pointsDiscountAmount + manualDiscountAmount;
         setLastCopyPack({
           orderNumber,
           orderId,
@@ -1012,7 +1018,7 @@ export default function CreateOrderPage() {
                             }}
                             placeholder="ใช้คะแนน"
                             className="h-8 text-sm w-24"
-                            disabled={availablePoints === 0}
+                            disabled={!pointsCanApplyNow || availablePoints === 0}
                           />
                           <Button
                             type="button"
@@ -1020,7 +1026,7 @@ export default function CreateOrderPage() {
                             size="sm"
                             className="h-8"
                             onClick={() => setPointsToRedeem(maxRedeemable)}
-                            disabled={availablePoints === 0}
+                            disabled={!pointsCanApplyNow || availablePoints === 0}
                           >
                             ใช้ทั้งหมด
                           </Button>

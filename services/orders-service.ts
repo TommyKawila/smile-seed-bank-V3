@@ -21,6 +21,7 @@ import {
 } from "@/lib/payment-grace";
 import { pushTextToLineUser } from "@/services/line-messaging";
 import type { AdminOrderLineItem } from "@/types/admin-order";
+import { Prisma } from "@prisma/client";
 
 export type { AdminOrderLineItem };
 
@@ -416,6 +417,9 @@ export async function approvePayment(
           shipping_email: true,
           line_user_id: true,
           total_amount: true,
+          customer_profile_id: true,
+          points_redeemed: true,
+          payment_status: true,
           source_quotation_number: true,
           customers: { select: { email: true, full_name: true, line_user_id: true } },
         },
@@ -429,7 +433,23 @@ export async function approvePayment(
         data: { status: "PENDING", payment_status: "paid", reject_note: null },
       });
 
-      // TODO: Loyalty — accrue points from `order.total_amount` / tier rules (100 THB = 1 pt per blueprint); run inside this transaction when implemented.
+      if (before.payment_status !== "paid" && before.customer_profile_id) {
+        const totalAmount = Number(before.total_amount ?? 0);
+        const ptsRedeemed = before.points_redeemed ?? 0;
+        const customerTouch = await tx.customer.updateMany({
+          where: {
+            id: before.customer_profile_id,
+            ...(ptsRedeemed > 0 ? { points: { gte: ptsRedeemed } } : {}),
+          },
+          data: {
+            points: { increment: Math.floor(totalAmount / 100) - ptsRedeemed },
+            total_spend: { increment: new Prisma.Decimal(totalAmount) },
+          },
+        });
+        if (customerTouch.count !== 1) {
+          throw new Error("Insufficient customer points");
+        }
+      }
 
       const qn = before.source_quotation_number?.trim();
       const quotationPaidSync = {

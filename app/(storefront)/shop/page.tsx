@@ -47,6 +47,9 @@ export default async function ShopPage({
   const resolvedParams = params ? await params : undefined;
   const sp = searchParams ? await searchParams : undefined;
   const breederSlug = firstParam(resolvedParams?.breederSlug);
+  const shopBreederParam = breederSlug
+    ? undefined
+    : firstParam(sp?.breeder)?.trim() || undefined;
   const breederId = await resolveBreederIdFromSlug(breederSlug);
   const category = firstParam(sp?.category)?.trim() || "";
   const search = firstParam(sp?.q)?.trim() || "";
@@ -79,13 +82,14 @@ export default async function ShopPage({
     getActiveProducts({
       category: category || undefined,
       breeder_id: breederId,
+      breeder_shop_param: shopBreederParam,
       search: search || undefined,
       catalog_ft: catalogFt || undefined,
       includeVariants: Boolean(firstParam(sp?.seeds)?.trim()),
       limit: SHOP_INITIAL_PRODUCTS,
       page: 1,
       quick,
-      sort: sort ?? (!quick && breederId != null ? "smart_deal" : undefined),
+      sort: sort ?? (!quick && (breederId != null || shopBreederParam) ? "smart_deal" : undefined),
       minPrice: priceRange.min ?? undefined,
       maxPrice: priceRange.max ?? undefined,
       seeds_param: firstParam(sp?.seeds)?.trim() || null,
@@ -100,6 +104,8 @@ export default async function ShopPage({
       error: "catalog_fetch_failed",
       catalogHasMore: false,
       catalogTotalCount: null as number | null,
+      catalogNextCursor: null as number | null,
+      catalogUseCursor: false,
     })),
     hasStorefrontClearanceProducts().catch(() => false),
   ]);
