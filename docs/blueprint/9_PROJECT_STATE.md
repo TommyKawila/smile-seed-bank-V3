@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-05 (Critical bugfix — POS totals + catalog filters)
+- **POS:** persist line prices after brand promo; reject point redemption without completed POS customer profile.
+- **Catalog:** genetics/pack filters use memory matching; result total avoids unscoped filter-count fallback.
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`, `lib/shop-attribute-filters.ts`, `services/product-service.ts`, `app/(storefront)/shop/ShopPageClient.tsx`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

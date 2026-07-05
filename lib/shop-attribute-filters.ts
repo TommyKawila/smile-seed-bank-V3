@@ -118,13 +118,13 @@ export function catalogFiltersRequireMemoryScan(p: CatalogAttributeFilterParams)
   const yieldNeedsMemory =
     Boolean(p.yieldQuick?.trim()) && !yieldQuickIsSqlHighFilter(p.yieldQuick);
   return (
-    (p.genetics.length > 0 && !geneticsSlugsFullyDbMappable(p.genetics)) ||
+    p.genetics.length > 0 ||
     (p.difficulty.length > 0 && !difficultySlugsFullyDbMappable(p.difficulty)) ||
     (p.thc.length > 0 && !thcSlugsFullyDbMappable(p.thc)) ||
     (p.cbd.length > 0 && !cbdSlugsFullyDbMappable(p.cbd)) ||
     (p.sex.length > 0 && !sexSlugsFullyDbMappable(p.sex)) ||
     yieldNeedsMemory ||
-    (p.seeds.length > 0 && !seedsSlugsFullyDbMappable(p.seeds))
+    p.seeds.length > 0
   );
 }
 

@@ -26,7 +26,11 @@ import { useToast } from "@/hooks/use-toast";
 import { toastErrorMessage } from "@/lib/admin-toast";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { applyPromotions, type PromotionRule } from "@/lib/promotion-utils";
-import { cartItemBrandLineDisplay, type BrandPromotionRuleRow } from "@/lib/cart-utils";
+import {
+  cartItemBrandLineDisplay,
+  unitBahtAfterBrandForCartItem,
+  type BrandPromotionRuleRow,
+} from "@/lib/cart-utils";
 import {
   matchBrandPromotionRule,
   resolveListingUnitAfterBrand,
@@ -111,6 +115,14 @@ type PosCustomer = {
   address?: string | null;
   points?: number;
 };
+
+function parsePosCustomerProfileId(id: string | null | undefined): number | null {
+  const raw = String(id ?? "").trim();
+  const numeric = raw.startsWith("pos-") ? raw.slice(4) : raw;
+  if (!/^\d+$/.test(numeric)) return null;
+  const n = Number(numeric);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
 
 function mapCustomerSearchHit(raw: unknown): PosCustomer | null {
   if (!raw || typeof raw !== "object") return null;
@@ -533,6 +545,10 @@ export default function CreateOrderPage() {
       const isClaim = mode === "claim";
       const isCashComplete = !isClaim && customer.payment_method === "CASH";
       const posOrderStatus = isClaim ? "PENDING_INFO" : isCashComplete ? "COMPLETED" : "PENDING";
+      const customerProfileId = parsePosCustomerProfileId(selectedCustomer?.id);
+      if (isCashComplete && effectivePointsRedeemed > 0 && customerProfileId == null) {
+        throw new Error("ใช้คะแนนได้เฉพาะลูกค้า POS ที่มีโปรไฟล์สะสมแต้ม");
+      }
       const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -543,7 +559,13 @@ export default function CreateOrderPage() {
             productName: i.productName,
             unitLabel: i.unitLabel,
             quantity: i.quantity,
-            price: i.price,
+            price: i.isFreeGift
+              ? 0
+              : unitBahtAfterBrandForCartItem(
+                  i.price,
+                  i.breederName,
+                  brandPromotionRules
+                ).unit,
           })),
           status: posOrderStatus,
           totalAmount: grandTotal,
@@ -552,7 +574,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: customerProfileId,
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,

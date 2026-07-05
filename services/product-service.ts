@@ -35,12 +35,9 @@ import {
   yieldQuickIsSqlHighFilter,
   difficultyOrFilterExpression,
   difficultySlugsFullyDbMappable,
-  geneticsDbValuesForSlugs,
-  geneticsSlugsFullyDbMappable,
   parseListParam,
   productMatchesSeedsPackFilter,
   productMatchesShopAttributeFilters,
-  seedsSlugsFullyDbMappable,
   sexOrFilterExpression,
   sexSlugsFullyDbMappable,
   thcOrFilterExpression,
@@ -572,8 +569,6 @@ export async function getActiveProducts(opts?: {
     const cbdSel = parseListParam(opts?.cbd_param ?? null);
     const sexSel = parseListParam(opts?.sex_param ?? null);
     const yieldQuickParam = opts?.yield_param?.trim() || null;
-    const geneticsSqlOk =
-      geneticsSel.length === 0 || geneticsSlugsFullyDbMappable(geneticsSel);
     const difficultySqlOk =
       difficultySel.length === 0 || difficultySlugsFullyDbMappable(difficultySel);
     const thcSqlOk = thcSel.length === 0 || thcSlugsFullyDbMappable(thcSel);
@@ -591,7 +586,6 @@ export async function getActiveProducts(opts?: {
     const ftOriginal = opts?.catalog_ft?.trim() ?? "";
     const catalogFtKey = normalizeCatalogFtUrlParam(ftOriginal);
     const memoryFtPassNeeded = ftOriginal ? catalogFtRequiresMemoryPass(ftOriginal) : false;
-    const seedsSqlOk = seedsSel.length === 0 || seedsSlugsFullyDbMappable(seedsSel);
     const yieldSqlHigh = yieldQuickIsSqlHighFilter(yieldQuickParam);
     const cursorId =
       opts?.cursor_id != null && Number.isFinite(Number(opts.cursor_id))
@@ -649,11 +643,6 @@ export async function getActiveProducts(opts?: {
       }
       if (breederIdResolved != null) qb = qb.eq("breeder_id", breederIdResolved);
 
-      if (geneticsSel.length > 0 && geneticsSqlOk) {
-        const domValues = geneticsDbValuesForSlugs(geneticsSel);
-        if (domValues.length === 1) qb = qb.eq("strain_dominance", domValues[0]);
-        else if (domValues.length > 1) qb = qb.in("strain_dominance", domValues);
-      }
       if (difficultySel.length > 0 && difficultySqlOk) {
         const diffOr = difficultyOrFilterExpression(difficultySel);
         if (diffOr) qb = qb.or(diffOr);
@@ -732,11 +721,6 @@ export async function getActiveProducts(opts?: {
         qb = qb.lte("price", opts.maxPrice);
       }
       if (breederIdResolved != null) qb = qb.eq("breeder_id", breederIdResolved);
-      if (geneticsSel.length > 0 && geneticsSqlOk) {
-        const domValues = geneticsDbValuesForSlugs(geneticsSel);
-        if (domValues.length === 1) qb = qb.eq("strain_dominance", domValues[0]);
-        else if (domValues.length > 1) qb = qb.in("strain_dominance", domValues);
-      }
       if (difficultySel.length > 0 && difficultySqlOk) {
         const diffOr = difficultyOrFilterExpression(difficultySel);
         if (diffOr) qb = qb.or(diffOr);

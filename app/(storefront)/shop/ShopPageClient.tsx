@@ -800,6 +800,15 @@ export function ShopPageClient({
   const totalFiltered = filteredProducts.length;
   const shownCount = visibleProducts.length;
 
+  const hasClientAttributeFilters =
+    !serverHandlesAttributeFilters &&
+    (attributeFilterParams.genetics.length > 0 ||
+      attributeFilterParams.difficulty.length > 0 ||
+      attributeFilterParams.thc.length > 0 ||
+      attributeFilterParams.cbd.length > 0 ||
+      attributeFilterParams.sex.length > 0 ||
+      Boolean(attributeFilterParams.yieldQuick) ||
+      attributeFilterParams.seeds.length > 0);
   const isNarrowedByClientFilters = totalFiltered < products.length;
   /** Unfiltered catalog total from filter-counts API when SQL total is unknown. */
   const filterCountsScopedTotal = useMemo(() => {
@@ -811,9 +820,10 @@ export function ShopPageClient({
       (f["photo-3n"] ?? 0);
     return sum > 0 ? sum : null;
   }, [filterOptionCounts.flowering]);
-  const catalogDisplayTotal = isNarrowedByClientFilters
-    ? totalFiltered
-    : catalogTotal ?? filterCountsScopedTotal ?? totalFiltered;
+  const catalogDisplayTotal =
+    isNarrowedByClientFilters || (hasClientAttributeFilters && catalogTotal == null)
+      ? totalFiltered
+      : catalogTotal ?? filterCountsScopedTotal ?? totalFiltered;
   const footerTotal = catalogDisplayTotal;
   const footerShown = Math.min(shownCount, totalFiltered);
 
