@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-14 (Critical fix — POS customer profile id)
+- **Bug:** POS customer search คืน id แบบ `pos-123` / `web-uuid`; สร้าง order ใช้ `Number(id)` ทำให้ JSON ส่ง `customer_profile_id: null` และแต้มแลกไม่ถูกหักจาก profile
+- **Fix:** parse เฉพาะ POS profile id สำหรับ order; ส่ง coupon user id เฉพาะ UUID จาก web customer
+- **Validation:** `eslint app/admin/orders/create/page.tsx` ผ่าน; parser runtime check ผ่าน; `tsc --noEmit` ยังติด baseline เดิมนอกไฟล์นี้
+- **ไฟล์:** `app/admin/orders/create/page.tsx`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
