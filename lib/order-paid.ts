@@ -63,3 +63,14 @@ export function isReceiptEligibleStatus(
     return true;
   return false;
 }
+
+export function orderCanAcceptTransferPayment(
+  status: string | null | undefined,
+  paymentStatus: string | null | undefined,
+  slipUrl: string | null | undefined
+): boolean {
+  const s = (status ?? "").toUpperCase();
+  const ps = (paymentStatus ?? "").toLowerCase();
+  if (ps === "paid" || slipUrl?.trim()) return false;
+  return ["PENDING", "PENDING_PAYMENT", "PENDING_INFO", "PAYMENT_REJECTED"].includes(s);
+}

@@ -12,6 +12,7 @@ import { lineOaPrefillUrlForOrderSuccess } from "@/lib/line-oa-url";
 import { formatPrice } from "@/lib/utils";
 import type { ActiveBankAccount } from "@/lib/storefront-payment-shared";
 import { PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
+import { orderCanAcceptTransferPayment } from "@/lib/order-paid";
 import { DynamicPromptPayQr } from "@/components/storefront/checkout/DynamicPromptPayQr";
 import { BankTransferAccountList } from "@/components/storefront/checkout/BankTransferAccountList";
 
@@ -25,6 +26,9 @@ export type PaymentPageClientProps = {
   initialOrder: {
     total_amount: number;
     payment_method: string | null;
+    status: string;
+    payment_status: string | null;
+    slip_url: string | null;
   } | null;
   orderUnavailable: boolean;
 };
@@ -113,6 +117,18 @@ export function PaymentPageClient({
         <p className="text-zinc-600">วิธีการชำระเงินไม่ใช่โอนเงิน</p>
         <Button asChild>
           <Link href="/">กลับหน้าแรก</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (!orderCanAcceptTransferPayment(order.status, order.payment_status, order.slip_url)) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-50 px-4 text-center">
+        <p className="font-semibold text-zinc-700">ออเดอร์นี้ไม่อยู่ในสถานะรอชำระเงินแล้ว</p>
+        <p className="max-w-sm text-sm text-zinc-500">กรุณาตรวจสอบสถานะออเดอร์ หรือสอบถามแอดมินหากเพิ่งโอนเงิน</p>
+        <Button asChild>
+          <Link href={`/order-success/${encodeURIComponent(orderNumber)}`}>ดูสถานะออเดอร์</Link>
         </Button>
       </div>
     );

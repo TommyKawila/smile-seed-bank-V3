@@ -615,6 +615,9 @@ export async function autoCancelUnpaidOrder24hStale(
       });
       if (!order) throw new Error("Order not found");
       if (order.status === "CANCELLED") throw new Error("Order is already cancelled");
+      if ((order.order_origin ?? "").toUpperCase() === "MANUAL") {
+        throw new Error("24h auto-cancel: manual orders require admin cancellation");
+      }
       const s = order.status ?? "";
       if (s !== "PENDING_PAYMENT" && s !== "PENDING" && s !== "PENDING_INFO") {
         throw new Error(`24h auto-cancel: expected PENDING_PAYMENT|PENDING|PENDING_INFO, got ${s}`);

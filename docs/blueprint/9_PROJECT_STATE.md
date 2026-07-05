@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-25 (Critical bug automation — POS/payment guards)
+- **แก้:** POS customer `pos-*` linkage + points redeem UI, transfer payability guards, receipt token fallback secret, manual order 24h auto-cancel exclusion.
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `lib/order-paid.ts`, `lib/services/order-service.ts`, `app/api/storefront/promptpay-payload/route.ts`, `components/storefront/payment/PaymentPageClient.tsx`, `lib/receipt-download-token.ts`, `lib/services/payment-reminder.ts`, `services/orders-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
