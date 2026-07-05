@@ -4,7 +4,7 @@ import { ShopPageClient } from "@/app/(storefront)/shop/ShopPageClient";
 import { getActiveProducts, hasStorefrontClearanceProducts } from "@/services/product-service";
 import { bigintToJson } from "@/lib/bigint-json";
 import { prisma } from "@/lib/prisma";
-import { breederSlugFromName } from "@/lib/breeder-slug";
+import { resolveBreederFromShopParam } from "@/lib/breeder-slug";
 import type { ProductListItem } from "@/services/storefront-product-service";
 import { parsePriceRangeParams } from "@/lib/shop-price-filter";
 import {
@@ -24,17 +24,18 @@ function searchParamsGetter(sp: Record<string, string | string[] | undefined> | 
 }
 
 async function resolveBreederIdFromSlug(slug: string | undefined): Promise<number | undefined> {
-  const normalizedSlug = decodeURIComponent(slug ?? "").trim().toLowerCase();
+  const normalizedSlug = decodeURIComponent(slug ?? "").trim();
   if (!normalizedSlug) return undefined;
 
   const breeders = await prisma.breeders.findMany({
     where: { is_active: true },
     select: { id: true, name: true },
   });
-  const match = breeders.find(
-    (breeder) => breederSlugFromName(breeder.name).toLowerCase() === normalizedSlug
+  const match = resolveBreederFromShopParam(
+    breeders.map((breeder) => ({ id: Number(breeder.id), name: breeder.name })),
+    normalizedSlug
   );
-  return match ? Number(match.id) : undefined;
+  return match?.id;
 }
 
 export default async function ShopPage({
@@ -46,7 +47,7 @@ export default async function ShopPage({
 }) {
   const resolvedParams = params ? await params : undefined;
   const sp = searchParams ? await searchParams : undefined;
-  const breederSlug = firstParam(resolvedParams?.breederSlug);
+  const breederSlug = firstParam(sp?.breeder) ?? firstParam(resolvedParams?.breederSlug);
   const breederId = await resolveBreederIdFromSlug(breederSlug);
   const category = firstParam(sp?.category)?.trim() || "";
   const search = firstParam(sp?.q)?.trim() || "";
@@ -100,6 +101,7 @@ export default async function ShopPage({
       error: "catalog_fetch_failed",
       catalogHasMore: false,
       catalogTotalCount: null as number | null,
+      catalogUseCursor: false,
     })),
     hasStorefrontClearanceProducts().catch(() => false),
   ]);
