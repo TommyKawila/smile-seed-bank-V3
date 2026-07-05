@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-24 (Critical automation — POS customer/points integrity)
+- **แก้:** แยก `/api/admin/customers?mode=omni` จาก customer management search · POS parse `pos-*` เป็น `customer_profile_id` · points redeem เฉพาะ cash completed พร้อม API guard
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/admin/quotations/new/page.tsx`, `app/api/admin/customers/route.ts`, `app/api/admin/orders/simple/route.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
