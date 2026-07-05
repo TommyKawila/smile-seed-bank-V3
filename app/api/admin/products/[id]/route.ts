@@ -80,33 +80,77 @@ export async function PATCH(
       return NextResponse.json({ error: productError.message }, { status: 500 });
     }
 
-    // ── 2. Replace all variants (delete → insert) ─────────────────────────────
-    const { error: deleteError } = await db
+    // ── 2. Preserve variant IDs (update/insert; deactivate removed) ────────────
+    const { data: existingRaw, error: existingError } = await db
       .from("product_variants")
-      .delete()
+      .select("*")
       .eq("product_id", productId);
-
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    if (existingError) {
+      return NextResponse.json({ error: existingError.message }, { status: 500 });
     }
 
-    const variantRows = variants.map((v) => ({ ...v, product_id: productId }));
-    let insertedVariants: ProductVariant[] = [];
-    if (variantRows.length > 0) {
-      const { data: ins, error: variantError } = await db
-        .from("product_variants")
-        .insert(variantRows)
-        .select();
+    const existingVariants = (existingRaw ?? []) as ProductVariant[];
+    const existingById = new Map(existingVariants.map((v) => [Number(v.id), v]));
+    const unusedExisting = new Set(existingVariants.map((v) => Number(v.id)));
+    const findFallbackVariant = (sku: string | null | undefined, unitLabel: string) => {
+      const skuKey = sku?.trim().toLowerCase();
+      const labelKey = unitLabel.trim().toLowerCase();
+      return existingVariants.find((v) => {
+        const id = Number(v.id);
+        if (!unusedExisting.has(id)) return false;
+        const existingSku = (v.sku ?? "").trim().toLowerCase();
+        if (skuKey && existingSku === skuKey) return true;
+        return v.unit_label.trim().toLowerCase() === labelKey;
+      });
+    };
 
-      if (variantError) {
-        return NextResponse.json({ error: variantError.message }, { status: 500 });
+    const savedVariants: ProductVariant[] = [];
+    for (const variant of variants) {
+      const { id, ...variantData } = variant;
+      const fallback = id == null ? findFallbackVariant(variant.sku, variant.unit_label) : null;
+      const targetId = id != null && existingById.has(id) ? id : fallback ? Number(fallback.id) : null;
+      const payload = { ...variantData, product_id: productId };
+
+      if (targetId != null) {
+        const { data: updated, error: variantError } = await db
+          .from("product_variants")
+          .update(payload)
+          .eq("id", targetId)
+          .eq("product_id", productId)
+          .select()
+          .single();
+        if (variantError) {
+          return NextResponse.json({ error: variantError.message }, { status: 500 });
+        }
+        unusedExisting.delete(targetId);
+        savedVariants.push(updated as ProductVariant);
+      } else {
+        const { data: inserted, error: variantError } = await db
+          .from("product_variants")
+          .insert(payload)
+          .select()
+          .single();
+        if (variantError) {
+          return NextResponse.json({ error: variantError.message }, { status: 500 });
+        }
+        savedVariants.push(inserted as ProductVariant);
       }
-      insertedVariants = (ins ?? []) as ProductVariant[];
+    }
+
+    const removedVariantIds = [...unusedExisting];
+    if (removedVariantIds.length > 0) {
+      const { error: deactivateError } = await db
+        .from("product_variants")
+        .update({ is_active: false, stock: 0 })
+        .in("id", removedVariantIds);
+      if (deactivateError) {
+        return NextResponse.json({ error: deactivateError.message }, { status: 500 });
+      }
     }
 
     // ── 3. Sync price & stock on parent ───────────────────────────────────────
-    const startingPrice = computeStartingPrice(insertedVariants);
-    const totalStock = computeTotalStock(insertedVariants);
+    const startingPrice = computeStartingPrice(savedVariants);
+    const totalStock = computeTotalStock(savedVariants);
 
     await db
       .from("products")
@@ -120,7 +164,7 @@ export async function PATCH(
         is_main: entry.is_main,
         variant_unit_label: entry.variant_unit_label ?? null,
       })),
-      insertedVariants.map((v) => ({
+      savedVariants.map((v) => ({
         id: Number(v.id),
         unit_label: v.unit_label,
       }))

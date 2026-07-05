@@ -24,6 +24,7 @@ import {
   carrierLabelFromCode,
   carrierTrackingUrl,
 } from "@/lib/shipping-carriers";
+import { isSlipUploadEligibleOrder } from "@/lib/order-status-guards";
 import { randomUUID } from "crypto";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
@@ -768,13 +769,15 @@ export async function uploadSlip(
         id: number;
         payment_method: string | null;
         slip_url: string | null;
+        status: string | null;
+        payment_status: string | null;
         total_amount: string;
         customer_name: string | null;
         cust_full: string | null;
       }[]
     >`
-      SELECT o.id, o.payment_method, o.slip_url, o.total_amount::text AS total_amount,
-             o.customer_name, c.full_name AS cust_full
+      SELECT o.id, o.payment_method, o.slip_url, o.status, o.payment_status,
+             o.total_amount::text AS total_amount, o.customer_name, c.full_name AS cust_full
       FROM orders o
       LEFT JOIN customers c ON c.id = o.customer_id
       WHERE o.order_number = ${orderNumber}
@@ -785,6 +788,9 @@ export async function uploadSlip(
     if (order.slip_url) return { data: null, error: "Slip already uploaded" };
     if (order.payment_method !== "TRANSFER") {
       return { data: null, error: "This order does not require slip upload" };
+    }
+    if (!isSlipUploadEligibleOrder(order.status, order.payment_status)) {
+      return { data: null, error: "Order is not awaiting payment" };
     }
 
     // Guard: file type + size
@@ -814,11 +820,18 @@ export async function uploadSlip(
     const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
     const slipUrl = data.publicUrl;
 
-    // Update order status
-    await sql`
+    // Update order status only if it stayed upload-eligible during storage work.
+    const updated = await sql<{ id: number }[]>`
       UPDATE orders SET slip_url = ${slipUrl}, status = 'AWAITING_VERIFICATION'
       WHERE id = ${order.id}
+        AND slip_url IS NULL
+        AND status IN ('PENDING', 'PENDING_PAYMENT', 'PENDING_INFO')
+        AND LOWER(COALESCE(payment_status, 'pending')) <> 'paid'
+      RETURNING id
     `;
+    if (updated.length !== 1) {
+      return { data: null, error: "Order is not awaiting payment" };
+    }
 
     const displayName =
       order.customer_name?.trim() || order.cust_full?.trim() || "—";

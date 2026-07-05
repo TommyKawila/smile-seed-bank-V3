@@ -20,6 +20,7 @@ import {
   type PaymentGraceHours,
 } from "@/lib/payment-grace";
 import { pushTextToLineUser } from "@/services/line-messaging";
+import { isPaymentApprovalEligibleOrder } from "@/lib/order-status-guards";
 import type { AdminOrderLineItem } from "@/types/admin-order";
 
 export type { AdminOrderLineItem };
@@ -417,17 +418,32 @@ export async function approvePayment(
           line_user_id: true,
           total_amount: true,
           source_quotation_number: true,
+          payment_status: true,
           customers: { select: { email: true, full_name: true, line_user_id: true } },
         },
       });
       if (!before) {
         throw new Error("Order not found");
       }
+      if (!isPaymentApprovalEligibleOrder(before.status, before.payment_status)) {
+        throw new Error("Order not awaiting payment verification");
+      }
 
-      const order = await tx.orders.update({
-        where: { id: oid },
+      const approved = await tx.orders.updateMany({
+        where: {
+          id: oid,
+          status: "AWAITING_VERIFICATION",
+          payment_status: { not: "paid" },
+        },
         data: { status: "PENDING", payment_status: "paid", reject_note: null },
       });
+      if (approved.count !== 1) {
+        throw new Error("Order not awaiting payment verification");
+      }
+      const order = await tx.orders.findUnique({ where: { id: oid } });
+      if (!order) {
+        throw new Error("Order not found");
+      }
 
       // TODO: Loyalty — accrue points from `order.total_amount` / tier rules (100 THB = 1 pt per blueprint); run inside this transaction when implemented.
 
