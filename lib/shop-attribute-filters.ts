@@ -352,9 +352,8 @@ export function packBucketsFromVariants(
   return [...buckets];
 }
 
-export function seedsSlugsFullyDbMappable(slugs: string[]): boolean {
-  if (slugs.length === 0) return false;
-  return slugs.every((s) => (SEED_PACK_FILTER_SLUGS as readonly string[]).includes(s));
+export function seedsSlugsFullyDbMappable(_slugs: string[]): boolean {
+  return false;
 }
 
 export function productMatchesSeedsPackFilter(

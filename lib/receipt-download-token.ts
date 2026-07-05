@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
-function secret(): string {
-  return process.env.RECEIPT_DOWNLOAD_SECRET?.trim() || "ssb-receipt-token-v1-set-RECEIPT_DOWNLOAD_SECRET";
+function secret(): string | null {
+  return process.env.RECEIPT_DOWNLOAD_SECRET?.trim() || null;
 }
 
 /** Short signed token for LINE / email links (no Supabase cookie). TTL default 90d. */
