@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-06-08 (Critical POS transfer loyalty + auto-cancel)
+- **แก้:** POS โอนเงินบันทึก/ตัดแต้มตอน approve payment · กัน cron 24h auto-cancel ออเดอร์ `order_origin=MANUAL`
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`, `services/orders-service.ts`, `lib/services/payment-reminder.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

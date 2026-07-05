@@ -532,6 +532,12 @@ export default function CreateOrderPage() {
     try {
       const isClaim = mode === "claim";
       const isCashComplete = !isClaim && customer.payment_method === "CASH";
+      const canRedeemPoints = !isClaim && selectedCustomer != null;
+      const submittedPointsRedeemed = canRedeemPoints ? effectivePointsRedeemed : 0;
+      const submittedPointsDiscount = canRedeemPoints ? pointsDiscountAmount : 0;
+      const submittedTotalAmount = roundCheckoutBahtWhole(
+        Math.max(0, summary.total - manualDiscountAmount - submittedPointsDiscount)
+      );
       const posOrderStatus = isClaim ? "PENDING_INFO" : isCashComplete ? "COMPLETED" : "PENDING";
       const res = await fetch("/api/admin/orders/simple", {
         method: "POST",
@@ -546,9 +552,9 @@ export default function CreateOrderPage() {
             price: i.price,
           })),
           status: posOrderStatus,
-          totalAmount: grandTotal,
-          points_redeemed: isCashComplete ? effectivePointsRedeemed : 0,
-          points_discount_amount: isCashComplete ? pointsDiscountAmount : 0,
+          totalAmount: submittedTotalAmount,
+          points_redeemed: submittedPointsRedeemed,
+          points_discount_amount: submittedPointsDiscount,
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,

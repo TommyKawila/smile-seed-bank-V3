@@ -80,6 +80,19 @@ export async function POST(req: NextRequest) {
     const totalAmount = roundCheckoutBahtWhole(
       overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0)
     );
+    const hasPointRedemption = points_redeemed > 0 || points_discount_amount > 0;
+    if (hasPointRedemption && !customer_profile_id) {
+      return NextResponse.json(
+        { error: "Customer profile is required to redeem points" },
+        { status: 400 }
+      );
+    }
+    if (points_discount_amount !== points_redeemed) {
+      return NextResponse.json(
+        { error: "Points discount must match redeemed points" },
+        { status: 400 }
+      );
+    }
     const claimToken = status === "PENDING_INFO" ? randomUUID() : null;
     const deductStock =
       status === "COMPLETED" || status === "PENDING_INFO" || status === "PENDING";
@@ -91,6 +104,19 @@ export async function POST(req: NextRequest) {
 
     const { orderId: createdOrderId } = await prisma.$transaction(
       async (tx) => {
+        if (customer_profile_id && points_redeemed > 0) {
+          const cust = await tx.customer.findUnique({
+            where: { id: BigInt(customer_profile_id) },
+            select: { points: true },
+          });
+          if (!cust) {
+            throw new Error("Customer profile not found");
+          }
+          if ((cust.points ?? 0) < points_redeemed) {
+            throw new Error("Insufficient customer points");
+          }
+        }
+
         const orderCreate: Prisma.ordersCreateInput = {
           order_number: orderNumber,
           total_amount: new Prisma.Decimal(totalAmount),
@@ -209,13 +235,6 @@ export async function POST(req: NextRequest) {
         if (status === "COMPLETED" && customer_profile_id) {
           const ptsRedeemed = points_redeemed ?? 0;
           const pointsToAdd = Math.floor(totalAmount / 100);
-          const cust = await tx.customer.findUnique({
-            where: { id: BigInt(customer_profile_id) },
-            select: { points: true },
-          });
-          if (cust && ptsRedeemed > 0 && (cust.points ?? 0) < ptsRedeemed) {
-            throw new Error("Insufficient customer points");
-          }
           await tx.customer.update({
             where: { id: BigInt(customer_profile_id) },
             data: {

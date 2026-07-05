@@ -236,7 +236,10 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
     where: {
       status: { in: [...CRON_ORDER_STATUSES] },
       created_at: { lt: cutoff24h },
-      OR: [{ slip_url: null }, { slip_url: "" }],
+      AND: [
+        { OR: [{ slip_url: null }, { slip_url: "" }] },
+        { OR: [{ order_origin: null }, { order_origin: { not: "MANUAL" } }] },
+      ],
     },
     include: {
       customers: { select: { email: true, line_user_id: true } },

@@ -21,6 +21,7 @@ import {
 } from "@/lib/payment-grace";
 import { pushTextToLineUser } from "@/services/line-messaging";
 import type { AdminOrderLineItem } from "@/types/admin-order";
+import { Prisma } from "@prisma/client";
 
 export type { AdminOrderLineItem };
 
@@ -416,6 +417,9 @@ export async function approvePayment(
           shipping_email: true,
           line_user_id: true,
           total_amount: true,
+          payment_status: true,
+          customer_profile_id: true,
+          points_redeemed: true,
           source_quotation_number: true,
           customers: { select: { email: true, full_name: true, line_user_id: true } },
         },
@@ -429,7 +433,28 @@ export async function approvePayment(
         data: { status: "PENDING", payment_status: "paid", reject_note: null },
       });
 
-      // TODO: Loyalty — accrue points from `order.total_amount` / tier rules (100 THB = 1 pt per blueprint); run inside this transaction when implemented.
+      if (
+        (before.payment_status ?? "").toLowerCase() !== "paid" &&
+        before.customer_profile_id
+      ) {
+        const ptsRedeemed = before.points_redeemed ?? 0;
+        const totalAmount = Number(order.total_amount ?? before.total_amount ?? 0);
+        const pointsToAdd = Math.floor(totalAmount / 100);
+        const cust = await tx.customer.findUnique({
+          where: { id: before.customer_profile_id },
+          select: { points: true },
+        });
+        if (cust && ptsRedeemed > 0 && (cust.points ?? 0) < ptsRedeemed) {
+          throw new Error("Insufficient customer points");
+        }
+        await tx.customer.update({
+          where: { id: before.customer_profile_id },
+          data: {
+            points: { increment: pointsToAdd - ptsRedeemed },
+            total_spend: { increment: new Prisma.Decimal(totalAmount) },
+          },
+        });
+      }
 
       const qn = before.source_quotation_number?.trim();
       const quotationPaidSync = {
@@ -618,6 +643,9 @@ export async function autoCancelUnpaidOrder24hStale(
       const s = order.status ?? "";
       if (s !== "PENDING_PAYMENT" && s !== "PENDING" && s !== "PENDING_INFO") {
         throw new Error(`24h auto-cancel: expected PENDING_PAYMENT|PENDING|PENDING_INFO, got ${s}`);
+      }
+      if ((order.order_origin ?? "").toUpperCase() === "MANUAL") {
+        throw new Error("24h auto-cancel: manual orders require admin cancellation");
       }
       if ((order.payment_status ?? "").toLowerCase() === "paid") {
         throw new Error("24h auto-cancel: payment already confirmed");
