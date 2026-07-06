@@ -80,6 +80,20 @@ export async function POST(req: NextRequest) {
     const totalAmount = roundCheckoutBahtWhole(
       overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0)
     );
+    if (points_redeemed > 0 || points_discount_amount > 0) {
+      if (status !== "COMPLETED" || !customer_profile_id) {
+        return NextResponse.json(
+          { error: "Point redemption requires a completed POS customer order" },
+          { status: 400 }
+        );
+      }
+      if (points_redeemed !== points_discount_amount) {
+        return NextResponse.json(
+          { error: "Point redemption amount must match redeemed points" },
+          { status: 400 }
+        );
+      }
+    }
     const claimToken = status === "PENDING_INFO" ? randomUUID() : null;
     const deductStock =
       status === "COMPLETED" || status === "PENDING_INFO" || status === "PENDING";

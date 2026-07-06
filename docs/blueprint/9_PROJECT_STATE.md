@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-06 (Critical POS customer linkage)
+- **Bug:** POS omni search คืน `pos-{id}` แต่ create order แปลงด้วย `Number(id)` → `customer_profile_id` เป็น `null`; แต้ม/ยอดสะสมไม่อัปเดต และ UI ใช้แต้มอยู่ใน dead branch
+- **Fix:** parse เฉพาะ `pos-{id}`/numeric, ส่ง profile id ที่ถูกต้อง, ย้าย UI ใช้แต้มใต้ลูกค้าที่เลือก, และ API reject redemption ที่ไม่มี completed customer profile
+- **ไฟล์:** `lib/pos-customer-profile-id.ts`, `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
