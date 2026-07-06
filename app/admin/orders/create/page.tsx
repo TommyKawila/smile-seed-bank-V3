@@ -49,6 +49,7 @@ import {
 } from "@/lib/utils/format-order";
 import { resolvePosVariantUnitPrice } from "@/lib/pos-pricing";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
+import { parsePosCustomerProfileId } from "@/lib/pos-customer-profile-id";
 
 type PosLastCopyPack = {
   orderNumber: string;
@@ -286,12 +287,17 @@ export default function CreateOrderPage() {
     ? (selectedCustomer.wholesale_discount_percent ?? 0)
     : 0;
 
-  const availablePoints = selectedCustomer?.points ?? 0;
+  const selectedCustomerProfileId = parsePosCustomerProfileId(selectedCustomer?.id ?? null);
+  const canRedeemPoints =
+    selectedCustomerProfileId != null && customer.payment_method === "CASH";
+  const availablePoints = selectedCustomerProfileId != null ? selectedCustomer?.points ?? 0 : 0;
   const manualDiscountPercentClamped = Math.min(100, Math.max(0, manualDiscountPercent));
   const manualDiscountAmount = roundCheckoutBahtWhole(
     (summary.subtotal * manualDiscountPercentClamped) / 100
   );
-  const maxRedeemable = Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount));
+  const maxRedeemable = canRedeemPoints
+    ? Math.min(availablePoints, Math.floor(summary.total - manualDiscountAmount))
+    : 0;
   const effectivePointsRedeemed = Math.min(
     pointsToRedeem,
     maxRedeemable,
@@ -552,7 +558,7 @@ export default function CreateOrderPage() {
           promotion_rule_id: hasPromotionDiscount ? (activePromotion?.id ?? null) : null,
           promotion_discount_amount: summary.tierDiscount,
           discount_amount: manualDiscountAmount,
-          customer_profile_id: selectedCustomer ? Number(selectedCustomer.id) : null,
+          customer_profile_id: selectedCustomerProfileId,
           customer: {
             full_name: customer.full_name,
             phone: customer.phone,
@@ -961,18 +967,61 @@ export default function CreateOrderPage() {
               <div className="space-y-1.5" ref={customerSearchRef}>
                 <Label className="text-xs">เลือกลูกค้า</Label>
                 {selectedCustomer ? (
-                  <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/25 bg-accent px-3 py-2">
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900">{selectedCustomer.name}</p>
-                      <p className="text-xs text-zinc-500">{selectedCustomer.phone}</p>
-                      <Badge variant="outline" className="mt-0.5 text-[10px]">
-                        {selectedCustomer.tier}
-                        {selectedCustomer.tier === "Wholesale" && ` -${selectedCustomer.wholesale_discount_percent ?? 0}%`}
-                      </Badge>
+                  <div className="space-y-2 rounded-lg border border-primary/25 bg-accent px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium text-zinc-900">{selectedCustomer.name}</p>
+                        <p className="text-xs text-zinc-500">{selectedCustomer.phone}</p>
+                        <Badge variant="outline" className="mt-0.5 text-[10px]">
+                          {selectedCustomer.tier}
+                          {selectedCustomer.tier === "Wholesale" && ` -${selectedCustomer.wholesale_discount_percent ?? 0}%`}
+                        </Badge>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => selectCustomer(null)}>
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => selectCustomer(null)}>
-                      <X className="h-4 w-4" />
-                    </Button>
+                    {selectedCustomerProfileId != null && items.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-xs text-zinc-500">คะแนนคงเหลือ: <span className="font-medium text-zinc-700">{availablePoints}</span> คะแนน</p>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={maxRedeemable}
+                            value={pointsToRedeem || ""}
+                            onChange={(e) => {
+                              const v = e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                              setPointsToRedeem(Math.min(v, maxRedeemable));
+                            }}
+                            placeholder="ใช้คะแนน"
+                            className="h-8 w-24 text-sm"
+                            disabled={!canRedeemPoints || availablePoints === 0}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => setPointsToRedeem(maxRedeemable)}
+                            disabled={!canRedeemPoints || availablePoints === 0}
+                          >
+                            ใช้ทั้งหมด
+                          </Button>
+                          {pointsToRedeem > 0 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 text-zinc-500"
+                              onClick={() => setPointsToRedeem(0)}
+                            >
+                              ล้าง
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="relative">
@@ -997,47 +1046,6 @@ export default function CreateOrderPage() {
                     >
                       <UserPlus className="h-4 w-4" />
                     </Button>
-                    {selectedCustomer && items.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs text-zinc-500">คะแนนคงเหลือ: <span className="font-medium text-zinc-700">{availablePoints}</span> คะแนน</p>
-                        <div className="flex gap-2">
-                          <Input
-                            type="number"
-                            min={0}
-                            max={maxRedeemable}
-                            value={pointsToRedeem || ""}
-                            onChange={(e) => {
-                              const v = e.target.value === "" ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
-                              setPointsToRedeem(Math.min(v, maxRedeemable));
-                            }}
-                            placeholder="ใช้คะแนน"
-                            className="h-8 text-sm w-24"
-                            disabled={availablePoints === 0}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8"
-                            onClick={() => setPointsToRedeem(maxRedeemable)}
-                            disabled={availablePoints === 0}
-                          >
-                            ใช้ทั้งหมด
-                          </Button>
-                          {pointsToRedeem > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 text-zinc-500"
-                              onClick={() => setPointsToRedeem(0)}
-                            >
-                              ล้าง
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
                     {customerSearchOpen && (customerSearch.length >= 2 || customerResults.length > 0) && (
                       <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
                         {customerSearching ? (
