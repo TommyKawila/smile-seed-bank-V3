@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-07 (Critical bug — payment grace auto-cancel race)
+- **แก้:** `autoCancelUnpaidOrder24hStale` re-check `created_at`, slip, และ `payment_grace_until` ใน atomic `updateMany` ก่อน cancel/คืน stock
+- **Validation:** `npx eslint services/orders-service.ts` ผ่าน · `npx tsc --noEmit` ยัง fail จาก baseline unrelated
+- **ไฟล์:** `services/orders-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
