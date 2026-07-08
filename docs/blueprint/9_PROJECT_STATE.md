@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-08 (Critical fix — order payment transition guards)
+- **Bug:** slip/claim/approve writes could resurrect cancelled orders after stock restore.
+- **แก้:** pin pending/unpaid status on slip + claim updates; approve only `AWAITING_VERIFICATION`; clean orphan slip upload on failed claim.
+- **ไฟล์:** `lib/services/order-service.ts`, `services/orders-service.ts`, `app/api/storefront/orders/upload-slip/route.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

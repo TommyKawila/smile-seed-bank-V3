@@ -745,6 +745,26 @@ export async function getCheckoutPendingRestore(
 const SLIP_BUCKET = "payment-slips";
 const ALLOWED_EXT = ["jpg", "jpeg", "png", "webp", "pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const AWAITING_PAYMENT_STATUSES = ["PENDING", "PENDING_PAYMENT", "PENDING_INFO"] as const;
+
+function isAwaitingPaymentStatus(status: string | null): boolean {
+  return AWAITING_PAYMENT_STATUSES.includes(
+    status as (typeof AWAITING_PAYMENT_STATUSES)[number]
+  );
+}
+
+function isUnpaid(paymentStatus: string | null | undefined): boolean {
+  return (paymentStatus ?? "").toLowerCase() !== "paid";
+}
+
+async function removeUploadedSlip(path: string): Promise<void> {
+  try {
+    const supabase = await createAdminClient();
+    await supabase.storage.from(SLIP_BUCKET).remove([path]);
+  } catch (err) {
+    console.error("[order-service] slip cleanup error:", err);
+  }
+}
 
 export interface UploadSlipInput {
   orderNumber: string;
@@ -768,12 +788,15 @@ export async function uploadSlip(
         id: number;
         payment_method: string | null;
         slip_url: string | null;
+        status: string | null;
+        payment_status: string | null;
         total_amount: string;
         customer_name: string | null;
         cust_full: string | null;
       }[]
     >`
-      SELECT o.id, o.payment_method, o.slip_url, o.total_amount::text AS total_amount,
+      SELECT o.id, o.payment_method, o.slip_url, o.status, o.payment_status,
+             o.total_amount::text AS total_amount,
              o.customer_name, c.full_name AS cust_full
       FROM orders o
       LEFT JOIN customers c ON c.id = o.customer_id
@@ -785,6 +808,9 @@ export async function uploadSlip(
     if (order.slip_url) return { data: null, error: "Slip already uploaded" };
     if (order.payment_method !== "TRANSFER") {
       return { data: null, error: "This order does not require slip upload" };
+    }
+    if (!isAwaitingPaymentStatus(order.status) || !isUnpaid(order.payment_status)) {
+      return { data: null, error: "Order already processed" };
     }
 
     // Guard: file type + size
@@ -814,11 +840,21 @@ export async function uploadSlip(
     const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
     const slipUrl = data.publicUrl;
 
-    // Update order status
-    await sql`
-      UPDATE orders SET slip_url = ${slipUrl}, status = 'AWAITING_VERIFICATION'
-      WHERE id = ${order.id}
-    `;
+    const claimed = await prisma.orders.updateMany({
+      where: {
+        id: BigInt(order.id),
+        status: { in: [...AWAITING_PAYMENT_STATUSES] },
+        AND: [
+          { OR: [{ payment_status: null }, { payment_status: { not: "paid" } }] },
+          { OR: [{ slip_url: null }, { slip_url: "" }] },
+        ],
+      },
+      data: { slip_url: slipUrl, status: "AWAITING_VERIFICATION" },
+    });
+    if (claimed.count !== 1) {
+      await removeUploadedSlip(path);
+      return { data: null, error: "Order already processed" };
+    }
 
     const displayName =
       order.customer_name?.trim() || order.cust_full?.trim() || "—";
@@ -1054,8 +1090,15 @@ export async function submitOrderClaim(
     const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
     const slipUrl = data.publicUrl;
 
-    await prisma.orders.update({
-      where: { id: order.id },
+    const claimed = await prisma.orders.updateMany({
+      where: {
+        id: order.id,
+        status: "PENDING_INFO",
+        AND: [
+          { OR: [{ payment_status: null }, { payment_status: { not: "paid" } }] },
+          { OR: [{ slip_url: null }, { slip_url: "" }] },
+        ],
+      },
       data: {
         shipping_name,
         shipping_address,
@@ -1067,6 +1110,10 @@ export async function submitOrderClaim(
         status: "AWAITING_VERIFICATION",
       },
     });
+    if (claimed.count !== 1) {
+      await removeUploadedSlip(path);
+      return { data: null, error: "Order already processed" };
+    }
 
     const displayName = shipping_name;
     const totalFmt = Number(order.total_amount).toLocaleString("th-TH", {
@@ -1175,8 +1222,15 @@ export async function submitAdminClaimOnBehalf(
     const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
     const slipUrl = data.publicUrl;
 
-    await prisma.orders.update({
-      where: { id: order.id },
+    const claimed = await prisma.orders.updateMany({
+      where: {
+        id: order.id,
+        status: order.status,
+        AND: [
+          { OR: [{ payment_status: null }, { payment_status: { not: "paid" } }] },
+          { OR: [{ slip_url: null }, { slip_url: "" }] },
+        ],
+      },
       data: {
         shipping_name,
         shipping_address,
@@ -1188,6 +1242,10 @@ export async function submitAdminClaimOnBehalf(
         status: "AWAITING_VERIFICATION",
       },
     });
+    if (claimed.count !== 1) {
+      await removeUploadedSlip(path);
+      return { data: null, error: "Order already processed" };
+    }
 
     const totalFmt = Number(order.total_amount).toLocaleString("th-TH", {
       maximumFractionDigits: 0,
