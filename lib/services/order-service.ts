@@ -845,7 +845,7 @@ export async function uploadSlip(
         id: BigInt(order.id),
         status: { in: [...AWAITING_PAYMENT_STATUSES] },
         AND: [
-          { OR: [{ payment_status: null }, { payment_status: { not: "paid" } }] },
+          { payment_status: { not: "paid" } },
           { OR: [{ slip_url: null }, { slip_url: "" }] },
         ],
       },
@@ -1095,7 +1095,7 @@ export async function submitOrderClaim(
         id: order.id,
         status: "PENDING_INFO",
         AND: [
-          { OR: [{ payment_status: null }, { payment_status: { not: "paid" } }] },
+          { payment_status: { not: "paid" } },
           { OR: [{ slip_url: null }, { slip_url: "" }] },
         ],
       },
@@ -1227,7 +1227,7 @@ export async function submitAdminClaimOnBehalf(
         id: order.id,
         status: order.status,
         AND: [
-          { OR: [{ payment_status: null }, { payment_status: { not: "paid" } }] },
+          { payment_status: { not: "paid" } },
           { OR: [{ slip_url: null }, { slip_url: "" }] },
         ],
       },
