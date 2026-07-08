@@ -428,7 +428,7 @@ export async function approvePayment(
         where: {
           id: oid,
           status: "AWAITING_VERIFICATION",
-          OR: [{ payment_status: null }, { payment_status: { not: "paid" } }],
+          payment_status: { not: "paid" },
         },
         data: { status: "PENDING", payment_status: "paid", reject_note: null },
       });
