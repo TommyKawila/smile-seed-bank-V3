@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-09 (Critical bug sweep — orders/POS/document dispatch)
+- **แก้:** auto-cancel claim เช็ค `payment_grace_until` แบบ atomic · POS บันทึก line price หลัง brand discount + parse `pos-*` profile ID · server บังคับ point redemption invariants · document dispatch reject body ว่าง
+- **ไฟล์:** `services/orders-service.ts`, `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`, `app/api/admin/business-documents/dispatch/route.ts`, `services/business-document-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

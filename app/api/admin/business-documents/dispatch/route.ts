@@ -11,7 +11,9 @@ const BodySchema = z.object({
   brandName: z.string().min(1).max(120),
   senderName: z.string().min(1).max(120),
   documentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
-  bodyText: z.string().min(1).max(50000),
+  bodyText: z.string().max(50000).refine((value) => value.trim().length > 0, {
+    message: "Document body is required",
+  }),
 });
 
 export async function POST(req: NextRequest) {

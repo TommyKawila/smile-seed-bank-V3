@@ -1,5 +1,4 @@
 import { getSiteOrigin } from "@/lib/get-url";
-import { buildBusinessDocumentPlainText } from "@/lib/business-document-template";
 import { buildBusinessDocumentEmailHtml } from "@/lib/email-business-document-html";
 import { BUSINESS_DOCUMENT_SUBJECT } from "@/types/business-document";
 import type { BusinessDocumentDispatchInput } from "@/types/business-document";
@@ -31,8 +30,9 @@ export async function sendBusinessDocumentEmail(
   const to = input.recipientEmail.trim();
   if (!to) return { success: false, error: "Recipient email is required" };
 
-  const { recipientEmail: _email, bodyText, ...fields } = input;
-  const plain = bodyText.trim() || buildBusinessDocumentPlainText(fields);
+  const { bodyText } = input;
+  const plain = bodyText.trim();
+  if (!plain) return { success: false, error: "Document body is required" };
   const logoUrl = await fetchLogoUrl();
   const html = buildBusinessDocumentEmailHtml(plain, logoUrl);
 
