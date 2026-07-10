@@ -1076,7 +1076,7 @@ export async function submitOrderClaim(
         status: "PENDING_INFO",
         AND: [
           { OR: [{ slip_url: null }, { slip_url: "" }] },
-          { OR: [{ payment_status: null }, { payment_status: { not: "paid" } }] },
+          { NOT: { payment_status: "paid" } },
         ],
       },
       data: {
@@ -1207,7 +1207,7 @@ export async function submitAdminClaimOnBehalf(
         status: { in: ["PENDING", "PENDING_INFO"] },
         AND: [
           { OR: [{ slip_url: null }, { slip_url: "" }] },
-          { OR: [{ payment_status: null }, { payment_status: { not: "paid" } }] },
+          { NOT: { payment_status: "paid" } },
         ],
       },
       data: {

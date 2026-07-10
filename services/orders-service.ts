@@ -25,8 +25,8 @@ import type { AdminOrderLineItem } from "@/types/admin-order";
 export type { AdminOrderLineItem };
 
 const UNPAID_PAYMENT_STATUS_WHERE = {
-  OR: [{ payment_status: null }, { payment_status: { not: "paid" } }],
-} as const;
+  NOT: { payment_status: "paid" },
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types and row normalization
