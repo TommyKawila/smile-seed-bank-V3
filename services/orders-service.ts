@@ -24,6 +24,10 @@ import type { AdminOrderLineItem } from "@/types/admin-order";
 
 export type { AdminOrderLineItem };
 
+const UNPAID_PAYMENT_STATUS_WHERE = {
+  NOT: { payment_status: "paid" },
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types and row normalization
 // ─────────────────────────────────────────────────────────────────────────────
@@ -424,10 +428,18 @@ export async function approvePayment(
         throw new Error("Order not found");
       }
 
-      const order = await tx.orders.update({
-        where: { id: oid },
+      const claimed = await tx.orders.updateMany({
+        where: {
+          id: oid,
+          status: "AWAITING_VERIFICATION",
+          ...UNPAID_PAYMENT_STATUS_WHERE,
+        },
         data: { status: "PENDING", payment_status: "paid", reject_note: null },
       });
+      if (claimed.count !== 1) {
+        throw new Error("Cannot approve payment — order is not awaiting verification or was concurrently updated");
+      }
+      const order = await tx.orders.findUniqueOrThrow({ where: { id: oid } });
 
       // TODO: Loyalty — accrue points from `order.total_amount` / tier rules (100 THB = 1 pt per blueprint); run inside this transaction when implemented.
 

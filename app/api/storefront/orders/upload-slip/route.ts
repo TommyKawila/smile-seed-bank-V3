@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
       const status =
         error === "Order not found" ? 404
         : error === "Slip already uploaded" ? 400
+        : error === "Order already processed" ? 400
         : error === "This order does not require slip upload" ? 400
         : 500;
       return NextResponse.json({ error }, { status });

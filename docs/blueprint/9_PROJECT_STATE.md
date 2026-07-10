@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-10 (Critical — POS points + order payment race guards)
+- **แก้:** POS loyalty ใช้ `pos-*`/numeric customer id เท่านั้น + API reject การแลกแต้มถ้าไม่มี POS customer / ไม่ใช่ completed / แต้มไม่ตรงส่วนลด
+- **แก้:** slip upload / claim / approve payment pin สถานะ unpaid ที่ eligible ก่อนเขียน ป้องกัน cancelled order ถูกฟื้นหลังคืน stock
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`, `app/api/storefront/orders/upload-slip/route.ts`, `lib/services/order-service.ts`, `services/orders-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
