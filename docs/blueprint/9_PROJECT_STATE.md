@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-11 (Critical bug — payment grace auto-cancel race)
+- **แก้:** atomic auto-cancel claim ผูก `created_at` cutoff + `payment_grace_until <= asOf/null` เพื่อไม่ cancel order ที่แอดมินเพิ่ง extend grace พร้อมคืน stock จาก race condition
+- **ไฟล์:** `services/orders-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
