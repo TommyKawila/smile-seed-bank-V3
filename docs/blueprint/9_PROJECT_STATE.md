@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-13 (Critical bug automation — POS loyalty + payment grace race)
+- **แก้:** POS submit แปลง `pos-*` customer id เป็น profile id ก่อนส่ง server · ส่ง unit price หลัง brand discount ให้ `order_items` ตรงกับยอดชำระ
+- **Guard:** `/api/admin/orders/simple` reject point redemption ที่ไม่มี POS profile / ไม่ใช่ COMPLETED / point discount ไม่เท่าคะแนนที่แลก
+- **Race:** `autoCancelUnpaidOrder24hStale` atomic claim เช็ค `created_at` + `payment_grace_until` ใน `updateMany` เพื่อไม่ cancel order ที่เพิ่งถูกต่อ grace
+- **ไฟล์:** `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`, `services/orders-service.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
