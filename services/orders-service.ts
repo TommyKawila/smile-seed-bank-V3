@@ -15,6 +15,7 @@ import { sendLineFlexNotification } from "@/lib/order-line-notifications";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import { createOrderLog } from "@/lib/order-logs";
 import {
+  PAYMENT_AUTO_CANCEL_MS,
   PAYMENT_GRACE_HOUR_OPTIONS,
   shouldAutoCancelUnpaidOrder,
   type PaymentGraceHours,
@@ -634,15 +635,20 @@ export async function autoCancelUnpaidOrder24hStale(
         throw new Error("24h auto-cancel: payment grace active or not past deadline");
       }
       const rejectNote = `${AUTO_CANCEL_24H_NOTE}${REJECT_STOCK_NOTE_SUFFIX}`;
+      const autoCancelCreatedBefore = new Date(asOf.getTime() - PAYMENT_AUTO_CANCEL_MS);
       const claimed = await tx.orders.updateMany({
         where: {
           id: oid,
           status: order.status ?? "",
           NOT: { status: { in: ["CANCELLED", "VOIDED"] } },
           payment_status: order.payment_status ?? "pending",
-          ...(order.slip_url?.trim()
-            ? { slip_url: order.slip_url }
-            : { OR: [{ slip_url: null }, { slip_url: "" }] }),
+          created_at: { lte: autoCancelCreatedBefore },
+          AND: [
+            { OR: [{ payment_grace_until: null }, { payment_grace_until: { lte: asOf } }] },
+            order.slip_url?.trim()
+              ? { slip_url: order.slip_url }
+              : { OR: [{ slip_url: null }, { slip_url: "" }] },
+          ],
         },
         data: { status: "CANCELLED", reject_note: rejectNote },
       });
