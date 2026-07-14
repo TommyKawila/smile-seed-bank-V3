@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { assertAdmin } from "@/lib/auth-utils";
 import {
   clearOrderPaymentGrace,
   extendOrderPaymentGrace,
@@ -29,6 +30,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await assertAdmin();
+
     const { id } = await params;
     const orderId = parseInt(id, 10);
     if (Number.isNaN(orderId)) {
@@ -50,7 +53,7 @@ export async function PATCH(
         const lower = error.toLowerCase();
         const status = lower.includes("not found")
           ? 404
-          : lower.includes("no active")
+          : lower.includes("no active") || lower.includes("payment grace:")
             ? 400
             : 500;
         return NextResponse.json({ error }, { status });
@@ -72,6 +75,8 @@ export async function PATCH(
     });
   } catch (err) {
     console.error("PATCH /api/admin/orders/[id]/payment-grace", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    const status = message.toLowerCase().includes("unauthorized") ? 401 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
