@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-14 (Critical integrity fixes)
+- **Payment:** guard slip/claim/approve transitions and payment-grace auto-cancel races to prevent cancelled orders being revived after stock restore.
+- **POS:** persist brand-discounted line prices, parse `pos-*` customer IDs, and reject invalid point-redemption payloads.
+- **ไฟล์:** `lib/services/order-service.ts`, `services/orders-service.ts`, `app/api/storefront/orders/upload-slip/route.ts`, `app/api/admin/orders/[id]/payment-grace/route.ts`, `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`
+
 ### บันทึกการทำงาน — 2026-07-08 (Critical fix — order payment transition guards)
 - **Bug:** slip/claim/approve writes could resurrect cancelled orders after stock restore.
 - **แก้:** pin pending/unpaid status on slip + claim updates; approve only `AWAITING_VERIFICATION`; clean orphan slip upload on failed claim.
