@@ -745,6 +745,7 @@ export async function getCheckoutPendingRestore(
 const SLIP_BUCKET = "payment-slips";
 const ALLOWED_EXT = ["jpg", "jpeg", "png", "webp", "pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const SLIP_UPLOAD_STATUSES = ["PENDING", "PENDING_PAYMENT"] as const;
 
 export interface UploadSlipInput {
   orderNumber: string;
@@ -767,13 +768,16 @@ export async function uploadSlip(
       {
         id: number;
         payment_method: string | null;
+        payment_status: string | null;
+        status: string | null;
         slip_url: string | null;
         total_amount: string;
         customer_name: string | null;
         cust_full: string | null;
       }[]
     >`
-      SELECT o.id, o.payment_method, o.slip_url, o.total_amount::text AS total_amount,
+      SELECT o.id, o.payment_method, o.payment_status, o.status, o.slip_url,
+             o.total_amount::text AS total_amount,
              o.customer_name, c.full_name AS cust_full
       FROM orders o
       LEFT JOIN customers c ON c.id = o.customer_id
@@ -785,6 +789,14 @@ export async function uploadSlip(
     if (order.slip_url) return { data: null, error: "Slip already uploaded" };
     if (order.payment_method !== "TRANSFER") {
       return { data: null, error: "This order does not require slip upload" };
+    }
+    if (
+      !SLIP_UPLOAD_STATUSES.includes(
+        (order.status ?? "") as (typeof SLIP_UPLOAD_STATUSES)[number]
+      ) ||
+      (order.payment_status ?? "").toLowerCase() === "paid"
+    ) {
+      return { data: null, error: "Order is not awaiting payment" };
     }
 
     // Guard: file type + size
@@ -815,10 +827,19 @@ export async function uploadSlip(
     const slipUrl = data.publicUrl;
 
     // Update order status
-    await sql`
+    const updated = await sql<{ id: number }[]>`
       UPDATE orders SET slip_url = ${slipUrl}, status = 'AWAITING_VERIFICATION'
       WHERE id = ${order.id}
+        AND payment_method = 'TRANSFER'
+        AND LOWER(COALESCE(payment_status, 'pending')) <> 'paid'
+        AND status IN ('PENDING', 'PENDING_PAYMENT')
+        AND (slip_url IS NULL OR BTRIM(slip_url) = '')
+      RETURNING id
     `;
+    if (updated.length !== 1) {
+      await supabase.storage.from(SLIP_BUCKET).remove([path]);
+      return { data: null, error: "Order is no longer awaiting payment" };
+    }
 
     const displayName =
       order.customer_name?.trim() || order.cust_full?.trim() || "—";
@@ -1019,12 +1040,16 @@ export async function submitOrderClaim(
         id: true,
         order_number: true,
         status: true,
+        payment_status: true,
         slip_url: true,
         total_amount: true,
       },
     });
     if (!order) return { data: null, error: "Order not found" };
     if (order.status !== "PENDING_INFO") {
+      return { data: null, error: "Order already processed" };
+    }
+    if ((order.payment_status ?? "").toLowerCase() === "paid") {
       return { data: null, error: "Order already processed" };
     }
     if (order.slip_url) return { data: null, error: "Slip already uploaded" };
@@ -1054,8 +1079,13 @@ export async function submitOrderClaim(
     const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
     const slipUrl = data.publicUrl;
 
-    await prisma.orders.update({
-      where: { id: order.id },
+    const claimed = await prisma.orders.updateMany({
+      where: {
+        id: order.id,
+        status: order.status,
+        payment_status: order.payment_status,
+        slip_url: order.slip_url,
+      },
       data: {
         shipping_name,
         shipping_address,
@@ -1067,6 +1097,10 @@ export async function submitOrderClaim(
         status: "AWAITING_VERIFICATION",
       },
     });
+    if (claimed.count !== 1) {
+      await supabase.storage.from(SLIP_BUCKET).remove([path]);
+      return { data: null, error: "Order already processed" };
+    }
 
     const displayName = shipping_name;
     const totalFmt = Number(order.total_amount).toLocaleString("th-TH", {
@@ -1140,12 +1174,16 @@ export async function submitAdminClaimOnBehalf(
         id: true,
         order_number: true,
         status: true,
+        payment_status: true,
         slip_url: true,
         total_amount: true,
       },
     });
     if (!order) return { data: null, error: "Order not found" };
     if (order.status !== "PENDING_INFO" && order.status !== "PENDING") {
+      return { data: null, error: "Order is not awaiting payment (PENDING / PENDING_INFO)" };
+    }
+    if ((order.payment_status ?? "").toLowerCase() === "paid") {
       return { data: null, error: "Order is not awaiting payment (PENDING / PENDING_INFO)" };
     }
     if (order.slip_url) return { data: null, error: "Slip already uploaded" };
@@ -1175,8 +1213,13 @@ export async function submitAdminClaimOnBehalf(
     const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
     const slipUrl = data.publicUrl;
 
-    await prisma.orders.update({
-      where: { id: order.id },
+    const claimed = await prisma.orders.updateMany({
+      where: {
+        id: order.id,
+        status: order.status,
+        payment_status: order.payment_status,
+        slip_url: order.slip_url,
+      },
       data: {
         shipping_name,
         shipping_address,
@@ -1188,6 +1231,10 @@ export async function submitAdminClaimOnBehalf(
         status: "AWAITING_VERIFICATION",
       },
     });
+    if (claimed.count !== 1) {
+      await supabase.storage.from(SLIP_BUCKET).remove([path]);
+      return { data: null, error: "Order is no longer awaiting payment" };
+    }
 
     const totalFmt = Number(order.total_amount).toLocaleString("th-TH", {
       maximumFractionDigits: 0,
