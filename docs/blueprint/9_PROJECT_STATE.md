@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-16 (Payment lifecycle race guards)
+- **แก้:** cron auto-cancel recheck อายุออเดอร์ + payment grace แบบ atomic; approve/slip/claim เปลี่ยนสถานะเฉพาะออเดอร์ unpaid ที่ยัง eligible
+- **ป้องกัน:** ออเดอร์ที่ยกเลิกและคืนสต็อกแล้วถูกชุบกลับเป็น paid/fulfillable
+- **ไฟล์:** `services/orders-service.ts`, `lib/services/order-service.ts`, `app/api/storefront/orders/upload-slip/route.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
