@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-17 (Critical order and catalog integrity)
+- **แก้:** payment-grace/auto-cancel ใช้ atomic guards; POS บันทึกราคาหลัง brand discount, ผูก loyalty ID ถูกต้อง, รองรับ gift variants; pack filter scan ก่อน pagination
+- **ไฟล์:** `services/orders-service.ts`, `app/api/admin/orders/[id]/payment-grace/route.ts`, `app/admin/orders/create/page.tsx`, `app/api/admin/orders/simple/route.ts`, `lib/shop-attribute-filters.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split
