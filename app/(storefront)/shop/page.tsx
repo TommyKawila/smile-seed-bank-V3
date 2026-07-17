@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { ShopSkeleton } from "@/components/skeletons/ShopSkeleton";
 import { ShopPageClient } from "@/app/(storefront)/shop/ShopPageClient";
 import { getActiveProducts, hasStorefrontClearanceProducts } from "@/services/product-service";
-import { resolveBreederBySlugFromCache, resolveBreederIdFromSlugCached } from "@/services/breeder-slug-resolve-service";
+import { resolveBreederFromShopParamCached } from "@/services/breeder-slug-resolve-service";
 import { bigintToJson } from "@/lib/bigint-json";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { VIEWPORT_HINT_COOKIE } from "@/lib/viewport-hint-cookie";
@@ -41,12 +41,16 @@ export default async function ShopPage({
 }) {
   const resolvedParams = params ? await params : undefined;
   const sp = searchParams ? await searchParams : undefined;
-  const breederSlug = firstParam(resolvedParams?.breederSlug);
-  const [breederId, initialBreeder, initialLimit] = await Promise.all([
-    resolveBreederIdFromSlugCached(breederSlug),
-    breederSlug ? resolveBreederBySlugFromCache(breederSlug) : Promise.resolve(null),
+  const breederSlugFromRoute = firstParam(resolvedParams?.breederSlug);
+  const breederSlugFromQuery = firstParam(sp?.breeder)?.trim() || undefined;
+  const breederShopParam = breederSlugFromRoute ?? breederSlugFromQuery;
+  const [initialBreeder, initialLimit] = await Promise.all([
+    breederShopParam
+      ? resolveBreederFromShopParamCached(breederShopParam)
+      : Promise.resolve(null),
     shopInitialProductLimit(),
   ]);
+  const breederId = initialBreeder?.id;
   const category = firstParam(sp?.category)?.trim() || "";
   const search = firstParam(sp?.q)?.trim() || "";
   const filterRaw = firstParam(sp?.filter)?.trim() || "";

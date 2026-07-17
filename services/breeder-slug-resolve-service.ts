@@ -66,9 +66,27 @@ export async function resolveBreederBySlugFromCache(
   return breeder;
 }
 
+/** Slug (preferred) or legacy numeric `?breeder=` id — single SSR lookup. */
+export async function resolveBreederFromShopParamCached(
+  param: string | undefined
+): Promise<Breeder | null> {
+  const raw = decodeURIComponent(param ?? "").trim();
+  if (!raw) return null;
+  const index = await getActiveBreederSlugIndex();
+  if (/^\d+$/.test(raw)) {
+    const id = Number(raw);
+    if (!Number.isSafeInteger(id)) return null;
+    const match = index.find((b) => b.id === id);
+    if (!match) return null;
+    const { slug: _slug, ...breeder } = match;
+    return breeder;
+  }
+  return resolveBreederBySlugFromCache(raw);
+}
+
 export async function resolveBreederIdFromSlugCached(
   slug: string | undefined
 ): Promise<number | undefined> {
-  const breeder = await resolveBreederBySlugFromCache(slug);
+  const breeder = await resolveBreederFromShopParamCached(slug);
   return breeder?.id;
 }

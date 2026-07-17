@@ -12,6 +12,7 @@ import {
   type SectionTitle,
 } from "@/lib/homepage-section-title";
 import { cn } from "@/lib/utils";
+import { seedsBreederHref } from "@/lib/breeder-slug";
 import { BREEDER_SHOWCASE_LIMIT } from "@/lib/constants";
 import {
   fetchBreederShowcase,
@@ -105,7 +106,7 @@ export default function BreederShowcase({
             {rows.map((b) => (
               <li key={b.id} className="w-[9.25rem] shrink-0 snap-start md:w-auto md:min-w-0">
                 <Link
-                  href={`/shop?breeder=${encodeURIComponent(b.slug)}`}
+                  href={seedsBreederHref(b)}
                   className="group flex h-full flex-col rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm transition hover:border-emerald-200/90 hover:shadow-md"
                 >
                   <div className="relative mx-auto flex h-20 w-full items-center justify-center">

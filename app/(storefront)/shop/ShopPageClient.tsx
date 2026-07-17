@@ -371,7 +371,9 @@ export function ShopPageClient({
   useEffect(() => {
     if (deferFirstDupClientCatalog.current) {
       deferFirstDupClientCatalog.current = false;
-      if (initialProducts.length > 0) return;
+      if (initialProducts.length > 0) {
+        if (!breederParam?.trim() || initialBreeder) return;
+      }
     }
     let cancelled = false;
     void (async () => {
@@ -443,6 +445,8 @@ export function ShopPageClient({
     yieldQuickParam,
     priceMin,
     priceMax,
+    initialBreeder,
+    initialProducts.length,
   ]);
 
   const priceCap = useMemo(
@@ -459,11 +463,9 @@ export function ShopPageClient({
   const [showBackToTop, setShowBackToTop] = useState(false);
   // Breeder selected via URL param — slug preferred; numeric id still supported
   const urlBreeder = useMemo(() => {
-    if (breederParam && initialBreeder) {
-      const fromClient = resolveBreederFromShopParam(allBreeders, breederParam);
-      return fromClient ?? initialBreeder;
-    }
-    return breederParam ? resolveBreederFromShopParam(allBreeders, breederParam) : null;
+    if (!breederParam) return null;
+    const fromClient = resolveBreederFromShopParam(allBreeders, breederParam);
+    return fromClient ?? initialBreeder ?? null;
   }, [breederParam, allBreeders, initialBreeder]);
 
   useEffect(() => {
