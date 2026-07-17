@@ -114,8 +114,19 @@ export function LineLiffEntryClient({ liffId, nextPath }: Props) {
         <p className="mt-2 text-sm text-zinc-600">
           {isOutsideLine
             ? "กรุณากดปุ่มจากแชท Smile Seed Bank ในแอป LINE"
-            : "ลองใหม่อีกครั้ง หรือเปิดร้านในเบราว์เซอร์"}
+            : errorCode === "missing_token"
+              ? "LIFF ต้องเปิด scope openid + profile ใน LINE Developers"
+              : errorCode === "invalid_token"
+                ? "LINE channel ID ไม่ตรงกับ LIFF app (ตรวจ LINE_LOGIN_CHANNEL_ID)"
+                : errorCode === "sync_failed"
+                  ? "สร้าง/ซิงก์บัญชีไม่สำเร็จ (ตรวจ SUPABASE_SERVICE_ROLE_KEY บน Vercel)"
+                  : errorCode === "otp_failed" || errorCode === "link_failed"
+                    ? "ตั้ง session ไม่สำเร็จ — ลองใหม่หรือเปิดในเบราว์เซอร์"
+                    : "ลองใหม่อีกครั้ง หรือเปิดร้านในเบราว์เซอร์"}
         </p>
+        {!isOutsideLine && errorCode !== "unknown" ? (
+          <p className="mt-2 font-mono text-xs text-zinc-400">code: {errorCode}</p>
+        ) : null}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
           <Button type="button" variant="outline" onClick={() => window.location.reload()}>
             ลองใหม่

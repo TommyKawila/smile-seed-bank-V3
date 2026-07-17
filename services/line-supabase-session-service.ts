@@ -1,9 +1,12 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database.types";
 
 export async function establishSupabaseSessionForEmail(
-  email: string
+  email: string,
+  supabaseClient?: SupabaseClient<Database>
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const normalized = email.trim().toLowerCase();
   if (!normalized) {
@@ -27,7 +30,7 @@ export async function establishSupabaseSessionForEmail(
     return { ok: false, error: "link_empty" };
   }
 
-  const supabase = await createClient();
+  const supabase = supabaseClient ?? (await createClient());
   const { error: otpErr } = await supabase.auth.verifyOtp({
     token_hash: tokenHash,
     type: "magiclink",
