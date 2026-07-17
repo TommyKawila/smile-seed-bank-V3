@@ -26,9 +26,9 @@ export const DEFAULT_HERO_BANNERS_FALLBACK: HeroBanner[] = [
   {
     id: "vault-shop",
     desktopSrc:
-      "https://images.unsplash.com/photo-1548776478-23bf51fa65c8?auto=format&fit=crop&w=1920&h=700&q=85",
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1920&h=700&q=85",
     mobileSrc:
-      "https://images.unsplash.com/photo-1548776478-23bf51fa65c8?auto=format&fit=crop&w=900&h=1125&q=85",
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&h=1125&q=85",
     altTh: "Browse the genetic vault — Smile Seed Bank",
     altEn: "Browse the genetic vault — Smile Seed Bank",
     link: "/seeds",
