@@ -4,6 +4,18 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-18 (PSI `/seeds` 74 — LCP resource load delay)
+- **Root cause:** `CatalogLcpPreload` + grid อยู่ใน Suspense เดียวกับ `useSearchParams` → SSR = `ShopSkeleton` ไม่มี LCP img → delay ~3.7s
+- **Fix:** preload นอก Suspense · `ShopCatalogLcpFallback` ใส่ `<img>` LCP URL เดียวกับ ProductCard · `PRODUCT_LISTING_THUMB_W` 384→320 · `ShopSkeleton` V4 dark
+- **Pending บอส:** deploy → View Source ตรวจ preload+img · PSI 3-run median `/seeds` · อัป `6_PERF_BUDGETS.md` เมื่อ ≥90
+- **ไฟล์:** `shop/page.tsx`, `ShopCatalogLcpFallback.tsx`, `CatalogLcpPreload.tsx`, `storefront-image-urls.ts`, `ShopSkeleton.tsx`
+
+### บันทึกการทำงาน — 2026-07-18 (Mobile catalog filter sheets → V4 dark)
+- **Root cause:** Radix Sheet portal อยู่นอก `.storefront-v4` → CSS vars กลับเป็น light `:root`
+- **Fix:** ใส่ `storefront-v4` บน `ShopPriceFilterBottomSheet` + `ShopFilterMobileSheet` · body/footer dark glass · chip inactive `bg-card/70`
+- **Bottom bar:** sticky price/filter buttons ตัด `ring-white` · outline glass + solid primary
+- **ไฟล์:** `ShopPriceFilter.tsx`, `FilterSidebar.tsx`, `CatalogSidebarQuickFilters.tsx`, `ShopPageClient.tsx`
+
 ### บันทึกการทำงาน — 2026-07-18 (PSI `/seeds` 80→≥90 — catalog TTFB + images + LCP)
 - **Baseline (lab):** `/seeds` mobile Perf **80** · LCP **4.1s** · TTFB **~1.86s** · breeder logo overserve ~329 KiB
 - **TTFB:** `services/storefront-catalog-cache-service.ts` — `unstable_cache` default catalog bundle (products + count + clearance) · revalidate **120s** · tag `storefront-catalog`

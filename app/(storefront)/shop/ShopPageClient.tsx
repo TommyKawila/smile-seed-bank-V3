@@ -1320,14 +1320,14 @@ export function ShopPageClient({
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 lg:hidden">
         <div
-          className="pointer-events-none h-10 bg-gradient-to-t from-background from-40% via-background/90 to-transparent"
+          className="pointer-events-none h-10 bg-gradient-to-t from-background from-40% via-background/85 to-transparent"
           aria-hidden
         />
-        <div className="pointer-events-auto border-t border-border/90 bg-card/98 px-4 py-3 shadow-[0_-8px_32px_rgba(18,70,62,0.14)] backdrop-blur-lg pb-[max(0.875rem,env(safe-area-inset-bottom))]">
+        <div className="pointer-events-auto border-t border-border bg-card/90 px-4 py-3 shadow-[0_-10px_36px_rgba(0,0,0,0.55)] backdrop-blur-xl pb-[max(0.875rem,env(safe-area-inset-bottom))]">
           <div className="mx-auto flex w-full max-w-md gap-3">
             <Button
               type="button"
-              className="h-14 min-h-12 flex-1 gap-2 rounded-2xl border-2 border-primary/25 bg-secondary text-base font-bold text-primary shadow-md ring-1 ring-white/80 transition-transform active:scale-[0.98] hover:bg-secondary/90"
+              className="h-14 min-h-12 flex-1 gap-2 rounded-2xl border border-primary/40 bg-card/80 text-base font-bold text-primary shadow-sm surface-glass transition-transform active:scale-[0.98] hover:border-primary/60 hover:bg-primary/10"
               onClick={() => setShowPriceSheet(true)}
             >
               <Tag className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
@@ -1335,7 +1335,7 @@ export function ShopPageClient({
             </Button>
             <Button
               type="button"
-              className="h-14 min-h-12 flex-1 gap-2 rounded-2xl border-2 border-primary/80 bg-primary px-4 text-base font-bold text-primary-foreground shadow-[0_6px_20px_rgba(18,70,62,0.35)] ring-2 ring-primary/20 transition-transform active:scale-[0.98] hover:bg-primary/90"
+              className="h-14 min-h-12 flex-1 gap-2 rounded-2xl border border-primary/50 bg-primary px-4 text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-[0.98] hover:bg-primary/90"
               onClick={() => setShowFilter(true)}
             >
               <SlidersHorizontal className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />

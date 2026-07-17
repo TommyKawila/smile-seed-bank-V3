@@ -13,7 +13,8 @@ export const HERO_DESKTOP_RENDER_W = 640;
 export const PRODUCT_GALLERY_MAIN_W = 828;
 export const PRODUCT_GALLERY_THUMB_W = 160;
 export const PRODUCT_GALLERY_LIGHTBOX_W = 1200;
-export const PRODUCT_LISTING_THUMB_W = 384;
+/** Mobile catalog card ~315 CSS px; 320 covers @1x + slight DPR headroom. */
+export const PRODUCT_LISTING_THUMB_W = 320;
 /** 32px display @2x — card / nav breeder badges. */
 export const BREEDER_LOGO_W = 64;
 

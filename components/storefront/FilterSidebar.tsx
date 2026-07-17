@@ -487,16 +487,16 @@ export function ShopFilterMobileSheet({
       <SheetContent
         id="shop-filters"
         side="bottom"
-        className="flex max-h-[92dvh] w-full flex-col gap-0 rounded-t-2xl border-t-0 bg-gradient-to-b from-secondary/20 via-background to-background p-0 shadow-2xl [&>button]:hidden"
+        className="storefront-v4 flex max-h-[92dvh] w-full flex-col gap-0 rounded-t-2xl border-t border-border bg-card p-0 text-foreground shadow-2xl shadow-black/50 [&>button]:hidden"
       >
-        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-primary/25" aria-hidden />
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-primary/40" aria-hidden />
 
-        <div className="relative shrink-0 overflow-hidden rounded-t-2xl bg-gradient-to-br from-primary via-primary to-primary/85 px-4 pb-4 pt-3 text-primary-foreground shadow-md">
-          <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-secondary/30 blur-2xl" />
+        <div className="relative shrink-0 overflow-hidden border-b border-border bg-gradient-to-br from-primary/90 via-primary to-primary/70 px-4 pb-4 pt-3 text-primary-foreground">
+          <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-emerald-300/20 blur-2xl" />
           <div className="relative flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="mb-1 flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-black/20 backdrop-blur-sm">
                   <SlidersHorizontal className="h-5 w-5" strokeWidth={2} aria-hidden />
                 </span>
                 <SheetTitle className="text-left text-lg font-bold tracking-tight text-primary-foreground">
@@ -510,7 +510,7 @@ export function ShopFilterMobileSheet({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="shrink-0 rounded-full bg-white/15 p-2.5 text-primary-foreground transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              className="shrink-0 rounded-full border border-white/20 bg-black/20 p-2.5 text-primary-foreground transition-colors hover:bg-black/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label={t("ปิด", "Close")}
             >
               <X className="h-5 w-5" strokeWidth={2.5} />
@@ -518,17 +518,17 @@ export function ShopFilterMobileSheet({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background px-4 py-4 [-webkit-overflow-scrolling:touch]">
           <div className="mb-5">
             <CatalogSidebarQuickFilters {...quickFilters} presentation="mobile" />
           </div>
           <FilterSidebarContent t={t} counts={counts} presentation="mobile" />
         </div>
 
-        <div className="shrink-0 border-t border-primary/10 bg-background/98 px-4 py-4 shadow-[0_-8px_24px_rgba(18,70,62,0.1)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="shrink-0 border-t border-border bg-card/95 px-4 py-4 shadow-[0_-8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
-            className="mb-2.5 h-14 w-full rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
+            className="mb-2.5 h-14 w-full rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
             onClick={() => onOpenChange(false)}
           >
             {t(`ดูสินค้า ${resultCount} รายการ`, `View ${resultCount} products`)}
@@ -536,7 +536,7 @@ export function ShopFilterMobileSheet({
           <Button
             type="button"
             variant="ghost"
-            className="h-11 w-full rounded-xl text-sm font-semibold text-primary/80 hover:bg-primary/5 hover:text-primary"
+            className="h-11 w-full rounded-xl text-sm font-semibold text-foreground/70 hover:bg-primary/10 hover:text-primary"
             onClick={() => onClearAll()}
           >
             {t("ล้างตัวกรองทั้งหมด", "Clear all filters")}

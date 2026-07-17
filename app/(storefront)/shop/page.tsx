@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
-import { ShopSkeleton } from "@/components/skeletons/ShopSkeleton";
 import { ShopPageClient } from "@/app/(storefront)/shop/ShopPageClient";
 import { CatalogLcpPreload } from "@/components/storefront/CatalogLcpPreload";
+import { ShopCatalogLcpFallback } from "@/components/storefront/ShopCatalogLcpFallback";
 import { getActiveProducts } from "@/services/product-service";
 import { resolveBreederFromShopParamCached } from "@/services/breeder-slug-resolve-service";
 import {
@@ -160,23 +160,26 @@ export default async function ShopPage({
       initialCatalogUseCursor && lastRow?.id != null ? Number(lastRow.id) : null;
   }
 
-  const lcpHref = getListingThumbnailUrl(initialProducts[0] ?? {});
+  const firstProduct = initialProducts[0] ?? null;
+  const lcpHref = getListingThumbnailUrl(firstProduct ?? {});
 
   return (
-    <Suspense fallback={<ShopSkeleton />}>
+    <>
       <CatalogLcpPreload href={lcpHref} />
-      <ShopPageClient
-        initialProducts={initialProducts}
-        initialCatalogTotal={initialCatalogTotal}
-        initialCatalogNextCursor={
-          Number.isFinite(initialCatalogNextCursor ?? NaN)
-            ? initialCatalogNextCursor
-            : null
-        }
-        initialCatalogUseCursor={initialCatalogUseCursor}
-        showClearanceFilter={initialShowClearanceFilter}
-        initialBreeder={initialBreeder}
-      />
-    </Suspense>
+      <Suspense fallback={<ShopCatalogLcpFallback product={firstProduct} />}>
+        <ShopPageClient
+          initialProducts={initialProducts}
+          initialCatalogTotal={initialCatalogTotal}
+          initialCatalogNextCursor={
+            Number.isFinite(initialCatalogNextCursor ?? NaN)
+              ? initialCatalogNextCursor
+              : null
+          }
+          initialCatalogUseCursor={initialCatalogUseCursor}
+          showClearanceFilter={initialShowClearanceFilter}
+          initialBreeder={initialBreeder}
+        />
+      </Suspense>
+    </>
   );
 }

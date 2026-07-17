@@ -74,7 +74,7 @@ function QuickPill({
         presentation === "mobile" ? "min-h-12" : "min-h-11",
         active
           ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25"
-          : "border-primary/15 bg-card text-primary hover:border-primary/35 hover:bg-primary/[0.06]"
+          : "border-border bg-card/70 text-foreground/85 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
       )}
     >
       {iconSlug ? (
