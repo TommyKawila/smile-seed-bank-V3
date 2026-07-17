@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-18 (PSI `/seeds` 72 — empty SSR catalog)
+- **Root cause (prod HTML):** `initialProducts: []` — `unstable_cache` เรียก `getActiveProducts`→`cookies()` ล้ม แล้ว cache ค่าว่าง 120s → ไม่มี LCP img จน client fetch (~5s delay)
+- **Fix:** `access: "service_role"` ใน `getActiveProducts` · cache bundle v2 ใช้ service-role · ห้าม cache empty (throw + uncached retry) · `shop/page.tsx` last-resort service-role fill
+- **Pending บอส:** deploy → curl ตรวจ `"initialProducts":[{` + preload · PSI 3-run median · อัป `6_PERF_BUDGETS.md` เมื่อ ≥90
+- **ไฟล์:** `product-service.ts`, `storefront-catalog-cache-service.ts`, `shop/page.tsx`
+
 ### บันทึกการทำงาน — 2026-07-18 (PSI `/seeds` 74 — LCP resource load delay)
 - **Root cause:** `CatalogLcpPreload` + grid อยู่ใน Suspense เดียวกับ `useSearchParams` → SSR = `ShopSkeleton` ไม่มี LCP img → delay ~3.7s
 - **Fix:** preload นอก Suspense · `ShopCatalogLcpFallback` ใส่ `<img>` LCP URL เดียวกับ ProductCard · `PRODUCT_LISTING_THUMB_W` 384→320 · `ShopSkeleton` V4 dark

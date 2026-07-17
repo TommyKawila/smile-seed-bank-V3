@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { bigintToJson } from "@/lib/bigint-json";
+import { logger } from "@/lib/logger";
 import {
   getActiveProducts,
   hasStorefrontClearanceProducts,
@@ -22,14 +23,18 @@ async function fetchDefaultCatalogBundle(limit: number): Promise<DefaultCatalogB
     getActiveProducts({
       limit,
       page: 1,
-    }).catch(() => ({
-      data: [] as ProductListItem[],
-      error: "catalog_fetch_failed",
-      catalogHasMore: false,
-      catalogTotalCount: null as number | null,
-      catalogUseCursor: false,
-      catalogNextCursor: null as number | null,
-    })),
+      access: "service_role",
+    }).catch((err) => {
+      logger.error("storefront-catalog-cache getActiveProducts failed", { cause: err });
+      return {
+        data: [] as ProductListItem[],
+        error: "catalog_fetch_failed",
+        catalogHasMore: false,
+        catalogTotalCount: null as number | null,
+        catalogUseCursor: false,
+        catalogNextCursor: null as number | null,
+      };
+    }),
     hasStorefrontClearanceProducts().catch(() => false),
   ]);
 
@@ -63,16 +68,41 @@ async function fetchDefaultCatalogBundle(limit: number): Promise<DefaultCatalogB
   };
 }
 
-/** Cached default `/seeds` / `/shop` first page (no filters). Keys by limit (16 mobile / 30 desktop). */
-export function getCachedDefaultCatalogBundle(
+/**
+ * Cached default `/seeds` / `/shop` first page (no filters).
+ * Uses service-role (no cookies) so `unstable_cache` is valid.
+ * Empty results are not cached — falls through to a live fetch.
+ */
+export async function getCachedDefaultCatalogBundle(
   limit: number
 ): Promise<DefaultCatalogBundle> {
   const safeLimit = Math.min(100, Math.max(1, Math.floor(limit)));
-  return unstable_cache(
-    () => fetchDefaultCatalogBundle(safeLimit),
-    ["storefront-catalog-default-v1", String(safeLimit)],
-    { revalidate: 120, tags: [STOREFRONT_CATALOG_CACHE_TAG] }
-  )();
+
+  try {
+    const cached = await unstable_cache(
+      async () => {
+        const bundle = await fetchDefaultCatalogBundle(safeLimit);
+        if (bundle.products.length === 0) {
+          // Throw so Next does not persist an empty catalog in Data Cache.
+          throw new Error("storefront_catalog_empty_skip_cache");
+        }
+        return bundle;
+      },
+      ["storefront-catalog-default-v2", String(safeLimit)],
+      { revalidate: 120, tags: [STOREFRONT_CATALOG_CACHE_TAG] }
+    )();
+    return cached;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg !== "storefront_catalog_empty_skip_cache") {
+      logger.error("storefront-catalog-cache unstable_cache miss/error", { cause: err });
+    } else {
+      logger.error(
+        `storefront-catalog-cache empty result; uncached retry limit=${safeLimit}`
+      );
+    }
+    return fetchDefaultCatalogBundle(safeLimit);
+  }
 }
 
 /** True when URL has no catalog filters — safe to serve the default cached bundle. */

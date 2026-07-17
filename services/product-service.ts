@@ -1,4 +1,8 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import {
+  createClient,
+  createAdminClient,
+  createServiceRoleClient,
+} from "@/lib/supabase/server";
 import {
   PRODUCT_SELECT_CATALOG_LIST,
   PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS,
@@ -553,6 +557,11 @@ export async function getActiveProducts(opts?: {
   catalog_ft?: string | null;
   /** Continue `id DESC` scan below this product id (load-more without offset). */
   cursor_id?: number;
+  /**
+   * `service_role` — no cookies; safe inside `unstable_cache` for public catalog SSR.
+   * Default `cookie` keeps anon + session for authenticated API paths.
+   */
+  access?: "cookie" | "service_role";
 }): Promise<
   ServiceResult<ProductWithBreeder[]> & {
     catalogHasMore?: boolean;
@@ -564,7 +573,10 @@ export async function getActiveProducts(opts?: {
   }
 > {
   try {
-    const supabase = await createClient();
+    const supabase =
+      opts?.access === "service_role"
+        ? createServiceRoleClient()
+        : await createClient();
     const seedsSel = parseListParam(opts?.seeds_param ?? null);
     const geneticsSel = parseListParam(opts?.genetics_param ?? null);
     const difficultySel = parseListParam(opts?.difficulty_param ?? null);

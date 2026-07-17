@@ -122,6 +122,32 @@ export default async function ShopPage({
     initialCatalogUseCursor = bundle.catalogUseCursor;
     initialCatalogNextCursor = bundle.catalogNextCursor;
     initialShowClearanceFilter = bundle.showClearanceFilter;
+
+    // Last-resort SSR fill if cache/live path still returned empty (never ship [] to LCP).
+    if (initialProducts.length === 0) {
+      const catalog = await getActiveProducts({
+        limit: initialLimit,
+        page: 1,
+        access: "service_role",
+      }).catch(() => ({
+        data: [] as ProductListItem[],
+        error: "catalog_fetch_failed",
+        catalogHasMore: false,
+        catalogTotalCount: null as number | null,
+        catalogUseCursor: false,
+      }));
+      if (!catalog.error && (catalog.data?.length ?? 0) > 0) {
+        initialProducts = bigintToJson(catalog.data ?? []) as ProductListItem[];
+        initialCatalogTotal =
+          typeof catalog.catalogTotalCount === "number"
+            ? catalog.catalogTotalCount
+            : null;
+        initialCatalogUseCursor = catalog.catalogUseCursor === true;
+        const lastRow = initialProducts[initialProducts.length - 1];
+        initialCatalogNextCursor =
+          initialCatalogUseCursor && lastRow?.id != null ? Number(lastRow.id) : null;
+      }
+    }
   } else {
     const catalog = await getActiveProducts({
       category: category || undefined,
@@ -142,6 +168,7 @@ export default async function ShopPage({
       cbd_param: cbdParam,
       sex_param: sexParam,
       yield_param: yieldParam,
+      access: "service_role",
     }).catch(() => ({
       data: [] as ProductListItem[],
       error: "catalog_fetch_failed",
