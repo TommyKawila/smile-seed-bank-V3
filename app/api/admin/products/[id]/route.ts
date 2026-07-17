@@ -127,6 +127,7 @@ export async function PATCH(
     );
 
     revalidateTag("storefront-home");
+    revalidateTag("storefront-catalog");
     revalidateClearanceStorefront();
 
     return NextResponse.json({ productId });

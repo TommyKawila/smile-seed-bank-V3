@@ -170,6 +170,7 @@ export async function POST(req: NextRequest) {
     }
 
     revalidateTag("storefront-home");
+    revalidateTag("storefront-catalog");
     revalidateClearanceStorefront();
 
     return NextResponse.json(

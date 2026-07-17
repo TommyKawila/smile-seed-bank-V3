@@ -3,6 +3,19 @@ import {
   CATALOG_PAGE_DESCRIPTION,
   CATALOG_PAGE_TITLE,
 } from "@/lib/seo/catalog-metadata";
+import { PUBLIC_SUPABASE_FALLBACK_ORIGIN } from "@/lib/public-storage-url";
+
+function supabasePreconnectOrigin(): string {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
+  if (raw) {
+    try {
+      return new URL(raw).origin;
+    } catch {
+      /* fall through */
+    }
+  }
+  return PUBLIC_SUPABASE_FALLBACK_ORIGIN;
+}
 
 export const metadata: Metadata = {
   title: CATALOG_PAGE_TITLE,
@@ -25,5 +38,12 @@ export const metadata: Metadata = {
 };
 
 export default function SeedsLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  const origin = supabasePreconnectOrigin();
+  return (
+    <>
+      <link rel="preconnect" href={origin} crossOrigin="anonymous" />
+      <link rel="dns-prefetch" href={origin} />
+      {children}
+    </>
+  );
 }

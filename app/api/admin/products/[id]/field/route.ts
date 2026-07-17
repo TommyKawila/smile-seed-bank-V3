@@ -48,6 +48,7 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     revalidateTag("storefront-home");
+    revalidateTag("storefront-catalog");
     return NextResponse.json({ productId });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

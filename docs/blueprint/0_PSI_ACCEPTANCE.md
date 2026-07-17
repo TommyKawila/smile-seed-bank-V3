@@ -32,7 +32,7 @@
 
 ## Test protocol
 
-1. Test URL: production homepage `/` (primary) · also `/shop` and one `/product/[slug]` before major releases.
+1. Test URL: production homepage `/` (primary) · also `/shop`, `/seeds`, and one `/product/[slug]` before major releases.
 2. Environment: pagespeed.web.dev · Incognito · extensions disabled.
 3. Run **3 times** · use **median** score.
 4. **Do not merge** if Mobile Performance drops **>2** from baseline lock without explicit Boss approval + retest plan.

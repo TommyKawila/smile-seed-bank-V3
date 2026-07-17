@@ -199,7 +199,7 @@ export function ShopPageClient({
   initialCatalogTotal = null,
   initialCatalogNextCursor = null,
   initialCatalogUseCursor = false,
-  showClearanceFilter = false,
+  showClearanceFilter: initialShowClearanceFilter,
   initialBreeder = null,
 }: {
   initialProducts: ProductListItem[];
@@ -207,7 +207,10 @@ export function ShopPageClient({
   initialCatalogTotal?: number | null;
   initialCatalogNextCursor?: number | null;
   initialCatalogUseCursor?: boolean;
-  /** Hide «ล้างสต็อก» chip when no clearance products in catalog. */
+  /**
+   * From cached default SSR when known; `undefined` → idle client fetch
+   * (keeps clearance chip off the filtered SSR critical path).
+   */
   showClearanceFilter?: boolean;
   /** SSR breeder row for `/seeds/[slug]` — avoids idle breeder fetch for header. */
   initialBreeder?: Breeder | null;
@@ -219,6 +222,34 @@ export function ShopPageClient({
   const journalCatalogBase = journalBreederCatalogBasePath(pathname);
   const breederParam =
     (journalBreederSlug ?? searchParams.get("breeder"))?.trim() || null;
+
+  const [showClearanceFilter, setShowClearanceFilter] = useState(
+    initialShowClearanceFilter ?? false
+  );
+
+  useEffect(() => {
+    setShowClearanceFilter(initialShowClearanceFilter ?? false);
+  }, [initialShowClearanceFilter]);
+
+  useEffect(() => {
+    if (initialShowClearanceFilter !== undefined) return;
+    let cancelled = false;
+    const cancelIdle = scheduleIdleWork(() => {
+      fetchWithTimeout("/api/storefront/has-clearance", {}, SHOP_CATALOG_FETCH_TIMEOUT_MS)
+        .then(async (res) => {
+          if (!res.ok || cancelled) return;
+          const json = (await res.json()) as { showClearanceFilter?: boolean };
+          if (!cancelled) setShowClearanceFilter(Boolean(json.showClearanceFilter));
+        })
+        .catch(() => {
+          /* chip stays hidden */
+        });
+    }, SHOP_FILTER_COUNTS_IDLE_MS);
+    return () => {
+      cancelled = true;
+      cancelIdle();
+    };
+  }, [initialShowClearanceFilter]);
 
   useEffect(() => {
     if (!isStorefrontCatalogPath(pathname)) return;

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
-import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
+import { breederLogoUrl } from "@/lib/storefront-image-urls";
 import { cn } from "@/lib/utils";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
@@ -14,6 +14,7 @@ export function BreederLogoImage({
   className,
   imgClassName,
   sizes,
+  priority = false,
 }: {
   src: string | null | undefined;
   breederName: string;
@@ -22,8 +23,10 @@ export function BreederLogoImage({
   className?: string;
   imgClassName?: string;
   sizes?: string;
+  /** Default false — logos are never the catalog LCP candidate. */
+  priority?: boolean;
 }) {
-  const resolved = useMemo(() => resolvePublicAssetUrl(src), [src]);
+  const resolved = useMemo(() => breederLogoUrl(src, width), [src, width]);
   const [failed, setFailed] = useState(false);
   const onError = useCallback(() => setFailed(true), []);
 
@@ -58,6 +61,9 @@ export function BreederLogoImage({
         className={cn("object-contain", imgClassName)}
         sizes={sizes ?? `${width}px`}
         onError={onError}
+        priority={priority}
+        fetchPriority={priority ? "high" : "low"}
+        loading={priority ? "eager" : "lazy"}
         unoptimized={shouldOffloadImageOptimization(resolved)}
       />
     </div>

@@ -14,6 +14,8 @@ export const PRODUCT_GALLERY_MAIN_W = 828;
 export const PRODUCT_GALLERY_THUMB_W = 160;
 export const PRODUCT_GALLERY_LIGHTBOX_W = 1200;
 export const PRODUCT_LISTING_THUMB_W = 384;
+/** 32px display @2x — card / nav breeder badges. */
+export const BREEDER_LOGO_W = 64;
 
 function withFallback(src: string, optimized: string | null): string {
   return optimized ?? resolvePublicAssetUrl(src) ?? src;
@@ -86,6 +88,23 @@ export function productListingThumbUrl(src: string | null | undefined): string |
     resolveOptimizedAssetUrl(s, {
       width: PRODUCT_LISTING_THUMB_W,
       quality: 60,
+      resize: "contain",
+      format: "webp",
+    }) ?? resolvePublicAssetUrl(s)
+  );
+}
+
+export function breederLogoUrl(
+  src: string | null | undefined,
+  displayWidth = BREEDER_LOGO_W / 2
+): string | null {
+  const s = src == null ? "" : String(src).trim();
+  if (!s) return null;
+  const w = Math.max(BREEDER_LOGO_W, Math.round(displayWidth) * 2);
+  return (
+    resolveOptimizedAssetUrl(s, {
+      width: w,
+      quality: 70,
       resize: "contain",
       format: "webp",
     }) ?? resolvePublicAssetUrl(s)

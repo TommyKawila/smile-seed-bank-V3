@@ -21,7 +21,7 @@ export function GeneticVaultProductGrid({
               product={product}
               disableOuterMotion
               catalogSeedsFilter={catalogSeedsFilter}
-              imagePriority={index < 2}
+              imagePriority={index === 0}
             />
           </div>
         ))}

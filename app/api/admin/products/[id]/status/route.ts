@@ -64,6 +64,7 @@ export async function PATCH(
     }
 
     revalidateTag("storefront-home");
+    revalidateTag("storefront-catalog");
 
     return NextResponse.json({
       is_active: nextActive,

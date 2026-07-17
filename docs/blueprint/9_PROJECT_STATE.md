@@ -4,6 +4,17 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-18 (PSI `/seeds` 80→≥90 — catalog TTFB + images + LCP)
+- **Baseline (lab):** `/seeds` mobile Perf **80** · LCP **4.1s** · TTFB **~1.86s** · breeder logo overserve ~329 KiB
+- **TTFB:** `services/storefront-catalog-cache-service.ts` — `unstable_cache` default catalog bundle (products + count + clearance) · revalidate **120s** · tag `storefront-catalog`
+- **SSR:** `shop/page.tsx` ใช้ cache เมื่อไม่มี filter · filtered path ไม่รอ `hasStorefrontClearanceProducts`
+- **Clearance chip:** idle client `GET /api/storefront/has-clearance` เมื่อ SSR ไม่ส่งค่า
+- **Images:** `breederLogoUrl()` → Supabase render webp · `BreederLogoImage` lazy/low priority
+- **LCP:** `CatalogLcpPreload` 1 รูป · `imagePriority={index === 0}` · preconnect Supabase ใน seeds/shop layout
+- **Invalidate:** `revalidateTag("storefront-catalog")` ใน admin products + `revalidate-clearance.ts`
+- **Pending บอส:** deploy → PSI 3-run median `/seeds` · อัป `6_PERF_BUDGETS.md` **เมื่อ ≥90 เท่านั้น**
+- **ไฟล์:** `storefront-catalog-cache-service.ts`, `shop/page.tsx`, `ShopPageClient.tsx`, `BreederLogoImage.tsx`, `storefront-image-urls.ts`, `CatalogLcpPreload.tsx`, `GeneticVaultProductGrid.tsx`, `api/storefront/has-clearance/route.ts`, admin product routes, seeds/shop `layout.tsx`
+
 ### บันทึกการทำงาน — 2026-07-17 (Cursor skill — ssb-security-audit)
 - **Added:** `.cursor/skills/ssb-security-audit/SKILL.md` — multi-pass static security audit checklist (auth, admin, IDOR, RLS, secrets, checkout, LINE, XSS)
 - **Usage:** สั่งในแชท เช่น `ใช้ skill ssb-security-audit ทำ Pass 1` หรือ `Audit security โฟกัส checkout`

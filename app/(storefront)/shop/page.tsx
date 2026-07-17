@@ -2,8 +2,13 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { ShopSkeleton } from "@/components/skeletons/ShopSkeleton";
 import { ShopPageClient } from "@/app/(storefront)/shop/ShopPageClient";
-import { getActiveProducts, hasStorefrontClearanceProducts } from "@/services/product-service";
+import { CatalogLcpPreload } from "@/components/storefront/CatalogLcpPreload";
+import { getActiveProducts } from "@/services/product-service";
 import { resolveBreederFromShopParamCached } from "@/services/breeder-slug-resolve-service";
+import {
+  getCachedDefaultCatalogBundle,
+  isDefaultCatalogRequest,
+} from "@/services/storefront-catalog-cache-service";
 import { bigintToJson } from "@/lib/bigint-json";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { VIEWPORT_HINT_COOKIE } from "@/lib/viewport-hint-cookie";
@@ -77,57 +82,89 @@ export default async function ShopPage({
   const priceRange = parsePriceRangeParams({
     get: searchParamsGetter(sp),
   });
+  const seedsParam = firstParam(sp?.seeds)?.trim() || null;
+  const geneticsParam = firstParam(sp?.genetics)?.trim() || null;
+  const difficultyParam = firstParam(sp?.difficulty)?.trim() || null;
+  const thcParam = firstParam(sp?.thc)?.trim() || null;
+  const cbdParam = firstParam(sp?.cbd)?.trim() || null;
+  const sexParam = firstParam(sp?.sex)?.trim() || null;
+  const yieldParam = firstParam(sp?.yield)?.trim() || null;
 
-  const [catalog, showClearanceFilter] = await Promise.all([
-    getActiveProducts({
+  const useDefaultCache = isDefaultCatalogRequest({
+    breederId,
+    category,
+    search,
+    catalogFt,
+    quick,
+    sort,
+    minPrice: priceRange.min ?? undefined,
+    maxPrice: priceRange.max ?? undefined,
+    seedsParam,
+    geneticsParam,
+    difficultyParam,
+    thcParam,
+    cbdParam,
+    sexParam,
+    yieldParam,
+  });
+
+  let initialProducts: ProductListItem[] = [];
+  let initialCatalogTotal: number | null = null;
+  let initialCatalogUseCursor = false;
+  let initialCatalogNextCursor: number | null = null;
+  /** Cached default path only — filtered SSR defers clearance chip to client idle. */
+  let initialShowClearanceFilter: boolean | undefined = undefined;
+
+  if (useDefaultCache) {
+    const bundle = await getCachedDefaultCatalogBundle(initialLimit);
+    initialProducts = bundle.products;
+    initialCatalogTotal = bundle.catalogTotalCount;
+    initialCatalogUseCursor = bundle.catalogUseCursor;
+    initialCatalogNextCursor = bundle.catalogNextCursor;
+    initialShowClearanceFilter = bundle.showClearanceFilter;
+  } else {
+    const catalog = await getActiveProducts({
       category: category || undefined,
       breeder_id: breederId,
       search: search || undefined,
       catalog_ft: catalogFt || undefined,
-      includeVariants: Boolean(firstParam(sp?.seeds)?.trim()),
+      includeVariants: Boolean(seedsParam),
       limit: initialLimit,
       page: 1,
       quick,
       sort: sort ?? (!quick && breederId != null ? "smart_deal" : undefined),
       minPrice: priceRange.min ?? undefined,
       maxPrice: priceRange.max ?? undefined,
-      seeds_param: firstParam(sp?.seeds)?.trim() || null,
-      genetics_param: firstParam(sp?.genetics)?.trim() || null,
-      difficulty_param: firstParam(sp?.difficulty)?.trim() || null,
-      thc_param: firstParam(sp?.thc)?.trim() || null,
-      cbd_param: firstParam(sp?.cbd)?.trim() || null,
-      sex_param: firstParam(sp?.sex)?.trim() || null,
-      yield_param: firstParam(sp?.yield)?.trim() || null,
+      seeds_param: seedsParam,
+      genetics_param: geneticsParam,
+      difficulty_param: difficultyParam,
+      thc_param: thcParam,
+      cbd_param: cbdParam,
+      sex_param: sexParam,
+      yield_param: yieldParam,
     }).catch(() => ({
       data: [] as ProductListItem[],
       error: "catalog_fetch_failed",
       catalogHasMore: false,
       catalogTotalCount: null as number | null,
-    })),
-    hasStorefrontClearanceProducts().catch(() => false),
-  ]);
-  const initialProducts = catalog.error
-    ? []
-    : (bigintToJson(catalog.data ?? []) as ProductListItem[]);
-  const initialCatalogTotal =
-    typeof catalog.catalogTotalCount === "number" ? catalog.catalogTotalCount : null;
-  const initialCatalogUseCursor = catalog.catalogUseCursor === true;
-  const lastRow = initialProducts[initialProducts.length - 1];
-  const initialCatalogNextCursor =
-    initialCatalogUseCursor && lastRow != null && lastRow.id != null
-      ? Number(lastRow.id)
-      : null;
+      catalogUseCursor: false,
+    }));
+    initialProducts = catalog.error
+      ? []
+      : (bigintToJson(catalog.data ?? []) as ProductListItem[]);
+    initialCatalogTotal =
+      typeof catalog.catalogTotalCount === "number" ? catalog.catalogTotalCount : null;
+    initialCatalogUseCursor = catalog.catalogUseCursor === true;
+    const lastRow = initialProducts[initialProducts.length - 1];
+    initialCatalogNextCursor =
+      initialCatalogUseCursor && lastRow?.id != null ? Number(lastRow.id) : null;
+  }
 
-  const lcpPreloadUrls = initialProducts
-    .slice(0, 2)
-    .map((p) => getListingThumbnailUrl(p))
-    .filter((url): url is string => Boolean(url));
+  const lcpHref = getListingThumbnailUrl(initialProducts[0] ?? {});
 
   return (
     <Suspense fallback={<ShopSkeleton />}>
-      {lcpPreloadUrls.map((href) => (
-        <link key={href} rel="preload" as="image" href={href} fetchPriority="high" />
-      ))}
+      <CatalogLcpPreload href={lcpHref} />
       <ShopPageClient
         initialProducts={initialProducts}
         initialCatalogTotal={initialCatalogTotal}
@@ -137,7 +174,7 @@ export default async function ShopPage({
             : null
         }
         initialCatalogUseCursor={initialCatalogUseCursor}
-        showClearanceFilter={showClearanceFilter}
+        showClearanceFilter={initialShowClearanceFilter}
         initialBreeder={initialBreeder}
       />
     </Suspense>

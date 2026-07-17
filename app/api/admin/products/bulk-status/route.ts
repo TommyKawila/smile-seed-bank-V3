@@ -75,6 +75,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     revalidateTag("storefront-home");
+    revalidateTag("storefront-catalog");
 
     return NextResponse.json({
       updated: rows.length,
