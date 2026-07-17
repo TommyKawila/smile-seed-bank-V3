@@ -15,6 +15,7 @@ import { sendLineFlexNotification } from "@/lib/order-line-notifications";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import { createOrderLog } from "@/lib/order-logs";
 import {
+  PAYMENT_AUTO_CANCEL_MS,
   PAYMENT_GRACE_HOUR_OPTIONS,
   shouldAutoCancelUnpaidOrder,
   type PaymentGraceHours,
@@ -634,15 +635,25 @@ export async function autoCancelUnpaidOrder24hStale(
         throw new Error("24h auto-cancel: payment grace active or not past deadline");
       }
       const rejectNote = `${AUTO_CANCEL_24H_NOTE}${REJECT_STOCK_NOTE_SUFFIX}`;
+      const createdBefore = new Date(asOf.getTime() - PAYMENT_AUTO_CANCEL_MS);
       const claimed = await tx.orders.updateMany({
         where: {
           id: oid,
           status: order.status ?? "",
           NOT: { status: { in: ["CANCELLED", "VOIDED"] } },
           payment_status: order.payment_status ?? "pending",
-          ...(order.slip_url?.trim()
-            ? { slip_url: order.slip_url }
-            : { OR: [{ slip_url: null }, { slip_url: "" }] }),
+          created_at: { lte: createdBefore },
+          AND: [
+            order.slip_url?.trim()
+              ? { slip_url: order.slip_url }
+              : { OR: [{ slip_url: null }, { slip_url: "" }] },
+            {
+              OR: [
+                { payment_grace_until: null },
+                { payment_grace_until: { lte: asOf } },
+              ],
+            },
+          ],
         },
         data: { status: "CANCELLED", reject_note: rejectNote },
       });
@@ -684,17 +695,24 @@ export async function extendOrderPaymentGrace(
       const paymentGraceUntil =
         existing && existing.getTime() > candidateUntil.getTime() ? existing : candidateUntil;
 
-      const row = await tx.orders.update({
-        where: { id: oid },
+      const claimed = await tx.orders.updateMany({
+        where: {
+          id: oid,
+          status: order.status,
+          payment_status: order.payment_status,
+          slip_url: order.slip_url,
+          payment_grace_until: existing,
+        },
         data: {
           payment_grace_until: paymentGraceUntil,
           notification_level: 0,
           last_notified_at: null,
         },
-        select: { payment_grace_until: true },
       });
-      if (!row.payment_grace_until) throw new Error("Failed to set payment grace");
-      return row.payment_grace_until;
+      if (claimed.count !== 1) {
+        throw new Error("Payment grace: order was concurrently updated");
+      }
+      return paymentGraceUntil;
     });
 
     const untilIso = updated.toISOString();
@@ -724,10 +742,19 @@ export async function clearOrderPaymentGrace(
       if (!order) throw new Error("Order not found");
       if (!order.payment_grace_until) throw new Error("No active payment grace on this order");
       assertPaymentGraceEligible(order);
-      await tx.orders.update({
-        where: { id: oid },
+      const claimed = await tx.orders.updateMany({
+        where: {
+          id: oid,
+          status: order.status,
+          payment_status: order.payment_status,
+          slip_url: order.slip_url,
+          payment_grace_until: order.payment_grace_until,
+        },
         data: { payment_grace_until: null },
       });
+      if (claimed.count !== 1) {
+        throw new Error("Payment grace: order was concurrently updated");
+      }
     });
     await createOrderLog({
       orderId,
