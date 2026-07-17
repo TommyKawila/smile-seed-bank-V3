@@ -137,8 +137,8 @@ export function OrderClaimClient({ token }: { token: string }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-zinc-500">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-800/70" />
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary/70" />
         <p className="text-sm">กำลังโหลด…</p>
       </div>
     );
@@ -146,20 +146,20 @@ export function OrderClaimClient({ token }: { token: string }) {
 
   if (loadError) {
     return (
-      <div className="mx-auto max-w-md rounded-2xl border border-zinc-200/80 bg-white p-8 text-center shadow-sm">
-        <p className="text-sm text-zinc-600">{loadError}</p>
+      <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+        <p className="text-sm text-muted-foreground">{loadError}</p>
       </div>
     );
   }
 
   if (preview && preview.status !== "PENDING_INFO") {
     return (
-      <div className="mx-auto max-w-md rounded-2xl border border-zinc-200/80 bg-white p-8 text-center shadow-sm">
-        <p className={cn("mb-2 text-lg font-medium text-zinc-800", orderMono.className)}>
+      <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+        <p className={cn("mb-2 text-lg font-medium text-foreground", orderMono.className)}>
           #{preview.order_number}
         </p>
-        <p className="text-sm text-zinc-600">Order already processed</p>
-        <p className="mt-1 text-xs text-zinc-400">ออเดอร์นี้ดำเนินการแล้ว</p>
+        <p className="text-sm text-muted-foreground">Order already processed</p>
+        <p className="mt-1 text-xs text-muted-foreground">ออเดอร์นี้ดำเนินการแล้ว</p>
       </div>
     );
   }
@@ -181,24 +181,24 @@ export function OrderClaimClient({ token }: { token: string }) {
     return (
       <m.div
         ref={successBlockRef}
-        className="mx-auto max-w-md scroll-mt-4 space-y-4 rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-5 text-center shadow-sm sm:space-y-5 sm:p-7"
+        className="mx-auto max-w-md scroll-mt-4 space-y-4 rounded-2xl border border-primary/30 bg-emerald-50/40 p-5 text-center shadow-sm sm:space-y-5 sm:p-7"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="space-y-1">
-          <p className="text-base font-medium text-emerald-900">{headline}</p>
-          <p className="text-sm text-emerald-800/90">{subTh}</p>
+          <p className="text-base font-medium text-primary">{headline}</p>
+          <p className="text-sm text-primary/90">{subTh}</p>
         </div>
         {lineTrackHref ? (
-          <div className="rounded-xl border border-[#06C755]/40 bg-white p-3 text-left shadow-sm sm:p-4">
+          <div className="rounded-xl border border-[#06C755]/40 bg-card p-3 text-left shadow-sm sm:p-4">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-[#05804a]">
               แจ้งเตือนผ่าน LINE
             </p>
-            <p className="mt-1.5 text-xs leading-snug text-zinc-700">
+            <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
               แตะปุ่มด้านล่าง แล้วกด <span className="font-medium">ส่ง</span> ใน LINE
             </p>
-            <p className="mt-0.5 text-[11px] leading-snug text-zinc-500">
+            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
               Open chat, then tap <span className="font-medium">Send</span> to enable tracking.
             </p>
             <Button
@@ -214,20 +214,20 @@ export function OrderClaimClient({ token }: { token: string }) {
         <Button
           asChild
           variant="outline"
-          className="h-11 w-full border-emerald-800/35 text-emerald-900 hover:bg-emerald-50 sm:h-12"
+          className="h-11 w-full border-emerald-800/35 text-primary hover:bg-primary/10 sm:h-12"
         >
           <Link href={`/order/status/${encodeURIComponent(token)}`}>
             Check Order Status
           </Link>
         </Button>
         {claimInfo?.showSetPassword && loginEmail ? (
-          <Button asChild variant="outline" className="h-10 w-full border-emerald-800/30 text-sm text-emerald-900">
+          <Button asChild variant="outline" className="h-10 w-full border-emerald-800/30 text-sm text-primary">
             <Link href={`/login?email=${encodeURIComponent(loginEmail)}`}>
               ตั้งรหัสผ่าน (ไม่บังคับ)
             </Link>
           </Button>
         ) : null}
-        <p className="text-[11px] text-emerald-900/70">
+        <p className="text-[11px] text-primary/70">
           เก็บลิงก์สถานะไว้ดูเลขพัสดุภายหลัง
         </p>
       </m.div>
@@ -246,12 +246,12 @@ export function OrderClaimClient({ token }: { token: string }) {
           aria-live="polite"
           aria-busy="true"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-white/20 bg-white px-6 py-8 text-center shadow-xl">
+          <div className="w-full max-w-sm rounded-2xl border border-white/20 bg-card px-6 py-8 text-center shadow-xl">
             <Loader2 className="mx-auto h-10 w-10 animate-spin text-emerald-700" />
-            <p className="mt-4 text-base font-medium text-zinc-900">
+            <p className="mt-4 text-base font-medium text-foreground">
               กำลังบันทึกข้อมูล…
             </p>
-            <p className="mt-1 text-sm text-zinc-600">
+            <p className="mt-1 text-sm text-muted-foreground">
               Saving your info… Please don&apos;t close, almost done!
             </p>
           </div>
@@ -259,16 +259,16 @@ export function OrderClaimClient({ token }: { token: string }) {
       ) : null}
 
       <header className="mb-8 text-center">
-        <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-zinc-400">
+        <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Genetic Vault
         </p>
-        <h1 className="mt-2 text-lg font-semibold tracking-tight text-zinc-900">
+        <h1 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
           ยืนยันการสั่งซื้อ
         </h1>
         {preview && (
-          <p className={cn("mt-3 text-sm text-emerald-900/90", orderMono.className)}>
+          <p className={cn("mt-3 text-sm text-primary/90", orderMono.className)}>
             #{preview.order_number}
-            <span className="ml-2 text-zinc-500">
+            <span className="ml-2 text-muted-foreground">
               · ฿{preview.total_amount.toLocaleString("th-TH", { maximumFractionDigits: 0 })}
             </span>
           </p>
@@ -277,7 +277,7 @@ export function OrderClaimClient({ token }: { token: string }) {
 
       <form
         onSubmit={(e) => void onSubmit(e)}
-        className="space-y-5 rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:p-7"
+        className="space-y-5 rounded-2xl border border-border bg-card p-5 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:p-7"
       >
         {lineTrackHref ? (
           <div className="rounded-xl border border-[#06C755]/35 bg-emerald-50/60 p-4 shadow-sm">
@@ -289,10 +289,10 @@ export function OrderClaimClient({ token }: { token: string }) {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#047857]">
                   LINE Tracking Status
                 </p>
-                <p className="text-xs leading-snug text-zinc-800">
+                <p className="text-xs leading-snug text-foreground">
                   รับแจ้งเลขพัสดุผ่าน LINE ทันทีเมื่อจัดส่ง
                 </p>
-                <p className="text-[11px] leading-snug text-zinc-500">
+                <p className="text-[11px] leading-snug text-muted-foreground">
                   Link LINE now to get tracking updates
                 </p>
               </div>
@@ -310,7 +310,7 @@ export function OrderClaimClient({ token }: { token: string }) {
         ) : null}
 
         <div className="space-y-2">
-          <Label htmlFor="shipping_name" className="text-zinc-700">
+          <Label htmlFor="shipping_name" className="text-muted-foreground">
             ชื่อ-นามสกุล (ผู้รับ)
           </Label>
           <Input
@@ -319,12 +319,12 @@ export function OrderClaimClient({ token }: { token: string }) {
             onChange={(e) => setName(e.target.value)}
             required
             autoComplete="name"
-            className="border-zinc-200"
+            className="border-border"
             placeholder="ชื่อจริงตามพัสดุ"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="shipping_address" className="text-zinc-700">
+          <Label htmlFor="shipping_address" className="text-muted-foreground">
             ที่อยู่จัดส่ง
           </Label>
           <Textarea
@@ -333,12 +333,12 @@ export function OrderClaimClient({ token }: { token: string }) {
             onChange={(e) => setAddress(e.target.value)}
             required
             rows={4}
-            className="resize-y border-zinc-200 text-base"
+            className="resize-y border-border text-base"
             placeholder="บ้านเลขที่ หมู่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="shipping_phone" className="text-zinc-700">
+          <Label htmlFor="shipping_phone" className="text-muted-foreground">
             เบอร์โทร
           </Label>
           <Input
@@ -349,12 +349,12 @@ export function OrderClaimClient({ token }: { token: string }) {
             onChange={(e) => setPhone(e.target.value)}
             required
             autoComplete="tel"
-            className="border-zinc-200"
+            className="border-border"
             placeholder="08xxxxxxxx"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="shipping_email" className="text-zinc-700">
+          <Label htmlFor="shipping_email" className="text-muted-foreground">
             อีเมล (แนะนำ — แจ้งเตือนและเชื่อมบัญชีร้านโดยไม่ต้องล็อกอิน)
           </Label>
           <Input
@@ -364,15 +364,15 @@ export function OrderClaimClient({ token }: { token: string }) {
             value={shipping_email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
-            className="border-zinc-200"
+            className="border-border"
             placeholder="you@example.com"
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-zinc-700">สลิปโอนเงิน</Label>
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-800/25 bg-zinc-50/80 px-4 py-8 transition hover:border-emerald-700/40">
-            <Upload className="h-6 w-6 text-emerald-800/60" />
-            <span className="text-center text-xs text-zinc-600">
+          <Label className="text-muted-foreground">สลิปโอนเงิน</Label>
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-800/25 bg-muted/30 px-4 py-8 transition hover:border-emerald-700/40">
+            <Upload className="h-6 w-6 text-primary/60" />
+            <span className="text-center text-xs text-muted-foreground">
               {file ? file.name : "แตะเพื่อเลือกไฟล์ (JPG, PNG, WebP, PDF — สูงสุด 5MB)"}
             </span>
             <input
@@ -386,11 +386,11 @@ export function OrderClaimClient({ token }: { token: string }) {
 
         {submitError && <p className="text-sm text-red-600">{submitError}</p>}
 
-        <p className="rounded-lg border border-zinc-200/80 bg-zinc-50/90 px-3 py-2 text-[11px] leading-relaxed text-zinc-500">
-          <span className="block text-zinc-600">
+        <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+          <span className="block text-muted-foreground">
             หลังกดส่ง กรุณาอยู่หน้านี้สักครู่เพื่อยืนยันการเชื่อม LINE
           </span>
-          <span className="mt-0.5 block text-zinc-500">
+          <span className="mt-0.5 block text-muted-foreground">
             After clicking submit, please stay on this page to confirm your LINE tracking link.
           </span>
         </p>
@@ -398,7 +398,7 @@ export function OrderClaimClient({ token }: { token: string }) {
         <Button
           type="submit"
           disabled={submitting}
-          className="h-12 w-full bg-emerald-800 text-white hover:bg-emerald-800/90"
+          className="h-12 w-full bg-primary text-white hover:bg-primary/90"
         >
           {submitting ? (
             <>

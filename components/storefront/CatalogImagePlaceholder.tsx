@@ -30,7 +30,7 @@ export function CatalogImagePlaceholder({
       <span
         className={cn(
           mono,
-          "max-w-[90%] text-center text-[8px] font-medium uppercase leading-tight tracking-[0.18em] text-zinc-400 sm:text-[9px]"
+          "max-w-[90%] text-center text-[8px] font-medium uppercase leading-tight tracking-[0.18em] text-muted-foreground sm:text-[9px]"
         )}
       >
         {label}

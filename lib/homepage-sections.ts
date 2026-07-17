@@ -1,6 +1,7 @@
 /** Keys must match `homepage_sections.key` and home section render map (`HomePageBelowFold` / hero). */
 export const DEFAULT_HOME_SECTION_KEYS = [
   "hero",
+  "ai_quick_tools_dock",
   "promotion_banner",
   "categories",
   "breeder_showcase",
@@ -28,6 +29,10 @@ export const DEFAULT_SECTION_FALLBACK_LABELS: Record<
   { label_th: string; label_en: string }
 > = {
   hero: { label_th: "แบนเนอร์หลัก", label_en: "Hero" },
+  ai_quick_tools_dock: {
+    label_th: "เครื่องมือ AI ด่วน",
+    label_en: "AI Quick Tools Dock",
+  },
   promotion_banner: {
     label_th: "แบนเนอร์โปรโมชัน (คงที่ · ไม่ใช้งาน)",
     label_en: "Promotion banner (legacy · unused)",
@@ -54,3 +59,18 @@ export const DEFAULT_SECTION_FALLBACK_LABELS: Record<
   new_strains: { label_th: "สายพันธุ์มาใหม่", label_en: "New arrivals grid" },
   newsletter: { label_th: "แบนเนอร์สมัครสมาชิก", label_en: "Newsletter / sign-up" },
 };
+
+/** Ensure AI dock is first below-fold section when missing from DB order. */
+export function normalizeBelowFoldSections(
+  sections: HomePageSectionPayload[]
+): HomePageSectionPayload[] {
+  const filtered = sections.filter((s) => s.key !== "hero");
+  if (filtered.some((s) => s.key === "ai_quick_tools_dock")) return filtered;
+  const fb = DEFAULT_SECTION_FALLBACK_LABELS.ai_quick_tools_dock;
+  const dock: HomePageSectionPayload = {
+    key: "ai_quick_tools_dock",
+    label_th: fb?.label_th ?? "เครื่องมือ AI ด่วน",
+    label_en: fb?.label_en ?? "AI Quick Tools Dock",
+  };
+  return [dock, ...filtered];
+}

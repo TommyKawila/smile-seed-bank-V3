@@ -2,13 +2,12 @@
 
 import { useCallback, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
-import { Zap, Leaf, Sun } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import {
   geneticsDomPillActiveSlug,
   type BreederTypeOption,
 } from "@/components/storefront/BreederTypeFilter";
 import { ShopQuickFilterBar } from "@/components/storefront/ShopQuickFilterBar";
+import { SeedsFilterIconBadge } from "@/components/storefront/seeds-filter-icon-badge";
 import {
   CATALOG_GENETICS_STRIP_LABELS,
   CATALOG_GENETICS_STRIP_SLUGS,
@@ -18,16 +17,9 @@ import {
 } from "@/lib/catalog-filter-strip-labels";
 import { parseListParam } from "@/lib/shop-attribute-filters";
 import { floweringTypeToSlug } from "@/lib/seed-type-filter";
-import { shopFilterChipLeadingGlyph } from "@/components/storefront/shop-filter-chip-styles";
 import { cn } from "@/lib/utils";
 
 const FLOWERING_QUICK_SLUGS = ["auto", "photo", "photo-ff"] as const;
-
-const FLOWERING_ICONS: Record<(typeof FLOWERING_QUICK_SLUGS)[number], LucideIcon> = {
-  auto: Leaf,
-  photo: Sun,
-  "photo-ff": Zap,
-};
 
 type TFn = (th: string, en: string) => string;
 
@@ -60,16 +52,16 @@ function QuickPill({
   onClick,
   label,
   count,
+  iconSlug,
   glyph,
-  icon: Icon,
   presentation,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
   count?: number;
+  iconSlug?: string;
   glyph?: string | null;
-  icon?: LucideIcon;
   presentation: "sidebar" | "mobile";
 }) {
   return (
@@ -78,15 +70,15 @@ function QuickPill({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-1.5 py-2 text-center font-sans transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
+        "flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl border-2 px-1.5 py-2 text-center font-sans transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
         presentation === "mobile" ? "min-h-12" : "min-h-11",
         active
           ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25"
-          : "border-primary/15 bg-white text-primary hover:border-primary/35 hover:bg-primary/[0.06]"
+          : "border-primary/15 bg-card text-primary hover:border-primary/35 hover:bg-primary/[0.06]"
       )}
     >
-      {Icon ? (
-        <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary-foreground" : "text-primary")} />
+      {iconSlug ? (
+        <SeedsFilterIconBadge slug={iconSlug} active={active} size="sm" />
       ) : glyph ? (
         <span className="text-base leading-none" aria-hidden>
           {glyph}
@@ -187,7 +179,7 @@ export function CatalogSidebarQuickFilters({
     <div
       className={cn(
         "space-y-4",
-        "rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/[0.06] via-white to-secondary/30 p-4 shadow-sm"
+        "rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/[0.06] via-card/80 to-secondary/30 p-4 shadow-sm surface-glass"
       )}
     >
       <div className="flex flex-wrap gap-2 border-b border-primary/10 pb-3">
@@ -201,21 +193,17 @@ export function CatalogSidebarQuickFilters({
 
       {floweringRows.length > 0 ? (
         <SidebarFilterRow label={t("ประเภท", "Type")} presentation={presentation}>
-          {floweringRows.map(({ slug, label, count }) => {
-            const key = slug as (typeof FLOWERING_QUICK_SLUGS)[number];
-            const Icon = FLOWERING_ICONS[key];
-            return (
+          {floweringRows.map(({ slug, label, count }) => (
               <QuickPill
                 key={slug}
                 active={ftActive === slug}
                 onClick={() => setFt(slug)}
                 label={label}
                 count={count}
-                icon={Icon}
+                iconSlug={slug}
                 presentation={presentation}
               />
-            );
-          })}
+            ))}
         </SidebarFilterRow>
       ) : null}
 
@@ -227,7 +215,7 @@ export function CatalogSidebarQuickFilters({
             onClick={() => setGenetics(slug)}
             label={label}
             count={count}
-            glyph={shopFilterChipLeadingGlyph(slug)}
+            iconSlug={slug}
             presentation={presentation}
           />
         ))}

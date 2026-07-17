@@ -62,8 +62,8 @@ export function OrderStatusClient({ token }: { token: string }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-zinc-500">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-800/70" />
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary/70" />
         <p className="text-sm">กำลังโหลดสถานะ…</p>
       </div>
     );
@@ -71,8 +71,8 @@ export function OrderStatusClient({ token }: { token: string }) {
 
   if (loadError || !data) {
     return (
-      <div className="mx-auto max-w-md rounded-2xl border border-zinc-200/80 bg-white p-8 text-center shadow-sm">
-        <p className="text-sm text-zinc-600">{loadError ?? "ไม่พบข้อมูล"}</p>
+      <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+        <p className="text-sm text-muted-foreground">{loadError ?? "ไม่พบข้อมูล"}</p>
       </div>
     );
   }
@@ -82,23 +82,23 @@ export function OrderStatusClient({ token }: { token: string }) {
   return (
     <div className="mx-auto max-w-lg px-1">
       <header className="mb-6 text-center">
-        <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-zinc-400">
+        <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Genetic Vault
         </p>
-        <h1 className="mt-2 text-lg font-semibold tracking-tight text-zinc-900">
+        <h1 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
           สถานะคำสั่งซื้อ
         </h1>
-        <p className={cn("mt-3 text-sm text-emerald-900/90", orderMono.className)}>
+        <p className={cn("mt-3 text-sm text-primary/90", orderMono.className)}>
           #{data.order_number}
         </p>
       </header>
 
-      <div className="space-y-4 rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm sm:p-7">
-        <div className="flex items-start gap-3 rounded-xl bg-zinc-50/80 px-3 py-3">
-          <Package className="mt-0.5 h-5 w-5 shrink-0 text-emerald-800" />
+      <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
+        <div className="flex items-start gap-3 rounded-xl bg-muted/30 px-3 py-3">
+          <Package className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <div>
-            <p className="text-sm font-medium text-zinc-900">{statusDescription(data.status)}</p>
-            <p className="mt-1 text-xs text-zinc-500">{data.status}</p>
+            <p className="text-sm font-medium text-foreground">{statusDescription(data.status)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{data.status}</p>
           </div>
         </div>
 
@@ -113,20 +113,20 @@ export function OrderStatusClient({ token }: { token: string }) {
             {data.tracking_url ? (
               <Button
                 asChild
-                className="mt-4 w-full bg-emerald-800 hover:bg-emerald-800/90"
+                className="mt-4 w-full bg-primary hover:bg-primary/90"
               >
                 <a href={data.tracking_url} target="_blank" rel="noopener noreferrer">
                   ติดตามพัสดุ
                 </a>
               </Button>
             ) : (
-              <p className="mt-3 text-center text-xs text-zinc-500">
+              <p className="mt-3 text-center text-xs text-muted-foreground">
                 ใช้เลขด้านบนไปติดตามที่เว็บขนส่งโดยตรง
               </p>
             )}
           </div>
         ) : (
-          <p className="text-center text-sm text-zinc-600">
+          <p className="text-center text-sm text-muted-foreground">
             {data.status === "SHIPPED"
               ? "เลขพัสดุจะแสดงที่นี่เมื่อทีมงานบันทึกแล้ว — ลองรีเฟรชด้านล่าง"
               : "เมื่อจัดส่งแล้ว เลขพัสดุและลิงก์ติดตามจะปรากฏที่หน้านี้"}
@@ -143,7 +143,7 @@ export function OrderStatusClient({ token }: { token: string }) {
             <RefreshCw className="mr-2 h-4 w-4" />
             รีเฟรชสถานะ
           </Button>
-          <Button asChild variant="ghost" className="flex-1 text-emerald-900">
+          <Button asChild variant="ghost" className="flex-1 text-primary">
             <Link href="/shop">กลับไปร้านค้า</Link>
           </Button>
         </div>

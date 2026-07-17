@@ -7,19 +7,19 @@ export default function TermsOfUsePage() {
 
   return (
     <article className="mx-auto max-w-3xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-32">
-      <h1 className="font-sans text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+      <h1 className="font-sans text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {t("เงื่อนไขการใช้งาน (Terms of Use)", "Terms of Use")}
       </h1>
-      <p className="mt-3 text-sm text-zinc-500">
+      <p className="mt-3 text-sm text-muted-foreground">
         {t(
           "อัปเดตล่าสุดเพื่อการใช้งานเว็บไซต์และบริการของ Smile Seed Bank",
           "These terms govern your use of the Smile Seed Bank website and services."
         )}
       </p>
 
-      <div className="mt-10 space-y-10 text-sm leading-relaxed text-zinc-700 sm:text-base">
+      <div className="mt-10 space-y-10 text-sm leading-relaxed text-muted-foreground sm:text-base">
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("1. ข้อกำหนดด้านอายุ", "1. Age requirement")}
           </h2>
           <p>
@@ -31,7 +31,7 @@ export default function TermsOfUsePage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("2. ข้อจำกัดทางกฎหมายและวัตถุประสงค์การจำหน่าย", "2. Legal disclaimer & intended use")}
           </h2>
           <p>
@@ -43,7 +43,7 @@ export default function TermsOfUsePage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("3. ความเป็นส่วนตัวและข้อมูลส่วนบุคคล", "3. Privacy & personal data")}
           </h2>
           <p>
@@ -55,7 +55,7 @@ export default function TermsOfUsePage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("4. การคืนสินค้าและการยกเลิกออเดอร์", "4. Returns & order cancellation")}
           </h2>
           <p>
@@ -66,8 +66,8 @@ export default function TermsOfUsePage() {
           </p>
         </section>
 
-        <section className="space-y-3 border-t border-zinc-200 pt-8">
-          <p className="text-xs text-zinc-500">
+        <section className="space-y-3 border-t border-border pt-8">
+          <p className="text-xs text-muted-foreground">
             {t(
               "หากมีคำถามเกี่ยวกับเงื่อนไขเหล่านี้ โปรดติดต่อเราผ่านช่องทางที่ระบุบนเว็บไซต์",
               "For questions about these terms, please contact us through the channels listed on our website."

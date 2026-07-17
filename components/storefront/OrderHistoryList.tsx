@@ -34,8 +34,8 @@ function statusClass(status: string, paymentStatus: string): string {
     return "border-primary/15 bg-primary/10 text-primary";
   }
   if (key === "SHIPPED") return "border-secondary/80 bg-secondary/60 text-secondary-foreground";
-  if (key === "CANCELLED") return "border-zinc-200 bg-zinc-100 text-zinc-500";
-  return "border-zinc-200 bg-white text-zinc-600";
+  if (key === "CANCELLED") return "border-border bg-muted/30 text-muted-foreground";
+  return "border-border bg-card text-muted-foreground";
 }
 
 export function OrderHistoryList({
@@ -50,15 +50,15 @@ export function OrderHistoryList({
   const dateLocale = locale === "en" ? "en-GB" : "th-TH";
 
   return (
-    <Card className="min-h-[360px] border-zinc-200/80 shadow-sm">
+    <Card className="min-h-[360px] border-border shadow-sm">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-zinc-900">
+        <CardTitle className="text-base font-semibold text-foreground">
           {t("Order History", "Order History")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {orders.length === 0 ? (
-          <div className="flex min-h-[240px] items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 text-center text-sm text-zinc-500">
+          <div className="flex min-h-[240px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 px-4 text-center text-sm text-muted-foreground">
             {t("Your orders will appear here after checkout.", "Your orders will appear here after checkout.")}
           </div>
         ) : (
@@ -71,24 +71,24 @@ export function OrderHistoryList({
               return (
                 <article
                   key={order.id}
-                  className="min-h-[128px] rounded-xl border border-zinc-200 bg-white p-4"
+                  className="min-h-[128px] rounded-xl border border-border bg-card p-4"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                         {order.createdAt
                           ? new Intl.DateTimeFormat(dateLocale, {
                               dateStyle: "medium",
                             }).format(new Date(order.createdAt))
                           : t("Order", "Order")}
                       </p>
-                      <h3 className="mt-1 font-semibold text-zinc-900">{order.orderNumber}</h3>
+                      <h3 className="mt-1 font-semibold text-foreground">{order.orderNumber}</h3>
                       {order.trackingNumber ? (
-                        <p className="mt-1 text-xs text-zinc-500">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {t("Tracking", "Tracking")}: {order.shippingProvider ?? t("Carrier", "Carrier")} / {order.trackingNumber}
                         </p>
                       ) : (
-                        <p className="mt-1 text-xs text-zinc-500">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {t("Tracking will appear after shipping.", "Tracking will appear after shipping.")}
                         </p>
                       )}
@@ -97,13 +97,13 @@ export function OrderHistoryList({
                       <Badge className={statusClass(order.status, order.paymentStatus)} variant="outline">
                         {statusLabel(order.status, order.paymentStatus, t)}
                       </Badge>
-                      <span className="font-semibold tabular-nums text-zinc-900">
+                      <span className="font-semibold tabular-nums text-foreground">
                         {formatBaht(order.totalAmount)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+                  <div className="mt-4 rounded-lg bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                     {freeShippingEarned ? (
                       <span className="font-medium text-primary">
                         {t("Free Shipping unlocked for this order.", "Free Shipping unlocked for this order.")}

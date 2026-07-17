@@ -134,18 +134,18 @@ function BreederCatalogSeoBlock({
 
   return (
     <section
-      className="mt-12 border-t border-zinc-100 pt-10 sm:mt-14 sm:pt-12"
+      className="mt-12 border-t border-border pt-10 sm:mt-14 sm:pt-12"
       aria-labelledby="breeder-catalog-seo-title"
     >
-      <div className="min-h-[1px] rounded-2xl border border-zinc-100 bg-zinc-50/70 px-4 py-5 sm:px-6 sm:py-6">
+      <div className="min-h-[1px] rounded-2xl border border-border bg-muted/30/70 px-4 py-5 sm:px-6 sm:py-6">
         <h2
           id="breeder-catalog-seo-title"
-          className="font-sans text-base font-semibold tracking-tight text-zinc-900 sm:text-lg"
+          className="font-sans text-base font-semibold tracking-tight text-foreground sm:text-lg"
         >
           {t("ประวัติและเกี่ยวกับค่าย", "History & breeder story")}: {breederName}
         </h2>
         {summary?.trim() ? (
-          <p className="mt-3 text-sm leading-relaxed text-zinc-600">{summary.trim()}</p>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{summary.trim()}</p>
         ) : null}
 
         {hasStory ? (
@@ -159,25 +159,25 @@ function BreederCatalogSeoBlock({
             </summary>
             <div className="mt-4 space-y-4 border-l-2 border-primary/15 pl-4">
               {fullDesc?.trim() ? (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">{fullDesc.trim()}</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{fullDesc.trim()}</p>
               ) : null}
               {highlightRows.length > 0 ? (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {t("ไฮไลต์สำคัญ", "Key highlights")}
                   </p>
                   <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {highlightRows.map(({ icon: Icon, label, value }) => (
                       <li
                         key={label}
-                        className="flex items-start gap-2 rounded-xl bg-white px-3 py-2.5 shadow-sm ring-1 ring-zinc-100"
+                        className="flex items-start gap-2 rounded-xl bg-card px-3 py-2.5 shadow-sm ring-1 ring-border"
                       >
                         <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
                         <div className="min-w-0">
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70">
                             {label}
                           </p>
-                          <p className="text-xs leading-snug text-zinc-700">{value}</p>
+                          <p className="text-xs leading-snug text-muted-foreground">{value}</p>
                         </div>
                       </li>
                     ))}
@@ -1036,10 +1036,10 @@ export function ShopPageClient({
     : [];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* ── Breeder strip: logo + name + count → products ASAP ───────────────── */}
       {urlBreeder ? (
-        <div className="border-b border-zinc-100 bg-white px-4 py-2.5 sm:px-6">
+        <div className="border-b border-border bg-background px-4 py-2.5 sm:px-6">
           <div className="mx-auto max-w-7xl space-y-2.5 sm:space-y-3">
             <div className="flex items-center justify-between gap-3">
               <Link
@@ -1054,14 +1054,14 @@ export function ShopPageClient({
                 variant="outline"
                 size="sm"
                 onClick={() => router.push("/seeds")}
-                className="h-8 max-w-[min(52%,14rem)] shrink-0 gap-1 border-zinc-200 px-2.5 text-xs text-zinc-600 hover:border-primary hover:text-primary sm:h-9 sm:max-w-none sm:px-3 sm:text-sm"
+                className="h-8 max-w-[min(52%,14rem)] shrink-0 gap-1 border-border px-2.5 text-xs text-muted-foreground hover:border-primary hover:text-primary sm:h-9 sm:max-w-none sm:px-3 sm:text-sm"
               >
                 <ChevronLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="truncate">{tMsg("breeder.view_all_products", "View All Products")}</span>
               </Button>
             </div>
             <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-              <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 sm:h-[4.75rem] sm:w-[4.75rem]">
+              <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/30 sm:h-[4.75rem] sm:w-[4.75rem]">
                 <BreederLogoImage
                   src={urlBreeder.logo_url}
                   breederName={urlBreeder.name}
@@ -1074,10 +1074,10 @@ export function ShopPageClient({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
-                  <h1 className="truncate text-lg font-bold tracking-tight text-zinc-900 sm:text-xl">
+                  <h1 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
                     {urlBreeder.name}
                   </h1>
-                  <span className="inline-block min-w-[3ch] shrink-0 tabular-nums text-xs text-zinc-400" aria-live="polite">
+                  <span className="inline-block min-w-[3ch] shrink-0 tabular-nums text-xs text-muted-foreground" aria-live="polite">
                     {isLoading ? "—" : `${catalogDisplayTotal} ${tMsg("breeder.strains_count", "Strains")}`}
                   </span>
                 </div>
@@ -1092,13 +1092,13 @@ export function ShopPageClient({
         <CatalogStickyFilterStrip
           catalogHeading={
             urlBreeder ? undefined : (
-              <h1 className="font-sans text-lg font-bold leading-tight tracking-tight text-zinc-900 sm:text-xl">
+              <h1 className="font-sans text-lg font-bold leading-tight tracking-tight text-foreground sm:text-xl">
                 {quickEffective === "clearance"
                   ? t("ล้างสต็อก — เมล็ดพันธุ์ลดราคา", "Clearance — discounted seeds")
                   : quickEffective === "sale"
                     ? t("โปรแบรนด์ — สินค้าลดราคา", "Brand deals — on sale")
                     : t("คลังเมล็ดพันธุ์รวมทุกค่าย", "Seed vault — all breeders")}
-                <span className="ml-2 inline-block min-w-[3ch] text-sm font-normal tabular-nums text-zinc-400">
+                <span className="ml-2 inline-block min-w-[3ch] text-sm font-normal tabular-nums text-muted-foreground">
                   {isLoading ? "(—)" : `(${catalogDisplayTotal} ${t("รายการ", "items")})`}
                 </span>
               </h1>
@@ -1149,7 +1149,7 @@ export function ShopPageClient({
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="text-xs text-zinc-400 underline hover:text-zinc-600"
+                  className="text-xs text-muted-foreground underline hover:text-muted-foreground"
                 >
                   {t("ล้างทั้งหมด", "Clear all")}
                 </button>
@@ -1158,7 +1158,7 @@ export function ShopPageClient({
 
             {qNorm && matchingBreeders.length > 0 && (
               <div className="mb-6">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("แบรนด์ที่ตรงกับคำค้น", "Brands matching your search")}
                 </p>
                 <div className="flex flex-wrap gap-4">
@@ -1170,9 +1170,9 @@ export function ShopPageClient({
                       <Link
                         key={b.id}
                         href={seedsBreederHref(b)}
-                        className="flex w-full max-w-md items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:border-primary/25 sm:w-auto"
+                        className="flex w-full max-w-md items-center gap-4 rounded-2xl border border-border surface-glass p-4 shadow-sm transition-shadow hover:border-primary/25 sm:w-auto"
                       >
-                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-border bg-muted/30">
                           <BreederLogoImage
                             src={b.logo_url}
                             breederName={b.name}
@@ -1184,8 +1184,8 @@ export function ShopPageClient({
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-zinc-900">{b.name}</p>
-                          <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500">{summary.slice(0, 120)}{summary.length > 120 ? "…" : ""}</p>
+                          <p className="font-semibold text-foreground">{b.name}</p>
+                          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{summary.slice(0, 120)}{summary.length > 120 ? "…" : ""}</p>
                           <span className="mt-1.5 inline-block text-xs font-medium text-emerald-600">
                             {t("ดูสายพันธุ์", "View genetics")} →
                           </span>
@@ -1200,12 +1200,12 @@ export function ShopPageClient({
             {isLoading ? (
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {[...Array(12)].map((_, i) => (
-                  <div key={i} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-                    <div className="aspect-square animate-pulse bg-zinc-200" />
+                  <div key={i} className="overflow-hidden rounded-xl border border-border surface-glass shadow-sm">
+                    <div className="aspect-square animate-pulse bg-muted/40" />
                     <div className="space-y-2 p-3">
-                      <div className="mx-auto h-5 w-24 animate-pulse rounded-full bg-zinc-200" />
-                      <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-200" />
-                      <div className="h-10 animate-pulse rounded bg-zinc-200" />
+                      <div className="mx-auto h-5 w-24 animate-pulse rounded-full bg-muted/40" />
+                      <div className="h-3 w-1/2 animate-pulse rounded bg-muted/40" />
+                      <div className="h-10 animate-pulse rounded bg-muted/40" />
                     </div>
                   </div>
                 ))}
@@ -1213,8 +1213,8 @@ export function ShopPageClient({
             ) : filteredProducts.length === 0 ? (
               <>
                 <div className="flex flex-col items-center justify-center gap-3 px-4 py-20 text-center">
-                  <PackageX className="h-12 w-12 text-zinc-600" />
-                  <p className="text-base font-medium text-zinc-600">
+                  <PackageX className="h-12 w-12 text-muted-foreground" />
+                  <p className="text-base font-medium text-muted-foreground">
                     {(() => {
                       const qDisplay = qParam.trim();
                       if (qDisplay && urlBreeder) {
@@ -1253,7 +1253,7 @@ export function ShopPageClient({
                   catalogSeedsFilter={seedsParam.trim() ? seedsParam : null}
                 />
                 {totalFiltered > 0 && (
-                  <p className="mt-6 text-center text-sm text-zinc-500">
+                  <p className="mt-6 text-center text-sm text-muted-foreground">
                     {t("แสดง {current} จาก {total} สินค้า", "Showing {current} of {total} products")
                       .replace("{current}", String(footerShown))
                       .replace("{total}", String(footerTotal))}
@@ -1264,7 +1264,7 @@ export function ShopPageClient({
                     <Button
                       type="button"
                       variant="outline"
-                      className="min-w-[10rem] border-primary/30 bg-white font-semibold text-primary hover:bg-primary/5"
+                      className="min-w-[10rem] border-primary/30 bg-card font-semibold text-primary hover:bg-primary/5"
                       disabled={loadingMore}
                       onClick={loadMoreProducts}
                     >
@@ -1289,10 +1289,10 @@ export function ShopPageClient({
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 lg:hidden">
         <div
-          className="pointer-events-none h-10 bg-gradient-to-t from-white from-40% via-white/90 to-transparent"
+          className="pointer-events-none h-10 bg-gradient-to-t from-background from-40% via-background/90 to-transparent"
           aria-hidden
         />
-        <div className="pointer-events-auto border-t border-zinc-200/90 bg-white/98 px-4 py-3 shadow-[0_-8px_32px_rgba(18,70,62,0.14)] backdrop-blur-lg pb-[max(0.875rem,env(safe-area-inset-bottom))]">
+        <div className="pointer-events-auto border-t border-border/90 bg-card/98 px-4 py-3 shadow-[0_-8px_32px_rgba(18,70,62,0.14)] backdrop-blur-lg pb-[max(0.875rem,env(safe-area-inset-bottom))]">
           <div className="mx-auto flex w-full max-w-md gap-3">
             <Button
               type="button"
@@ -1319,7 +1319,7 @@ export function ShopPageClient({
           type="button"
           aria-label={t("กลับขึ้นด้านบน", "Back to top")}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-8 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-md transition hover:bg-zinc-50 max-lg:bottom-[6.75rem] sm:right-8"
+          className="fixed bottom-8 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-border surface-glass text-muted-foreground shadow-md transition hover:bg-muted/30 max-lg:bottom-[6.75rem] sm:right-8"
         >
           <ArrowUp className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </button>

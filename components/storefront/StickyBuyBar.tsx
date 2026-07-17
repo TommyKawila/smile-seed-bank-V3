@@ -19,7 +19,7 @@ type StickyBuyBarProps = {
 }
 
 const safeBar =
-  "border-t border-zinc-200/90 bg-white/80 p-3 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] backdrop-blur-lg pb-[max(0.75rem,env(safe-area-inset-bottom))] max-lg:pr-24"
+  "border-t border-border bg-background/95 p-3 shadow-[0_-4px_24px_rgba(0,0,0,0.25)] backdrop-blur-lg pb-[max(0.75rem,env(safe-area-inset-bottom))] max-lg:pr-24"
 
 export function StickyBuyBar({
   visible,
@@ -50,18 +50,18 @@ export function StickyBuyBar({
             <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
               <div className="min-w-0 flex-1 pr-2">
                 <p
-                  className="truncate text-[11px] text-zinc-500 sm:text-xs"
+                  className="truncate text-[11px] text-foreground/60 sm:text-xs"
                   title={productName}
                 >
                   {productName}
                 </p>
-                <p className="font-sans text-lg font-bold tabular-nums text-zinc-900 sm:text-xl">
+                <p className="font-sans text-lg font-bold tabular-nums text-primary sm:text-xl">
                   {outOfStock ? "—" : priceLabel}
                 </p>
               </div>
               <div className="relative flex shrink-0 flex-col items-end gap-0.5">
                 {lowStock && (
-                  <span className="rounded border border-amber-200/80 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-amber-900">
+                  <span className="rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[9px] font-semibold leading-none text-red-400">
                     {lowStockLabel}
                   </span>
                 )}
@@ -70,9 +70,9 @@ export function StickyBuyBar({
                   onClick={onAdd}
                   disabled={disabled}
                   className={cn(
-                    "inline-flex h-10 min-w-[7rem] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-bold text-white shadow-md transition",
-                    "bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                    "inline-flex h-10 min-w-[7rem] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-bold text-primary-foreground shadow-md transition",
+                    "bg-primary hover:bg-primary/90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   )}
                 >
                   <ShoppingCart className="h-4 w-4 shrink-0 opacity-95" aria-hidden />

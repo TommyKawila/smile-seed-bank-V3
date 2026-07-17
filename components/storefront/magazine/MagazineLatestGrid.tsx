@@ -9,14 +9,12 @@ import {
   isKnowledgeCategory,
   isResearchCategory,
   formatResearchRefId,
-  magazineCategoryDisplayTh,
 } from "@/lib/blog-research-category";
 import { estimateReadingMinutesFromExcerpt } from "@/lib/blog-reading-time";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
 import { cn } from "@/lib/utils";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
-
-const mono = "font-[family-name:var(--font-journal-mono)] tabular-nums";
+import { magazineCategoryLabel } from "@/lib/blog-category-labels";
 
 function formatPostDate(iso: string | null): string {
   if (!iso) return "—";
@@ -36,7 +34,7 @@ function CardImage({ src, alt, className }: { src: string | null; alt: string; c
     return (
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-100",
+          "absolute inset-0 bg-gradient-to-br from-muted/50 via-card to-background",
           className
         )}
       />
@@ -57,15 +55,9 @@ function CardImage({ src, alt, className }: { src: string | null; alt: string; c
   );
 }
 
-function GlassTag({ children, className }: { children: ReactNode; className?: string }) {
+function CategoryTag({ children }: { children: ReactNode }) {
   return (
-    <span
-      className={cn(
-        mono,
-        "inline-flex items-center rounded-sm border border-white/50 bg-white/45 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-950 shadow-sm backdrop-blur-md",
-        className
-      )}
-    >
+    <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-primary backdrop-blur-sm">
       {children}
     </span>
   );
@@ -81,14 +73,9 @@ function CardMetaFooter({
   readMin: number;
 }) {
   return (
-    <div
-      className={cn(
-        mono,
-        "mt-auto flex flex-wrap items-center border-t border-zinc-100 pt-3 text-[11px] tracking-wide text-zinc-500"
-      )}
-    >
+    <div className="mt-auto flex flex-wrap items-center border-t border-border pt-3 font-sans text-xs text-foreground/50">
       <time dateTime={publishedAt ?? undefined}>{formatPostDate(publishedAt)}</time>
-      <span className="mx-2 text-zinc-300" aria-hidden>
+      <span className="mx-2 text-foreground/25" aria-hidden>
         ·
       </span>
       <span>{readMin} min read</span>
@@ -98,12 +85,7 @@ function CardMetaFooter({
 
 function RefTag({ children }: { children: ReactNode }) {
   return (
-    <span
-      className={cn(
-        mono,
-        "inline-flex w-fit rounded-sm border border-zinc-200/90 bg-zinc-100/90 px-2 py-0.5 text-[10px] font-medium tracking-wide text-zinc-600"
-      )}
-    >
+    <span className="inline-flex w-fit rounded-md border border-border bg-background/70 px-2 py-0.5 font-sans text-[10px] font-medium tracking-wide text-foreground/70 backdrop-blur-sm">
       {children}
     </span>
   );
@@ -134,12 +116,12 @@ function BentoPostCard({
     <Link
       href={`/blog/${post.slug}`}
       className={cn(
-        "group flex h-full min-h-0 flex-col overflow-hidden rounded-sm border border-[#e8eaef] bg-white shadow-sm transition-shadow duration-300 hover:border-emerald-200/60 hover:shadow-lg"
+        "group flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card/60 shadow-sm surface-glass transition-shadow duration-300 hover:border-primary/30 hover:shadow-md"
       )}
     >
       <div
         className={cn(
-          "relative w-full overflow-hidden rounded-t-sm bg-zinc-100",
+          "relative w-full overflow-hidden rounded-t-2xl bg-muted/30",
           isFeatured && "min-h-[220px] flex-1 lg:min-h-[260px]",
           isCompact && "min-h-[130px] flex-1 basis-0 lg:min-h-[140px]",
           isMedium && "aspect-[16/10] min-h-[180px] shrink-0",
@@ -147,20 +129,20 @@ function BentoPostCard({
         )}
       >
         <CardImage src={post.featured_image} alt={cardTitle} />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-900/50 via-transparent to-transparent opacity-80 transition group-hover:opacity-90" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent opacity-90 transition group-hover:opacity-100" />
         <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end gap-2 p-3 sm:p-4">
-          {post.category && <GlassTag>{post.category.name}</GlassTag>}
-          {showRef && <RefTag>{refId}</RefTag>}
-          {research && (
-            <VerifiedResearchBadge className="border-white/40 bg-white/35 text-emerald-950 backdrop-blur-md" />
+          {post.category && (
+            <CategoryTag>{magazineCategoryLabel(post.category, locale)}</CategoryTag>
           )}
+          {showRef && <RefTag>{refId}</RefTag>}
+          {research && <VerifiedResearchBadge />}
         </div>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-2 p-4 sm:p-5">
         <h3
           className={cn(
-            "font-sans font-semibold leading-snug tracking-[-0.02em] text-zinc-900 group-hover:text-emerald-950",
+            "font-sans font-semibold leading-snug tracking-tight text-foreground group-hover:text-primary",
             isFeatured && "text-xl sm:text-2xl lg:text-[1.65rem]",
             isCompact && "text-base sm:text-[1.05rem]",
             isMedium && "text-lg sm:text-xl",
@@ -172,7 +154,7 @@ function BentoPostCard({
         {cardExcerpt && (
           <p
             className={cn(
-              "line-clamp-3 text-sm font-light leading-relaxed text-zinc-600",
+              "line-clamp-3 text-sm leading-relaxed text-foreground/65",
               isCompact && "line-clamp-2 text-[13px]",
               isMedium && "line-clamp-3"
             )}
@@ -195,7 +177,7 @@ export function MagazineLatestGrid({
 }) {
   if (posts.length === 0) {
     return (
-      <div className="rounded-sm border border-dashed border-[#f3f4f6] bg-white py-20 text-center text-zinc-500">
+      <div className="rounded-2xl border border-dashed border-border bg-card/60 py-20 text-center text-muted-foreground">
         ยังไม่มีบทความในขณะนี้
       </div>
     );

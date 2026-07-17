@@ -19,10 +19,10 @@ export function BankTransferAccountList({
       {accounts.map((acc) => (
         <div
           key={`bank-${acc.id}`}
-          className="rounded-xl border border-zinc-200/95 bg-white p-4 shadow-sm"
+          className="rounded-xl border border-border/95 bg-card p-4 shadow-sm"
         >
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b border-zinc-100 pb-3">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-3">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
               {t("ยอดที่ต้องโอน", "Amount to transfer")}
             </span>
             <span className="font-mono text-xl font-semibold tabular-nums text-primary">
@@ -31,18 +31,18 @@ export function BankTransferAccountList({
           </div>
           <dl className="space-y-2.5 text-sm">
             <div className="flex justify-between gap-3">
-              <dt className="shrink-0 text-zinc-500">{t("ธนาคาร", "Bank")}</dt>
-              <dd className="text-right font-medium text-zinc-900">{acc.bank_name}</dd>
+              <dt className="shrink-0 text-muted-foreground">{t("ธนาคาร", "Bank")}</dt>
+              <dd className="text-right font-medium text-foreground">{acc.bank_name}</dd>
             </div>
             <div className="flex justify-between gap-3">
-              <dt className="shrink-0 text-zinc-500">{t("ชื่อบัญชี", "Account name")}</dt>
-              <dd className="text-right font-medium text-zinc-900">
+              <dt className="shrink-0 text-muted-foreground">{t("ชื่อบัญชี", "Account name")}</dt>
+              <dd className="text-right font-medium text-foreground">
                 {acc.account_name ?? "—"}
               </dd>
             </div>
             <div className="flex justify-between gap-3">
-              <dt className="shrink-0 text-zinc-500">{t("เลขบัญชี", "Account no.")}</dt>
-              <dd className="font-mono font-medium tabular-nums text-zinc-900">
+              <dt className="shrink-0 text-muted-foreground">{t("เลขบัญชี", "Account no.")}</dt>
+              <dd className="font-mono font-medium tabular-nums text-foreground">
                 {acc.account_number}
               </dd>
             </div>
@@ -54,7 +54,7 @@ export function BankTransferAccountList({
                 alt=""
                 width={200}
                 height={200}
-                className="h-[200px] w-[200px] max-w-full rounded-lg border border-zinc-100 object-contain"
+                className="h-[200px] w-[200px] max-w-full rounded-lg border border-border object-contain"
                 sizes="200px"
                 unoptimized={shouldOffloadImageOptimization(acc.qr_code_url)}
               />

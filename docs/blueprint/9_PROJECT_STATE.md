@@ -4,6 +4,28 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-17 (Cursor skill — ssb-security-audit)
+- **Added:** `.cursor/skills/ssb-security-audit/SKILL.md` — multi-pass static security audit checklist (auth, admin, IDOR, RLS, secrets, checkout, LINE, XSS)
+- **Usage:** สั่งในแชท เช่น `ใช้ skill ssb-security-audit ทำ Pass 1` หรือ `Audit security โฟกัส checkout`
+- **Note:** ไม่แทน `/review-security` (diff/PR) และไม่ใช่ live pentest
+
+### บันทึกการทำงาน — 2026-07-17 (V4 Cyber-Organic — storefront UI Phases 0–5)
+- **Phase 0:** `.storefront-v4` scoped tokens ใน `globals.css` · wrap `app/(storefront)/layout.tsx` · body `bg-background` (Admin light คงเดิม)
+- **Phase 1:** Navbar/Footer/StorefrontLayoutClient dark shell · footer credit Gemini/Tommy (verbatim TH)
+- **Phase 2:** `AiQuickToolsDock` หลัง hero · `homepage-sections` + `HomePageBelowFold` · Hero H1 gradient · `/tools/[slug]` stub
+- **Phase 3:** Shop catalog — `ShopPageClient`, `ProductCard`, `FilterSidebar`, filter strip/chips, spotlight/insight cards
+- **Phase 4:** PDP — `product-detail-client.tsx` dark surfaces · `ProductSpecs.tsx` V4 genetic bars (emerald sativa / indica glow)
+- **Phase 5:** profile, blog, checkout, login, line entry, cart sheet, age gate + storefront components batch token migration
+- **Phase 6 (pending บอส):** PSI 3-run median `/`, `/shop`, `/product/[slug]`, `/seeds` — อัป `6_PERF_BUDGETS.md` เมื่อ ≥90 เท่านั้น
+- **Build:** `next build` compile ✓ (sitemap prerender ล้มเพราะ DB offline ใน sandbox — ไม่เกี่ยว UI)
+- **ไฟล์หลัก:** `globals.css`, `tailwind.config.ts`, `StorefrontLayoutClient.tsx`, `Navbar.tsx`, `Footer.tsx`, `AiQuickToolsDock.tsx`, `home-stream.tsx`, `HomePageBelowFold.tsx`, `Hero.tsx`, `ShopPageClient.tsx`, `FilterSidebar.tsx`, `ProductSpecs.tsx`, `product-detail-client.tsx`, + storefront components batch
+
+### บันทึกการทำงาน — 2026-07-17 (V4 Cyber-Organic — blueprint docs)
+- **Scope:** Storefront V4 dark theme docs only · Admin light UI unchanged · code migration deferred
+- **Design system:** `5_UI_UX_DESIGN_SYSTEM.md` → V4 Cyber-Organic (slate-950, emerald, glass surfaces, H1 gradient, AI dock, footer credit)
+- **Sync:** `1_PRD_PROJECT_OVERVIEW.md`, `7_A11Y_CHECKLIST.md` (dark contrast), `4_ARCHITECTURE_DIRECTORY.md` (`ai_quick_tools_dock`, `/tools/*`), `.cursorrules`
+- **Next (code):** `globals.css`, `AiQuickToolsDock.tsx`, dark storefront components · PSI retest → `6_PERF_BUDGETS.md`
+
 ### บันทึกการทำงาน — 2026-07-17 (Vercel Speed Insights — catalog/profile perf)
 - **Phase 1–3:** CLS/LCP/FCP quick wins + catalog SSR + profile RSC shell
 - **CLS:** ตัด `useMediaQuery(..., true)` → mobile-first / CSS `lg:` sidebar · ลบ double `pt-20` ที่ shop/profile · breeder count `tabular-nums min-w-[3ch]` · profile order cards ถอน `y:8` entry

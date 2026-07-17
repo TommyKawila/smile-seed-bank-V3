@@ -17,7 +17,7 @@ export default function LineLiffEntryError({
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md items-center px-4 py-12">
-      <Alert className="border-primary/20 bg-white shadow-sm">
+      <Alert className="border-primary/20 bg-card shadow-sm">
         <AlertTitle>โหลดไม่สำเร็จ</AlertTitle>
         <AlertDescription>กรุณาลองใหม่ หรือเปิดร้านจากแชท LINE อีกครั้ง</AlertDescription>
         <Button className="mt-4" type="button" onClick={reset}>

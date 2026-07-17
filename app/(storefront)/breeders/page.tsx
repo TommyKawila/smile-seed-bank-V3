@@ -24,7 +24,7 @@ function HighlightGrid({ rows }: { rows: HighlightRow[] }) {
           <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/60">{label}</p>
-            <p className="text-xs leading-snug text-zinc-700">{value}</p>
+            <p className="text-xs leading-snug text-muted-foreground">{value}</p>
           </div>
         </li>
       ))}
@@ -55,7 +55,7 @@ function ExpandableDescription({
       {/* Summary — always visible, never falls back to fullText */}
       {summary && (
         <div className="relative">
-          <p className="text-sm leading-relaxed text-zinc-500">{summary}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{summary}</p>
           {hasMore && !expanded && (
             <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent" />
           )}
@@ -73,13 +73,13 @@ function ExpandableDescription({
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             style={{ overflow: "hidden" }}
           >
-            <div className="mt-3 border-t border-zinc-100 pt-3 space-y-3">
+            <div className="mt-3 border-t border-border pt-3 space-y-3">
               {fullText && fullText !== summary && (
-                <p className="text-sm leading-relaxed text-zinc-500">{fullText}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{fullText}</p>
               )}
               {highlights.length > 0 && (
                 <>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Key Highlights</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Key Highlights</p>
                   <HighlightGrid rows={highlights} />
                 </>
               )}
@@ -124,7 +124,7 @@ export default function BreedersPage() {
   const active = breeders.filter((b) => b.is_active);
 
   return (
-    <div className="min-h-screen bg-white pb-24 pt-24">
+    <div className="min-h-screen bg-background pb-24 pt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
 
         {/* Page Header */}
@@ -133,10 +133,10 @@ export default function BreedersPage() {
             <Leaf className="h-3.5 w-3.5" />
             {t("แบรนด์ที่เราคัดสรร", "Our Curated Breeders")}
           </span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
             {t("Breeders ชั้นนำระดับโลก", "World-Class Breeders")}
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-500">
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
             {t(
               "เราคัดสรรเฉพาะ Breeder ที่มีชื่อเสียงและผ่านการตรวจสอบคุณภาพ เพื่อมอบสายพันธุ์ที่ดีที่สุดให้แก่คุณ",
               "We partner only with reputable, quality-verified breeders to bring you the finest genetics available."
@@ -155,7 +155,7 @@ export default function BreedersPage() {
         {!isLoading && active.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-20 text-center">
             <Leaf className="h-12 w-12 text-zinc-200" />
-            <p className="text-sm text-zinc-400">{t("ยังไม่มี Breeder", "No breeders yet")}</p>
+            <p className="text-sm text-muted-foreground">{t("ยังไม่มี Breeder", "No breeders yet")}</p>
           </div>
         )}
 
@@ -171,10 +171,10 @@ export default function BreedersPage() {
               <m.div
                 key={breeder.id}
                 variants={cardVariant as import("framer-motion").Variants}
-                className="group flex flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
                 {/* Logo area */}
-                <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-zinc-50">
+                <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-muted/30">
                   <div className="flex h-28 w-28 items-center justify-center">
                     <BreederLogoImage
                       src={breeder.logo_url}
@@ -192,7 +192,7 @@ export default function BreedersPage() {
 
                 {/* Content */}
                 <div className="flex flex-1 flex-col p-5">
-                  <h3 className="mb-2 text-base font-bold text-zinc-900 group-hover:text-primary">
+                  <h3 className="mb-2 text-base font-bold text-foreground group-hover:text-primary">
                     {breeder.name}
                   </h3>
                   {(() => {
@@ -274,7 +274,7 @@ export default function BreedersPage() {
         <div className="mt-14 text-center">
           <Link
             href="/shop"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-primary"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"
           >
             <ChevronRight className="h-4 w-4 rotate-180" />
             {t("กลับไปร้านค้า", "Back to Shop")}

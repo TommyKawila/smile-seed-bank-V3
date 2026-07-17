@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Smile Seed Bank — Premium Eco-Clinical (Teal + Lavender) */
+    /* Admin + auth — Light (legacy) */
     --background: 0 0% 100%;
     --foreground: 240 5% 10%;
 
@@ -18,6 +18,7 @@
     --primary-foreground: 0 0% 98%;
 
     --sativa: 158 95% 45%;
+    --indica: 263 70% 58%;
 
     --secondary: 255 55% 90%;
     --secondary-foreground: 255 45% 35%;
@@ -38,6 +39,29 @@
     --radius: 0.75rem;
   }
 
+  /* Storefront V4 Cyber-Organic — scoped; Admin stays on :root light */
+  .storefront-v4 {
+    --background: 222 47% 4%;
+    --foreground: 0 0% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 160 84% 45%;
+    --primary-foreground: 222 47% 4%;
+    --sativa: 160 84% 45%;
+    --indica: 263 70% 58%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 160 84% 45%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 160 84% 45%;
+  }
+
   * {
     @apply border-border;
   }
@@ -51,6 +75,14 @@
   .magazine-article-emoji {
     font-family: var(--font-magazine), "Prompt", "Noto Sans Thai", "Segoe UI Emoji",
       "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif;
+  }
+
+  .text-h1-cyber {
+    @apply bg-gradient-to-r from-white to-emerald-400 bg-clip-text text-transparent;
+  }
+
+  .surface-glass {
+    @apply border border-border bg-slate-900/40 backdrop-blur-md;
   }
 }
 

@@ -8,12 +8,12 @@ export function SmartTieInStrip({ products }: { products: SmartProductPreview[] 
   if (products.length === 0) return null;
 
   return (
-    <aside className="my-12 rounded-2xl border border-zinc-200 bg-gradient-to-b from-emerald-50/50 to-zinc-50 p-6 shadow-sm">
+    <aside className="my-12 rounded-2xl border border-border bg-card/60 p-6 shadow-sm surface-glass">
       <div className="mb-5 flex items-baseline justify-between gap-3">
-        <h3 className="font-sans text-lg font-semibold text-emerald-950">
+        <h3 className="font-sans text-lg font-semibold text-foreground">
           Editor&apos;s pick
         </h3>
-        <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-emerald-700">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
           Related gear
         </span>
       </div>
@@ -22,9 +22,9 @@ export function SmartTieInStrip({ products }: { products: SmartProductPreview[] 
           <li key={p.id}>
             <Link
               href={p.slug ? `/product/${p.slug}` : "/shop"}
-              className="group flex gap-4 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm transition hover:border-emerald-200 hover:shadow-md"
+              className="group flex gap-4 rounded-xl border border-border bg-card p-3 shadow-sm transition hover:border-primary/30 hover:shadow-md"
             >
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted/30">
                 {p.image_url ? (
                   <Image
                     src={p.image_url}
@@ -38,15 +38,15 @@ export function SmartTieInStrip({ products }: { products: SmartProductPreview[] 
                     unoptimized={shouldOffloadImageOptimization(p.image_url)}
                   />
                 ) : (
-                  <div className="h-full w-full bg-zinc-200" />
+                  <div className="h-full w-full bg-muted/40" />
                 )}
               </div>
               <div className="min-w-0 flex-1 py-0.5">
-                <p className="line-clamp-2 text-sm font-semibold text-zinc-900 group-hover:text-emerald-900">
+                <p className="line-clamp-2 text-sm font-semibold text-foreground group-hover:text-primary">
                   {p.name}
                 </p>
                 {p.breeder_name && (
-                  <p className="mt-1 truncate text-xs text-zinc-600">{p.breeder_name}</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{p.breeder_name}</p>
                 )}
               </div>
             </Link>

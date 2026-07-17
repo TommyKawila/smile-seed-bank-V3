@@ -73,7 +73,7 @@ export function HomeNewsletterSection() {
   }
 
   return (
-    <section className="mx-4 mb-14 overflow-hidden rounded-3xl border border-emerald-800/20 bg-emerald-800 sm:mx-6">
+    <section className="mx-4 mb-14 overflow-hidden rounded-3xl border border-emerald-800/20 bg-primary sm:mx-6">
       <div className="mx-auto flex max-w-4xl flex-col items-stretch justify-between gap-8 px-6 py-10 sm:flex-row sm:items-center sm:gap-10">
         <div className="min-w-0 flex-1 text-center sm:text-left">
           <h3 className="font-sans text-xl font-medium leading-snug text-white sm:text-2xl">
@@ -115,12 +115,12 @@ export function HomeNewsletterSection() {
               }}
               placeholder={t("ใส่อีเมลของคุณ...", "you@email.com")}
               disabled={pending}
-              className="min-h-12 h-12 min-w-0 flex-1 touch-manipulation border-white/25 bg-white/95 px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-600 focus-visible:ring-emerald-300"
+              className="min-h-12 h-12 min-w-0 flex-1 touch-manipulation border-white/25 bg-white/95 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus-visible:ring-emerald-300"
             />
             <Button
               type="submit"
               disabled={pending}
-              className="min-h-12 h-12 w-full min-w-[3rem] shrink-0 touch-manipulation rounded-sm border-2 border-white bg-white px-6 text-sm font-semibold tracking-wide text-emerald-900 hover:bg-emerald-50 disabled:opacity-60 sm:w-auto"
+              className="min-h-12 h-12 w-full min-w-[3rem] shrink-0 touch-manipulation rounded-sm border-2 border-white bg-card px-6 text-sm font-semibold tracking-wide text-primary hover:bg-primary/10 disabled:opacity-60 sm:w-auto"
             >
               {pending ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

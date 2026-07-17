@@ -11,7 +11,7 @@ export default function StorefrontError({
 }) {
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-3xl items-center px-4 py-12">
-      <Alert className="border-primary/20 bg-white shadow-sm">
+      <Alert className="border-primary/20 bg-card shadow-sm">
         <AlertTitle>โหลดหน้านี้ไม่สำเร็จ / Page could not load</AlertTitle>
         <AlertDescription>
           ข้อมูลหลักของร้านยังปลอดภัย กรุณาลองโหลดส่วนนี้ใหม่อีกครั้ง

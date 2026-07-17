@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -53,12 +52,12 @@ function HeroMediaPanel({
     );
   }
   if (isLoading) {
-    return <Skeleton className="h-full w-full rounded-none bg-zinc-200" />;
+    return <Skeleton className="h-full w-full rounded-none bg-muted/40" />;
   }
   if (useAnimatedSvg) {
     return (
       <div
-        className="h-full w-full bg-zinc-100 [&>svg]:pointer-events-none [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:min-h-full [&>svg]:object-cover"
+        className="h-full w-full bg-muted/30 [&>svg]:pointer-events-none [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:min-h-full [&>svg]:object-cover"
         dangerouslySetInnerHTML={{ __html: normalizeHeroSvgHtml(svgHtml) }}
       />
     );
@@ -127,29 +126,27 @@ export default function Hero({
     heroCtaButtons && heroCtaButtons.length > 0 ? heroCtaButtons : DEFAULT_HERO_CTA_BUTTONS;
 
   return (
-    <section
-      className="relative flex w-full flex-col overflow-hidden rounded-none bg-zinc-50 max-lg:max-h-[100svh] max-lg:w-full lg:max-h-none"
-    >
+    <section className="relative flex w-full flex-col overflow-hidden rounded-none bg-background max-lg:max-h-[100svh] max-lg:w-full lg:max-h-none">
       <div className="flex flex-1 flex-col lg:grid lg:min-h-0 lg:max-h-none lg:grid-cols-2 lg:items-stretch lg:gap-0 lg:min-w-0">
-        <div className="relative z-10 order-2 -mt-20 flex min-h-[auto] w-full min-w-0 flex-1 flex-col justify-end bg-white px-4 pb-5 pt-5 sm:-mt-24 sm:px-8 sm:pb-8 md:py-20 lg:order-1 lg:mt-0 lg:min-w-0 lg:max-w-xl lg:w-full lg:justify-center lg:self-stretch lg:bg-transparent lg:px-10 lg:py-12 lg:pl-12 lg:pr-10 xl:py-20 xl:pl-16 xl:pr-14">
+        <div className="relative z-10 order-2 -mt-20 flex min-h-[auto] w-full min-w-0 flex-1 flex-col justify-end bg-background px-4 pb-5 pt-5 sm:-mt-24 sm:px-8 sm:pb-8 md:py-20 lg:order-1 lg:mt-0 lg:min-w-0 lg:max-w-xl lg:w-full lg:justify-center lg:self-stretch lg:bg-transparent lg:px-10 lg:py-12 lg:pl-12 lg:pr-10 xl:py-20 xl:pl-16 xl:pr-14">
           <div
             className={cn(
               "w-full lg:min-w-0 space-y-3 break-words sm:space-y-4 lg:space-y-7 xl:space-y-8",
               "animate-in fade-in slide-in-from-left-5 duration-500 fill-mode-both"
             )}
           >
-            <p className={cn(HERO_MONO, "text-[9px] font-bold leading-relaxed tracking-[0.2em] text-emerald-950 break-words sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px]")}>
+            <p className={cn(HERO_MONO, "text-[9px] font-bold leading-relaxed tracking-[0.2em] text-primary break-words sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px]")}>
               {t(
                 "ก่อตั้ง ค.ศ. 2018 // ร้านเมล็ดพันธุ์แห่งรอยยิ้มยุคแรกของไทย",
                 "EST. 2018 // THAILAND'S FIRST SMILE-ERA SEED SHOP"
               )}
             </p>
 
-            <h1 className="font-sans text-[1.65rem] font-bold leading-[1.3] tracking-tight text-zinc-900 break-words sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]">
+            <h1 className="text-h1-cyber font-sans text-[1.65rem] font-bold leading-[1.3] tracking-tight break-words sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]">
               {headline}
             </h1>
 
-            <p className="max-w-md text-sm font-normal leading-relaxed tracking-wide text-zinc-700 break-words sm:text-[15px] lg:text-base">
+            <p className="max-w-md text-sm font-normal leading-relaxed tracking-wide text-muted-foreground break-words sm:text-[15px] lg:text-base">
               {t(
                 "จากร้านลับสู่คลังเมล็ดพันธุ์แท้ที่มือโปรวางใจ การันตีคุณภาพจากประสบการณ์จริงเกือบ 10 ปี",
                 "From underground roots to a vault of authentic genetics. Quality backed by a decade of real experience."
@@ -162,29 +159,27 @@ export default function Hero({
                 const href = getLocalizedPath(btn.href, locale);
                 const showChevron = heroCtaShowsChevron(btn.color);
                 return (
-                  <Button
+                  <Link
                     key={btn.id}
-                    asChild
-                    variant="ghost"
+                    href={href}
+                    aria-label={label}
                     className={cn(
-                      "h-11 w-full rounded-lg px-6 text-sm shadow-none transition-colors sm:min-w-0",
+                      "inline-flex min-h-12 h-12 w-full items-center justify-center gap-2 rounded-lg px-6 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-w-0",
                       heroCtaButtonClassName(btn.color)
                     )}
                   >
-                    <Link href={href} aria-label={label}>
-                      {label}
-                      {showChevron ? (
-                        <ChevronRight className="ml-1 h-4 w-4 opacity-90" strokeWidth={1.75} aria-hidden />
-                      ) : null}
-                    </Link>
-                  </Button>
+                    {label}
+                    {showChevron ? (
+                      <ChevronRight className="ml-1 h-4 w-4 opacity-90" strokeWidth={1.75} aria-hidden />
+                    ) : null}
+                  </Link>
                 );
               })}
             </div>
           </div>
         </div>
 
-        <div className="relative order-1 w-full shrink-0 overflow-hidden bg-zinc-100 aspect-[392/429] lg:order-2 lg:aspect-[617/712] lg:h-auto lg:min-h-0 lg:w-full lg:min-w-0">
+        <div className="relative order-1 w-full shrink-0 overflow-hidden bg-muted aspect-[392/429] lg:order-2 lg:aspect-[617/712] lg:h-auto lg:min-h-0 lg:w-full lg:min-w-0">
           <HeroMediaPanel
             isLoading={isLoading}
             useAnimatedSvg={Boolean(useAnimatedSvg)}
@@ -202,7 +197,6 @@ export default function Hero({
                   )
             }
           />
-          <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-zinc-900/5 max-lg:hidden" />
         </div>
       </div>
     </section>

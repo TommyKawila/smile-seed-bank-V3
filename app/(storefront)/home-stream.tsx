@@ -12,6 +12,7 @@ import { getHeroCarouselBannersCached } from "@/services/hero-banner-service";
 import {
   DEFAULT_HOME_SECTION_KEYS,
   DEFAULT_SECTION_FALLBACK_LABELS,
+  normalizeBelowFoldSections,
   type HomePageSectionPayload,
 } from "@/lib/homepage-sections";
 import { listHeroCtaButtons } from "@/services/homepage-hero-cta-service";
@@ -70,14 +71,14 @@ export async function HomeMainStream() {
     href,
     color,
   }));
-  const belowSections = sections.filter((s) => s.key !== "hero");
+  const belowSections = normalizeBelowFoldSections(sections.filter((s) => s.key !== "hero"));
   const vpHint = cookies().get(VIEWPORT_HINT_COOKIE)?.value;
   const initialLcpDesktop = vpHint === "d";
   const heroCarousel = (
     <HomeHeroCarousel banners={banners} initialLcpDesktop={initialLcpDesktop} />
   );
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
+    <div className="min-h-screen bg-background text-foreground">
       <HomePageHeroClient sections={sections} heroCarousel={heroCarousel} heroCtaButtons={heroCtaPayload} />
       <div className="w-full [content-visibility:auto] [contain-intrinsic-size:0_600px] overflow-hidden">
         <HomePageBelowFoldHost

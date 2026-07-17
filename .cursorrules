@@ -12,7 +12,7 @@ Before performing any task, you MUST read and follow these pillars from `docs/bl
 3. `2_BUSINESS_LOGIC_RULES.md` - Stock, Discounts, Wholesale, & AI Scanner logic.[cite: 3]
 4. `3_DB_SCHEMA_RLS.md` - Tables (Products, Variants, Orders) & Security.[cite: 4]
 5. `4_ARCHITECTURE_DIRECTORY.md` - Project structure + route tiers.[cite: 5]
-6. `5_UI_UX_DESIGN_SYSTEM.md` - Premium Eco-Clinical (Teal/Lavender) & Tokens.[cite: 6]
+6. `5_UI_UX_DESIGN_SYSTEM.md` - V4 Cyber-Organic (Slate-950/Emerald) storefront tokens · Admin stays light.[cite: 6]
 7. `7_A11Y_CHECKLIST.md` - Touch targets, single-link cards, focus.[cite: 8]
 8. `8_SEO_SCHEMA.md` - Canonical, sitemap, JSON-LD.[cite: 8]
 
@@ -48,7 +48,7 @@ All code generation MUST adhere to these rules:
 # CORE CODING RULES
 - **Language:** Code & Comments in English. Communication with "บอส" in Thai.[cite: 1]
 - **Types:** STRICT TypeScript. Avoid `any` at all costs.[cite: 1]
-- **Design:** Mobile-first, Boutique feel, using Teal (#12463e) and Lavender tokens.[cite: 1, 6]
+- **Design:** Mobile-first storefront V4 Cyber-Organic — dark slate-950 + emerald semantic tokens (`5_UI_UX_DESIGN_SYSTEM.md`). Admin panel: light UI unchanged.[cite: 1, 6]
 - **Bilingual:** Standardize TH/EN support in all UI and SEO metadata.[cite: 1]
 - **Case-Insensitivity:** Use `.toLowerCase()` for filtering logic consistently.[cite: 8]
 

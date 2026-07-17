@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import BookOpen from "lucide-react/dist/esm/icons/book-open";
 import Leaf from "lucide-react/dist/esm/icons/leaf";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
@@ -11,7 +10,6 @@ import { magazineDisplayExcerpt, magazineDisplayTitle } from "@/lib/magazine-bil
 import { resolvePublicAssetUrl } from "@/lib/public-storage-url";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
-import { BlogHeroSlogan } from "@/components/storefront/magazine/BlogHeroSlogan";
 import { VerifiedResearchBadge } from "@/components/storefront/magazine/VerifiedResearchBadge";
 import { isResearchCategory } from "@/lib/blog-research-category";
 import { magazineCategoryLabel } from "@/lib/blog-category-labels";
@@ -30,13 +28,13 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
   const readLabel = t(`อ่านบทความ: ${cardTitle}`, `Read article: ${cardTitle}`);
 
   return (
-    <article className="overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition hover:shadow-lg">
+    <article className="overflow-hidden rounded-2xl surface-glass transition hover:border-primary/30">
       <Link
         href={href}
-        className="group flex flex-col focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+        className="group flex flex-col focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         aria-label={readLabel}
       >
-        <div className="relative aspect-video min-h-[11rem] w-full overflow-hidden bg-zinc-100">
+        <div className="relative aspect-video min-h-[11rem] w-full overflow-hidden bg-muted/30">
           {img ? (
             <Image
               src={img}
@@ -51,27 +49,27 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
               unoptimized={shouldOffloadImageOptimization(img)}
             />
           ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">
-              <Leaf className="h-10 w-10 text-zinc-300" aria-hidden />
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-muted/40 to-muted/60">
+              <Leaf className="h-10 w-10 text-muted-foreground" aria-hidden />
             </div>
           )}
         </div>
         <div className="flex flex-1 flex-col p-5">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             {post.category && (
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-900">
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                 {magazineCategoryLabel(post.category, locale)}
               </span>
             )}
             {research && <VerifiedResearchBadge />}
           </div>
-          <h3 className="font-sans line-clamp-2 text-lg font-semibold leading-snug text-zinc-900 group-hover:text-emerald-900">
+          <h3 className="font-sans line-clamp-2 text-lg font-semibold leading-snug text-foreground group-hover:text-primary">
             {cardTitle}
           </h3>
           {cardExcerpt && (
-            <p className="mt-2 line-clamp-3 flex-1 text-sm text-zinc-600">{cardExcerpt}</p>
+            <p className="mt-2 line-clamp-3 flex-1 text-sm text-muted-foreground">{cardExcerpt}</p>
           )}
-          <span className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-emerald-800 px-4 text-sm font-semibold text-white group-hover:bg-emerald-900 sm:w-auto sm:self-start">
+          <span className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-white group-hover:bg-primary/90 sm:w-auto sm:self-start">
             {t("อ่านเพิ่มเติม", "Read article")}
           </span>
         </div>
@@ -103,46 +101,41 @@ export function HomeInsightSection({
   );
 
   return (
-    <section className="border-b border-zinc-100 bg-white pt-20 pb-14 sm:pt-24 sm:pb-16">
+    <section className="border-b border-border bg-background py-10 sm:py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mb-10 space-y-4 text-center sm:mb-12">
-          <span className="inline-flex min-h-11 items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-emerald-800">
-            <BookOpen className="h-3.5 w-3.5 shrink-0" />
+        <div className="mb-6 space-y-2 text-center sm:mb-8 sm:space-y-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
             {t("ข้อมูลเชิงลึก", "Insights")}
-          </span>
-          <h2 className="font-sans text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
+          </p>
+          <h2 className="font-sans text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {mainHeading}
           </h2>
-          <BlogHeroSlogan />
-          <p className="mx-auto mt-1 max-w-2xl text-sm text-zinc-600">
-            {t(
-              "สรุปล่าสุดจาก Smile Seed Blog — อ่านต่อเพื่อเพิ่มความแม่นยำในการปลูก",
-              "Latest from Smile Seed Blog — precision growing, distilled."
-            )}
+          <p className="mx-auto max-w-md text-sm text-muted-foreground">
+            {t("เทคนิคปลูกและพันธุกรรมที่คัดมาแล้ว", "Curated grow tips & genetics")}
           </p>
         </div>
 
         {loading ? (
           <div className="space-y-8">
-            <div className="grid min-h-[320px] animate-pulse gap-0 overflow-hidden rounded-sm border border-zinc-100 bg-zinc-100 lg:grid-cols-2">
-              <div className="hidden bg-zinc-200 lg:block" />
-              <div className="min-h-[220px] bg-zinc-100 lg:min-h-0" />
+            <div className="grid min-h-[320px] animate-pulse gap-0 overflow-hidden rounded-sm border border-border bg-muted/30 lg:grid-cols-2">
+              <div className="hidden bg-muted/40 lg:block" />
+              <div className="min-h-[220px] bg-muted/30 lg:min-h-0" />
             </div>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-[280px] animate-pulse rounded-sm border border-[#f3f4f6] bg-zinc-50"
+                  className="h-[280px] animate-pulse rounded-sm border border-border bg-muted/30"
                 />
               ))}
             </div>
           </div>
         ) : posts.length === 0 ? (
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-sm text-muted-foreground">
             {t("ยังไม่มีบทความ", "No articles yet.")}{" "}
             <Link
               href="/blog"
-              className="inline-flex min-h-11 min-w-[44px] items-center justify-center font-medium text-emerald-800 hover:underline"
+              className="inline-flex min-h-11 min-w-[44px] items-center justify-center font-medium text-primary hover:underline"
             >
               {t("ไปที่คลังความรู้สายเขียว", "Visit the knowledge vault")}
             </Link>
@@ -150,16 +143,16 @@ export function HomeInsightSection({
         ) : (
           <div className="space-y-10">
             {featured && (
-              <article className="group overflow-hidden rounded-sm border border-zinc-200/90 bg-zinc-50 shadow-[0_2px_28px_-6px_rgba(6,78,59,0.12)] lg:grid lg:min-h-[min(28rem,70vh)] lg:grid-cols-2 lg:items-stretch lg:gap-0">
-                <div className="order-1 flex flex-col justify-center border-zinc-100 px-6 py-10 sm:px-10 lg:order-1 lg:border-r lg:py-14 lg:pl-10 xl:pl-14">
-                  <span className="mb-4 inline-flex w-fit rounded-full border border-emerald-200/90 bg-white/80 px-3 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
+              <article className="group overflow-hidden rounded-2xl surface-glass lg:grid lg:min-h-[min(28rem,70vh)] lg:grid-cols-2 lg:items-stretch lg:gap-0">
+                <div className="order-1 flex flex-col justify-center px-6 py-8 sm:px-10 lg:order-1 lg:py-12 lg:pl-10 xl:pl-14">
+                  <span className="mb-3 inline-flex w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
                     {t("เกร็ดความรู้", "Knowledge")}
                   </span>
-                  <h3 className="font-sans text-2xl font-bold leading-[1.25] tracking-tight text-emerald-800 sm:text-3xl md:text-[1.65rem] md:leading-snug">
+                  <h3 className="font-sans text-2xl font-bold leading-[1.25] tracking-tight text-foreground sm:text-3xl md:text-[1.65rem] md:leading-snug">
                     {featuredTitle}
                   </h3>
                   {featuredExcerpt && (
-                    <p className="mt-5 line-clamp-5 text-sm font-light leading-relaxed text-zinc-600 sm:text-base">
+                    <p className="mt-5 line-clamp-5 text-sm font-light leading-relaxed text-muted-foreground sm:text-base">
                       {featuredExcerpt}
                     </p>
                   )}
@@ -167,14 +160,14 @@ export function HomeInsightSection({
                     <Button
                       asChild
                       size="lg"
-                      className="min-h-11 rounded-sm bg-emerald-800 px-8 font-semibold text-white shadow-none hover:bg-emerald-900"
+                      className="min-h-11 rounded-sm bg-primary px-8 font-semibold text-white shadow-none hover:bg-primary/90"
                     >
                       <Link href={`/blog/${featured.slug}`}>{t("อ่านบทความ", "Read article")}</Link>
                     </Button>
                   </div>
                 </div>
                 <div
-                  className="relative order-2 block min-h-[260px] w-full overflow-hidden bg-zinc-200 lg:min-h-full"
+                  className="relative order-2 block min-h-[260px] w-full overflow-hidden bg-muted/40 lg:min-h-full"
                   aria-hidden
                 >
                   {featuredImg ? (
@@ -191,8 +184,8 @@ export function HomeInsightSection({
                       unoptimized={shouldOffloadImageOptimization(featuredImg)}
                     />
                   ) : (
-                    <div className="flex h-full min-h-[260px] items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200">
-                      <Leaf className="h-16 w-16 text-zinc-300" />
+                    <div className="flex h-full min-h-[260px] items-center justify-center bg-gradient-to-br from-muted/40 to-muted/60">
+                      <Leaf className="h-16 w-16 text-muted-foreground" />
                     </div>
                   )}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-900/10 via-transparent to-transparent" />

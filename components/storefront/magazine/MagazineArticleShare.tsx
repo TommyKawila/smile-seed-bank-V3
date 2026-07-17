@@ -30,7 +30,7 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
 
   return (
     <div
-      className="border-t border-zinc-200 pt-10"
+      className="border-t border-border pt-10"
       role="group"
       aria-label={
         title
@@ -38,7 +38,7 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
           : t("แบ่งปันประสบการณ์", "Share article")
       }
     >
-      <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+      <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
         {t("แบ่งปันประสบการณ์", "Share")}
       </p>
       <div className="flex flex-wrap items-center gap-2">
@@ -46,7 +46,7 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
           href={fbHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/60 text-foreground/65 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
           aria-label={t("แชร์บน Facebook", "Share on Facebook")}
         >
           <Facebook className="h-4 w-4" />
@@ -55,7 +55,7 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
           href={lineHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/60 text-foreground/65 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
           aria-label={t("แชร์บน LINE", "Share on LINE")}
         >
           <LineIcon className="h-4 w-4" />
@@ -63,10 +63,10 @@ export function MagazineArticleShare({ url, title = "" }: Props) {
         <button
           type="button"
           onClick={onCopy}
-          className="inline-flex h-10 items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 text-xs text-zinc-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-card/60 px-3 text-xs text-foreground/65 shadow-sm transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
           aria-label={t("คัดลอกลิงก์", "Copy link")}
         >
-          {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Link2 className="h-4 w-4" />}
+          {copied ? <Check className="h-4 w-4 text-primary" /> : <Link2 className="h-4 w-4" />}
           {copied ? t("คัดลอกแล้ว", "Copied") : t("คัดลอกลิงก์", "Copy link")}
         </button>
       </div>

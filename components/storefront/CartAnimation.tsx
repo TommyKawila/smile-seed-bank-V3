@@ -122,7 +122,7 @@ function FlyingItem({ detail, onDone }: { detail: ActiveFly; onDone: () => void 
       }}
     >
       <div
-        className="relative flex h-11 w-11 flex-col items-center justify-center overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-b from-white to-emerald-50/95 shadow-lg ring-2 ring-emerald-400/25"
+        className="relative flex h-11 w-11 flex-col items-center justify-center overflow-hidden rounded-2xl border border-primary/30/80 bg-gradient-to-b from-white to-emerald-50/95 shadow-lg ring-2 ring-emerald-400/25"
         style={{ boxShadow: `0 6px ${glow}px -4px rgba(16, 185, 129, 0.4)` }}
       >
         <div
@@ -143,7 +143,7 @@ function FlyingItem({ detail, onDone }: { detail: ActiveFly; onDone: () => void 
         ) : (
           <Sprout className="relative z-[1] h-6 w-6 text-emerald-700" strokeWidth={2.25} aria-hidden />
         )}
-        <p className="relative z-[1] max-w-[2.6rem] truncate px-0.5 text-[7px] font-semibold leading-tight text-zinc-700">
+        <p className="relative z-[1] max-w-[2.6rem] truncate px-0.5 text-[7px] font-semibold leading-tight text-muted-foreground">
           {detail.productName}
         </p>
       </div>

@@ -18,9 +18,9 @@ function BlogCard({ blog }: { blog: Blog }) {
   return (
     <Link
       href={`/blog/${blog.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
     >
-      <div className="relative h-48 w-full overflow-hidden bg-zinc-100">
+      <div className="relative h-48 w-full overflow-hidden bg-muted/30">
         {blog.image_url ? (
           <Image
             src={blog.image_url}
@@ -43,14 +43,14 @@ function BlogCard({ blog }: { blog: Blog }) {
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <h3 className="mb-2 line-clamp-2 text-base font-bold leading-tight text-zinc-900 group-hover:text-primary">
+        <h3 className="mb-2 line-clamp-2 text-base font-bold leading-tight text-foreground group-hover:text-primary">
           {title}
         </h3>
         {excerpt && (
-          <p className="line-clamp-2 flex-1 text-sm leading-relaxed text-zinc-500">{excerpt}</p>
+          <p className="line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">{excerpt}</p>
         )}
         <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
             <time dateTime={blog.created_at}>{formatDate(blog.created_at)}</time>
           </div>
@@ -70,7 +70,7 @@ export function BlogListClient({ blogs }: { blogs: Blog[] }) {
 
   if (blogs.length === 0) {
     return (
-      <div className="py-20 text-center text-zinc-400">
+      <div className="py-20 text-center text-muted-foreground">
         <BookOpen className="mx-auto mb-4 h-12 w-12 opacity-30" />
         <p>{t("ยังไม่มีบทความในขณะนี้", "No articles yet")}</p>
       </div>
@@ -85,10 +85,10 @@ export function BlogListClient({ blogs }: { blogs: Blog[] }) {
           <BookOpen className="h-3.5 w-3.5" />
           {t("บทความ & ความรู้", "Articles & Knowledge")}
         </span>
-        <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
           {t("เรียนรู้ไปพร้อมกัน", "Learn Together")}
         </h1>
-        <p className="mt-3 text-base text-zinc-500">
+        <p className="mt-3 text-base text-muted-foreground">
           {t(
             "ความรู้เรื่องเมล็ดพันธุ์ เทคนิคการปลูก และข้อมูลน่ารู้จากทีมงาน",
             "Seed knowledge, growing techniques, and insights from our team"
@@ -99,7 +99,7 @@ export function BlogListClient({ blogs }: { blogs: Blog[] }) {
       {/* Featured Post */}
       {featured && (
         <Link href={`/blog/${featured.slug}`} className="group mb-12 block">
-          <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50 shadow-sm transition-shadow duration-300 hover:shadow-lg sm:flex">
+          <div className="overflow-hidden rounded-2xl border border-border bg-muted/30 shadow-sm transition-shadow duration-300 hover:shadow-lg sm:flex">
             <div className="relative h-60 w-full shrink-0 sm:h-auto sm:w-96">
               {featured.image_url ? (
                 <Image
@@ -127,16 +127,16 @@ export function BlogListClient({ blogs }: { blogs: Blog[] }) {
                   {featured.category}
                 </span>
               )}
-              <h2 className="mb-3 text-xl font-bold leading-tight text-zinc-900 group-hover:text-primary sm:text-2xl">
+              <h2 className="mb-3 text-xl font-bold leading-tight text-foreground group-hover:text-primary sm:text-2xl">
                 {(locale === "en" ? featured.title_en : featured.title) ?? featured.title}
               </h2>
               {((locale === "en" ? featured.excerpt_en : featured.excerpt) ?? featured.excerpt) && (
-                <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-zinc-500">
+                <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
                   {(locale === "en" ? featured.excerpt_en : featured.excerpt) ?? featured.excerpt}
                 </p>
               )}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Calendar className="h-3.5 w-3.5" />
                   <time dateTime={featured.created_at}>{formatDate(featured.created_at)}</time>
                 </div>

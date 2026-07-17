@@ -173,16 +173,16 @@ export function NavbarSearchPanel({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-lg border-zinc-200 bg-white/98 p-0 shadow-xl backdrop-blur-md sm:max-w-lg"
+        className="max-w-lg border-border bg-white/98 p-0 shadow-xl backdrop-blur-md sm:max-w-lg"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className="sr-only">
           <DialogTitle>{t("ค้นหา", "Search")}</DialogTitle>
         </DialogHeader>
 
-        <div className="border-b border-zinc-100 p-4">
+        <div className="border-b border-border p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" aria-hidden />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
             <Input
               ref={inputRef}
               type="search"
@@ -193,7 +193,7 @@ export function NavbarSearchPanel({
               }}
               onKeyDown={onKeyDown}
               placeholder={t("ค้นหาสายพันธุ์หรือแบรนด์...", "Search strains or brands...")}
-              className="h-11 border-zinc-200 bg-white pl-9 pr-3 text-base"
+              className="h-11 border-border bg-card pl-9 pr-3 text-base"
               autoComplete="off"
               aria-autocomplete="list"
               aria-controls="search-suggest-list"
@@ -213,7 +213,7 @@ export function NavbarSearchPanel({
           className="max-h-[min(60vh,420px)] overflow-y-auto px-2 pb-2"
         >
           {loading && debounced.length >= 2 && (
-            <div className="flex items-center justify-center gap-2 py-8 text-sm text-zinc-500">
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
               {t("กำลังค้นหา…", "Searching…")}
             </div>
@@ -235,12 +235,12 @@ export function NavbarSearchPanel({
                   aria-selected={active}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors",
-                    active ? "bg-emerald-50 ring-1 ring-emerald-200/80" : "hover:bg-zinc-50"
+                    active ? "bg-emerald-50 ring-1 ring-emerald-200/80" : "hover:bg-muted/30"
                   )}
                   onMouseEnter={() => setHighlight(i)}
                   onClick={() => go(p.href)}
                 >
-                  <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200/80">
+                  <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted/30 ring-1 ring-zinc-200/80">
                     {p.thumb ? (
                       <Image src={p.thumb} alt="" fill className="object-cover" sizes="48px" unoptimized={shouldOffloadImageOptimization(p.thumb)} />
                     ) : (
@@ -250,8 +250,8 @@ export function NavbarSearchPanel({
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="line-clamp-2 font-semibold text-zinc-900">{p.name}</span>
-                    <span className="mt-0.5 block text-xs text-zinc-500">{sub}</span>
+                    <span className="line-clamp-2 font-semibold text-foreground">{p.name}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">{sub}</span>
                   </span>
                 </button>
               );
@@ -265,12 +265,12 @@ export function NavbarSearchPanel({
                 aria-selected={active}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors",
-                  active ? "bg-emerald-50 ring-1 ring-emerald-200/80" : "hover:bg-zinc-50"
+                  active ? "bg-emerald-50 ring-1 ring-emerald-200/80" : "hover:bg-muted/30"
                 )}
                 onMouseEnter={() => setHighlight(i)}
                 onClick={() => go(b.href)}
               >
-                <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200/80">
+                <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/30 ring-1 ring-zinc-200/80">
                   {b.logoUrl ? (
                     <Image src={b.logoUrl} alt="" width={48} height={48} className="object-contain p-1" unoptimized={shouldOffloadImageOptimization(b.logoUrl)} />
                   ) : (
@@ -278,8 +278,8 @@ export function NavbarSearchPanel({
                   )}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="line-clamp-2 font-semibold text-zinc-900">{b.name}</span>
-                  <span className="mt-0.5 block text-xs font-medium text-emerald-800/90">
+                  <span className="line-clamp-2 font-semibold text-foreground">{b.name}</span>
+                  <span className="mt-0.5 block text-xs font-medium text-primary/90">
                     {t("บรีดเดอร์", "Breeder")}
                   </span>
                 </span>
@@ -289,27 +289,27 @@ export function NavbarSearchPanel({
 
           {empty && (
             <div className="space-y-3 px-2 py-6 text-center">
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-muted-foreground">
                 {t("ไม่พบผลลัพธ์ที่ตรงกัน — ลองคำค้นอื่น หรือดูสายพันธุ์ยอดนิยม", "No matches — try another term or explore popular picks.")}
               </p>
               <div className="flex flex-wrap justify-center gap-2 text-xs">
                 <Link
                   href="/shop?thc=high"
-                  className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 font-medium text-zinc-700 hover:bg-zinc-100"
+                  className="rounded-full border border-border bg-muted/30 px-3 py-1.5 font-medium text-muted-foreground hover:bg-muted/30"
                   onClick={() => onOpenChange(false)}
                 >
                   {locale === "en" ? "High THC" : "THC สูง"}
                 </Link>
                 <Link
                   href="/shop?ft=auto"
-                  className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 font-medium text-zinc-700 hover:bg-zinc-100"
+                  className="rounded-full border border-border bg-muted/30 px-3 py-1.5 font-medium text-muted-foreground hover:bg-muted/30"
                   onClick={() => onOpenChange(false)}
                 >
                   {locale === "en" ? "Autoflower" : "ออโต้"}
                 </Link>
                 <Link
                   href="/shop"
-                  className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-medium text-emerald-900 hover:bg-emerald-100"
+                  className="rounded-full border border-primary/30 bg-emerald-50 px-3 py-1.5 font-medium text-primary hover:bg-emerald-100"
                   onClick={() => onOpenChange(false)}
                 >
                   {t("ดูทั้งหมด", "Browse shop")}
@@ -324,10 +324,10 @@ export function NavbarSearchPanel({
               role="option"
               aria-selected={highlight === totalRows}
               className={cn(
-                "mt-1 w-full rounded-lg border border-dashed border-zinc-200 px-3 py-2.5 text-center text-sm font-medium transition-colors",
+                "mt-1 w-full rounded-lg border border-dashed border-border px-3 py-2.5 text-center text-sm font-medium transition-colors",
                 highlight === totalRows
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                  : "text-emerald-800 hover:bg-zinc-50"
+                  ? "border-emerald-300 bg-emerald-50 text-primary"
+                  : "text-primary hover:bg-muted/30"
               )}
               onMouseEnter={() => setHighlight(totalRows)}
               onClick={() => go(`/shop?q=${encodeURIComponent(debounced)}`)}
@@ -337,7 +337,7 @@ export function NavbarSearchPanel({
           )}
 
           {!loading && debounced.length > 0 && debounced.length < 2 && (
-            <p className="px-2 py-4 text-center text-xs text-zinc-400">
+            <p className="px-2 py-4 text-center text-xs text-muted-foreground">
               {t("พิมพ์อย่างน้อย 2 ตัวอักษร", "Type at least 2 characters")}
             </p>
           )}

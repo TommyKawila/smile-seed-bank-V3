@@ -17,7 +17,10 @@ import {
 type TFn = (th: string, en: string) => string;
 
 const pricePanelClass =
-  "space-y-4 rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/[0.05] via-white to-secondary/25 p-4 font-sans text-zinc-800 shadow-sm";
+  "space-y-4 rounded-2xl border border-border bg-card/50 p-4 font-sans text-foreground shadow-sm surface-glass";
+
+const sectionHeadingClass =
+  "font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary";
 
 function PricePresetChip({
   label,
@@ -42,7 +45,7 @@ function PricePresetChip({
               "min-h-11 rounded-xl border-2 px-3 py-2.5 text-center font-sans text-[11px] font-semibold transition-all active:scale-[0.98]",
               active
                 ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                : "border-primary/15 bg-white text-primary hover:border-primary/35 hover:bg-primary/[0.06]"
+                : "border-primary/15 bg-card text-primary hover:border-primary/35 hover:bg-primary/[0.06]"
             )
       )}
     >
@@ -157,6 +160,7 @@ export function ShopPriceFilterPanel({
   showChips = true,
   showSlider = true,
   variant = "default",
+  presentation = "default",
 }: {
   t: TFn;
   cap: number;
@@ -168,6 +172,8 @@ export function ShopPriceFilterPanel({
   showSlider?: boolean;
   /** `sheet` — full-width chips grid for mobile bottom sheet. */
   variant?: "default" | "sheet";
+  /** `sidebar` — compact V4 typography for desktop filter column. */
+  presentation?: "default" | "sidebar";
 }) {
   const presets = useMemo(() => budgetPresetsForCap(cap), [cap]);
   const activeId = activeBudgetPresetId(min, max, cap);
@@ -197,20 +203,35 @@ export function ShopPriceFilterPanel({
   };
 
   const isSheet = variant === "sheet";
+  const isSidebar = presentation === "sidebar";
 
   return (
-    <div className={cn(pricePanelClass, className)}>
-      <div className="mb-1 flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
-          <Tag className="h-5 w-5" strokeWidth={2} aria-hidden />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-primary">{t("ช่วงราคา", "Price range")}</p>
-          <p className="text-xs text-zinc-500">
+    <div
+      className={cn(
+        isSidebar ? "space-y-3 font-sans text-foreground" : pricePanelClass,
+        className
+      )}
+    >
+      {isSidebar ? (
+        <div className="space-y-1">
+          <p className={sectionHeadingClass}>{t("ช่วงราคา", "Price range")}</p>
+          <p className="text-xs text-foreground/65">
             {t("เลือกงบหรือลากสไลเดอร์", "Pick a budget or drag the slider")}
           </p>
         </div>
-      </div>
+      ) : (
+        <div className="mb-1 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
+            <Tag className="h-5 w-5" strokeWidth={2} aria-hidden />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-primary">{t("ช่วงราคา", "Price range")}</p>
+            <p className="text-xs text-foreground/65">
+              {t("เลือกงบหรือลากสไลเดอร์", "Pick a budget or drag the slider")}
+            </p>
+          </div>
+        </div>
+      )}
 
       {showChips && (
         <div
@@ -241,8 +262,18 @@ export function ShopPriceFilterPanel({
       )}
 
       {showSlider && (
-        <div className="space-y-3 rounded-xl border border-primary/10 bg-white/80 p-3">
-          <div className="flex justify-between font-sans text-sm font-semibold tabular-nums text-primary">
+        <div
+          className={cn(
+            "space-y-3 rounded-xl border p-3",
+            isSidebar ? "border-border bg-muted/15" : "border-border bg-card/60"
+          )}
+        >
+          <div
+            className={cn(
+              "flex justify-between font-sans text-sm font-semibold tabular-nums",
+              isSidebar ? "text-foreground" : "text-primary"
+            )}
+          >
             <span>{formatPrice(pair[0])}</span>
             <span>{formatPrice(pair[1])}</span>
           </div>
@@ -258,7 +289,7 @@ export function ShopPriceFilterPanel({
             <button
               type="button"
               onClick={() => onRangeChange(null, null)}
-              className="font-sans text-xs font-semibold text-primary/80 underline-offset-2 hover:text-primary hover:underline"
+              className="font-sans text-xs font-medium text-primary/80 underline-offset-2 hover:text-primary hover:underline"
             >
               {t("ล้างช่วงราคา", "Clear price range")}
             </button>
@@ -292,7 +323,7 @@ export function ShopPriceFilterBottomSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="flex max-h-[min(88dvh,640px)] flex-col gap-0 rounded-t-2xl border-t-0 bg-gradient-to-b from-secondary/20 via-white to-white p-0 font-sans shadow-2xl [&>button]:hidden"
+        className="flex max-h-[min(88dvh,640px)] flex-col gap-0 rounded-t-2xl border-t-0 bg-gradient-to-b from-secondary/20 via-background to-background p-0 font-sans shadow-2xl [&>button]:hidden"
       >
         <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-primary/25" aria-hidden />
 
@@ -337,7 +368,7 @@ export function ShopPriceFilterBottomSheet({
           />
         </div>
 
-        <div className="shrink-0 border-t border-primary/10 bg-white/98 px-4 py-4 shadow-[0_-8px_24px_rgba(18,70,62,0.1)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="shrink-0 border-t border-primary/10 bg-background/98 px-4 py-4 shadow-[0_-8px_24px_rgba(18,70,62,0.1)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
             className="h-14 w-full rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"

@@ -68,15 +68,12 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
 
   return (
     <div
-      className={`min-h-screen bg-white text-zinc-900 ${inter.variable} ${journalMono.variable} font-sans antialiased`}
+      className={`min-h-screen bg-background text-foreground ${inter.variable} ${journalMono.variable} font-sans antialiased`}
     >
       <div className="mx-auto max-w-7xl px-4 pb-28 pt-24 sm:px-6 lg:px-8">
-        <header className="mb-20 space-y-6 text-center lg:mb-28 lg:space-y-7">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-emerald-700">
-            Smile Seed Bank
-          </p>
-          <h1 className="font-sans text-4xl font-semibold tracking-[-0.03em] text-zinc-900 md:text-5xl lg:text-6xl">
-            Smile Seed Blog
+        <header className="mb-16 space-y-4 text-center lg:mb-24 lg:space-y-5">
+          <h1 className="font-sans text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+            {locale === "en" ? "Smile Seed Blog" : "คลังความรู้สายเขียว"}
           </h1>
           <BlogHeroSlogan />
         </header>
@@ -88,7 +85,7 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
 
           <div className="order-2 lg:order-none lg:col-start-2 lg:row-start-2">
             <Suspense
-              fallback={<div className="h-14 animate-pulse rounded-xl bg-zinc-100" />}
+              fallback={<div className="h-14 animate-pulse rounded-xl bg-muted/30" />}
             >
               <MagazineCategoryPills categories={categories} />
             </Suspense>

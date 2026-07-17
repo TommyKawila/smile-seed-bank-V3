@@ -116,16 +116,16 @@ export function ShopCatalogFilterStrip({
         "flex items-center gap-2",
         compact
           ? "min-w-0"
-          : "rounded-2xl border border-zinc-200/80 bg-gradient-to-b from-white to-zinc-50/40 p-2 shadow-sm sm:p-2.5"
+          : "rounded-2xl border border-border surface-glass p-2 shadow-sm sm:p-2.5"
       )}
     >
       <div className={cn("relative min-w-0 flex-1", compact ? "min-h-9" : "min-h-[2.25rem]")}>
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 bg-gradient-to-r from-white via-white/85 to-transparent"
+          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-5 bg-gradient-to-r from-background via-background/85 to-transparent"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-6 bg-gradient-to-l from-white via-white/85 to-transparent"
+          className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-6 bg-gradient-to-l from-background via-background/85 to-transparent"
           aria-hidden
         />
         <CatalogFilterToolbar compact={compact} t={t} onToggleFilter={onToggleFilter} showFilter={showFilter} hideDesktopFilterToggle={hideDesktopFilterToggle} {...toolbarProps} />
@@ -134,7 +134,7 @@ export function ShopCatalogFilterStrip({
         <Button
           variant="outline"
           size="sm"
-          className={`hidden h-9 shrink-0 rounded-full border-zinc-200/80 bg-white px-3 text-zinc-700 shadow-sm lg:inline-flex ${showFilter ? "border-primary bg-primary/10 text-primary" : ""}`}
+          className={`hidden h-9 shrink-0 rounded-full border-border bg-card px-3 text-foreground shadow-sm lg:inline-flex ${showFilter ? "border-primary bg-primary/10 text-primary" : ""}`}
           onClick={onToggleFilter}
           aria-expanded={showFilter}
           aria-controls="shop-filters"
@@ -157,7 +157,7 @@ export function CatalogStickyFilterStrip({
   return (
     <div
       className={cn(
-        "sticky z-40 -mx-4 border-b border-zinc-100 bg-white/95 px-4 backdrop-blur-md sm:-mx-6 sm:px-6",
+        "sticky z-40 -mx-4 border-b border-border bg-background/95 px-4 backdrop-blur-md sm:-mx-6 sm:px-6",
         JOURNAL_PRODUCT_FONT_VARS,
         "top-[4.5rem] py-2 max-lg:mb-1 lg:top-28 lg:mb-3 lg:py-2.5"
       )}

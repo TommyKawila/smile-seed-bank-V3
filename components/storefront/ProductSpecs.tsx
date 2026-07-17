@@ -5,56 +5,43 @@ import { Mars, Venus } from "lucide-react";
 import type { Product } from "@/types/supabase";
 import { cn } from "@/lib/utils";
 
-/** Compact feminized chip — flat secondary (lavender) per Premium Eco-Clinical. */
+const CHIP = "inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1.5";
+const STAT = "flex flex-col items-center justify-center rounded-[var(--radius)] border border-border bg-muted/30 p-4 text-center";
+
 export function FeminizedSeedSpecChip({ className }: { className?: string }) {
   return (
-    <div
-      className={`inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 ${className ?? ""}`}
-    >
-      <Venus className="h-6 w-6 shrink-0 text-primary" aria-hidden />
-      <span className="font-sans text-xs font-semibold tabular-nums tracking-wide text-zinc-800">
-        Fem
-      </span>
+    <div className={cn(CHIP, className)}>
+      <Venus className="h-6 w-6 shrink-0 text-indica" aria-hidden />
+      <span className="font-sans text-xs font-semibold tabular-nums tracking-wide text-foreground">Fem</span>
     </div>
   );
 }
 
-/** Compact regular seed chip — outline + Mars. */
 export function RegularSeedSpecChip({ className }: { className?: string }) {
   return (
-    <div
-      className={`inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 ${className ?? ""}`}
-    >
+    <div className={cn(CHIP, className)}>
       <Mars className="h-6 w-6 shrink-0 text-primary" aria-hidden />
-      <span className="font-sans text-xs font-semibold tabular-nums tracking-wide text-zinc-800">
-        Reg
-      </span>
+      <span className="font-sans text-xs font-semibold tabular-nums tracking-wide text-foreground">Reg</span>
     </div>
   );
 }
 
-/** Bento stat cell when sex / seed is feminized — lavender slot in 4-tone lab palette. */
 export function FeminizedStatCard({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center">
-      <Venus className="mb-1.5 h-6 w-6 text-primary" aria-hidden />
-      <span className="font-sans text-xl font-semibold tabular-nums tracking-tight text-zinc-900">
-        Fem
-      </span>
-      <span className="mt-0.5 text-xs font-bold uppercase tracking-wider text-zinc-500">{label}</span>
+    <div className={STAT}>
+      <Venus className="mb-1.5 h-6 w-6 text-indica" aria-hidden />
+      <span className="font-sans text-xl font-semibold tabular-nums tracking-tight text-foreground">Fem</span>
+      <span className="mt-0.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
     </div>
   );
 }
 
-/** Bento stat cell when seed / sex is regular — muted slot + Mars. */
 export function RegularStatCard({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center">
+    <div className={STAT}>
       <Mars className="mb-1.5 h-6 w-6 text-primary" aria-hidden />
-      <span className="font-sans text-xl font-semibold tabular-nums tracking-tight text-zinc-900">
-        Reg
-      </span>
-      <span className="mt-0.5 text-xs font-bold uppercase tracking-wider text-zinc-500">{label}</span>
+      <span className="font-sans text-xl font-semibold tabular-nums tracking-tight text-foreground">Reg</span>
+      <span className="mt-0.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -66,7 +53,6 @@ function toPct(v: unknown): number | null {
   return Math.min(100, Math.max(0, Math.round(n)));
 }
 
-/** Prefer integer columns; fall back to legacy ratio decimals. */
 export function getGeneticPercents(product: Pick<
   Product,
   "sativa_percent" | "indica_percent" | "sativa_ratio" | "indica_ratio"
@@ -103,17 +89,17 @@ export function GeneticRatioBar({
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold sm:text-sm">
         <span className="font-bold text-primary">{t(`ซาติวา: ${sativa}%`, `Sativa: ${sativa}%`)}</span>
-        <span className="font-bold text-zinc-600">{t(`อินดิกา: ${indica}%`, `Indica: ${indica}%`)}</span>
+        <span className="font-bold text-indica">{t(`อินดิกา: ${indica}%`, `Indica: ${indica}%`)}</span>
       </div>
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-zinc-100 sm:h-3.5">
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted sm:h-3.5">
         <m.div
-          className="relative z-10 h-full shrink-0 rounded-l-full bg-primary"
+          className="relative z-10 h-full shrink-0 rounded-l-full bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.55)]"
           initial={{ width: "0%" }}
           animate={{ width: `${sativa}%` }}
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
         />
         <m.div
-          className="relative z-0 h-full shrink-0 rounded-r-full bg-zinc-300"
+          className="relative z-0 h-full shrink-0 rounded-r-full bg-indica shadow-[0_0_10px_hsl(var(--indica)/0.45)]"
           initial={{ width: "0%" }}
           animate={{ width: `${indica}%` }}
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
@@ -127,8 +113,8 @@ export function GeneticRatioBar({
   }
 
   return (
-    <div className={cn("rounded-2xl border border-zinc-200 bg-zinc-50 p-4", className)}>
-      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-zinc-500">
+    <div className={cn("surface-glass rounded-2xl p-4", className)}>
+      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
         {t("สัดส่วนพันธุกรรม", "Genetic ratio")}
       </p>
       {bar}

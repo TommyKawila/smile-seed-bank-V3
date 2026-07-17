@@ -103,7 +103,7 @@ function formatDescriptionJournal(text: string, productName: string): React.Reac
   const parts = text.split(regex);
   return parts.map((part, i) =>
     i % 2 === 1 ? (
-      <span key={i} className="font-normal text-zinc-800">
+      <span key={i} className="font-normal text-foreground">
         {part}
       </span>
     ) : (
@@ -113,7 +113,7 @@ function formatDescriptionJournal(text: string, productName: string): React.Reac
 }
 
 const statCardShell =
-  "flex flex-col items-center justify-center rounded-[var(--radius)] border border-zinc-200 bg-zinc-50 p-4 text-center";
+  "flex flex-col items-center justify-center rounded-2xl border border-border bg-card/50 p-4 text-center";
 
 // Stat card — unified light surface + emerald icon accent
 function StatCard({
@@ -128,10 +128,10 @@ function StatCard({
   return (
     <div className={statCardShell}>
       <Icon className="mb-1.5 h-6 w-6 text-primary" aria-hidden />
-      <span className={cn("text-xl font-semibold tracking-tight text-zinc-900", fontSansTabular)}>
+      <span className={cn("text-xl font-semibold tracking-tight text-foreground", fontSansTabular)}>
         {value}
       </span>
-      <span className="mt-0.5 text-xs font-bold uppercase tracking-wider text-zinc-500">{label}</span>
+      <span className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-foreground/50">{label}</span>
     </div>
   );
 }
@@ -141,7 +141,7 @@ function ChipRow({
   emoji,
   label,
   data,
-  chipClass = "bg-zinc-100 text-zinc-700",
+  chipClass = "border border-border bg-muted/20 text-foreground/80",
 }: {
   emoji: string;
   label: string;
@@ -152,7 +152,7 @@ function ChipRow({
   if (items.length === 0) return null;
   return (
     <div className="space-y-2">
-      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-500">
+      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
         <span>{emoji}</span> {label}
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -185,8 +185,8 @@ function SpecRow({
   const display = value ?? "Unknown";
   const isUnk = display === "Unknown";
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-zinc-100 py-2.5 text-sm last:border-0">
-      <span className="flex shrink-0 items-center gap-2 text-zinc-500">
+    <div className="flex items-start justify-between gap-4 border-b border-border py-2.5 text-sm last:border-0">
+      <span className="flex shrink-0 items-center gap-2 text-foreground/60">
         {Icon && <Icon className="h-4 w-4 text-primary" />}
         {label}
       </span>
@@ -194,7 +194,7 @@ function SpecRow({
         className={cn(
           "text-right text-sm font-medium",
           fontSansTabular,
-          isUnk ? "text-muted-foreground italic" : "text-zinc-800"
+          isUnk ? "text-muted-foreground italic" : "text-foreground"
         )}
       >
         {display}
@@ -336,8 +336,8 @@ export default function ProductDetailClient({
   if (!product) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 pt-16 text-center font-sans">
-        <Leaf className="h-12 w-12 text-zinc-200" />
-        <p className={cn("font-sans", "text-lg font-medium text-zinc-700")}>ไม่พบสินค้า</p>
+        <Leaf className="h-12 w-12 text-muted-foreground/40" />
+        <p className={cn("font-sans", "text-lg font-medium text-muted-foreground")}>ไม่พบสินค้า</p>
         <Button asChild variant="outline">
           <Link href="/shop">{tMsg("common.back_to_shop", "Back to Shop")}</Link>
         </Button>
@@ -413,7 +413,7 @@ export default function ProductDetailClient({
   return (
     <div
       className={cn(
-        "min-h-screen bg-white pt-16 font-sans sm:pt-28",
+        "min-h-screen bg-background pt-16 font-sans sm:pt-28",
         showStickyBuy && "max-lg:pb-28"
       )}
     >
@@ -421,7 +421,7 @@ export default function ProductDetailClient({
         {/* Breadcrumb / back — list referrer, else breeder page, else shop */}
         <Link
           href={backNav.href}
-          className="mb-2 inline-flex w-fit max-w-full min-w-0 items-center gap-1 text-sm text-zinc-500 hover:text-primary sm:mb-4"
+          className="mb-2 inline-flex w-fit max-w-full min-w-0 items-center gap-1 text-sm text-foreground/60 transition-colors hover:text-primary sm:mb-4"
           title={backNav.title}
         >
           <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
@@ -443,15 +443,15 @@ export default function ProductDetailClient({
           </div>
 
           {/* ── Right: Info ───────────────────────────────────────────────── */}
-          <div className="flex flex-col gap-2 rounded-2xl border border-zinc-100 bg-white/95 p-4 shadow-sm sm:gap-2.5 sm:p-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+          <div className="flex flex-col gap-3 sm:gap-4 lg:gap-5">
             <div className="flex min-w-0 items-start gap-3 max-lg:gap-2.5">
               <div className="min-w-0 flex-1 space-y-1.5 max-lg:space-y-1">
-                <h1 className="font-sans text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
+                <h1 className="font-sans text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl md:text-4xl">
                   {product.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                   {salePct != null && salePct > 0 && (
-                    <span className="rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/40">
+                    <span className="rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary-foreground shadow-sm ring-1 ring-border/50">
                       {hasBrandSale
                         ? t(`แบรนด์ −${salePct}%`, `Brand −${salePct}%`)
                         : `−${salePct}%`}
@@ -462,7 +462,7 @@ export default function ProductDetailClient({
                       <span
                         className={cn(
                           fontSansTabular,
-                          "text-sm tabular-nums text-zinc-400 line-through"
+                          "text-sm tabular-nums text-foreground/45 line-through"
                         )}
                       >
                         {formatPrice(displayList)}
@@ -471,7 +471,7 @@ export default function ProductDetailClient({
                     <span
                       className={cn(
                         fontSansTabular,
-                        "text-2xl font-extrabold text-emerald-600 sm:text-3xl"
+                        "text-2xl font-bold text-primary sm:text-3xl"
                       )}
                     >
                       {mainPriceLine}
@@ -485,7 +485,7 @@ export default function ProductDetailClient({
               {product.breeders && (
                 <Link
                   href={seedsBreederHref(product.breeders)}
-                  className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border-2 border-zinc-200/90 bg-white shadow-md ring-1 ring-zinc-100/80 transition-transform hover:scale-[1.02] hover:shadow-lg"
+                  className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border bg-card shadow-md ring-2 ring-background transition-transform hover:scale-[1.02] hover:shadow-lg"
                   aria-label={product.breeders.name}
                 >
                   <BreederLogoImage
@@ -513,7 +513,7 @@ export default function ProductDetailClient({
                 <p
                   className={cn(
                     fontSansTabular,
-                    "line-clamp-3 whitespace-pre-line text-sm font-light leading-relaxed text-zinc-600"
+                    "line-clamp-3 whitespace-pre-line text-sm leading-relaxed text-foreground/65"
                   )}
                 >
                   {descPlain}
@@ -534,7 +534,7 @@ export default function ProductDetailClient({
                 <span
                   className={cn(
                     fontSansTabular,
-                    "inline-flex items-center rounded-sm border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-800"
+                    "inline-flex items-center rounded-full border border-border bg-card/60 px-2.5 py-1 text-[11px] font-medium text-foreground/80"
                   )}
                 >
                   {labelFloweringType(product.flowering_type)}
@@ -546,7 +546,7 @@ export default function ProductDetailClient({
                 <span
                   className={cn(
                     fontSansTabular,
-                    "inline-flex items-center rounded-sm border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-medium text-emerald-950"
+                    "inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary"
                   )}
                 >
                   THC {product.thc_percent}%
@@ -556,7 +556,7 @@ export default function ProductDetailClient({
                 <span
                   className={cn(
                     fontSansTabular,
-                    "inline-flex items-center rounded-sm border border-violet-200/80 bg-violet-50/80 px-2.5 py-1 text-[11px] font-medium text-zinc-800"
+                    "inline-flex items-center rounded-full border border-border bg-muted/20 px-2.5 py-1 text-[11px] font-medium text-foreground/80"
                   )}
                 >
                   CBD {formatCbdDisplay(product.cbd_percent)}
@@ -569,7 +569,7 @@ export default function ProductDetailClient({
             {/* Variant Selector */}
             {activeVariants.length > 0 && (
               <div className="space-y-2">
-                <p className="font-sans text-sm font-bold text-zinc-900">{t("เลือกแพ็กเกจ", "Pack size")}</p>
+                <p className="font-sans text-sm font-semibold text-foreground">{t("เลือกแพ็กเกจ", "Pack size")}</p>
                 <div className="flex flex-wrap gap-2">
                   {activeVariants.map((v) => {
                     const soldOut = (v.stock ?? 0) === 0;
@@ -588,10 +588,10 @@ export default function ProductDetailClient({
                         disabled={soldOut}
                         className={`relative rounded-lg border-2 px-4 py-2.5 text-left transition-all ${
                           isSelected
-                            ? "border-primary bg-primary/10 text-zinc-900 shadow-sm ring-1 ring-primary/25"
+                            ? "border-primary bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/25"
                             : soldOut
-                            ? "border-zinc-100 bg-zinc-50 text-zinc-300 line-through cursor-not-allowed"
-                            : "border-zinc-200 bg-white text-zinc-700 hover:border-primary/40"
+                            ? "border-border bg-muted/20 text-foreground/45 line-through cursor-not-allowed"
+                            : "border-border bg-card/60 text-foreground/75 hover:border-primary/40 hover:bg-primary/5"
                         }`}
                       >
                         <span className="block text-[11px] font-normal leading-tight text-inherit opacity-90">
@@ -601,13 +601,13 @@ export default function ProductDetailClient({
                           className={cn(
                             "block text-base font-semibold",
                             fontSansTabular,
-                            isSelected ? "text-primary" : "text-zinc-900"
+                            isSelected ? "text-primary" : "text-foreground"
                           )}
                         >
                           {formatPrice(variantEff)}
                         </span>
                         {showVariantStrike ? (
-                          <span className={cn(fontSansTabular, "block text-xs text-zinc-400 line-through")}>
+                          <span className={cn(fontSansTabular, "block text-xs text-foreground/45 line-through")}>
                             {formatPrice(variantList)}
                           </span>
                         ) : null}
@@ -646,12 +646,12 @@ export default function ProductDetailClient({
         {/* ── Premium Specs Section ─────────────────────────────────────── */}
         <div id="product-full-description" className="mt-8 scroll-mt-24 sm:mt-10">
           <Tabs value={infoTab} onValueChange={setInfoTab}>
-            <TabsList className="h-auto w-full flex-wrap gap-1 bg-zinc-100/90 p-1.5 sm:w-auto">
+            <TabsList className="h-auto w-full flex-wrap gap-1 rounded-xl border border-border bg-muted/20 p-1.5 sm:w-auto">
               <TabsTrigger
                 value="specs"
                 className={cn(
                   "font-sans",
-                  "flex-1 rounded-sm px-3 py-2 text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
+                  "flex-1 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm sm:flex-none"
                 )}
               >
                 🧬 {t("พันธุกรรม & สเปก", "Genetics & Specs")}
@@ -660,16 +660,16 @@ export default function ProductDetailClient({
                 value="effects"
                 className={cn(
                   "font-sans",
-                  "flex-1 rounded-sm px-3 py-2 text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
+                  "flex-1 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm sm:flex-none"
                 )}
               >
-                ⚡ {t("ผล & รสชาติ", "Effects & Flavors")}
+                ⚡ {t("เอฟเฟค & เทอร์พีนส์", "Effects & Terpenes")}
               </TabsTrigger>
               <TabsTrigger
                 value="description"
                 className={cn(
                   "font-sans",
-                  "flex-1 rounded-sm px-3 py-2 text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm sm:flex-none"
+                  "flex-1 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm sm:flex-none"
                 )}
               >
                 📋 {t("คำบรรยาย", "Description")}
@@ -749,8 +749,8 @@ export default function ProductDetailClient({
                   product.seed_type ||
                   product.flowering_type ||
                   product.yield_info) && (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50/90 p-5 shadow-sm">
-                    <p className="mb-3 flex items-center gap-2 font-sans text-sm font-bold text-zinc-900">
+                  <div className="rounded-2xl border border-border bg-card/50 p-5 shadow-sm surface-glass">
+                    <p className="mb-3 flex items-center gap-2 font-sans text-sm font-semibold text-foreground">
                       <Dna className="h-4 w-4 text-primary" /> {t("โปรไฟล์พันธุกรรม", "Genetic Profile")}
                     </p>
                     {shouldShowGeneticsRow(product.genetic_ratio, product.lineage) && (
@@ -773,12 +773,12 @@ export default function ProductDetailClient({
 
                 {/* Terpene Profile */}
                 {toArray(product.terpenes).length > 0 && (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+                  <div className="rounded-2xl border border-border bg-card/50 p-5 surface-glass">
                     <ChipRow
                       emoji="🫙"
                       label={t("เทอร์พีน", "Terpene Profile")}
                       data={product.terpenes}
-                      chipClass="border border-violet-200/80 bg-white text-violet-800"
+                      chipClass="border border-primary/20 bg-primary/10 text-primary"
                     />
                   </div>
                 )}
@@ -788,7 +788,7 @@ export default function ProductDetailClient({
                   !product.thc_percent &&
                   !product.lineage?.trim() &&
                   toArray(product.terpenes).length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-zinc-200 py-12 text-center text-sm text-zinc-400">
+                  <div className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
                     {t("ยังไม่มีข้อมูล AI Specs", "No AI specs available yet")}
                   </div>
                 )}
@@ -800,40 +800,40 @@ export default function ProductDetailClient({
               <div className="grid gap-4 sm:grid-cols-2">
 
                 {toArray(product.effects).length > 0 && (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+                  <div className="rounded-2xl border border-border bg-card/50 p-5 surface-glass">
                     <ChipRow
                       emoji="⚡"
                       label={t("อาการ / ความรู้สึก", "Effects")}
                       data={product.effects}
-                      chipClass="border border-zinc-200 bg-white text-zinc-800"
+                      chipClass="border border-border bg-muted/20 text-foreground/80"
                     />
                   </div>
                 )}
 
                 {toArray(product.flavors).length > 0 && (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+                  <div className="rounded-2xl border border-border bg-card/50 p-5 surface-glass">
                     <ChipRow
                       emoji="🍋"
                       label={t("รสชาติ & กลิ่น", "Flavors & Aroma")}
                       data={product.flavors}
-                      chipClass="border border-zinc-200 bg-white text-zinc-800"
+                      chipClass="border border-border bg-muted/20 text-foreground/80"
                     />
                   </div>
                 )}
 
                 {toArray(product.medical_benefits).length > 0 && (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 sm:col-span-2">
+                  <div className="rounded-2xl border border-border bg-card/50 p-5 sm:col-span-2 surface-glass">
                     <ChipRow
                       emoji="💊"
                       label={t("สรรพคุณทางยา", "Medical Benefits")}
                       data={product.medical_benefits}
-                      chipClass="border border-zinc-200 bg-white text-zinc-800"
+                      chipClass="border border-border bg-muted/20 text-foreground/80"
                     />
                   </div>
                 )}
 
                 {toArray(product.effects).length === 0 && toArray(product.flavors).length === 0 && toArray(product.medical_benefits).length === 0 && (
-                  <div className="col-span-2 rounded-2xl border border-dashed border-zinc-200 py-12 text-center text-sm text-zinc-400">
+                  <div className="col-span-2 rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
                     {t("ยังไม่มีข้อมูล Effects & Flavors", "No effects or flavors data yet")}
                   </div>
                 )}
@@ -861,8 +861,8 @@ export default function ProductDetailClient({
 
                   if (!text && !hasStructured) {
                     return (
-                      <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-6">
-                        <p className="text-sm text-zinc-400">{t("ยังไม่มีคำบรรยาย", "No description available")}</p>
+                      <div className="rounded-2xl border border-border bg-card/50 p-6 surface-glass">
+                        <p className="text-sm text-foreground/65">{t("ยังไม่มีคำบรรยาย", "No description available")}</p>
                       </div>
                     );
                   }
@@ -870,11 +870,11 @@ export default function ProductDetailClient({
                   return (
                     <>
                       {text && (
-                        <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-6">
+                        <div className="rounded-2xl border border-border bg-card/50 p-6 surface-glass">
                           {(text.match(/\n\n/) ? text.split(/\n\n+/) : [text]).map((para, i) => (
                             <p
                               key={i}
-                              className="mb-4 text-sm font-light leading-relaxed text-zinc-600 last:mb-0 whitespace-pre-line"
+                              className="mb-4 text-sm leading-relaxed text-foreground/70 last:mb-0 whitespace-pre-line"
                             >
                               {formatDescriptionJournal(para.trim(), product.name)}
                             </p>
@@ -882,47 +882,47 @@ export default function ProductDetailClient({
                         </div>
                       )}
                       {hasStructured && (
-                        <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-6 space-y-3">
+                        <div className="rounded-2xl border border-border bg-card/50 p-6 space-y-3 surface-glass">
                           {hasGeneticsDistinct && (
-                            <p className="flex items-start gap-2 text-sm text-zinc-700">
+                            <p className="flex items-start gap-2 text-sm text-foreground/70">
                               <Dna className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                               <span>
-                                <span className="font-semibold text-zinc-800">{t("พันธุกรรม", "Genetics")}:</span>{" "}
+                                <span className="font-semibold text-foreground">{t("พันธุกรรม", "Genetics")}:</span>{" "}
                                 {product.genetic_ratio}
                               </span>
                             </p>
                           )}
                           {hasLineage && (
-                            <p className="flex items-start gap-2 text-sm text-zinc-700">
+                            <p className="flex items-start gap-2 text-sm text-foreground/70">
                               <GitFork className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                               <span>
-                                <span className="font-semibold text-zinc-800">{t("สายเลือด", "Lineage")}:</span>{" "}
+                                <span className="font-semibold text-foreground">{t("สายเลือด", "Lineage")}:</span>{" "}
                                 {product.lineage}
                               </span>
                             </p>
                           )}
                           {hasDifficulty && (
-                            <p className="text-sm text-zinc-700">
+                            <p className="text-sm text-foreground/70">
                               <span className="mr-2">🌿</span>
-                              <span className="font-semibold text-zinc-800">{t("คุณสมบัติการเติบโต", "Growth")}:</span> {product.growing_difficulty}
+                              <span className="font-semibold text-foreground">{t("คุณสมบัติการเติบโต", "Growth")}:</span> {product.growing_difficulty}
                             </p>
                           )}
                           {hasTerpenes && (
-                            <p className="text-sm text-zinc-700">
+                            <p className="text-sm text-foreground/70">
                               <span className="mr-2">🍋</span>
-                              <span className="font-semibold text-zinc-800">{t("รสชาติและกลิ่น", "Flavor & Aroma")}:</span> {terpeneList.join(", ")}
+                              <span className="font-semibold text-foreground">{t("รสชาติและกลิ่น", "Flavor & Aroma")}:</span> {terpeneList.join(", ")}
                             </p>
                           )}
                           {hasYield && (
-                            <p className="text-sm text-zinc-700">
+                            <p className="text-sm text-foreground/70">
                               <span className="mr-2">⚖️</span>
-                              <span className="font-semibold text-zinc-800">{t("ผลผลิต", "Yield")}:</span> {product.yield_info}
+                              <span className="font-semibold text-foreground">{t("ผลผลิต", "Yield")}:</span> {product.yield_info}
                             </p>
                           )}
                           {product.breeders?.name && (
-                            <p className="text-sm text-zinc-700 pt-1 border-t border-zinc-100">
+                            <p className="text-sm text-foreground/70 pt-1 border-t border-border">
                               <span className="mr-2">🏆</span>
-                              <span className="font-semibold text-zinc-800">{t("บทสรุป", "Summary")}:</span> {product.name} {t("โดย", "by")} {product.breeders.name}
+                              <span className="font-semibold text-foreground">{t("บทสรุป", "Summary")}:</span> {product.name} {t("โดย", "by")} {product.breeders.name}
                             </p>
                           )}
                         </div>
@@ -934,25 +934,25 @@ export default function ProductDetailClient({
             </TabsContent>
           </Tabs>
           {(product.master_sku ?? "").trim() !== "" && (
-            <p className="mt-8 border-t border-zinc-100 pt-6 font-sans text-xs text-zinc-500">
+            <p className="mt-8 border-t border-border pt-6 font-sans text-xs text-foreground/50">
               {t("รหัสสินค้า", "SKU")}:{" "}
-              <span className="font-medium tabular-nums text-zinc-600">{product.master_sku}</span>
+              <span className="font-medium tabular-nums text-foreground/70">{product.master_sku}</span>
             </p>
           )}
         </div>
 
         {relatedProducts.length > 0 && (
-          <section className="mt-14 border-t border-zinc-100 pt-10 sm:mt-16 sm:pt-12">
+          <section className="mt-14 border-t border-border pt-10 sm:mt-16 sm:pt-12">
             <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
                   RELATED PRODUCTS
                 </p>
-                <h2 className="mt-2 font-sans text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+                <h2 className="mt-2 font-sans text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
                   {t("สินค้าที่เกี่ยวข้อง", "Related Products")}
                 </h2>
               </div>
-              <p className="max-w-xl text-sm font-light leading-relaxed text-zinc-500">
+              <p className="max-w-xl text-sm leading-relaxed text-foreground/65">
                 {t(
                   "คัดจากบรีดเดอร์และหมวดหมู่เดียวกัน เพื่อให้เลือกต่อได้ง่าย",
                   "Selected from the same breeder and category for easy comparison."

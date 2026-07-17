@@ -80,10 +80,10 @@ export function CouponCard({
       className={cn(
         "flex items-center gap-3 rounded-2xl border p-3 transition-colors",
         used
-          ? "border-zinc-200 bg-zinc-50 opacity-60 grayscale"
+          ? "border-border bg-muted/30 opacity-60 grayscale"
           : isWelcome
             ? "border-primary/25 bg-accent"
-            : "border-zinc-100 bg-white"
+            : "border-border bg-card"
       )}
     >
       <div
@@ -100,17 +100,17 @@ export function CouponCard({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <p className={cn("font-mono text-sm font-bold", used ? "text-zinc-500 line-through" : "text-zinc-900")}>
+          <p className={cn("font-mono text-sm font-bold", used ? "text-muted-foreground line-through" : "text-foreground")}>
             {coupon.code}
           </p>
           {used && (
-            <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-zinc-600">
+            <span className="rounded bg-muted/40 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
               ใช้แล้ว
             </span>
           )}
         </div>
-        <p className="text-xs text-zinc-500">{discountLabel(coupon)}</p>
-        {minSpend && <p className="text-[11px] text-zinc-600">{minSpend}</p>}
+        <p className="text-xs text-muted-foreground">{discountLabel(coupon)}</p>
+        {minSpend && <p className="text-[11px] text-muted-foreground">{minSpend}</p>}
         {expiry && !used && (
           <p className="mt-0.5 text-[11px] font-medium text-orange-500">{expiry}</p>
         )}
@@ -125,7 +125,7 @@ export function CouponCard({
             className={cn(
               "flex min-h-9 min-w-[5.5rem] items-center justify-center gap-1 rounded-xl px-2 text-xs font-semibold transition-colors",
               collected
-                ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
+                ? "cursor-not-allowed bg-muted/30 text-muted-foreground"
                 : "bg-primary/10 text-primary hover:bg-primary/15"
             )}
           >
@@ -139,7 +139,7 @@ export function CouponCard({
             onClick={copy}
             className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors",
-              copied ? "bg-accent text-primary" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+              copied ? "bg-accent text-primary" : "bg-muted/30 text-muted-foreground hover:bg-muted/40"
             )}
             aria-label="คัดลอก"
           >
@@ -256,21 +256,21 @@ export function FloatingOfferButton({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 350, damping: 30 }}
-              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-white px-4 pb-8 pt-4 shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-card px-4 pb-8 pt-4 shadow-2xl"
             >
-              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-zinc-200" />
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted/40" />
 
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-zinc-900">ส่วนลดของคุณ</h3>
-                  <p className="text-xs text-zinc-500">
+                  <h3 className="text-base font-bold text-foreground">ส่วนลดของคุณ</h3>
+                  <p className="text-xs text-muted-foreground">
                     {coupons.length} โค้ดที่ยังใช้ได้ · เก็บโค้ดหรือคัดลอกไปใช้ที่ตะกร้า
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/30 text-muted-foreground hover:bg-muted/40"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -289,7 +289,7 @@ export function FloatingOfferButton({
                 ))}
               </div>
 
-              <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-zinc-600">
+              <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                 <ChevronRight className="h-3 w-3" />
                 คัดลอกโค้ด แล้วใส่ในหน้าตะกร้าสินค้า
               </div>

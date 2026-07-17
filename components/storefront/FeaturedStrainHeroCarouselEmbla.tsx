@@ -86,7 +86,7 @@ export function FeaturedStrainHeroCarouselEmbla({
           <button
             type="button"
             aria-label={t("สไลด์ก่อนหน้า", "Previous Slide")}
-            className="absolute left-0 top-[min(38%,11rem)] z-10 flex h-10 w-10 -translate-x-0 items-center justify-center rounded-full border border-zinc-200/90 bg-white/95 text-zinc-600 shadow-sm transition-colors hover:border-primary/30 hover:text-primary md:-translate-x-1"
+            className="absolute left-0 top-[min(38%,11rem)] z-10 flex h-10 w-10 -translate-x-0 items-center justify-center rounded-full border border-border bg-white/95 text-muted-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary md:-translate-x-1"
             onClick={scrollPrev}
           >
             <ChevronLeft className="h-5 w-5" strokeWidth={1.75} />
@@ -94,7 +94,7 @@ export function FeaturedStrainHeroCarouselEmbla({
           <button
             type="button"
             aria-label={t("สไลด์ถัดไป", "Next Slide")}
-            className="absolute right-0 top-[min(38%,11rem)] z-10 flex h-10 w-10 translate-x-0 items-center justify-center rounded-full border border-zinc-200/90 bg-white/95 text-zinc-600 shadow-sm transition-colors hover:border-primary/30 hover:text-primary md:translate-x-1"
+            className="absolute right-0 top-[min(38%,11rem)] z-10 flex h-10 w-10 translate-x-0 items-center justify-center rounded-full border border-border bg-white/95 text-muted-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary md:translate-x-1"
             onClick={scrollNext}
           >
             <ChevronRight className="h-5 w-5" strokeWidth={1.75} />

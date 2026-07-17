@@ -89,7 +89,7 @@ export function ShopSpotlightCard({
     >
       <Link
         href={productDetailHref(product)}
-        className="group flex h-full min-h-[200px] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white font-sans shadow-sm transition-shadow hover:border-emerald-200/80 hover:shadow-md sm:min-h-[220px] sm:flex-row"
+        className="group flex h-full min-h-[200px] flex-col overflow-hidden rounded-xl border border-border bg-card font-sans shadow-sm transition-shadow hover:border-primary/30 hover:shadow-md sm:min-h-[220px] sm:flex-row surface-glass"
       >
         <div className="relative aspect-[4/3] w-full shrink-0 sm:aspect-auto sm:h-auto sm:w-[42%] sm:max-w-md">
           {img ? (
@@ -106,36 +106,36 @@ export function ShopSpotlightCard({
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center p-5 sm:p-6">
-          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
             {t("สปอตไลต์", "Spotlight")}
           </p>
-          <h3 className="mt-2 font-sans text-xl font-bold leading-snug tracking-tight text-zinc-900 sm:text-2xl">
+          <h3 className="mt-2 font-sans text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl">
             {product.name}
           </h3>
           <div className="mt-3 w-full min-w-0">
             <MicroGeneticsBar product={asMicroGeneticsProduct(product)} />
           </div>
           {ex && (
-            <p className="mt-4 line-clamp-3 font-sans text-sm font-normal leading-relaxed text-zinc-600">
+            <p className="mt-4 line-clamp-3 font-sans text-sm font-normal leading-relaxed text-muted-foreground">
               {ex}
             </p>
           )}
-          <div className="mt-4 min-w-0 border-t border-zinc-100 pt-3">
+          <div className="mt-4 min-w-0 border-t border-border pt-3">
             {seedsPackLabel ? (
-              <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-800 sm:text-xs">
+              <p className="mb-0.5 font-sans text-[10px] leading-tight text-primary sm:text-xs">
                 {seedsPackLabel}
               </p>
             ) : null}
             {showStrike && (
-              <p className="font-sans text-xs tabular-nums text-zinc-500 line-through">
+              <p className="font-sans text-xs tabular-nums text-muted-foreground line-through">
                 {formatPrice(listRegular)}
               </p>
             )}
-            <p className="font-sans text-[15px] font-bold tabular-nums text-zinc-900">
+            <p className="font-sans text-[15px] font-bold tabular-nums text-foreground">
               {listFrom > 0 ? formatPrice(listFrom) : t("สอบถาม", "Inquire")}
             </p>
           </div>
-          <span className="mt-4 inline-flex w-fit items-center rounded-full bg-emerald-700 px-4 py-2 font-sans text-xs font-semibold text-white shadow-sm transition-colors group-hover:bg-emerald-800">
+          <span className="mt-4 inline-flex w-fit items-center rounded-full bg-primary px-4 py-2 font-sans text-xs font-semibold text-primary-foreground shadow-sm transition-colors group-hover:bg-primary/90">
             {t("เปิดรายงานสายพันธุ์", "Open strain dossier")} →
           </span>
         </div>

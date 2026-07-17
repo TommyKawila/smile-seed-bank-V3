@@ -26,7 +26,8 @@ export default async function StorefrontLayout({
     initialAgeVerifiedCookie || initialSessionHint !== null;
 
   return (
-    <LanguageProvider initialLocale={initialLocale}>
+    <div className="storefront-v4 min-h-screen bg-background text-foreground">
+      <LanguageProvider initialLocale={initialLocale}>
       <BreederCatalogProvider>
         <AuthProvider initialSessionHint={initialSessionHint}>
           <SiteSettingsProvider>
@@ -42,6 +43,7 @@ export default async function StorefrontLayout({
           </SiteSettingsProvider>
         </AuthProvider>
       </BreederCatalogProvider>
-    </LanguageProvider>
+      </LanguageProvider>
+    </div>
   );
 }

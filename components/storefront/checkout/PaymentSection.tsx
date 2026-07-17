@@ -40,12 +40,12 @@ export function PaymentSection({
     deferPromptPayFetch && promptPayResolution.mode === "checkout";
 
   return (
-    <Card className="rounded-3xl border-zinc-200/90 shadow-[0_10px_40px_-18px_rgba(15,23,42,0.25)]">
+    <Card className="rounded-3xl border-border shadow-[0_10px_40px_-18px_rgba(15,23,42,0.25)]">
       <CardContent className="space-y-4 p-5 sm:p-6">
-        <h2 className={cn(serif, "text-base font-semibold tracking-tight text-zinc-900")}>
+        <h2 className={cn(serif, "text-base font-semibold tracking-tight text-foreground")}>
           {t("ชำระเงิน", "Payment")}
         </h2>
-        <p className="text-xs leading-relaxed text-zinc-500">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           {promptPayOn
             ? t(
                 "สแกน QR พร้อมเพย์ตามยอดสุทธิที่ระบบยืนยัน — และ/หรือโอนผ่านธนาคารด้านล่าง",
@@ -60,7 +60,7 @@ export function PaymentSection({
         {promptPayOn ? (
           <div className="space-y-2">
             {shippingIncluded ? (
-              <p className="text-center text-[11px] font-medium text-zinc-500">
+              <p className="text-center text-[11px] font-medium text-muted-foreground">
                 {t("ยอดเงินรวมค่าจัดส่งแล้ว", "Total includes shipping")}
               </p>
             ) : null}
@@ -78,7 +78,7 @@ export function PaymentSection({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-11 min-h-[44px] w-full gap-2 rounded-xl border-zinc-200 text-zinc-700 shadow-sm"
+                  className="h-11 min-h-[44px] w-full gap-2 rounded-xl border-border text-muted-foreground shadow-sm"
                   onClick={() => setPromptPayReloadNonce((n) => n + 1)}
                 >
                   <RefreshCw className="h-4 w-4 shrink-0" aria-hidden />
@@ -89,8 +89,8 @@ export function PaymentSection({
           </div>
         ) : null}
 
-        <div className="space-y-3 border-t border-zinc-100 pt-4">
-          <p className="text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+        <div className="space-y-3 border-t border-border pt-4">
+          <p className="text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             {t("รายละเอียดการโอน (สาธารณะ)", "Transfer details")}
           </p>
 
@@ -111,7 +111,7 @@ export function PaymentSection({
             />
 
             {!bankAccountsError && bankAccounts.length === 0 && (
-              <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-center text-sm text-zinc-600">
+              <p className="rounded-xl border border-border bg-muted/30 px-3 py-3 text-center text-sm text-muted-foreground">
                 {t(
                   "ยังไม่มีบัญชีสำหรับแสดง — กรุณาติดต่อร้านเพื่อขอข้อมูลโอนเงิน",
                   "No active bank accounts are listed. Please contact the shop for transfer details.",

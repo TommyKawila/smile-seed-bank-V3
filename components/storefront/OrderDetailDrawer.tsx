@@ -90,7 +90,7 @@ const STATUS_MAP: Record<string, {
   VOIDED: {
     label: "ยกเลิกและคืนสินค้า",
     desc: "ออเดอร์นี้ถูกยกเลิกแล้ว",
-    icon: RotateCcw, cls: "text-zinc-600", bg: "bg-zinc-100 border-zinc-300",
+    icon: RotateCcw, cls: "text-muted-foreground", bg: "bg-muted/30 border-zinc-300",
   },
   PAYMENT_REJECTED: {
     label: "การชำระเงินไม่ผ่าน",
@@ -147,7 +147,7 @@ function ItemRow({ item }: { item: OrderDetailRow["order_items"][number] }) {
   return (
     <div className="flex items-start gap-3 px-4 py-3">
       {/* Thumbnail */}
-      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-muted/30">
         {product?.image_url ? (
           <Image
             src={product.image_url}
@@ -165,17 +165,17 @@ function ItemRow({ item }: { item: OrderDetailRow["order_items"][number] }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold leading-snug text-zinc-900 line-clamp-2">{titleLine}</p>
+        <p className="text-sm font-bold leading-snug text-foreground line-clamp-2">{titleLine}</p>
         {pv?.unit_label && (
           <p className="mt-0.5 text-xs font-medium text-primary">{pv.unit_label}</p>
         )}
-        <p className="mt-1 text-xs text-zinc-400">
+        <p className="mt-1 text-xs text-muted-foreground">
           {formatPrice(item.unit_price)} × {item.quantity}
         </p>
       </div>
 
       {/* Line total */}
-      <p className="shrink-0 pt-0.5 text-sm font-bold text-zinc-800">
+      <p className="shrink-0 pt-0.5 text-sm font-bold text-foreground">
         {formatPrice(lineTotal)}
       </p>
     </div>
@@ -247,23 +247,23 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 360, damping: 32 }}
-            className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92vh] flex-col rounded-t-3xl bg-white shadow-2xl"
+            className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[92vh] flex-col rounded-t-3xl bg-card shadow-2xl"
           >
             {/* Handle + Header */}
-            <div className="shrink-0 border-b border-zinc-100 px-5 pb-4 pt-4">
-              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-200" />
+            <div className="shrink-0 border-b border-border px-5 pb-4 pt-4">
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted/40" />
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-bold text-zinc-900">
+                  <h2 className="text-base font-bold text-foreground">
                     ออเดอร์{" "}
                     <span className="font-mono text-primary">#{order.order_number}</span>
                   </h2>
-                  <p className="mt-0.5 text-xs text-zinc-400">{dateStr}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{dateStr}</p>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 hover:bg-zinc-200 active:scale-95"
+                  className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/30 text-muted-foreground hover:bg-muted/40 active:scale-95"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -278,7 +278,7 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
                 <StatusIcon className={cn("mt-0.5 h-5 w-5 shrink-0", statusInfo.cls)} />
                 <div>
                   <p className={cn("text-sm font-bold", statusInfo.cls)}>{statusInfo.label}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">{statusInfo.desc}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{statusInfo.desc}</p>
                 </div>
               </div>
 
@@ -287,7 +287,7 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
                   href={`/api/storefront/orders/${encodeURIComponent(order.order_number)}/receipt`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-white py-3 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-emerald-50/50"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-card py-3 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/10"
                 >
                   <FileText className="h-4 w-4 shrink-0" />
                   {locale === "en" ? "Download receipt (PDF)" : "ดาวน์โหลดใบเสร็จ (PDF)"}
@@ -356,10 +356,10 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
               )}
 
               {/* ── Items List ── */}
-              <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white">
-                <div className="flex items-center gap-2 border-b border-zinc-100 px-4 py-3">
-                  <Package className="h-4 w-4 text-zinc-400" />
-                  <span className="text-sm font-semibold text-zinc-700">
+              <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-semibold text-muted-foreground">
                     รายการสินค้า ({order.order_items.length})
                   </span>
                 </div>
@@ -371,17 +371,17 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
               </div>
 
               {/* ── Price Breakdown ── */}
-              <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white">
+              <div className="overflow-hidden rounded-2xl border border-border bg-card">
                 <div className="divide-y divide-zinc-50">
                   <div className="flex items-baseline justify-between gap-4 px-4 py-3 text-sm">
-                    <span className="text-zinc-600">ยอดรวมสินค้า</span>
-                    <span className="shrink-0 tabular-nums font-medium text-zinc-900">
+                    <span className="text-muted-foreground">ยอดรวมสินค้า</span>
+                    <span className="shrink-0 tabular-nums font-medium text-foreground">
                       {formatPrice(subtotal)}
                     </span>
                   </div>
                   {discPrimary > 0 && (
                     <div className="flex items-baseline justify-between gap-4 px-4 py-3 text-sm">
-                      <span className="text-zinc-600">
+                      <span className="text-muted-foreground">
                         {promoCode ? `ส่วนลด (${promoCode})` : "ส่วนลด"}
                       </span>
                       <span className="shrink-0 tabular-nums font-medium text-red-500">
@@ -391,7 +391,7 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
                   )}
                   {discPromotion > 0 && (
                     <div className="flex items-baseline justify-between gap-4 px-4 py-3 text-sm">
-                      <span className="text-zinc-600">ส่วนลดโปรโมชั่น</span>
+                      <span className="text-muted-foreground">ส่วนลดโปรโมชั่น</span>
                       <span className="shrink-0 tabular-nums font-medium text-red-500">
                         −{formatPrice(discPromotion)}
                       </span>
@@ -399,7 +399,7 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
                   )}
                   {discPoints > 0 && (
                     <div className="flex items-baseline justify-between gap-4 px-4 py-3 text-sm">
-                      <span className="text-zinc-600">ส่วนลดคะแนน</span>
+                      <span className="text-muted-foreground">ส่วนลดคะแนน</span>
                       <span className="shrink-0 tabular-nums font-medium text-red-500">
                         −{formatPrice(discPoints)}
                       </span>
@@ -407,18 +407,18 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
                   )}
                   <div className="px-4 py-3 text-sm">
                     <div className="flex items-baseline justify-between gap-4">
-                      <span className="text-zinc-600">ค่าจัดส่ง</span>
-                      <span className="shrink-0 tabular-nums font-medium text-zinc-900">
+                      <span className="text-muted-foreground">ค่าจัดส่ง</span>
+                      <span className="shrink-0 tabular-nums font-medium text-foreground">
                         {shippingFee <= 0 ? "ฟรี" : formatPrice(shippingFee)}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[11px] leading-snug text-zinc-400">
+                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
                       ส่งฟรีเมื่อสั่งซื้อสุทธิครบ {formatPrice(1000)}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-baseline justify-between border-t border-zinc-100 bg-zinc-50 px-4 py-4">
-                  <span className="text-base font-bold text-zinc-900">ยอดชำระทั้งสิ้น</span>
+                <div className="flex items-baseline justify-between border-t border-border bg-muted/30 px-4 py-4">
+                  <span className="text-base font-bold text-foreground">ยอดชำระทั้งสิ้น</span>
                   <span className="text-xl font-extrabold tabular-nums text-primary">
                     {formatPrice(Number(order.total_amount))}
                   </span>
@@ -426,13 +426,13 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
               </div>
 
               {/* ── Payment Method ── */}
-              <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white px-4 py-3.5">
-                <CreditCard className="h-5 w-5 shrink-0 text-zinc-400" />
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5">
+                <CreditCard className="h-5 w-5 shrink-0 text-muted-foreground" />
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     ช่องทางชำระเงิน
                   </p>
-                  <p className="mt-0.5 text-sm font-semibold text-zinc-700">
+                  <p className="mt-0.5 text-sm font-semibold text-muted-foreground">
                     {PAYMENT_LABELS[order.payment_method ?? ""] ?? order.payment_method ?? "—"}
                   </p>
                 </div>
@@ -440,13 +440,13 @@ export function OrderDetailDrawer({ order, onClose, locale = "th" }: Props) {
 
               {/* ── Shipping Address ── */}
               {order.shipping_address && (
-                <div className="flex items-start gap-3 rounded-2xl border border-zinc-100 bg-white px-4 py-3.5">
-                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-zinc-400" />
+                <div className="flex items-start gap-3 rounded-2xl border border-border bg-card px-4 py-3.5">
+                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       ที่อยู่จัดส่ง
                     </p>
-                    <p className="mt-1 text-sm leading-relaxed text-zinc-700 whitespace-pre-line">
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
                       {order.shipping_address}
                     </p>
                   </div>

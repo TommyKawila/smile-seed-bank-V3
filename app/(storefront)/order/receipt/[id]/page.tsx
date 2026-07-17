@@ -82,7 +82,7 @@ export default async function OrderReceiptPage({
             href={selfTh}
             className={cn(
               "rounded-full px-3 py-1 font-medium",
-              lang === "th" ? "bg-emerald-800 text-white" : "text-emerald-800 hover:bg-emerald-100",
+              lang === "th" ? "bg-primary text-white" : "text-primary hover:bg-emerald-100",
             )}
           >
             {t.langTh}
@@ -91,7 +91,7 @@ export default async function OrderReceiptPage({
             href={selfEn}
             className={cn(
               "rounded-full px-3 py-1 font-medium",
-              lang === "en" ? "bg-emerald-800 text-white" : "text-emerald-800 hover:bg-emerald-100",
+              lang === "en" ? "bg-primary text-white" : "text-primary hover:bg-emerald-100",
             )}
           >
             {t.langEn}
@@ -100,7 +100,7 @@ export default async function OrderReceiptPage({
 
         <div
           className={cn(
-            "overflow-hidden rounded-3xl border border-emerald-100/90 bg-white",
+            "overflow-hidden rounded-3xl border border-emerald-100/90 bg-card",
             "shadow-[0_25px_50px_-12px_rgba(6,78,59,0.18),0_0_0_1px_rgba(16,185,129,0.06)]",
             "ring-1 ring-emerald-900/5",
           )}
@@ -114,42 +114,42 @@ export default async function OrderReceiptPage({
           </div>
 
           <div className="space-y-5 px-6 py-6">
-            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-zinc-100 pb-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-3">
               <div>
-                <p className="text-xs text-zinc-500">{t.order}</p>
-                <p className="font-mono text-lg font-semibold text-emerald-900">
+                <p className="text-xs text-muted-foreground">{t.order}</p>
+                <p className="font-mono text-lg font-semibold text-primary">
                   #{data.order_number}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-zinc-500">{t.status}</p>
-                <p className="text-sm font-medium text-zinc-800">
+                <p className="text-xs text-muted-foreground">{t.status}</p>
+                <p className="text-sm font-medium text-foreground">
                   {statusLabel(data.status, lang)}
                 </p>
               </div>
             </div>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-muted-foreground">
               {t.orderId}: {data.order_id}
             </p>
 
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t.items}
               </p>
               <ul className="space-y-2">
                 {data.items.map((row, i) => (
                   <li
                     key={i}
-                    className="flex justify-between gap-3 border-b border-zinc-50 pb-2 text-sm last:border-0"
+                    className="flex justify-between gap-3 border-b border-border pb-2 text-sm last:border-0"
                   >
-                    <span className="text-zinc-800">
+                    <span className="text-foreground">
                       {row.product_name}
                       {row.unit_label ? (
-                        <span className="text-zinc-500"> ({row.unit_label})</span>
+                        <span className="text-muted-foreground"> ({row.unit_label})</span>
                       ) : null}{" "}
                       × {row.quantity}
                     </span>
-                    <span className="shrink-0 font-medium text-emerald-900 tabular-nums">
+                    <span className="shrink-0 font-medium text-primary tabular-nums">
                       {formatPrice(row.line_total)}
                     </span>
                   </li>
@@ -158,19 +158,19 @@ export default async function OrderReceiptPage({
             </div>
 
             <div className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-emerald-50 to-white px-4 py-3.5 ring-1 ring-emerald-100/80">
-              <span className="text-sm font-semibold text-emerald-900">{t.total}</span>
-              <span className="text-xl font-bold tracking-tight text-emerald-800 tabular-nums">
+              <span className="text-sm font-semibold text-primary">{t.total}</span>
+              <span className="text-xl font-bold tracking-tight text-primary tabular-nums">
                 {formatPrice(data.total_amount)}
               </span>
             </div>
 
             {unpaidForQr ? (
               <div className="rounded-2xl border border-emerald-100/90 bg-gradient-to-b from-white to-emerald-50/30 p-5 text-center shadow-inner shadow-emerald-900/5">
-                <p className="mb-2 text-xs text-zinc-600">
+                <p className="mb-2 text-xs text-muted-foreground">
                   {lang === "th" ? STOREFRONT_KBANK_TRANSFER_NAME_TH : STOREFRONT_KBANK_TRANSFER_NAME_EN} ·{" "}
-                  <span className="font-mono font-medium text-zinc-900">{STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO}</span>
+                  <span className="font-mono font-medium text-foreground">{STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO}</span>
                 </p>
-                <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-emerald-800/90">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-primary/90">
                   {t.qrCaption}
                 </p>
                 <OrderTransferQr
@@ -185,12 +185,12 @@ export default async function OrderReceiptPage({
             {data.status === "PENDING_INFO" ? (
               <Link
                 href={claimHref}
-                className="flex w-full items-center justify-center rounded-2xl bg-emerald-800 px-4 py-4 text-center text-sm font-semibold text-white shadow-lg shadow-emerald-900/25 transition hover:bg-emerald-800/95 active:scale-[0.99]"
+                className="flex w-full items-center justify-center rounded-2xl bg-primary px-4 py-4 text-center text-sm font-semibold text-white shadow-lg shadow-emerald-900/25 transition hover:bg-primary/95 active:scale-[0.99]"
               >
                 {t.cta}
               </Link>
             ) : (
-              <p className="text-center text-xs text-zinc-500">
+              <p className="text-center text-xs text-muted-foreground">
                 {lang === "th"
                   ? "ลิงก์กรอกข้อมูลปิดเมื่อออเดอร์ดำเนินการแล้ว"
                   : "Claim link is no longer available for this order."}

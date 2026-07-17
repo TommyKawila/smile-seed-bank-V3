@@ -20,25 +20,56 @@ import { useAuth, useStorefrontSignedIn } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NAV_LOGO_INTRINSIC, NAV_LOGO_SIZES } from "@/lib/storefront-nav-logo";
-import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
+import { GeneticsSeedsNav } from "@/components/storefront/GeneticsSeedsNav";
 
-const BreederSeedsNav = dynamic(
-  () =>
-    import("@/components/storefront/BreederDropdownMenu").then((m) => ({
-      default: m.BreederSeedsNav,
-    })),
-  { ssr: false }
-);
+function LanguageToggle({
+  locale,
+  setLocale,
+  groupLabel,
+  thLabel,
+  enLabel,
+  className,
+}: {
+  locale: string;
+  setLocale: (l: "th" | "en") => void;
+  groupLabel: string;
+  thLabel: string;
+  enLabel: string;
+  className?: string;
+}) {
+  const btn = (active: boolean) =>
+    cn(
+      "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[10px] font-bold tracking-wide transition-all sm:text-[11px]",
+      active
+        ? "bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/30"
+        : "border border-border bg-card/60 text-muted-foreground hover:border-primary/40 hover:text-primary"
+    );
 
-const GeneticsSeedsNav = dynamic(
-  () =>
-    import("@/components/storefront/GeneticsSeedsNav").then((m) => ({
-      default: m.GeneticsSeedsNav,
-    })),
-  { ssr: false }
-);
+  return (
+    <div className={cn("flex items-center gap-1.5", className)} role="group" aria-label={groupLabel}>
+      <button
+        type="button"
+        aria-label={thLabel}
+        aria-pressed={locale === "th"}
+        onClick={() => setLocale("th")}
+        className={btn(locale === "th")}
+      >
+        TH
+      </button>
+      <button
+        type="button"
+        aria-label={enLabel}
+        aria-pressed={locale === "en"}
+        onClick={() => setLocale("en")}
+        className={btn(locale === "en")}
+      >
+        ENG
+      </button>
+    </div>
+  );
+}
 
 const CartSheet = dynamic(
   () => import("./CartSheet").then((m) => ({ default: m.CartSheet })),
@@ -52,27 +83,6 @@ const SearchCommand = dynamic(
     })),
   { ssr: false }
 );
-
-type SeedsNavShellProps = {
-  navLinkClass: string;
-  solidLightNav: boolean;
-  label: string;
-};
-
-function SeedsNavShell({ navLinkClass, solidLightNav, label }: SeedsNavShellProps) {
-  return (
-    <span
-      className={cn(
-        navLinkClass,
-        "inline-flex items-center gap-1",
-        solidLightNav ? "text-zinc-800" : "text-zinc-600"
-      )}
-    >
-      {label}
-      <ChevronDown className="h-3.5 w-3.5 opacity-60" strokeWidth={1.75} aria-hidden />
-    </span>
-  );
-}
 
 export function Navbar() {
   const router = useRouter();
@@ -90,14 +100,8 @@ export function Navbar() {
     pathname === "/seeds" ||
     pathname.startsWith("/seeds/");
   const [scrolled, setScrolled] = useState(false);
-  /** White sticky bar: home, blog, product detail, commerce flows, catalog, or scrolled inner pages. */
-  const solidLightNav =
-    isHomePage ||
-    isMagazineSection ||
-    isProductDetail ||
-    isJournalCommerce ||
-    isCatalogPath ||
-    scrolled;
+  /** V4: always dark glass nav on storefront */
+  const solidLightNav = true;
   const { itemCount, isOpen, openCart, closeCart } = useCartContext();
   const { locale, setLocale, t } = useLanguage();
   const { settings } = useSiteSettings();
@@ -111,16 +115,7 @@ export function Navbar() {
   const [cartHitWobble, setCartHitWobble] = useState(false);
   const [cartSheetMounted, setCartSheetMounted] = useState(false);
   const [searchMounted, setSearchMounted] = useState(false);
-  const [breederNavMounted, setBreederNavMounted] = useState(false);
-  const [geneticsNavMounted, setGeneticsNavMounted] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (menuOpen) {
-      setBreederNavMounted(true);
-      setGeneticsNavMounted(true);
-    }
-  }, [menuOpen]);
 
   useEffect(() => {
     if (isOpen) setCartSheetMounted(true);
@@ -168,24 +163,26 @@ export function Navbar() {
 
   const homeLabel = t("หน้าแรก", "Home");
   const blogLabel = t("คลังความรู้สายเขียว", "Knowledge vault");
-  const breedersLabel = t("บรีดเดอร์", "Breeders");
-  const seedsGeneticsLabel = t("เมล็ดพันธุ์", "Seeds");
 
-  const navLinkClass = solidLightNav
-    ? "text-sm font-normal tracking-[0.06em] text-zinc-800 transition-colors hover:text-emerald-900"
-    : "text-sm font-normal tracking-[0.06em] text-zinc-600 transition-colors hover:text-primary";
+  const navLinkClass =
+    "text-sm font-medium tracking-wide text-foreground/75 transition-colors hover:text-primary";
 
-  const iconBtnClass = "rounded-full transition-colors hover:bg-zinc-100";
+  const navLinkActive = "text-primary";
+
+  const isHomeActive = pathname === "/";
+  const isBlogActive = isMagazineSection;
+  const isSeedsActive =
+    isCatalogPath ||
+    pathname === "/breeders" ||
+    pathname.startsWith("/brand/") ||
+    pathname.startsWith("/breeders/");
+
+  const iconBtnClass =
+    "rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary";
 
   return (
     <>
-      <header
-        className={`no-print fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-          solidLightNav
-            ? "border-b border-gray-100 bg-white shadow-sm"
-            : "bg-transparent"
-        }`}
-      >
+      <header className="no-print fixed inset-x-0 top-0 z-50 border-b border-border bg-background/95 shadow-sm backdrop-blur-md transition-all duration-300">
         <div className="mx-auto flex h-20 w-full min-w-0 max-w-7xl flex-row flex-nowrap items-center justify-between gap-2 px-4 sm:h-28 sm:gap-3 sm:px-5 lg:gap-4 lg:px-8">
           {/* Logo — aligned to nav link cap height */}
           <Link href="/" className="flex min-w-0 shrink-0 items-center self-center leading-none">
@@ -202,10 +199,10 @@ export function Navbar() {
               />
             ) : (
               <>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-800">
-                  <Leaf className="h-4 w-4 text-white" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                  <Leaf className="h-4 w-4 text-primary-foreground" />
                 </div>
-                <span className="max-w-[9rem] truncate text-base font-bold tracking-tight text-zinc-900 sm:max-w-none">
+                <span className="max-w-[9rem] truncate text-base font-bold tracking-tight text-foreground sm:max-w-none">
                   Smile Seed Bank
                 </span>
               </>
@@ -214,87 +211,28 @@ export function Navbar() {
 
           {/* Desktop Nav Links */}
           <nav className="hidden items-center gap-7 md:flex lg:gap-8">
-            <Link href="/" className={navLinkClass}>
+            <Link href="/" className={cn(navLinkClass, isHomeActive && navLinkActive)}>
               {homeLabel}
             </Link>
-            <div
-              className="hidden md:block"
-              onMouseEnter={() => setBreederNavMounted(true)}
-              onFocusCapture={() => setBreederNavMounted(true)}
-            >
-              {breederNavMounted ? (
-                <BreederSeedsNav
-                  navLinkClass={navLinkClass}
-                  solidLightNav={solidLightNav}
-                  mode="desktop"
-                />
-              ) : (
-                <SeedsNavShell
-                  navLinkClass={navLinkClass}
-                  solidLightNav={solidLightNav}
-                  label={breedersLabel}
-                />
-              )}
-            </div>
-            <div
-              className="hidden md:block"
-              onMouseEnter={() => setGeneticsNavMounted(true)}
-              onFocusCapture={() => setGeneticsNavMounted(true)}
-            >
-              {geneticsNavMounted ? (
-                <GeneticsSeedsNav
-                  navLinkClass={navLinkClass}
-                  solidLightNav={solidLightNav}
-                  mode="desktop"
-                />
-              ) : (
-                <SeedsNavShell
-                  navLinkClass={navLinkClass}
-                  solidLightNav={solidLightNav}
-                  label={seedsGeneticsLabel}
-                />
-              )}
-            </div>
-            <Link href="/blog" className={navLinkClass}>
+            <GeneticsSeedsNav
+              navLinkClass={cn(navLinkClass, isSeedsActive && navLinkActive)}
+              solidLightNav={solidLightNav}
+              mode="desktop"
+            />
+            <Link href="/blog" className={cn(navLinkClass, isBlogActive && navLinkActive)}>
               {blogLabel}
             </Link>
           </nav>
 
           {/* Right Side */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2">
-            {/* Language Toggle — two targets so each control has a unique accessible name */}
-            <div
-              className="flex overflow-hidden rounded-sm border border-zinc-200/90 bg-white text-[11px] font-semibold text-zinc-700 shadow-sm transition-colors hover:border-emerald-300/80"
-              role="group"
-              aria-label={t("เลือกภาษาเว็บไซต์", "Choose site language")}
-            >
-              <button
-                type="button"
-                aria-label={t("เปลี่ยนเป็นภาษาไทย", "Switch site language to Thai")}
-                onClick={() => setLocale("th")}
-                className={cn(
-                  "px-2.5 py-1.5 transition-colors",
-                  locale === "th"
-                    ? "bg-emerald-700/95 text-white"
-                    : "text-zinc-500 hover:text-zinc-800"
-                )}
-              >
-                TH
-              </button>
-              <button
-                type="button"
-                aria-label={t("เปลี่ยนเป็นภาษาอังกฤษ", "Switch site language to English")}
-                onClick={() => setLocale("en")}
-                className={cn(
-                  "px-2.5 py-1.5 transition-colors",
-                  locale === "en"
-                    ? "bg-emerald-700/95 text-white"
-                    : "text-zinc-500 hover:text-zinc-800"
-                )}
-              >
-                EN
-              </button>
-            </div>
+            <LanguageToggle
+              locale={locale}
+              setLocale={setLocale}
+              groupLabel={t("เลือกภาษาเว็บไซต์", "Choose site language")}
+              thLabel={t("เปลี่ยนเป็นภาษาไทย", "Switch site language to Thai")}
+              enLabel={t("เปลี่ยนเป็นภาษาอังกฤษ", "Switch site language to English")}
+            />
 
             {searchMounted ? (
               <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} triggerClassName={iconBtnClass} />
@@ -305,7 +243,7 @@ export function Navbar() {
                 aria-label={t("ค้นหา", "Search")}
                 onClick={() => setSearchOpen(true)}
               >
-                <Search className="h-5 w-5 text-zinc-700" strokeWidth={1.75} />
+                <Search className="h-5 w-5" strokeWidth={1.75} />
               </button>
             )}
             {/* User — Avatar dropdown or Login link */}
@@ -315,40 +253,40 @@ export function Navbar() {
                   <button
                     type="button"
                     onClick={() => setUserMenuOpen((v) => !v)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-900 transition-colors hover:bg-emerald-100"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary transition-colors hover:bg-primary/25"
                     aria-label={t("เปิดเมนูโปรไฟล์", "Open profile menu")}
                   >
                     {displayInitial}
                   </button>
                   {userMenuOpen ? (
                       <div
-                        className="absolute right-0 top-12 z-50 w-48 animate-in fade-in slide-in-from-top-2 zoom-in-95 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-lg duration-150"
+                        className="absolute right-0 top-12 z-50 w-48 animate-in fade-in slide-in-from-top-2 zoom-in-95 overflow-hidden rounded-2xl border border-border bg-popover shadow-lg duration-150"
                       >
-                        <div className="border-b border-zinc-100 px-4 py-3">
-                          <p className="truncate text-xs font-semibold text-zinc-800">{customer?.full_name ?? t("ลูกค้า", "Customer")}</p>
-                          <p className="truncate text-[11px] text-zinc-400">{displayEmail}</p>
+                        <div className="border-b border-border px-4 py-3">
+                          <p className="truncate text-xs font-semibold text-foreground">{customer?.full_name ?? t("ลูกค้า", "Customer")}</p>
+                          <p className="truncate text-[11px] text-muted-foreground">{displayEmail}</p>
                         </div>
                         <Link
                           href="/profile?tab=orders"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-muted"
                         >
-                          <Package className="h-4 w-4 text-zinc-400" />
+                          <Package className="h-4 w-4 text-muted-foreground" />
                           {t("ออเดอร์ของฉัน", "My Orders")}
                         </Link>
                         <Link
                           href="/profile?tab=profile"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-muted"
                         >
-                          <User className="h-4 w-4 text-zinc-400" />
+                          <User className="h-4 w-4 text-muted-foreground" />
                           {t("ข้อมูลส่วนตัว", "Profile")}
                         </Link>
                         <button
                           type="button"
                           aria-label={t("ออกจากระบบ", "Sign Out")}
                           onClick={() => { void signOut().then(() => { router.push("/"); setUserMenuOpen(false); }); }}
-                          className="flex w-full items-center gap-2.5 border-t border-zinc-100 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"
+                          className="flex w-full items-center gap-2.5 border-t border-border px-4 py-2.5 text-sm text-red-400 hover:bg-red-950/30"
                         >
                           <LogOut className="h-4 w-4" />
                           {t("ออกจากระบบ", "Sign Out")}
@@ -362,7 +300,7 @@ export function Navbar() {
                   className={`flex h-10 w-10 items-center justify-center ${iconBtnClass}`}
                   aria-label={t("เข้าสู่ระบบ", "Sign In")}
                 >
-                  <User className="h-5 w-5 text-zinc-800" />
+                  <User className="h-5 w-5" />
                 </Link>
               )}
             </div>
@@ -384,7 +322,7 @@ export function Navbar() {
                 )}
                 aria-hidden
               >
-                <ShoppingCart className="h-5 w-5 text-zinc-800" />
+                <ShoppingCart className="h-5 w-5" />
               </span>
               {itemCount > 0 && (
                 <span
@@ -407,9 +345,9 @@ export function Navbar() {
               }
             >
               {menuOpen ? (
-                <X className="h-5 w-5 text-zinc-800" />
+                <X className="h-5 w-5" />
               ) : (
-                <Menu className="h-5 w-5 text-zinc-800" />
+                <Menu className="h-5 w-5" />
               )}
             </button>
           </div>
@@ -418,67 +356,51 @@ export function Navbar() {
         {/* Mobile Dropdown Menu */}
         {menuOpen ? (
             <div
-              className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200 sm:px-6 md:hidden"
+              className="border-t border-border bg-background px-4 pb-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200 sm:px-6 md:hidden"
             >
               <Link
                 href="/"
                 onClick={() => setMenuOpen(false)}
-                className="block py-3 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
+                className={cn(
+                  "block py-3 text-base font-medium tracking-wide transition-colors hover:text-primary",
+                  isHomeActive ? "text-primary" : "text-foreground/85"
+                )}
               >
                 {homeLabel}
               </Link>
-              {breederNavMounted ? (
-                <BreederSeedsNav
-                  navLinkClass={navLinkClass}
-                  solidLightNav={solidLightNav}
-                  mode="mobile"
-                  onNavigate={() => setMenuOpen(false)}
-                />
-              ) : (
-                <span className="block border-b border-gray-100 py-3 text-base font-normal tracking-wide text-zinc-800">
-                  {breedersLabel}
-                </span>
-              )}
-              {geneticsNavMounted ? (
-                <GeneticsSeedsNav
-                  navLinkClass={navLinkClass}
-                  solidLightNav={solidLightNav}
-                  mode="mobile"
-                  onNavigate={() => setMenuOpen(false)}
-                />
-              ) : (
-                <Link
-                  href="/seeds"
-                  onClick={() => setMenuOpen(false)}
-                  className="block border-b border-gray-100 py-3 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
-                >
-                  {seedsGeneticsLabel}
-                </Link>
-              )}
+              <GeneticsSeedsNav
+                navLinkClass={cn(navLinkClass, isSeedsActive && navLinkActive)}
+                solidLightNav={solidLightNav}
+                mode="mobile"
+                onNavigate={() => setMenuOpen(false)}
+              />
               <Link
                 href="/blog"
                 onClick={() => setMenuOpen(false)}
-                className="block py-3 text-base font-normal tracking-wide text-zinc-800 hover:text-emerald-900"
+                className={cn(
+                  "block py-3 text-base font-medium tracking-wide transition-colors hover:text-primary",
+                  isBlogActive ? "text-primary" : "text-foreground/85"
+                )}
               >
                 {blogLabel}
               </Link>
               {/* Auth Links — Mobile */}
-              <div className="mt-3 border-t border-gray-100 pt-3">
+              <div className="mt-3 border-t border-border pt-3">
                 {signedIn ? (
                   <div className="flex items-center justify-between">
                     <Link
                       href="/profile"
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 text-sm font-medium text-zinc-800"
+                      className="flex items-center gap-2 text-sm font-medium text-foreground"
                     >
-                      <User className="h-4 w-4 text-emerald-800" />
+                      <User className="h-4 w-4 text-primary" />
                       {t("โปรไฟล์ของฉัน", "My Profile")}
                     </Link>
                     <button
                       type="button"
                       aria-label={t("ออกจากระบบ", "Sign Out")}
                       onClick={() => void signOut()}
-                      className="text-xs text-red-600"
+                      className="text-xs text-red-400"
                     >
                       {t("ออกจากระบบ", "Sign Out")}
                     </button>
@@ -487,44 +409,21 @@ export function Navbar() {
                   <Link
                     href="/login"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 text-sm font-medium text-emerald-800"
+                    className="flex items-center gap-2 text-sm font-medium text-primary"
                   >
                     <User className="h-4 w-4" />
                     {t("เข้าสู่ระบบ / สมัครสมาชิก", "Sign In / Register")}
                   </Link>
                 )}
               </div>
-              {/* Language toggle inside mobile menu */}
-              <div
-                className="mt-2 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-2"
-                role="group"
-                aria-label={t("เลือกภาษาเว็บไซต์", "Choose site language")}
-              >
-                <button
-                  type="button"
-                  onClick={() => setLocale("th")}
-                  className={cn(
-                    "text-sm font-medium text-zinc-600 underline-offset-2 hover:underline",
-                    locale === "th" && "font-bold text-emerald-800"
-                  )}
-                  aria-label={t("เปลี่ยนเป็นภาษาไทย", "Switch site language to Thai")}
-                >
-                  ภาษาไทย
-                </button>
-                <span className="text-zinc-300" aria-hidden>
-                  |
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setLocale("en")}
-                  className={cn(
-                    "text-sm font-medium text-zinc-600 underline-offset-2 hover:underline",
-                    locale === "en" && "font-bold text-emerald-800"
-                  )}
-                  aria-label={t("เปลี่ยนเป็นภาษาอังกฤษ", "Switch site language to English")}
-                >
-                  English
-                </button>
+              <div className="mt-2 border-t border-border pt-3">
+                <LanguageToggle
+                  locale={locale}
+                  setLocale={setLocale}
+                  groupLabel={t("เลือกภาษาเว็บไซต์", "Choose site language")}
+                  thLabel={t("เปลี่ยนเป็นภาษาไทย", "Switch site language to Thai")}
+                  enLabel={t("เปลี่ยนเป็นภาษาอังกฤษ", "Switch site language to English")}
+                />
               </div>
             </div>
         ) : null}

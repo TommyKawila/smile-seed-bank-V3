@@ -8,7 +8,7 @@ import X from "lucide-react/dist/esm/icons/x";
 import ZoomIn from "lucide-react/dist/esm/icons/zoom-in";
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useLanguage } from "@/context/LanguageContext"
 import {
   buildDetailGalleryUrls,
@@ -149,11 +149,11 @@ function Lightbox({
         onOpenAutoFocus={(ev) => ev.preventDefault()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-black/90 px-3 py-2">
-          <p className="max-w-[70%] truncate text-sm text-white" title={name}>
+          <DialogTitle className="max-w-[70%] truncate text-sm font-normal text-white" title={name}>
             {name}
-          </p>
+          </DialogTitle>
           <div className="flex items-center gap-1">
-            <span className="text-xs text-zinc-400">
+            <span className="text-xs text-muted-foreground">
               {index + 1}/{images.length}
             </span>
             <Button
@@ -256,7 +256,7 @@ function Lightbox({
             </div>
           </div>
         )}
-        <p className="shrink-0 bg-black/90 px-3 pb-3 text-center text-xs text-zinc-500">
+        <p className="shrink-0 bg-black/90 px-3 pb-3 text-center text-xs text-muted-foreground">
           ลากเพื่อเปลี่ยนรูป · นิ้วสองนิ้วเพื่อซูม
         </p>
       </DialogContent>
@@ -305,8 +305,8 @@ export function ProductGallery({
 
   if (!gallery.length) {
     return (
-      <div className="flex max-h-[min(60vw,250px)] min-h-[200px] items-center justify-center rounded-sm bg-zinc-50 aspect-square md:max-h-none">
-        <div className="p-4 text-center text-sm text-zinc-400">No image</div>
+      <div className="flex max-h-[min(60vw,250px)] min-h-[200px] items-center justify-center rounded-2xl bg-muted/30 aspect-square md:max-h-none">
+        <div className="p-4 text-center text-sm text-muted-foreground">No image</div>
       </div>
     )
   }
@@ -316,7 +316,7 @@ export function ProductGallery({
   return (
     <div>
       <div
-        className="relative w-full max-h-[min(60vw,250px)] aspect-square cursor-zoom-in overflow-hidden rounded-sm bg-zinc-50 md:max-h-none"
+        className="relative w-full max-h-[min(60vw,250px)] aspect-square cursor-zoom-in overflow-hidden rounded-2xl bg-muted/30 md:max-h-none"
         role="button"
         tabIndex={0}
         onClick={() => setLightbox(true)}
@@ -402,7 +402,7 @@ export function ProductGallery({
               type="button"
               onClick={() => setSelected(i)}
               className={cn(
-                "group relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border-2",
+                "group relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2",
                 selected === i
                   ? "border-amber-500"
                   : "border-amber-500/20 opacity-30 hover:opacity-60"

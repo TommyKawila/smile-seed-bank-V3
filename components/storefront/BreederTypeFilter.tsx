@@ -44,9 +44,9 @@ const iconClass = "h-3.5 w-3.5 shrink-0";
 const chipBase =
   "inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border px-2.5 py-1.5 font-sans text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800/25 focus-visible:ring-offset-2";
 const chipOff =
-  "border-transparent bg-zinc-100/50 text-zinc-600 hover:bg-zinc-200/50";
+  "border-transparent bg-muted/30 text-muted-foreground hover:bg-muted/40/50";
 const chipOn =
-  "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80";
+  "border-primary/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80";
 
 export function BreederTypeFilter({
   options,
@@ -109,8 +109,8 @@ export function BreederTypeFilter({
     "inline-flex shrink-0 items-center gap-2 rounded-sm border px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800/25 focus-visible:ring-offset-2";
 
   const inactive =
-    "border-zinc-200/90 bg-zinc-50/90 text-zinc-800 hover:border-zinc-300 hover:bg-white";
-  const activeStyle = "border-emerald-800/90 bg-emerald-800 text-white shadow-sm";
+    "border-border bg-muted/30 text-foreground hover:border-border hover:bg-card";
+  const activeStyle = "border-emerald-800/90 bg-primary text-white shadow-sm";
 
   if (appearance === "quick-chips") {
     return (
@@ -144,7 +144,7 @@ export function BreederTypeFilter({
                 className={cn(
                   mono,
                   "text-[10px] font-medium tabular-nums",
-                  isOn ? "text-white/85" : "text-zinc-400"
+                  isOn ? "text-white/85" : "text-muted-foreground"
                 )}
               >
                 ({count})
@@ -185,7 +185,7 @@ export function BreederTypeFilter({
               <span
                 className={cn(
                   mono,
-                  "ml-1 text-[10px] font-medium tabular-nums text-zinc-400",
+                  "ml-1 text-[10px] font-medium tabular-nums text-muted-foreground",
                   isOn && "text-emerald-600/90"
                 )}
               >
@@ -203,7 +203,7 @@ export function BreederTypeFilter({
       <div
         role="tablist"
         aria-label={ariaLabel ?? "Flowering type"}
-        className="flex flex-wrap gap-2 border-b border-zinc-100 pb-3"
+        className="flex flex-wrap gap-2 border-b border-border pb-3"
       >
         {showAllButton ? (
           <button
@@ -214,7 +214,7 @@ export function BreederTypeFilter({
             className={cn(tabBase, serif, "font-normal tracking-tight", !active ? activeStyle : inactive)}
           >
             <Compass
-              className={cn(iconClass, !active ? "text-white/95" : "text-zinc-500")}
+              className={cn(iconClass, !active ? "text-white/95" : "text-muted-foreground")}
               strokeWidth={1}
               aria-hidden
             />
@@ -223,7 +223,7 @@ export function BreederTypeFilter({
         ) : null}
         {options.map(({ slug, label, count }) => {
           const isOn = active === slug;
-          const iconTone = isOn ? "text-white/95" : "text-zinc-500";
+          const iconTone = isOn ? "text-white/95" : "text-muted-foreground";
           const Icon = filterIcon(slug);
           return (
             <button
@@ -247,7 +247,7 @@ export function BreederTypeFilter({
                 className={cn(
                   mono,
                   "text-[11px] font-medium tabular-nums",
-                  isOn ? "text-white/90" : "text-zinc-500"
+                  isOn ? "text-white/90" : "text-muted-foreground"
                 )}
               >
                 ({count})

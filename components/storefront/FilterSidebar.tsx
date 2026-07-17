@@ -73,13 +73,18 @@ const SEEDS_PACK_ROWS: { slug: string; labelTh: string; labelEn: string; i18n?: 
 
 type FilterPresentation = "sidebar" | "mobile";
 
-/** Eco-Clinical filter panel tokens (primary teal + secondary lavender). */
+const sectionHeadingClass =
+  "font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary";
+const subSectionHeadingClass =
+  "font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-primary/70";
+
+/** V4 filter panel tokens. */
 const filterCardClass =
-  "rounded-2xl border border-primary/10 bg-white p-4 shadow-sm";
+  "rounded-2xl border border-border bg-card/50 p-4 shadow-sm surface-glass";
 const filterCardTintClass =
-  "rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/[0.05] via-white to-secondary/25 p-4 shadow-sm";
+  "rounded-2xl border border-border bg-card/50 p-4 shadow-sm surface-glass";
 const filterLabDividerClass =
-  "flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/[0.06] px-4 py-3";
+  "flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3";
 
 function FilterSectionHeading({
   icon,
@@ -98,7 +103,7 @@ function FilterSectionHeading({
       <div className="min-w-0">
         <p className="text-sm font-bold leading-tight text-primary">{title}</p>
         {subtitle ? (
-          <p className="mt-0.5 text-xs leading-snug text-zinc-500">{subtitle}</p>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{subtitle}</p>
         ) : null}
       </div>
     </div>
@@ -162,24 +167,24 @@ export function FilterSidebarContent({
   const rowClass = (on: boolean, isZero: boolean) =>
     isMobile
       ? mobileRowClass(on, isZero, "default")
-      : `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
-          isZero ? "opacity-60" : ""
-        } ${
+      : cn(
+          "flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-sm font-sans transition-colors",
+          isZero && "opacity-55",
           on
-            ? "border-primary/40 bg-primary/[0.06] text-zinc-900"
-            : "border-zinc-200/90 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50/80"
-        }`;
+            ? "border-primary/40 bg-primary/10 text-foreground"
+            : "border-border bg-card/60 text-foreground/75 hover:border-primary/25 hover:bg-primary/5"
+        );
 
   const seedsRowClass = (on: boolean, isZero: boolean) =>
     isMobile
       ? mobileRowClass(on, isZero, "seeds")
-      : `flex w-full cursor-pointer items-center gap-2 rounded-sm border px-2.5 py-2 text-sm font-sans transition-colors ${
-          isZero ? "opacity-60" : ""
-        } ${
+      : cn(
+          "flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-sm font-sans transition-colors",
+          isZero && "opacity-55",
           on
-            ? "border-primary/40 bg-primary/[0.08] text-primary"
-            : "border-zinc-200/90 bg-white text-zinc-600 hover:border-primary/20 hover:bg-primary/[0.04]"
-        }`;
+            ? "border-primary/40 bg-primary/10 text-primary"
+            : "border-border bg-card/60 text-foreground/75 hover:border-primary/25 hover:bg-primary/5"
+        );
 
   const mobileRowClass = (
     on: boolean,
@@ -192,7 +197,7 @@ export function FilterSidebarContent({
     if (!on) {
       return cn(
         base,
-        "border-primary/15 bg-white text-zinc-700 hover:border-primary/30 hover:bg-primary/[0.04]"
+        "border-primary/15 bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.04]"
       );
     }
     if (tone === "fem")
@@ -209,25 +214,25 @@ export function FilterSidebarContent({
       if (tone === "fem")
         return cn(
           "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
-          isZero ? "bg-primary/5 text-zinc-400" : "bg-primary/10 text-primary"
+          isZero ? "bg-primary/5 text-muted-foreground" : "bg-primary/10 text-primary"
         );
       return cn(
         "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
-        isZero ? "bg-primary/5 text-zinc-400" : "bg-primary/10 text-primary"
+        isZero ? "bg-primary/5 text-muted-foreground" : "bg-primary/10 text-primary"
       );
     }
     return cn(
-      "shrink-0 font-sans text-[10px] font-normal tabular-nums",
-      isZero ? "text-zinc-400" : "text-zinc-500"
+      "shrink-0 font-sans text-[10px] font-medium tabular-nums",
+      isZero ? "text-muted-foreground/70" : on ? "text-primary/80" : "text-foreground/45"
     );
   };
 
   const labelTextClass = (on: boolean) =>
     isMobile
-      ? cn("text-sm font-semibold leading-tight", on ? "text-inherit" : "text-zinc-800")
+      ? cn("text-sm font-semibold leading-tight", on ? "text-inherit" : "text-foreground")
       : cn(
-          "font-sans text-[11px] font-medium tabular-nums tracking-wide",
-          on ? "text-primary" : "text-zinc-600"
+          "font-sans text-[11px] font-medium tracking-wide",
+          on ? "font-semibold text-primary" : "text-foreground/75"
         );
 
   const mobileCheck = (on: boolean) =>
@@ -236,7 +241,7 @@ export function FilterSidebarContent({
         <Check className="h-4 w-4 stroke-[2.5]" aria-hidden />
       </span>
     ) : (
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-primary/15 bg-white" />
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-primary/15 bg-card" />
     );
 
   return (
@@ -250,6 +255,7 @@ export function FilterSidebarContent({
           onRangeChange={priceFilter.onRangeChange}
           showChips={false}
           showSlider
+          presentation="sidebar"
           className="mb-0"
         />
       ) : null}
@@ -261,7 +267,7 @@ export function FilterSidebarContent({
             subtitle={t("เลือกจำนวนเมล็ดต่อแพ็ก", "Seeds per pack")}
           />
         ) : (
-          <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
+          <p className={cn(sectionHeadingClass, "mb-2")}>
             {t("ขนาดแพ็กเกจ", "Package size")}
           </p>
         )}
@@ -303,8 +309,8 @@ export function FilterSidebarContent({
           </p>
         </div>
       ) : (
-        <p className="border-b border-zinc-200/90 pb-2.5 font-sans text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500">
-          {t("ห้องปฏิบัติการกรอง", "THE LAB")}
+        <p className={cn(sectionHeadingClass, "border-b border-border pb-2.5")}>
+          {t("กรองละเอียด", "Refine filters")}
         </p>
       )}
 
@@ -316,7 +322,7 @@ export function FilterSidebarContent({
             subtitle={t("ความเข้มข้นสารสำคัญ", "Potency ranges")}
           />
         ) : (
-          <p className="mb-2.5 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
+          <p className={cn(sectionHeadingClass, "mb-2.5")}>
             {t("THC & CBD", "THC & CBD")}
           </p>
         )}
@@ -324,7 +330,7 @@ export function FilterSidebarContent({
           className={cn(
             isMobile
               ? "mb-2 text-xs font-bold uppercase tracking-wide text-primary/80"
-              : "mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500"
+              : cn(subSectionHeadingClass, "mb-1.5")
           )}
         >
           THC
@@ -356,7 +362,7 @@ export function FilterSidebarContent({
           className={cn(
             isMobile
               ? "mb-2 text-xs font-bold uppercase tracking-wide text-primary/70"
-              : "mb-1.5 font-sans text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500"
+              : cn(subSectionHeadingClass, "mb-1.5")
           )}
         >
           CBD
@@ -394,7 +400,7 @@ export function FilterSidebarContent({
             subtitle={t("เหมาะกับมือใหม่หรือโปร", "Grow skill level")}
           />
         ) : (
-          <p className="mb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-600">
+          <p className={cn(sectionHeadingClass, "mb-2")}>
             {t("ระดับความยาก", "Difficulty")}
           </p>
         )}
@@ -446,12 +452,12 @@ export function FilterSidebar({
   return (
     <div
       id="shop-filters-desktop"
-      className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-2xl border border-zinc-200/90 bg-white shadow-sm lg:top-[11.5rem] lg:max-h-[calc(100vh-11.5rem)]"
+      className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-2xl border border-border surface-glass shadow-sm lg:top-[11.5rem] lg:max-h-[calc(100vh-11.5rem)]"
     >
       <div className="shrink-0 px-4 pb-3 pt-4">
         <CatalogSidebarQuickFilters {...quickFilters} presentation="sidebar" />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-zinc-100 px-4 pb-5 pt-4 [-webkit-overflow-scrolling:touch]">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-border px-4 pb-5 pt-4 [-webkit-overflow-scrolling:touch]">
         <FilterSidebarContent t={t} counts={counts} priceFilter={priceFilter} />
       </div>
     </div>
@@ -481,7 +487,7 @@ export function ShopFilterMobileSheet({
       <SheetContent
         id="shop-filters"
         side="bottom"
-        className="flex max-h-[92dvh] w-full flex-col gap-0 rounded-t-2xl border-t-0 bg-gradient-to-b from-secondary/20 via-white to-white p-0 shadow-2xl [&>button]:hidden"
+        className="flex max-h-[92dvh] w-full flex-col gap-0 rounded-t-2xl border-t-0 bg-gradient-to-b from-secondary/20 via-background to-background p-0 shadow-2xl [&>button]:hidden"
       >
         <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-primary/25" aria-hidden />
 
@@ -519,7 +525,7 @@ export function ShopFilterMobileSheet({
           <FilterSidebarContent t={t} counts={counts} presentation="mobile" />
         </div>
 
-        <div className="shrink-0 border-t border-primary/10 bg-white/98 px-4 py-4 shadow-[0_-8px_24px_rgba(18,70,62,0.1)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="shrink-0 border-t border-primary/10 bg-background/98 px-4 py-4 shadow-[0_-8px_24px_rgba(18,70,62,0.1)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
             className="mb-2.5 h-14 w-full rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"

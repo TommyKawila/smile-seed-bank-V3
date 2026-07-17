@@ -26,27 +26,27 @@ export function FeaturedProductHero({
 
   if (isLoading) {
     return (
-      <section className="border-b border-zinc-100 bg-zinc-50/50 py-10 font-sans sm:py-14">
+      <section className="border-b border-border bg-muted/30 py-10 font-sans sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mb-8 space-y-3 sm:mb-10">
-            <div className="h-3 w-28 animate-pulse rounded bg-zinc-200/80" />
-            <div className="h-8 max-w-md animate-pulse rounded bg-zinc-200/80 sm:h-9" />
-            <div className="h-4 max-w-lg animate-pulse rounded bg-zinc-200/80" />
+            <div className="h-3 w-28 animate-pulse rounded bg-muted/40/80" />
+            <div className="h-8 max-w-md animate-pulse rounded bg-muted/40/80 sm:h-9" />
+            <div className="h-4 max-w-lg animate-pulse rounded bg-muted/40/80" />
           </div>
           <div className="grid gap-6 sm:gap-8 md:grid-cols-2 md:gap-10">
-            <div className="min-h-[200px] animate-pulse rounded-sm border border-zinc-100 bg-zinc-100 sm:min-h-[280px]" />
+            <div className="min-h-[200px] animate-pulse rounded-sm border border-border bg-muted/30 sm:min-h-[280px]" />
             <div className="flex flex-col justify-center space-y-4 py-2">
-              <div className="h-3 w-24 animate-pulse rounded bg-zinc-200/80" />
-              <div className="h-10 w-4/5 animate-pulse rounded bg-zinc-200/80" />
-              <div className="grid grid-cols-3 gap-2 border-y border-zinc-100 py-4">
+              <div className="h-3 w-24 animate-pulse rounded bg-muted/40/80" />
+              <div className="h-10 w-4/5 animate-pulse rounded bg-muted/40/80" />
+              <div className="grid grid-cols-3 gap-2 border-y border-border py-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="space-y-2">
-                    <div className="h-2 w-8 animate-pulse rounded bg-zinc-200/80" />
-                    <div className="h-6 animate-pulse rounded bg-zinc-200/80" />
+                    <div className="h-2 w-8 animate-pulse rounded bg-muted/40/80" />
+                    <div className="h-6 animate-pulse rounded bg-muted/40/80" />
                   </div>
                 ))}
               </div>
-              <div className="h-16 animate-pulse rounded bg-zinc-200/80" />
+              <div className="h-16 animate-pulse rounded bg-muted/40/80" />
             </div>
           </div>
         </div>
@@ -57,7 +57,7 @@ export function FeaturedProductHero({
   if (products.length === 0) return null;
 
   return (
-    <section className="border-b border-zinc-100 bg-zinc-50/50 py-10 font-sans sm:py-14">
+    <section className="border-b border-border bg-muted/30 py-10 font-sans sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <header
           className={cn(
@@ -65,13 +65,13 @@ export function FeaturedProductHero({
             "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-500 motion-safe:fill-mode-both"
           )}
         >
-          <p className="font-sans text-xs font-semibold tracking-wide text-emerald-800">
+          <p className="font-sans text-xs font-semibold tracking-wide text-primary">
             {t("สายพันธุ์คัดพิเศษ", "Curated selections")}
           </p>
-          <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.85rem]">
+          <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl md:text-[1.85rem]">
             {mainHeading}
           </h2>
-          <p className="font-sans text-sm leading-relaxed text-zinc-600">
+          <p className="font-sans text-sm leading-relaxed text-muted-foreground">
             {t(
               "คัดเลือกอย่างมีหลักการ — เน้นความชัดเจนของโปรไฟล์และความโปร่งใสทางวิทยาศาสตร์",
               "Editorial picks with clear lab-style labeling—depth lives on each strain profile."

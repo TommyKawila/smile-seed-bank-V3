@@ -40,14 +40,14 @@ export function LineInAppGoogleOverlay({ open, onOpenChange, className }: Props)
         className,
       )}
     >
-      <div className="max-h-[min(92vh,720px)] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl sm:p-6">
+      <div className="max-h-[min(92vh,720px)] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-2xl sm:p-6">
         <h2
           id="line-in-app-google-title"
-          className="text-center text-lg font-bold leading-snug text-zinc-900"
+          className="text-center text-lg font-bold leading-snug text-foreground"
         >
           {t("เข้าสู่ระบบด้วย Google", "Sign in with Google")}
         </h2>
-        <p className="mt-2 text-center text-sm leading-relaxed text-zinc-600">
+        <p className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">
           {t(
             "กรุณาเปิดหน้านี้ในเบราว์เซอร์ของระบบ (Safari หรือ Chrome) เพื่อลงชื่อเข้าใช้ Google",
             "To sign in with Google, please open this page in your system browser (Safari or Chrome).",
@@ -55,17 +55,17 @@ export function LineInAppGoogleOverlay({ open, onOpenChange, className }: Props)
         </p>
 
         <div className="mt-5 space-y-3">
-          <div className="flex items-start gap-2 text-left text-xs text-zinc-600">
+          <div className="flex items-start gap-2 text-left text-xs text-muted-foreground">
             <span className="mt-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
               1
             </span>
             <span>
               {t("แตะปุ่ม", "Tap the")}{" "}
-              <span className="font-semibold text-zinc-800">⋮</span>{" "}
+              <span className="font-semibold text-foreground">⋮</span>{" "}
               {t("(จุดสามจุด) มุมขวาบน", "(three dots) in the top-right corner")}
             </span>
           </div>
-          <div className="rounded-xl border-2 border-zinc-200 bg-zinc-50 p-3">
+          <div className="rounded-xl border-2 border-border bg-muted/30 p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex gap-1.5">
                 <div className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
@@ -73,22 +73,22 @@ export function LineInAppGoogleOverlay({ open, onOpenChange, className }: Props)
                 <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
               </div>
               <div
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-300/80 bg-white shadow-sm"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-300/80 bg-card shadow-sm"
                 aria-hidden
               >
-                <MoreVertical className="h-5 w-5 text-zinc-700" />
+                <MoreVertical className="h-5 w-5 text-muted-foreground" />
               </div>
             </div>
-            <div className="mt-2 h-1.5 w-2/3 rounded bg-zinc-200/80" />
+            <div className="mt-2 h-1.5 w-2/3 rounded bg-muted/40/80" />
           </div>
 
-          <div className="flex items-start gap-2 text-left text-xs text-zinc-600">
+          <div className="flex items-start gap-2 text-left text-xs text-muted-foreground">
             <span className="mt-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
               2
             </span>
             <span>
               {t("เลือก", "Choose")}{" "}
-              <span className="font-semibold text-zinc-800">
+              <span className="font-semibold text-foreground">
                 {t("เปิดในเบราว์เซอร์", "Open in external browser")}
               </span>{" "}
               {t("หรือคำที่คล้ายกัน", "or similar")}
@@ -113,7 +113,7 @@ export function LineInAppGoogleOverlay({ open, onOpenChange, className }: Props)
             {t("ใช้ LINE หรืออีเมลแทน", "Continue with LINE or email instead")}
           </Button>
         </div>
-        <p className="mt-3 text-center text-[11px] leading-relaxed text-zinc-400">
+        <p className="mt-3 text-center text-[11px] leading-relaxed text-muted-foreground">
           {t(
             "LINE ฝังเบราว์เซอร์ไม่รองรับ Google Login — นี่คือข้อกำหนดของ Google ไม่ใช่ร้านค้า",
             "LINE’s in-app browser can’t complete Google sign-in (Google’s policy, not the store’s).",

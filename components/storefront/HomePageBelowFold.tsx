@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
-import QuickCategoryNav from "@/components/storefront/QuickCategoryNav";
+import { AiQuickToolsDock } from "@/components/storefront/AiQuickToolsDock";
 import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import { HomeNewsletterSection } from "@/components/storefront/HomeNewsletterSection";
 import { ProductCard } from "@/components/storefront/ProductCard";
@@ -41,6 +41,11 @@ const FeaturedProductHero = dynamic(
 const BreederShowcase = dynamic(() => import("@/components/storefront/BreederShowcase"), {
   ssr: false,
 });
+
+const QuickCategoryNav = dynamic(
+  () => import("@/components/storefront/QuickCategoryNav"),
+  { ssr: false }
+);
 
 const ClearanceSection = dynamic(
   () =>
@@ -112,6 +117,12 @@ export function HomePageBelowFold({
       case "hero":
       case "promotion_banner":
         return null;
+      case "ai_quick_tools_dock":
+        return (
+          <div key={sk} className={BELOW_FOLD_CV}>
+            <AiQuickToolsDock />
+          </div>
+        );
       case "new_strains": {
         const arrivalsHeading = resolveSectionHeading(
           locale,
@@ -133,13 +144,13 @@ export function HomePageBelowFold({
                 )}
               >
                 <div className="max-w-2xl space-y-2">
-                  <p className={cn(JOURNAL_PRODUCT_MONO_CLASS, "text-[11px] font-medium uppercase tracking-widest text-emerald-800")}>
+                  <p className={cn(JOURNAL_PRODUCT_MONO_CLASS, "text-[11px] font-medium uppercase tracking-widest text-primary")}>
                     NEW ARRIVALS
                   </p>
-                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl">
+                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-foreground sm:text-3xl md:text-4xl">
                     {arrivalsHeading}
                   </h2>
-                  <p className="text-sm font-light leading-relaxed text-zinc-600">
+                  <p className="text-sm font-light leading-relaxed text-muted-foreground">
                     {t(
                       "สายพันธุ์ใหม่ล่าสุดในคลัง — อัปเดตตามการคัดเลือกอย่างต่อเนื่อง",
                       "Latest genetic entries in the Smile Seed Bank archive—refreshed as new strains land."
@@ -150,7 +161,7 @@ export function HomePageBelowFold({
                   asChild
                   variant="ghost"
                   size="sm"
-                  className="min-h-11 shrink-0 self-start px-3 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900 sm:self-end"
+                  className="min-h-11 shrink-0 self-start px-3 text-primary hover:bg-muted hover:text-primary sm:self-end"
                 >
                   <Link href="/shop?category=Seeds">
                     {t("ไปที่คลังเมล็ดพันธุ์", "Seed vault")}{" "}
@@ -164,16 +175,16 @@ export function HomePageBelowFold({
                   {[...Array(8)].map((_, i) => (
                     <div
                       key={i}
-                      className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
+                      className="overflow-hidden rounded-xl border border-border surface-glass shadow-sm"
                     >
-                      <div className="aspect-square animate-pulse bg-zinc-100" />
+                      <div className="aspect-square animate-pulse bg-slate-800/50" />
                       <div className="space-y-2 px-2.5 pb-2.5 pt-2">
-                        <div className="mx-auto h-6 w-28 animate-pulse rounded-full bg-zinc-100" />
-                        <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
-                        <div className="h-4 animate-pulse rounded bg-zinc-100" />
+                        <div className="mx-auto h-6 w-28 animate-pulse rounded-full bg-slate-800/50" />
+                        <div className="h-3 w-2/3 animate-pulse rounded bg-slate-800/50" />
+                        <div className="h-4 animate-pulse rounded bg-slate-800/50" />
                         <div className="flex justify-between pt-2">
-                          <div className="h-5 w-16 animate-pulse rounded bg-zinc-100" />
-                          <div className="h-8 w-8 animate-pulse rounded-full bg-zinc-100" />
+                          <div className="h-5 w-16 animate-pulse rounded bg-slate-800/50" />
+                          <div className="h-8 w-8 animate-pulse rounded-full bg-slate-800/50" />
                         </div>
                       </div>
                     </div>
@@ -188,7 +199,7 @@ export function HomePageBelowFold({
                   ))}
                 </div>
               ) : (
-                <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
+                <p className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
                   {t("ยังไม่มีสินค้าใหม่ในช่วงนี้", "No new arrivals yet.")}
                 </p>
               )}
@@ -198,13 +209,13 @@ export function HomePageBelowFold({
       }
       case "categories":
         return (
-          <div key={sk} className={cn("bg-white pb-6 sm:pb-8", BELOW_FOLD_CV)}>
+          <div key={sk} className={cn("bg-background pb-6 sm:pb-8", BELOW_FOLD_CV)}>
             <QuickCategoryNav sectionTitle={st} />
           </div>
         );
       case "breeder_showcase":
         return (
-          <div key={sk} className={cn("bg-white pb-6 sm:pb-10", BELOW_FOLD_CV)}>
+          <div key={sk} className={cn("bg-background pb-6 sm:pb-10", BELOW_FOLD_CV)}>
             <BreederShowcase sectionTitle={st} />
           </div>
         );
@@ -242,21 +253,21 @@ export function HomePageBelowFold({
           "Scroll every brand in our network — tap a logo to shop strains"
         );
         return (
-          <section key={sk} className={cn("border-b border-zinc-100 bg-white py-12 sm:py-16", BELOW_FOLD_CV)}>
+          <section key={sk} className={cn("border-b border-border bg-background py-12 sm:py-16", BELOW_FOLD_CV)}>
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
               <div className="mb-8 flex items-end justify-between gap-4">
                 <div className="max-w-2xl">
-                  <span className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mb-2 inline-flex items-center rounded-full border border-zinc-100 bg-zinc-50/50 px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-zinc-500")}>
+                  <span className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mb-2 inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-muted-foreground")}>
                     {t("ครบทุกแบรนด์", "Full catalog")}
                   </span>
-                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-900 sm:text-3xl">
+                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-foreground sm:text-3xl">
                     {breederMain}
                   </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-600">{breederSub}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{breederSub}</p>
                 </div>
                 <Link
                   href="/breeders"
-                  className="hidden min-h-[44px] items-center gap-1 px-2 text-sm font-semibold text-emerald-800 hover:underline sm:flex"
+                  className="hidden min-h-[44px] items-center gap-1 px-2 text-sm font-semibold text-primary hover:underline sm:flex"
                 >
                   {t("ดูทั้งหมด", "View All")}
                   <ChevronRight className="h-4 w-4" />
@@ -264,7 +275,7 @@ export function HomePageBelowFold({
               </div>
               <div className="mt-6 flex justify-center sm:hidden">
                 <Link href="/breeders" className="inline-flex min-h-11 min-w-[44px] items-center justify-center">
-                  <Button variant="outline" size="sm" className="min-h-11 gap-1.5 border-emerald-200 text-emerald-900 hover:bg-emerald-50">
+                  <Button variant="outline" size="sm" className="min-h-11 gap-1.5 border-border text-primary hover:bg-muted">
                     {t("ดู Breeder ทั้งหมด", "View All Breeders")}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -278,14 +289,14 @@ export function HomePageBelowFold({
         return (
           <section
             key={sk}
-            className={cn("border-t border-b border-zinc-100 bg-zinc-50 py-12 sm:py-16", BELOW_FOLD_CV)}
+            className={cn("border-t border-b border-border bg-muted/20 py-12 sm:py-16", BELOW_FOLD_CV)}
           >
             <div className="mx-auto max-w-5xl px-4 sm:px-6">
-              <div className="grid grid-cols-1 divide-y divide-zinc-100 text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              <div className="grid grid-cols-1 divide-y divide-border text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 {features.map((f) => (
                   <div key={f.label} className="px-6 py-7 sm:py-9">
-                    <p className="font-sans text-base font-semibold text-zinc-900">{f.label}</p>
-                    <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">
+                    <p className="font-sans text-base font-semibold text-foreground">{f.label}</p>
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                       {f.sub}
                     </p>
                   </div>

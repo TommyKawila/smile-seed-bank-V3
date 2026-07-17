@@ -56,10 +56,10 @@ function FeaturedProductInsightCard({
   return (
     <article
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition hover:shadow-lg"
+        "flex h-full min-h-0 flex-col overflow-hidden rounded-sm border border-border bg-card shadow-sm transition hover:shadow-lg"
       )}
     >
-      <Link href={href} className="relative block aspect-video overflow-hidden bg-zinc-100">
+      <Link href={href} className="relative block aspect-video overflow-hidden bg-muted/30">
         {img ? (
           <Image
             src={img}
@@ -80,19 +80,19 @@ function FeaturedProductInsightCard({
       </Link>
       <div className="flex min-h-0 flex-1 flex-col p-5">
         {product.breeders?.name ? (
-          <span className="mb-2 inline-flex w-fit max-w-full items-center rounded-full border border-emerald-200/90 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-900 line-clamp-1">
+          <span className="mb-2 inline-flex w-fit max-w-full items-center rounded-full border border-primary/30 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary line-clamp-1">
             {product.breeders.name}
           </span>
         ) : null}
-        <h3 className="font-sans line-clamp-1 text-lg font-bold leading-snug text-zinc-900">
-          <Link href={href} className="hover:text-emerald-900">
+        <h3 className="font-sans line-clamp-1 text-lg font-bold leading-snug text-foreground">
+          <Link href={href} className="hover:text-primary">
             {product.name}
           </Link>
         </h3>
-        <p className="mt-2 line-clamp-2 min-h-0 flex-1 text-sm text-zinc-600">{excerpt}</p>
+        <p className="mt-2 line-clamp-2 min-h-0 flex-1 text-sm text-muted-foreground">{excerpt}</p>
         <Button
           asChild
-          className="mt-4 h-10 w-full shrink-0 rounded-sm bg-emerald-800 font-semibold text-white shadow-none hover:bg-emerald-900"
+          className="mt-4 h-10 w-full shrink-0 rounded-sm bg-primary font-semibold text-white shadow-none hover:bg-primary/90"
         >
           <Link href={href}>{t("ดูรายละเอียด", "View details")}</Link>
         </Button>
@@ -120,28 +120,28 @@ export function FeaturedProductsCarousel({
 
   if (isLoading) {
     return (
-      <section className="border-b border-zinc-100 bg-white py-12 sm:py-16">
+      <section className="border-b border-border bg-card py-12 sm:py-16">
         <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
           <div className="mb-10 space-y-3">
-            <div className="h-3 w-24 animate-pulse rounded bg-zinc-100" />
-            <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.75rem]">
+            <div className="h-3 w-24 animate-pulse rounded bg-muted/30" />
+            <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl md:text-[1.75rem]">
               {mainHeading}
             </h2>
-            <div className="h-4 max-w-lg animate-pulse rounded bg-zinc-100" />
+            <div className="h-4 max-w-lg animate-pulse rounded bg-muted/30" />
           </div>
           <div className="grid grid-cols-1 gap-6 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="flex flex-col overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm"
+                className="flex flex-col overflow-hidden rounded-sm border border-border bg-card shadow-sm"
               >
-                <div className="aspect-video animate-pulse bg-zinc-100" />
+                <div className="aspect-video animate-pulse bg-muted/30" />
                 <div className="space-y-3 p-5">
-                  <div className="h-2.5 w-16 animate-pulse rounded bg-zinc-100" />
-                  <div className="h-5 w-4/5 animate-pulse rounded bg-zinc-100" />
-                  <div className="h-3 w-full animate-pulse rounded bg-zinc-100" />
-                  <div className="h-3 w-full animate-pulse rounded bg-zinc-100" />
-                  <div className="mt-2 h-10 w-full animate-pulse rounded bg-zinc-100" />
+                  <div className="h-2.5 w-16 animate-pulse rounded bg-muted/30" />
+                  <div className="h-5 w-4/5 animate-pulse rounded bg-muted/30" />
+                  <div className="h-3 w-full animate-pulse rounded bg-muted/30" />
+                  <div className="h-3 w-full animate-pulse rounded bg-muted/30" />
+                  <div className="mt-2 h-10 w-full animate-pulse rounded bg-muted/30" />
                 </div>
               </div>
             ))}
@@ -154,7 +154,7 @@ export function FeaturedProductsCarousel({
   if (products.length === 0) return null;
 
   return (
-    <section className="border-b border-zinc-100 bg-white py-12 sm:py-16">
+    <section className="border-b border-border bg-card py-12 sm:py-16">
       <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${JOURNAL_PRODUCT_FONT_VARS}`}>
         <m.header
           className="mb-10 max-w-3xl space-y-3"
@@ -163,13 +163,13 @@ export function FeaturedProductsCarousel({
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.45 }}
         >
-          <p className="text-xs font-medium tracking-wide text-emerald-800">
+          <p className="text-xs font-medium tracking-wide text-primary">
             {t("สายพันธุ์คัดพิเศษ", "Curated selections")}
           </p>
-          <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-[1.75rem]">
+          <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl md:text-[1.75rem]">
             {mainHeading}
           </h2>
-          <p className="text-sm font-light leading-relaxed text-zinc-600">
+          <p className="text-sm font-light leading-relaxed text-muted-foreground">
             {t(
               "คัดเลือกอย่างมีหลักการ — เน้นความชัดเจนของโปรไฟล์และความโปร่งใสทางวิทยาศาสตร์",
               "Editorial picks with clear lab-style labeling—depth lives on each strain profile."

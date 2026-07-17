@@ -45,7 +45,7 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
           />
         ) : (
           <div className="flex h-full items-center justify-center bg-zinc-900">
-            <Leaf className="h-10 w-10 text-zinc-600" />
+            <Leaf className="h-10 w-10 text-muted-foreground" />
           </div>
         )}
         {pct != null && pct > 0 && (
@@ -63,7 +63,7 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
         </Link>
         <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-zinc-800 pt-2">
           {regular > sale && (
-            <span className="text-xs tabular-nums text-zinc-500 line-through">{formatPrice(regular)}</span>
+            <span className="text-xs tabular-nums text-muted-foreground line-through">{formatPrice(regular)}</span>
           )}
           <span className="text-base font-bold tabular-nums text-emerald-400">{formatPrice(sale)}</span>
         </div>

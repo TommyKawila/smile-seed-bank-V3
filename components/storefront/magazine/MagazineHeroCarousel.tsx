@@ -25,7 +25,7 @@ function HeroImage({
 }) {
   if (!src) {
     return (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-white" />
+      <div className="absolute inset-0 bg-gradient-to-br from-muted/50 via-card to-background" />
     );
   }
   return (
@@ -56,12 +56,12 @@ export function MagazineHeroCarousel({ posts }: Props) {
 
   if (slides.length === 0) {
     return (
-      <div className="relative aspect-video min-h-[240px] w-full overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm">
+      <div className="relative aspect-video min-h-[240px] w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-          <p className="font-sans text-2xl text-zinc-600">
+          <p className="font-sans text-2xl text-muted-foreground">
             No highlights yet
           </p>
-          <p className="max-w-md text-sm text-zinc-500">
+          <p className="max-w-md text-sm text-muted-foreground">
             Publish posts and mark them as highlight in Admin to fill this carousel.
           </p>
         </div>
@@ -74,7 +74,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
   const heroTitle = magazineDisplayTitle(current, locale);
 
   return (
-    <div className="relative aspect-video min-h-[260px] w-full overflow-hidden rounded-sm border border-[#f3f4f6] bg-white shadow-sm transition-shadow hover:shadow-md">
+    <div className="relative aspect-video min-h-[260px] w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
       <AnimatePresence mode="wait">
         <m.div
           key={current.id}
@@ -85,29 +85,29 @@ export function MagazineHeroCarousel({ posts }: Props) {
           className="absolute inset-0"
         >
           <div className="group relative h-full w-full">
-            <div className="absolute inset-0 overflow-hidden rounded-sm">
+            <div className="absolute inset-0 overflow-hidden">
               <HeroImage
                 src={current.featured_image}
                 alt={heroTitle}
                 priority={i === 0}
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/55 to-white/15" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/55 to-background/10" />
             <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10 md:p-12">
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 {current.category && (
-                  <span className="inline-flex w-fit rounded-full border border-white/40 bg-white/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-950 shadow-sm backdrop-blur-md">
+                  <span className="inline-flex w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary backdrop-blur-sm">
                     {magazineCategoryDisplayTh(current.category)}
                   </span>
                 )}
                 {research && <VerifiedResearchBadge />}
               </div>
-              <h2 className="font-sans text-3xl font-semibold leading-[1.15] tracking-tight text-zinc-900 sm:text-4xl md:text-5xl lg:max-w-3xl">
+              <h2 className="font-sans text-2xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-3xl md:text-4xl lg:max-w-3xl">
                 {heroTitle}
               </h2>
               <Link
                 href={`/blog/${current.slug}`}
-                className="mt-6 inline-flex w-fit items-center justify-center rounded-sm bg-emerald-800 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900"
+                className="mt-6 inline-flex min-h-11 w-fit items-center justify-center rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
               >
                 {t("อ่านบทความ", "Read article")}
               </Link>
@@ -124,7 +124,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
               aria-label={`Slide ${idx + 1}`}
               onClick={() => setI(idx)}
               className={`h-2 rounded-full transition-all duration-300 ${
-                idx === i ? "w-8 bg-emerald-700" : "w-2 bg-zinc-300 hover:bg-zinc-400"
+                idx === i ? "w-8 bg-primary" : "w-2 bg-muted-foreground/40 hover:bg-primary/60"
               }`}
             />
           ))}

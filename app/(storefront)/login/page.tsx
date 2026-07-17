@@ -185,7 +185,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 pt-20">
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 pt-20">
       <LineInAppGoogleOverlay open={lineGoogleOverlayOpen} onOpenChange={setLineGoogleOverlayOpen} />
       <m.div
         initial={{ opacity: 0, y: 20 }}
@@ -193,9 +193,9 @@ export default function LoginPage() {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="w-full max-w-md"
       >
-        <div className="overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
           <div className="px-6 pb-5 pt-8 text-center sm:px-7 sm:pt-9">
-            <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900">
+            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
               {t("เริ่มต้นการสั่งซื้อ", "Start your order")}
             </h1>
             {collectCouponHint ? (
@@ -209,14 +209,14 @@ export default function LoginPage() {
           </div>
 
           {/* Tab Toggle */}
-          <div className="grid grid-cols-2 border-b border-t border-zinc-100">
+          <div className="grid grid-cols-2 border-b border-t border-border">
             {(["login", "register"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => { setMode(m); setError(null); setSuccess(null); }}
                 className={`py-3.5 text-sm font-semibold transition-colors ${
-                  mode === m ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800"
+                  mode === m ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {m === "login" ? t("เข้าสู่ระบบ", "Sign In") : t("สมัครสมาชิก", "Register")}
@@ -226,7 +226,7 @@ export default function LoginPage() {
 
           <div className="space-y-8 px-6 pb-8 pt-7 sm:px-7 sm:pb-9">
             {/* Member benefits */}
-            <div className="rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-3.5 py-3.5 text-left shadow-sm">
+            <div className="rounded-xl border border-primary/30 bg-emerald-50/90 px-3.5 py-3.5 text-left shadow-sm">
               <p className="text-[13px] font-medium leading-snug text-emerald-950">
                 {t(
                   "💡 สมัครสมาชิก รับส่วนลด 10% สำหรับออเดอร์แรก และรับแจ้งเตือนผ่าน LINE อัตโนมัติ",
@@ -236,14 +236,14 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("เข้าสู่ระบบด้วย", "Sign in with")}
               </p>
               <div className="flex flex-col gap-2.5">
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 w-full gap-2.5 border-zinc-200 font-semibold shadow-sm"
+                  className="h-11 w-full gap-2.5 border-border font-semibold shadow-sm"
                   onClick={handleGoogle}
                   disabled={googleLoading || lineLoading}
                 >
@@ -275,22 +275,22 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center gap-3 pt-1">
-              <Separator className="flex-1 bg-zinc-200" />
-              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+              <Separator className="flex-1 bg-muted/40" />
+              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t("หรือ", "or")}
               </span>
-              <Separator className="flex-1 bg-zinc-200" />
+              <Separator className="flex-1 bg-muted/40" />
             </div>
 
             {/* Guest checkout — equal prominence */}
             <div className="space-y-3">
-              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("สั่งซื้อแบบไม่สมัครสมาชิก", "Checkout without an account")}
               </p>
               <Button
                 asChild
                 variant="outline"
-                className="h-auto min-h-[3rem] w-full flex-col gap-1 border-2 border-zinc-200 bg-zinc-50/80 py-3 text-zinc-800 shadow-sm transition-colors hover:border-emerald-300/80 hover:bg-emerald-50/50"
+                className="h-auto min-h-[3rem] w-full flex-col gap-1 border-2 border-border bg-muted/30 py-3 text-foreground shadow-sm transition-colors hover:border-primary/40/80 hover:bg-primary/10"
               >
                 <Link href="/checkout" className="flex w-full flex-col items-center gap-1 px-2">
                   <span className="flex items-center gap-2 text-sm font-bold">
@@ -300,7 +300,7 @@ export default function LoginPage() {
                       "Checkout as a guest (buy now)",
                     )}
                   </span>
-                  <span className="text-center text-[11px] font-normal leading-snug text-zinc-600">
+                  <span className="text-center text-[11px] font-normal leading-snug text-muted-foreground">
                     {t("รวดเร็ว ไม่ต้องใช้รหัสผ่าน", "Fast checkout — no password needed")}
                   </span>
                 </Link>
@@ -308,15 +308,15 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center gap-3 pt-1">
-              <Separator className="flex-1 bg-zinc-200" />
-              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+              <Separator className="flex-1 bg-muted/40" />
+              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t("หรือ", "or")}
               </span>
-              <Separator className="flex-1 bg-zinc-200" />
+              <Separator className="flex-1 bg-muted/40" />
             </div>
 
             <div className="space-y-3">
-              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("หรือใช้อีเมลของคุณ", "Or use your email")}
               </p>
               <form onSubmit={handleSubmit} className="space-y-3.5">
@@ -330,9 +330,9 @@ export default function LoginPage() {
                     className="overflow-hidden"
                   >
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-zinc-600">{t("ชื่อ-นามสกุล", "Full Name")}</Label>
+                      <Label className="text-xs font-semibold text-muted-foreground">{t("ชื่อ-นามสกุล", "Full Name")}</Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                        <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           type="text"
                           value={name}
@@ -348,9 +348,9 @@ export default function LoginPage() {
               </AnimatePresence>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-zinc-600">{t("อีเมล", "Email")}</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">{t("อีเมล", "Email")}</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="email"
                     value={email}
@@ -364,7 +364,7 @@ export default function LoginPage() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <Label className="text-xs font-semibold text-zinc-600">{t("รหัสผ่าน", "Password")}</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground">{t("รหัสผ่าน", "Password")}</Label>
                   {mode === "login" && (
                     <button
                       type="button"
@@ -377,7 +377,7 @@ export default function LoginPage() {
                   )}
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type={showPw ? "text" : "password"}
                     value={password}
@@ -389,7 +389,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -416,7 +416,7 @@ export default function LoginPage() {
             </form>
             </div>
 
-            <p className="pt-2 text-center text-xs leading-relaxed text-zinc-400">
+            <p className="pt-2 text-center text-xs leading-relaxed text-muted-foreground">
               {t("โดยการสมัครสมาชิก คุณยอมรับ", "By signing up you agree to our")}{" "}
               <Link
                 href="/terms"

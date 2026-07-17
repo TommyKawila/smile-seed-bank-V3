@@ -113,16 +113,16 @@ export function EditorialHighlightSection() {
 
   if (loading) {
     return (
-      <section className="border-b border-zinc-100 bg-zinc-50/70 py-14 sm:py-16">
+      <section className="border-b border-border bg-muted/30/70 py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mb-8 h-7 w-40 animate-pulse rounded bg-zinc-200" />
+          <div className="mb-8 h-7 w-40 animate-pulse rounded bg-muted/40" />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-8">
             <div className="lg:col-span-3">
-              <div className="aspect-[4/5] animate-pulse rounded-2xl bg-zinc-200 sm:min-h-[420px] sm:aspect-auto" />
+              <div className="aspect-[4/5] animate-pulse rounded-2xl bg-muted/40 sm:min-h-[420px] sm:aspect-auto" />
             </div>
             <div className="flex flex-col gap-4 lg:col-span-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 animate-pulse rounded-xl bg-zinc-200" />
+                <div key={i} className="h-24 animate-pulse rounded-xl bg-muted/40" />
               ))}
             </div>
           </div>
@@ -145,7 +145,7 @@ export function EditorialHighlightSection() {
         <p className="text-xs font-semibold uppercase tracking-widest text-primary">
           {t("ความรู้ & เรื่องราว", "Knowledge & stories")}
         </p>
-        <h2 className="mt-1 font-sans text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+        <h2 className="mt-1 font-sans text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {t("จาก Smile Seed Blog", "From Smile Seed Blog")}
         </h2>
       </div>
@@ -166,7 +166,7 @@ export function EditorialHighlightSection() {
       <HeroImage src={main.featured_image} alt={mainTitle} />
       <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/50 to-white/5" />
       <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-        <span className="mb-3 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
+        <span className="mb-3 inline-flex rounded-full border border-primary/30 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary">
           #{badgeLabel(main)}
         </span>
         <m.h3
@@ -177,9 +177,9 @@ export function EditorialHighlightSection() {
           {mainTitle}
         </m.h3>
         {mainExcerpt ? (
-          <p className="mt-2 line-clamp-2 text-sm text-zinc-600">{mainExcerpt}</p>
+          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{mainExcerpt}</p>
         ) : null}
-        <p className="mt-4 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+        <p className="mt-4 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Clock className="h-3.5 w-3.5 opacity-90" aria-hidden />
           {mainMins} {t("นาทีในการอ่าน", "min read")}
         </p>
@@ -190,7 +190,7 @@ export function EditorialHighlightSection() {
   if (posts.length === 1) {
     return (
       <m.section
-        className="border-b border-zinc-100 bg-gradient-to-b from-zinc-50/90 to-white py-14 sm:py-16"
+        className="border-b border-border bg-gradient-to-b from-zinc-50/90 to-white py-14 sm:py-16"
         initial={{ opacity: 0, y: 36 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-72px" }}
@@ -206,7 +206,7 @@ export function EditorialHighlightSection() {
 
   return (
     <m.section
-      className="border-b border-zinc-100 bg-gradient-to-b from-zinc-50/90 to-white py-14 sm:py-16"
+      className="border-b border-border bg-gradient-to-b from-zinc-50/90 to-white py-14 sm:py-16"
       initial={{ opacity: 0, y: 36 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-72px" }}
@@ -237,9 +237,9 @@ export function EditorialHighlightSection() {
                 <m.div key={post.id} variants={sideItemVariants}>
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="group/side flex gap-4 overflow-hidden rounded-xl border border-zinc-200/80 bg-white p-3 shadow-sm transition-shadow duration-300 hover:border-primary/25 hover:shadow-md"
+                    className="group/side flex gap-4 overflow-hidden rounded-xl border border-border bg-card p-3 shadow-sm transition-shadow duration-300 hover:border-primary/25 hover:shadow-md"
                   >
-                    <div className="relative h-24 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
+                    <div className="relative h-24 w-28 shrink-0 overflow-hidden rounded-lg bg-muted/30">
                       <ThumbImage src={post.featured_image} alt={sideTitle} />
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-0.5">
@@ -247,13 +247,13 @@ export function EditorialHighlightSection() {
                         #{badgeLabel(post)}
                       </span>
                       <m.h4
-                        className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-900"
+                        className="line-clamp-2 text-sm font-semibold leading-snug text-foreground"
                         whileHover={{ color: "rgb(4 120 87)" }}
                         transition={{ duration: 0.3 }}
                       >
                         {sideTitle}
                       </m.h4>
-                      <p className="flex items-center gap-1 text-[11px] text-zinc-500">
+                      <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
                         <Clock className="h-3 w-3 shrink-0" aria-hidden />
                         {mins} {t("นาทีในการอ่าน", "min read")}
                       </p>

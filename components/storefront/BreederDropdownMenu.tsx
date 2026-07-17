@@ -31,14 +31,14 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
 
   if (mode === "mobile") {
     return (
-      <div className="border-b border-gray-100 py-1">
-        <p className="py-2.5 text-base font-normal tracking-wide text-zinc-800">{label}</p>
-        <p className={cn(mono, "mb-2 text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-400")}>
+      <div className="border-b border-border py-1">
+        <p className="py-2.5 text-base font-normal tracking-wide text-foreground">{label}</p>
+        <p className={cn(mono, "mb-2 text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground")}>
           FIND BY BREEDER
         </p>
         <ul className="max-h-56 space-y-3 overflow-y-auto pb-2">
           {isLoading ? (
-            <li className="text-xs text-zinc-400">…</li>
+            <li className="text-xs text-muted-foreground">…</li>
           ) : (
             breeders.map((b) => (
               <li key={b.id}>
@@ -47,10 +47,10 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
                   onClick={onNavigate}
                   className={cn(
                     serif,
-                    "flex items-center gap-3 rounded-sm py-1 text-sm font-medium text-zinc-800 hover:text-emerald-900"
+                    "flex items-center gap-3 rounded-sm py-1 text-sm font-medium text-foreground hover:text-primary"
                   )}
                 >
-                  <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-sm border border-zinc-100 bg-zinc-50">
+                  <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-sm border border-border bg-muted/30">
                     <BreederLogoImage
                       src={b.logo_url}
                       breederName={b.name}
@@ -84,13 +84,12 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
         aria-label={t("เปิดเมนูบรีดเดอร์", "Open breeders menu")}
         className={cn(
           navLinkClass,
-          "inline-flex items-center gap-1 border-0 bg-transparent p-0",
-          solidLightNav ? "text-zinc-800" : "text-zinc-600"
+          "inline-flex items-center gap-1 border-0 bg-transparent p-0"
         )}
       >
         {label}
         <ChevronDown
-          className={cn("h-3.5 w-3.5 opacity-60 transition-transform", open && "rotate-180")}
+          className={cn("h-3.5 w-3.5 text-primary/70 opacity-80 transition-transform", open && "rotate-180")}
           strokeWidth={1.75}
           aria-hidden
         />
@@ -98,14 +97,14 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
 
       {open && (
         <div className="absolute left-1/2 top-full z-50 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 pt-2 lg:left-0 lg:translate-x-0">
-          <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-md">
-            <div className="border-b border-zinc-50 px-5 py-3">
-              <p className={cn(mono, "text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-400")}>
+          <div className="overflow-hidden rounded-sm border border-border bg-card shadow-md">
+            <div className="border-b border-border px-5 py-3">
+              <p className={cn(mono, "text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground")}>
                 FIND BY BREEDER
               </p>
               <Link
                 href="/seeds"
-                className={cn(serif, "mt-2 block text-sm font-medium text-emerald-900 hover:underline")}
+                className={cn(serif, "mt-2 block text-sm font-medium text-primary hover:underline")}
                 onClick={() => setOpen(false)}
               >
                 {catalogLabel} →
@@ -113,7 +112,7 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
             </div>
             <ul className="max-h-[min(60vh,24rem)] space-y-4 overflow-y-auto px-5 py-4">
               {isLoading ? (
-                <li className="text-sm text-zinc-400">Loading…</li>
+                <li className="text-sm text-muted-foreground">Loading…</li>
               ) : (
                 breeders.map((b) => (
                   <li key={b.id}>
@@ -121,11 +120,11 @@ export function BreederSeedsNav({ navLinkClass, solidLightNav, onNavigate, mode 
                       href={seedsBreederHref(b)}
                       className={cn(
                         serif,
-                        "flex items-start gap-3 rounded-sm py-0.5 text-sm font-medium leading-snug text-zinc-900 transition-colors hover:text-emerald-900"
+                        "flex items-start gap-3 rounded-sm py-0.5 text-sm font-medium leading-snug text-foreground transition-colors hover:text-primary"
                       )}
                       onClick={() => setOpen(false)}
                     >
-                      <span className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-sm border border-zinc-100 bg-zinc-50">
+                      <span className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-sm border border-border bg-muted/30">
                         <BreederLogoImage
                           src={b.logo_url}
                           breederName={b.name}

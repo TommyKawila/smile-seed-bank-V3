@@ -7,19 +7,19 @@ export default function PrivacyPolicyPage() {
 
   return (
     <article className="mx-auto max-w-3xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-32">
-      <h1 className="font-sans text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+      <h1 className="font-sans text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {t("นโยบายความเป็นส่วนตัว (Privacy Policy)", "Privacy Policy")}
       </h1>
-      <p className="mt-3 text-sm text-zinc-500">
+      <p className="mt-3 text-sm text-muted-foreground">
         {t(
           "อธิบายว่า Smile Seed Bank เก็บ ใช้ และปกป้องข้อมูลส่วนบุคคลของคุณอย่างไร",
           "How Smile Seed Bank collects, uses, and protects your personal information."
         )}
       </p>
 
-      <div className="mt-10 space-y-10 text-sm leading-relaxed text-zinc-700 sm:text-base">
+      <div className="mt-10 space-y-10 text-sm leading-relaxed text-muted-foreground sm:text-base">
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("1. ข้อมูลที่เราเก็บรวบรวม", "1. Information we collect")}
           </h2>
           <p>
@@ -31,7 +31,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("2. การนำข้อมูลไปใช้", "2. How we use your information")}
           </h2>
           <p>
@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("3. ความปลอดภัยของข้อมูล", "3. Data security")}
           </h2>
           <p>
@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("4. บุคคลที่สาม", "4. Third parties")}
           </h2>
           <p>
@@ -67,7 +67,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("5. คุกกี้ (Cookies)", "5. Cookies")}
           </h2>
           <p>
@@ -79,7 +79,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("6. สิทธิของคุณ", "6. Your rights")}
           </h2>
           <p>
@@ -90,8 +90,8 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        <section className="space-y-3 border-t border-zinc-200 pt-8">
-          <p className="text-xs text-zinc-500">
+        <section className="space-y-3 border-t border-border pt-8">
+          <p className="text-xs text-muted-foreground">
             {t(
               "หากมีคำถามเกี่ยวกับนโยบายความเป็นส่วนตัว โปรดติดต่อเราผ่านช่องทางที่ระบุบนเว็บไซต์",
               "For questions about this privacy policy, please contact us through the channels listed on our website."

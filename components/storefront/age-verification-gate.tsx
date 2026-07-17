@@ -111,14 +111,14 @@ export function AgeVerificationGate({
 
       <div
         className={cn(
-          "relative z-10 w-[calc(100%-1.5rem)] max-w-md rounded-2xl border border-emerald-800/25 bg-white p-6 pt-7 shadow-2xl ring-1 ring-emerald-900/10",
+          "relative z-10 w-[calc(100%-1.5rem)] max-w-md rounded-2xl border border-primary/25 bg-card p-6 pt-7 shadow-2xl ring-1 ring-primary/10",
           "focus:outline-none",
           "[font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe_UI,Roboto,Helvetica_Neue,Arial,sans-serif]"
         )}
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div
-          className="absolute right-4 top-4 z-10 flex overflow-hidden rounded-sm border border-zinc-200/90 bg-white text-[11px] font-semibold text-zinc-700 shadow-sm"
+          className="absolute right-4 top-4 z-10 flex overflow-hidden rounded-sm border border-border bg-card text-[11px] font-semibold text-muted-foreground shadow-sm"
           role="group"
           aria-label="Language"
         >
@@ -130,7 +130,7 @@ export function AgeVerificationGate({
               "px-2.5 py-1.5 transition-colors",
               locale === "th"
                 ? "bg-emerald-700/95 text-white"
-                : "text-zinc-500 hover:text-zinc-800"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             TH
@@ -143,7 +143,7 @@ export function AgeVerificationGate({
               "px-2.5 py-1.5 transition-colors",
               locale === "en"
                 ? "bg-emerald-700/95 text-white"
-                : "text-zinc-500 hover:text-zinc-800"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             EN
@@ -193,7 +193,7 @@ export function AgeVerificationGate({
           <Button
             type="button"
             variant="outline"
-            className="h-11 w-full border-emerald-800/25 text-zinc-800 [font-family:inherit] hover:bg-emerald-50 sm:min-w-[180px] sm:w-auto"
+            className="h-11 w-full border-primary/25 text-foreground [font-family:inherit] hover:bg-primary/10 sm:min-w-[180px] sm:w-auto"
             onClick={onExit}
           >
             ออก (Exit)

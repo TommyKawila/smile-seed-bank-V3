@@ -269,7 +269,7 @@ export function DynamicPromptPayQr({
         style={{ minHeight: embedded ? QR_SIZE : QR_SIZE + 48 }}
       >
         <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-muted-foreground">
           {t("กำลังเตรียม QR พร้อมเพย์...", "Preparing PromptPay QR...")}
         </p>
       </div>
@@ -278,7 +278,7 @@ export function DynamicPromptPayQr({
 
   if (!payload) {
     return wrap(
-      <p className="rounded-lg bg-zinc-100 px-3 py-2 text-center text-sm text-zinc-600">
+      <p className="rounded-lg bg-muted/30 px-3 py-2 text-center text-sm text-muted-foreground">
         {t(
           "พร้อมเพย์ไม่พร้อมให้บริการในขณะนี้ — กรุณาโอนตามเลขบัญชีด้านบน",
           "PromptPay is not available — please transfer using the account number above.",
@@ -290,21 +290,21 @@ export function DynamicPromptPayQr({
   return wrap(
     <>
       <div className="space-y-4 text-sm">
-        <div className="flex justify-between gap-3 rounded-2xl border border-zinc-100 bg-zinc-50/80 px-3 py-3">
-          <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <div className="flex justify-between gap-3 rounded-2xl border border-border bg-muted/30 px-3 py-3">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t("ยอดที่ต้องชำระ", "Amount to pay")}
           </span>
-          <span className="font-mono text-lg font-semibold tabular-nums text-zinc-900">
+          <span className="font-mono text-lg font-semibold tabular-nums text-foreground">
             {formatPrice(displayBaht)}
           </span>
         </div>
         <div className="flex justify-between gap-2 px-0.5">
-          <span className="text-xs text-zinc-500">{t("ชื่อผู้รับเงิน", "Payee")}</span>
-          <span className="max-w-[65%] text-right text-sm font-medium leading-snug text-zinc-900">
+          <span className="text-xs text-muted-foreground">{t("ชื่อผู้รับเงิน", "Payee")}</span>
+          <span className="max-w-[65%] text-right text-sm font-medium leading-snug text-foreground">
             {payeeLabel}
           </span>
         </div>
-        <p className="text-[11px] leading-relaxed text-zinc-500">
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
           {t(
             "ยอดจากเซิร์ฟเวอร์ — สแกน QR (หมายเลขพร้อมเพย์ไม่แสดงเป็นข้อความ)",
             "Server-validated amount — scan QR (PromptPay ID not shown as text).",
@@ -313,7 +313,7 @@ export function DynamicPromptPayQr({
       </div>
 
       <div className="mx-auto mt-2 flex w-full max-w-[300px] flex-col items-center gap-3">
-        <div className="rounded-3xl border border-zinc-200/90 bg-white p-4 shadow-inner">
+        <div className="rounded-3xl border border-border bg-card p-4 shadow-inner">
           <QRCodeCanvas
             ref={canvasRef}
             value={payload}
@@ -329,7 +329,7 @@ export function DynamicPromptPayQr({
           type="button"
           variant="outline"
           size="sm"
-          className="w-full max-w-xs gap-2 rounded-xl border-zinc-200"
+          className="w-full max-w-xs gap-2 rounded-xl border-border"
           onClick={() => void downloadPng()}
         >
           <Download className="h-4 w-4" aria-hidden />
@@ -342,7 +342,7 @@ export function DynamicPromptPayQr({
 
 function CardShell({ children, t }: { children: ReactNode; t: (th: string, en: string) => string }) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-zinc-200/85 bg-white shadow-[0_16px_48px_-20px_rgba(15,23,42,0.22)]">
+    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-[0_16px_48px_-20px_rgba(15,23,42,0.22)]">
       <div className="border-b border-emerald-900/10 bg-gradient-to-r from-[#12463e]/[0.07] to-zinc-50/90 px-5 py-3.5">
         <h3 className="text-sm font-semibold tracking-tight text-[#12463e]">
           {t("พร้อมเพย์", "PromptPay")}

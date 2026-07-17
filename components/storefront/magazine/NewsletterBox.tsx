@@ -30,18 +30,18 @@ export function NewsletterBox() {
   }
 
   return (
-    <aside className="rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-6 shadow-sm">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+    <aside className="rounded-2xl border border-border bg-card/60 px-5 py-6 shadow-sm surface-glass">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
         {t("จดหมายข่าว", "Newsletter")}
       </p>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+      <p className="mt-2 text-sm leading-relaxed text-foreground/65">
         {t(
           "สรุปสั้นๆ จากโต๊ะบรรณาธิการ — คัดเฉพาะประเด็นสำคัญ",
           "Short updates from the editorial desk — no clutter."
         )}
       </p>
       {msg ? (
-        <p className="mt-4 text-sm text-emerald-700" role="status">
+        <p className="mt-4 text-sm text-primary" role="status">
           {msg}
         </p>
       ) : (
@@ -61,12 +61,12 @@ export function NewsletterBox() {
             }}
             placeholder={t("ใส่อีเมลของคุณ...", "you@email.com")}
             disabled={pending}
-            className="min-h-10 flex-1 rounded-lg border border-zinc-200 bg-white px-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/25"
+            className="min-h-10 flex-1 rounded-lg border border-border bg-background px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/25"
           />
           <button
             type="submit"
             disabled={pending}
-            className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-emerald-700 px-5 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:opacity-50"
+            className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
           >
             {pending ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

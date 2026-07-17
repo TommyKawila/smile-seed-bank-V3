@@ -15,7 +15,7 @@ export function StockAlert({
   return (
     <span
       className={cn(
-        "inline-flex h-6 items-center rounded-full border border-primary/15 bg-accent/70 px-2.5 text-[11px] font-semibold tabular-nums text-primary",
+        "inline-flex h-6 items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 text-[10px] font-semibold tabular-nums text-primary",
         className
       )}
     >

@@ -39,10 +39,10 @@ export function DiscountProgressBar({
 
   return (
     <div className="space-y-2 font-sans">
-      <div className="flex justify-end font-sans text-xs text-zinc-600">
+      <div className="flex justify-end font-sans text-xs text-muted-foreground">
         <span className="tabular-nums">{formatPrice(threshold)}</span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-zinc-200">
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted/40">
         <div
           className="h-full rounded-full bg-primary transition-all duration-300"
           style={{ width: `${progress}%` }}

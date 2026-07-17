@@ -81,7 +81,7 @@ export function ClearanceSection({
               {t("ล้างสต็อก", "CLEARANCE")}
             </p>
             <h2 className="font-sans text-2xl font-semibold tracking-tight text-white sm:text-3xl">{heading}</h2>
-            <p className="text-sm font-light text-zinc-400">{sub}</p>
+            <p className="text-sm font-light text-muted-foreground">{sub}</p>
           </div>
           <Button
             asChild

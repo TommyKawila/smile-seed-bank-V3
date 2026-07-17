@@ -80,7 +80,7 @@ export function ShopGeneticVaultHero({
   t: VaultHeroTFn;
 }) {
   return (
-    <div className="border-b border-zinc-100 bg-white px-4 py-10 font-sans sm:px-6 sm:py-12">
+    <div className="border-b border-border bg-background px-4 py-10 font-sans sm:px-6 sm:py-12">
       <div className="relative mx-auto max-w-7xl">
         <FeaturedStrainHeroCarousel products={products} isEn={isEn} t={t} />
       </div>

@@ -72,7 +72,7 @@ export default function RootLayout({
         ) : null}
         {supabaseOriginHeadLinks()}
       </head>
-      <body className={`${prompt.variable} min-h-screen bg-white font-sans antialiased`}>
+      <body className={`${prompt.variable} min-h-screen bg-background font-sans antialiased`}>
         <PromptExtendedFacesLoader />
         {children}
         <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />

@@ -63,20 +63,20 @@ function TrackOrderInner() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10 sm:py-14">
-      <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-700/10 text-emerald-800">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-700/10 text-primary">
             <Package className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-zinc-900">ติดตามออเดอร์</h1>
-            <p className="text-xs text-zinc-500">Smile Seed Bank</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">ติดตามออเดอร์</h1>
+            <p className="text-xs text-muted-foreground">Smile Seed Bank</p>
           </div>
         </div>
 
         {success && (
           <p
-            className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-sm text-emerald-900"
+            className="mb-4 rounded-lg border border-primary/30 bg-emerald-50/80 px-3 py-2 text-sm text-primary"
             role="status"
           >
             เชื่อม LINE สำหรับแจ้งเตือนแล้ว
@@ -92,7 +92,7 @@ function TrackOrderInner() {
         )}
 
         {loading && (
-          <div className="flex items-center gap-2 text-sm text-zinc-600">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin text-emerald-700" />
             กำลังโหลด...
           </div>
@@ -107,42 +107,42 @@ function TrackOrderInner() {
         {!loading && data && (
           <div className="space-y-4 text-sm">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">เลขที่ออเดอร์</p>
-              <p className="mt-1 font-mono text-base font-semibold text-zinc-900">#{data.orderNumber}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">เลขที่ออเดอร์</p>
+              <p className="mt-1 font-mono text-base font-semibold text-foreground">#{data.orderNumber}</p>
             </div>
 
             {showLinked ? (
-              <div className="flex items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50/80 px-3 py-2 text-sm font-medium text-emerald-900">
+              <div className="flex items-center gap-2 rounded-lg border border-primary/30/80 bg-emerald-50/80 px-3 py-2 text-sm font-medium text-primary">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
                 LINE Linked ✅
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-xs text-zinc-600">รับแจ้งเตือนจัดส่งผ่าน LINE (ไม่บังคับ)</p>
-                <Button asChild className="w-full bg-emerald-700 text-white hover:bg-emerald-800">
+                <p className="text-xs text-muted-foreground">รับแจ้งเตือนจัดส่งผ่าน LINE (ไม่บังคับ)</p>
+                <Button asChild className="w-full bg-emerald-700 text-white hover:bg-primary">
                   <Link href={connectHref}>Connect LINE Notifications</Link>
                 </Button>
               </div>
             )}
 
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 px-4 py-3">
-              <p className="text-xs text-zinc-500">สถานะ</p>
-              <p className="mt-0.5 font-medium text-zinc-900">{data.statusLabelTh}</p>
-              <p className="text-xs text-zinc-500">{data.statusLabelEn}</p>
+            <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
+              <p className="text-xs text-muted-foreground">สถานะ</p>
+              <p className="mt-0.5 font-medium text-foreground">{data.statusLabelTh}</p>
+              <p className="text-xs text-muted-foreground">{data.statusLabelEn}</p>
             </div>
 
             {(data.trackingNumber || data.shippingProvider) && (
               <div className="flex gap-3 rounded-xl border border-emerald-700/15 bg-emerald-50/50 px-4 py-3">
-                <Truck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-800" />
+                <Truck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
-                  <p className="text-xs font-medium text-emerald-900/80">เลขพัสดุ</p>
+                  <p className="text-xs font-medium text-primary/80">เลขพัสดุ</p>
                   {data.trackingNumber ? (
-                    <p className="mt-1 font-mono text-sm font-semibold text-zinc-900">{data.trackingNumber}</p>
+                    <p className="mt-1 font-mono text-sm font-semibold text-foreground">{data.trackingNumber}</p>
                   ) : (
-                    <p className="mt-1 text-zinc-600">—</p>
+                    <p className="mt-1 text-muted-foreground">—</p>
                   )}
                   {data.shippingProvider ? (
-                    <p className="mt-1 text-xs text-zinc-600">ขนส่ง: {data.shippingProvider}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">ขนส่ง: {data.shippingProvider}</p>
                   ) : null}
                 </div>
               </div>
@@ -159,7 +159,7 @@ export default function TrackOrderPage() {
     <Suspense
       fallback={
         <div className="mx-auto max-w-lg px-4 py-14">
-          <div className="flex items-center justify-center gap-2 text-sm text-zinc-600">
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
             กำลังโหลด...
           </div>

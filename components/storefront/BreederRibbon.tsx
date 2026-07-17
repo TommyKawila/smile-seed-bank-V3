@@ -216,17 +216,17 @@ function BreederRibbonBase({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.95 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="pointer-events-none fixed z-50 w-56 -translate-x-1/2 -translate-y-full rounded-2xl border border-zinc-100 bg-white/90 px-3.5 py-3 shadow-2xl backdrop-blur-md"
+            className="pointer-events-none fixed z-50 w-56 -translate-x-1/2 -translate-y-full rounded-2xl border border-border bg-white/90 px-3.5 py-3 shadow-2xl backdrop-blur-md"
             style={{ left: tooltip.mx, top: tooltip.my - 16 }}
           >
-            <p className="mb-0.5 text-xs font-bold text-zinc-900">{tooltip.breeder.name}</p>
-            <p className="line-clamp-3 text-[11px] leading-relaxed text-zinc-500">
+            <p className="mb-0.5 text-xs font-bold text-foreground">{tooltip.breeder.name}</p>
+            <p className="line-clamp-3 text-[11px] leading-relaxed text-muted-foreground">
               {t(
                 tooltip.breeder.summary_th ?? tooltip.breeder.summary_en ?? tooltip.breeder.description ?? "",
                 tooltip.breeder.summary_en ?? tooltip.breeder.summary_th ?? tooltip.breeder.description ?? "",
               ).slice(0, 130)}
             </p>
-            <div className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-zinc-100 bg-white/90" />
+            <div className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-border bg-white/90" />
           </m.div>
         )}
       </AnimatePresence>
@@ -303,8 +303,8 @@ function BreederRibbonBase({
               >
                 <div
                   onDragStart={(ev) => ev.preventDefault()}
-                  className={`flex items-center justify-center overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-lg ${cardSize} ${
-                    isActive ? "ring-2 ring-primary border-primary/40 grayscale-0 opacity-100" : "border-zinc-100"
+                  className={`flex items-center justify-center overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-lg ${cardSize} ${
+                    isActive ? "ring-2 ring-primary border-primary/40 grayscale-0 opacity-100" : "border-border"
                   }`}
                 >
                   <div
@@ -329,7 +329,7 @@ function BreederRibbonBase({
                     />
                   </div>
                 </div>
-                <p className={`text-center font-medium text-zinc-600 transition-colors duration-200 group-hover:text-primary ${compact ? "text-[10px]" : "text-[11px]"}`}>
+                <p className={`text-center font-medium text-muted-foreground transition-colors duration-200 group-hover:text-primary ${compact ? "text-[10px]" : "text-[11px]"}`}>
                   {b.name}
                 </p>
               </a>

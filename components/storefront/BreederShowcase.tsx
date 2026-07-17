@@ -6,7 +6,6 @@ import { ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
-import { JOURNAL_PRODUCT_MONO_CLASS } from "@/components/storefront/journal-product-mono-class";
 import {
   resolveSectionHeading,
   type SectionTitle,
@@ -43,11 +42,11 @@ export default function BreederShowcase({
   const networkLabel =
     totalBreeders != null && totalBreeders > 0
       ? locale === "en"
-        ? `${BREEDER_SHOWCASE_LIMIT} brands with the most strains in our vault — from a network of ${totalBreeders}+ breeders`
-        : `${BREEDER_SHOWCASE_LIMIT} แบรนด์ที่มีสายพันธุ์ในคลังมากที่สุด — จากเครือข่าย ${totalBreeders}+ แบรนด์`
+        ? `${BREEDER_SHOWCASE_LIMIT} top brands · ${totalBreeders}+ in our network`
+        : `${BREEDER_SHOWCASE_LIMIT} แบรนด์เด่น · เครือข่าย ${totalBreeders}+ แบรนด์`
       : t(
-          `${BREEDER_SHOWCASE_LIMIT} แบรนด์ที่มีสายพันธุ์ในคลังมากที่สุด`,
-          `${BREEDER_SHOWCASE_LIMIT} brands with the widest strain selection`
+          "แบรนด์ที่มีสายพันธุ์ในคลังมากที่สุด",
+          "Brands with the widest strain selection"
         );
 
   useEffect(() => {
@@ -70,32 +69,24 @@ export default function BreederShowcase({
   }, []);
 
   return (
-    <section
-      className="border-b border-zinc-100 bg-zinc-100/50"
-      aria-label={mainHeading}
-    >
+    <section className="border-b border-border bg-background" aria-label={mainHeading}>
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
-        <div className="mb-8 text-center md:mb-10">
-          <span
-            className={cn(
-              JOURNAL_PRODUCT_MONO_CLASS,
-              "mb-3 inline-flex items-center rounded-full border border-emerald-200/60 bg-white px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-emerald-800"
-            )}
-          >
+        <div className="mb-6 space-y-2 text-center sm:mb-8 sm:space-y-3">
+          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
             {showcaseLabel}
-          </span>
-          <h2 className="font-sans text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+          </p>
+          <h2 className="font-sans text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {mainHeading}
           </h2>
-          <p className="mx-auto mt-2 max-w-2xl text-sm text-zinc-600 sm:text-base">{networkLabel}</p>
+          <p className="mx-auto max-w-md text-sm text-muted-foreground">{networkLabel}</p>
         </div>
 
         {rows === null ? (
           <div className="flex justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-700/50" aria-hidden />
+            <Loader2 className="h-8 w-8 animate-spin text-primary/50" aria-hidden />
           </div>
         ) : rows.length === 0 ? (
-          <p className="text-center text-sm text-zinc-500">{t("ไม่พบข้อมูลแบรนด์", "No brands to display.")}</p>
+          <p className="text-center text-sm text-muted-foreground">{t("ไม่พบข้อมูลแบรนด์", "No brands to display.")}</p>
         ) : (
           <ul
             className={cn(
@@ -107,10 +98,10 @@ export default function BreederShowcase({
               <li key={b.id} className="w-[9.25rem] shrink-0 snap-start md:w-auto md:min-w-0">
                 <Link
                   href={seedsBreederHref(b)}
-                  className="group flex h-full flex-col rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm transition hover:border-emerald-200/90 hover:shadow-md"
+                  className="group flex h-full flex-col rounded-2xl surface-glass p-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
                   <div className="relative mx-auto flex h-20 w-full items-center justify-center">
-                    <div className="grayscale transition duration-300 group-hover:grayscale-0">
+                    <div className="opacity-85 grayscale transition duration-300 group-hover:opacity-100 group-hover:grayscale-0">
                       <BreederLogoImage
                         src={b.logoUrl}
                         breederName={b.name}
@@ -122,10 +113,10 @@ export default function BreederShowcase({
                       />
                     </div>
                   </div>
-                  <p className="mt-3 line-clamp-2 text-center text-sm font-semibold leading-snug text-zinc-900">
+                  <p className="mt-3 line-clamp-2 text-center font-sans text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
                     {b.name}
                   </p>
-                  <p className="mt-1 text-center text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                  <p className="mt-1 text-center font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                     {b.strainCount}{" "}
                     {locale === "en"
                       ? b.strainCount === 1
@@ -143,7 +134,7 @@ export default function BreederShowcase({
           <Button
             asChild
             variant="outline"
-            className="border-emerald-200 bg-white font-semibold text-emerald-900 hover:bg-emerald-50"
+            className="min-h-11 rounded-lg border-primary/30 bg-transparent font-semibold text-primary hover:border-primary/50 hover:bg-primary/10"
           >
             <Link href="/shop" className="inline-flex items-center gap-1">
               {t("เลือกเมล็ดจากแบรนด์เด่น", "Shop top brands")}

@@ -52,7 +52,7 @@ export function VaultHeroSlide({
         <Link
           href={productDetailHref(product)}
           aria-label={`${product.name} — ${t("ดูรูปสายพันธุ์", "Strain image")}`}
-          className="group relative order-1 block aspect-[4/3] min-h-[200px] overflow-hidden rounded-sm border border-zinc-100 bg-zinc-50 shadow-sm sm:min-h-[240px] md:min-h-[320px]"
+          className="group relative order-1 block aspect-[4/3] min-h-[200px] overflow-hidden rounded-sm border border-border bg-muted/30 shadow-sm sm:min-h-[240px] md:min-h-[320px]"
         >
           {img ? (
             <Image
@@ -74,36 +74,36 @@ export function VaultHeroSlide({
         </Link>
 
         <div className="order-2 flex min-w-0 flex-col justify-center font-sans">
-          <p className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500 sm:text-[11px]">
+          <p className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground sm:text-[11px]">
             {t("สายพันธุ์เด่น", "FEATURED_STRAIN")}
           </p>
-          <h2 className="mt-2 font-sans text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:mt-3 sm:text-3xl md:text-[2.35rem]">
+          <h2 className="mt-2 font-sans text-2xl font-bold leading-tight tracking-tight text-foreground sm:mt-3 sm:text-3xl md:text-[2.35rem]">
             <Link href={productDetailHref(product)} className="hover:text-primary" aria-label={product.name}>
               {product.name}
             </Link>
           </h2>
 
           {product.breeders && (
-            <p className="mt-2 font-sans text-[11px] font-normal tabular-nums text-zinc-600 sm:text-xs">
+            <p className="mt-2 font-sans text-[11px] font-normal tabular-nums text-muted-foreground sm:text-xs">
               {product.breeders.name}
             </p>
           )}
 
-          <dl className="mt-4 grid grid-cols-3 divide-x divide-zinc-200 border-y border-zinc-100 sm:mt-5">
+          <dl className="mt-4 grid grid-cols-3 divide-x divide-zinc-200 border-y border-border sm:mt-5">
             <div className="min-w-0 py-3 pr-2 sm:py-4 sm:pr-3">
-              <dt className="font-sans text-[8px] font-medium uppercase tracking-[0.18em] text-zinc-500 sm:text-[9px] sm:tracking-[0.2em]">
+              <dt className="font-sans text-[8px] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-[9px] sm:tracking-[0.2em]">
                 THC
               </dt>
               <dd className={statValClass}>{thc != null ? `${thc}%` : "—"}</dd>
             </div>
             <div className="min-w-0 px-2 py-3 sm:px-3 sm:py-4">
-              <dt className="font-sans text-[8px] font-medium uppercase tracking-[0.18em] text-zinc-500 sm:text-[9px] sm:tracking-[0.2em]">
+              <dt className="font-sans text-[8px] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-[9px] sm:tracking-[0.2em]">
                 CBD
               </dt>
               <dd className={statValClass}>{cbd != null && cbd !== "" ? String(cbd) : "—"}</dd>
             </div>
             <div className="min-w-0 py-3 pl-2 sm:py-4 sm:pl-3">
-              <dt className="font-sans text-[8px] font-medium uppercase tracking-[0.18em] text-zinc-500 sm:text-[9px] sm:tracking-[0.2em]">
+              <dt className="font-sans text-[8px] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-[9px] sm:tracking-[0.2em]">
                 {t("ผลผลิต", "YIELD")}
               </dt>
               <dd className={cn(statValClass, "line-clamp-2 normal-case tracking-normal")}>
@@ -113,10 +113,10 @@ export function VaultHeroSlide({
           </dl>
 
           <div className="mt-5 sm:mt-6">
-            <p className="font-sans text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-600 sm:text-[10px]">
+            <p className="font-sans text-[9px] font-medium uppercase tracking-[0.2em] text-muted-foreground sm:text-[10px]">
               {t("บันทึกจากผู้ผลิต", "BREEDER'S_NOTE")}
             </p>
-            <p className="mt-2 max-w-xl font-sans text-sm font-normal leading-relaxed text-zinc-600">
+            <p className="mt-2 max-w-xl font-sans text-sm font-normal leading-relaxed text-muted-foreground">
               {note || t("รายละเอียดกำลังจัดเตรียม", "Archive entry in preparation.")}
             </p>
           </div>

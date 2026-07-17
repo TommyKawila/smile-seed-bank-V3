@@ -20,7 +20,7 @@ export const HERO_CTA_COLOR_OPTIONS: {
   { value: "green", label: "เขียว (Teal / โลโก้)", swatchClass: "bg-primary" },
   { value: "red", label: "แดง (Smile)", swatchClass: "bg-red-600" },
   { value: "yellow", label: "เหลือง (Smile)", swatchClass: "bg-amber-400" },
-  { value: "outline", label: "ขาว (Outline)", swatchClass: "bg-white ring-1 ring-zinc-300" },
+  { value: "outline", label: "Outline (glass)", swatchClass: "bg-card ring-1 ring-border" },
 ];
 
 export function normalizeHeroCtaColor(raw: string | null | undefined): HeroCtaColor {
@@ -33,13 +33,13 @@ export function normalizeHeroCtaColor(raw: string | null | undefined): HeroCtaCo
 export function heroCtaButtonClassName(color: HeroCtaColor): string {
   switch (color) {
     case "green":
-      return "border border-primary bg-primary font-medium text-primary-foreground hover:bg-primary/90";
+      return "border border-primary bg-primary font-semibold text-primary-foreground shadow-[0_4px_14px_hsl(var(--primary)/0.35)] hover:border-emerald-400 hover:bg-emerald-400";
     case "red":
-      return "border border-red-600 bg-red-600 font-medium text-white hover:bg-red-700";
+      return "border border-red-500 bg-red-600/90 font-semibold text-white shadow-[0_4px_14px_rgba(220,38,38,0.35)] hover:bg-red-500";
     case "yellow":
-      return "border border-amber-400 bg-amber-400 font-medium text-zinc-900 hover:bg-amber-500";
+      return "border border-amber-400/80 bg-amber-400/90 font-semibold text-slate-950 hover:bg-amber-300";
     case "outline":
-      return "border border-zinc-300 bg-transparent font-normal text-zinc-800 hover:border-primary/40 hover:bg-zinc-50";
+      return "surface-glass border border-primary/30 bg-card/50 font-medium text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary";
   }
 }
 

@@ -79,7 +79,7 @@ export function ShopSexFilterBar({
               className={cn(
                 mono,
                 "text-[10px] font-medium tabular-nums",
-                on ? "text-white/85" : "text-zinc-400"
+                on ? "text-white/85" : "text-muted-foreground"
               )}
             >
               ({count})

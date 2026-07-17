@@ -29,6 +29,7 @@ const config: Config = {
           foreground: "hsl(var(--primary-foreground))",
         },
         sativa: "hsl(var(--sativa))",
+        indica: "hsl(var(--indica))",
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",

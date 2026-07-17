@@ -79,11 +79,11 @@ export function HomeHeroCarousel({ banners, initialLcpDesktop = false }: Props) 
   }, [slides.length]);
 
   if (!current) {
-    return <div className="h-full min-h-0 w-full bg-zinc-100" />;
+    return <div className="h-full min-h-0 w-full bg-muted/30" />;
   }
 
   if (!slideVisual) {
-    return <div className="h-full min-h-0 w-full bg-zinc-100" />;
+    return <div className="h-full min-h-0 w-full bg-muted/30" />;
   }
 
   const { href, mobileSrc, desktopSrc, heroAlt, panelBackdrop } = slideVisual;
@@ -92,7 +92,7 @@ export function HomeHeroCarousel({ banners, initialLcpDesktop = false }: Props) 
     <div
       key={current.id}
       className={cn(
-        "absolute inset-0 overflow-hidden bg-zinc-100 md:flex md:items-center md:justify-center",
+        "absolute inset-0 overflow-hidden bg-muted/30 md:flex md:items-center md:justify-center",
         index !== 0 && "animate-hero-fade-in"
       )}
       style={panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
@@ -111,7 +111,7 @@ export function HomeHeroCarousel({ banners, initialLcpDesktop = false }: Props) 
   );
 
   return (
-    <div className="relative isolate h-full min-h-0 w-full overflow-hidden bg-zinc-100 p-0">
+    <div className="relative isolate h-full min-h-0 w-full overflow-hidden bg-muted/30 p-0">
       {href ? (
         <Link
           href={href}

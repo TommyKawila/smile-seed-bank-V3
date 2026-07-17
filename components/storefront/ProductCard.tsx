@@ -38,7 +38,7 @@ import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { getProductAggregateStock } from "@/lib/product-stock";
 
 const glassBadge =
-  "rounded-full border border-white/30 bg-white/20 px-2 py-0.5 text-[10px] font-medium backdrop-blur-md";
+  "rounded-full border border-border bg-card/80 px-2 py-0.5 text-[10px] font-medium text-red-400 backdrop-blur-md";
 
 function getPrimaryImage(product: {
   image_urls?: unknown;
@@ -120,12 +120,12 @@ function ProductImageBadges({ product, t }: { product: ProductWithMeta; t: (th: 
   return (
     <div className="absolute right-2 top-2 z-20 flex max-w-[min(55%,calc(100%-3.5rem))] flex-col items-end gap-1">
       {showBest && (
-        <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/30">
+        <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm ring-1 ring-border/50">
           {t("ขายดี", "Best Seller")}
         </span>
       )}
       {showNew && (
-        <span className="rounded-full bg-emerald-800 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/30">
+        <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm ring-1 ring-border/50">
           {t("ใหม่", "New Arrival")}
         </span>
       )}
@@ -309,8 +309,8 @@ function ProductCardBase({
   ) : null;
 
   const cardInner = (
-    <div className="group flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:border-zinc-200 hover:shadow-md">
-        <div className="relative aspect-square shrink-0 overflow-hidden bg-zinc-50">
+    <div className="group flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card/60 surface-glass shadow-sm transition-shadow hover:border-primary/30 hover:shadow-md">
+        <div className="relative aspect-square shrink-0 overflow-hidden bg-muted/30">
           <Link
             href={productDetailHref(product)}
             className="absolute inset-0 block"
@@ -338,7 +338,7 @@ function ProductCardBase({
           </Link>
           {topLeftSalePct ? (
             <div className="absolute left-2 top-2 z-20">
-              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-white/40">
+              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm ring-1 ring-border/50">
                 {hasBrandSale
                   ? t(`แบรนด์ −${topLeftSalePct}%`, `Brand −${topLeftSalePct}%`)
                   : t(`ลด ${topLeftSalePct}%`, `Sale ${topLeftSalePct}%`)}
@@ -351,8 +351,8 @@ function ProductCardBase({
               className="pointer-events-none absolute inset-0 z-[12] flex items-center justify-center bg-zinc-950/35 p-3"
               aria-hidden
             >
-              <div className="w-full max-w-[min(92%,15rem)] rounded-md border border-zinc-400/80 bg-zinc-900/95 px-3 py-2.5 text-center shadow-lg ring-1 ring-black/20">
-                <p className="font-sans text-[11px] font-extrabold leading-tight text-white sm:text-xs">
+              <div className="w-full max-w-[min(92%,15rem)] rounded-lg border border-border bg-background/95 px-3 py-2.5 text-center shadow-lg">
+                <p className="font-sans text-[11px] font-bold leading-tight text-foreground sm:text-xs">
                   {t("สินค้าหมด / SOLD OUT", "Sold out / SOLD OUT")}
                 </p>
               </div>
@@ -361,14 +361,14 @@ function ProductCardBase({
 
           <ProductImageBadges product={pm} t={t} />
           {clearancePct != null && clearancePct > 0 && (
-              <span className="absolute right-2 top-12 z-20 rounded-md bg-emerald-800 px-2 py-0.5 text-[10px] font-bold tabular-nums text-white shadow-sm">
+              <span className="absolute right-2 top-12 z-20 rounded-md bg-primary px-2 py-0.5 text-[10px] font-bold tabular-nums text-primary-foreground shadow-sm">
               −{clearancePct}%
             </span>
           )}
 
           <div className="absolute bottom-2 left-2 z-10 flex max-w-[min(100%,11rem)] flex-wrap gap-1">
             {lowStock && !outOfStock && !lastOneLeft && (
-              <span className={`${glassBadge} text-red-800`}>{t("เหลือน้อย", "Low")}</span>
+              <span className={glassBadge}>{t("เหลือน้อย", "Low")}</span>
             )}
           </div>
 
@@ -376,7 +376,7 @@ function ProductCardBase({
             <Link
               href={seedsBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
-              className={`absolute left-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-white shadow-md ring-2 ring-white transition-transform hover:scale-105 ${topLeftSalePct ? "top-10" : "top-2"}`}
+              className={`absolute left-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-card shadow-md ring-2 ring-background transition-transform hover:scale-105 ${topLeftSalePct ? "top-10" : "top-2"}`}
               aria-label={product.breeders.name}
             >
               <BreederLogoImage
@@ -429,10 +429,10 @@ function ProductCardBase({
 
         <div className="flex min-h-0 flex-1 flex-col gap-1.5 px-2.5 pb-2.5 pt-2">
           <div className="flex shrink-0 items-center justify-center">
-            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-bold tabular-nums text-zinc-800 ring-1 ring-zinc-200/80">
-              <span className="text-emerald-800">THC {thcPill}</span>
-              <span className="text-zinc-500">·</span>
-              <span className="truncate">{typePill}</span>
+            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/20 px-2 py-1 text-[10px] font-semibold tabular-nums text-foreground">
+              <span className="text-primary">THC {thcPill}</span>
+              <span className="text-foreground/35">·</span>
+              <span className="truncate text-foreground/75">{typePill}</span>
             </span>
           </div>
 
@@ -440,7 +440,7 @@ function ProductCardBase({
             <Link
               href={seedsBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
-              className="line-clamp-1 min-h-[1.25rem] shrink-0 text-center text-[11px] font-medium leading-tight text-zinc-600 hover:text-emerald-900"
+              className="line-clamp-1 min-h-[1.25rem] shrink-0 text-center text-[11px] font-medium leading-tight text-foreground/60 transition-colors hover:text-primary"
             >
               {product.breeders.name}
             </Link>
@@ -453,21 +453,21 @@ function ProductCardBase({
             className="flex min-h-[2.5rem] shrink-0 flex-col justify-center"
             onClick={touchCatalogReturnFromWindow}
           >
-            <h3 className="line-clamp-2 text-center font-sans text-[14px] font-bold leading-snug tracking-tight text-zinc-900">
+            <h3 className="line-clamp-2 text-center font-sans text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary">
               {product.name}
             </h3>
           </Link>
 
           {lastOneLeft ? (
-            <div className="mt-auto flex min-h-0 flex-col border-t border-zinc-100 pt-2">
+            <div className="mt-auto flex min-h-0 flex-col border-t border-border pt-2">
               <div className="text-center">
                 {seedsPackLabel ? (
-                  <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-800 sm:text-xs">
+                  <p className="mb-0.5 font-sans text-[10px] leading-tight text-primary sm:text-xs">
                     {seedsPackLabel}
                   </p>
                 ) : null}
                 {showStrike && (
-                  <p className="text-xs tabular-nums text-zinc-500 line-through">
+                  <p className="text-xs tabular-nums text-foreground/45 line-through">
                     {formatPrice(strikeDisplay)}
                   </p>
                 )}
@@ -485,7 +485,7 @@ function ProductCardBase({
                 disabled={!displayVariant}
                 onClick={handleAdd}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="relative z-20 mt-1.5 h-9 w-full shrink-0 border-0 bg-gradient-to-b from-emerald-500 to-emerald-700 p-0 font-sans text-[10px] font-extrabold leading-tight text-white shadow-[0_4px_14px_rgba(16,185,129,0.5)] transition hover:from-emerald-500 hover:to-emerald-800 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:text-sm sm:leading-normal"
+                className="relative z-20 mt-1.5 h-9 w-full shrink-0 border-0 bg-primary p-0 font-sans text-[10px] font-bold leading-tight text-primary-foreground shadow-md shadow-primary/25 transition hover:bg-primary/90 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:text-sm sm:leading-normal"
                 aria-label={
                   loc === "th" ? "สั่งซื้อก่อนหมด" : "Buy before it is gone"
                 }
@@ -499,21 +499,21 @@ function ProductCardBase({
               </Button>
             </div>
           ) : (
-            <div className="mt-auto border-t border-zinc-100 pt-2">
+            <div className="mt-auto border-t border-border pt-2">
               {outOfStock ? (
                 <div className="flex min-h-0 flex-col">
                   <div className="text-center">
                     {seedsPackLabel ? (
-                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-zinc-500 sm:text-xs">
+                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-muted-foreground sm:text-xs">
                         {seedsPackLabel}
                       </p>
                     ) : null}
                     {showStrike && (
-                      <p className="text-xs tabular-nums text-zinc-500 line-through">
+                      <p className="text-xs tabular-nums text-foreground/45 line-through">
                         {formatPrice(strikeDisplay)}
                       </p>
                     )}
-                    <p className="text-[15px] font-bold tabular-nums text-zinc-500">
+                    <p className="text-[15px] font-bold tabular-nums text-muted-foreground">
                       {priceLabel}
                     </p>
                     {stockAlert && (
@@ -527,7 +527,7 @@ function ProductCardBase({
                     disabled
                     onPointerDown={(e) => e.stopPropagation()}
                     aria-label={t("สินค้าหมดชั่วคราว", "Sold Out")}
-                    className="relative z-20 mt-1.5 h-10 w-full shrink-0 border border-zinc-300 bg-zinc-200 p-0 font-sans text-sm font-semibold text-zinc-600 shadow-none hover:bg-zinc-200"
+                    className="relative z-20 mt-1.5 h-10 w-full shrink-0 border border-border bg-muted/25 p-0 font-sans text-sm font-medium text-muted-foreground shadow-none hover:bg-muted/25"
                   >
                     {t("สินค้าหมดชั่วคราว", "Sold Out")}
                   </Button>
@@ -536,12 +536,12 @@ function ProductCardBase({
                 <div className="flex min-h-0 items-end justify-between gap-2">
                   <div className="min-w-0">
                     {seedsPackLabel ? (
-                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-emerald-800 sm:text-xs">
+                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-primary sm:text-xs">
                         {seedsPackLabel}
                       </p>
                     ) : null}
                     {showStrike && (
-                      <p className="text-xs tabular-nums text-zinc-500 line-through">
+                      <p className="text-xs tabular-nums text-foreground/45 line-through">
                         {formatPrice(strikeDisplay)}
                       </p>
                     )}

@@ -75,6 +75,8 @@ export function StorefrontLayoutClient({
   initialSkipAgeGate: boolean;
 }) {
   const pathname = usePathname();
+  const isLiffEntry =
+    pathname === "/line/entry" || pathname.startsWith("/line/entry/");
   const isHomePath = pathname === "/";
 
   useEffect(() => {
@@ -146,6 +148,10 @@ export function StorefrontLayoutClient({
     };
   }, []);
 
+  if (isLiffEntry) {
+    return <main className="min-h-screen bg-background">{children}</main>;
+  }
+
   const layoutBody = (
     <>
       {cartFxMount ? <CartAnimation replay={cartFxReplay} /> : null}
@@ -162,7 +168,7 @@ export function StorefrontLayoutClient({
       {mountHomeBanners ? <PromotionBanner /> : null}
       <div className="flex min-h-screen flex-col">
         <Navbar />
-        <main className="flex-1 bg-white pt-20 sm:pt-28">{children}</main>
+        <main className="flex-1 bg-background pt-20 sm:pt-28">{children}</main>
         <Footer />
         {mountOffers ? <OfferManager /> : null}
       </div>

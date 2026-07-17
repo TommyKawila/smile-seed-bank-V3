@@ -30,7 +30,7 @@ export function AnimatedHeroSlide({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={transition}
-        className="absolute inset-0 overflow-hidden bg-zinc-100 will-change-[opacity] md:flex md:items-center md:justify-center"
+        className="absolute inset-0 overflow-hidden bg-muted/30 will-change-[opacity] md:flex md:items-center md:justify-center"
         style={panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
       >
         {/* Plain anchor between LazyMotion layer and Image fill (layout containment). */}

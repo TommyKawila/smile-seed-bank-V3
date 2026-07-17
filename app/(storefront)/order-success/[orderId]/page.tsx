@@ -104,10 +104,10 @@ function OrderPriceBreakdown({ order, t }: { order: OrderSuccessView; t: TFn }) 
       ? t(`ส่วนลด ${pct}%`, `${pct}% off`)
       : t("ส่วนลด", "Discount");
   return (
-    <div className="space-y-2.5 rounded-lg border border-zinc-100 bg-white px-3.5 py-4 sm:px-4">
+    <div className="space-y-2.5 rounded-lg border border-border bg-card px-3.5 py-4 sm:px-4">
       <div className="flex justify-between gap-3 text-sm">
-        <span className="text-zinc-500">{t("ยอดรวมสินค้า", "Subtotal")}</span>
-        <span className="tabular-nums text-zinc-600">{formatPrice(itemsSubtotal)}</span>
+        <span className="text-muted-foreground">{t("ยอดรวมสินค้า", "Subtotal")}</span>
+        <span className="tabular-nums text-muted-foreground">{formatPrice(itemsSubtotal)}</span>
       </div>
       {showDisc ? (
         <div className="flex justify-between gap-3 text-sm">
@@ -117,13 +117,13 @@ function OrderPriceBreakdown({ order, t }: { order: OrderSuccessView; t: TFn }) 
       ) : null}
       {shipping > 0.005 ? (
         <div className="flex justify-between gap-3 text-sm">
-          <span className="text-zinc-500">{t("ค่าจัดส่ง", "Shipping")}</span>
-          <span className="tabular-nums text-zinc-600">{formatPrice(shipping)}</span>
+          <span className="text-muted-foreground">{t("ค่าจัดส่ง", "Shipping")}</span>
+          <span className="tabular-nums text-muted-foreground">{formatPrice(shipping)}</span>
         </div>
       ) : null}
-      <Separator className="bg-zinc-100" />
+      <Separator className="bg-muted/30" />
       <div className="flex items-end justify-between gap-3 pt-0.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {t("ยอดสุทธิ", "Total")}
         </span>
         <span className="text-xl font-extrabold tabular-nums text-primary sm:text-2xl">
@@ -139,18 +139,18 @@ function ShippingRecipientBlock({ order, t }: { order: OrderSuccessView; t: TFn 
     return null;
   }
   return (
-    <div className="rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+    <div className="rounded-lg border border-border bg-muted/30 px-3 py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {t("ที่อยู่จัดส่ง", "Shipping address")}
       </p>
       {order.customer_name?.trim() ? (
-        <p className="mt-2 text-sm font-bold text-zinc-900">{order.customer_name.trim()}</p>
+        <p className="mt-2 text-sm font-bold text-foreground">{order.customer_name.trim()}</p>
       ) : null}
       {order.customer_phone?.trim() ? (
-        <p className="mt-1 font-mono text-sm tabular-nums text-zinc-700">{order.customer_phone.trim()}</p>
+        <p className="mt-1 font-mono text-sm tabular-nums text-muted-foreground">{order.customer_phone.trim()}</p>
       ) : null}
       {order.shipping_address ? (
-        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-700">{order.shipping_address}</p>
+        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{order.shipping_address}</p>
       ) : null}
     </div>
   );
@@ -286,7 +286,7 @@ export default function OrderSuccessDynamicPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 pt-20">
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 pt-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -294,8 +294,8 @@ export default function OrderSuccessDynamicPage() {
 
   if (loadError === "not_found" || !orderNumber) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-zinc-50 px-4 pt-20 pb-12 text-center">
-        <p className="text-zinc-600">
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-muted/30 px-4 pt-20 pb-12 text-center">
+        <p className="text-muted-foreground">
           {t("ไม่พบออเดอร์", "Order not found.")}
         </p>
         <Button asChild variant="outline">
@@ -308,8 +308,8 @@ export default function OrderSuccessDynamicPage() {
   if (loadError === "auth") {
     const next = `/order-success/${encodeURIComponent(orderNumber)}`;
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-zinc-50 px-4 pt-20 pb-12 text-center">
-        <p className="text-zinc-600">
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-muted/30 px-4 pt-20 pb-12 text-center">
+        <p className="text-muted-foreground">
           {t(
             "กรุณาเข้าสู่ระบบเพื่อดูออเดอร์นี้",
             "Please sign in to view this order."
@@ -326,8 +326,8 @@ export default function OrderSuccessDynamicPage() {
 
   if (loadError === "forbidden") {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-zinc-50 px-4 pt-20 pb-12 text-center">
-        <p className="text-zinc-600">
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-muted/30 px-4 pt-20 pb-12 text-center">
+        <p className="text-muted-foreground">
           {t("คุณไม่มีสิทธิ์ดูออเดอร์นี้", "You do not have access to this order.")}
         </p>
         <Button asChild variant="outline">
@@ -339,8 +339,8 @@ export default function OrderSuccessDynamicPage() {
 
   if (loadError === "server" || !order) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-zinc-50 px-4 pt-20 pb-12 text-center">
-        <p className="text-zinc-600">{t("โหลดข้อมูลไม่สำเร็จ", "Could not load order.")}</p>
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-muted/30 px-4 pt-20 pb-12 text-center">
+        <p className="text-muted-foreground">{t("โหลดข้อมูลไม่สำเร็จ", "Could not load order.")}</p>
         <Button type="button" variant="outline" onClick={() => void loadOrder()}>
           {t("ลองอีกครั้ง", "Try again")}
         </Button>
@@ -506,22 +506,22 @@ export default function OrderSuccessDynamicPage() {
 
   if (showTransferPayFlow) {
     return (
-      <div className="min-h-screen bg-zinc-50 pt-20 pb-14">
+      <div className="min-h-screen bg-muted/30 pt-20 pb-14">
         <div className="mx-auto max-w-lg space-y-5 px-4 sm:px-6">
-          <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   {t("เลขออเดอร์", "Order no.")}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
-                  <p className="min-w-0 truncate font-mono text-lg font-bold tabular-nums text-zinc-900 sm:text-xl">
+                  <p className="min-w-0 truncate font-mono text-lg font-bold tabular-nums text-foreground sm:text-xl">
                     #{displayNo}
                   </p>
                   <button
                     type="button"
                     onClick={() => copyOrderNumber()}
-                    className="shrink-0 rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-primary"
+                    className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted/30 hover:text-primary"
                     aria-label={t("คัดลอกเลขออเดอร์", "Copy order number")}
                   >
                     {copiedOrderNo ? (
@@ -536,7 +536,7 @@ export default function OrderSuccessDynamicPage() {
                 {t("รอชำระเงิน", "Awaiting payment")}
               </span>
             </div>
-            <Separator className="my-4 bg-zinc-100" />
+            <Separator className="my-4 bg-muted/30" />
             <OrderPriceBreakdown order={order} t={t} />
           </div>
 
@@ -546,23 +546,23 @@ export default function OrderSuccessDynamicPage() {
               {t("ข้อมูลการโอนเงิน", "Transfer details")}
             </div>
 
-            <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="space-y-4 rounded-xl border border-border bg-card p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">
                 {t("โอนผ่าน Thai QR / K-Bank", "Thai QR payment (K-Bank)")}
               </p>
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
-                  <span className="font-medium text-zinc-800">
+                  <span className="text-muted-foreground">{t("ธนาคาร", "Bank")}</span>
+                  <span className="font-medium text-foreground">
                     {locale === "en" ? STOREFRONT_KBANK_TRANSFER_NAME_EN : STOREFRONT_KBANK_TRANSFER_NAME_TH}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("เลขบัญชี", "Account no.")}</span>
-                  <span className="font-mono font-semibold text-zinc-900">{STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO}</span>
+                  <span className="text-muted-foreground">{t("เลขบัญชี", "Account no.")}</span>
+                  <span className="font-mono font-semibold text-foreground">{STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO}</span>
                 </div>
               </div>
-              <p className="text-center text-xs text-zinc-500">
+              <p className="text-center text-xs text-muted-foreground">
                 {t("สแกน QR แล้วโอนตามยอดด้านบน", "Scan the QR and transfer the amount shown above.")}
               </p>
               <DynamicPromptPayQr
@@ -576,28 +576,28 @@ export default function OrderSuccessDynamicPage() {
 
             {apiBankExtras && (
               <div className="grid gap-2 text-sm">
-                <Separator className="bg-zinc-100" />
-                <p className="text-xs font-medium text-zinc-500">
+                <Separator className="bg-muted/30" />
+                <p className="text-xs font-medium text-muted-foreground">
                   {t("บัญชีสำรอง", "Alternative account")}
                 </p>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
-                  <span className="font-medium text-zinc-800">{apiBankExtras.name}</span>
+                  <span className="text-muted-foreground">{t("ธนาคาร", "Bank")}</span>
+                  <span className="font-medium text-foreground">{apiBankExtras.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("เลขบัญชี", "Account no.")}</span>
-                  <span className="font-mono font-semibold text-zinc-900">{apiBankExtras.accountNo}</span>
+                  <span className="text-muted-foreground">{t("เลขบัญชี", "Account no.")}</span>
+                  <span className="font-mono font-semibold text-foreground">{apiBankExtras.accountNo}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">{t("ชื่อบัญชี", "Account name")}</span>
-                  <span className="font-medium text-zinc-800">{apiBankExtras.accountName}</span>
+                  <span className="text-muted-foreground">{t("ชื่อบัญชี", "Account name")}</span>
+                  <span className="font-medium text-foreground">{apiBankExtras.accountName}</span>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
-            <p className="font-semibold text-zinc-800">
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <p className="font-semibold text-foreground">
               {t("ส่งหลักฐานการโอนเงิน", "Upload payment slip")}
             </p>
             <input
@@ -635,7 +635,7 @@ export default function OrderSuccessDynamicPage() {
 
           {isGuestOrder && !lineLinked ? (
             <div className="space-y-2">
-              <p className="text-center text-[11px] leading-relaxed text-zinc-500">
+              <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
                 {t(
                   `แอด LINE แล้วส่งเลขออเดอร์ #${displayNo} ในแชท — ระบบจะเชื่อมเพื่อแจ้งเตือนสถานะ`,
                   `Add LINE and send order #${displayNo} in chat to enable status alerts.`,
@@ -674,9 +674,9 @@ export default function OrderSuccessDynamicPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 pt-20 pb-14">
+    <div className="min-h-screen bg-muted/30 pt-20 pb-14">
       <div className="mx-auto max-w-lg px-4 sm:px-6">
-        <Card className="overflow-hidden border-zinc-200/80 shadow-sm">
+        <Card className="overflow-hidden border-border shadow-sm">
           {isCancelled ? (
             <div className="bg-red-900 px-5 py-7 text-center sm:px-6">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/15">
@@ -737,18 +737,18 @@ export default function OrderSuccessDynamicPage() {
           )}
 
           <CardContent className="space-y-5 p-5 sm:p-6">
-            <div className="rounded-lg border border-zinc-100 bg-zinc-50/90 px-3 py-2.5">
-              <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
+            <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+              <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 {t("เลขออเดอร์", "Order no.")}
               </p>
               <div className="mt-1 flex items-center justify-center gap-2">
-                <p className="font-mono text-xl font-semibold tabular-nums tracking-wide text-zinc-900 sm:text-2xl">
+                <p className="font-mono text-xl font-semibold tabular-nums tracking-wide text-foreground sm:text-2xl">
                   #{displayNo}
                 </p>
                 <button
                   type="button"
                   onClick={() => copyOrderNumber()}
-                  className="shrink-0 rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/80 hover:text-primary"
+                  className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-white/80 hover:text-primary"
                   aria-label={t("คัดลอกเลขออเดอร์", "Copy order number")}
                 >
                   {copiedOrderNo ? (
@@ -761,7 +761,7 @@ export default function OrderSuccessDynamicPage() {
             </div>
 
             <div className="space-y-3">
-              <h2 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t("สรุปรายการ", "Order summary")}
               </h2>
               <OrderPriceBreakdown order={order} t={t} />
@@ -769,7 +769,7 @@ export default function OrderSuccessDynamicPage() {
                 {order.items.map((line, idx) => (
                   <li
                     key={`${line.product_name}-${idx}`}
-                    className="flex justify-between gap-3 border-b border-zinc-100/80 pb-2.5 last:border-0 last:pb-0 text-zinc-800"
+                    className="flex justify-between gap-3 border-b border-border pb-2.5 last:border-0 last:pb-0 text-foreground"
                   >
                     <span className="min-w-0 flex-1 break-words font-sans leading-snug">
                       {orderSuccessItemSummaryLine(
@@ -777,9 +777,9 @@ export default function OrderSuccessDynamicPage() {
                         locale === "en" ? "en" : "th",
                         t
                       )}{" "}
-                      <span className="tabular-nums text-zinc-500">×{line.quantity}</span>
+                      <span className="tabular-nums text-muted-foreground">×{line.quantity}</span>
                     </span>
-                    <span className="shrink-0 tabular-nums font-medium text-zinc-900">
+                    <span className="shrink-0 tabular-nums font-medium text-foreground">
                       {formatPrice(line.line_total)}
                     </span>
                   </li>
@@ -792,7 +792,7 @@ export default function OrderSuccessDynamicPage() {
                   variant="outline"
                   disabled={receiptLoading}
                   onClick={() => void handleDownloadReceipt()}
-                  className="h-11 w-full border-primary/25 bg-white text-zinc-800 hover:bg-emerald-50/50"
+                  className="h-11 w-full border-primary/25 bg-card text-foreground hover:bg-primary/10"
                 >
                   {receiptLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -806,23 +806,23 @@ export default function OrderSuccessDynamicPage() {
 
             {isShipped ? (
               <>
-                <Separator className="bg-zinc-100" />
+                <Separator className="bg-muted/30" />
                 <div className="rounded-xl border border-primary/25 bg-accent/40 p-4">
                   <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
                     <Truck className="h-4 w-4" />
                     {t("ข้อมูลการจัดส่ง", "Tracking")}
                   </div>
                   {order.shipping_provider ? (
-                    <p className="text-sm text-zinc-700">
-                      <span className="text-zinc-500">{t("ขนส่ง", "Carrier")}: </span>
-                      <span className="font-medium text-zinc-900">
+                    <p className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground">{t("ขนส่ง", "Carrier")}: </span>
+                      <span className="font-medium text-foreground">
                         {CARRIER_LABELS[order.shipping_provider] ?? order.shipping_provider}
                       </span>
                     </p>
                   ) : null}
                   {order.tracking_number ? (
                     <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="break-all font-mono text-lg font-bold tabular-nums tracking-wide text-zinc-900 sm:text-xl">
+                      <p className="break-all font-mono text-lg font-bold tabular-nums tracking-wide text-foreground sm:text-xl">
                         {order.tracking_number}
                       </p>
                       <Button
@@ -846,7 +846,7 @@ export default function OrderSuccessDynamicPage() {
                       </Button>
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm text-zinc-500">
+                    <p className="mt-2 text-sm text-muted-foreground">
                       {t("กำลังอัปเดตเลขพัสดุ", "Tracking number will appear here when available.")}
                     </p>
                   )}
@@ -854,7 +854,7 @@ export default function OrderSuccessDynamicPage() {
               </>
             ) : null}
 
-            <Separator className="bg-zinc-100" />
+            <Separator className="bg-muted/30" />
 
             {isCancelled ? (
               <div className="space-y-3">
@@ -885,7 +885,7 @@ export default function OrderSuccessDynamicPage() {
                     ? t("สอบถามสถานะผ่าน LINE", "Get updates via LINE (Active ✓)")
                     : t("สอบถามสถานะพัสดุผ่าน LINE", "Ask about parcel status on LINE")}
                 </LineOaResponsiveCta>
-                <p className="text-center text-[11px] leading-relaxed text-zinc-500">
+                <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
                   {t(
                     `เลขออเดอร์ #${displayNo} — พิมพ์ในแชท LINE ของร้านเมื่อมีเลขพัสดุ`,
                     `Order #${displayNo} — message us on LINE; include tracking if you contact us.`,
@@ -918,7 +918,7 @@ export default function OrderSuccessDynamicPage() {
                           "Track Order on LINE"
                         )}
                 </LineOaResponsiveCta>
-                <p className="text-center text-[11px] leading-relaxed text-zinc-500">
+                <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
                   {lineLinked
                     ? t(
                         "บัญชี LINE เชื่อมแล้ว — แจ้งเตือนสถานะอัตโนมัติ",
@@ -930,7 +930,7 @@ export default function OrderSuccessDynamicPage() {
                       )}
                 </p>
                 {showSlipLineHelp ? (
-                  <ul className="list-disc space-y-1.5 pl-4 text-xs leading-relaxed text-zinc-600 marker:text-primary">
+                  <ul className="list-disc space-y-1.5 pl-4 text-xs leading-relaxed text-muted-foreground marker:text-primary">
                     <li>
                       {t(
                         "แจ้งเตือนสถานะการจัดส่งและเลขพัสดุแบบเรียลไทม์เมื่อพัสดุออกจากร้าน",
@@ -951,7 +951,7 @@ export default function OrderSuccessDynamicPage() {
                     </li>
                   </ul>
                 ) : (
-                  <p className="text-center text-xs leading-relaxed text-zinc-600">
+                  <p className="text-center text-xs leading-relaxed text-muted-foreground">
                     {t(
                       "เพิ่ม LINE เพื่อรับอัปเดตการจัดส่งและเลขพัสดุทันทีที่มีการอัปเดต",
                       "Use LINE to get shipping updates and tracking as soon as they are available."
@@ -977,7 +977,7 @@ export default function OrderSuccessDynamicPage() {
             </div>
           </CardContent>
         </Card>
-        <p className="mt-5 text-center text-[11px] tabular-nums text-zinc-400">
+        <p className="mt-5 text-center text-[11px] tabular-nums text-muted-foreground">
           {locale === "en"
             ? "Keep your order number for your records."
             : "เก็บเลขออเดอร์ไว้เพื่ออ้างอิง"}

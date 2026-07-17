@@ -30,15 +30,15 @@ export function ShippingSection({
   serif: string;
 }) {
   return (
-    <Card className="rounded-sm border-zinc-200 shadow-sm">
+    <Card className="rounded-sm border-border shadow-sm">
       <CardContent className="space-y-4 p-5">
-        <h2 className={cn(serif, "text-sm font-medium text-zinc-800")}>
+        <h2 className={cn(serif, "text-sm font-medium text-foreground")}>
           {t("ข้อมูลจัดส่ง", "Shipping details")}
         </h2>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <Label htmlFor="full_name" className="text-xs font-light text-zinc-600">
+            <Label htmlFor="full_name" className="text-xs font-light text-muted-foreground">
               {t("ชื่อ-นามสกุล *", "Full name *")}
             </Label>
             <Input
@@ -46,12 +46,12 @@ export function ShippingSection({
               value={form.full_name}
               onChange={(e) => setField("full_name", e.target.value)}
               placeholder={t("ชื่อผู้รับ", "Recipient name")}
-              className="rounded-sm border-zinc-200 bg-white"
+              className="rounded-sm border-border bg-card"
             />
             {fieldErrors.full_name && <p className="text-xs text-red-500">{fieldErrors.full_name}</p>}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="phone" className="text-xs font-light text-zinc-600">
+            <Label htmlFor="phone" className="text-xs font-light text-muted-foreground">
               {t("เบอร์โทร *", "Phone *")}
             </Label>
             <Input
@@ -60,7 +60,7 @@ export function ShippingSection({
               onChange={(e) => setField("phone", e.target.value)}
               placeholder="08x-xxx-xxxx"
               type="tel"
-              className="rounded-sm border-zinc-200 bg-white"
+              className="rounded-sm border-border bg-card"
             />
             {fieldErrors.phone && <p className="text-xs text-red-500">{fieldErrors.phone}</p>}
           </div>
@@ -68,7 +68,7 @@ export function ShippingSection({
 
         {!user && (
           <div className="space-y-1">
-            <Label htmlFor="guest_email" className="text-xs font-light text-zinc-600">
+            <Label htmlFor="guest_email" className="text-xs font-light text-muted-foreground">
               {t("อีเมล *", "Email *")}
             </Label>
             <Input
@@ -78,14 +78,14 @@ export function ShippingSection({
               onChange={(e) => setField("guest_email", e.target.value)}
               placeholder="your@email.com"
               autoComplete="email"
-              className="rounded-sm border-zinc-200 bg-white"
+              className="rounded-sm border-border bg-card"
             />
             {fieldErrors.guest_email && <p className="text-xs text-red-500">{fieldErrors.guest_email}</p>}
           </div>
         )}
 
         <div className="space-y-1">
-          <Label htmlFor="address" className="text-xs font-light text-zinc-600">
+          <Label htmlFor="address" className="text-xs font-light text-muted-foreground">
             {t("ที่อยู่จัดส่ง *", "Shipping address *")}
           </Label>
           <Textarea
@@ -94,13 +94,13 @@ export function ShippingSection({
             onChange={(e) => setField("address", e.target.value)}
             placeholder={t("บ้านเลขที่, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์", "Street, district, province, postal code")}
             rows={3}
-            className="rounded-sm border-zinc-200 bg-white"
+            className="rounded-sm border-border bg-card"
           />
           {fieldErrors.address && <p className="text-xs text-red-500">{fieldErrors.address}</p>}
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="order_note" className="text-xs font-light text-zinc-600">
+          <Label htmlFor="order_note" className="text-xs font-light text-muted-foreground">
             {t("หมายเหตุถึงผู้ขาย (ไม่บังคับ)", "Order note (optional)")}
           </Label>
           <Textarea
@@ -109,7 +109,7 @@ export function ShippingSection({
             onChange={(e) => setField("order_note", e.target.value)}
             placeholder={t("เช่น วันเวลาที่สะดวกรับ", "e.g. preferred delivery time")}
             rows={3}
-            className="resize-none rounded-sm border-zinc-200 bg-white"
+            className="resize-none rounded-sm border-border bg-card"
           />
           {fieldErrors.order_note && <p className="text-xs text-red-500">{fieldErrors.order_note}</p>}
         </div>

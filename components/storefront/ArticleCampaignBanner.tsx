@@ -25,7 +25,7 @@ function ArticleBannerAside({
     <aside className="mx-auto mt-12 max-w-[720px]" aria-label="Article promotion">
       <Link
         href={href}
-        className="group block overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm ring-1 ring-zinc-100 transition hover:border-primary/25 hover:shadow-md"
+        className="group block overflow-hidden rounded-2xl border border-primary/10 bg-card shadow-sm ring-1 ring-zinc-100 transition hover:border-primary/25 hover:shadow-md"
       >
         <div className="relative aspect-[3/2] overflow-hidden bg-accent/30 md:aspect-[3/1]">
           {mobileSrc ? (

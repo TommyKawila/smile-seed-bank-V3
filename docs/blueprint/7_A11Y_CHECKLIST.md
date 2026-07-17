@@ -1,8 +1,10 @@
-# Accessibility Checklist (Blueprint V3.2)
+# Accessibility Checklist (Blueprint V4 — storefront dark)
 
 Design and ship accessible UI **before** PSI — not as a post-launch patch.
 
 Target: **≥95** Lighthouse Accessibility (current lock: **100** on `/`).
+
+Scope: **Storefront V4 Cyber-Organic** — Admin light UI follows same touch/focus rules where applicable.
 
 ---
 
@@ -11,6 +13,7 @@ Target: **≥95** Lighthouse Accessibility (current lock: **100** on `/`).
 - Minimum **48×48px** for buttons, inputs, icon controls, pill tabs.
 - Spacing between stacked targets: **≥8px** (newsletter row uses **gap-5 / 20px**).
 - Submit buttons: **`min-h-12`** on forms (newsletter, checkout).
+- **AI Quick Tools Dock:** each tool tile **≥48×48px** · horizontal gap **≥8px**.
 
 ---
 
@@ -42,16 +45,29 @@ Target: **≥95** Lighthouse Accessibility (current lock: **100** on `/`).
 ## Images & media
 
 - LCP/hero: meaningful `alt` on content images; decorative slides use empty alt.
-- Icons-only buttons: **`aria-label`** (cart, search, menu, language switch).
+- Icons-only buttons: **`aria-label`** (cart, search, menu, language switch, AI dock tools).
 - Autoplay carousel: respect **`prefers-reduced-motion`** where implemented.
 
 ---
 
 ## Color & contrast
 
-- Body text on white: zinc-700+ · primary buttons on teal meet contrast for large text.
+### Storefront dark (V4 Cyber-Organic)
+
+- Page background: **slate-950** (`--background`).
+- Body copy: **`text-slate-200` or lighter** on dark — avoid slate-500 for long paragraphs.
+- Primary CTA: **emerald-500** fill · verify **WCAG AA** (large text minimum; normal labels use emerald-400 on dark if needed).
+- Muted / secondary text: `muted-foreground` token — minimum contrast vs slate-950.
+- Glass cards: ensure text inside glass surfaces still meets contrast (no gray-on-gray).
+
+### General
+
 - Sale/error states: do not rely on color alone — add text or icon.
-- Use design tokens (`primary`, `muted-foreground`) — avoid low-contrast gray on lavender.
+- Use design tokens (`primary`, `muted-foreground`) — avoid low-contrast custom grays.
+
+### Admin (light — legacy)
+
+- Body text on white: zinc-700+ · primary buttons meet contrast for large text.
 
 ---
 
@@ -67,6 +83,7 @@ Target: **≥95** Lighthouse Accessibility (current lock: **100** on `/`).
 
 | Component | Pattern |
 |-----------|---------|
+| `AiQuickToolsDock` | 48px tool targets · gap ≥8px · `aria-label` per tool |
 | `HomeNewsletterSection` | 48px targets · gap-5 |
 | `HomeInsightSection` / insight cards | single stretched link |
 | `Navbar` | labeled icon buttons · mobile menu focus trap |
@@ -82,8 +99,9 @@ Before merge on UI PR:
 - [ ] New buttons/inputs ≥48px touch target
 - [ ] Form fields have labels
 - [ ] Icon-only controls have `aria-label`
+- [ ] Dark storefront text meets contrast on slate-950
 - [ ] Run Lighthouse A11y on affected page if home/shop/product
 
 ---
 
-*See also `5_UI_UX_DESIGN_SYSTEM.md` §4 Accessibility tokens.*
+*See also `5_UI_UX_DESIGN_SYSTEM.md` §5 Accessibility tokens.*

@@ -77,17 +77,17 @@ export function LoginForPromoDialog({
             <Gift className="h-10 w-10 text-primary" />
           </div>
           <DialogHeader>
-            <DialogTitle className="text-lg text-zinc-800">
+            <DialogTitle className="text-lg text-foreground">
               {t("เข้าสู่ระบบเพื่อใช้โค้ดส่วนลด", "Sign in to use this promo")}
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-zinc-600 leading-relaxed">{message}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
           <div className="flex w-full flex-col gap-2">
             <Button
               type="button"
               onClick={() => void onGoogleClick()}
               disabled={!!oauthLoading}
-              className="w-full gap-2 bg-white border-2 border-primary text-primary hover:bg-accent hover:border-primary font-semibold py-6"
+              className="w-full gap-2 bg-card border-2 border-primary text-primary hover:bg-accent hover:border-primary font-semibold py-6"
             >
               {oauthLoading === "google" ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -113,7 +113,7 @@ export function LoginForPromoDialog({
               <Link href={emailLoginHref}>{t("เข้าสู่ระบบด้วยอีเมล", "Sign in with Email")}</Link>
             </Button>
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             {t("หลังเข้าสู่ระบบ โค้ดจะถูกใช้ให้อัตโนมัติเมื่อรองรับ", "After login, your code will be applied when supported.")}
           </p>
         </div>

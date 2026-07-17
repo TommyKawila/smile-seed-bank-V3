@@ -18,7 +18,7 @@ export function OrderTransferQr({
 
   if (!PAYMENT_CONFIG.isPromptPayEnabled) {
     return (
-      <p className="text-center text-xs text-zinc-600">
+      <p className="text-center text-xs text-muted-foreground">
         {t("โอนตามเลขบัญชีด้านบน", "Transfer using the account number above.")}
       </p>
     );

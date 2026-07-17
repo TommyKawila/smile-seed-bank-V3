@@ -24,9 +24,9 @@ export function HomePageHeroClient({ sections, heroCarousel, heroCtaButtons }: H
 
   const st = sectionTitle(heroSection);
   return (
-    <div className="bg-white pb-6 sm:pb-8">
+    <div className="bg-background pb-6 sm:pb-8">
       <div className="w-full px-0 pt-0 lg:mx-auto lg:max-w-7xl lg:px-6 lg:pt-6">
-        <div className="overflow-hidden lg:rounded-3xl lg:border lg:border-zinc-200 lg:shadow-[0_24px_64px_-18px_rgba(21,128,61,0.12)] lg:ring-1 lg:ring-zinc-200/80">
+        <div className="overflow-hidden lg:rounded-3xl">
           <Hero sectionTitle={st} heroCarousel={heroCarousel} heroCtaButtons={heroCtaButtons} />
         </div>
       </div>

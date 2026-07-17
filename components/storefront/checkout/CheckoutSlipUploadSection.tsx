@@ -60,7 +60,7 @@ export function CheckoutSlipUploadSection({
     <div className="space-y-3">
       <div
         className={cn(
-          "rounded-2xl border bg-white p-5 shadow-md space-y-4",
+          "rounded-2xl border bg-card p-5 shadow-md space-y-4",
           "border-primary/35 ring-2 ring-primary/15",
         )}
       >
@@ -68,10 +68,10 @@ export function CheckoutSlipUploadSection({
           <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
             {t("ขั้นตอนถัดไป", "Next step")}
           </p>
-          <p className={cn(serif, "mt-1 text-lg font-semibold text-zinc-900")}>
+          <p className={cn(serif, "mt-1 text-lg font-semibold text-foreground")}>
             {t("ส่งหลักฐานการโอนเงิน", "Upload payment proof")}
           </p>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             {t("อัปโหลดสลิปหรือ PDF เพื่อยืนยันการชำระเงิน", "Upload a slip or PDF to confirm payment")}
           </p>
         </div>
@@ -110,7 +110,7 @@ export function CheckoutSlipUploadSection({
       </div>
 
       <div className="pt-1">
-        <p className="mb-2 text-center text-[11px] font-medium text-zinc-400">
+        <p className="mb-2 text-center text-[11px] font-medium text-muted-foreground">
           {t(
             "เพิ่มเพื่อน LINE เพื่อรับเลขพัสดุอัตโนมัติ (ไม่บังคับ)",
             "Add LINE friend for parcel updates (optional)",
@@ -118,7 +118,7 @@ export function CheckoutSlipUploadSection({
         </p>
         <LineParcelTrackingCta
           href={lineOaPrefillUrlForOrderSuccess(orderNumber, lineId)}
-          className="border-zinc-200/90 bg-zinc-50/90 py-2 text-xs font-normal text-zinc-600 hover:bg-zinc-100/90"
+          className="border-border bg-muted/30 py-2 text-xs font-normal text-muted-foreground hover:bg-muted/30/90"
         />
       </div>
     </div>

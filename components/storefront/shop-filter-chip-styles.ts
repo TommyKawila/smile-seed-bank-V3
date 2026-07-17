@@ -11,7 +11,7 @@ export function shopQuickChipClasses(active: boolean, compact = false): string {
       : shopQuickChipBase,
     active
       ? "border-primary bg-primary text-white shadow-sm"
-      : "border-zinc-200/80 bg-white text-zinc-600 hover:border-primary/25 hover:bg-primary/5"
+      : "border-border bg-card text-muted-foreground hover:border-primary/25 hover:bg-primary/5"
   );
 }
 

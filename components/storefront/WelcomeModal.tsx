@@ -173,14 +173,14 @@ export function WelcomeModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 8 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-2xl"
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-card shadow-2xl"
           >
             {/* Close X */}
             <button
               type="button"
               onClick={() => void dismiss()}
               disabled={updating}
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/30 hover:text-muted-foreground"
               aria-label={t("ปิด", "Close")}
             >
               <X className="h-4 w-4" />
@@ -195,13 +195,13 @@ export function WelcomeModal() {
               </div>
 
               {/* Header */}
-              <h2 className="text-center text-xl font-extrabold leading-snug text-zinc-900">
+              <h2 className="text-center text-xl font-extrabold leading-snug text-foreground">
                 {locale === "en" ? headerEn : headerTh}
               </h2>
 
               {/* Discount box */}
               <div className="mt-5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-4">
-                <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wider text-zinc-600">
+                <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {t("รหัสส่วนลด 10%", "10% discount code")}
                 </p>
                 <div className="flex items-center justify-center gap-2">
@@ -220,7 +220,7 @@ export function WelcomeModal() {
               </div>
 
               {/* Message */}
-              <p className="mt-4 text-center text-sm leading-relaxed text-zinc-600">
+              <p className="mt-4 text-center text-sm leading-relaxed text-muted-foreground">
                 {locale === "en" ? msgEn : msgTh}
               </p>
 
@@ -237,7 +237,7 @@ export function WelcomeModal() {
                   type="button"
                   onClick={() => void dismiss()}
                   disabled={updating}
-                  className="text-center text-sm font-medium text-zinc-500 hover:text-zinc-700"
+                  className="text-center text-sm font-medium text-muted-foreground hover:text-muted-foreground"
                 >
                   {t("เก็บไว้ก่อน", "Maybe Later")}
                 </button>

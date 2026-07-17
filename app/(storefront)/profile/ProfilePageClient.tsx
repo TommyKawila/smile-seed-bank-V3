@@ -91,14 +91,14 @@ export type ProfilePageClientProps = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; labelEn: string; cls: string }> = {
-  PENDING: { label: "รอดำเนินการ", labelEn: "Pending", cls: "bg-zinc-100 text-zinc-600" },
-  AWAITING_VERIFICATION: { label: "รอตรวจสอบสลิป", labelEn: "Verifying", cls: "bg-zinc-100 text-zinc-600" },
-  PAID: { label: "ชำระแล้ว", labelEn: "Paid", cls: "bg-emerald-50 text-emerald-800" },
-  COMPLETED: { label: "เสร็จสมบูรณ์", labelEn: "Completed", cls: "bg-emerald-50 text-emerald-800" },
-  SHIPPED: { label: "จัดส่งแล้ว", labelEn: "Shipped", cls: "bg-zinc-100 text-zinc-700" },
-  DELIVERED: { label: "ส่งถึงแล้ว", labelEn: "Delivered", cls: "bg-emerald-50 text-emerald-800" },
-  CANCELLED: { label: "ยกเลิกแล้ว", labelEn: "Cancelled", cls: "bg-zinc-100 text-zinc-500" },
-  VOIDED: { label: "ยกเลิก·คืนสต็อก", labelEn: "Voided", cls: "bg-zinc-100 text-zinc-600" },
+  PENDING: { label: "รอดำเนินการ", labelEn: "Pending", cls: "bg-muted/30 text-muted-foreground" },
+  AWAITING_VERIFICATION: { label: "รอตรวจสอบสลิป", labelEn: "Verifying", cls: "bg-muted/30 text-muted-foreground" },
+  PAID: { label: "ชำระแล้ว", labelEn: "Paid", cls: "bg-emerald-50 text-primary" },
+  COMPLETED: { label: "เสร็จสมบูรณ์", labelEn: "Completed", cls: "bg-emerald-50 text-primary" },
+  SHIPPED: { label: "จัดส่งแล้ว", labelEn: "Shipped", cls: "bg-muted/30 text-muted-foreground" },
+  DELIVERED: { label: "ส่งถึงแล้ว", labelEn: "Delivered", cls: "bg-emerald-50 text-primary" },
+  CANCELLED: { label: "ยกเลิกแล้ว", labelEn: "Cancelled", cls: "bg-muted/30 text-muted-foreground" },
+  VOIDED: { label: "ยกเลิก·คืนสต็อก", labelEn: "Voided", cls: "bg-muted/30 text-muted-foreground" },
 };
 
 function StatusBadge({
@@ -390,7 +390,7 @@ function ProfileContent({
   const displayCustomer = (customer ?? initialCustomer) as Customer | null;
 
   return (
-    <div className={`min-h-screen bg-white ${JOURNAL_PRODUCT_FONT_VARS}`}>
+    <div className={`min-h-screen bg-background ${JOURNAL_PRODUCT_FONT_VARS}`}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -399,15 +399,15 @@ function ProfileContent({
               {(displayCustomer?.full_name ?? activeEmail ?? "U").charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="font-bold text-zinc-900">{displayCustomer?.full_name ?? t("ลูกค้า", "Customer")}</p>
-              <p className="text-sm text-zinc-500">{activeEmail}</p>
+              <p className="font-bold text-foreground">{displayCustomer?.full_name ?? t("ลูกค้า", "Customer")}</p>
+              <p className="text-sm text-muted-foreground">{activeEmail}</p>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => { void signOut().then(() => router.push("/")); }}
-            className="gap-1.5 rounded-sm border-zinc-200 text-zinc-600"
+            className="gap-1.5 rounded-sm border-border text-muted-foreground"
           >
             <LogOut className="h-3.5 w-3.5" />
             {t("ออกจากระบบ", "Sign Out")}
@@ -424,7 +424,7 @@ function ProfileContent({
         {/* Tabs */}
         <div
           className={cn(
-            "mb-4 grid gap-px overflow-hidden rounded-sm border border-zinc-200 bg-zinc-200",
+            "mb-4 grid gap-px overflow-hidden rounded-sm border border-border bg-muted/40",
             showMembershipProgram ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"
           )}
         >
@@ -447,7 +447,7 @@ function ProfileContent({
                 "flex min-h-[2.75rem] items-center justify-center px-1 py-2.5 text-center transition-colors sm:min-h-0 sm:py-3.5",
                 tab === tb
                   ? "bg-zinc-900 text-white"
-                  : "bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+                  : "bg-card text-muted-foreground hover:bg-muted/30 hover:text-foreground"
               )}
             >
               {label}
@@ -475,12 +475,12 @@ function ProfileContent({
                 <Loader2 className="h-7 w-7 animate-spin text-primary" />
               </div>
             ) : orders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-4 rounded-sm border border-dashed border-zinc-200 py-16 text-center">
+              <div className="flex flex-col items-center justify-center gap-4 rounded-sm border border-dashed border-border py-16 text-center">
                 <ShoppingBag className="h-10 w-10 text-zinc-200" strokeWidth={1} />
-                <p className={cn(serif, "text-lg font-medium text-zinc-800")}>
+                <p className={cn(serif, "text-lg font-medium text-foreground")}>
                   {t("ยังไม่มีออเดอร์", "No orders yet")}
                 </p>
-                <Button asChild variant="outline" className="rounded-sm border-zinc-200 tracking-wide">
+                <Button asChild variant="outline" className="rounded-sm border-border tracking-wide">
                   <Link href="/shop">{t("สำรวจสายพันธุ์", "Explore genetics")}</Link>
                 </Button>
               </div>
@@ -502,11 +502,11 @@ function ProfileContent({
                       onClick={() => setSelectedOrder(order as OrderDetailRow)}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="w-full overflow-hidden rounded-sm border border-zinc-100 bg-white text-left shadow-sm transition-transform active:scale-[.99]"
+                      className="w-full overflow-hidden rounded-sm border border-border bg-card text-left shadow-sm transition-transform active:scale-[.99]"
                     >
                       <div className="flex items-start gap-4 p-4">
                         {/* Item image */}
-                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-zinc-100">
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-muted/30">
                           {img ? (
                             <Image
                               src={img}
@@ -525,13 +525,13 @@ function ProfileContent({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className={cn(mono, "text-sm font-medium text-zinc-900")}>
+                              <p className={cn(mono, "text-sm font-medium text-foreground")}>
                                 #{order.order_number}
                               </p>
-                              <p className={cn(serif, "mt-0.5 text-xs font-medium text-zinc-700")}>
+                              <p className={cn(serif, "mt-0.5 text-xs font-medium text-muted-foreground")}>
                                 {itemName}{itemCount > 1 ? ` +${itemCount - 1} ${t("รายการ", "more")}` : ""}
                               </p>
-                              <p className={cn(mono, "mt-0.5 text-[11px] text-zinc-500")}>
+                              <p className={cn(mono, "mt-0.5 text-[11px] text-muted-foreground")}>
                                 {new Date(order.created_at).toLocaleDateString(
                                   locale === "th" ? "th-TH" : "en-US",
                                   { year: "numeric", month: "short", day: "numeric" }
@@ -551,14 +551,14 @@ function ProfileContent({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] font-medium text-zinc-700 hover:bg-white"
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-border bg-muted/30 px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-card"
                                   >
                                     <FileText className="h-3.5 w-3.5" />
                                     {locale === "en" ? "Receipt" : "ใบเสร็จ"}
                                   </a>
                                 ) : null}
                               </div>
-                              <p className={cn(mono, "text-sm font-semibold text-emerald-900")}>
+                              <p className={cn(mono, "text-sm font-semibold text-primary")}>
                                 {formatPrice(order.total_amount)}
                               </p>
                             </div>
@@ -566,11 +566,11 @@ function ProfileContent({
 
                           {/* Tracking */}
                           {order.tracking_number && (
-                            <div className="mt-2.5 flex items-center gap-2 rounded-sm border border-zinc-100 bg-zinc-50 px-3 py-2">
-                              <Truck className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={1.25} />
+                            <div className="mt-2.5 flex items-center gap-2 rounded-sm border border-border bg-muted/30 px-3 py-2">
+                              <Truck className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.25} />
                               <div className="min-w-0 flex-1">
-                                <p className={cn(navMono, "text-[9px] text-zinc-500")}>{t("เลขพัสดุ", "Tracking")}</p>
-                                <p className={cn(mono, "text-sm font-medium text-zinc-800")}>{order.tracking_number}</p>
+                                <p className={cn(navMono, "text-[9px] text-muted-foreground")}>{t("เลขพัสดุ", "Tracking")}</p>
+                                <p className={cn(mono, "text-sm font-medium text-foreground")}>{order.tracking_number}</p>
                               </div>
                               <span
                                 role="button"
@@ -590,8 +590,8 @@ function ProfileContent({
                         </div>
                       </div>
                       {/* Tap hint */}
-                      <div className="flex items-center justify-end gap-1 border-t border-zinc-50 px-4 py-2">
-                        <span className="text-[11px] text-zinc-400">{t("แตะเพื่อดูรายละเอียด", "Tap for details")}</span>
+                      <div className="flex items-center justify-end gap-1 border-t border-border px-4 py-2">
+                        <span className="text-[11px] text-muted-foreground">{t("แตะเพื่อดูรายละเอียด", "Tap for details")}</span>
                         <ChevronRight className="h-3.5 w-3.5 text-zinc-300" />
                       </div>
                     </m.button>
@@ -609,18 +609,18 @@ function ProfileContent({
               <MemberCoupons locale={locale} t={t} mono={mono} serif={serif} />
 
               <div className="space-y-4">
-                <div className="border-b border-zinc-100 pb-2">
-                  <h3 className={cn(serif, "text-sm font-medium text-zinc-800")}>
+                <div className="border-b border-border pb-2">
+                  <h3 className={cn(serif, "text-sm font-medium text-foreground")}>
                     {t("โค้ดจากปุ่มส่วนลด", "Collected from offer button")}
                   </h3>
-                  <p className="mt-1 text-xs text-zinc-500">{t("เลือกจากคูปองลอยมุมขวาล่างของร้าน", "From the floating coupon on the storefront")}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t("เลือกจากคูปองลอยมุมขวาล่างของร้าน", "From the floating coupon on the storefront")}</p>
                 </div>
                 {couponsLoading ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-7 w-7 animate-spin text-primary" />
                   </div>
                 ) : collectedCoupons.length === 0 ? (
-                  <p className="text-center text-xs text-zinc-400">
+                  <p className="text-center text-xs text-muted-foreground">
                     {t(
                       "ยังไม่มีโค้ดในส่วนนี้ — กด «เก็บโค้ด» จากปุ่มส่วนลดมุมขวาล่างเมื่อมีโค้ด",
                       "Nothing here yet — tap “Collect code” on the bottom-right discount button when offers appear.",
@@ -634,7 +634,7 @@ function ProfileContent({
                       <div className="space-y-6">
                         {available.length > 0 && (
                           <div className="space-y-2">
-                            <p className={cn(serif, "mb-1 text-xs text-zinc-500")}>
+                            <p className={cn(serif, "mb-1 text-xs text-muted-foreground")}>
                               {t("ใช้ได้", "Available")}
                             </p>
                             {available.map((c) => (
@@ -650,7 +650,7 @@ function ProfileContent({
                         )}
                         {used.length > 0 && (
                           <div className="space-y-2">
-                            <p className={cn(serif, "mb-1 text-xs text-zinc-400")}>
+                            <p className={cn(serif, "mb-1 text-xs text-muted-foreground")}>
                               {t("ใช้แล้ว / หมดอายุ", "Used / Expired")}
                             </p>
                             {used.map((c) => (
@@ -677,12 +677,12 @@ function ProfileContent({
         {/* ── PROFILE TAB ─────────────────────────────────────────────────────── */}
         {tab === "profile" && (
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm">
-              <div className="border-b border-zinc-100 px-5 py-4">
-                <h2 className={cn(serif, "text-lg font-medium text-zinc-900")}>
+            <div className="overflow-hidden rounded-sm border border-border bg-card shadow-sm">
+              <div className="border-b border-border px-5 py-4">
+                <h2 className={cn(serif, "text-lg font-medium text-foreground")}>
                   {t("ข้อมูลส่วนตัว", "Personal Information")}
                 </h2>
-                <p className="mt-0.5 text-xs font-light text-zinc-500">
+                <p className="mt-0.5 text-xs font-light text-muted-foreground">
                   {t("แก้ไขข้อมูลแล้วกดบันทึก", "Edit your info then tap Save")}
                 </p>
               </div>
@@ -690,11 +690,11 @@ function ProfileContent({
               <div className="space-y-5 p-5">
                 {/* Email (read-only) */}
                 <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5 text-xs font-light text-zinc-600">
+                  <Label className="flex items-center gap-1.5 text-xs font-light text-muted-foreground">
                     <Mail className="h-3.5 w-3.5" strokeWidth={1.25} />
                     {t("อีเมล", "Email")}
                   </Label>
-                  <div className="flex min-h-[48px] items-center rounded-sm border border-zinc-200 bg-white px-4 text-sm font-normal text-zinc-600">
+                  <div className="flex min-h-[48px] items-center rounded-sm border border-border bg-card px-4 text-sm font-normal text-muted-foreground">
                     {activeEmail}
                   </div>
                 </div>
@@ -703,7 +703,7 @@ function ProfileContent({
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="full_name"
-                    className="flex items-center gap-1.5 text-xs font-light text-zinc-600"
+                    className="flex items-center gap-1.5 text-xs font-light text-muted-foreground"
                   >
                     <User className="h-3.5 w-3.5" strokeWidth={1.25} />
                     {t("ชื่อ-นามสกุล", "Full Name")}
@@ -715,7 +715,7 @@ function ProfileContent({
                     value={editForm.full_name}
                     onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))}
                     placeholder={t("ชื่อ-นามสกุล", "Full name")}
-                    className="min-h-[48px] rounded-sm border-zinc-200 bg-white text-sm"
+                    className="min-h-[48px] rounded-sm border-border bg-card text-sm"
                   />
                 </div>
 
@@ -723,7 +723,7 @@ function ProfileContent({
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="phone"
-                    className="flex items-center gap-1.5 text-xs font-light text-zinc-600"
+                    className="flex items-center gap-1.5 text-xs font-light text-muted-foreground"
                   >
                     <Phone className="h-3.5 w-3.5" strokeWidth={1.25} />
                     {t("เบอร์โทรศัพท์", "Phone")}
@@ -736,7 +736,7 @@ function ProfileContent({
                     value={editForm.phone}
                     onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
                     placeholder="08x-xxx-xxxx"
-                    className="min-h-[48px] rounded-sm border-zinc-200 bg-white text-sm"
+                    className="min-h-[48px] rounded-sm border-border bg-card text-sm"
                   />
                 </div>
 
@@ -744,7 +744,7 @@ function ProfileContent({
                 <div id="address" className="scroll-mt-24 space-y-1.5">
                   <Label
                     htmlFor="address"
-                    className="flex items-center gap-1.5 text-xs font-light text-zinc-600"
+                    className="flex items-center gap-1.5 text-xs font-light text-muted-foreground"
                   >
                     <MapPin className="h-3.5 w-3.5" strokeWidth={1.25} />
                     {t("ที่อยู่จัดส่ง", "Shipping Address")}
@@ -756,7 +756,7 @@ function ProfileContent({
                     onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))}
                     placeholder={t("บ้านเลขที่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์", "House no., Street, District, Province, Zip")}
                     rows={4}
-                    className="resize-none rounded-sm border-zinc-200 bg-white text-sm leading-relaxed"
+                    className="resize-none rounded-sm border-border bg-card text-sm leading-relaxed"
                   />
                 </div>
 
@@ -764,7 +764,7 @@ function ProfileContent({
                 <Button
                   onClick={() => void handleSaveProfile()}
                   disabled={saving}
-                  className="h-12 w-full gap-2 rounded-sm bg-emerald-800 text-base font-semibold tracking-wide text-white shadow-none hover:bg-emerald-900 active:scale-[.98]"
+                  className="h-12 w-full gap-2 rounded-sm bg-primary text-base font-semibold tracking-wide text-white shadow-none hover:bg-primary/90 active:scale-[.98]"
                 >
                   {saving ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -776,7 +776,7 @@ function ProfileContent({
             </div>
 
             {/* Quick Links */}
-            <div className="overflow-hidden rounded-sm border border-zinc-100 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-sm border border-border bg-card shadow-sm">
               {[
                 { href: "/shop", label: t("เลือกซื้อสินค้า", "Browse Products"), icon: ShoppingBag },
                 { href: "/breeders", label: t("ดูข้อมูล Breeder", "Explore Breeders"), icon: Leaf },
@@ -784,10 +784,10 @@ function ProfileContent({
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center justify-between px-5 py-3.5 text-sm font-light text-zinc-700 hover:bg-zinc-50 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-zinc-100"
+                  className="flex items-center justify-between px-5 py-3.5 text-sm font-light text-muted-foreground hover:bg-muted/30 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-border"
                 >
                   <span className="flex items-center gap-3">
-                    <Icon className="h-4 w-4 text-zinc-400" strokeWidth={1.25} />
+                    <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.25} />
                     {label}
                   </span>
                   <ChevronRight className="h-4 w-4 text-zinc-300" strokeWidth={1.25} />
