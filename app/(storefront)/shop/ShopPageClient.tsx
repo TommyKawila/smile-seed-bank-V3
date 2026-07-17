@@ -1,20 +1,19 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import {
-  PackageX,
-  ChevronLeft,
-  ChevronDown,
-  MapPin,
-  Star,
-  Trophy,
-  Zap,
-  ArrowUp,
-  SlidersHorizontal,
-  Tag,
-} from "lucide-react";
+import PackageX from "lucide-react/dist/esm/icons/package-x";
+import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
+import Star from "lucide-react/dist/esm/icons/star";
+import Trophy from "lucide-react/dist/esm/icons/trophy";
+import Zap from "lucide-react/dist/esm/icons/zap";
+import ArrowUp from "lucide-react/dist/esm/icons/arrow-up";
+import SlidersHorizontal from "lucide-react/dist/esm/icons/sliders-horizontal";
+import Tag from "lucide-react/dist/esm/icons/tag";
 import { Button } from "@/components/ui/button";
 import { useBreeders } from "@/hooks/useBreeders";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
@@ -48,8 +47,7 @@ import {
   CATALOG_GENETICS_STRIP_LABELS,
   CATALOG_GENETICS_STRIP_SLUGS,
 } from "@/lib/catalog-filter-strip-labels";
-import { FilterSidebar, ShopFilterMobileSheet } from "@/components/storefront/FilterSidebar";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 import {
   calculateFilterCounts,
   catalogAttributeFiltersHandledOnServer,
@@ -65,16 +63,39 @@ import {
   priceFilterActive,
   productMatchesPriceRange,
 } from "@/lib/shop-price-filter";
-import { ShopPriceFilterBottomSheet } from "@/components/storefront/ShopPriceFilter";
 import { GeneticVaultProductGrid } from "@/components/storefront/GeneticVaultProductGrid";
 import { fetchWithTimeout } from "@/lib/timeout";
 import type { ProductListItem } from "@/services/storefront-product-service";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
+import type { Breeder } from "@/types/supabase";
+
+const LazyFilterSidebar = dynamic(
+  () =>
+    import("@/components/storefront/FilterSidebar").then((m) => ({
+      default: m.FilterSidebar,
+    })),
+  { ssr: false }
+);
+const LazyShopFilterMobileSheet = dynamic(
+  () =>
+    import("@/components/storefront/FilterSidebar").then((m) => ({
+      default: m.ShopFilterMobileSheet,
+    })),
+  { ssr: false }
+);
+const LazyShopPriceFilterBottomSheet = dynamic(
+  () =>
+    import("@/components/storefront/ShopPriceFilter").then((m) => ({
+      default: m.ShopPriceFilterBottomSheet,
+    })),
+  { ssr: false }
+);
 
 const SHOP_PAGE_INITIAL = 30;
 const SHOP_PAGE_STEP = 24;
 /** Filtered catalog scans multiple DB chunks — allow longer than default 2s rule. */
 const SHOP_CATALOG_FETCH_TIMEOUT_MS = 8000;
+const SHOP_FILTER_COUNTS_IDLE_MS = 2_500;
 const SHOP_CATALOG_LOAD_MORE_TIMEOUT_MS = 15000;
 
 async function fetchCatalogProductsApi(
@@ -179,6 +200,7 @@ export function ShopPageClient({
   initialCatalogNextCursor = null,
   initialCatalogUseCursor = false,
   showClearanceFilter = false,
+  initialBreeder = null,
 }: {
   initialProducts: ProductListItem[];
   /** Total rows for current URL filters from server (null if unknown). */
@@ -187,6 +209,8 @@ export function ShopPageClient({
   initialCatalogUseCursor?: boolean;
   /** Hide «ล้างสต็อก» chip when no clearance products in catalog. */
   showClearanceFilter?: boolean;
+  /** SSR breeder row for `/seeds/[slug]` — avoids idle breeder fetch for header. */
+  initialBreeder?: Breeder | null;
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -429,21 +453,24 @@ export function ShopPageClient({
   const { locale, t } = useLanguage();
   const isEn = locale === "en";
   const { t: tMsg } = useTranslations();
-  const isLg = useMediaQuery("(min-width: 1024px)", true);
   const [showFilter, setShowFilter] = useState(false);
   const [showPriceSheet, setShowPriceSheet] = useState(false);
   const [visibleCount, setVisibleCount] = useState(SHOP_PAGE_INITIAL);
   const [showBackToTop, setShowBackToTop] = useState(false);
   // Breeder selected via URL param — slug preferred; numeric id still supported
-  const urlBreeder = useMemo(
-    () => (breederParam ? resolveBreederFromShopParam(allBreeders, breederParam) : null),
-    [breederParam, allBreeders]
-  );
+  const urlBreeder = useMemo(() => {
+    if (breederParam && initialBreeder) {
+      const fromClient = resolveBreederFromShopParam(allBreeders, breederParam);
+      return fromClient ?? initialBreeder;
+    }
+    return breederParam ? resolveBreederFromShopParam(allBreeders, breederParam) : null;
+  }, [breederParam, allBreeders, initialBreeder]);
 
   useEffect(() => {
-    if (!breederParam?.trim() || breedersLoading) return;
-    const resolved = resolveBreederFromShopParam(allBreeders, breederParam);
-    if (!resolved) {
+    if (!breederParam?.trim()) return;
+    const resolved =
+      resolveBreederFromShopParam(allBreeders, breederParam) ?? initialBreeder;
+    if (!resolved && !breedersLoading && !initialBreeder) {
       const fallback = pathname?.startsWith("/brand/")
         ? "/breeders"
         : pathname?.startsWith("/seeds/")
@@ -452,7 +479,7 @@ export function ShopPageClient({
       router.replace(fallback, { scroll: false });
       return;
     }
-    if (/^\d+$/.test(breederParam.trim())) {
+    if (resolved && /^\d+$/.test(breederParam.trim())) {
       const slug = breederSlugFromName(resolved.name);
       const sp = new URLSearchParams(searchParams.toString());
       sp.delete("breeder");
@@ -465,7 +492,7 @@ export function ShopPageClient({
         router.replace(`/shop?${sp.toString()}`, { scroll: false });
       }
     }
-  }, [breederParam, allBreeders, breedersLoading, router, searchParams, journalCatalogBase, pathname]);
+  }, [breederParam, allBreeders, breedersLoading, router, searchParams, journalCatalogBase, pathname, initialBreeder]);
 
   useEffect(() => {
     if (!searchParams.get("type")) return;
@@ -620,22 +647,28 @@ export function ShopPageClient({
     if (qTrim) sp.set("q", qTrim);
     if (ftRawQS.trim()) sp.set("ft", ftRawQS.trim());
     if (filterQueryParam.trim()) sp.set("filter", filterQueryParam.trim());
-    void (async () => {
-      try {
-        const res = await fetchWithTimeout(
-          `/api/shop/filter-counts?${sp.toString()}`,
-          { cache: "no-store" },
-          SHOP_FILTER_COUNTS_TIMEOUT_MS
-        );
-        const json = (await res.json()) as { counts?: ShopFilterOptionCounts };
-        if (!cancelled && res.ok && json.counts) setFilterCountsFromApi(json.counts);
-        else if (!cancelled) setFilterCountsFromApi(null);
-      } catch {
-        if (!cancelled) setFilterCountsFromApi(null);
-      }
-    })();
+
+    const fetchCounts = () => {
+      void (async () => {
+        try {
+          const res = await fetchWithTimeout(
+            `/api/shop/filter-counts?${sp.toString()}`,
+            { cache: "no-store" },
+            SHOP_FILTER_COUNTS_TIMEOUT_MS
+          );
+          const json = (await res.json()) as { counts?: ShopFilterOptionCounts };
+          if (!cancelled && res.ok && json.counts) setFilterCountsFromApi(json.counts);
+          else if (!cancelled) setFilterCountsFromApi(null);
+        } catch {
+          if (!cancelled) setFilterCountsFromApi(null);
+        }
+      })();
+    };
+
+    const cancelIdle = scheduleIdleWork(fetchCounts, SHOP_FILTER_COUNTS_IDLE_MS);
     return () => {
       cancelled = true;
+      cancelIdle();
     };
   }, [
     categoryParam,
@@ -1001,7 +1034,7 @@ export function ShopPageClient({
     : [];
 
   return (
-    <div className="min-h-screen bg-white pt-20 sm:pt-28">
+    <div className="min-h-screen bg-white">
       {/* ── Breeder strip: logo + name + count → products ASAP ───────────────── */}
       {urlBreeder ? (
         <div className="border-b border-zinc-100 bg-white px-4 py-2.5 sm:px-6">
@@ -1042,10 +1075,8 @@ export function ShopPageClient({
                   <h1 className="truncate text-lg font-bold tracking-tight text-zinc-900 sm:text-xl">
                     {urlBreeder.name}
                   </h1>
-                  <span className="shrink-0 text-xs tabular-nums text-zinc-400" aria-live="polite">
-                    {isLoading
-                      ? t("กำลังโหลด...", "Loading...")
-                      : `${catalogDisplayTotal} ${tMsg("breeder.strains_count", "Strains")}`}
+                  <span className="inline-block min-w-[3ch] shrink-0 tabular-nums text-xs text-zinc-400" aria-live="polite">
+                    {isLoading ? "—" : `${catalogDisplayTotal} ${tMsg("breeder.strains_count", "Strains")}`}
                   </span>
                 </div>
               </div>
@@ -1065,10 +1096,8 @@ export function ShopPageClient({
                   : quickEffective === "sale"
                     ? t("โปรแบรนด์ — สินค้าลดราคา", "Brand deals — on sale")
                     : t("คลังเมล็ดพันธุ์รวมทุกค่าย", "Seed vault — all breeders")}
-                <span className="ml-2 text-sm font-normal tabular-nums text-zinc-400">
-                  {isLoading
-                    ? `(${t("กำลังโหลด...", "Loading...")})`
-                    : `(${catalogDisplayTotal} ${t("รายการ", "items")})`}
+                <span className="ml-2 inline-block min-w-[3ch] text-sm font-normal tabular-nums text-zinc-400">
+                  {isLoading ? "(—)" : `(${catalogDisplayTotal} ${t("รายการ", "items")})`}
                 </span>
               </h1>
             )
@@ -1076,9 +1105,8 @@ export function ShopPageClient({
         />
 
         <div className="flex min-h-0 flex-col lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-stretch lg:gap-8">
-          {isLg && (
-            <aside className="flex min-h-0 min-w-0 flex-col items-stretch self-stretch">
-              <FilterSidebar
+          <aside className="hidden min-h-0 min-w-0 flex-col items-stretch self-stretch lg:flex">
+              <LazyFilterSidebar
                 t={t}
                 counts={filterOptionCounts}
                 quickFilters={sidebarQuickFilters}
@@ -1089,13 +1117,11 @@ export function ShopPageClient({
                   onRangeChange: setPriceRange,
                 }}
               />
-            </aside>
-          )}
+          </aside>
 
           <div ref={gridTopRef} className="min-w-0 scroll-mt-36">
-            {!isLg && (
-              <>
-                <ShopPriceFilterBottomSheet
+            <div className="lg:hidden">
+                <LazyShopPriceFilterBottomSheet
                   t={t}
                   open={showPriceSheet}
                   onOpenChange={setShowPriceSheet}
@@ -1105,7 +1131,7 @@ export function ShopPageClient({
                   onRangeChange={setPriceRange}
                   resultCount={catalogDisplayTotal}
                 />
-                <ShopFilterMobileSheet
+                <LazyShopFilterMobileSheet
                   t={t}
                   counts={filterOptionCounts}
                   open={showFilter}
@@ -1114,8 +1140,7 @@ export function ShopPageClient({
                   onClearAll={clearFilters}
                   quickFilters={sidebarQuickFilters}
                 />
-              </>
-            )}
+            </div>
 
             {hasFilters && (
               <div className="mb-4 flex flex-wrap items-center gap-2">

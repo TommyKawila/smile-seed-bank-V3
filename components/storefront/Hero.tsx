@@ -167,7 +167,7 @@ export default function Hero({
                     asChild
                     variant="ghost"
                     className={cn(
-                      "h-11 w-full rounded-sm px-6 text-sm shadow-none transition-colors sm:min-w-0",
+                      "h-11 w-full rounded-lg px-6 text-sm shadow-none transition-colors sm:min-w-0",
                       heroCtaButtonClassName(btn.color)
                     )}
                   >

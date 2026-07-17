@@ -1,10 +1,12 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { ShopSkeleton } from "@/components/skeletons/ShopSkeleton";
 import { ShopPageClient } from "@/app/(storefront)/shop/ShopPageClient";
 import { getActiveProducts, hasStorefrontClearanceProducts } from "@/services/product-service";
+import { resolveBreederBySlugFromCache, resolveBreederIdFromSlugCached } from "@/services/breeder-slug-resolve-service";
 import { bigintToJson } from "@/lib/bigint-json";
-import { prisma } from "@/lib/prisma";
-import { breederSlugFromName } from "@/lib/breeder-slug";
+import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
+import { VIEWPORT_HINT_COOKIE } from "@/lib/viewport-hint-cookie";
 import type { ProductListItem } from "@/services/storefront-product-service";
 import { parsePriceRangeParams } from "@/lib/shop-price-filter";
 import {
@@ -13,7 +15,14 @@ import {
   resolveCatalogSortFromFilter,
 } from "@/lib/catalog-navigation";
 
-const SHOP_INITIAL_PRODUCTS = 30;
+const SHOP_INITIAL_PRODUCTS_DESKTOP = 30;
+const SHOP_INITIAL_PRODUCTS_MOBILE = 16;
+
+async function shopInitialProductLimit(): Promise<number> {
+  const cookieStore = await cookies();
+  const vp = cookieStore.get(VIEWPORT_HINT_COOKIE)?.value;
+  return vp === "d" ? SHOP_INITIAL_PRODUCTS_DESKTOP : SHOP_INITIAL_PRODUCTS_MOBILE;
+}
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -21,20 +30,6 @@ function firstParam(value: string | string[] | undefined): string | undefined {
 
 function searchParamsGetter(sp: Record<string, string | string[] | undefined> | undefined) {
   return (key: string) => firstParam(sp?.[key]) ?? null;
-}
-
-async function resolveBreederIdFromSlug(slug: string | undefined): Promise<number | undefined> {
-  const normalizedSlug = decodeURIComponent(slug ?? "").trim().toLowerCase();
-  if (!normalizedSlug) return undefined;
-
-  const breeders = await prisma.breeders.findMany({
-    where: { is_active: true },
-    select: { id: true, name: true },
-  });
-  const match = breeders.find(
-    (breeder) => breederSlugFromName(breeder.name).toLowerCase() === normalizedSlug
-  );
-  return match ? Number(match.id) : undefined;
 }
 
 export default async function ShopPage({
@@ -47,7 +42,11 @@ export default async function ShopPage({
   const resolvedParams = params ? await params : undefined;
   const sp = searchParams ? await searchParams : undefined;
   const breederSlug = firstParam(resolvedParams?.breederSlug);
-  const breederId = await resolveBreederIdFromSlug(breederSlug);
+  const [breederId, initialBreeder, initialLimit] = await Promise.all([
+    resolveBreederIdFromSlugCached(breederSlug),
+    breederSlug ? resolveBreederBySlugFromCache(breederSlug) : Promise.resolve(null),
+    shopInitialProductLimit(),
+  ]);
   const category = firstParam(sp?.category)?.trim() || "";
   const search = firstParam(sp?.q)?.trim() || "";
   const filterRaw = firstParam(sp?.filter)?.trim() || "";
@@ -82,7 +81,7 @@ export default async function ShopPage({
       search: search || undefined,
       catalog_ft: catalogFt || undefined,
       includeVariants: Boolean(firstParam(sp?.seeds)?.trim()),
-      limit: SHOP_INITIAL_PRODUCTS,
+      limit: initialLimit,
       page: 1,
       quick,
       sort: sort ?? (!quick && breederId != null ? "smart_deal" : undefined),
@@ -115,8 +114,16 @@ export default async function ShopPage({
       ? Number(lastRow.id)
       : null;
 
+  const lcpPreloadUrls = initialProducts
+    .slice(0, 2)
+    .map((p) => getListingThumbnailUrl(p))
+    .filter((url): url is string => Boolean(url));
+
   return (
     <Suspense fallback={<ShopSkeleton />}>
+      {lcpPreloadUrls.map((href) => (
+        <link key={href} rel="preload" as="image" href={href} fetchPriority="high" />
+      ))}
       <ShopPageClient
         initialProducts={initialProducts}
         initialCatalogTotal={initialCatalogTotal}
@@ -127,6 +134,7 @@ export default async function ShopPage({
         }
         initialCatalogUseCursor={initialCatalogUseCursor}
         showClearanceFilter={showClearanceFilter}
+        initialBreeder={initialBreeder}
       />
     </Suspense>
   );

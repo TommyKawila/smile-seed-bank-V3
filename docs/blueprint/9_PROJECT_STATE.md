@@ -4,6 +4,24 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-17 (Vercel Speed Insights — catalog/profile perf)
+- **Phase 1–3:** CLS/LCP/FCP quick wins + catalog SSR + profile RSC shell
+- **CLS:** ตัด `useMediaQuery(..., true)` → mobile-first / CSS `lg:` sidebar · ลบ double `pt-20` ที่ shop/profile · breeder count `tabular-nums min-w-[3ch]` · profile order cards ถอน `y:8` entry
+- **LCP:** `imagePriority` 2 การ์ดแรก + `<link rel="preload">` 2 thumb ใน `shop/page.tsx`
+- **JS defer:** Framer ทุก route (idle ≥2.5s + interaction) · filter-counts idle 2.5s · `dynamic()` FilterSidebar/mobile sheets · JetBrains Mono `display: optional`
+- **SSR catalog:** `ssb_vp` → mobile initial 16 / desktop 30 · cached breeder slug index + `initialBreeder` header · `loading.tsx` shop/seeds/profile
+- **Profile RSC:** server fetch orders + customer → `ProfilePageClient` · lazy OrderDetailDrawer/GenomeCircle/MemberCoupons
+- **Phase 4 (manual retest):** PSI 3-run median production — `/`, `/shop`, `/seeds`, `/seeds/420fastbuds`, `/profile` · อัปเดต `6_PERF_BUDGETS.md` เมื่อ ≥90 เท่านั้น
+- **ไฟล์:** `ShopPageClient.tsx`, `shop/page.tsx`, `StorefrontLayoutClient.tsx`, `GeneticVaultProductGrid.tsx`, `ShopCatalogFilterStrip.tsx`, `profile/page.tsx`, `ProfilePageClient.tsx`, `services/profile-orders-service.ts`, `services/breeder-slug-resolve-service.ts`, `shop|seeds|profile/loading.tsx`
+
+### บันทึกการทำงาน — 2026-07-17 (LINE LIFF chat-bar entry → /shop)
+- **Plan C:** LIFF entry `/line/entry` — `liff.init` + `POST /api/line/liff/session` (verify idToken → `syncLineUserToSupabase` → Supabase magiclink OTP) → redirect `/shop`
+- **Services:** `services/line-auth-service.ts`, `services/line-supabase-session-service.ts`, `lib/line-liff-verify.ts`, `lib/line-liff-config.ts`
+- **UI:** `components/storefront/LineLiffEntryClient.tsx` + `loading.tsx` / `error.tsx`
+- **Deps:** `@line/liff` · env `NEXT_PUBLIC_LIFF_ID`
+- **Manual (บอส):** LINE Developers → LIFF endpoint `https://<domain>/line/entry` (scope profile+openid) → OA Manager Chat bar → LIFF → ใส่ LIFF ID บน Vercel
+- **ไฟล์:** `app/api/line/liff/session/route.ts`, `app/(storefront)/line/entry/page.tsx`, `lib/auth/next-auth-options.ts`, `app/auth/line-bridge/route.ts`
+
 ### บันทึกการทำงาน — 2026-06-04 (Shop catalog P4 — pack_buckets + photo-ff SQL)
 - **`pack_buckets` text[]** + GIN index · `seeds=` → `.overlaps(pack_buckets)` (ไม่ scan variants)
 - **`?ft=photo-ff`** → SQL `flowering_type = photo_ff` · **`?ft=photo`** → SQL `photoperiod` + memory pass เฉพาะ FF/category split

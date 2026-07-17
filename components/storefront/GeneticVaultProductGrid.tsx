@@ -14,7 +14,7 @@ export function GeneticVaultProductGrid({
   return (
     <div className={JOURNAL_PRODUCT_FONT_VARS}>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {products.map((product) => (
+        {products.map((product, index) => (
           <div
             key={`vault-p-${product.id}`}
             className="flex h-full min-h-0 min-w-0 flex-col"
@@ -23,6 +23,7 @@ export function GeneticVaultProductGrid({
               product={product}
               disableOuterMotion
               catalogSeedsFilter={catalogSeedsFilter}
+              imagePriority={index < 2}
             />
           </div>
         ))}

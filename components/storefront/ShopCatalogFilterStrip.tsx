@@ -107,7 +107,7 @@ export function ShopCatalogFilterStrip({
   t,
   ...toolbarProps
 }: ShopCatalogFilterStripProps) {
-  const isLg = useMediaQuery("(min-width: 1024px)", true);
+  const isLg = useMediaQuery("(min-width: 1024px)", false);
   const compact = !isLg;
 
   return (

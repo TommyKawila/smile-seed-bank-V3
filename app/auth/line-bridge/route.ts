@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
-import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/safe-redirect-path";
+import { establishSupabaseSessionForEmail } from "@/services/line-supabase-session-service";
 
 /**
  * After NextAuth LINE login, promote the user into a real Supabase session
@@ -36,28 +36,9 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/login?error=line_bridge_no_email`);
     }
 
-    const admin = createServiceRoleClient();
-    const { data: link, error: linkErr } = await admin.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-    });
-    if (linkErr) {
-      console.error("[line-bridge] generateLink failed");
-      return NextResponse.redirect(`${origin}/login?error=line_bridge_link`);
-    }
-    const tokenHash = link?.properties?.hashed_token;
-    if (!tokenHash) {
-      console.error("[line-bridge] generateLink: missing hashed_token");
-      return NextResponse.redirect(`${origin}/login?error=line_bridge_link_empty`);
-    }
-
-    const supabase = await createClient();
-    const { error: otpErr } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: "magiclink",
-    });
-    if (otpErr) {
-      console.error("[line-bridge] verifyOtp failed");
+    const supabaseSession = await establishSupabaseSessionForEmail(email);
+    if (!supabaseSession.ok) {
+      console.error("[line-bridge] session failed:", supabaseSession.error);
       return NextResponse.redirect(`${origin}/login?error=line_bridge_otp`);
     }
 

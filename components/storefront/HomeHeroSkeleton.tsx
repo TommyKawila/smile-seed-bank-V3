@@ -11,8 +11,8 @@ export function HomeHeroSkeleton() {
               <div className="h-10 w-full max-w-md animate-pulse rounded bg-zinc-200" />
               <div className="h-16 w-full max-w-md animate-pulse rounded bg-zinc-100" />
               <div className="flex gap-3 pt-2">
-                <div className="h-11 w-40 animate-pulse rounded-sm bg-zinc-200" />
-                <div className="h-11 w-40 animate-pulse rounded-sm bg-zinc-100" />
+                <div className="h-11 w-40 animate-pulse rounded-lg bg-zinc-200" />
+                <div className="h-11 w-40 animate-pulse rounded-lg bg-zinc-100" />
               </div>
             </div>
           </div>
