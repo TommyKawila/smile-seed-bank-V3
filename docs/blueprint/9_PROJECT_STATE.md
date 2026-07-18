@@ -4,6 +4,19 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-18 (Checkout shipping delay notice popup)
+- **What:** TH/EN dialog ก่อนเข้า `/checkout` เมื่อกด «ดำเนินการชำระเงิน» ในตะกร้า — แจ้งแอดมินไม่อยู่ 19–27 ก.ค. 69 ส่งสินค้าได้ 28 ก.ค. 69
+- **Logic:** active ถึง `2026-07-27T23:59:59+07:00` แล้วหายอัตโนมัติ · กดยืนยัน → ปิด cart + ไป checkout
+- **ไฟล์:** `components/storefront/CartSheet.tsx`
+
+### คิวรอบหน้า — PSI `/seeds` mobile **83** (พัก 2026-07-18)
+- **ตอนนี้:** Perf **83** · LCP **4.2s** · SI **4.4s** · FCP/TBT/CLS เขียว · A11y 95 / BP·SEO 100
+- **ได้แล้ว:** empty SSR แก้แล้ว · LCP “discoverable in initial document” ผ่าน · ยัง**ไม่** lock `6_PERF_BUDGETS` (รอ ≥90)
+- **รอบหน้า #1 (สำคัญ):** PSI ชี้ LCP ยัง `loading=lazy` + ไม่มี `fetchpriority=high` ทั้งที่การ์ด `index===0` ตั้ง eager/high — ไล่ element จริงหลัง hydrate (น่าจะคนละรูปกับการ์ดแรก / Suspense แทนที่ fallback) → คง LCP candidate เดียวให้อยู่รอดหลัง `useSearchParams` (SSR grid นอก Suspense หรือไม่ unmount รูป LCP)
+- **รอบหน้า #2 (ต่ำ):** Forced reflow ~33ms chunk `509-*` — ทำหลัง LCP ≤2.5s
+- **อย่าทำ:** chase Unused JS/CSS · sync-mount age gate · dual LCP priority
+- **DoD รอบหน้า:** PSI `/seeds` 3-run median ≥90 (หรือ 88–90 ถ้า lab noise + LCP เขียว) → อัป `6_PERF_BUDGETS.md`
+
 ### บันทึกการทำงาน — 2026-07-18 (PSI `/seeds` 72 — empty SSR catalog)
 - **Root cause (prod HTML):** `initialProducts: []` — `unstable_cache` เรียก `getActiveProducts`→`cookies()` ล้ม แล้ว cache ค่าว่าง 120s → ไม่มี LCP img จน client fetch (~5s delay)
 - **Fix:** `access: "service_role"` ใน `getActiveProducts` · cache bundle v2 ใช้ service-role · ห้าม cache empty (throw + uncached retry) · `shop/page.tsx` last-resort service-role fill

@@ -12,6 +12,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -26,6 +28,7 @@ import { DiscountProgressBar } from "./DiscountProgressBar";
 import { LoginForPromoDialog } from "./LoginForPromoDialog";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { cartItemPackDescription } from "@/lib/cart-pack-display";
@@ -34,6 +37,11 @@ import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
 const sans = "font-sans";
 const sansTab = "font-sans tabular-nums";
+
+/** Admin away notice — active through 27 Jul 2026 23:59 ICT */
+function isShippingDelayNoticeActive(): boolean {
+  return Date.now() <= Date.parse("2026-07-27T23:59:59+07:00");
+}
 
 function CartLineQuantityInput({
   variantId,
@@ -140,6 +148,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
 
   const { t, locale } = useLanguage();
   const { user, customer } = useAuth();
+  const router = useRouter();
   const [couponInput, setCouponInput] = useState("");
   const [couponsOpen, setCouponsOpen] = useState(false);
   const [availableCoupons, setAvailableCoupons] = useState<{ code: string; discount_type: string; discount_value: number }[]>([]);
@@ -148,6 +157,21 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
   const [loginPromoMessage, setLoginPromoMessage] = useState("");
   const [loginPromoCode, setLoginPromoCode] = useState("");
   const [promoOauthLoading, setPromoOauthLoading] = useState<null | "google" | "line">(null);
+  const [shippingNoticeOpen, setShippingNoticeOpen] = useState(false);
+
+  const proceedToCheckout = () => {
+    setShippingNoticeOpen(false);
+    onClose();
+    router.push("/checkout");
+  };
+
+  const handleCheckoutClick = () => {
+    if (isShippingDelayNoticeActive()) {
+      setShippingNoticeOpen(true);
+      return;
+    }
+    proceedToCheckout();
+  };
 
   const fetchAvailableCoupons = useCallback(async () => {
     setLoadingCoupons(true);
@@ -648,18 +672,41 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
 
             {/* Checkout Button */}
             <Button
-              asChild
-              onClick={onClose}
+              type="button"
+              onClick={handleCheckoutClick}
               className="w-full rounded-sm bg-primary py-5 font-sans text-base font-semibold tracking-wide text-white shadow-none hover:bg-primary/90 active:scale-[0.98]"
             >
-              <Link href="/checkout" className="font-sans">
-                {t("ดำเนินการชำระเงิน", "Proceed to Checkout")}
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Link>
+              {t("ดำเนินการชำระเงิน", "Proceed to Checkout")}
+              <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         )}
       </SheetContent>
+
+      <Dialog open={shippingNoticeOpen} onOpenChange={setShippingNoticeOpen}>
+        <DialogContent className="storefront-v4 font-sans sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-sans text-left">
+              {t("แจ้งเตือนการจัดส่ง", "Shipping notice")}
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-left text-sm leading-relaxed text-muted-foreground">
+              {t(
+                "แอดมินไม่อยู่ 7 วัน ตั้งแต่ 19-27 กรกฎาคม 69 ลูกค้าซื้อของได้ตามปกติครับ แต่จะกลับมาส่งสินค้าได้วันที่ 28 กรกฎาคม 69",
+                "Admin is away for 7 days from 19–27 July 2026. You can still place orders as usual, but shipping will resume on 28 July 2026.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              onClick={proceedToCheckout}
+              className="w-full rounded-sm bg-primary font-sans font-semibold text-primary-foreground hover:bg-primary/90 sm:w-auto"
+            >
+              {t("เข้าใจแล้ว ไปชำระเงิน", "Got it — continue to checkout")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }
