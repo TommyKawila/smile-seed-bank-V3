@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-23 (Payment lifecycle race guards)
+- **Bug:** slip/claim/approval เขียนทับ order ที่ถูก cancel และคืน stock แล้ว; auto-cancel ยังชนะ payment grace ที่เพิ่มพร้อมกันได้
+- **Fix:** atomic status/payment/slip guards สำหรับ upload, claim, approve และ age/grace guard ใน auto-cancel claim; ลบไฟล์ slip เมื่อ claim แพ้ race
+- **ไฟล์:** `lib/services/order-service.ts`, `services/orders-service.ts`, `app/api/storefront/orders/upload-slip/route.ts`
+
 ### บันทึกการทำงาน — 2026-07-18 (Checkout shipping delay notice popup)
 - **What:** TH/EN dialog ก่อนเข้า `/checkout` เมื่อกด «ดำเนินการชำระเงิน» ในตะกร้า — แจ้งแอดมินไม่อยู่ 19–27 ก.ค. 69 ส่งสินค้าได้ 28 ก.ค. 69
 - **Logic:** active ถึง `2026-07-27T23:59:59+07:00` แล้วหายอัตโนมัติ · กดยืนยัน → ปิด cart + ไป checkout
