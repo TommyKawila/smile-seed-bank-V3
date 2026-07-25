@@ -24,7 +24,7 @@ const CreateOrderSchema = z.object({
     .array(
       z.object({
         variantId: z.number().int().positive(),
-        productId: z.number().int().positive(),
+        productId: z.number().int().nonnegative(),
         productName: z.string().min(1),
         unitLabel: z.string(),
         quantity: z.number().int().positive(),
@@ -77,6 +77,27 @@ export async function POST(req: NextRequest) {
       customer_profile_id,
       customer,
     } = parsed.data;
+    const hasPointRedemption = points_redeemed > 0 || points_discount_amount > 0;
+    if (hasPointRedemption) {
+      if (status !== "COMPLETED") {
+        return NextResponse.json(
+          { error: "Point redemption is only allowed for completed POS orders" },
+          { status: 400 }
+        );
+      }
+      if (!customer_profile_id) {
+        return NextResponse.json(
+          { error: "Point redemption requires a POS customer profile" },
+          { status: 400 }
+        );
+      }
+      if (points_discount_amount !== points_redeemed) {
+        return NextResponse.json(
+          { error: "Point discount must equal redeemed points" },
+          { status: 400 }
+        );
+      }
+    }
     const totalAmount = roundCheckoutBahtWhole(
       overrideTotal ?? items.reduce((s, i) => s + i.price * i.quantity, 0)
     );
@@ -121,6 +142,7 @@ export async function POST(req: NextRequest) {
           where: { id: { in: uniqueVariantIds.map((id) => BigInt(id)) } },
           select: {
             id: true,
+            product_id: true,
             stock: true,
             cost_price: true,
             unit_label: true,
@@ -147,6 +169,11 @@ export async function POST(req: NextRequest) {
 
         for (const item of items) {
           const variant = variantById.get(item.variantId)!;
+          const productId =
+            variant.product_id ?? (item.productId > 0 ? BigInt(item.productId) : null);
+          if (!productId) {
+            throw new Error(`Variant ${item.variantId} is not linked to a product`);
+          }
           const currentStock = runningStock.get(item.variantId) ?? 0;
           if (deductStock && currentStock < item.quantity) {
             throw new Error(
@@ -178,7 +205,7 @@ export async function POST(req: NextRequest) {
           linesToCreate.push({
             order_id: order.id,
             variant_id: BigInt(item.variantId),
-            product_id: BigInt(item.productId),
+            product_id: productId,
             product_name: item.productName,
             unit_label: item.unitLabel ?? null,
             quantity: item.quantity,
