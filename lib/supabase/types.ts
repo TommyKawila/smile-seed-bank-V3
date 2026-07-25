@@ -43,8 +43,9 @@ export type ProductWithBreederAndVariants = ProductWithBreeder & {
 export const PRODUCT_SELECT_WITH_BREEDER =
   "*, breeders(id, name, logo_url), product_categories(id, name), product_images(id,url,variant_id,is_main,sort_order)";
 
+/** Public PDP/API select — never expose cost_price, sku, low_stock_threshold, or internal timestamps. */
 export const PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS =
-  "*, breeders(id, name, logo_url), product_categories(id, name), product_variants(*), product_images(id,url,variant_id,is_main,sort_order)";
+  "*, breeders(id, name, logo_url), product_categories(id, name), product_variants(id, unit_label, price, stock, is_active, discount_percent, discount_ends_at, clearance_price), product_images(id,url,variant_id,is_main,sort_order)";
 
 /** Filter sidebar counts — attribute fields + pack labels only. */
 export const PRODUCT_SELECT_FILTER_COUNT =
