@@ -475,9 +475,22 @@ export async function getMixedBreederProducts(
         ranked.*,
         COALESCE(
           (
-            SELECT jsonb_agg(to_jsonb(pv) ORDER BY pv.id ASC)
+            SELECT jsonb_agg(
+              jsonb_build_object(
+                'id', pv.id,
+                'unit_label', pv.unit_label,
+                'price', pv.price,
+                'stock', pv.stock,
+                'is_active', pv.is_active,
+                'discount_percent', pv.discount_percent,
+                'discount_ends_at', pv.discount_ends_at,
+                'clearance_price', pv.clearance_price
+              )
+              ORDER BY pv.id ASC
+            )
             FROM public.product_variants pv
             WHERE pv.product_id = ranked.id
+              AND pv.is_active IS TRUE
           ),
           '[]'::jsonb
         ) AS product_variants,

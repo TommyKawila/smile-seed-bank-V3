@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-26 (Critical integrity regressions — payment/POS/public API)
+- **What:** Restore unmerged critical guards still missing on `main`
+- **Bugs:** (1) 24h auto-cancel race vs payment grace / stock restore (2) cancelled-order resurrection via slip/claim/approve (3) POS `pos-*` profile NaN + points discount without debit + gift `productId:0` fail + pre-brand line prices (4) public mixed-breeder variant `cost_price` leak
+- **Fix:** atomic `updateMany` grace/deadline claim · guarded unpaid transitions · `assertAdmin` on payment-grace · POS parse/validate/resolve gift product_id · brand unit price on submit · allowlisted public variant jsonb
+- **ไฟล์:** `services/orders-service.ts`, `lib/services/order-service.ts`, `app/api/admin/orders/[id]/payment-grace/route.ts`, `app/api/admin/orders/simple/route.ts`, `app/admin/orders/create/page.tsx`, `lib/supabase/types.ts`, `services/product-service.ts`
+
 ### บันทึกการทำงาน — 2026-07-26 (Seeds Hub — All Seeds chooser)
 - **What:** `/seeds` เปล่า = hub เลือกค่าย / Auto·Photo / Sativa·Indica·Hybrid ก่อนเข้า catalog · `?view=all` หรือ filter อื่น = catalog
 - **Logic:** `shouldShowSeedsHub` · `getSeedsHubPayload` · context bar «เปลี่ยนทางเข้า» · Hero All Seeds คง `/seeds`
