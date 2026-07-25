@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-25 (Critical integrity regressions — payment/POS/public API)
+- **What:** Restore unmerged critical guards that regressed on `main`
+- **Bugs:** (1) 24h auto-cancel race vs payment grace / stock restore (2) cancelled-order resurrection via slip/claim/approve (3) POS `pos-*` profile NaN + points discount without debit + gift `productId:0` fail + pre-brand line prices (4) public PDP/API variant `cost_price` leak
+- **Fix:** atomic `updateMany` grace/deadline claim · guarded unpaid transitions · `assertAdmin` on payment-grace · POS parse/validate/resolve gift product_id · brand unit price on submit · allowlisted public variant select + mixed-breeder jsonb
+- **ไฟล์:** `services/orders-service.ts`, `lib/services/order-service.ts`, `app/api/admin/orders/[id]/payment-grace/route.ts`, `app/api/admin/orders/simple/route.ts`, `app/admin/orders/create/page.tsx`, `lib/supabase/types.ts`, `services/product-service.ts`
+
 ### บันทึกการทำงาน — 2026-07-18 (Checkout shipping delay notice popup)
 - **What:** TH/EN dialog ก่อนเข้า `/checkout` เมื่อกด «ดำเนินการชำระเงิน» ในตะกร้า — แจ้งแอดมินไม่อยู่ 19–27 ก.ค. 69 ส่งสินค้าได้ 28 ก.ค. 69
 - **Logic:** active ถึง `2026-07-27T23:59:59+07:00` แล้วหายอัตโนมัติ · กดยืนยัน → ปิด cart + ไป checkout
