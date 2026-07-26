@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-26 (Mobile densify hub: /tools · /clearance · /seeds)
+- **What:** Hub มือถือ 2 คอลัมน์ · การ์ด `aspect-[4/3]` บน mobile · hero/content กระชับขึ้น · desktop breakpoints คงเดิม
+- **Logic:** `grid-cols-2 gap-3` default · `py-6`/`text-2xl` hero mobile · `min-h-0 sm:min-h-[60vh]` · touch `min-h-12` คงไว้
+- **ไฟล์:** `GrowerToolsHubClient.tsx`, `GrowerToolCard.tsx`, `ClearanceLandingClient.tsx`, `ClearanceBreederBoxCard.tsx`, `SeedsHubClient.tsx`, `SeedsChooserBox.tsx`
+
 ### บันทึกการทำงาน — 2026-07-26 (Soil Mixer: Base+Super DIY recipes)
 - **What:** AI แบ่งเป้า Base L + Super L · สูตรผสมจากวัสดุในมือ · ซื้อเฉพาะวัตถุดิบ (ห้ามแนะนำซื้อ Base soil สำเร็จรูป) · UI แสดงปริมาณ + baseMixPlan/superMixPlan
 - **ไฟล์:** `grower-tools-service.ts`, `lib/soil-mixer.ts`, `SoilMixResultInfographic.tsx`

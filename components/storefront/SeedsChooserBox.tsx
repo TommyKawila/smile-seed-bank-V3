@@ -35,13 +35,13 @@ export function SeedsChooserBox({
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border bg-card shadow-lg",
+        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-lg sm:rounded-2xl",
         className
       )}
     >
       <Link
         href={href}
-        className="relative block aspect-[16/10] min-h-[48px] overflow-hidden bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        className="relative block aspect-[4/3] min-h-[48px] overflow-hidden bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:aspect-[16/10]"
         aria-label={title}
       >
         {imageUrl ? (
@@ -49,12 +49,12 @@ export function SeedsChooserBox({
             src={imageUrl}
             alt=""
             fill
-            sizes="(max-width: 768px) 100vw, 50vw"
+            sizes="(max-width: 640px) 50vw, 33vw"
             className={cn(
               "transition duration-500 group-hover:scale-[1.03]",
               imageFit === "cover"
                 ? "object-cover object-center"
-                : "object-contain p-6 sm:p-8"
+                : "object-contain p-3 sm:p-6 lg:p-8"
             )}
             placeholder="blur"
             blurDataURL={SHIMMER_BLUR_DATA_URL}
@@ -74,9 +74,11 @@ export function SeedsChooserBox({
             <Leaf className="h-12 w-12 text-muted-foreground" aria-hidden />
           </div>
         ) : null}
-        <div className="absolute inset-x-0 bottom-0 p-4">
-          <p className="text-lg font-semibold tracking-tight text-white">{title}</p>
-          {subtitle ? <p className="mt-0.5 text-xs text-zinc-300">{subtitle}</p> : null}
+        <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-4">
+          <p className="text-sm font-semibold tracking-tight text-white sm:text-lg">{title}</p>
+          {subtitle ? (
+            <p className="mt-0.5 text-[10px] text-zinc-300 sm:text-xs">{subtitle}</p>
+          ) : null}
         </div>
       </Link>
     </article>

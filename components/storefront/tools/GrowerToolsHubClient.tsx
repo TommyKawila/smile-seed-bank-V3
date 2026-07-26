@@ -15,7 +15,7 @@ export function GrowerToolsHubClient({ aiFlags }: { aiFlags: GrowerToolAiFlags }
   });
 
   return (
-    <div className="min-h-[60vh] bg-background text-foreground">
+    <div className="min-h-0 bg-background text-foreground sm:min-h-[60vh]">
       <div className="relative overflow-hidden border-b border-border">
         <div
           aria-hidden
@@ -25,14 +25,14 @@ export function GrowerToolsHubClient({ aiFlags }: { aiFlags: GrowerToolAiFlags }
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:32px_32px]"
         />
-        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
+        <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-14">
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-emerald-500/90">
             {t("เครื่องมือสายเขียว", "GROWER GEAR")}
           </p>
-          <h1 className="mt-2 max-w-2xl font-sans text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-1.5 max-w-2xl font-sans text-2xl font-semibold tracking-tight sm:mt-2 sm:text-4xl">
             {t("AI ช่วยปลูก", "Grower Tools")}
           </h1>
-          <p className="mt-2 max-w-xl text-sm font-light text-muted-foreground">
+          <p className="mt-1.5 max-w-xl text-xs font-light text-muted-foreground sm:mt-2 sm:text-sm">
             {t(
               "เลือกเครื่องมือ — ผสมดิน · VPD · ปุ๋ย · วิเคราะห์อาการ",
               "Pick a tool — soil mix · VPD · fertilizer · plant doctor"
@@ -41,8 +41,8 @@ export function GrowerToolsHubClient({ aiFlags }: { aiFlags: GrowerToolAiFlags }
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-12">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {GROWER_TOOLS.map((tool, i) => (
             <div
               key={tool.slug}
@@ -58,7 +58,7 @@ export function GrowerToolsHubClient({ aiFlags }: { aiFlags: GrowerToolAiFlags }
             </div>
           ))}
         </div>
-        <p className="mt-10 text-center">
+        <p className="mt-8 text-center sm:mt-10">
           <Link
             href="/"
             className="text-sm text-emerald-400 hover:text-emerald-300"

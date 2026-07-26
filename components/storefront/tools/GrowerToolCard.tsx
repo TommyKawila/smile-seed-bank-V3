@@ -21,6 +21,9 @@ const ICONS: Record<GrowerToolIconName, typeof FlaskConical> = {
   stethoscope: Stethoscope,
 };
 
+const CARD_BODY =
+  "relative flex min-h-[48px] aspect-[4/3] flex-col items-center justify-center gap-2 bg-zinc-900/80 p-3 sm:aspect-[16/10] sm:gap-3 sm:p-4";
+
 export function GrowerToolCard({
   tool,
   style,
@@ -38,21 +41,23 @@ export function GrowerToolCard({
   const inner = (
     <>
       {disabled ? (
-        <span className="absolute right-2 top-2 rounded-md bg-zinc-800/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="absolute right-1.5 top-1.5 rounded-md bg-zinc-800/90 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground sm:right-2 sm:top-2 sm:px-2 sm:text-[10px]">
           {t("ปิดชั่วคราว", "Off")}
         </span>
       ) : null}
       <span
         className={cn(
-          "flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-background/60 text-emerald-400 transition duration-300",
+          "flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-background/60 text-emerald-400 transition duration-300 sm:h-14 sm:w-14 sm:rounded-2xl",
           !disabled && "group-hover:scale-110 group-hover:border-emerald-500/50"
         )}
       >
-        <Icon className="h-7 w-7" strokeWidth={1.5} aria-hidden />
+        <Icon className="h-5 w-5 sm:h-7 sm:w-7" strokeWidth={1.5} aria-hidden />
       </span>
       <div className="text-center">
-        <p className="text-base font-semibold text-foreground">{title}</p>
-        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{blurb}</p>
+        <p className="text-sm font-semibold text-foreground sm:text-base">{title}</p>
+        <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground sm:mt-1 sm:text-xs">
+          {blurb}
+        </p>
       </div>
     </>
   );
@@ -60,7 +65,7 @@ export function GrowerToolCard({
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border bg-card shadow-lg transition duration-400",
+        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-lg transition duration-400 sm:rounded-2xl",
         disabled
           ? "cursor-not-allowed opacity-45 saturate-50"
           : "hover:-translate-y-0.5 hover:border-emerald-500/40 hover:shadow-emerald-500/10"
@@ -69,16 +74,13 @@ export function GrowerToolCard({
       aria-disabled={disabled || undefined}
     >
       {disabled ? (
-        <div
-          className="relative flex min-h-[48px] aspect-[16/10] flex-col items-center justify-center gap-3 bg-zinc-900/80 p-4"
-          aria-label={`${title} — ${t("ปิดชั่วคราว", "temporarily off")}`}
-        >
+        <div className={CARD_BODY} aria-label={`${title} — ${t("ปิดชั่วคราว", "temporarily off")}`}>
           {inner}
         </div>
       ) : (
         <Link
           href={growerToolHref(tool.slug)}
-          className="relative flex min-h-[48px] aspect-[16/10] flex-col items-center justify-center gap-3 bg-zinc-900/80 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          className={cn(CARD_BODY, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500")}
           aria-label={title}
         >
           {inner}
