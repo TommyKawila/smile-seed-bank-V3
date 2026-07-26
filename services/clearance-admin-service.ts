@@ -168,20 +168,21 @@ export async function addProductsToClearance(
 export async function removeProductFromClearance(
   productId: number
 ): Promise<{ error: string | null }> {
-  const supabase = await createAdminClient();
-  const { error: productError } = await supabase
-    .from("products")
-    .update({ is_clearance: false, sale_price: null })
-    .eq("id", productId);
-  if (productError) return { error: productError.message };
-
-  const { error: variantError } = await supabase
-    .from("product_variants")
-    .update({ clearance_price: null })
-    .eq("product_id", productId);
-  if (variantError) return { error: variantError.message };
-
-  return { error: null };
+  try {
+    await prisma.$transaction([
+      prisma.products.update({
+        where: { id: BigInt(productId) },
+        data: { is_clearance: false, sale_price: null },
+      }),
+      prisma.product_variants.updateMany({
+        where: { product_id: BigInt(productId) },
+        data: { clearance_price: null },
+      }),
+    ]);
+    return { error: null };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 export async function removeProductsFromClearance(

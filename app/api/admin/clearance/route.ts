@@ -14,13 +14,13 @@ import {
 export const dynamic = "force-dynamic";
 
 const AddSchema = z.union([
-  z.object({ productId: z.coerce.number().int().positive() }),
-  z.object({
-    productIds: z.array(z.coerce.number().int().positive()).min(1).max(200),
-  }),
   z.object({ action: z.literal("resync") }),
   z.object({
     action: z.literal("remove"),
+    productIds: z.array(z.coerce.number().int().positive()).min(1).max(200),
+  }),
+  z.object({ productId: z.coerce.number().int().positive() }),
+  z.object({
     productIds: z.array(z.coerce.number().int().positive()).min(1).max(200),
   }),
 ]);
