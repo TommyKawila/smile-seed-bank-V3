@@ -44,6 +44,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { CLEARANCE_DISCOUNT_PERCENT, clearancePriceFromList, CLEARANCE_BREEDER_BANNER, clearanceBreederBannerSizeLabel } from "@/lib/clearance";
 import { formatPrice } from "@/lib/utils";
+import { computeTotalStock } from "@/lib/product-utils";
 import type { ProductFull } from "@/types/supabase";
 import type { ClearanceBreederSummary } from "@/lib/clearance";
 
@@ -51,9 +52,18 @@ type PickerRow = {
   id: number;
   name: string;
   image_url: string | null;
+  stock?: number | null;
   breeders?: { name: string } | null;
   is_clearance?: boolean | null;
+  product_variants?: { stock: number | null; is_active?: boolean | null }[] | null;
 };
+
+function pickerRowHasStock(row: PickerRow): boolean {
+  if (row.product_variants?.length) {
+    return computeTotalStock(row.product_variants) > 0;
+  }
+  return Number(row.stock ?? 0) > 0;
+}
 
 export function ClearanceAdminClient() {
   const { toast } = useToast();
@@ -131,13 +141,15 @@ export function ClearanceAdminClient() {
     if (!pickerOpen) return;
     let cancelled = false;
     setPickerLoading(true);
-    const params = new URLSearchParams({ limit: "40", isActive: "true", stockStatus: "inStock" });
+    const params = new URLSearchParams({ limit: "40", isActive: "true", stockStatus: "sellable" });
     if (pickerDebounced) params.set("q", pickerDebounced);
     if (pickerBreederId !== "all") params.set("breeder", pickerBreederId);
     fetch(`/api/admin/products?${params}`)
       .then((r) => r.json())
       .then((data: { products?: PickerRow[] }) => {
-        if (!cancelled) setPickerRows(data.products ?? []);
+        if (!cancelled) {
+          setPickerRows((data.products ?? []).filter(pickerRowHasStock));
+        }
       })
       .finally(() => {
         if (!cancelled) setPickerLoading(false);

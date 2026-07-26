@@ -103,7 +103,9 @@ async function productHasAvailableStock(productId: number): Promise<boolean> {
     },
   });
   if (!row) return false;
-  if (computeTotalStock(row.product_variants) > 0) return true;
+  if (row.product_variants.length > 0) {
+    return computeTotalStock(row.product_variants) > 0;
+  }
   const legacy = Number(row.stock ?? 0);
   return Number.isFinite(legacy) && legacy > 0;
 }

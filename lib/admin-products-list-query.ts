@@ -85,6 +85,21 @@ export async function buildAdminProductsWhere(
   let baseWhere: Prisma.productsWhereInput = where;
   if (stockStatus === "inStock") {
     baseWhere = { AND: [where, inStockClause] };
+  } else if (stockStatus === "sellable") {
+    /** Active variant stock only — ignores stale `products.stock`. */
+    baseWhere = {
+      AND: [
+        where,
+        {
+          product_variants: {
+            some: {
+              is_active: { not: false },
+              stock: { gt: 0 },
+            },
+          },
+        },
+      ],
+    };
   } else if (stockStatus === "outOfStock") {
     baseWhere = {
       AND: [
