@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-26 (Remove checkout shipping delay popup)
+- **What:** ถอด dialog แจ้งแอดมินไม่อยู่ 19–27 ก.ค. 69 ออกจากตะกร้า — กลับไปกด checkout ตรงไป `/checkout`
+- **ไฟล์:** `components/storefront/CartSheet.tsx`
+
 ### บันทึกการทำงาน — 2026-07-18 (Checkout shipping delay notice popup)
 - **What:** TH/EN dialog ก่อนเข้า `/checkout` เมื่อกด «ดำเนินการชำระเงิน» ในตะกร้า — แจ้งแอดมินไม่อยู่ 19–27 ก.ค. 69 ส่งสินค้าได้ 28 ก.ค. 69
 - **Logic:** active ถึง `2026-07-27T23:59:59+07:00` แล้วหายอัตโนมัติ · กดยืนยัน → ปิด cart + ไป checkout
