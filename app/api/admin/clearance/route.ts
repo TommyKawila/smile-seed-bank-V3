@@ -7,6 +7,7 @@ import {
   addProductsToClearance,
   listAdminClearanceProducts,
   listClearanceBreederSummary,
+  removeProductsFromClearance,
   resyncAllClearancePrices,
 } from "@/services/clearance-admin-service";
 
@@ -18,6 +19,10 @@ const AddSchema = z.union([
     productIds: z.array(z.coerce.number().int().positive()).min(1).max(200),
   }),
   z.object({ action: z.literal("resync") }),
+  z.object({
+    action: z.literal("remove"),
+    productIds: z.array(z.coerce.number().int().positive()).min(1).max(200),
+  }),
 ]);
 
 export async function GET() {
@@ -49,11 +54,22 @@ export async function POST(req: NextRequest) {
 
     const data = parsed.data;
 
-    if ("action" in data) {
+    if ("action" in data && data.action === "resync") {
       const { error, synced } = await resyncAllClearancePrices();
       if (error) return NextResponse.json({ error }, { status: 500 });
       revalidateClearanceStorefront();
       return NextResponse.json({ ok: true, synced, discountPercent: CLEARANCE_DISCOUNT_PERCENT });
+    }
+
+    if ("action" in data && data.action === "remove") {
+      const { error, removed } = await removeProductsFromClearance(data.productIds);
+      if (error) return NextResponse.json({ error }, { status: 500 });
+      revalidateClearanceStorefront();
+      return NextResponse.json({
+        ok: true,
+        removed,
+        discountPercent: CLEARANCE_DISCOUNT_PERCENT,
+      });
     }
 
     if ("productIds" in data) {

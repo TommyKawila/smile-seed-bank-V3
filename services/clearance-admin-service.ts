@@ -164,6 +164,19 @@ export async function removeProductFromClearance(
   return { error: null };
 }
 
+export async function removeProductsFromClearance(
+  productIds: number[]
+): Promise<{ error: string | null; removed: number }> {
+  const unique = [...new Set(productIds.filter((id) => Number.isFinite(id) && id > 0))];
+  let removed = 0;
+  for (const id of unique) {
+    const { error } = await removeProductFromClearance(id);
+    if (error) return { error, removed };
+    removed += 1;
+  }
+  return { error: null, removed };
+}
+
 /** Re-sync all clearance members to fixed % (e.g. after list price edits). */
 export async function resyncAllClearancePrices(): Promise<{
   error: string | null;

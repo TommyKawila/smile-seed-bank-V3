@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Leaf } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-import { CLEARANCE_DISCOUNT_PERCENT } from "@/lib/clearance";
+import { CLEARANCE_DISCOUNT_PERCENT, CLEARANCE_BREEDER_BANNER } from "@/lib/clearance";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import type { StorefrontClearanceBreederBox } from "@/lib/clearance";
@@ -22,7 +22,7 @@ export function ClearanceBreederBoxCard({ box }: { box: StorefrontClearanceBreed
     <article className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-lg">
       <Link
         href={href}
-        className="relative block aspect-[16/10] min-h-[48px] overflow-hidden bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        className={`relative block min-h-[48px] overflow-hidden bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${CLEARANCE_BREEDER_BANNER.aspectClass}`}
         aria-label={`${title} — −${CLEARANCE_DISCOUNT_PERCENT}%`}
       >
         {img ? (

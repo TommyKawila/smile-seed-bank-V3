@@ -1,6 +1,7 @@
 {
   "breeder": {
-    "back_to_list": "Back to Breeders",
+    "back_to_list": "Back to All Seeds",
+    "back_to_seeds": "Back to All Seeds",
     "strains_count": "Strains",
     "view_all_products": "View All Products"
   },

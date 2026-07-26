@@ -8,6 +8,8 @@ export interface ImagePreset {
 
 export const IMAGE_PRESETS = {
   hero: { width: 2560, quality: 85, maxFileSizeKB: 500 } satisfies ImagePreset,
+  /** Clearance breeder box — 16:10, max width 1600 (mobile full-width + desktop 3-col). */
+  clearance_banner: { width: 1600, quality: 85, maxFileSizeKB: 220 } satisfies ImagePreset,
   product: { width: 1200, quality: 85, maxFileSizeKB: 150 } satisfies ImagePreset,
   logo: { width: 512, quality: 85, maxFileSizeKB: 50 } satisfies ImagePreset,
 } as const;
@@ -18,7 +20,7 @@ const MIN_QUALITY = 40;
 const QUALITY_STEP = 5;
 
 function isPresetName(s: string): s is ImagePresetName {
-  return s === "hero" || s === "product" || s === "logo";
+  return s === "hero" || s === "clearance_banner" || s === "product" || s === "logo";
 }
 
 /**

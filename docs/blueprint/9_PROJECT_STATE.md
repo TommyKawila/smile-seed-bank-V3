@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-26 (Seeds Hub — All Seeds chooser)
+- **What:** `/seeds` เปล่า = hub เลือกค่าย / Auto·Photo / Sativa·Indica·Hybrid ก่อนเข้า catalog · `?view=all` หรือ filter อื่น = catalog
+- **Logic:** `shouldShowSeedsHub` · `getSeedsHubPayload` · context bar «เปลี่ยนทางเข้า» · Hero All Seeds คง `/seeds`
+- **Fix:** โซนค่ายว่างจาก timeout fallback → แยกโหลด breeders / facets + retry breeders-only
+- **ไฟล์:** `lib/seeds-hub.ts`, `services/seeds-hub-service.ts`, `SeedsHubClient.tsx`, `SeedsChooserBox.tsx`, `SeedsCatalogEntryBar.tsx`, `app/(storefront)/seeds/page.tsx`, `ShopPageClient.tsx`
+
 ### บันทึกการทำงาน — 2026-07-26 (Clearance UI — fixed 50%)
 - **What:** Clearance ลดคงที่ 50% · Admin multi-select + สรุปค่าย + อัปแบนเนอร์ · Client `/clearance` กริดแบนเนอร์บรีดเดอร์ → ลิสต์สินค้า
 - **Logic:** `CLEARANCE_DISCOUNT_PERCENT=50` · add/resync เขียน `clearance_price` อัตโนมัติ · ตาราง `clearance_breeder_banners` · CTA/ชิปชี้ `/clearance`

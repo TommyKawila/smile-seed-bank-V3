@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import {
   DEFAULT_HERO_CTA_BUTTONS as CLIENT_DEFAULTS,
   normalizeHeroCtaColor,
+  normalizeHeroCtaHref,
   type HeroCtaColor,
 } from "@/lib/homepage-hero-cta";
 
@@ -60,7 +61,7 @@ function mapRow(row: DbRow): HeroCtaButton {
     id: row.id,
     labelTh: row.label_th,
     labelEn: row.label_en,
-    href: row.href.trim() || "/",
+    href: normalizeHeroCtaHref(row.href),
     color: normalizeHeroCtaColor(row.variant),
     sortOrder: row.sort_order,
     isActive: row.is_active,
