@@ -47,9 +47,20 @@ export function heroCtaShowsChevron(color: HeroCtaColor): boolean {
   return color !== "outline";
 }
 
+export function normalizeHeroCtaHref(href: string): string {
+  const h = href.trim();
+  if (!h) return "/";
+  const lower = h.toLowerCase();
+  if (lower === "/clearance" || lower.startsWith("/clearance?")) return "/clearance";
+  if (lower.includes("quick=clearance") || lower.includes("filter=clearance")) {
+    return "/clearance";
+  }
+  return h;
+}
+
 export const DEFAULT_HERO_CTA_BUTTONS: HeroCtaButtonPayload[] = [
   { id: "default_0", labelTh: "เมล็ดพันธุ์ทั้งหมด", labelEn: "All Seeds", href: "/seeds", color: "green" },
   { id: "default_1", labelTh: "เมล็ดพันธุ์มาใหม่", labelEn: "New Arrivals", href: "/shop?sort=new_arrivals", color: "outline" },
-  { id: "default_2", labelTh: "เมล็ดพันธุ์ลดราคา", labelEn: "Clearance Seeds", href: "/seeds?quick=clearance", color: "outline" },
+  { id: "default_2", labelTh: "เมล็ดพันธุ์ลดราคา", labelEn: "Clearance Seeds", href: "/clearance", color: "red" },
   { id: "default_3", labelTh: "บทความน่าสนใจ", labelEn: "Featured Articles", href: "/blog", color: "outline" },
 ];

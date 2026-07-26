@@ -6,6 +6,7 @@ import {
   ProductSchema,
   deriveProductIsActiveForCatalog,
 } from "@/lib/validations/product";
+import { applyClearancePricesToVariants } from "@/lib/clearance";
 import {
   computeStartingPrice,
   computeTotalStock,
@@ -36,7 +37,11 @@ export async function PATCH(
       );
     }
 
-    const { variants, gallery_entries, ...productData } = parsed.data;
+    const { variants: rawVariants, gallery_entries, ...productData } = parsed.data;
+    const variants =
+      productData.is_clearance === true
+        ? applyClearancePricesToVariants(rawVariants)
+        : rawVariants.map((v) => ({ ...v, clearance_price: null }));
 
     const isActive = deriveProductIsActiveForCatalog(
       variants,

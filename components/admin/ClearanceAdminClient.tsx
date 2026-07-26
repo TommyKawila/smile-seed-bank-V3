@@ -1,15 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2, PackageX, Plus, Search, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  Loader2,
+  PackageX,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -22,8 +42,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { CLEARANCE_DISCOUNT_PERCENT, clearancePriceFromList, CLEARANCE_BREEDER_BANNER, clearanceBreederBannerSizeLabel } from "@/lib/clearance";
 import { formatPrice } from "@/lib/utils";
 import type { ProductFull } from "@/types/supabase";
+import type { ClearanceBreederSummary } from "@/lib/clearance";
 
 type PickerRow = {
   id: number;
@@ -33,47 +55,36 @@ type PickerRow = {
   is_clearance?: boolean | null;
 };
 
-type VariantDraft = {
-  unit_label: string;
-  price: number;
-  clearance_price: number | null;
-};
-
 export function ClearanceAdminClient() {
   const { toast } = useToast();
   const [products, setProducts] = useState<ProductFull[]>([]);
+  const [breederSummary, setBreederSummary] = useState<ClearanceBreederSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQ, setPickerQ] = useState("");
   const [pickerDebounced, setPickerDebounced] = useState("");
   const [pickerRows, setPickerRows] = useState<PickerRow[]>([]);
   const [pickerLoading, setPickerLoading] = useState(false);
-  const [drafts, setDrafts] = useState<Record<number, VariantDraft[]>>({});
-  const [pendingId, setPendingId] = useState<number | null>(null);
+  const [pickerBreederId, setPickerBreederId] = useState("all");
+  const [breederOptions, setBreederOptions] = useState<{ id: number; name: string }[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [listSelectedIds, setListSelectedIds] = useState<number[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bannerBusyId, setBannerBusyId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/clearance", { cache: "no-store" });
-      const json = (await res.json()) as { products?: ProductFull[]; error?: string };
+      const json = (await res.json()) as {
+        products?: ProductFull[];
+        breederSummary?: ClearanceBreederSummary[];
+        error?: string;
+      };
       if (!res.ok) throw new Error(json.error ?? "โหลดไม่สำเร็จ");
-      const list = json.products ?? [];
-      setProducts(list);
-      setDrafts(
-        Object.fromEntries(
-          list.map((p) => [
-            p.id,
-            (p.product_variants ?? []).map((v) => ({
-              unit_label: v.unit_label,
-              price: Number(v.price ?? 0),
-              clearance_price:
-                (v as { clearance_price?: number | null }).clearance_price != null
-                  ? Number((v as { clearance_price?: number | null }).clearance_price)
-                  : null,
-            })),
-          ])
-        )
-      );
+      setProducts(json.products ?? []);
+      setBreederSummary(json.breederSummary ?? []);
+      setListSelectedIds([]);
     } catch (e) {
       toast({
         variant: "destructive",
@@ -97,9 +108,32 @@ export function ClearanceAdminClient() {
   useEffect(() => {
     if (!pickerOpen) return;
     let cancelled = false;
+    fetch("/api/admin/breeders")
+      .then((r) => r.json())
+      .then((data: { id: number | string; name: string; is_active?: boolean | null }[]) => {
+        if (cancelled || !Array.isArray(data)) return;
+        setBreederOptions(
+          data
+            .filter((b) => b.is_active !== false)
+            .map((b) => ({ id: Number(b.id), name: b.name }))
+            .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }))
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setBreederOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pickerOpen]);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    let cancelled = false;
     setPickerLoading(true);
-    const params = new URLSearchParams({ limit: "30", isActive: "true" });
+    const params = new URLSearchParams({ limit: "40", isActive: "true" });
     if (pickerDebounced) params.set("q", pickerDebounced);
+    if (pickerBreederId !== "all") params.set("breeder", pickerBreederId);
     fetch(`/api/admin/products?${params}`)
       .then((r) => r.json())
       .then((data: { products?: PickerRow[] }) => {
@@ -111,19 +145,101 @@ export function ClearanceAdminClient() {
     return () => {
       cancelled = true;
     };
-  }, [pickerOpen, pickerDebounced]);
+  }, [pickerOpen, pickerDebounced, pickerBreederId]);
 
-  const addProduct = async (productId: number) => {
-    setPendingId(productId);
+  useEffect(() => {
+    if (!pickerOpen) {
+      setPickerQ("");
+      setPickerDebounced("");
+      setPickerBreederId("all");
+      setSelectedIds([]);
+    }
+  }, [pickerOpen]);
+
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const listSelectedSet = useMemo(() => new Set(listSelectedIds), [listSelectedIds]);
+  const allListSelected =
+    products.length > 0 && listSelectedIds.length === products.length;
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleListSelect = (id: number) => {
+    setListSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleListSelectAll = () => {
+    if (allListSelected) {
+      setListSelectedIds([]);
+      return;
+    }
+    setListSelectedIds(products.map((p) => p.id as number));
+  };
+
+  const removeSelectedFromList = async () => {
+    if (listSelectedIds.length === 0) {
+      toast({ title: "เลือกสินค้าที่ต้องการนำออกก่อน" });
+      return;
+    }
+    if (
+      !window.confirm(
+        `นำสินค้าออกจาก Clearance ${listSelectedIds.length} รายการ?`
+      )
+    ) {
+      return;
+    }
+    setBulkBusy(true);
     try {
       const res = await fetch("/api/admin/clearance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
+        body: JSON.stringify({ action: "remove", productIds: listSelectedIds }),
       });
-      const json = (await res.json()) as { error?: string };
+      const json = (await res.json()) as { error?: string; removed?: number };
+      if (!res.ok) throw new Error(json.error ?? "นำออกไม่สำเร็จ");
+      toast({
+        title: `นำออก ${json.removed ?? listSelectedIds.length} รายการแล้ว`,
+      });
+      setListSelectedIds([]);
+      await load();
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "นำออกไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const addSelected = async () => {
+    const ids = selectedIds.filter((id) => {
+      const row = pickerRows.find((r) => r.id === id);
+      return row && !row.is_clearance;
+    });
+    if (ids.length === 0) {
+      toast({ title: "เลือกสินค้าที่ยังไม่อยู่ใน Clearance" });
+      return;
+    }
+    setBulkBusy(true);
+    try {
+      const res = await fetch("/api/admin/clearance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds: ids }),
+      });
+      const json = (await res.json()) as { error?: string; added?: number };
       if (!res.ok) throw new Error(json.error ?? "เพิ่มไม่สำเร็จ");
-      toast({ title: "เพิ่มใน Clearance แล้ว", description: "กรอกราคาเซลแต่ละแพ็กด้านล่าง" });
+      toast({
+        title: `เพิ่ม ${json.added ?? ids.length} สินค้าแล้ว`,
+        description: `ตั้งราคา Clearance −${CLEARANCE_DISCOUNT_PERCENT}% อัตโนมัติ`,
+      });
       setPickerOpen(false);
       await load();
     } catch (e) {
@@ -133,66 +249,127 @@ export function ClearanceAdminClient() {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
-      setPendingId(null);
+      setBulkBusy(false);
     }
   };
 
-  const removeProduct = async (productId: number, name: string) => {
-    if (!window.confirm(`นำ "${name}" ออกจาก Clearance?`)) return;
-    setPendingId(productId);
+  const resyncPrices = async () => {
+    setBulkBusy(true);
     try {
-      const res = await fetch(`/api/admin/clearance/${productId}`, { method: "DELETE" });
-      const json = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(json.error ?? "ลบไม่สำเร็จ");
-      toast({ title: "นำออกจาก Clearance แล้ว" });
-      await load();
-    } catch (e) {
-      toast({
-        variant: "destructive",
-        title: "นำออกไม่สำเร็จ",
-        description: e instanceof Error ? e.message : String(e),
-      });
-    } finally {
-      setPendingId(null);
-    }
-  };
-
-  const setDraftPrice = (productId: number, index: number, value: number | null) => {
-    setDrafts((prev) => {
-      const rows = [...(prev[productId] ?? [])];
-      const row = rows[index];
-      if (!row) return prev;
-      rows[index] = { ...row, clearance_price: value };
-      return { ...prev, [productId]: rows };
-    });
-  };
-
-  const savePrices = async (productId: number) => {
-    const variants = drafts[productId] ?? [];
-    setPendingId(productId);
-    try {
-      const res = await fetch(`/api/admin/clearance/${productId}`, {
-        method: "PATCH",
+      const res = await fetch("/api/admin/clearance", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          variants: variants.map((v) => ({
-            unit_label: v.unit_label,
-            clearance_price: v.clearance_price,
-          })),
-        }),
+        body: JSON.stringify({ action: "resync" }),
       });
-      const json = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(json.error ?? "บันทึกไม่สำเร็จ");
-      toast({ title: "บันทึกราคาเซลแล้ว" });
+      const json = (await res.json()) as { error?: string; synced?: number };
+      if (!res.ok) throw new Error(json.error ?? "ซิงค์ไม่สำเร็จ");
+      toast({
+        title: `ซิงค์ราคา −${CLEARANCE_DISCOUNT_PERCENT}% แล้ว`,
+        description: `${json.synced ?? 0} สินค้า`,
+      });
       await load();
     } catch (e) {
       toast({
         variant: "destructive",
-        title: "บันทึกไม่สำเร็จ",
+        title: "ซิงค์ไม่สำเร็จ",
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
-      setPendingId(null);
+      setBulkBusy(false);
+    }
+  };
+
+  const upsertBanner = async (
+    breederId: number,
+    patch: {
+      imageUrl?: string | null;
+      titleTh?: string;
+      titleEn?: string | null;
+      isActive?: boolean;
+      sortOrder?: number;
+    }
+  ) => {
+    setBannerBusyId(breederId);
+    try {
+      const res = await fetch("/api/admin/clearance/banners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ breederId, ...patch }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "บันทึกแบนเนอร์ไม่สำเร็จ");
+      await load();
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "บันทึกแบนเนอร์ไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setBannerBusyId(null);
+    }
+  };
+
+  const uploadBanner = async (breederId: number, file: File) => {
+    setBannerBusyId(breederId);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("key", `clearance-banner-${breederId}`);
+      form.append("bucket", "brand-assets");
+      const up = await fetch("/api/admin/settings/upload?preset=clearance_banner", {
+        method: "POST",
+        body: form,
+      });
+      const upJson = (await up.json()) as { url?: string; error?: string };
+      if (!up.ok || !upJson.url) throw new Error(upJson.error ?? "อัปโหลดไม่สำเร็จ");
+      await upsertBanner(breederId, { imageUrl: upJson.url, isActive: true });
+      toast({ title: "อัปโหลดแบนเนอร์แล้ว" });
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "อัปโหลดไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+      setBannerBusyId(null);
+    }
+  };
+
+  const moveBreeder = async (breederId: number, dir: -1 | 1) => {
+    const idx = breederSummary.findIndex((b) => b.breederId === breederId);
+    const swapIdx = idx + dir;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= breederSummary.length) return;
+    const next = [...breederSummary];
+    const tmp = next[idx]!;
+    next[idx] = next[swapIdx]!;
+    next[swapIdx] = tmp;
+    setBreederSummary(next);
+
+    for (const [i, row] of next.entries()) {
+      if (!row.banner) {
+        await upsertBanner(row.breederId, { sortOrder: i, isActive: true });
+      }
+    }
+    const orderedBreederIds = next.map((b) => b.breederId);
+    setBannerBusyId(breederId);
+    try {
+      const res = await fetch("/api/admin/clearance/banners", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedBreederIds }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "เรียงลำดับไม่สำเร็จ");
+      await load();
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "เรียงลำดับไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+      await load();
+    } finally {
+      setBannerBusyId(null);
     }
   };
 
@@ -202,20 +379,168 @@ export function ClearanceAdminClient() {
         <div>
           <h1 className="text-xl font-bold text-zinc-900">สินค้า Clearance</h1>
           <p className="text-sm text-zinc-500">
-            จัดการสินค้าล้างสต็อกแยกจากหน้าแก้ไขสินค้า · แสดงที่{" "}
-            <Link href="/seeds?quick=clearance" className="text-primary underline-offset-2 hover:underline">
-              /seeds?quick=clearance
+            ลดคงที่ −{CLEARANCE_DISCOUNT_PERCENT}% · หน้าลูกค้า{" "}
+            <Link href="/clearance" className="text-emerald-800 underline-offset-2 hover:underline">
+              /clearance
             </Link>
           </p>
         </div>
-        <Button onClick={() => setPickerOpen(true)} className="bg-amber-700 hover:bg-amber-800">
-          <Plus className="mr-1.5 h-4 w-4" /> เพิ่มสินค้า
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={bulkBusy || products.length === 0}
+            onClick={() => void resyncPrices()}
+          >
+            {bulkBusy ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-1.5 h-4 w-4" />
+            )}
+            ซิงค์ราคา {CLEARANCE_DISCOUNT_PERCENT}%
+          </Button>
+          <Button
+            onClick={() => setPickerOpen(true)}
+            className="bg-emerald-800 hover:bg-emerald-900"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> เพิ่มสินค้า
+          </Button>
+        </div>
       </div>
 
       <Card>
         <CardHeader className="py-3">
-          <CardTitle className="text-base">รายการ Clearance ({products.length})</CardTitle>
+          <CardTitle className="text-base">
+            กล่องแบนเนอร์ตามค่าย ({breederSummary.length})
+          </CardTitle>
+          <p className="text-xs text-zinc-500">
+            ระบบจัดกลุ่มจากสินค้าใน Clearance — อัปโหลดรูปแบนเนอร์ต่อค่ายสำหรับหน้า /clearance
+          </p>
+          <p className="mt-1 text-xs font-medium text-emerald-800">
+            {clearanceBreederBannerSizeLabel("th")}
+          </p>
+          <p className="text-[11px] text-zinc-400">{CLEARANCE_BREEDER_BANNER.safeZoneNoteTh}</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-zinc-500">
+              <Loader2 className="h-4 w-4 animate-spin" /> กำลังโหลด…
+            </div>
+          ) : breederSummary.length === 0 ? (
+            <p className="py-8 text-center text-sm text-zinc-500">
+              ยังไม่มีค่ายใน Clearance — เพิ่มสินค้าก่อน
+            </p>
+          ) : (
+            breederSummary.map((b, index) => {
+              const busy = bannerBusyId === b.breederId;
+              const preview = b.banner?.imageUrl || b.logoUrl;
+              return (
+                <div
+                  key={b.breederId}
+                  className="grid gap-4 rounded-xl border border-zinc-200 bg-white p-4 md:grid-cols-[11rem_minmax(0,1fr)_auto] md:items-center"
+                >
+                  <div className={`relative mx-auto w-full max-w-[11rem] overflow-hidden rounded-lg border border-zinc-100 bg-zinc-50 md:mx-0 ${CLEARANCE_BREEDER_BANNER.aspectClass}`}>
+                    {preview ? (
+                      <Image
+                        src={preview}
+                        alt=""
+                        fill
+                        className="object-cover object-center"
+                        sizes="176px"
+                      />
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-zinc-400">
+                        <span>16:10</span>
+                        <span>
+                          {CLEARANCE_BREEDER_BANNER.recommendedWidth}×
+                          {CLEARANCE_BREEDER_BANNER.recommendedHeight}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 text-center md:text-left">
+                    <p className="font-semibold text-zinc-900">{b.name}</p>
+                    <p className="text-xs text-zinc-500">
+                      {b.productCount} สินค้า · −{CLEARANCE_DISCOUNT_PERCENT}%
+                      {b.banner?.isActive === false ? " · ซ่อนแบนเนอร์" : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-200 px-2.5 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50">
+                      <Upload className="h-3.5 w-3.5" />
+                      อัปรูป
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        disabled={busy}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void uploadBanner(b.breederId, f);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-600">
+                      <span>แสดง</span>
+                      <Switch
+                        checked={b.banner?.isActive ?? true}
+                        disabled={busy}
+                        onCheckedChange={(on) =>
+                          void upsertBanner(b.breederId, { isActive: on })
+                        }
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="h-9 w-9"
+                      disabled={busy || index === 0}
+                      onClick={() => void moveBreeder(b.breederId, -1)}
+                      aria-label="Move up"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="h-9 w-9"
+                      disabled={busy || index === breederSummary.length - 1}
+                      onClick={() => void moveBreeder(b.breederId, 1)}
+                      aria-label="Move down"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin text-zinc-400" /> : null}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 py-3">
+          <CardTitle className="text-base">
+            รายการ Clearance ({products.length})
+          </CardTitle>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            disabled={bulkBusy || listSelectedIds.length === 0}
+            onClick={() => void removeSelectedFromList()}
+          >
+            {bulkBusy ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-1.5 h-4 w-4" />
+            )}
+            นำออกที่เลือก ({listSelectedIds.length})
+          </Button>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
@@ -230,19 +555,49 @@ export function ClearanceAdminClient() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-zinc-300"
+                      checked={allListSelected}
+                      onChange={toggleListSelectAll}
+                      aria-label="เลือกทั้งหมด"
+                    />
+                  </TableHead>
                   <TableHead className="w-14" />
                   <TableHead>สินค้า</TableHead>
-                  <TableHead>แพ็ก / ราคาเซล</TableHead>
-                  <TableHead className="w-36 text-right">จัดการ</TableHead>
+                  <TableHead>ค่าย</TableHead>
+                  <TableHead>ราคา (−{CLEARANCE_DISCOUNT_PERCENT}%)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {products.map((p) => {
                   const pid = p.id as number;
-                  const rows = drafts[pid] ?? [];
-                  const busy = pendingId === pid;
+                  const checked = listSelectedSet.has(pid);
+                  const variants = p.product_variants ?? [];
+                  const from = variants[0];
+                  const list = Number(from?.price ?? 0);
+                  const sale =
+                    from &&
+                    (from as { clearance_price?: number | null }).clearance_price != null
+                      ? Number((from as { clearance_price?: number | null }).clearance_price)
+                      : clearancePriceFromList(list);
                   return (
-                    <TableRow key={pid}>
+                    <TableRow
+                      key={pid}
+                      className={checked ? "bg-emerald-50/50" : undefined}
+                      data-state={checked ? "selected" : undefined}
+                    >
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-zinc-300"
+                          checked={checked}
+                          disabled={bulkBusy}
+                          onChange={() => toggleListSelect(pid)}
+                          aria-label={`เลือก ${p.name}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         {p.image_url ? (
                           <div className="relative h-11 w-11 overflow-hidden rounded-lg border border-zinc-200">
@@ -256,59 +611,22 @@ export function ClearanceAdminClient() {
                       </TableCell>
                       <TableCell>
                         <p className="font-medium text-zinc-900">{p.name}</p>
-                        <p className="text-xs text-zinc-500">{p.breeders?.name ?? "—"}</p>
+                        <p className="text-xs text-zinc-500">{variants.length} แพ็ก</p>
+                      </TableCell>
+                      <TableCell className="text-sm text-zinc-600">
+                        {p.breeders?.name ?? "—"}
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-2">
-                          {rows.map((v, i) => (
-                            <div key={v.unit_label} className="flex flex-wrap items-center gap-2 text-xs">
-                              <span className="min-w-[4.5rem] font-medium text-zinc-700">{v.unit_label}</span>
-                              <span className="text-zinc-400">ขาย {formatPrice(v.price)}</span>
-                              <Input
-                                type="number"
-                                min={0}
-                                step={1}
-                                placeholder="ราคาเซล"
-                                disabled={busy}
-                                value={v.clearance_price ?? ""}
-                                onChange={(e) => {
-                                  const raw = e.target.value;
-                                  if (raw === "") {
-                                    setDraftPrice(pid, i, null);
-                                    return;
-                                  }
-                                  const n = parseInt(raw, 10);
-                                  setDraftPrice(pid, i, Number.isFinite(n) ? n : null);
-                                }}
-                                className="h-8 w-24 border-amber-200 bg-amber-50/40 text-sm"
-                              />
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={busy}
-                            className="mt-1 h-8 text-xs"
-                            onClick={() => void savePrices(pid)}
-                          >
-                            {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
-                            บันทึกราคาเซล
-                          </Button>
+                        <div className="flex flex-wrap items-baseline gap-2 text-sm">
+                          {list > 0 ? (
+                            <span className="tabular-nums text-zinc-400 line-through">
+                              {formatPrice(list)}
+                            </span>
+                          ) : null}
+                          <span className="font-semibold tabular-nums text-emerald-800">
+                            {formatPrice(sale)}
+                          </span>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          disabled={busy}
-                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                          onClick={() => void removeProduct(pid, p.name)}
-                        >
-                          <Trash2 className="mr-1 h-3.5 w-3.5" />
-                          นำออก
-                        </Button>
                       </TableCell>
                     </TableRow>
                   );
@@ -320,20 +638,35 @@ export function ClearanceAdminClient() {
       </Card>
 
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-        <DialogContent className="max-h-[85vh] max-w-lg overflow-hidden flex flex-col">
+        <DialogContent className="flex max-h-[85vh] max-w-lg flex-col overflow-hidden">
           <DialogHeader>
-            <DialogTitle>เพิ่มสินค้าใน Clearance</DialogTitle>
+            <DialogTitle>เพิ่มสินค้าใน Clearance (−{CLEARANCE_DISCOUNT_PERCENT}%)</DialogTitle>
           </DialogHeader>
-          <div className="relative mb-3">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-            <Input
-              value={pickerQ}
-              onChange={(e) => setPickerQ(e.target.value)}
-              placeholder="ค้นหาชื่อสินค้า…"
-              className="pl-9"
-            />
+          <div className="mb-3 min-w-0 space-y-2">
+            <Select value={pickerBreederId} onValueChange={setPickerBreederId}>
+              <SelectTrigger className="h-10 w-full min-w-0 border-zinc-200">
+                <SelectValue placeholder="ทุกค่าย" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทุกค่าย</SelectItem>
+                {breederOptions.map((b) => (
+                  <SelectItem key={b.id} value={String(b.id)}>
+                    {b.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="relative w-full min-w-0">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+              <Input
+                value={pickerQ}
+                onChange={(e) => setPickerQ(e.target.value)}
+                placeholder="ค้นหาชื่อสินค้า…"
+                className="w-full pl-9"
+              />
+            </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto space-y-1">
+          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
             {pickerLoading ? (
               <div className="flex justify-center py-8 text-sm text-zinc-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -343,28 +676,49 @@ export function ClearanceAdminClient() {
             ) : (
               pickerRows.map((row) => {
                 const inList = Boolean(row.is_clearance);
+                const on = selectedSet.has(row.id);
                 return (
                   <button
                     key={row.id}
                     type="button"
-                    disabled={inList || pendingId === row.id}
-                    onClick={() => void addProduct(row.id)}
-                    className="flex w-full items-center gap-3 rounded-lg border border-zinc-100 px-3 py-2 text-left hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={inList}
+                    onClick={() => toggleSelect(row.id)}
+                    className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+                      on
+                        ? "border-emerald-700/30 bg-emerald-50"
+                        : "border-zinc-100 hover:bg-zinc-50"
+                    }`}
                   >
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{row.name}</span>
-                    <span className="shrink-0 text-xs text-zinc-500">{row.breeders?.name ?? ""}</span>
+                    <span className="shrink-0 text-xs text-zinc-500">
+                      {row.breeders?.name ?? ""}
+                    </span>
                     {inList ? (
-                      <span className="text-[10px] font-semibold uppercase text-amber-700">อยู่แล้ว</span>
-                    ) : pendingId === row.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                      <span className="text-[10px] font-semibold uppercase text-amber-700">
+                        อยู่แล้ว
+                      </span>
+                    ) : on ? (
+                      <Check className="h-4 w-4 text-emerald-800" />
                     ) : (
-                      <Plus className="h-4 w-4 text-primary" />
+                      <Plus className="h-4 w-4 text-zinc-400" />
                     )}
                   </button>
                 );
               })
             )}
           </div>
+          <DialogFooter className="mt-3 gap-2 sm:justify-between">
+            <p className="text-xs text-zinc-500">เลือกแล้ว {selectedIds.length} รายการ</p>
+            <Button
+              type="button"
+              disabled={bulkBusy || selectedIds.length === 0}
+              className="bg-emerald-800 hover:bg-emerald-900"
+              onClick={() => void addSelected()}
+            >
+              {bulkBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+              เพิ่มที่เลือก (−{CLEARANCE_DISCOUNT_PERCENT}%)
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
