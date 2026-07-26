@@ -19,6 +19,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { breederSlugFromName } from "@/lib/breeder-slug";
+import { resolveBreederBySlugFromCache } from "@/services/breeder-slug-resolve-service";
 import {
   computeStartingPrice,
   computeTotalStock,
@@ -1385,14 +1386,41 @@ export async function hasStorefrontClearanceProducts(): Promise<boolean> {
   }
 }
 
+function clearanceProductStock(
+  p: Pick<ProductWithBreederAndVariants, "stock" | "product_variants">
+): number {
+  const variantStock = computeTotalStock(p.product_variants ?? []);
+  if (variantStock > 0) return variantStock;
+  const legacy = Number(p.stock ?? 0);
+  return Number.isFinite(legacy) ? Math.max(0, legacy) : 0;
+}
+
+function isListableClearanceProduct(p: ProductWithBreederAndVariants): boolean {
+  return clearanceProductStock(p) > 0 && getEffectiveListingPrice(p) > 0;
+}
+
+/** Clearance breeder box counts — same listable rules as drill-down grid. */
+export async function getListableClearanceCountsByBreeder(): Promise<Map<number, number>> {
+  const rows = await prisma.products.findMany({
+    where: { is_clearance: true, is_active: true, breeder_id: { not: null } },
+    select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+  });
+  const map = new Map<number, number>();
+  for (const row of rows) {
+    const p = bigintToJson(row) as unknown as ProductWithBreederAndVariants;
+    if (!isListableClearanceProduct(p)) continue;
+    const breederId = Number(p.breeder_id);
+    if (!Number.isFinite(breederId)) continue;
+    map.set(breederId, (map.get(breederId) ?? 0) + 1);
+  }
+  return map;
+}
+
 async function filterAndSortClearanceProducts(
   mapped: ProductWithBreederAndVariants[],
   limit: number
 ): Promise<ProductWithBreederAndVariants[]> {
-  const filtered = mapped.filter((p) => {
-    const stock = computeTotalStock(p.product_variants ?? []);
-    return stock > 0 && getEffectiveListingPrice(p) > 0;
-  });
+  const filtered = mapped.filter(isListableClearanceProduct);
   filtered.sort((a, b) => {
     const pa = getEffectiveListingPrice(a);
     const pb = getEffectiveListingPrice(b);
@@ -1448,13 +1476,7 @@ export async function getClearanceStorefrontProductsByBreederSlug(
       return { data: { products: [], breederName: null }, error: null };
     }
 
-    const breeders = await prisma.breeders.findMany({
-      where: { is_active: { not: false } },
-      select: { id: true, name: true },
-    });
-    const match = breeders.find(
-      (b) => breederSlugFromName(b.name).toLowerCase() === want
-    );
+    const match = await resolveBreederBySlugFromCache(want);
     if (!match) {
       return { data: { products: [], breederName: null }, error: null };
     }
@@ -1464,7 +1486,7 @@ export async function getClearanceStorefrontProductsByBreederSlug(
       where: {
         is_active: true,
         is_clearance: true,
-        breeder_id: match.id,
+        breeder_id: BigInt(match.id),
       },
       orderBy: [{ id: "desc" }],
       take,

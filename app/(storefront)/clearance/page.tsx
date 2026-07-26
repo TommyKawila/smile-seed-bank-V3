@@ -28,7 +28,7 @@ export default async function ClearancePage({ searchParams }: Props) {
   if (breederSlug) {
     const result = await withTimeout(
       getClearanceStorefrontProductsByBreederSlug(breederSlug),
-      2000,
+      4000,
       { data: { products: [], breederName: null }, error: null }
     );
     return (

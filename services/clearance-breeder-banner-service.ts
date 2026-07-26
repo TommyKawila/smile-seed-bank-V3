@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { breederSlugFromName } from "@/lib/breeder-slug";
+import { getListableClearanceCountsByBreeder } from "@/services/product-service";
 import {
   CLEARANCE_DISCOUNT_PERCENT,
   type StorefrontClearanceBreederBox,
@@ -32,17 +33,7 @@ export type ClearanceBreederBannerInput = {
 };
 
 async function clearanceCountsByBreeder(): Promise<Map<number, number>> {
-  const grouped = await prisma.products.groupBy({
-    by: ["breeder_id"],
-    where: { is_clearance: true, is_active: true, breeder_id: { not: null } },
-    _count: { id: true },
-  });
-  const map = new Map<number, number>();
-  for (const g of grouped) {
-    if (g.breeder_id == null) continue;
-    map.set(Number(g.breeder_id), g._count.id);
-  }
-  return map;
+  return getListableClearanceCountsByBreeder();
 }
 
 export async function upsertClearanceBreederBanner(

@@ -5,6 +5,7 @@
 import type { ProductVariant } from "@/types/supabase";
 import { getMessage } from "@/lib/i18n-messages";
 import { parsePackFromUnitLabel } from "@/lib/sku-utils";
+import { clearancePriceFromList, CLEARANCE_DISCOUNT_PERCENT } from "@/lib/clearance";
 
 /** Deterministic fallback when name has no Latin letters (e.g. Thai-only). */
 function slugFallbackFromName(name: string): string {
@@ -269,6 +270,11 @@ function resolveVariantClearancePrice(
   const explicit = Number(variant?.clearance_price ?? 0);
   if (explicit > 0) {
     return roundMoney(Math.min(list, explicit));
+  }
+
+  if (product.is_clearance === true) {
+    const fixed = clearancePriceFromList(list, CLEARANCE_DISCOUNT_PERCENT);
+    if (fixed > 0) return fixed;
   }
 
   const sale = Number(product.sale_price ?? 0);
