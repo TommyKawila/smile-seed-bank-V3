@@ -14,11 +14,16 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams?: { breeder?: string };
+  searchParams?: Promise<{ breeder?: string | string[] }>;
 };
 
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default async function ClearancePage({ searchParams }: Props) {
-  const breederSlug = searchParams?.breeder?.trim() || null;
+  const sp = searchParams ? await searchParams : undefined;
+  const breederSlug = firstParam(sp?.breeder)?.trim() || null;
 
   if (breederSlug) {
     const result = await withTimeout(
