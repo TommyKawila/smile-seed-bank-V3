@@ -70,6 +70,8 @@ export interface Product {
   /** Clearance: sale applies to listing price; packs scale from starting variant. */
   is_clearance?: boolean | null;
   sale_price?: number | null;
+  product_kind?: string | null;
+  merch_category?: string | null;
   image_url: string | null;
   image_url_2: string | null;
   image_url_3: string | null;

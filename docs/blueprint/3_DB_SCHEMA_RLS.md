@@ -5,6 +5,8 @@
 ### 1. products (Standardized Attributes)
 - `id`: bigint (PK)
 - `slug`: text (Unique) - ใช้ชื่อสินค้าทำ slug อัตโนมัติ[cite: 6, 8]
+- `product_kind`: `seed` (default) | `merch` — apparel/gear ใช้ `merch` + `merch_category`
+- `merch_category`: `tees` | `caps` | `pins` | `stickers` (required when `product_kind = merch`)
 - `flowering_type`: `autoflower` | `photoperiod` | `photo_ff` | `photo_3n`[cite: 8]
 - `sex_type`: `feminized` | `regular`[cite: 8]
 - `is_featured`: boolean, `featured_priority`: int[cite: 8]

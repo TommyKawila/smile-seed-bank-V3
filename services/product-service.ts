@@ -18,7 +18,7 @@ import {
 } from "@/lib/product-brand-listing";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { breederSlugFromName } from "@/lib/breeder-slug";
+import { seedCatalogProductWhere } from "@/lib/product-kind";
 import { resolveBreederBySlugFromCache } from "@/services/breeder-slug-resolve-service";
 import {
   computeStartingPrice,
@@ -325,13 +325,52 @@ export async function getBreederIdFromShopParam(
   return row ? Number(row.id) : null;
 }
 
+function isListableNewSeedsProduct(p: ProductWithBreederAndVariants): boolean {
+  const variantStock = computeTotalStock(p.product_variants ?? []);
+  const stock =
+    variantStock > 0
+      ? variantStock
+      : Math.max(0, Number(p.stock ?? 0) || 0);
+  return stock > 0 && getEffectiveListingPrice(p) > 0;
+}
+
+/** Home rail + `/new` — only products in the New Seeds admin box (pinned). */
 export async function getNewArrivals(limit = HOME_NEW_ARRIVALS_LIMIT) {
   try {
     const take = Math.min(MAX_ACTIVE_PRODUCTS_LIMIT, Math.max(1, Math.floor(limit)));
     const rows = await prisma.products.findMany({
-      where: { is_active: true },
+      where: { is_active: true, is_pinned_new_arrival: true, ...seedCatalogProductWhere },
       orderBy: [
-        { is_pinned_new_arrival: "desc" },
+        { new_arrival_priority: "desc" },
+        { created_at: "desc" },
+        { id: "desc" },
+      ],
+      take: Math.min(take * 3, MAX_ACTIVE_PRODUCTS_LIMIT),
+      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+    });
+
+    const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
+    const listable = mapped.filter(isListableNewSeedsProduct).slice(0, take);
+    for (const row of listable) sanitizeProductTextFields(row);
+    return { data: await withBrandListingEnrichment(listable), error: null };
+  } catch (err) {
+    logger.error("product-service.getNewArrivals failed", { cause: err });
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/** Dedicated `/new` landing — full pinned New Seeds box (listable only). */
+export async function getPinnedNewSeedsStorefrontProducts(
+  limit = 60
+): Promise<ServiceResult<ProductWithBreederAndVariants[]>> {
+  try {
+    const take = Math.min(120, Math.max(1, Math.floor(limit)));
+    const rows = await prisma.products.findMany({
+      where: { is_active: true, is_pinned_new_arrival: true, ...seedCatalogProductWhere },
+      orderBy: [
         { new_arrival_priority: "desc" },
         { created_at: "desc" },
         { id: "desc" },
@@ -339,12 +378,14 @@ export async function getNewArrivals(limit = HOME_NEW_ARRIVALS_LIMIT) {
       take,
       select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
     });
-
     const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
-    for (const row of mapped) sanitizeProductTextFields(row);
-    return { data: await withBrandListingEnrichment(mapped), error: null };
+    const listable = mapped.filter(isListableNewSeedsProduct);
+    for (const row of listable) sanitizeProductTextFields(row);
+    return { data: await withBrandListingEnrichment(listable), error: null };
   } catch (err) {
-    logger.error("product-service.getNewArrivals failed", { cause: err });
+    logger.error("product-service.getPinnedNewSeedsStorefrontProducts failed", {
+      cause: err,
+    });
     return {
       data: null,
       error: err instanceof Error ? err.message : String(err),
@@ -391,6 +432,7 @@ export async function getRelatedProducts({
     const baseWhere: Prisma.productsWhereInput = {
       is_active: true,
       id: { not: BigInt(productId) },
+      ...seedCatalogProductWhere,
       ...(breederId != null ? { breeder_id: BigInt(breederId) } : {}),
       ...(categoryName?.trim() ? { category: categoryName.trim() } : {}),
     };
@@ -469,6 +511,7 @@ export async function getMixedBreederProducts(
         LEFT JOIN public.product_categories pc ON pc.id = p.category_id
         WHERE p.is_active IS TRUE
           AND p.breeder_id IS NOT NULL
+          AND (p.product_kind IS DISTINCT FROM 'merch')
           AND (b.is_active IS DISTINCT FROM FALSE)
       )
       SELECT
@@ -650,6 +693,7 @@ export async function getActiveProducts(opts?: {
 
     const applyCommonFilters = () => {
       let qb = supabase.from("products").select(selectShape).eq("is_active", true);
+      qb = qb.neq("product_kind", "merch");
       if (clearanceOnly) qb = qb.eq("is_clearance", true);
       if (opts?.category) qb = qb.eq("category", opts.category);
       const searchRaw = opts?.search?.trim();
@@ -733,7 +777,8 @@ export async function getActiveProducts(opts?: {
       let qb = supabase
         .from("products")
         .select("id", { count: "exact", head: true })
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .neq("product_kind", "merch");
       if (clearanceOnly) qb = qb.eq("is_clearance", true);
       if (opts?.category) qb = qb.eq("category", opts.category);
       const searchRaw = opts?.search?.trim();
@@ -1377,7 +1422,7 @@ export async function getActiveProducts(opts?: {
 export async function hasStorefrontClearanceProducts(): Promise<boolean> {
   try {
     const n = await prisma.products.count({
-      where: { is_active: true, is_clearance: true, stock: { gt: 0 } },
+      where: { is_active: true, is_clearance: true, stock: { gt: 0 }, ...seedCatalogProductWhere },
     });
     return n > 0;
   } catch (err) {
@@ -1402,7 +1447,7 @@ function isListableClearanceProduct(p: ProductWithBreederAndVariants): boolean {
 /** Clearance breeder box counts — same listable rules as drill-down grid. */
 export async function getListableClearanceCountsByBreeder(): Promise<Map<number, number>> {
   const rows = await prisma.products.findMany({
-    where: { is_clearance: true, is_active: true, breeder_id: { not: null } },
+    where: { is_clearance: true, is_active: true, breeder_id: { not: null }, ...seedCatalogProductWhere },
     select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
   });
   const map = new Map<number, number>();
@@ -1443,7 +1488,7 @@ export async function getClearanceStorefrontProducts(
   try {
     const fetchTake = Math.min(48, Math.max(limit * 3, limit));
     const rows = await prisma.products.findMany({
-      where: { is_active: true, is_clearance: true },
+      where: { is_active: true, is_clearance: true, ...seedCatalogProductWhere },
       orderBy: [{ id: "desc" }],
       take: fetchTake,
       select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
@@ -1517,7 +1562,7 @@ export async function getFeaturedProducts(
   try {
     const take = Math.min(MAX_ACTIVE_PRODUCTS_LIMIT, Math.max(1, Math.floor(limit)));
     const rows = await prisma.products.findMany({
-      where: { is_active: true, is_featured: true },
+      where: { is_active: true, is_featured: true, ...seedCatalogProductWhere },
       orderBy: [{ featured_priority: "asc" }, { id: "desc" }],
       take,
       select: STOREFRONT_HOME_FEATURED_PRODUCT_SELECT,

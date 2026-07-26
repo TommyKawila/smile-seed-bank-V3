@@ -714,6 +714,8 @@ export type Database = {
           medical_benefits: Json | null
           name: string
           new_arrival_priority: number | null
+          product_kind: string
+          merch_category: string | null
           slug: string | null
           price: number | null
           sale_price: number | null
@@ -761,6 +763,8 @@ export type Database = {
           medical_benefits?: Json | null
           name: string
           new_arrival_priority?: number | null
+          product_kind?: string
+          merch_category?: string | null
           slug?: string | null
           price?: number | null
           sale_price?: number | null
@@ -808,6 +812,8 @@ export type Database = {
           medical_benefits?: Json | null
           name?: string
           new_arrival_priority?: number | null
+          product_kind?: string
+          merch_category?: string | null
           slug?: string | null
           price?: number | null
           sale_price?: number | null

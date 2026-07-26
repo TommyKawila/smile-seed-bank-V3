@@ -90,8 +90,13 @@ export function isStorefrontCatalogPath(pathname: string | null): boolean {
   );
 }
 
-/** List pages that product PDP «back» should return to (catalog + clearance landing). */
+/** List pages that product PDP «back» should return to (catalog + landings). */
 export function isProductListReturnPath(pathname: string | null): boolean {
   if (!pathname) return false;
-  return pathname === "/clearance" || isStorefrontCatalogPath(pathname);
+  return (
+    pathname === "/clearance" ||
+    pathname === "/new" ||
+    pathname === "/merch" ||
+    isStorefrontCatalogPath(pathname)
+  );
 }

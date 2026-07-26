@@ -59,6 +59,8 @@ function extraImageRemotePatterns() {
 }
 
 const nextConfig = {
+  /** Avoid webpack bundling a stale @prisma/client DMMF in dev. */
+  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
   transpilePackages: [
     "framer-motion",
     "embla-carousel-react",

@@ -4,9 +4,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  schemas  = ["public"]
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["public"]
 }
 
 model blogs {
@@ -432,6 +433,9 @@ model products {
   is_clearance          Boolean?            @default(false)
   is_pinned_new_arrival Boolean?            @default(false)
   new_arrival_priority  Int?                @default(0)
+  /// `seed` (default) | `merch` — apparel/gear uses `merch` + `merch_category`.
+  product_kind          String              @default("seed")
+  merch_category        String?
   product_images        product_images[]
   product_variants      product_variants[]
   breeders              breeders?           @relation(fields: [breeder_id], references: [id], onUpdate: NoAction)
@@ -439,6 +443,8 @@ model products {
 
   @@index([category_id])
   @@index([category_id], map: "idx_products_category_id")
+  @@index([product_kind, breeder_id], map: "idx_products_product_kind_breeder")
+  @@index([product_kind, merch_category], map: "idx_products_product_kind_merch_category")
   @@index([is_pinned_new_arrival(sort: Desc), new_arrival_priority(sort: Desc), created_at(sort: Desc)], map: "idx_products_new_arrival")
   @@schema("public")
 }

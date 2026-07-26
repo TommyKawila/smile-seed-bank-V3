@@ -15,3 +15,8 @@
 ## 4. AI & Media
 - **AI Scanner:** สกัดข้อมูลแบบ "Read & Discard" (ไม่เก็บรูปต้นฉบับเข้า Storage เพื่อประหยัดพื้นที่)[cite: 8]
 - **Watermark:** รูปสินค้าแกลเลอรีจะถูกใส่ Watermark อัตโนมัติที่มุมขวาล่าง[cite: 8]
+
+## 5. Merchandise (Catalog V1)
+- **Separation:** `product_kind = merch` แยกจาก seed catalog — ไม่โผล่ใน `/seeds`, New Seeds, Clearance
+- **Categories:** `merch_category` = tees | caps | pins | stickers · variants ใช้ `unit_label` เป็นไซส์
+- **Cart:** ยังไม่เปิด — storefront CTA = Coming soon (รอบถัดไป)

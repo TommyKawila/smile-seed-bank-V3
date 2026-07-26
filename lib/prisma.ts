@@ -1,7 +1,15 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+/** Bump when Prisma schema requires client regen (dev hot-reload bust). */
+const PRISMA_SCHEMA_REV = 202607261600;
+
+type GlobalPrisma = {
+  prisma?: PrismaClient;
+  prismaSchemaRev?: number;
+};
+
+const globalForPrisma = globalThis as unknown as GlobalPrisma;
 
 function resolveDatabaseUrl(): string {
   const url =
@@ -22,6 +30,11 @@ function databaseHostFromConnectionString(url: string): string | undefined {
   }
 }
 
+function productsModelHasMerchKind(): boolean {
+  const model = Prisma.dmmf.datamodel.models.find((m) => m.name === "products");
+  return model?.fields.some((f) => f.name === "product_kind") ?? false;
+}
+
 function prismaClientSingleton() {
   const connectionString = resolveDatabaseUrl();
   const dbHost = databaseHostFromConnectionString(connectionString);
@@ -36,16 +49,29 @@ function prismaClientSingleton() {
 
 function resolvePrismaClient(): PrismaClient {
   const existing = globalForPrisma.prisma;
-  if (
+  const stale =
     process.env.NODE_ENV === "development" &&
     existing &&
-    !("homepage_hero_cta_buttons" in existing)
-  ) {
+    (globalForPrisma.prismaSchemaRev !== PRISMA_SCHEMA_REV ||
+      !("homepage_hero_cta_buttons" in existing) ||
+      !productsModelHasMerchKind());
+
+  if (stale) {
     console.warn("[prisma] Stale client detected — reinitializing after schema change");
-    return prismaClientSingleton();
+    const client = prismaClientSingleton();
+    globalForPrisma.prisma = client;
+    globalForPrisma.prismaSchemaRev = PRISMA_SCHEMA_REV;
+    return client;
   }
-  return existing ?? prismaClientSingleton();
+
+  if (!existing) {
+    const client = prismaClientSingleton();
+    globalForPrisma.prisma = client;
+    globalForPrisma.prismaSchemaRev = PRISMA_SCHEMA_REV;
+    return client;
+  }
+
+  return existing;
 }
 
 export const prisma = resolvePrismaClient();
-globalForPrisma.prisma = prisma;

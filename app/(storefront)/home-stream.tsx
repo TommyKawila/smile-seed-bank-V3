@@ -53,7 +53,7 @@ async function getSections(): Promise<HomePageSectionPayload[]> {
 
 const getHeroCtaCached = unstable_cache(
   () => listHeroCtaButtons(true),
-  ["storefront-home-hero-cta", "clearance-landing-v2"],
+  ["storefront-home-hero-cta", "new-seeds-landing-v1"],
   { tags: ["home-layout"] }
 );
 

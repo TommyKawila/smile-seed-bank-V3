@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/get-url";
 import { breederSlugFromName } from "@/lib/breeder-slug";
+import { GROWER_TOOLS } from "@/lib/grower-tools";
 
 /** Product PDPs use `/product/[slug]` (slug or numeric id). Nested `/seeds/[breeder]/[product]` is not a route in this app. */
 export const revalidate = 3600;
@@ -31,6 +32,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/blog`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
     { url: `${base}/shop`, lastModified: now, changeFrequency: "daily", priority: 0.88 },
     { url: `${base}/clearance`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
+    { url: `${base}/new`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
+    { url: `${base}/merch`, lastModified: now, changeFrequency: "weekly", priority: 0.75 },
+    { url: `${base}/tools`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/breeders`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.35 },
     { url: `${base}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.35 },
@@ -41,6 +45,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: b.created_at ?? now,
     changeFrequency: "weekly" as const,
     priority: 0.72,
+  }));
+
+  const growerToolEntries: MetadataRoute.Sitemap = GROWER_TOOLS.map((tool) => ({
+    url: `${base}/tools/${tool.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.65,
   }));
 
   const blogEntries: MetadataRoute.Sitemap = posts.map((p) => ({
@@ -62,5 +73,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...staticEntries, ...breederCatalogEntries, ...blogEntries, ...productEntries];
+  return [
+    ...staticEntries,
+    ...growerToolEntries,
+    ...breederCatalogEntries,
+    ...blogEntries,
+    ...productEntries,
+  ];
 }

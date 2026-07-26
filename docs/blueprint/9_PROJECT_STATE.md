@@ -4,6 +4,55 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-26 (Soil Mixer: Base+Super DIY recipes)
+- **What:** AI แบ่งเป้า Base L + Super L · สูตรผสมจากวัสดุในมือ · ซื้อเฉพาะวัตถุดิบ (ห้ามแนะนำซื้อ Base soil สำเร็จรูป) · UI แสดงปริมาณ + baseMixPlan/superMixPlan
+- **ไฟล์:** `grower-tools-service.ts`, `lib/soil-mixer.ts`, `SoilMixResultInfographic.tsx`
+
+### บันทึกการทำงาน — 2026-07-26 (Soil Mixer infographic + Shopee affiliate)
+- **What:** ผลวิเคราะห์ Soil Mixer เป็น JSON → UI infographic (สรุป / ขาดอะไร / ซื้อเพิ่ม + ปุ่ม Shopee) · affiliate `an_redir`
+- **Env:** `SHOPEE_AFFILIATE_ID` (ไม่มีก็ fallback search ปกติ)
+- **ไฟล์:** `lib/shopee-affiliate.ts`, `lib/soil-mixer.ts` (types), `grower-tools-service.ts`, `SoilMixResultInfographic.tsx`, `SoilMixerClient.tsx`, API route
+
+### บันทึกการทำงาน — 2026-07-26 (Soil Mixer wizard + OpenAI)
+- **What:** Soil Mixer wizard 2 ขั้น (กระถาง → วัสดุ) · คำนวณ Super/Base จากเป้าหมาย · prompt วิธีใช้ Super soil 1/3+2/3 · ย้าย grower-tools AI ทั้ง 3 ตัวไป OpenAI
+- **Logic:** `lib/soil-mixer.ts` computeSoilPotTarget · API payload `potTarget` · gpt-4o-mini (text) / gpt-4o (vision)
+- **ไฟล์:** `lib/soil-mixer.ts`, `SoilMixerClient.tsx`, `grower-tools-service.ts`, `app/api/storefront/grower-tools/route.ts`
+
+### บันทึกการทำงาน — 2026-07-26 (Fertilizer Advisor infographic + Shopee)
+- **What:** ปุ๋ย AI → JSON structured · UI infographic (NPK cards · products · tips · cautions) · ปุ่มซื้อ Shopee affiliate
+- **Logic:** `lib/fertilizer-advisor.ts` · `gpt-4o-mini` JSON · API `{ analysis, buyLinks }` · sub_id `fertilizer-*`
+- **ไฟล์:** `FertilizerResultInfographic.tsx`, `FertilizerAdvisorClient.tsx`, `grower-tools-service.ts`, `grower-tools/route.ts`
+
+### บันทึกการทำงาน — 2026-07-26 (Admin toggle — Grower Tools AI)
+- **What:** Admin `/admin/settings/grower-tools` — Switch เปิด/ปิด AI · key `grower_tools_ai_enabled` ใน `site_settings`
+- **Logic:** default เปิด · API `grower-tools` 503 `ai_disabled` เมื่อปิด · storefront disable ปุ่มวิเคราะห์ + banner · VPD ไม่กระทบ
+- **ไฟล์:** `lib/grower-tools-settings.ts`, `services/setting-service.ts`, `app/admin/settings/grower-tools/page.tsx`, `grower-tools/route.ts`, tool clients, `AdminSidebar.tsx`
+
+### บันทึกการทำงาน — 2026-07-26 (Navbar AI Assistant dropdown)
+- **What:** ย้ายเครื่องมือ AI ขึ้น Navbar — เมนู **ผู้ช่วย AI** dropdown desktop (hover) + mobile hamburger · 4 tools + ดูทั้งหมด → `/tools`
+- **Logic:** reuse `GROWER_TOOLS` + icons · active state เมื่อ `pathname.startsWith("/tools")` · pattern เดียวกับ `GeneticsSeedsNav`
+- **ไฟล์:** `components/storefront/GrowerToolsNavDropdown.tsx`, `Navbar.tsx`
+
+### บันทึกการทำงาน — 2026-07-26 (Grower Tools / AI ช่วยปลูก)
+- **What:** Hub `/tools` + 4 เครื่องมือจริง · VPD คำนวณ client-side · Soil/Fertilizer/Plant Doctor เรียก Gemini ผ่าน `POST /api/storefront/grower-tools` (Read & Discard รูป)
+- **Logic:** shared catalog `lib/grower-tools.ts` · rate-limit IP · `withTimeout` 12s · dock ลิงก์ hub · sitemap `/tools` + slugs
+- **ไฟล์:** `lib/grower-tools.ts`, `lib/vpd.ts`, `services/grower-tools-service.ts`, `app/api/storefront/grower-tools/route.ts`, `app/(storefront)/tools/*`, `components/storefront/tools/*`, `AiQuickToolsDock.tsx`, `sitemap.ts`
+
+### บันทึกการทำงาน — 2026-07-26 (Merchandise Catalog + Admin V1)
+- **What:** DB `product_kind`/`merch_category` · Admin `/admin/merch` CRUD · storefront `/merch` อ่านจาก DB · ยังไม่ผูก cart
+- **Logic:** reuse `products`+variants · hub derive จาก breeders ที่มี merch active · seed catalog กรอง `product_kind <> merch` · PDP merch redirect กลับ `/merch`
+- **ไฟล์:** migrations `20260726160000_products_merch_kind`, `merch-admin-service.ts`, `merch-storefront-service.ts`, `MerchAdminClient.tsx`, `lib/merch-catalog.ts`, `lib/product-kind.ts`, `app/api/admin/merch/*`, `product-service.ts`, `storefront-product-service.ts`
+
+### บันทึกการทำงาน — 2026-07-26 (Merchandise UX prototype `/merch`)
+- **What:** หน้า `/merch` prototype — กล่องค่าย → หมวด (tees/caps/pins/stickers) → กริดสินค้า + quick-look · CTA coming soon (ไม่ผูก cart)
+- **Logic:** mock ใน `lib/merch-prototype-catalog.ts` · motion hover/stagger · Nav + sitemap `/merch` · return-path รวม `/merch`
+- **ไฟล์:** `app/(storefront)/merch/*`, `MerchLandingClient.tsx`, `MerchBreederBoxCard.tsx`, `MerchCategoryBoxCard.tsx`, `MerchProductCard.tsx`, `Navbar.tsx`, `sitemap.ts`, `catalog-navigation.ts`
+
+### บันทึกการทำงาน — 2026-07-26 (New Seeds landing + admin box)
+- **What:** หน้า `/new` curated grid จากสินค้าที่ pin · Admin `/admin/new-seeds` bulk เพิ่ม/นำออก/จัดลำดับ · Hero/Home/QuickFilter ชี้ `/new`
+- **Logic:** `is_pinned_new_arrival` + `new_arrival_priority` · home rail `getNewArrivals` เฉพาะ pinned listable · return-path `/new` · hero CTA normalize `hero_cta_new`
+- **ไฟล์:** `services/new-seeds-admin-service.ts`, `NewSeedsAdminClient.tsx`, `app/admin/new-seeds/page.tsx`, `app/api/admin/new-seeds/route.ts`, `app/(storefront)/new/*`, `NewSeedsLandingClient.tsx`, `lib/revalidate-new-seeds.ts`, `product-service.ts`, `homepage-hero-cta.ts`, `ShopQuickFilterBar.tsx`, `HomePageBelowFold.tsx`, `AdminSidebar.tsx`, migrations hero CTA href
+
 ### บันทึกการทำงาน — 2026-07-26 (Seeds Hub — All Seeds chooser)
 - **What:** `/seeds` เปล่า = hub เลือกค่าย / Auto·Photo / Sativa·Indica·Hybrid ก่อนเข้า catalog · `?view=all` หรือ filter อื่น = catalog
 - **Logic:** `shouldShowSeedsHub` · `getSeedsHubPayload` · context bar «เปลี่ยนทางเข้า» · Hero All Seeds คง `/seeds`

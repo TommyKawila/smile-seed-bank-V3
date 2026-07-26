@@ -19,6 +19,10 @@ export interface SiteSettings {
   legal_seed_license_number?: string;
   legal_business_registration_url?: string;
   legal_business_registration_number?: string;
+  grower_tools_ai_enabled?: string;
+  grower_tools_ai_soil_mixer_enabled?: string;
+  grower_tools_ai_fertilizer_enabled?: string;
+  grower_tools_ai_plant_doctor_enabled?: string;
 }
 
 export async function fetchSiteSettings(useAdmin: boolean): Promise<SiteSettings> {

@@ -64,7 +64,7 @@ export function SeedsCatalogEntryBar() {
         className="inline-flex min-h-12 items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
-        {t("เปลี่ยนทางเข้า", "Change entry")}
+        {t("กลับไปหน้าก่อนนี้", "Back to previous page")}
       </Link>
     </div>
   );

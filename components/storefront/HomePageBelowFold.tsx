@@ -163,8 +163,8 @@ export function HomePageBelowFold({
                   size="sm"
                   className="min-h-11 shrink-0 self-start px-3 text-primary hover:bg-muted hover:text-primary sm:self-end"
                 >
-                  <Link href="/shop?category=Seeds">
-                    {t("ไปที่คลังเมล็ดพันธุ์", "Seed vault")}{" "}
+                  <Link href="/new">
+                    {t("ดูเมล็ดพันธุ์มาใหม่ทั้งหมด", "See all new seeds")}{" "}
                     <ChevronRight className="ml-0.5 h-4 w-4" />
                   </Link>
                 </Button>

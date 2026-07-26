@@ -19,7 +19,10 @@
     "admin:set-password": "npx tsx scripts/set-admin-password.ts",
     "backfill:strain-dominance": "npx tsx scripts/backfill-strain-dominance.ts",
     "backfill:cbd-percent-num": "npx tsx scripts/backfill-cbd-percent-num.ts",
-    "backfill:pack-buckets": "npx tsx scripts/backfill-product-pack-buckets.ts"
+    "backfill:pack-buckets": "npx tsx scripts/backfill-product-pack-buckets.ts",
+    "db:migrate:deploy": "PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=120000 prisma migrate deploy",
+    "db:merch:schema": "npx tsx scripts/apply-merch-schema.ts",
+    "db:merch:resolve": "prisma migrate resolve --applied 20260726160000_products_merch_kind"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

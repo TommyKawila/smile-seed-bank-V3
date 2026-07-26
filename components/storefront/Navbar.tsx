@@ -23,6 +23,7 @@ import { NAV_LOGO_INTRINSIC, NAV_LOGO_SIZES } from "@/lib/storefront-nav-logo";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
 import { GeneticsSeedsNav } from "@/components/storefront/GeneticsSeedsNav";
+import { GrowerToolsNavDropdown } from "@/components/storefront/GrowerToolsNavDropdown";
 
 function LanguageToggle({
   locale,
@@ -162,7 +163,8 @@ export function Navbar() {
   }, []);
 
   const homeLabel = t("หน้าแรก", "Home");
-  const blogLabel = t("คลังความรู้สายเขียว", "Knowledge vault");
+  const merchLabel = t("Merchandise", "Merchandise");
+  const blogLabel = t("Blog", "Blog");
 
   const navLinkClass =
     "text-sm font-medium tracking-wide text-foreground/75 transition-colors hover:text-primary";
@@ -171,11 +173,13 @@ export function Navbar() {
 
   const isHomeActive = pathname === "/";
   const isBlogActive = isMagazineSection;
+  const isMerchActive = pathname === "/merch" || pathname.startsWith("/merch/");
   const isSeedsActive =
     isCatalogPath ||
     pathname === "/breeders" ||
     pathname.startsWith("/brand/") ||
     pathname.startsWith("/breeders/");
+  const isToolsActive = pathname === "/tools" || pathname.startsWith("/tools/");
 
   const iconBtnClass =
     "rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary";
@@ -219,9 +223,16 @@ export function Navbar() {
               solidLightNav={solidLightNav}
               mode="desktop"
             />
+            <Link href="/merch" className={cn(navLinkClass, isMerchActive && navLinkActive)}>
+              {merchLabel}
+            </Link>
             <Link href="/blog" className={cn(navLinkClass, isBlogActive && navLinkActive)}>
               {blogLabel}
             </Link>
+            <GrowerToolsNavDropdown
+              navLinkClass={cn(navLinkClass, isToolsActive && navLinkActive)}
+              mode="desktop"
+            />
           </nav>
 
           {/* Right Side */}
@@ -375,6 +386,16 @@ export function Navbar() {
                 onNavigate={() => setMenuOpen(false)}
               />
               <Link
+                href="/merch"
+                onClick={() => setMenuOpen(false)}
+                className={cn(
+                  "block py-3 text-base font-medium tracking-wide transition-colors hover:text-primary",
+                  isMerchActive ? "text-primary" : "text-foreground/85"
+                )}
+              >
+                {merchLabel}
+              </Link>
+              <Link
                 href="/blog"
                 onClick={() => setMenuOpen(false)}
                 className={cn(
@@ -384,6 +405,11 @@ export function Navbar() {
               >
                 {blogLabel}
               </Link>
+              <GrowerToolsNavDropdown
+                navLinkClass={cn(navLinkClass, isToolsActive && navLinkActive)}
+                mode="mobile"
+                onNavigate={() => setMenuOpen(false)}
+              />
               {/* Auth Links — Mobile */}
               <div className="mt-3 border-t border-border pt-3">
                 {signedIn ? (

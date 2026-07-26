@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { PRODUCT_KIND_MERCH, seedCatalogProductWhere } from "@/lib/product-kind";
 import {
   CLEARANCE_DISCOUNT_PERCENT,
   clearancePriceFromList,
@@ -21,7 +22,7 @@ export type ClearanceVariantPriceInput = {
 
 export async function listAdminClearanceProducts(): Promise<ProductFull[]> {
   const rows = await prisma.products.findMany({
-    where: { is_clearance: true },
+    where: { is_clearance: true, ...seedCatalogProductWhere },
     orderBy: [{ id: "desc" }],
     include: adminProductListInclude,
   });
@@ -30,7 +31,7 @@ export async function listAdminClearanceProducts(): Promise<ProductFull[]> {
 
 export async function listClearanceBreederSummary(): Promise<ClearanceBreederSummary[]> {
   const products = await prisma.products.findMany({
-    where: { is_clearance: true },
+    where: { is_clearance: true, ...seedCatalogProductWhere },
     select: {
       id: true,
       breeder_id: true,
@@ -147,6 +148,13 @@ async function applyFixedClearancePrices(
 export async function addProductToClearance(
   productId: number
 ): Promise<{ error: string | null }> {
+  const kindRow = await prisma.products.findUnique({
+    where: { id: BigInt(productId) },
+    select: { product_kind: true },
+  });
+  if (kindRow?.product_kind === PRODUCT_KIND_MERCH) {
+    return { error: "สินค้า Merch ไม่สามารถเพิ่มใน Clearance ได้" };
+  }
   if (!(await productHasAvailableStock(productId))) {
     return { error: "สินค้านี้หมดสต็อก — ไม่สามารถเพิ่มใน Clearance ได้" };
   }
@@ -206,7 +214,7 @@ export async function resyncAllClearancePrices(): Promise<{
   synced: number;
 }> {
   const rows = await prisma.products.findMany({
-    where: { is_clearance: true },
+    where: { is_clearance: true, ...seedCatalogProductWhere },
     select: { id: true },
   });
   let synced = 0;

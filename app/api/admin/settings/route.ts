@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { isDevAdminBypassEnabled } from "@/lib/auth-utils";
+import { assertAdmin } from "@/lib/auth-utils";
 import { logger } from "@/lib/logger";
 import { getSiteSettingsRecordMap, upsertSiteSetting } from "@/services/setting-service";
 
@@ -16,14 +15,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    // 🛡️ Extra layer of security: Ensure the requester is actually an Admin
-    const userClient = await createClient();
-    const { data: { user } } = await userClient.auth.getUser();
-    
-    // บอสสามารถเพิ่ม Logic เช็ค Role ตรงนี้ได้ถ้าต้องการ
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const user = await assertAdmin();
 
     const body = await req.json() as { key: string; value: string };
     if (!body.key || body.value === undefined) {
@@ -38,9 +30,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    logger.info(`Setting updated: ${body.key}`, { context: { user_id: user?.id } });
+    logger.info(`Setting updated: ${body.key}`, { context: { user_id: user.id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("Unauthorized")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     logger.error("Unexpected error in settings POST", { cause: err });
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

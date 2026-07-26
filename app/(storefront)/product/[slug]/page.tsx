@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { getProductBySlug } from "@/services/product-service";
 import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
 import ProductDetailClient from "./product-detail-client";
+import { isMerchProduct } from "@/lib/product-kind";
+import { merchCategoryHref, type MerchCategoryId } from "@/lib/merch-catalog";
+import { breederSlugFromName } from "@/lib/breeder-slug";
 
 function cleanProductPath(slug: string): string {
   return `/product/${encodeURIComponent(slug.trim())}`;
@@ -47,6 +51,16 @@ export default async function ProductPage({
   params: { slug: string };
 }) {
   const { data } = await getProductBySlug(params.slug);
+
+  if (data && isMerchProduct(data)) {
+    const breederName = data.breeders?.name;
+    const cat = data.merch_category;
+    if (breederName && cat) {
+      redirect(merchCategoryHref(breederSlugFromName(breederName), cat as MerchCategoryId));
+    }
+    redirect("/merch");
+  }
+
   return (
     <>
       {data ? <ProductJsonLd product={data} /> : null}

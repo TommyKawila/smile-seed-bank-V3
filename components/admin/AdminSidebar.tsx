@@ -27,6 +27,7 @@ import {
   Mail,
   Camera,
   Sparkles,
+  Shirt,
   Newspaper,
   Smartphone,
   Table2,
@@ -41,6 +42,8 @@ const navItems = [
   { href: "/admin/analytics", label: "Executive analytics", icon: BarChart3 },
   { href: "/admin/products", label: "สินค้า", icon: Package },
   { href: "/admin/clearance", label: "สินค้า Clearance", icon: Tag },
+  { href: "/admin/new-seeds", label: "เมล็ดพันธุ์มาใหม่", icon: Sparkles },
+  { href: "/admin/merch", label: "Merchandise", icon: Shirt },
   { href: "/admin/bulk-seeds", label: "Bulk seeds", icon: Table2 },
   { href: "/admin/inventory", label: "สต็อก / Inventory", icon: Boxes },
   { href: "/admin/inventory/dashboard", label: "Inventory Dashboard", icon: BarChart2 },
@@ -69,6 +72,7 @@ const bottomItems = [
   { href: "/admin/settings/homepage", label: "หน้าแรก (ลำดับ)", icon: LayoutTemplate },
   { href: "/admin/settings/shipping", label: "ค่าจัดส่ง", icon: Truck },
   { href: "/admin/settings/payment", label: "ช่องทางชำระเงิน", icon: CreditCard },
+  { href: "/admin/settings/grower-tools", label: "ผู้ช่วย AI ปลูก", icon: Sparkles },
 ];
 
 interface AdminSidebarProps {

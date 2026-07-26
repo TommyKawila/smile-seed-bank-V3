@@ -49,12 +49,16 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, mode }: Props) {
   const isEn = locale === "en";
 
   const label = t("เมล็ดพันธุ์", "Seeds");
-  const catalogLabel = t("คลังเมล็ดพันธุ์ทั้งหมด", "Full seed catalog");
+  const entryLinks = [
+    { href: "/seeds", label: t("เมล็ดพันธุ์ทั้งหมด", "All Seeds") },
+    { href: "/new", label: t("เมล็ดพันธุ์มาใหม่", "New Seeds") },
+    { href: "/clearance", label: t("เมล็ดพันธุ์ลดราคา", "Clearance Seeds") },
+  ] as const;
   const breederSectionLabel = t("เลือกเมล็ดตามค่าย", "Shop by breeder");
   const sectionHeadingClass =
     "font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary";
-  const catalogLinkClass =
-    "block text-[13px] font-semibold tracking-wide text-primary transition-colors hover:text-primary/80";
+  const entryLinkClass =
+    "block rounded-sm py-2 text-[13px] font-semibold tracking-wide text-primary transition-colors hover:bg-primary/10 hover:text-primary/90";
   const breederLinkClass =
     "flex items-center gap-3 rounded-lg py-0.5 text-sm font-medium text-muted-foreground transition-colors hover:text-primary";
 
@@ -120,13 +124,15 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, mode }: Props) {
         >
           {label}
         </Link>
-        <Link
-          href="/seeds"
-          onClick={onNavigate}
-          className="block py-1 text-[13px] font-semibold tracking-wide text-primary transition-colors hover:text-primary/80"
-        >
-          {catalogLabel} →
-        </Link>
+        <ul className="space-y-0.5 pb-1">
+          {entryLinks.map((item) => (
+            <li key={item.href}>
+              <Link href={item.href} onClick={onNavigate} className={entryLinkClass}>
+                {item.label} →
+              </Link>
+            </li>
+          ))}
+        </ul>
         <p className={cn(sectionHeadingClass, "mb-2 mt-3")}>
           {breederSectionLabel}
         </p>
@@ -177,13 +183,19 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, mode }: Props) {
         <div className="absolute left-1/2 top-full z-50 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 pt-2 lg:left-0 lg:translate-x-0">
           <div className="overflow-hidden rounded-sm border border-border bg-card shadow-md">
             <div className="border-b border-border px-5 py-3">
-              <Link
-                href="/seeds"
-                className={catalogLinkClass}
-                onClick={() => setOpen(false)}
-              >
-                {catalogLabel} →
-              </Link>
+              <ul className="space-y-0.5">
+                {entryLinks.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={entryLinkClass}
+                      onClick={() => setOpen(false)}
+                    >
+                      {item.label} →
+                    </Link>
+                  </li>
+                ))}
+              </ul>
               <p className={cn(sectionHeadingClass, "mb-2 mt-4")}>
                 {breederSectionLabel}
               </p>

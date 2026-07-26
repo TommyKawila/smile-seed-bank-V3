@@ -95,6 +95,7 @@ export async function fetchProductsForCatalog(opts: ProductQueryOptions): Promis
     : supabase.from("products").select(PRODUCT_SELECT_WITH_BREEDER);
 
   if (!includeInactive) query = query.eq("is_active", true);
+  query = query.neq("product_kind", "merch");
   if (featuredOnly) query = query.eq("is_featured", true);
   if (category) query = query.eq("category", category);
   const catalogSearchOr = search?.trim() ? buildProductCatalogSearchOrFilter(search.trim()) : null;

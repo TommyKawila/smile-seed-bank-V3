@@ -1,16 +1,11 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
-
-const Analytics = dynamic(
-  () => import("@vercel/analytics/react").then((m) => m.Analytics),
-  { ssr: false }
-);
+import { useEffect, useState, type ComponentType } from "react";
 
 /** Interaction-only — no idle fallback (keeps /events off PSI critical path). */
 export function VercelAnalyticsClient() {
   const [active, setActive] = useState(false);
+  const [Analytics, setAnalytics] = useState<ComponentType | null>(null);
 
   useEffect(() => {
     let done = false;
@@ -32,6 +27,21 @@ export function VercelAnalyticsClient() {
     };
   }, []);
 
-  if (!active) return null;
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    void import("@vercel/analytics/react")
+      .then((m) => {
+        if (!cancelled) setAnalytics(() => m.Analytics);
+      })
+      .catch(() => {
+        // Stale dev chunk / offline — analytics optional; never crash the app
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [active]);
+
+  if (!Analytics) return null;
   return <Analytics />;
 }

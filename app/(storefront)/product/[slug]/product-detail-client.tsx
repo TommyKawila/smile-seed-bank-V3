@@ -349,9 +349,12 @@ export default function ProductDetailClient({
     if (listReferrerPath) {
       const clearanceBack =
         listReferrerPath === "/clearance" || listReferrerPath.startsWith("/clearance?");
+      const newSeedsBack = listReferrerPath === "/new" || listReferrerPath.startsWith("/new?");
       const text = clearanceBack
         ? t("กลับไปหน้า Clearance", "Back to Clearance")
-        : t("กลับไปหน้าก่อน", "Back to previous page");
+        : newSeedsBack
+          ? t("กลับไปหน้า New Seeds", "Back to New Seeds")
+          : t("กลับไปหน้าก่อน", "Back to previous page");
       return { href: listReferrerPath, text, title: text };
     }
     if (product.breeders) {

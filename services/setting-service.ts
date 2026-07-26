@@ -1,4 +1,10 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import {
+  resolveGrowerToolAiEnabled,
+  resolveGrowerToolsAiFlags,
+  type GrowerToolAiAction,
+  type GrowerToolAiFlags,
+} from "@/lib/grower-tools-settings";
 
 export type UpsertSiteSettingResult =
   | { ok: true }
@@ -26,4 +32,21 @@ export async function getSiteSettingsRecordMap(): Promise<Record<string, string>
     acc[row.key] = row.value ?? "";
     return acc;
   }, {} as Record<string, string>);
+}
+
+/** Server-only: per-tool AI flags for storefront grower tools. Default all true. */
+export async function getGrowerToolsAiFlags(): Promise<GrowerToolAiFlags> {
+  const map = await getSiteSettingsRecordMap();
+  return resolveGrowerToolsAiFlags(map);
+}
+
+export async function isGrowerToolAiEnabled(action: GrowerToolAiAction): Promise<boolean> {
+  const map = await getSiteSettingsRecordMap();
+  return resolveGrowerToolAiEnabled(map, action);
+}
+
+/** @deprecated Use getGrowerToolsAiFlags / isGrowerToolAiEnabled */
+export async function getGrowerToolsAiEnabled(): Promise<boolean> {
+  const flags = await getGrowerToolsAiFlags();
+  return flags.soilMixer && flags.fertilizer && flags.plantDoctor;
 }
