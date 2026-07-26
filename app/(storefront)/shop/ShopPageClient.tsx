@@ -42,6 +42,7 @@ import {
 import {
   CatalogStickyFilterStrip,
 } from "@/components/storefront/ShopCatalogFilterStrip";
+import { SeedsCatalogEntryBar } from "@/components/storefront/SeedsCatalogEntryBar";
 import type { CatalogSidebarQuickFiltersProps } from "@/components/storefront/CatalogSidebarQuickFilters";
 import {
   CATALOG_GENETICS_STRIP_LABELS,
@@ -1074,17 +1075,19 @@ export function ShopPageClient({
           <div className="mx-auto max-w-7xl space-y-2.5 sm:space-y-3">
             <div className="flex items-center justify-between gap-3">
               <Link
-                href="/breeders"
+                href="/seeds"
                 className="inline-flex min-w-0 shrink items-center gap-1 text-[11px] font-medium text-primary hover:underline sm:text-xs"
               >
                 <ChevronLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                <span className="truncate">{tMsg("breeder.back_to_list", "Back to Breeders")}</span>
+                <span className="truncate">
+                  {tMsg("breeder.back_to_seeds", "Back to All Seeds")}
+                </span>
               </Link>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => router.push("/seeds")}
+                onClick={() => router.push("/seeds?view=all")}
                 className="h-8 max-w-[min(52%,14rem)] shrink-0 gap-1 border-border px-2.5 text-xs text-muted-foreground hover:border-primary hover:text-primary sm:h-9 sm:max-w-none sm:px-3 sm:text-sm"
               >
                 <ChevronLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -1119,6 +1122,7 @@ export function ShopPageClient({
       ) : null}
 
       <div className="mx-auto max-w-7xl px-4 pb-28 pt-0 sm:px-6 max-lg:pb-[7.25rem] lg:pb-8">
+        <SeedsCatalogEntryBar />
         {/* Sticky strip: no overflow-* on ancestors; top matches Navbar h-20 / sm:h-28 */}
         <CatalogStickyFilterStrip
           catalogHeading={
