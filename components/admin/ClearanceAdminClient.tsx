@@ -131,7 +131,7 @@ export function ClearanceAdminClient() {
     if (!pickerOpen) return;
     let cancelled = false;
     setPickerLoading(true);
-    const params = new URLSearchParams({ limit: "40", isActive: "true" });
+    const params = new URLSearchParams({ limit: "40", isActive: "true", stockStatus: "inStock" });
     if (pickerDebounced) params.set("q", pickerDebounced);
     if (pickerBreederId !== "all") params.set("breeder", pickerBreederId);
     fetch(`/api/admin/products?${params}`)
@@ -672,7 +672,9 @@ export function ClearanceAdminClient() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             ) : pickerRows.length === 0 ? (
-              <p className="py-8 text-center text-sm text-zinc-500">ไม่พบสินค้า</p>
+              <p className="py-8 text-center text-sm text-zinc-500">
+                ไม่พบสินค้าที่มีสต็อก
+              </p>
             ) : (
               pickerRows.map((row) => {
                 const inList = Boolean(row.is_clearance);

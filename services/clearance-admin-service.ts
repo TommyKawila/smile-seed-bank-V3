@@ -4,7 +4,7 @@ import {
   clearancePriceFromList,
   type ClearanceBreederSummary,
 } from "@/lib/clearance";
-import { deriveClearanceSalePrice } from "@/lib/product-utils";
+import { deriveClearanceSalePrice, computeTotalStock } from "@/lib/product-utils";
 import { prisma } from "@/lib/prisma";
 import {
   adminProductListInclude,
@@ -91,6 +91,23 @@ export async function listClearanceBreederSummary(): Promise<ClearanceBreederSum
     });
 }
 
+async function productHasAvailableStock(productId: number): Promise<boolean> {
+  const row = await prisma.products.findUnique({
+    where: { id: BigInt(productId) },
+    select: {
+      stock: true,
+      product_variants: {
+        where: { is_active: { not: false } },
+        select: { stock: true, is_active: true },
+      },
+    },
+  });
+  if (!row) return false;
+  if (computeTotalStock(row.product_variants) > 0) return true;
+  const legacy = Number(row.stock ?? 0);
+  return Number.isFinite(legacy) && legacy > 0;
+}
+
 async function applyFixedClearancePrices(
   productId: number
 ): Promise<{ error: string | null; salePrice: number | null }> {
@@ -128,6 +145,9 @@ async function applyFixedClearancePrices(
 export async function addProductToClearance(
   productId: number
 ): Promise<{ error: string | null }> {
+  if (!(await productHasAvailableStock(productId))) {
+    return { error: "สินค้านี้หมดสต็อก — ไม่สามารถเพิ่มใน Clearance ได้" };
+  }
   const applied = await applyFixedClearancePrices(productId);
   return { error: applied.error };
 }

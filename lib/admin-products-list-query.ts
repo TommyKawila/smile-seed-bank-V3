@@ -68,17 +68,47 @@ export async function buildAdminProductsWhere(
   }
 
   const stockStatus = sp.get("stockStatus") ?? "all";
+  const inStockClause: Prisma.productsWhereInput = {
+    OR: [
+      { stock: { gt: 0 } },
+      {
+        product_variants: {
+          some: {
+            is_active: { not: false },
+            stock: { gt: 0 },
+          },
+        },
+      },
+    ],
+  };
+
+  let baseWhere: Prisma.productsWhereInput = where;
   if (stockStatus === "inStock") {
-    where.stock = { gt: 0 };
+    baseWhere = { AND: [where, inStockClause] };
   } else if (stockStatus === "outOfStock") {
-    where.stock = 0;
+    baseWhere = {
+      AND: [
+        where,
+        { stock: { lte: 0 } },
+        {
+          NOT: {
+            product_variants: {
+              some: {
+                is_active: { not: false },
+                stock: { gt: 0 },
+              },
+            },
+          },
+        },
+      ],
+    };
   }
 
   const hasImage = sp.get("hasImage") ?? "all";
   if (hasImage === "true") {
     return {
       AND: [
-        where,
+        baseWhere,
         { image_url: { not: null } },
         { image_url: { not: "" } },
       ],
@@ -86,9 +116,9 @@ export async function buildAdminProductsWhere(
   }
   if (hasImage === "false") {
     return {
-      AND: [where, { OR: [{ image_url: null }, { image_url: "" }] }],
+      AND: [baseWhere, { OR: [{ image_url: null }, { image_url: "" }] }],
     };
   }
 
-  return where;
+  return baseWhere;
 }
