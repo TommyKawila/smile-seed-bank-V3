@@ -90,7 +90,7 @@ function patchToData(b: HeroCtaButtonAdminPatch) {
   return {
     label_th: b.label_th.trim(),
     label_en: b.label_en.trim(),
-    href: b.href.trim() || "/",
+    href: normalizeHeroCtaHref(b.href.trim() || "/", b.id),
     variant: color,
     sort_order: b.sort_order,
     is_active: b.is_active,

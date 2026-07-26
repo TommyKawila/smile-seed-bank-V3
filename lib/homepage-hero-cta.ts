@@ -56,6 +56,9 @@ export function normalizeHeroCtaHref(href: string, ctaId?: string): string {
   if (lower.includes("quick=clearance") || lower.includes("filter=clearance")) {
     return "/clearance";
   }
+  if (lower.includes("quick=sale") && ctaId === "hero_cta_clearance") {
+    return "/clearance";
+  }
   return h;
 }
 

@@ -16,6 +16,7 @@ import {
   type HomePageSectionPayload,
 } from "@/lib/homepage-sections";
 import { listHeroCtaButtons } from "@/services/homepage-hero-cta-service";
+import { normalizeHeroCtaHref } from "@/lib/homepage-hero-cta";
 import { VIEWPORT_HINT_COOKIE } from "@/lib/viewport-hint-cookie";
 
 const getSectionsCached = unstable_cache(
@@ -52,7 +53,7 @@ async function getSections(): Promise<HomePageSectionPayload[]> {
 
 const getHeroCtaCached = unstable_cache(
   () => listHeroCtaButtons(true),
-  ["storefront-home-hero-cta"],
+  ["storefront-home-hero-cta", "clearance-landing-v2"],
   { tags: ["home-layout"] }
 );
 
@@ -68,7 +69,7 @@ export async function HomeMainStream() {
     id,
     labelTh,
     labelEn,
-    href,
+    href: normalizeHeroCtaHref(href, id),
     color,
   }));
   const belowSections = normalizeBelowFoldSections(sections.filter((s) => s.key !== "hero"));

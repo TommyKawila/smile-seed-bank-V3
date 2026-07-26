@@ -18,6 +18,7 @@ import {
   DEFAULT_HERO_CTA_BUTTONS,
   heroCtaButtonClassName,
   heroCtaShowsChevron,
+  normalizeHeroCtaHref,
   type HeroCtaButtonPayload,
 } from "@/lib/homepage-hero-cta";
 
@@ -156,7 +157,7 @@ export default function Hero({
             <div className="grid grid-cols-1 gap-2.5 pt-0.5 sm:grid-cols-2 sm:gap-3 sm:pt-2">
               {ctaButtons.map((btn) => {
                 const label = locale === "en" ? btn.labelEn : btn.labelTh;
-                const href = getLocalizedPath(btn.href, locale);
+                const href = getLocalizedPath(normalizeHeroCtaHref(btn.href, btn.id), locale);
                 const showChevron = heroCtaShowsChevron(btn.color);
                 return (
                   <Link
