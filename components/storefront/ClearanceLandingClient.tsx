@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { CLEARANCE_DISCOUNT_PERCENT } from "@/lib/clearance";
+import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
 import { ClearanceBreederBoxCard } from "@/components/storefront/ClearanceBreederBoxCard";
 import { ClearanceCard } from "@/components/storefront/ClearanceCard";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
@@ -23,6 +25,13 @@ export function ClearanceLandingClient({
 }) {
   const { t } = useLanguage();
   const drillDown = Boolean(breederSlug);
+
+  useEffect(() => {
+    const path = breederSlug
+      ? `/clearance?breeder=${encodeURIComponent(breederSlug)}`
+      : "/clearance";
+    saveCatalogReturnPath(path);
+  }, [breederSlug]);
 
   return (
     <div className={`min-h-[60vh] bg-zinc-950 text-zinc-100 ${JOURNAL_PRODUCT_FONT_VARS}`}>

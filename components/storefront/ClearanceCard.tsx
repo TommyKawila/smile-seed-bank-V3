@@ -14,6 +14,7 @@ import {
   productDetailHref,
 } from "@/lib/product-utils";
 import { formatPrice } from "@/lib/utils";
+import { touchCatalogReturnFromWindow } from "@/lib/catalog-return-path";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
@@ -31,7 +32,11 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
     <article
       className={`flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-lg ${JOURNAL_PRODUCT_FONT_VARS}`}
     >
-      <Link href={href} className="relative block aspect-[4/3] overflow-hidden bg-zinc-900">
+      <Link
+        href={href}
+        onClick={() => touchCatalogReturnFromWindow()}
+        className="relative block aspect-[4/3] overflow-hidden bg-zinc-900"
+      >
         {img ? (
           <Image
             src={img}
@@ -57,6 +62,7 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
       <div className="flex flex-1 flex-col gap-2 p-3">
         <Link
           href={href}
+          onClick={() => touchCatalogReturnFromWindow()}
           className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100 hover:text-emerald-400"
         >
           {product.name}

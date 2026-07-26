@@ -89,3 +89,9 @@ export function isStorefrontCatalogPath(pathname: string | null): boolean {
     pathname.startsWith("/brand/")
   );
 }
+
+/** List pages that product PDP «back» should return to (catalog + clearance landing). */
+export function isProductListReturnPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return pathname === "/clearance" || isStorefrontCatalogPath(pathname);
+}

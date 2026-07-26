@@ -1,4 +1,4 @@
-import { isStorefrontCatalogPath } from "@/lib/catalog-navigation";
+import { isProductListReturnPath } from "@/lib/catalog-navigation";
 
 const STORAGE_KEY = "ssb:catalog-return";
 
@@ -8,7 +8,7 @@ export function saveCatalogReturnPath(pathWithSearch: string): void {
   const path = pathWithSearch.trim();
   if (!path || !path.startsWith("/")) return;
   const pathname = path.split("?")[0]?.split("#")[0] ?? "";
-  if (!isStorefrontCatalogPath(pathname)) return;
+  if (!isProductListReturnPath(pathname)) return;
   try {
     sessionStorage.setItem(STORAGE_KEY, path);
   } catch {
@@ -29,7 +29,7 @@ export function clearCatalogReturnPath(): void {
 export function touchCatalogReturnFromWindow(): void {
   if (typeof window === "undefined") return;
   const { pathname, search } = window.location;
-  if (!isStorefrontCatalogPath(pathname)) return;
+  if (!isProductListReturnPath(pathname)) return;
   saveCatalogReturnPath(search ? `${pathname}${search}` : pathname);
 }
 
@@ -39,7 +39,7 @@ export function readCatalogReturnPath(): string | null {
     const raw = sessionStorage.getItem(STORAGE_KEY)?.trim();
     if (!raw || !raw.startsWith("/")) return null;
     const pathname = raw.split("?")[0]?.split("#")[0] ?? "";
-    if (!isStorefrontCatalogPath(pathname)) return null;
+    if (!isProductListReturnPath(pathname)) return null;
     return raw;
   } catch {
     return null;
@@ -81,7 +81,7 @@ export function resolveProductListBackPath(opts: {
   const refFull = refPath ? refPath + refSearch : null;
   const stored = readCatalogReturnPath();
 
-  if (refPath && isStorefrontCatalogPath(refPath)) return refFull;
+  if (refPath && isProductListReturnPath(refPath)) return refFull;
   if (stored) return stored;
   if (refPath && isBlogArticlePath(refPath)) return refFull;
   return refFull;

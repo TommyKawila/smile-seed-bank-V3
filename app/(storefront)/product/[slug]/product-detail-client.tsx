@@ -347,7 +347,11 @@ export default function ProductDetailClient({
 
   const backNav: { href: string; text: string; title: string } = (() => {
     if (listReferrerPath) {
-      const text = t("กลับไปหน้าก่อน", "Back to previous page");
+      const clearanceBack =
+        listReferrerPath === "/clearance" || listReferrerPath.startsWith("/clearance?");
+      const text = clearanceBack
+        ? t("กลับไปหน้า Clearance", "Back to Clearance")
+        : t("กลับไปหน้าก่อน", "Back to previous page");
       return { href: listReferrerPath, text, title: text };
     }
     if (product.breeders) {
