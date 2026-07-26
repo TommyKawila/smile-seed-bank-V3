@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   resolveCatalogQuickFromFilter,
@@ -54,14 +55,12 @@ export function ShopQuickFilterBar({
         ✨ {t("สินค้ามาใหม่", "New arrivals")}
       </button>
       {showClearance ? (
-        <button
-          type="button"
-          className={shopQuickChipClasses(quickEff === "clearance", compact)}
-          aria-pressed={quickEff === "clearance"}
-          onClick={() => setQuick("clearance")}
+        <Link
+          href="/clearance"
+          className={shopQuickChipClasses(false, compact)}
         >
           🏷️ {t("ล้างสต็อก", "Clearance")}
-        </button>
+        </Link>
       ) : null}
     </div>
   );

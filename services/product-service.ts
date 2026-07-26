@@ -18,6 +18,7 @@ import {
 } from "@/lib/product-brand-listing";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import { breederSlugFromName } from "@/lib/breeder-slug";
 import {
   computeStartingPrice,
   computeTotalStock,
@@ -1384,6 +1385,29 @@ export async function hasStorefrontClearanceProducts(): Promise<boolean> {
   }
 }
 
+async function filterAndSortClearanceProducts(
+  mapped: ProductWithBreederAndVariants[],
+  limit: number
+): Promise<ProductWithBreederAndVariants[]> {
+  const filtered = mapped.filter((p) => {
+    const stock = computeTotalStock(p.product_variants ?? []);
+    return stock > 0 && getEffectiveListingPrice(p) > 0;
+  });
+  filtered.sort((a, b) => {
+    const pa = getEffectiveListingPrice(a);
+    const pb = getEffectiveListingPrice(b);
+    const ra = computeStartingPrice(a.product_variants);
+    const rb = computeStartingPrice(b.product_variants);
+    const pctA = ra > pa ? (ra - pa) / ra : 0;
+    const pctB = rb > pb ? (rb - pb) / rb : 0;
+    if (pctB !== pctA) return pctB - pctA;
+    return Number(b.id) - Number(a.id);
+  });
+  const out = filtered.slice(0, limit);
+  for (const row of out) sanitizeProductTextFields(row);
+  return withBrandListingEnrichment(out);
+}
+
 /** Homepage clearance rail: active, flagged clearance, in stock, sorted by discount depth then id. */
 export async function getClearanceStorefrontProducts(
   limit = 24
@@ -1398,25 +1422,66 @@ export async function getClearanceStorefrontProducts(
     });
 
     const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
-    const filtered = mapped.filter((p) => {
-      const stock = computeTotalStock(p.product_variants ?? []);
-      return stock > 0 && getEffectiveListingPrice(p) > 0;
-    });
-    filtered.sort((a, b) => {
-      const pa = getEffectiveListingPrice(a);
-      const pb = getEffectiveListingPrice(b);
-      const ra = computeStartingPrice(a.product_variants);
-      const rb = computeStartingPrice(b.product_variants);
-      const pctA = ra > pa ? (ra - pa) / ra : 0;
-      const pctB = rb > pb ? (rb - pb) / rb : 0;
-      if (pctB !== pctA) return pctB - pctA;
-      return Number(b.id) - Number(a.id);
-    });
-    const out = filtered.slice(0, limit);
-    for (const row of out) sanitizeProductTextFields(row);
-    return { data: await withBrandListingEnrichment(out), error: null };
+    return { data: await filterAndSortClearanceProducts(mapped, limit), error: null };
   } catch (err) {
     logger.error("product-service.getClearanceStorefrontProducts failed", { cause: err });
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/** Clearance products for one breeder (landing drill-down). */
+export async function getClearanceStorefrontProductsByBreederSlug(
+  breederSlug: string,
+  limit = 60
+): Promise<
+  ServiceResult<{
+    products: ProductWithBreederAndVariants[];
+    breederName: string | null;
+  }>
+> {
+  try {
+    const want = breederSlug.trim().toLowerCase();
+    if (!want) {
+      return { data: { products: [], breederName: null }, error: null };
+    }
+
+    const breeders = await prisma.breeders.findMany({
+      where: { is_active: { not: false } },
+      select: { id: true, name: true },
+    });
+    const match = breeders.find(
+      (b) => breederSlugFromName(b.name).toLowerCase() === want
+    );
+    if (!match) {
+      return { data: { products: [], breederName: null }, error: null };
+    }
+
+    const take = Math.min(120, Math.max(1, Math.floor(limit)));
+    const rows = await prisma.products.findMany({
+      where: {
+        is_active: true,
+        is_clearance: true,
+        breeder_id: match.id,
+      },
+      orderBy: [{ id: "desc" }],
+      take,
+      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+    });
+    const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
+    return {
+      data: {
+        products: await filterAndSortClearanceProducts(mapped, take),
+        breederName: match.name,
+      },
+      error: null,
+    };
+  } catch (err) {
+    logger.error("product-service.getClearanceStorefrontProductsByBreederSlug failed", {
+      cause: err,
+    });
     return {
       data: null,
       error: err instanceof Error ? err.message : String(err),

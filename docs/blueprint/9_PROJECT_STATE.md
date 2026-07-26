@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-26 (Clearance UI — fixed 50%)
+- **What:** Clearance ลดคงที่ 50% · Admin multi-select + สรุปค่าย + อัปแบนเนอร์ · Client `/clearance` กริดแบนเนอร์บรีดเดอร์ → ลิสต์สินค้า
+- **Logic:** `CLEARANCE_DISCOUNT_PERCENT=50` · add/resync เขียน `clearance_price` อัตโนมัติ · ตาราง `clearance_breeder_banners` · CTA/ชิปชี้ `/clearance`
+- **ไฟล์:** `lib/clearance.ts`, `services/clearance-admin-service.ts`, `services/clearance-breeder-banner-service.ts`, `components/admin/ClearanceAdminClient.tsx`, `app/(storefront)/clearance/*`, `ClearanceBreederBoxCard.tsx`, `ClearanceLandingClient.tsx`, `ShopQuickFilterBar.tsx`, `ClearanceSection.tsx`, `homepage-hero-cta.ts`, APIs admin/storefront clearance, prisma/supabase migrations
+
 ### บันทึกการทำงาน — 2026-07-26 (Remove checkout shipping delay popup)
 - **What:** ถอด dialog แจ้งแอดมินไม่อยู่ 19–27 ก.ค. 69 ออกจากตะกร้า — กลับไปกด checkout ตรงไป `/checkout`
 - **ไฟล์:** `components/storefront/CartSheet.tsx`

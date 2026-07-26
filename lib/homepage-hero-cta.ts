@@ -50,6 +50,6 @@ export function heroCtaShowsChevron(color: HeroCtaColor): boolean {
 export const DEFAULT_HERO_CTA_BUTTONS: HeroCtaButtonPayload[] = [
   { id: "default_0", labelTh: "เมล็ดพันธุ์ทั้งหมด", labelEn: "All Seeds", href: "/seeds", color: "green" },
   { id: "default_1", labelTh: "เมล็ดพันธุ์มาใหม่", labelEn: "New Arrivals", href: "/shop?sort=new_arrivals", color: "outline" },
-  { id: "default_2", labelTh: "เมล็ดพันธุ์ลดราคา", labelEn: "Clearance Seeds", href: "/seeds?quick=clearance", color: "outline" },
+  { id: "default_2", labelTh: "เมล็ดพันธุ์ลดราคา", labelEn: "Clearance Seeds", href: "/clearance", color: "outline" },
   { id: "default_3", labelTh: "บทความน่าสนใจ", labelEn: "Featured Articles", href: "/blog", color: "outline" },
 ];
