@@ -47,7 +47,8 @@ export function heroCtaShowsChevron(color: HeroCtaColor): boolean {
   return color !== "outline";
 }
 
-export function normalizeHeroCtaHref(href: string): string {
+export function normalizeHeroCtaHref(href: string, ctaId?: string): string {
+  if (ctaId === "hero_cta_clearance") return "/clearance";
   const h = href.trim();
   if (!h) return "/";
   const lower = h.toLowerCase();

@@ -61,7 +61,7 @@ function mapRow(row: DbRow): HeroCtaButton {
     id: row.id,
     labelTh: row.label_th,
     labelEn: row.label_en,
-    href: normalizeHeroCtaHref(row.href),
+    href: normalizeHeroCtaHref(row.href, row.id),
     color: normalizeHeroCtaColor(row.variant),
     sortOrder: row.sort_order,
     isActive: row.is_active,
