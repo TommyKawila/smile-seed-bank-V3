@@ -68,6 +68,11 @@ import { GeneticVaultProductGrid } from "@/components/storefront/GeneticVaultPro
 import { fetchWithTimeout } from "@/lib/timeout";
 import type { ProductListItem } from "@/services/storefront-product-service";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
+import {
+  SHOP_CATALOG_API_LIMIT,
+  SHOP_CATALOG_VISIBLE_STEP,
+  inferCatalogHasMore,
+} from "@/lib/shop-catalog-pagination";
 import type { Breeder } from "@/types/supabase";
 
 const LazyFilterSidebar = dynamic(
@@ -92,8 +97,8 @@ const LazyShopPriceFilterBottomSheet = dynamic(
   { ssr: false }
 );
 
-const SHOP_PAGE_INITIAL = 30;
-const SHOP_PAGE_STEP = 24;
+const SHOP_PAGE_INITIAL = SHOP_CATALOG_API_LIMIT;
+const SHOP_PAGE_STEP = SHOP_CATALOG_VISIBLE_STEP;
 /** Filtered catalog scans multiple DB chunks — allow longer than default 2s rule. */
 const SHOP_CATALOG_FETCH_TIMEOUT_MS = 8000;
 const SHOP_FILTER_COUNTS_IDLE_MS = 2_500;
@@ -197,6 +202,7 @@ function BreederCatalogSeoBlock({
 
 export function ShopPageClient({
   initialProducts,
+  initialPageSize = SHOP_PAGE_INITIAL,
   initialCatalogTotal = null,
   initialCatalogNextCursor = null,
   initialCatalogUseCursor = false,
@@ -204,6 +210,8 @@ export function ShopPageClient({
   initialBreeder = null,
 }: {
   initialProducts: ProductListItem[];
+  /** SSR batch size (16 mobile / 30 desktop) — used for has-more inference. */
+  initialPageSize?: number;
   /** Total rows for current URL filters from server (null if unknown). */
   initialCatalogTotal?: number | null;
   initialCatalogNextCursor?: number | null;
@@ -336,11 +344,8 @@ export function ShopPageClient({
     initialCatalogNextCursor
   );
   const [catalogUseCursor, setCatalogUseCursor] = useState(initialCatalogUseCursor);
-  const [hasMoreServerProducts, setHasMoreServerProducts] = useState(
-    () =>
-      initialCatalogTotal != null
-        ? initialProducts.length < initialCatalogTotal
-        : initialProducts.length >= SHOP_PAGE_INITIAL
+  const [hasMoreServerProducts, setHasMoreServerProducts] = useState(() =>
+    inferCatalogHasMore(initialProducts.length, initialCatalogTotal ?? null, initialPageSize)
   );
   const [loadingMore, setLoadingMore] = useState(false);
   const gridTopRef = useRef<HTMLDivElement | null>(null);
@@ -385,17 +390,16 @@ export function ShopPageClient({
     setCatalogUseCursor(initialCatalogUseCursor);
     setCatalogTotal(initialCatalogTotal ?? null);
     setHasMoreServerProducts(
-      initialCatalogTotal != null
-        ? initialProducts.length < initialCatalogTotal
-        : initialProducts.length >= SHOP_PAGE_INITIAL
+      inferCatalogHasMore(initialProducts.length, initialCatalogTotal ?? null, initialPageSize)
     );
-    setVisibleCount(SHOP_PAGE_INITIAL);
+    setVisibleCount(Math.max(initialProducts.length, initialPageSize));
   }, [
     serverHydrateKey,
     initialProducts,
     initialCatalogTotal,
     initialCatalogNextCursor,
     initialCatalogUseCursor,
+    initialPageSize,
   ]);
 
   const deferFirstDupClientCatalog = useRef(true);
@@ -491,7 +495,9 @@ export function ShopPageClient({
   const { t: tMsg } = useTranslations();
   const [showFilter, setShowFilter] = useState(false);
   const [showPriceSheet, setShowPriceSheet] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(SHOP_PAGE_INITIAL);
+  const [visibleCount, setVisibleCount] = useState(() =>
+    Math.max(initialProducts.length, initialPageSize)
+  );
   const [showBackToTop, setShowBackToTop] = useState(false);
   // Breeder selected via URL param — slug preferred; numeric id still supported
   const urlBreeder = useMemo(() => {
@@ -884,12 +890,22 @@ export function ShopPageClient({
   const footerTotal = catalogDisplayTotal;
   const footerShown = Math.min(shownCount, totalFiltered);
 
-  const allServerPagesFetched =
-    catalogTotal != null ? products.length >= catalogTotal : !hasMoreServerProducts;
-
   const hasMoreProducts =
     shownCount < totalFiltered ||
-    (!isNarrowedByClientFilters && hasMoreServerProducts && !allServerPagesFetched);
+    (!isNarrowedByClientFilters &&
+      (hasMoreServerProducts ||
+        (catalogDisplayTotal != null && products.length < catalogDisplayTotal)));
+
+  useEffect(() => {
+    if (isNarrowedByClientFilters) return;
+    const scopedTotal = catalogTotal ?? filterCountsScopedTotal;
+    if (scopedTotal == null) return;
+    if (products.length < scopedTotal) {
+      setHasMoreServerProducts(true);
+    } else if (products.length >= scopedTotal) {
+      setHasMoreServerProducts(false);
+    }
+  }, [catalogTotal, filterCountsScopedTotal, products.length, isNarrowedByClientFilters]);
 
   useEffect(
     () => subscribeScrollYBeyond(BACK_TO_TOP_SCROLL_THRESHOLD, setShowBackToTop),

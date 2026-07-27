@@ -12,6 +12,10 @@ import {
 import { bigintToJson } from "@/lib/bigint-json";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { VIEWPORT_HINT_COOKIE } from "@/lib/viewport-hint-cookie";
+import {
+  SHOP_CATALOG_DESKTOP_INITIAL,
+  SHOP_CATALOG_MOBILE_INITIAL,
+} from "@/lib/shop-catalog-pagination";
 import type { ProductListItem } from "@/services/storefront-product-service";
 import { parsePriceRangeParams } from "@/lib/shop-price-filter";
 import {
@@ -20,8 +24,8 @@ import {
   resolveCatalogSortFromFilter,
 } from "@/lib/catalog-navigation";
 
-const SHOP_INITIAL_PRODUCTS_DESKTOP = 30;
-const SHOP_INITIAL_PRODUCTS_MOBILE = 16;
+const SHOP_INITIAL_PRODUCTS_DESKTOP = SHOP_CATALOG_DESKTOP_INITIAL;
+const SHOP_INITIAL_PRODUCTS_MOBILE = SHOP_CATALOG_MOBILE_INITIAL;
 
 async function shopInitialProductLimit(): Promise<number> {
   const cookieStore = await cookies();
@@ -196,6 +200,7 @@ export default async function ShopPage({
       <Suspense fallback={<ShopCatalogLcpFallback product={firstProduct} />}>
         <ShopPageClient
           initialProducts={initialProducts}
+          initialPageSize={initialLimit}
           initialCatalogTotal={initialCatalogTotal}
           initialCatalogNextCursor={
             Number.isFinite(initialCatalogNextCursor ?? NaN)
