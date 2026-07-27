@@ -97,3 +97,56 @@ export function analyzeVpd(
 
   return { vpdKpa, band, status, headlineTh, headlineEn, tipsTh, tipsEn };
 }
+
+export type VpdEquipmentItem = {
+  id: string;
+  nameTh: string;
+  nameEn: string;
+  roleTh: string;
+  roleEn: string;
+  keyword: string;
+};
+
+/** Gear commonly used to monitor and tune grow-room VPD. */
+export const VPD_EQUIPMENT: VpdEquipmentItem[] = [
+  {
+    id: "sensor",
+    nameTh: "เซ็นเซอร์อุณหภูมิ + ความชื้น",
+    nameEn: "Temp + humidity sensor",
+    roleTh: "วัด RH / อุณหภูมิในห้องปลูก — ต้องมีก่อนปรับ VPD",
+    roleEn: "Monitor room RH and temp — baseline before tuning VPD",
+    keyword: "thermometer hygrometer grow tent",
+  },
+  {
+    id: "dehumidifier",
+    nameTh: "เครื่องลดความชื้น",
+    nameEn: "Dehumidifier",
+    roleTh: "ใช้เมื่อ RH สูง / VPD ต่ำเกิน",
+    roleEn: "Use when RH is high / VPD too low",
+    keyword: "dehumidifier grow room",
+  },
+  {
+    id: "humidifier",
+    nameTh: "เครื่องเพิ่มความชื้น",
+    nameEn: "Humidifier",
+    roleTh: "ใช้เมื่อ RH ต่ำ / VPD สูงเกิน",
+    roleEn: "Use when RH is low / VPD too high",
+    keyword: "humidifier grow tent",
+  },
+  {
+    id: "fan",
+    nameTh: "พัดลมดูด–เป่า (Inline / Exhaust)",
+    nameEn: "Inline / exhaust fan",
+    roleTh: "ระบายอากาศ · ช่วยลด RH และกระจายความชื้น",
+    roleEn: "Air exchange · helps lower RH and even humidity",
+    keyword: "inline fan grow tent exhaust",
+  },
+  {
+    id: "controller",
+    nameTh: "Controller ความชื้น / อุณหภูมิ",
+    nameEn: "Humidity / temp controller",
+    roleTh: "เปิด–ปิด humidifier / dehumidifier อัตโนมัติ",
+    roleEn: "Auto on/off for humidifier or dehumidifier",
+    keyword: "humidity controller thermostat grow",
+  },
+];

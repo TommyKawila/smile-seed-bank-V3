@@ -27,10 +27,10 @@ export function GrowerToolShell({
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(16,185,129,0.15),_transparent_55%)]"
         />
-        <div className="relative mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="relative mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-10">
           <Link
             href="/tools"
-            className="mb-4 inline-flex min-h-12 items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300"
+            className="mb-2 inline-flex min-h-12 items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 sm:mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
             {t("กลับ AI ช่วยปลูก", "Back to Grower Tools")}
@@ -38,16 +38,16 @@ export function GrowerToolShell({
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-emerald-500/90">
             {t("AI ช่วยปลูก", "GROWER TOOLS")}
           </p>
-          <h1 className="mt-2 font-sans text-2xl font-semibold tracking-tight sm:text-3xl">
+          <h1 className="mt-1.5 font-sans text-xl font-semibold tracking-tight sm:mt-2 sm:text-3xl">
             {title}
           </h1>
           {subtitle ? (
-            <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+            <p className="mt-1.5 text-xs text-muted-foreground sm:mt-2 sm:text-sm">{subtitle}</p>
           ) : null}
         </div>
       </div>
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">{children}</div>
-      <p className="mx-auto max-w-3xl px-4 pb-10 text-center text-xs text-muted-foreground sm:px-6">
+      <div className="mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-8">{children}</div>
+      <p className="mx-auto max-w-3xl px-4 pb-6 text-center text-xs text-muted-foreground sm:px-6 sm:pb-10">
         {disclaimer}
       </p>
     </div>

@@ -10,6 +10,7 @@ import { GrowerToolsAiDisabledNotice } from "@/components/storefront/tools/Growe
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { parseGrowerToolApiError } from "@/lib/grower-tool-api-errors";
 
 const MAX_BYTES = 4 * 1024 * 1024;
 
@@ -67,14 +68,13 @@ export function PlantDoctorClient({ aiEnabled = true }: { aiEnabled?: boolean })
           },
         }),
       });
-      const json = (await res.json()) as { text?: string; error?: string };
+      const json = (await res.json()) as {
+        text?: string;
+        error?: string;
+        retryAfterSec?: number;
+      };
       if (!res.ok) {
-        if (json.error === "ai_disabled") {
-          throw new Error(
-            t("โหมด AI ถูกปิดชั่วคราว", "AI mode is temporarily disabled")
-          );
-        }
-        throw new Error(json.error ?? "Request failed");
+        throw new Error(parseGrowerToolApiError(res.status, json, isEn ? "en" : "th"));
       }
       setResult(json.text ?? "");
     } catch (e) {

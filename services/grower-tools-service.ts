@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   aggregateShortagesFromRecipes,
+  resolveSoilShopeeKeyword,
   type SoilMixAnalysis,
   type SoilMixBuyItem,
   type SoilMixRecipeLine,
@@ -11,8 +12,10 @@ import {
 } from "@/lib/soil-mixer";
 import {
   getBrandProductsForStage,
-  getCuratedBrandKit,
+  getOrganicSoilPrepSteps,
+  isOrganicSoilFeeding,
   parseFertilizerAnalysis,
+  resolveFertilizerKit,
   resolveFertilizerType,
   type FertilizerAnalysis,
   type FertilizerGrowStage,
@@ -21,22 +24,54 @@ import {
 import { GROW_STAGES } from "@/lib/grower-tools";
 import { normalizeSoilMixerThaiText, soilMixerThaiVocabularyPrompt } from "@/lib/soil-mixer-terms";
 import { withTimeout } from "@/lib/timeout";
+import { buildCompleteSoilRecipes } from "@/services/soil-mixer-recipe-service";
 
 export type GrowerToolsLocale = "th" | "en";
 
-export type GrowerToolsAiResult = { text: string | null; error: string | null };
+export type GrowerToolAiMeta = {
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  latencyMs: number;
+};
+
+export type GrowerToolsAiResult = {
+  text: string | null;
+  error: string | null;
+  meta?: GrowerToolAiMeta;
+};
 
 export type SoilMixAiResult = {
   analysis: SoilMixAnalysis | null;
   error: string | null;
+  meta?: GrowerToolAiMeta;
 };
 
 export type FertilizerAiResult = {
   analysis: FertilizerAnalysis | null;
   error: string | null;
+  meta?: GrowerToolAiMeta;
 };
 
 export type { SoilMixAnalysis, SoilMixBuyItem, FertilizerAnalysis };
+
+function parseOpenAiUsage(json: {
+  usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+}): Pick<GrowerToolAiMeta, "promptTokens" | "completionTokens" | "totalTokens"> {
+  const promptTokens = json.usage?.prompt_tokens ?? 0;
+  const completionTokens = json.usage?.completion_tokens ?? 0;
+  const totalTokens = json.usage?.total_tokens ?? promptTokens + completionTokens;
+  return { promptTokens, completionTokens, totalTokens };
+}
+
+function aiMeta(
+  model: string,
+  usage: Pick<GrowerToolAiMeta, "promptTokens" | "completionTokens" | "totalTokens">,
+  latencyMs: number
+): GrowerToolAiMeta {
+  return { model, latencyMs, ...usage };
+}
 
 async function callOpenAIText(
   prompt: string,
@@ -56,6 +91,7 @@ async function callOpenAIText(
   }
 
   const model = imageDataUrl ? "gpt-4o" : "gpt-4o-mini";
+  const started = Date.now();
 
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -79,6 +115,8 @@ async function callOpenAIText(
       }),
     });
 
+    const latencyMs = Date.now() - started;
+
     if (!res.ok) {
       const body = await res.text();
       return { text: null, error: body.slice(0, 400) || `OpenAI HTTP ${res.status}` };
@@ -86,10 +124,16 @@ async function callOpenAIText(
 
     const json = (await res.json()) as {
       choices?: { message?: { content?: string } }[];
+      usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
     };
     const text = json.choices?.[0]?.message?.content?.trim() || null;
     if (!text) return { text: null, error: "Empty AI response" };
-    return { text, error: null };
+    const usage = parseOpenAiUsage(json);
+    return {
+      text,
+      error: null,
+      meta: aiMeta(model, usage, latencyMs),
+    };
   } catch (err) {
     return { text: null, error: err instanceof Error ? err.message : String(err) };
   }
@@ -101,6 +145,9 @@ async function callOpenAIJson(prompt: string): Promise<GrowerToolsAiResult> {
     return { text: null, error: "OPENAI_API_KEY is not configured" };
   }
 
+  const model = "gpt-4o-mini";
+  const started = Date.now();
+
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -109,7 +156,7 @@ async function callOpenAIJson(prompt: string): Promise<GrowerToolsAiResult> {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model,
         temperature: 0.3,
         max_tokens: 1600,
         response_format: { type: "json_object" },
@@ -124,6 +171,8 @@ async function callOpenAIJson(prompt: string): Promise<GrowerToolsAiResult> {
       }),
     });
 
+    const latencyMs = Date.now() - started;
+
     if (!res.ok) {
       const body = await res.text();
       return { text: null, error: body.slice(0, 400) || `OpenAI HTTP ${res.status}` };
@@ -131,10 +180,16 @@ async function callOpenAIJson(prompt: string): Promise<GrowerToolsAiResult> {
 
     const json = (await res.json()) as {
       choices?: { message?: { content?: string } }[];
+      usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
     };
     const text = json.choices?.[0]?.message?.content?.trim() || null;
     if (!text) return { text: null, error: "Empty AI response" };
-    return { text, error: null };
+    const usage = parseOpenAiUsage(json);
+    return {
+      text,
+      error: null,
+      meta: aiMeta(model, usage, latencyMs),
+    };
   } catch (err) {
     return { text: null, error: err instanceof Error ? err.message : String(err) };
   }
@@ -224,6 +279,8 @@ function parseRecipeLines(raw: unknown): SoilMixRecipeLine[] {
     }
     if (!item || typeof item !== "object") continue;
     const row = item as Record<string, unknown>;
+    const ingredientId =
+      typeof row.ingredientId === "string" ? row.ingredientId.trim() : undefined;
     const name = typeof row.name === "string" ? row.name.trim() : "";
     if (!name) continue;
     const need = typeof row.need === "string" ? row.need.trim() : String(row.need ?? "—");
@@ -236,6 +293,7 @@ function parseRecipeLines(raw: unknown): SoilMixRecipeLine[] {
           ? ""
           : String(row.buyMore ?? "");
     out.push({
+      ingredientId,
       name,
       need: need || "—",
       have: have || "0",
@@ -327,27 +385,21 @@ export async function analyzeSoilMix(
   recipeMode: SuperSoilRecipeMode = "basic"
 ): Promise<SoilMixAiResult> {
   const list = materials
-    .map((m) => `- ${m.label}${m.amount ? ` (~${m.amount})` : ""}`)
+    .map((m) => `- id=${m.id}; ${m.label}; amount=${m.amount ?? "0 L"}`)
     .join("\n");
+  const canonicalRecipes = buildCompleteSoilRecipes(
+    materials,
+    potTarget,
+    locale,
+    recipeMode
+  );
 
   const perPotSuper = (potTarget.superSoilLiters / potTarget.potCount).toFixed(1);
   const perPotBase = (potTarget.baseSoilLiters / potTarget.potCount).toFixed(1);
   const baseL = potTarget.baseSoilLiters.toFixed(1);
   const superL = potTarget.superSoilLiters.toFixed(1);
 
-  const superModeRules =
-    recipeMode === "advance"
-      ? `SUPER RECIPE MODE = ADVANCE (full living Super soil):
-- Super mix MUST include base media PLUS amendments such as: bat guano (ขี้ค้างคาว), bone meal, blood meal, kelp meal, biochar, dolomite lime, gypsum (as needed).
-- Amendment volumes are small vs media — still show need/have/buyMore.
-- List these amendments even if missing on hand (status=missing) so the shopping list is complete.
-- Super plan up to 10 lines.`
-      : `SUPER RECIPE MODE = BASIC (lean Super soil):
-- Keep Super simpler: media + worm castings + compost (+ optional light lime/guano if useful).
-- Do NOT require bone meal / blood meal / kelp / biochar / gypsum unless already on hand.
-- Super plan max ~6 lines.`;
-
-  const prompt = `You advise home growers how to MIX Base soil + Super soil from ON HAND materials first, then a complete nutrient recipe. Reply JSON only.
+  const prompt = `You explain a pre-calculated Base soil + Super soil recipe for home growers. Reply JSON only.
 
 TARGET FILL (must hit both):
 - potCount: ${potTarget.potCount} × ${potTarget.potLiters.toFixed(1)} L each
@@ -359,7 +411,10 @@ TARGET FILL (must hit both):
 ON HAND (allocate these FIRST across both recipes — do not invent higher "have" than listed):
 ${list || "(none)"}
 
-${superModeRules}
+CANONICAL RECIPES (already calculated by the server):
+${JSON.stringify(canonicalRecipes)}
+
+Copy baseMixPlan and superMixPlan EXACTLY. Do not add, remove, rename, or recalculate ingredients or quantities.
 
 JSON schema:
 {
@@ -387,15 +442,11 @@ JSON schema:
 }
 
 Rules (STRICT):
-1) Design nutritionally complete DIY Base + Super recipes for the target liters.
-2) For each recipe line: set need = amount used in that recipe; have = how much of ON HAND you allocate to that line (split across recipes if needed; have cannot exceed on-hand total).
-3) status:
-   - "ok" if have covers need (buyMore="")
-   - "short" if have > 0 but have < need (buyMore = need − have)
-   - "missing" if have is 0 / none on hand (buyMore = full need)
-4) NEVER recommend buying bagged "Base soil" / "ดินพื้นฐาน" / pre-made Super soil — only raw ingredients.
-5) buyList = unique ingredients to purchase (sum shortfalls); keyword shoppable on Shopee TH.
-6) Keep strings short. gaps max 8. Base plan max 8 lines. buyList max 12.
+1) Treat CANONICAL RECIPES as the source of truth.
+2) Explain the shortages accurately in summary and howToUse.
+3) NEVER recommend buying bagged "Base soil" / "Super soil" mix / pre-made soil blends — only raw ingredients.
+4) buyList = unique ingredients to purchase from canonical shortfalls; keyword shoppable on Shopee TH.
+5) Keep strings short. gaps max 8. buyList max 12.
 
 ${localeLine(locale)}`;
 
@@ -412,8 +463,14 @@ ${localeLine(locale)}`;
   if (!analysis) {
     return { analysis: null, error: "Invalid AI JSON" };
   }
+  const analysisWithCanonicalRecipes: SoilMixAnalysis = {
+    ...analysis,
+    ...canonicalRecipes,
+  };
   const normalized =
-    locale === "th" ? normalizeAnalysisThai(analysis) : analysis;
+    locale === "th"
+      ? normalizeAnalysisThai(analysisWithCanonicalRecipes)
+      : analysisWithCanonicalRecipes;
   // Re-aggregate after Thai normalize so names/amounts stay in sync with recipe cards
   const synced = aggregateShortagesFromRecipes(
     normalized.baseMixPlan,
@@ -424,17 +481,13 @@ ${localeLine(locale)}`;
     analysis: {
       ...normalized,
       gaps: synced.gaps,
-      buyList: synced.buyList.map((item) => {
-        const prev = normalized.buyList.find(
-          (b) => b.name.toLowerCase() === item.name.toLowerCase()
-        );
-        return {
-          ...item,
-          keyword: prev?.keyword && prev.keyword !== prev.name ? prev.keyword : item.keyword,
-        };
-      }),
+      buyList: synced.buyList.map((item) => ({
+        ...item,
+        keyword: resolveSoilShopeeKeyword(item.ingredientId, item.name),
+      })),
     },
     error: null,
+    meta: timed.meta,
   };
 }
 
@@ -455,20 +508,32 @@ export async function adviseFertilizer(
   locale: GrowerToolsLocale
 ): Promise<FertilizerAiResult> {
   const effectiveType = resolveFertilizerType(input.medium, input.type);
-  const kit = getCuratedBrandKit(input.medium);
+  const organicNatural = isOrganicSoilFeeding(input.medium, effectiveType);
+  const kit = resolveFertilizerKit(input.medium, effectiveType);
   const stageLabel = stageLabelForLocale(input.stageId, locale);
   const localeRules =
     locale === "en"
       ? "All string values in JSON must be in English. Keep each string short."
       : `ทุกข้อความใน JSON ต้องเป็นภาษาไทย สั้น กระชับ\n${soilMixerThaiVocabularyPrompt()}`;
 
-  const brandRule = `LOCKED BRAND: ${kit.brand} only.
+  const brandRule = organicNatural
+    ? `NATURAL ORGANIC SOIL feeding (regular soil, NOT super soil hot mix).
+- Recommend worm castings, compost/compost tea, kelp, guano, bone/blood meal — same philosophy as building living soil.
+- Do NOT mention bottled brands (Biobizz, Athena, etc.).
+- products array MUST be [] — product list is added by the app.
+- Summary, npkFocus, feedingTips, cautions must focus on natural amendments for ${stageLabel}.
+- feedingTips: practical real-world use — top-dress amounts, tea dilution, frequency, how to mix into soil.`
+    : `LOCKED BRAND: ${kit.brand} only.
 - Do NOT recommend other brands or generic products.
 - products array MUST be [] (empty) — product list is added by the app.
 - Summary, npkFocus, feedingTips, cautions must match ${kit.brand} feeding style for ${stageLabel} on ${input.medium}.
 - For soil: assume regular soil (NOT super soil) when giving Biobizz advice.
 - For coco/rockwool: ${kit.brand === "Athena" ? "reference Athena Pro Line EC targets & CalMag" : ""}
 - For RDWC: ${kit.brand === "FloraFlex" ? "reference FloraFlex reservoir EC & pH targets" : ""}`;
+
+  const summaryHint = organicNatural
+    ? "natural organic amendments and how to feed this stage"
+    : `${kit.brand} and this stage`;
 
   const prompt = `You advise home cannabis growers on fertilizer / feeding. Reply JSON only.
 
@@ -480,15 +545,15 @@ Context:
 
 JSON schema:
 {
-  "summary": "1-2 short sentences — mention ${kit.brand} and this stage",
+  "summary": "1-2 short sentences — mention ${summaryHint}",
   "npkFocus": {
-    "n": "short N guidance for ${kit.brand} this stage",
+    "n": "short N guidance for this stage",
     "p": "short P guidance",
     "k": "short K guidance"
   },
   "products": [],
-  "cautions": ["brand-specific burn / pH / EC / flush — max 4 bullets"],
-  "feedingTips": ["${kit.brand} feeding schedule tips — max 4 bullets"]
+  "cautions": ["first bullet MUST use ระวังอาการปุ๋ยไหม้ (Nutrient Burn) for burn/over-feed — max 4 bullets"],
+  "feedingTips": ["practical feeding schedule tips — max 4 bullets"]
 }
 
 Rules:
@@ -512,10 +577,14 @@ ${localeRules}`;
   }
 
   const brandProducts = getBrandProductsForStage(kit, input.stageId, locale);
+  const brandLabel =
+    locale === "en" && kit.brandEn ? kit.brandEn : kit.brand;
   const analysis: FertilizerAnalysis = {
     ...parsed,
     products: brandProducts,
-    recommendedBrand: kit.brand,
+    prepSteps: organicNatural ? getOrganicSoilPrepSteps(input.stageId, locale) : undefined,
+    organicNatural,
+    recommendedBrand: brandLabel,
     brandTagline: locale === "en" ? kit.taglineEn : kit.taglineTh,
   };
 
@@ -531,12 +600,14 @@ ${localeRules}`;
         },
         cautions: analysis.cautions.map(normalizeSoilMixerThaiText),
         feedingTips: analysis.feedingTips.map(normalizeSoilMixerThaiText),
+        prepSteps: analysis.prepSteps?.map(normalizeSoilMixerThaiText),
       },
       error: null,
+      meta: timed.meta,
     };
   }
 
-  return { analysis, error: null };
+  return { analysis, error: null, meta: timed.meta };
 }
 
 export async function diagnosePlant(

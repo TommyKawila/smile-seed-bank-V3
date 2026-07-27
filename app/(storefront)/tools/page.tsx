@@ -5,7 +5,7 @@ import { getGrowerToolsAiFlags } from "@/services/setting-service";
 export const metadata: Metadata = {
   title: "AI ช่วยปลูก | Grower Tools | Smile Seed Bank",
   description:
-    "เครื่องมือ AI สำหรับมือปลูก — ผสมดินซุปเปอร์ซอย, คำนวณ VPD, แนะนำปุ๋ย, วิเคราะห์อาการพืช",
+    "เครื่องมือ AI สำหรับมือปลูก — Super soil, คำนวณ VPD, แนะนำปุ๋ย, วิเคราะห์อาการพืช",
   alternates: { canonical: "/tools" },
 };
 

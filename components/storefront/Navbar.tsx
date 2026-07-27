@@ -367,13 +367,13 @@ export function Navbar() {
         {/* Mobile Dropdown Menu */}
         {menuOpen ? (
             <div
-              className="border-t border-border bg-background px-4 pb-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200 sm:px-6 md:hidden"
+              className="max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain border-t border-border bg-background px-4 pb-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200 sm:px-6 md:hidden"
             >
               <Link
                 href="/"
                 onClick={() => setMenuOpen(false)}
                 className={cn(
-                  "block py-3 text-base font-medium tracking-wide transition-colors hover:text-primary",
+                  "flex min-h-12 items-center border-b border-border text-base font-medium tracking-wide transition-colors hover:text-primary",
                   isHomeActive ? "text-primary" : "text-foreground/85"
                 )}
               >
@@ -383,13 +383,15 @@ export function Navbar() {
                 navLinkClass={cn(navLinkClass, isSeedsActive && navLinkActive)}
                 solidLightNav={solidLightNav}
                 mode="mobile"
+                menuOpen={menuOpen}
+                seedsActive={isSeedsActive}
                 onNavigate={() => setMenuOpen(false)}
               />
               <Link
                 href="/merch"
                 onClick={() => setMenuOpen(false)}
                 className={cn(
-                  "block py-3 text-base font-medium tracking-wide transition-colors hover:text-primary",
+                  "flex min-h-12 items-center border-b border-border text-base font-medium tracking-wide transition-colors hover:text-primary",
                   isMerchActive ? "text-primary" : "text-foreground/85"
                 )}
               >
@@ -399,7 +401,7 @@ export function Navbar() {
                 href="/blog"
                 onClick={() => setMenuOpen(false)}
                 className={cn(
-                  "block py-3 text-base font-medium tracking-wide transition-colors hover:text-primary",
+                  "flex min-h-12 items-center border-b border-border text-base font-medium tracking-wide transition-colors hover:text-primary",
                   isBlogActive ? "text-primary" : "text-foreground/85"
                 )}
               >
@@ -408,6 +410,8 @@ export function Navbar() {
               <GrowerToolsNavDropdown
                 navLinkClass={cn(navLinkClass, isToolsActive && navLinkActive)}
                 mode="mobile"
+                menuOpen={menuOpen}
+                toolsActive={isToolsActive}
                 onNavigate={() => setMenuOpen(false)}
               />
               {/* Auth Links — Mobile */}

@@ -26,6 +26,7 @@ import {
   type FertilizerMedium,
   type FertilizerType,
 } from "@/lib/fertilizer-advisor";
+import { parseGrowerToolApiError } from "@/lib/grower-tool-api-errors";
 
 type FertilizerResult = {
   analysis: FertilizerAnalysis;
@@ -80,14 +81,10 @@ export function FertilizerAdvisorClient({ aiEnabled = true }: { aiEnabled?: bool
         analysis?: FertilizerAnalysis;
         buyLinks?: FertilizerBuyLink[];
         error?: string;
+        retryAfterSec?: number;
       };
       if (!res.ok) {
-        if (json.error === "ai_disabled") {
-          throw new Error(
-            t("โหมด AI ถูกปิดชั่วคราว", "AI mode is temporarily disabled")
-          );
-        }
-        throw new Error(json.error ?? "Request failed");
+        throw new Error(parseGrowerToolApiError(res.status, json, isEn ? "en" : "th"));
       }
       if (!json.analysis) throw new Error(json.error ?? "No analysis");
       setResult({
@@ -161,8 +158,8 @@ export function FertilizerAdvisorClient({ aiEnabled = true }: { aiEnabled?: bool
           {!organicAllowed ? (
             <p className="text-xs leading-relaxed text-muted-foreground">
               {t(
-                "โคโค / RDWC / Rockwool ใช้ปุ๋ยเคมีเพียว (สังเคราะห์) เท่านั้น — ดินทั่วไปใช้ Biobizz (ไม่ใช่ super soil)",
-                "Coco / RDWC / rockwool = synthetic only — regular soil uses Biobizz (not super soil)"
+                "ดิน + ออแกนิค = สารอาหารธรรมชาติ (มูลไส้เดือน · Compost Tea · kelp) — หลักเดียวกับผสมดินปลูก · สังเคราะห์ = Biobizz",
+                "Soil + organic = natural amendments (worm castings, compost, kelp) — like soil mixing · synthetic = Biobizz"
               )}
             </p>
           ) : null}

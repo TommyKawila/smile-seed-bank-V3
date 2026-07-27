@@ -31,6 +31,7 @@ import {
   Newspaper,
   Smartphone,
   Table2,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -40,6 +41,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/analytics", label: "Executive analytics", icon: BarChart3 },
+  { href: "/admin/grower-tools/usage", label: "AI Tools Usage", icon: Activity },
   { href: "/admin/products", label: "สินค้า", icon: Package },
   { href: "/admin/clearance", label: "สินค้า Clearance", icon: Tag },
   { href: "/admin/new-seeds", label: "เมล็ดพันธุ์มาใหม่", icon: Sparkles },

@@ -1,3 +1,5 @@
+import { resolveSoilShopeeKeyword } from "@/lib/soil-mixer";
+
 export type FertilizerMedium = "soil" | "coco" | "hydro" | "rockwool";
 
 export type FertilizerType = "organic" | "synthetic";
@@ -35,6 +37,7 @@ export type FertilizerProductRec = {
   name: string;
   role: string;
   keyword: string;
+  ingredientId?: string;
 };
 
 export type FertilizerAnalysis = {
@@ -43,8 +46,10 @@ export type FertilizerAnalysis = {
   products: FertilizerProductRec[];
   cautions: string[];
   feedingTips: string[];
+  prepSteps?: string[];
   recommendedBrand?: string;
   brandTagline?: string;
+  organicNatural?: boolean;
 };
 
 export type FertilizerBuyLink = FertilizerProductRec & { shopUrl: string };
@@ -56,11 +61,13 @@ type BrandProductDef = {
   roleTh: string;
   roleEn: string;
   keyword: string;
+  ingredientId?: string;
   stages: FertilizerGrowStage[];
 };
 
 export type FertilizerBrandKit = {
   brand: string;
+  brandEn?: string;
   taglineTh: string;
   taglineEn: string;
   products: BrandProductDef[];
@@ -124,10 +131,106 @@ const FLORAFLEX_KIT: FertilizerBrandKit = {
   ],
 };
 
+const ORGANIC_SOIL_KIT: FertilizerBrandKit = {
+  brand: "สารอาหารธรรมชาติ",
+  brandEn: "Natural amendments",
+  taglineTh: "เสริมดินทั่วไปด้วยวัสดุออร์แกนิค — หลักเดียวกับการผสมดินปลูก (ไม่ใช่ Super soil ร้อน)",
+  taglineEn: "Regular soil boosts with organic amendments — same idea as soil mixing (not hot super soil)",
+  products: [
+    {
+      name: "มูลไส้เดือน",
+      roleTh: "ไนโตรเจน + จุลินทรีย์ — top-dress หรือผสมดิน",
+      roleEn: "N + microbes — top-dress or mix in",
+      keyword: "มูลไส้เดือน",
+      ingredientId: "worm",
+      stages: ["seedling", "veg", "flower"],
+    },
+    {
+      name: "Compost Tea",
+      roleTh: "Compost Tea / ผสมดิน — ให้ทีละน้อย",
+      roleEn: "Compost tea / mix-in — light doses",
+      keyword: "Compost Tea",
+      ingredientId: "compost",
+      stages: ["seedling", "veg", "flower"],
+    },
+    {
+      name: "Kelp Meal",
+      roleTh: "เคลป์ชา / รดใบ — โพแทสเซียม + ไมโคร",
+      roleEn: "Kelp tea / foliar — K + micros",
+      keyword: "kelp meal",
+      ingredientId: "kelp",
+      stages: ["seedling", "veg", "flower"],
+    },
+    {
+      name: "มูลค้างคาว",
+      roleTh: "ไนโตรเจนอ่อน — โรยบางๆ ช่วง veg",
+      roleEn: "Soft N — light dusting in veg",
+      keyword: "มูลค้างคาว",
+      ingredientId: "guano",
+      stages: ["veg"],
+    },
+    {
+      name: "กระดูกป่น",
+      roleTh: "ฟอสฟอรัส — ช่วงออกดอก",
+      roleEn: "Phosphorus — flower stage",
+      keyword: "กระดูกป่น + Bone meal",
+      ingredientId: "bone",
+      stages: ["flower"],
+    },
+    {
+      name: "ผงเลือดป่น",
+      roleTh: "ไนโตรเจนเร็ว — veg เท่านั้น ใช้น้อยมาก",
+      roleEn: "Fast N — veg only, tiny amounts",
+      keyword: "ผงเลือดป่น + blood meal",
+      ingredientId: "blood",
+      stages: ["veg"],
+    },
+  ],
+};
+
+const ORGANIC_SOIL_PREP: Record<FertilizerGrowStage, { th: string[]; en: string[] }> = {
+  seedling: {
+    th: [
+      "ผสมมูลไส้เดือน 10–15% ลงดินก่อนปลูก หรือโรยบางๆ รอบโคน — อย่าใส่หนัก",
+      "Compost Tea อ่อน: 1 ส่วนปุ๋ยหมัก : 10 ส่วนน้ำ แช่ 24–48 ชม. กรองก่อนรด",
+      "รดรอบโคน 1 ครั้ง/1–2 สัปดาห์ หลีกเลี่ยงใบอ่อน — ดินชื้นพอ ไม่แฉะ",
+    ],
+    en: [
+      "Mix 10–15% worm castings before planting or light top-dress — never heavy",
+      "Mild compost tea: 1 part compost : 10 parts water, brew 24–48 h, strain before use",
+      "Water at the root zone every 1–2 weeks — keep moist, not soggy; skip tender leaves",
+    ],
+  },
+  veg: {
+    th: [
+      "Top-dress มูลไส้เดือน ~1–2 ช้อนโต๊ะ/กระถาง 12 L ทุก 2–3 สัปดาห์ คลุกเบาๆ แล้วรดน้ำ",
+      "Compost Tea + kelp แทนน้ำเปล่า 1–2 ครั้ง/สัปดาห์ — เริ่มต้นจาง ค่อยๆ เพิ่ม",
+      "มูลค้างคาว/ผงเลือดป่น โรยปลายช้อนชา/กระถาง ครั้งเดียวต้น veg — ห้ามซ้ำถี่",
+    ],
+    en: [
+      "Top-dress worm castings ~1–2 tbsp per 12 L pot every 2–3 weeks; scratch in lightly and water",
+      "Compost + kelp tea instead of plain water 1–2×/week — start dilute, increase slowly",
+      "Bat guano or blood meal: tip of a teaspoon per pot once early veg — do not repeat often",
+    ],
+  },
+  flower: {
+    th: [
+      "เปลี่ยนโฟกัส P/K — กระดูกป่น + มูลค้างคาวโรยบางๆ สัปดาห์ละครั้ง คลุกชั้นบนดิน",
+      "ลดไนโตรเจนหนัก — หยุดผงเลือดป่น และลดมูลค้างคาว N สูง",
+      "Kelp tea รด 1 ครั้ง/สัปดาห์ ช่วง flower — รดรอบโคน ไม่ใส่ใบหนา",
+    ],
+    en: [
+      "Shift to P/K — light bone meal + guano top-dress weekly; scratch into top layer only",
+      "Ease off heavy N — stop blood meal and high-N guano",
+      "Kelp tea once weekly in flower — root zone only, avoid heavy foliar drench",
+    ],
+  },
+};
+
 const BIOBIZZ_KIT: FertilizerBrandKit = {
   brand: "Biobizz",
-  taglineTh: "เสริมดินทั่วไป (ไม่ใช่ super soil) — ออแกนิคให้ทีละน้อย",
-  taglineEn: "Regular soil supplement (not super soil) — light organic feeding",
+  taglineTh: "เสริมดินทั่วไป (ไม่ใช่ Super soil) — ออแกนิคให้ทีละน้อย",
+  taglineEn: "Regular soil supplement (not Super soil) — light organic feeding",
   products: [
     {
       name: "Biobizz Bio Grow",
@@ -167,6 +270,26 @@ const BRAND_BY_MEDIUM: Record<FertilizerMedium, FertilizerBrandKit> = {
   hydro: FLORAFLEX_KIT,
 };
 
+export function isOrganicSoilFeeding(medium: FertilizerMedium, type: FertilizerType): boolean {
+  return medium === "soil" && type === "organic";
+}
+
+export function resolveFertilizerKit(
+  medium: FertilizerMedium,
+  type: FertilizerType
+): FertilizerBrandKit {
+  if (isOrganicSoilFeeding(medium, type)) return ORGANIC_SOIL_KIT;
+  return BRAND_BY_MEDIUM[medium];
+}
+
+export function getOrganicSoilPrepSteps(
+  stage: FertilizerGrowStage,
+  locale: "th" | "en"
+): string[] {
+  const row = ORGANIC_SOIL_PREP[stage];
+  return locale === "en" ? row.en : row.th;
+}
+
 export function getCuratedBrandKit(medium: FertilizerMedium): FertilizerBrandKit {
   return BRAND_BY_MEDIUM[medium];
 }
@@ -178,10 +301,11 @@ export function getBrandProductsForStage(
 ): FertilizerProductRec[] {
   return kit.products
     .filter((p) => p.stages.includes(stage))
-    .map(({ name, roleTh, roleEn, keyword }) => ({
+    .map(({ name, roleTh, roleEn, keyword, ingredientId }) => ({
       name,
       role: locale === "en" ? roleEn : roleTh,
-      keyword,
+      keyword: resolveSoilShopeeKeyword(ingredientId, keyword),
+      ingredientId,
     }));
 }
 

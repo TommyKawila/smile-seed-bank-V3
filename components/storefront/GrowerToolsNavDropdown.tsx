@@ -13,6 +13,7 @@ import {
   growerToolHref,
   type GrowerToolIconName,
 } from "@/lib/grower-tools";
+import { MobileNavAccordion } from "@/components/storefront/MobileNavAccordion";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<GrowerToolIconName, typeof FlaskConical> = {
@@ -25,10 +26,12 @@ const ICONS: Record<GrowerToolIconName, typeof FlaskConical> = {
 type Props = {
   navLinkClass: string;
   onNavigate?: () => void;
+  menuOpen?: boolean;
+  toolsActive?: boolean;
   mode: "desktop" | "mobile";
 };
 
-export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, mode }: Props) {
+export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, menuOpen, toolsActive, mode }: Props) {
   const { t, locale } = useLanguage();
   const [open, setOpen] = useState(false);
   const isEn = locale === "en";
@@ -53,9 +56,13 @@ export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, mode }: Props
 
   if (mode === "mobile") {
     return (
-      <div className="border-b border-border py-1">
-        <p className="py-2.5 text-base font-medium tracking-wide text-foreground">{label}</p>
-        <ul className="space-y-0.5 pb-2">
+      <MobileNavAccordion
+        id="nav-grower-tools"
+        label={label}
+        active={toolsActive}
+        menuOpen={menuOpen}
+      >
+        <ul className="space-y-0.5">
           {toolLinks.map(({ tool, Icon, name, blurb }) => (
             <li key={tool.slug}>
               <Link
@@ -82,7 +89,7 @@ export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, mode }: Props
             </Link>
           </li>
         </ul>
-      </div>
+      </MobileNavAccordion>
     );
   }
 

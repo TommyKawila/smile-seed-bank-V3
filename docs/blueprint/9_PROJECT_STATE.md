@@ -4,6 +4,22 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-27 (Grower Tools abuse guard + Admin cost monitor)
+- **What:** Upstash Redis rate limit (burst/daily/vision) · log tokens+USD · งบ daily/monthly auto ปิด AI · Admin `/admin/grower-tools/usage`
+- **Logic:** `grower_tool_usage_logs` · `rateLimitGrowerTools()` · `checkGrowerToolsBudget()` + `tripGrowerToolsBudget()` · OpenAI `usage` → `estimateOpenAiCostUsd`
+- **Env:** `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+- **ไฟล์:** `rate-limit-upstash.ts`, `grower-tools-usage-service.ts`, `grower-tools-budget-service.ts`, grower-tools route, admin usage page/settings
+
+### บันทึกการทำงาน — 2026-07-27 (Soil Mixer canonical recipes + stock deduction)
+- **What:** ล็อกสูตรดินพื้นฐานและ Super Soil ให้ครบส่วนผสม · หักวัสดุในมือตามปริมาณจริง · รวมยอดขาดก่อนสร้างรายการซื้อ
+- **Logic:** `buildCompleteSoilRecipes()` คำนวณสูตร deterministic ฝั่ง service · กระจาย stock ตามสัดส่วน Base/Super · AI ทำเฉพาะสรุป/วิธีใช้
+- **ไฟล์:** `soil-mixer-recipe-service.ts`, `grower-tools-service.ts`, `soil-mixer.ts`, `SoilMixResultInfographic.tsx`
+
+### บันทึกการทำงาน — 2026-07-27 (Soil Mixer mobile densify + Lucide icons)
+- **What:** Wizard/ผลวิเคราะห์กระชับบนมือถือ · วัสดุ 2 คอลัมน์ + icon · เป้าหมาย 3 chips · GrowerToolShell hero ย่อ
+- **Logic:** `lib/soil-mixer-icons.ts` map วัสดุ → Lucide · `getSoilMaterialIcon()` match ชื่อ AI · touch `min-h-12` คงไว้
+- **ไฟล์:** `soil-mixer-icons.ts`, `SoilMixerClient.tsx`, `SoilMixResultInfographic.tsx`, `GrowerToolShell.tsx`
+
 ### บันทึกการทำงาน — 2026-07-26 (Mobile densify hub: /tools · /clearance · /seeds)
 - **What:** Hub มือถือ 2 คอลัมน์ · การ์ด `aspect-[4/3]` บน mobile · hero/content กระชับขึ้น · desktop breakpoints คงเดิม
 - **Logic:** `grid-cols-2 gap-3` default · `py-6`/`text-2xl` hero mobile · `min-h-0 sm:min-h-[60vh]` · touch `min-h-12` คงไว้

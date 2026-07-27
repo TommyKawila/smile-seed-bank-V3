@@ -91,15 +91,38 @@ export function normalizeVolumeAmount(raw: string | undefined): string | undefin
 }
 
 export type SoilMixBuyItem = {
+  ingredientId?: string;
   name: string;
   amount: string;
   keyword: string;
 };
 
+/** Shopee search terms — display name may stay Thai. */
+export const SOIL_SHOPEE_KEYWORDS: Record<string, string> = {
+  biochar: "Biochar",
+  guano: "มูลค้างคาว",
+  kelp: "kelp meal",
+  lime: "โดโลไมต์ + dolomite",
+  gypsum: "ยิปซั่ม ปลูกต้นไม้",
+  bone: "กระดูกป่น + Bone meal",
+  blood: "ผงเลือดป่น + blood meal",
+};
+
+export function resolveSoilShopeeKeyword(
+  ingredientId: string | undefined,
+  displayName: string
+): string {
+  if (ingredientId && SOIL_SHOPEE_KEYWORDS[ingredientId]) {
+    return SOIL_SHOPEE_KEYWORDS[ingredientId];
+  }
+  return displayName;
+}
+
 /** ok = enough on hand · short = have some, need more · missing = none on hand */
 export type SoilMixStockStatus = "ok" | "short" | "missing";
 
 export type SoilMixRecipeLine = {
+  ingredientId?: string;
   name: string;
   /** Amount this recipe needs (e.g. "30 L") */
   need: string;
@@ -158,24 +181,29 @@ export function aggregateShortagesFromRecipes(
   superMixPlan: SoilMixRecipeLine[],
   locale: "th" | "en" = "th"
 ): { buyList: SoilMixBuyItem[]; gaps: string[] } {
-  const map = new Map<string, { name: string; liters: number }>();
+  const map = new Map<string, { ingredientId?: string; name: string; liters: number }>();
 
   for (const line of [...baseMixPlan, ...superMixPlan]) {
     const liters = recipeLineBuyLiters(line);
     if (liters <= 0) continue;
-    const key = line.name.toLowerCase().trim();
+    const key = line.ingredientId?.toLowerCase().trim() || line.name.toLowerCase().trim();
     const prev = map.get(key);
     if (prev) prev.liters += liters;
-    else map.set(key, { name: line.name, liters });
+    else map.set(key, {
+      ingredientId: line.ingredientId,
+      name: line.name,
+      liters,
+    });
   }
 
   const buyList: SoilMixBuyItem[] = [...map.values()]
     .sort((a, b) => b.liters - a.liters)
     .slice(0, 12)
     .map((row) => ({
+      ingredientId: row.ingredientId,
       name: row.name,
       amount: `${formatLiters(row.liters)} L`,
-      keyword: row.name,
+      keyword: resolveSoilShopeeKeyword(row.ingredientId, row.name),
     }));
 
   const gaps = buyList.map((item) =>

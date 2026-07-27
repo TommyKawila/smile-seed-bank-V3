@@ -12,6 +12,7 @@ import {
   CATALOG_GENETICS_STRIP_LABELS,
   CATALOG_GENETICS_STRIP_SLUGS,
 } from "@/lib/catalog-filter-strip-labels";
+import { MobileNavAccordion } from "@/components/storefront/MobileNavAccordion";
 import { cn } from "@/lib/utils";
 
 const serif = "font-sans";
@@ -31,6 +32,8 @@ type Props = {
   navLinkClass: string;
   solidLightNav: boolean;
   onNavigate?: () => void;
+  menuOpen?: boolean;
+  seedsActive?: boolean;
   mode: "desktop" | "mobile";
 };
 
@@ -42,7 +45,7 @@ function floweringHref(slug: string): string {
   return `/seeds?ft=${encodeURIComponent(slug)}`;
 }
 
-export function GeneticsSeedsNav({ navLinkClass, onNavigate, mode }: Props) {
+export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActive, mode }: Props) {
   const { t, locale } = useLanguage();
   const { breeders, isLoading: breedersLoading } = useBreeders();
   const [open, setOpen] = useState(false);
@@ -116,15 +119,14 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, mode }: Props) {
 
   if (mode === "mobile") {
     return (
-      <div className="border-b border-border py-1">
-        <Link
-          href="/seeds"
-          onClick={onNavigate}
-          className="block py-2.5 text-base font-medium tracking-wide text-foreground hover:text-primary"
-        >
-          {label}
-        </Link>
-        <ul className="space-y-0.5 pb-1">
+      <MobileNavAccordion
+        id="nav-seeds"
+        label={label}
+        active={seedsActive}
+        menuOpen={menuOpen}
+        panelClassName="space-y-3"
+      >
+        <ul className="space-y-0.5">
           {entryLinks.map((item) => (
             <li key={item.href}>
               <Link href={item.href} onClick={onNavigate} className={entryLinkClass}>
@@ -133,11 +135,11 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, mode }: Props) {
             </li>
           ))}
         </ul>
-        <p className={cn(sectionHeadingClass, "mb-2 mt-3")}>
-          {breederSectionLabel}
-        </p>
-        <div className="pb-2">{breederLinks}</div>
-        <ul className="space-y-2 pb-2">
+        <div>
+          <p className={cn(sectionHeadingClass, "mb-2")}>{breederSectionLabel}</p>
+          {breederLinks}
+        </div>
+        <ul className="space-y-2">
           {rows.map((row) => (
             <li key={row.href}>
               <Link
@@ -145,7 +147,7 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, mode }: Props) {
                 onClick={onNavigate}
                 className={cn(
                   serif,
-                  "flex items-center gap-2.5 rounded-sm py-1 text-sm font-medium text-foreground hover:text-primary"
+                  "flex min-h-11 items-center gap-2.5 rounded-sm py-1 text-sm font-medium text-foreground hover:text-primary"
                 )}
               >
                 <SeedsFilterIconBadge slug={row.slug} />
@@ -154,7 +156,7 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, mode }: Props) {
             </li>
           ))}
         </ul>
-      </div>
+      </MobileNavAccordion>
     );
   }
 

@@ -21,7 +21,7 @@ export const GROWER_TOOLS: GrowerToolDef[] = [
     iconName: "flask",
     labelTh: "ผสมดิน",
     labelEn: "Soil Mixer",
-    blurbTh: "วิเคราะห์วัสดุที่มี — สูตรดินซุปเปอร์ซอยสำหรับ Home grow",
+    blurbTh: "วิเคราะห์วัสดุที่มี — สูตร Super soil สำหรับ Home grow",
     blurbEn: "Analyze what you have — Super soil mix for home grows",
   },
   {
@@ -71,12 +71,12 @@ export const SOIL_MATERIAL_OPTIONS = [
   { id: "perlite", labelTh: "perlite", labelEn: "Perlite" },
   { id: "vermiculite", labelTh: "vermiculite", labelEn: "Vermiculite" },
   { id: "biochar", labelTh: "biochar", labelEn: "Biochar" },
-  { id: "bone", labelTh: "bone meal", labelEn: "Bone meal" },
-  { id: "blood", labelTh: "blood meal", labelEn: "Blood meal" },
-  { id: "kelp", labelTh: "kelp meal", labelEn: "Kelp meal" },
+  { id: "bone", labelTh: "กระดูกป่น", labelEn: "Bone meal" },
+  { id: "blood", labelTh: "ผงเลือดป่น", labelEn: "Blood meal" },
+  { id: "kelp", labelTh: "Kelp Meal", labelEn: "Kelp Meal" },
   { id: "lime", labelTh: "dolomite lime", labelEn: "Dolomite lime" },
   { id: "gypsum", labelTh: "gypsum", labelEn: "Gypsum" },
-  { id: "guano", labelTh: "ขี้ค้างคาว", labelEn: "Bat guano" },
+  { id: "guano", labelTh: "มูลค้างคาว", labelEn: "Bat guano" },
   { id: "topsoil", labelTh: "ดินปลูกสำเร็จ", labelEn: "Bagged topsoil" },
 ] as const;
 
