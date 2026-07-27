@@ -22,9 +22,10 @@ import {
   type FertilizerMedium,
 } from "@/lib/fertilizer-advisor";
 import { GROW_STAGES } from "@/lib/grower-tools";
+import { buildSoilMixerKnowledgeContext } from "@/lib/soil-mixer-knowledge";
 import { normalizeSoilMixerThaiText, soilMixerThaiVocabularyPrompt } from "@/lib/soil-mixer-terms";
 import { withTimeout } from "@/lib/timeout";
-import { buildCompleteSoilRecipes } from "@/services/soil-mixer-recipe-service";
+import { buildSoilMixResult } from "@/services/soil-mixer-recipe-service";
 
 export type GrowerToolsLocale = "th" | "en";
 
@@ -55,6 +56,15 @@ export type FertilizerAiResult = {
 };
 
 export type { SoilMixAnalysis, SoilMixBuyItem, FertilizerAnalysis };
+
+/** Fast JSON path — Soil Mixer / Fertilizer (latency-sensitive structured copy). */
+const GROWER_TOOLS_JSON_MODEL = "gpt-4.1-nano";
+/** Vision plant doctor — keep multimodal quality. */
+const GROWER_TOOLS_VISION_MODEL = "gpt-4o";
+/** Soil Mixer hard timeout (ms) — recipes are server-side; AI only writes short copy. */
+const SOIL_MIXER_AI_TIMEOUT_MS = 18_000;
+const FERTILIZER_AI_TIMEOUT_MS = 18_000;
+const PLANT_DOCTOR_AI_TIMEOUT_MS = 20_000;
 
 function parseOpenAiUsage(json: {
   usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
@@ -90,7 +100,7 @@ async function callOpenAIText(
     });
   }
 
-  const model = imageDataUrl ? "gpt-4o" : "gpt-4o-mini";
+  const model = imageDataUrl ? GROWER_TOOLS_VISION_MODEL : GROWER_TOOLS_JSON_MODEL;
   const started = Date.now();
 
   try {
@@ -139,13 +149,16 @@ async function callOpenAIText(
   }
 }
 
-async function callOpenAIJson(prompt: string): Promise<GrowerToolsAiResult> {
+async function callOpenAIJson(
+  prompt: string,
+  opts?: { maxTokens?: number }
+): Promise<GrowerToolsAiResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return { text: null, error: "OPENAI_API_KEY is not configured" };
   }
 
-  const model = "gpt-4o-mini";
+  const model = GROWER_TOOLS_JSON_MODEL;
   const started = Date.now();
 
   try {
@@ -157,8 +170,8 @@ async function callOpenAIJson(prompt: string): Promise<GrowerToolsAiResult> {
       },
       body: JSON.stringify({
         model,
-        temperature: 0.3,
-        max_tokens: 1600,
+        temperature: 0.2,
+        max_tokens: opts?.maxTokens ?? 700,
         response_format: { type: "json_object" },
         messages: [
           {
@@ -350,11 +363,34 @@ function parseSoilMixAnalysis(
         : {};
     const howToUse = {
       superPerPot:
-        typeof howRaw.superPerPot === "string" ? howRaw.superPerPot.trim() : "",
+        typeof howRaw.superPerPot === "string" && howRaw.superPerPot.trim()
+          ? howRaw.superPerPot.trim()
+          : `~${(potTarget.superSoilLiters / potTarget.potCount).toFixed(1)} L`,
       basePerPot:
-        typeof howRaw.basePerPot === "string" ? howRaw.basePerPot.trim() : "",
-      why: typeof howRaw.why === "string" ? howRaw.why.trim() : "",
-      steps: asStringArray(howRaw.steps, 4),
+        typeof howRaw.basePerPot === "string" && howRaw.basePerPot.trim()
+          ? howRaw.basePerPot.trim()
+          : `~${(potTarget.baseSoilLiters / potTarget.potCount).toFixed(1)} L`,
+      why:
+        typeof howRaw.why === "string" && howRaw.why.trim()
+          ? howRaw.why.trim()
+          : locale === "en"
+            ? "Super is nutrient-dense — buffer with Base on top."
+            : "Super soil ร้อน — ใส่ Base ชั้นบนกันเบิร์น",
+      steps: (() => {
+        const steps = asStringArray(howRaw.steps, 4);
+        if (steps.length > 0) return steps;
+        return locale === "en"
+          ? [
+              "Mix Super and Base separately first.",
+              "Fill bottom 1/3 Super, top 2/3 Base.",
+              "Plant into the Base layer only.",
+            ]
+          : [
+              "ผสม Super และ Base แยกกันก่อน",
+              "ใส่ก้น 1/3 Super แล้วทับบน 2/3 ด้วย Base",
+              "ปลูกเฉพาะชั้น Base",
+            ];
+      })(),
     };
 
     return {
@@ -384,111 +420,110 @@ export async function analyzeSoilMix(
   locale: GrowerToolsLocale,
   recipeMode: SuperSoilRecipeMode = "basic"
 ): Promise<SoilMixAiResult> {
-  const list = materials
-    .map((m) => `- id=${m.id}; ${m.label}; amount=${m.amount ?? "0 L"}`)
-    .join("\n");
-  const canonicalRecipes = buildCompleteSoilRecipes(
-    materials,
-    potTarget,
-    locale,
-    recipeMode
-  );
-
-  const perPotSuper = (potTarget.superSoilLiters / potTarget.potCount).toFixed(1);
-  const perPotBase = (potTarget.baseSoilLiters / potTarget.potCount).toFixed(1);
-  const baseL = potTarget.baseSoilLiters.toFixed(1);
-  const superL = potTarget.superSoilLiters.toFixed(1);
-
-  const prompt = `You explain a pre-calculated Base soil + Super soil recipe for home growers. Reply JSON only.
-
-TARGET FILL (must hit both):
-- potCount: ${potTarget.potCount} × ${potTarget.potLiters.toFixed(1)} L each
-- totalFillLiters: ${potTarget.totalFillLiters.toFixed(1)}
-- Base soil to mix (top 2/3): ${baseL} L (~${perPotBase} L/pot)
-- Super soil to mix (bottom 1/3): ${superL} L (~${perPotSuper} L/pot)
-- recipeMode: ${recipeMode}
-
-ON HAND (allocate these FIRST across both recipes — do not invent higher "have" than listed):
-${list || "(none)"}
-
-CANONICAL RECIPES (already calculated by the server):
-${JSON.stringify(canonicalRecipes)}
-
-Copy baseMixPlan and superMixPlan EXACTLY. Do not add, remove, rename, or recalculate ingredients or quantities.
-
-JSON schema:
-{
-  "summary": "1-2 short sentences: on-hand first; shortfalls for Base ${baseL} L + Super ${superL} L (${recipeMode})",
-  "baseMixPlan": [
-    {
-      "name": "ingredient",
-      "need": "30 L",
-      "have": "20 L",
-      "status": "ok|short|missing",
-      "buyMore": "10 L or empty if ok"
-    }
-  ],
-  "superMixPlan": [ { "name": "...", "need": "...", "have": "...", "status": "ok|short|missing", "buyMore": "..." } ],
-  "gaps": ["short summary of shortages"],
-  "buyList": [
-    { "name": "ingredient", "amount": "total qty to buy across both recipes", "keyword": "Shopee search keyword" }
-  ],
-  "howToUse": {
-    "superPerPot": "~${perPotSuper} L Super at bottom 1/3",
-    "basePerPot": "~${perPotBase} L Base on top 2/3",
-    "why": "one short sentence: Super is hot — do not fill whole pot",
-    "steps": ["step1", "step2", "step3"]
-  }
+  const analysis = buildSoilMixResult(materials, potTarget, locale, recipeMode);
+  const normalized =
+    locale === "th" ? normalizeAnalysisThai(analysis) : analysis;
+  return { analysis: normalized, error: null };
 }
 
-Rules (STRICT):
-1) Treat CANONICAL RECIPES as the source of truth.
-2) Explain the shortages accurately in summary and howToUse.
-3) NEVER recommend buying bagged "Base soil" / "Super soil" mix / pre-made soil blends — only raw ingredients.
-4) buyList = unique ingredients to purchase from canonical shortfalls; keyword shoppable on Shopee TH.
-5) Keep strings short. gaps max 8. buyList max 12.
+export type SoilMixExplainResult = {
+  summary: string | null;
+  error: string | null;
+  meta?: GrowerToolAiMeta;
+};
 
+/** Optional AI polish of summary — does not change recipe numbers. */
+export async function explainSoilMix(
+  materials: SoilMaterialInput[],
+  potTarget: SoilPotTarget,
+  locale: GrowerToolsLocale,
+  recipeMode: SuperSoilRecipeMode = "basic"
+): Promise<SoilMixExplainResult> {
+  const base = buildSoilMixResult(materials, potTarget, locale, recipeMode);
+  const gapsLine = base.gaps.join("; ") || (locale === "en" ? "none" : "ไม่ขาด");
+  const prompt = `Rewrite this soil-mix summary in 1-2 friendly sentences. Do NOT change volumes or ingredients.
+
+Locked summary: ${base.summary}
+Shortages: ${gapsLine}
+Recipe mode: ${recipeMode}
+
+Reply JSON only: { "summary": "..." }
 ${localeLine(locale)}`;
 
-  const timed = await withTimeout(callOpenAIJson(prompt), 12000, {
+  const timed = await withTimeout(callOpenAIJson(prompt, { maxTokens: 200 }), SOIL_MIXER_AI_TIMEOUT_MS, {
     text: null,
     error: "timeout",
   });
-
   if (timed.error || !timed.text) {
-    return { analysis: null, error: timed.error ?? "Empty AI response" };
+    return { summary: null, error: timed.error ?? "Empty AI response", meta: timed.meta };
   }
+  try {
+    const data = JSON.parse(timed.text) as { summary?: string };
+    const summary =
+      typeof data.summary === "string" && data.summary.trim()
+        ? locale === "th"
+          ? normalizeSoilMixerThaiText(data.summary.trim())
+          : data.summary.trim()
+        : null;
+    return { summary, error: summary ? null : "Invalid AI JSON", meta: timed.meta };
+  } catch {
+    return { summary: null, error: "Invalid AI JSON", meta: timed.meta };
+  }
+}
 
-  const analysis = parseSoilMixAnalysis(timed.text, potTarget, locale);
-  if (!analysis) {
-    return { analysis: null, error: "Invalid AI JSON" };
+export type SoilMixAskResult = {
+  answer: string | null;
+  error: string | null;
+  meta?: GrowerToolAiMeta;
+};
+
+/** Grounded Q&A — only Smile Seed Bank knowledge + current recipe snapshot. */
+export async function askSoilMixQuestion(
+  question: string,
+  materials: SoilMaterialInput[],
+  potTarget: SoilPotTarget,
+  locale: GrowerToolsLocale,
+  recipeMode: SuperSoilRecipeMode = "basic"
+): Promise<SoilMixAskResult> {
+  const q = question.trim().slice(0, 400);
+  if (!q) return { answer: null, error: "Empty question" };
+
+  const snapshot = buildSoilMixResult(materials, potTarget, locale, recipeMode);
+  const knowledge = buildSoilMixerKnowledgeContext(locale);
+  const prompt = `You answer grower questions about a LOCKED super-soil recipe. Use ONLY the knowledge and snapshot below. Do not invent new ratios or products. If unsure, say to read the linked article.
+
+KNOWLEDGE:
+${knowledge}
+
+CURRENT SNAPSHOT:
+summary: ${snapshot.summary}
+gaps: ${snapshot.gaps.join("; ") || "none"}
+mode: ${recipeMode}
+
+QUESTION: ${q}
+
+Reply JSON: { "answer": "2-4 short sentences max" }
+${localeLine(locale)}`;
+
+  const timed = await withTimeout(callOpenAIJson(prompt, { maxTokens: 350 }), SOIL_MIXER_AI_TIMEOUT_MS, {
+    text: null,
+    error: "timeout",
+  });
+  if (timed.error || !timed.text) {
+    return { answer: null, error: timed.error ?? "Empty AI response", meta: timed.meta };
   }
-  const analysisWithCanonicalRecipes: SoilMixAnalysis = {
-    ...analysis,
-    ...canonicalRecipes,
-  };
-  const normalized =
-    locale === "th"
-      ? normalizeAnalysisThai(analysisWithCanonicalRecipes)
-      : analysisWithCanonicalRecipes;
-  // Re-aggregate after Thai normalize so names/amounts stay in sync with recipe cards
-  const synced = aggregateShortagesFromRecipes(
-    normalized.baseMixPlan,
-    normalized.superMixPlan,
-    locale
-  );
-  return {
-    analysis: {
-      ...normalized,
-      gaps: synced.gaps,
-      buyList: synced.buyList.map((item) => ({
-        ...item,
-        keyword: resolveSoilShopeeKeyword(item.ingredientId, item.name),
-      })),
-    },
-    error: null,
-    meta: timed.meta,
-  };
+  try {
+    const data = JSON.parse(timed.text) as { answer?: string };
+    const answer =
+      typeof data.answer === "string" && data.answer.trim()
+        ? locale === "th"
+          ? normalizeSoilMixerThaiText(data.answer.trim())
+          : data.answer.trim()
+        : null;
+    return { answer, error: answer ? null : "Invalid AI JSON", meta: timed.meta };
+  } catch {
+    return { answer: null, error: "Invalid AI JSON", meta: timed.meta };
+  }
 }
 
 export type FertilizerInput = {
@@ -562,7 +597,7 @@ Rules:
 
 ${localeRules}`;
 
-  const timed = await withTimeout(callOpenAIJson(prompt), 12000, {
+  const timed = await withTimeout(callOpenAIJson(prompt, { maxTokens: 700 }), FERTILIZER_AI_TIMEOUT_MS, {
     text: null,
     error: "timeout",
   });
@@ -627,7 +662,7 @@ Structure:
 
 Do NOT store or reference personal data. ${locale === "en" ? "Respond in English." : "ตอบเป็นภาษาไทย กระชับ"}`;
 
-  return withTimeout(callOpenAIText(prompt, imageDataUrl), 12000, {
+  return withTimeout(callOpenAIText(prompt, imageDataUrl), PLANT_DOCTOR_AI_TIMEOUT_MS, {
     text: null,
     error: "timeout",
   });

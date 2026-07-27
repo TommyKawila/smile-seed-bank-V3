@@ -1,10 +1,15 @@
 import {
+  aggregateShortagesFromRecipes,
   extractLitersFromText,
   formatLiters,
+  resolveSoilShopeeKeyword,
+  type SoilMixAnalysis,
   type SoilMixRecipeLine,
   type SoilPotTarget,
   type SuperSoilRecipeMode,
 } from "@/lib/soil-mixer";
+import { getSoilPrepGuides, soilTermBaseSoil, soilTermSuperSoil } from "@/lib/soil-mixer-terms";
+import { SUPER_SOIL_ARTICLE_SLUG } from "@/lib/soil-mixer-research";
 
 type Locale = "th" | "en";
 type MaterialInput = { id: string; label: string; amount?: string };
@@ -22,6 +27,7 @@ const MEDIA = {
   topsoil: { id: "topsoil", nameTh: "ดินปลูกสำเร็จ", nameEn: "Bagged topsoil" },
 } as const;
 
+/** Locked Smile Seed Bank ratios — see /blog/${SUPER_SOIL_ARTICLE_SLUG} + lib/soil-mixer-research.ts */
 const BASE_ADDITIONS: RecipeIngredient[] = [
   { id: "compost", nameTh: "ปุ๋ยหมัก", nameEn: "Compost", ratio: 0.25 },
   { id: "worm", nameTh: "มูลไส้เดือน", nameEn: "Worm castings", ratio: 0.15 },
@@ -163,4 +169,85 @@ export function buildCompleteSoilRecipes(
     materials,
     locale
   );
+}
+
+function buildDeterministicSummary(
+  locale: Locale,
+  potTarget: SoilPotTarget,
+  recipeMode: SuperSoilRecipeMode,
+  gapCount: number
+): string {
+  const isEn = locale === "en";
+  const baseL = formatLiters(potTarget.baseSoilLiters);
+  const superL = formatLiters(potTarget.superSoilLiters);
+  const modeLabel = recipeMode === "advance" ? "Advance" : "Basic";
+  if (gapCount === 0) {
+    return isEn
+      ? `On-hand stock covers Base ${baseL} L + Super ${superL} L (${modeLabel}).`
+      : `ของในมือครบสำหรับ Base ${baseL} L + Super ${superL} L (${modeLabel})`;
+  }
+  return isEn
+    ? `${gapCount} ingredient(s) short for Base ${baseL} L + Super ${superL} L (${modeLabel}) — buy raw materials only.`
+    : `ขาดวัสดุ ${gapCount} รายการสำหรับ Base ${baseL} L + Super ${superL} L (${modeLabel}) — ซื้อเฉพาะวัตถุดิบ`;
+}
+
+/** Full analysis without OpenAI — source of truth for Soil Mixer UI. */
+export function buildSoilMixResult(
+  materials: MaterialInput[],
+  potTarget: SoilPotTarget,
+  locale: Locale,
+  recipeMode: SuperSoilRecipeMode
+): SoilMixAnalysis {
+  const { baseMixPlan, superMixPlan } = buildCompleteSoilRecipes(
+    materials,
+    potTarget,
+    locale,
+    recipeMode
+  );
+  const { buyList, gaps } = aggregateShortagesFromRecipes(
+    baseMixPlan,
+    superMixPlan,
+    locale
+  );
+  const perPotSuper = formatLiters(potTarget.superSoilPerPotLiters);
+  const perPotBase = formatLiters(potTarget.baseSoilPerPotLiters);
+  const isEn = locale === "en";
+  const superName = soilTermSuperSoil(isEn);
+  const baseName = soilTermBaseSoil(isEn);
+  const prep = getSoilPrepGuides({
+    isEn,
+    superLitersLabel: formatLiters(potTarget.superSoilLiters),
+    baseLitersLabel: formatLiters(potTarget.baseSoilLiters),
+    superPerPotLabel: perPotSuper,
+    basePerPotLabel: perPotBase,
+  });
+
+  return {
+    summary: buildDeterministicSummary(locale, potTarget, recipeMode, gaps.length),
+    volumes: {
+      potCount: potTarget.potCount,
+      baseSoilLiters: potTarget.baseSoilLiters,
+      superSoilLiters: potTarget.superSoilLiters,
+      totalFillLiters: potTarget.totalFillLiters,
+    },
+    baseMixPlan,
+    superMixPlan,
+    gaps,
+    buyList: buyList.map((item) => ({
+      ...item,
+      keyword: resolveSoilShopeeKeyword(item.ingredientId, item.name),
+    })),
+    howToUse: {
+      superPerPot: isEn
+        ? `~${perPotSuper} L ${superName} (bottom 1/3)`
+        : `~${perPotSuper} L ${superName} (ก้น 1/3)`,
+      basePerPot: isEn
+        ? `~${perPotBase} L ${baseName} (top 2/3)`
+        : `~${perPotBase} L ${baseName} (บน 2/3)`,
+      why: isEn
+        ? `${superName} is nutrient-dense — ${baseName} buffers the root zone.`
+        : `${superName} ร้อน — ${baseName} กันเบิร์นราก`,
+      steps: prep.potFill.steps.slice(0, 3),
+    },
+  };
 }

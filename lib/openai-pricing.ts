@@ -3,6 +3,7 @@ export const OPENAI_PRICE_PER_1M: Record<
   string,
   { input: number; output: number }
 > = {
+  "gpt-4.1-nano": { input: 0.1, output: 0.4 },
   "gpt-4o-mini": { input: 0.15, output: 0.6 },
   "gpt-4o": { input: 2.5, output: 10 },
 };

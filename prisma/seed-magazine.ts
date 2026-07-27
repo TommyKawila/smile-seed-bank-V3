@@ -82,14 +82,20 @@ async function seedPosts(categoryBySlug: Map<string, bigint>, affiliateId: numbe
     const published = def.status === "PUBLISHED";
     const published_at = published ? created_at : null;
     const content = def.buildContent(affiliateId) as Prisma.InputJsonValue;
+    const content_en = def.buildContentEn
+      ? (def.buildContentEn(affiliateId) as Prisma.InputJsonValue)
+      : null;
 
     await prisma.blog_posts.upsert({
       where: { slug: def.slug },
       create: {
         title: def.title,
+        title_en: def.title_en ?? null,
         slug: def.slug,
         excerpt: def.excerpt,
+        excerpt_en: def.excerpt_en ?? null,
         content,
+        content_en,
         featured_image: def.featured_image,
         tags: def.tags,
         status: def.status,
@@ -102,8 +108,11 @@ async function seedPosts(categoryBySlug: Map<string, bigint>, affiliateId: numbe
       },
       update: {
         title: def.title,
+        title_en: def.title_en ?? null,
         excerpt: def.excerpt,
+        excerpt_en: def.excerpt_en ?? null,
         content,
+        content_en,
         featured_image: def.featured_image,
         tags: def.tags,
         status: def.status,

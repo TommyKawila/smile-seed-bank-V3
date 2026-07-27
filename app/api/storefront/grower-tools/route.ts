@@ -14,7 +14,9 @@ import {
 import {
   adviseFertilizer,
   analyzeSoilMix,
+  askSoilMixQuestion,
   diagnosePlant,
+  explainSoilMix,
   type GrowerToolAiMeta,
 } from "@/services/grower-tools-service";
 import { logGrowerToolUsage } from "@/services/grower-tools-usage-service";
@@ -37,14 +39,26 @@ const PotTargetSchema = z.object({
   baseSoilLiters: z.number().positive(),
 });
 
+const SoilMixerPayloadSchema = z.object({
+  potTarget: PotTargetSchema,
+  materials: z.array(MaterialSchema).max(20),
+  locale: LocaleSchema,
+  recipeMode: z.enum(["basic", "advance"]).default("basic"),
+});
+
 const BodySchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("soil-mixer"),
-    payload: z.object({
-      potTarget: PotTargetSchema,
-      materials: z.array(MaterialSchema).max(20),
-      locale: LocaleSchema,
-      recipeMode: z.enum(["basic", "advance"]).default("basic"),
+    payload: SoilMixerPayloadSchema,
+  }),
+  z.object({
+    action: z.literal("soil-mixer-explain"),
+    payload: SoilMixerPayloadSchema,
+  }),
+  z.object({
+    action: z.literal("soil-mixer-ask"),
+    payload: SoilMixerPayloadSchema.extend({
+      question: z.string().min(1).max(400),
     }),
   }),
   z.object({
@@ -75,7 +89,7 @@ function clientIp(req: NextRequest): string {
 }
 
 function logFromMeta(
-  action: GrowerToolAiAction,
+  action: GrowerToolAiAction | string,
   ipHash: string,
   status: "ok" | "error",
   meta?: GrowerToolAiMeta
@@ -89,6 +103,36 @@ function logFromMeta(
     completionTokens: meta?.completionTokens,
     latencyMs: meta?.latencyMs,
   });
+}
+
+async function requireAiGate(
+  action: GrowerToolAiAction,
+  ipHash: string
+): Promise<NextResponse | null> {
+  if (!(await isGrowerToolAiEnabled(action))) {
+    logGrowerToolUsage({ action, status: "ai_disabled", ipHash });
+    return NextResponse.json(
+      { error: "ai_disabled", message: "This AI tool is temporarily disabled" },
+      { status: 503 }
+    );
+  }
+
+  const budget = await checkGrowerToolsBudget();
+  if (!budget.ok) {
+    await tripGrowerToolsBudget();
+    logGrowerToolUsage({ action, status: "budget_blocked", ipHash });
+    return NextResponse.json(
+      {
+        error: "budget_exceeded",
+        message: "API budget limit reached",
+        dailySpend: budget.dailySpend,
+        monthlySpend: budget.monthlySpend,
+      },
+      { status: 503 }
+    );
+  }
+
+  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -125,51 +169,70 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!(await isGrowerToolAiEnabled(action))) {
-      logGrowerToolUsage({ action, status: "ai_disabled", ipHash });
-      return NextResponse.json(
-        { error: "ai_disabled", message: "This AI tool is temporarily disabled" },
-        { status: 503 }
-      );
-    }
-
-    const budget = await checkGrowerToolsBudget();
-    if (!budget.ok) {
-      await tripGrowerToolsBudget();
-      logGrowerToolUsage({ action, status: "budget_blocked", ipHash });
-      return NextResponse.json(
-        {
-          error: "budget_exceeded",
-          message: "API budget limit reached",
-          dailySpend: budget.dailySpend,
-          monthlySpend: budget.monthlySpend,
-        },
-        { status: 503 }
-      );
-    }
-
     if (action === "soil-mixer") {
       const potTarget = computeSoilPotTarget(
         payload.potTarget.potLiters,
         payload.potTarget.potCount
       );
-      const { analysis, error, meta } = await analyzeSoilMix(
+      const { analysis, error } = await analyzeSoilMix(
         payload.materials,
         potTarget,
         payload.locale,
         payload.recipeMode
       );
       if (error || !analysis) {
-        logFromMeta(action, ipHash, "error", meta);
+        logGrowerToolUsage({ action, status: "error", ipHash });
         return NextResponse.json({ error: error ?? "Analysis failed" }, { status: 502 });
       }
-      logFromMeta(action, ipHash, "ok", meta);
+      logGrowerToolUsage({ action, status: "ok", ipHash });
       const buyLinks = analysis.buyList.map((item) => ({
         ...item,
         shopUrl: buildShopeeAffiliateSearchUrl(item.keyword),
       }));
       return NextResponse.json({ analysis, buyLinks });
     }
+
+    if (action === "soil-mixer-explain" || action === "soil-mixer-ask") {
+      const gate = await requireAiGate("soil-mixer", ipHash);
+      if (gate) return gate;
+
+      const potTarget = computeSoilPotTarget(
+        payload.potTarget.potLiters,
+        payload.potTarget.potCount
+      );
+
+      if (action === "soil-mixer-explain") {
+        const { summary, error, meta } = await explainSoilMix(
+          payload.materials,
+          potTarget,
+          payload.locale,
+          payload.recipeMode
+        );
+        if (error || !summary) {
+          logFromMeta(action, ipHash, "error", meta);
+          return NextResponse.json({ error: error ?? "Explain failed" }, { status: 502 });
+        }
+        logFromMeta(action, ipHash, "ok", meta);
+        return NextResponse.json({ summary });
+      }
+
+      const { answer, error, meta } = await askSoilMixQuestion(
+        payload.question,
+        payload.materials,
+        potTarget,
+        payload.locale,
+        payload.recipeMode
+      );
+      if (error || !answer) {
+        logFromMeta(action, ipHash, "error", meta);
+        return NextResponse.json({ error: error ?? "Ask failed" }, { status: 502 });
+      }
+      logFromMeta(action, ipHash, "ok", meta);
+      return NextResponse.json({ answer });
+    }
+
+    const gate = await requireAiGate(action, ipHash);
+    if (gate) return gate;
 
     if (action === "fertilizer") {
       const resolvedType = resolveFertilizerType(payload.medium, payload.type);

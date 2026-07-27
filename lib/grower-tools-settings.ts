@@ -28,8 +28,8 @@ export const GROWER_TOOLS_AI_TOOL_OPTIONS: {
     settingKey: GROWER_TOOLS_AI_TOOL_KEYS.soilMixer,
     labelTh: "ผสมดิน (Soil Mixer)",
     labelEn: "Soil Mixer",
-    descTh: "วิเคราะห์สูตร Super soil + รายการซื้อ Shopee",
-    descEn: "Super soil mix analysis + Shopee buy list",
+    descTh: "คำนวณสูตร Super soil ทันที + ถามเพิ่ม (AI optional)",
+    descEn: "Instant Super soil recipe + optional AI Q&A",
   },
   {
     action: "fertilizer",

@@ -36,6 +36,8 @@ import {
   SOIL_SECTION_ICONS,
 } from "@/lib/soil-mixer-icons";
 import { SoilMixRecipePie } from "@/components/storefront/tools/SoilMixRecipePie";
+import Link from "next/link";
+import { articleHref } from "@/lib/soil-mixer-knowledge";
 import { buildShopeeSearchUrl } from "@/lib/shopee-affiliate";
 import { cn } from "@/lib/utils";
 
@@ -178,12 +180,19 @@ function RecipeCard({
 export function SoilMixResultInfographic({
   analysis,
   buyLinks,
+  aiEnabled = true,
+  onAsk,
 }: {
   analysis: SoilMixAnalysis;
   buyLinks: SoilMixBuyLink[];
+  aiEnabled?: boolean;
+  onAsk?: (question: string) => Promise<string | null>;
 }) {
   const { t, locale } = useLanguage();
   const isEn = locale === "en";
+  const [askQ, setAskQ] = useState("");
+  const [askLoading, setAskLoading] = useState(false);
+  const [askAnswer, setAskAnswer] = useState<string | null>(null);
   const baseL = formatLiters(analysis.volumes.baseSoilLiters);
   const superL = formatLiters(analysis.volumes.superSoilLiters);
   const superLabel = soilTermSuperSoil(isEn);
@@ -250,6 +259,13 @@ export function SoilMixResultInfographic({
         <p className="mt-1.5 text-sm font-medium leading-relaxed text-foreground sm:mt-2 sm:text-base">
           {analysis.summary}
         </p>
+        <Link
+          href={articleHref()}
+          className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-emerald-400 underline-offset-4 hover:underline sm:text-sm"
+        >
+          {t("อ่านหลักการสูตร Super soil", "Read Super soil recipe principles")}
+          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+        </Link>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-3">
           <div className="rounded-lg border border-border bg-background/50 p-3 text-center sm:p-4">
             <SOIL_SECTION_ICONS.base
@@ -428,6 +444,56 @@ export function SoilMixResultInfographic({
           stepIcons={[Layers, Droplets, Layers, Sprout, Flame]}
         />
       </section>
+
+      {aiEnabled && onAsk ? (
+        <section className="rounded-xl border border-border bg-card/40 p-3 sm:p-4">
+          <p className="text-xs font-semibold text-foreground sm:text-sm">
+            {t("ถามเพิ่มเกี่ยวกับสูตรนี้", "Ask about this mix")}
+          </p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
+            {t(
+              "ตอบจากหลักการ Smile Seed Bank เท่านั้น",
+              "Answers use Smile Seed Bank knowledge only"
+            )}
+          </p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input
+              type="text"
+              value={askQ}
+              maxLength={400}
+              placeholder={t("เช่น ทำไม guano อยู่แค่ Super?", "e.g. Why is guano only in Super?")}
+              className="min-h-11 flex-1 rounded-lg border border-border bg-background px-3 text-sm"
+              onChange={(e) => setAskQ(e.target.value)}
+            />
+            <Button
+              type="button"
+              disabled={askLoading || !askQ.trim()}
+              className="min-h-11 shrink-0 bg-emerald-600 hover:bg-emerald-500"
+              onClick={() => {
+                if (!onAsk || !askQ.trim()) return;
+                setAskLoading(true);
+                void onAsk(askQ.trim())
+                  .then((a) => {
+                    setAskAnswer(a);
+                    if (!a) toast.error(t("ถามไม่สำเร็จ", "Question failed"));
+                  })
+                  .finally(() => setAskLoading(false));
+              }}
+            >
+              {askLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                t("ถาม", "Ask")
+              )}
+            </Button>
+          </div>
+          {askAnswer ? (
+            <p className="mt-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-xs leading-relaxed text-foreground sm:text-sm">
+              {askAnswer}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 }

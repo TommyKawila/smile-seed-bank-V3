@@ -3,6 +3,13 @@
  * Used by prisma/seed-magazine.ts and prisma/seed.ts.
  */
 
+import {
+  SOIL_INGREDIENT_BRIEFS,
+  SUPER_SOIL_ARTICLE_SLUG,
+  SUPER_SOIL_PRINCIPLES,
+  SUPER_SOIL_RESEARCH_SOURCES,
+} from "@/lib/soil-mixer-research";
+
 export type MockCategory = {
   name: string;
   slug: string;
@@ -20,13 +27,16 @@ export type MockAffiliate = {
 export type MockPostDef = {
   slug: string;
   title: string;
+  title_en?: string;
   excerpt: string;
+  excerpt_en?: string;
   featured_image: string;
   tags: string[];
   status: "PUBLISHED" | "DRAFT";
   is_highlight: boolean;
   categorySlug: string;
   buildContent: (affiliateId: number) => Record<string, unknown>;
+  buildContentEn?: (affiliateId: number) => Record<string, unknown>;
 };
 
 function doc(content: object[]): Record<string, unknown> {
@@ -56,6 +66,12 @@ function blockquote(text: string): object {
 }
 
 export const MOCK_MAGAZINE_CATEGORIES: MockCategory[] = [
+  {
+    name: "Research",
+    slug: "research",
+    description: "งานวิจัยและอ้างอิงที่ตรวจสอบแล้ว",
+    sort_order: 0,
+  },
   {
     name: "Knowledge",
     slug: "knowledge",
@@ -93,8 +109,77 @@ export const MOCK_AFFILIATES: MockAffiliate[] = [
   },
 ];
 
-/** 11 posts, all PUBLISHED. ≥3 include [SMART_TIE_IN] for tie-in injection tests. */
+/** 11 posts + super soil reference article. ≥3 include [SMART_TIE_IN] for tie-in injection tests. */
 export const MOCK_MAGAZINE_POSTS: MockPostDef[] = [
+  {
+    slug: SUPER_SOIL_ARTICLE_SLUG,
+    title: "สูตร Super Soil ของ Smile Seed Bank — หลักการและวัสดุ",
+    title_en: "Smile Seed Bank Super Soil Recipe — Principles & Ingredients",
+    excerpt:
+      "ทำไม Super 1/3 + Base 2/3, ความต่าง Basic/Advance, และบทบาทวัสดุแต่ละตัว — อ้างอิง extension และ living-soil education.",
+    excerpt_en:
+      "Why 1/3 Super + 2/3 Base, basic vs advance, and each ingredient’s role — grounded in extension guides and living-soil education.",
+    featured_image:
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1600&q=80",
+    tags: ["super soil", "living soil", "organic", "recipe", "research"],
+    status: "PUBLISHED",
+    is_highlight: true,
+    categorySlug: "research",
+    buildContent: () =>
+      doc([
+        heading(2, "Super soil คืออะไร"),
+        p(
+          "Super soil (หรือ hot mix) คือดินอินทรีย์ที่ผสม amendment ร้อน — มูลค้างคาว ผงเลือดป่น กระดูกป่น — ต้อง cook ก่อนปลูก ไม่ใช่ดินสำเร็จรูปที่ใส่กระถางแล้วปลูกทันที"
+        ),
+        heading(2, "หลักการ 1/3 Super + 2/3 Base"),
+        p(SUPER_SOIL_PRINCIPLES.potFillTh),
+        blockquote(
+          "ห้ามใส่ Super เต็มกระถาง — รากต้นอาจเจอ nutrient burn จาก amendment ร้อน"
+        ),
+        heading(2, "Basic vs Advance"),
+        p(SUPER_SOIL_PRINCIPLES.basicVsAdvanceTh),
+        heading(2, "ตารางวัสดุ — ทำไมใช้ / ได้อะไร / ระวังอะไร"),
+        ...SOIL_INGREDIENT_BRIEFS.flatMap((b) => [
+          heading(3, b.id === "worm" ? "มูลไส้เดือน" : b.id),
+          p(`บทบาท: ${b.roleTh} · สารอาหาร: ${b.nutrientsTh}`),
+          p(`ใน Super/Base: ${b.inSuperTh}`),
+          p(`ข้อควรระวัง: ${b.cautionTh}`),
+        ]),
+        heading(2, "วิธีผสมและ cook"),
+        p(SUPER_SOIL_PRINCIPLES.cookTh),
+        p("ผสม Super และ Base แยกถัง — ใส่ก้น 1/3 Super ทับ 2/3 Base — ปลูกเฉพาะชั้น Base"),
+        heading(2, "อ้างอิง"),
+        ...SUPER_SOIL_RESEARCH_SOURCES.map((s) => p(`${s.name} — ${s.url}`)),
+        p("CTA: ใช้เครื่องมือ /tools/soil-mixer คำนวณปริมาณจากของในมือ"),
+      ]),
+    buildContentEn: () =>
+      doc([
+        heading(2, "What is super soil?"),
+        p(
+          "Super soil (hot mix) blends hot amendments — guano, blood meal, bone meal — and must be cooked before planting. It is not bagged soil you plant into immediately."
+        ),
+        heading(2, "1/3 Super + 2/3 Base"),
+        p(SUPER_SOIL_PRINCIPLES.potFillEn),
+        blockquote(
+          "Never fill the whole pot with Super — young roots can nutrient-burn on hot amendments."
+        ),
+        heading(2, "Basic vs Advance"),
+        p(SUPER_SOIL_PRINCIPLES.basicVsAdvanceEn),
+        heading(2, "Ingredients — role, nutrients, cautions"),
+        ...SOIL_INGREDIENT_BRIEFS.flatMap((b) => [
+          heading(3, b.id),
+          p(`Role: ${b.roleEn} · Nutrients: ${b.nutrientsEn}`),
+          p(`In mix: ${b.inSuperEn}`),
+          p(`Caution: ${b.cautionEn}`),
+        ]),
+        heading(2, "Mix & cook"),
+        p(SUPER_SOIL_PRINCIPLES.cookEn),
+        p("Mix Super and Base in separate bins — bottom 1/3 Super, top 2/3 Base — plant only in Base."),
+        heading(2, "References"),
+        ...SUPER_SOIL_RESEARCH_SOURCES.map((s) => p(`${s.name} — ${s.url}`)),
+        p("CTA: Use /tools/soil-mixer to calculate volumes from materials on hand."),
+      ]),
+  },
   {
     slug: "top-5-autoflowers-chiang-mai-climate",
     title: "Top 5 Autoflowers for Chiang Mai Climate",

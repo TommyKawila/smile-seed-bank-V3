@@ -4,6 +4,15 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-27 (Super soil: research → lock → blog → deterministic tool)
+- **What:** วิจัย+ล็อกสูตร Super soil · บทความอ้างอิง TH/EN (category Research + VerifiedResearch) · Soil Mixer คำนวณทันทีไม่รอ AI · optional explain/ask grounded
+- **Logic:** `lib/soil-mixer-research.ts` brief · `buildSoilMixResult()` deterministic · API `soil-mixer` ไม่ผ่าน AI gate · `soil-mixer-explain` / `soil-mixer-ask` optional · ลิงก์ `/blog/super-soil-recipe-smile-seed-bank`
+- **ไฟล์:** `soil-mixer-research.ts`, `soil-mixer-knowledge.ts`, `soil-mixer-recipe-service.ts`, `grower-tools-service.ts`, `grower-tools/route.ts`, `SoilMixerClient.tsx`, `SoilMixResultInfographic.tsx`, `mock-magazine-data.ts`, `seed-magazine.ts`
+
+- **What:** ลด timeout Soil Mixer — สลับ JSON model เป็น `gpt-4.1-nano` · ย่อ prompt ให้ AI เขียนแค่ summary/howToUse (สูตรคำนวณฝั่ง server)
+- **Logic:** ไม่ให้ AI copy base/super mix กลับ · max_tokens 500 · timeout 18s · pricing อัปเดต
+- **ไฟล์:** `grower-tools-service.ts`, `openai-pricing.ts`
+
 ### บันทึกการทำงาน — 2026-07-27 (Grower Tools abuse guard + Admin cost monitor)
 - **What:** Upstash Redis rate limit (burst/daily/vision) · log tokens+USD · งบ daily/monthly auto ปิด AI · Admin `/admin/grower-tools/usage`
 - **Logic:** `grower_tool_usage_logs` · `rateLimitGrowerTools()` · `checkGrowerToolsBudget()` + `tripGrowerToolsBudget()` · OpenAI `usage` → `estimateOpenAiCostUsd`

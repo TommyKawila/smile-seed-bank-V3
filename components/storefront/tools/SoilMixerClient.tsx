@@ -45,6 +45,19 @@ type SoilMixResult = {
   buyLinks: SoilMixBuyLink[];
 };
 
+type SoilMixApiPayload = {
+  potTarget: {
+    potLiters: number;
+    potCount: number;
+    totalFillLiters: number;
+    superSoilLiters: number;
+    baseSoilLiters: number;
+  };
+  materials: { id: string; label: string; amount?: string }[];
+  locale: "th" | "en";
+  recipeMode: SuperSoilRecipeMode;
+};
+
 type Props = { aiEnabled?: boolean };
 
 type MaterialsChoice = "unset" | "have" | "none";
@@ -65,6 +78,7 @@ export function SoilMixerClient({ aiEnabled = true }: Props) {
   const [recipeMode, setRecipeMode] = useState<SuperSoilRecipeMode>("basic");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SoilMixResult | null>(null);
+  const [lastPayload, setLastPayload] = useState<SoilMixApiPayload | null>(null);
   const resultAnchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -150,6 +164,42 @@ export function SoilMixerClient({ aiEnabled = true }: Props) {
     setStep(2);
   };
 
+  const fetchExplain = async (payload: SoilMixApiPayload) => {
+    try {
+      const res = await fetch("/api/storefront/grower-tools", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "soil-mixer-explain", payload }),
+      });
+      const json = (await res.json()) as { summary?: string; error?: string };
+      if (!res.ok || !json.summary) return;
+      setResult((prev) =>
+        prev
+          ? { ...prev, analysis: { ...prev.analysis, summary: json.summary! } }
+          : prev
+      );
+    } catch {
+      /* optional enrich — ignore */
+    }
+  };
+
+  const askQuestion = async (question: string): Promise<string | null> => {
+    if (!lastPayload) return null;
+    const res = await fetch("/api/storefront/grower-tools", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "soil-mixer-ask",
+        payload: { ...lastPayload, question },
+      }),
+    });
+    const json = (await res.json()) as { answer?: string; error?: string };
+    if (!res.ok) {
+      throw new Error(parseGrowerToolApiError(res.status, json, isEn ? "en" : "th"));
+    }
+    return json.answer ?? null;
+  };
+
   const submit = async () => {
     if (!potTarget) return;
 
@@ -188,24 +238,26 @@ export function SoilMixerClient({ aiEnabled = true }: Props) {
 
     setLoading(true);
     setResult(null);
+    const apiPayload: SoilMixApiPayload = {
+      potTarget: {
+        potLiters: potTarget.potLiters,
+        potCount: potTarget.potCount,
+        totalFillLiters: potTarget.totalFillLiters,
+        superSoilLiters: potTarget.superSoilLiters,
+        baseSoilLiters: potTarget.baseSoilLiters,
+      },
+      materials: payloadMaterials,
+      locale: isEn ? "en" : "th",
+      recipeMode,
+    };
+    setLastPayload(apiPayload);
     try {
       const res = await fetch("/api/storefront/grower-tools", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "soil-mixer",
-          payload: {
-            potTarget: {
-              potLiters: potTarget.potLiters,
-              potCount: potTarget.potCount,
-              totalFillLiters: potTarget.totalFillLiters,
-              superSoilLiters: potTarget.superSoilLiters,
-              baseSoilLiters: potTarget.baseSoilLiters,
-            },
-            materials: payloadMaterials,
-            locale: isEn ? "en" : "th",
-            recipeMode,
-          },
+          payload: apiPayload,
         }),
       });
       const raw = await res.text();
@@ -236,6 +288,7 @@ export function SoilMixerClient({ aiEnabled = true }: Props) {
         analysis: json.analysis,
         buyLinks: json.buyLinks ?? [],
       });
+      if (aiEnabled) void fetchExplain(apiPayload);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
     } finally {
@@ -251,14 +304,21 @@ export function SoilMixerClient({ aiEnabled = true }: Props) {
           ? t("ผลการวิเคราะห์ — สูตรและรายการซื้อ", "Analysis — recipe & shopping list")
           : step === 1
             ? t(
-                "ระบุกระถาง → เลือกวัสดุ → AI คำนวณสูตร",
-                "Set pots → pick materials → AI recipe"
+                "ระบุกระถาง → เลือกวัสดุ → คำนวณสูตร",
+                "Set pots → pick materials → calculate mix"
               )
             : t("ติ๊กวัสดุที่มี + ใส่ปริมาณ", "Check materials + enter amounts")
       }
     >
       <div className="space-y-4 sm:space-y-6">
-        {!aiEnabled ? <GrowerToolsAiDisabledNotice /> : null}
+        {!aiEnabled ? (
+          <GrowerToolsAiDisabledNotice
+            message={t(
+              "คำนวณสูตรใช้ได้ตามปกติ — ถามเพิ่ม/สรุป AI ปิดชั่วคราว",
+              "Recipe calc works — AI explain & Q&A temporarily off"
+            )}
+          />
+        ) : null}
         {step === 1 ? (
           <>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -764,14 +824,14 @@ export function SoilMixerClient({ aiEnabled = true }: Props) {
               </Button>
               <Button
                 type="button"
-                disabled={loading || !aiEnabled}
+                disabled={loading}
                 className="min-h-12 flex-1 bg-emerald-600 hover:bg-emerald-500"
                 onClick={() => void submit()}
               >
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  t("วิเคราะห์สูตร", "Analyze mix")
+                  t("คำนวณสูตร", "Calculate mix")
                 )}
               </Button>
             </div>
@@ -783,6 +843,8 @@ export function SoilMixerClient({ aiEnabled = true }: Props) {
             <SoilMixResultInfographic
               analysis={result.analysis}
               buyLinks={result.buyLinks}
+              aiEnabled={aiEnabled}
+              onAsk={aiEnabled ? askQuestion : undefined}
             />
           </div>
         ) : null}
