@@ -66,6 +66,25 @@ export function clearancePriceFromList(
   return Math.max(1, Math.round((list * (100 - pct)) / 100));
 }
 
+/**
+ * Unit baht for an `is_clearance` pack: prefer explicit `clearance_price`, else fixed %.
+ * Never exceeds list. Returns list when clearance cannot be derived.
+ */
+export function resolveClearanceUnitBaht(
+  listPrice: number,
+  clearancePrice?: number | null,
+  percent: number = CLEARANCE_DISCOUNT_PERCENT
+): number {
+  const list = Math.round(Number(listPrice));
+  if (!Number.isFinite(list) || list <= 0) return 0;
+  const explicit = Number(clearancePrice ?? 0);
+  if (Number.isFinite(explicit) && explicit > 0) {
+    return Math.min(list, Math.round(explicit));
+  }
+  const fixed = clearancePriceFromList(list, percent);
+  return fixed > 0 ? fixed : list;
+}
+
 export function applyClearancePricesToVariants<
   T extends { price?: number | null; clearance_price?: number | null },
 >(variants: T[], percent: number = CLEARANCE_DISCOUNT_PERCENT): T[] {

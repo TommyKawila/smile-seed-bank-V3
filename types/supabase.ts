@@ -285,6 +285,7 @@ export interface CartItem {
   productName: string;
   productImage: string | null;
   unitLabel: string;
+  /** List / variant price — brand or clearance applied in cart/checkout math */
   price: number;
   quantity: number;
   /** Variant available stock (from `product_variants.stock`) at add-to-cart time */
@@ -296,6 +297,10 @@ export interface CartItem {
   breederLogoUrl?: string | null;
   /** From `breeders.name` when item was added (order share / receipts) */
   breederName?: string | null;
+  /** When true and no brand promo matches, cart/checkout use clearance unit pricing */
+  isClearance?: boolean;
+  /** Pack `clearance_price` snapshot; falls back to fixed % off list when absent */
+  clearancePrice?: number | null;
 }
 
 export interface CartSummary {

@@ -48,6 +48,8 @@ const AddToCartSchema = z.object({
   breeder_id: z.number().int().positive().nullable().optional(),
   breederLogoUrl: z.string().nullable().optional(),
   breederName: z.string().nullable().optional(),
+  isClearance: z.boolean().optional(),
+  clearancePrice: z.number().nonnegative().nullable().optional(),
 });
 
 function safeNumber(val: unknown, fallback: number): number {
@@ -408,7 +410,10 @@ export function useCart(): UseCartReturn {
       const subtotal = items
         .filter((i) => !i.isFreeGift)
         .reduce((s, i) => {
-          const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules);
+          const { unit } = unitBahtAfterBrandForCartItem(i.price, i.breederName, brandPromotionRules, {
+            isClearance: i.isClearance,
+            clearancePrice: i.clearancePrice,
+          });
           return s + unit * i.quantity;
         }, 0);
 

@@ -441,16 +441,7 @@ export async function getRelatedProducts({
       where: geneticsWhere ? { AND: [baseWhere, geneticsWhere] } : baseWhere,
       take,
       orderBy: [{ created_at: "desc" }, { id: "desc" }],
-      include: {
-        breeders: true,
-        product_variants: {
-          where: { is_active: true },
-          orderBy: { price: "asc" },
-        },
-        product_images: {
-          orderBy: { sort_order: "asc" },
-        },
-      },
+      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
     });
 
     if (data.length >= take || !geneticsWhere) return { data, error: null };
@@ -462,16 +453,7 @@ export async function getRelatedProducts({
       },
       take: take - data.length,
       orderBy: [{ created_at: "desc" }, { id: "desc" }],
-      include: {
-        breeders: true,
-        product_variants: {
-          where: { is_active: true },
-          orderBy: { price: "asc" },
-        },
-        product_images: {
-          orderBy: { sort_order: "asc" },
-        },
-      },
+      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
     });
 
     return { data: [...data, ...fallback].slice(0, take), error: null };

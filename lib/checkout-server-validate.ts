@@ -10,6 +10,7 @@ import {
   matchBrandPromotionRule,
   type BrandPromotionRuleRow,
 } from "@/lib/brand-promotion-checkout";
+import { resolveClearanceUnitBaht } from "@/lib/clearance";
 import { bahtToSatangInt, roundCheckoutBahtWhole, satangIntToBaht } from "@/lib/money-thb";
 import { shippingFeeForSubtotal } from "@/lib/order-financials";
 import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-promo-math";
@@ -25,7 +26,7 @@ type LineIn = {
   productName: string;
 };
 
-export type PriceSource = "variant" | "product_fallback" | "brand_promotion";
+export type PriceSource = "variant" | "product_fallback" | "brand_promotion" | "clearance";
 
 export type CheckoutValidationFailureDetails = {
   clientValues: CheckoutSummary;
@@ -49,10 +50,12 @@ type VariantRow = {
   product_id: bigint | null;
   unit_label: string;
   price: unknown;
+  clearance_price: unknown;
   products: {
     id: bigint;
     name: string;
     price: unknown;
+    is_clearance: boolean | null;
     breeders: { name: string } | null;
   } | null;
 };
@@ -73,7 +76,7 @@ export function coerceDbPriceBaht(raw: unknown): number {
 }
 
 /**
- * Base unit from variant / product row, then brand % from `brandRules` vs breeder name — round after brand.
+ * Base unit from variant / product row, then brand % (preferred) or clearance — round after discount.
  */
 function resolveListingUnitBaht(
   v: VariantRow,
@@ -100,6 +103,18 @@ function resolveListingUnitBaht(
       source: "brand_promotion",
     };
   }
+
+  if (v.products?.is_clearance === true && base > 0) {
+    const clearanceRaw = coerceDbPriceBaht(v.clearance_price);
+    return {
+      unitBaht: resolveClearanceUnitBaht(
+        base,
+        Number.isFinite(clearanceRaw) && clearanceRaw > 0 ? clearanceRaw : null
+      ),
+      source: "clearance",
+    };
+  }
+
   return { unitBaht: base, source: baseSource };
 }
 
@@ -257,6 +272,7 @@ export async function validateStorefrontCheckoutTotals(input: {
             id: true,
             name: true,
             price: true,
+            is_clearance: true,
             breeders: { select: { name: true } },
           },
         },
