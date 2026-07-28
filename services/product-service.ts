@@ -441,16 +441,7 @@ export async function getRelatedProducts({
       where: geneticsWhere ? { AND: [baseWhere, geneticsWhere] } : baseWhere,
       take,
       orderBy: [{ created_at: "desc" }, { id: "desc" }],
-      include: {
-        breeders: true,
-        product_variants: {
-          where: { is_active: true },
-          orderBy: { price: "asc" },
-        },
-        product_images: {
-          orderBy: { sort_order: "asc" },
-        },
-      },
+      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
     });
 
     if (data.length >= take || !geneticsWhere) return { data, error: null };
@@ -462,16 +453,7 @@ export async function getRelatedProducts({
       },
       take: take - data.length,
       orderBy: [{ created_at: "desc" }, { id: "desc" }],
-      include: {
-        breeders: true,
-        product_variants: {
-          where: { is_active: true },
-          orderBy: { price: "asc" },
-        },
-        product_images: {
-          orderBy: { sort_order: "asc" },
-        },
-      },
+      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
     });
 
     return { data: [...data, ...fallback].slice(0, take), error: null };
@@ -518,9 +500,22 @@ export async function getMixedBreederProducts(
         ranked.*,
         COALESCE(
           (
-            SELECT jsonb_agg(to_jsonb(pv) ORDER BY pv.id ASC)
+            SELECT jsonb_agg(
+              jsonb_build_object(
+                'id', pv.id,
+                'unit_label', pv.unit_label,
+                'price', pv.price,
+                'stock', pv.stock,
+                'is_active', pv.is_active,
+                'discount_percent', pv.discount_percent,
+                'discount_ends_at', pv.discount_ends_at,
+                'clearance_price', pv.clearance_price
+              )
+              ORDER BY pv.id ASC
+            )
             FROM public.product_variants pv
             WHERE pv.product_id = ranked.id
+              AND pv.is_active IS TRUE
           ),
           '[]'::jsonb
         ) AS product_variants,

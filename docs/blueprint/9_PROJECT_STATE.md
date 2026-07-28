@@ -4,6 +4,18 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-28 (Critical: clearance checkout + related leak + merch variants)
+- **What:** Fix clearance money integrity, related-products cost leak, merch cross-product variant writes (plus restored payment/POS integrity set)
+- **Bugs:** (1) Clearance UI −50% but cart/checkout used list price (2) `GET /api/products/*/related` returned full variants incl. `cost_price` (3) merch PATCH could rewrite foreign variant IDs / wipe own variants
+- **Fix:** `isClearance`/`clearancePrice` on cart · `resolveClearanceUnitBaht` in cart + checkout · related uses storefront allowlist select · merch update scopes variants by `product_id`
+- **ไฟล์:** `lib/clearance.ts`, `lib/cart-utils.ts`, `lib/checkout-server-validate.ts`, `hooks/useCart.ts`, `ProductCard.tsx`, `product-detail-client.tsx`, `types/supabase.ts`, `services/product-service.ts`, `services/merch-admin-service.ts`, orders/POS integrity files
+
+### บันทึกการทำงาน — 2026-07-27 (Critical integrity regressions — payment/POS/public API)
+- **What:** Restore unmerged critical guards still missing on `main`
+- **Bugs:** (1) 24h auto-cancel race vs payment grace / stock restore (2) cancelled-order resurrection via slip/claim/approve (3) POS `pos-*` profile NaN + points discount without debit + gift `productId:0` fail + pre-brand line prices (4) public mixed-breeder variant `cost_price` leak
+- **Fix:** atomic `updateMany` grace/deadline claim · guarded unpaid transitions · `assertAdmin` on payment-grace · POS parse/validate/resolve gift product_id · brand unit price on submit · allowlisted public variant jsonb
+- **ไฟล์:** `services/orders-service.ts`, `lib/services/order-service.ts`, `app/api/admin/orders/[id]/payment-grace/route.ts`, `app/api/admin/orders/simple/route.ts`, `app/admin/orders/create/page.tsx`, `lib/supabase/types.ts`, `services/product-service.ts`
+
 ### บันทึกการทำงาน — 2026-07-27 (Super soil: research → lock → blog → deterministic tool)
 - **What:** วิจัย+ล็อกสูตร Super soil · บทความอ้างอิง TH/EN (category Research + VerifiedResearch) · Soil Mixer คำนวณทันทีไม่รอ AI · optional explain/ask grounded
 - **Logic:** `lib/soil-mixer-research.ts` brief · `buildSoilMixResult()` deterministic · API `soil-mixer` ไม่ผ่าน AI gate · `soil-mixer-explain` / `soil-mixer-ask` optional · ลิงก์ `/blog/super-soil-recipe-smile-seed-bank`

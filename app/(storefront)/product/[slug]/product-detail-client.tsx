@@ -300,6 +300,13 @@ export default function ProductDetailClient({
       breeder_id: product.breeder_id ?? null,
       breederLogoUrl: product.breeders?.logo_url ?? null,
       breederName: product.breeders?.name ?? null,
+      isClearance: product.is_clearance === true,
+      clearancePrice:
+        product.is_clearance === true
+          ? Number(
+              (selectedVariant as { clearance_price?: number | null }).clearance_price ?? 0
+            ) || null
+          : null,
     });
     if (error) {
       toast.error(error);

@@ -181,11 +181,20 @@ export async function updateMerchProduct(
         },
       });
 
-      if (keepIds.length > 0) {
+      const ownedKeep =
+        keepIds.length > 0
+          ? await tx.product_variants.findMany({
+              where: { product_id: existing.id, id: { in: keepIds.map((id) => BigInt(id)) } },
+              select: { id: true },
+            })
+          : [];
+      const ownedKeepIds = ownedKeep.map((row) => row.id);
+
+      if (ownedKeepIds.length > 0) {
         await tx.product_variants.deleteMany({
           where: {
             product_id: existing.id,
-            id: { notIn: keepIds.map((id) => BigInt(id)) },
+            id: { notIn: ownedKeepIds },
           },
         });
       } else {
@@ -196,8 +205,8 @@ export async function updateMerchProduct(
 
       for (const v of input.variants) {
         if (v.id != null && Number.isFinite(v.id)) {
-          await tx.product_variants.update({
-            where: { id: BigInt(v.id) },
+          const owned = await tx.product_variants.updateMany({
+            where: { id: BigInt(v.id), product_id: existing.id },
             data: {
               unit_label: v.unit_label.trim(),
               price: v.price,
@@ -206,6 +215,9 @@ export async function updateMerchProduct(
               is_active: true,
             },
           });
+          if (owned.count !== 1) {
+            throw new Error(`Variant ${v.id} does not belong to this merch product`);
+          }
         } else {
           await tx.product_variants.create({
             data: {
