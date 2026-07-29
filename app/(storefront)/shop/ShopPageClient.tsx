@@ -72,6 +72,7 @@ import {
   SHOP_CATALOG_API_LIMIT,
   SHOP_CATALOG_VISIBLE_STEP,
   inferCatalogHasMore,
+  nextCatalogPageFromLoadedCount,
 } from "@/lib/shop-catalog-pagination";
 import type { Breeder } from "@/types/supabase";
 
@@ -920,7 +921,9 @@ export function ShopPageClient({
     if (!hasMoreServerProducts || loadingMore) return;
     setLoadingMore(true);
     try {
-      const nextPage = loadedPage + 1;
+      const nextPage = catalogUseCursor
+        ? 1
+        : nextCatalogPageFromLoadedCount(products.length, SHOP_PAGE_INITIAL);
       const sp = new URLSearchParams({
         limit: String(SHOP_PAGE_INITIAL),
       });

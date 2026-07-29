@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-29 (Critical: checkout merch/promo + catalog pagination)
+- **What:** บล็อก checkout Merch (Coming soon) · persist ชื่อสินค้าจาก DB · enforce `usage_limit_per_user` ตอน createOrder · แก้ mobile Load More ข้ามสินค้า 17–30
+- **Logic:** `validateStorefrontCheckoutTotals` กรอง `product_kind≠merch` + `products.is_active` · `resolvedItems.productName` จาก DB · `createOrder` นับ redemption ตาม user/email ใน+นอก tx · `nextCatalogPageFromLoadedCount(products.length)`
+- **ไฟล์:** `lib/checkout-server-validate.ts`, `lib/services/order-service.ts`, `app/api/storefront/orders/route.ts`, `lib/shop-catalog-pagination.ts`, `ShopPageClient.tsx`
+
 ### บันทึกการทำงาน — 2026-07-29 (PSI LCP — stream hero early)
 - **What:** หลัง Wave defer JS ได้ Perf 87 / TBT 10ms แต่ LCP 4.1s + TTFB ~617ms — ปลดบล็อก LCP img จาก sections/Suspense ว่าง
 - **Logic:** `HomeHeroStream` รอแค่ banners+CTA (ไม่รอ `homepage_sections`) · ลบ Suspense fallback ว่างบน `/` · `HomePageHeroClient` ไม่ `return null` · Navbar logo บน `/` → `priority=false` / `fetchPriority=low` · preload hero ตาม `ssb_vp` ข้างเดียว
