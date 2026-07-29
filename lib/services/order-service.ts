@@ -150,6 +150,30 @@ export async function createOrder(
         return { data: null, error: "PROMO_REQUIRES_PHONE" };
       }
       if (!skipPromoPerUserReuseChecks) {
+        const promoMeta = await prisma.promo_codes.findUnique({
+          where: { id: BigInt(promo_code_id) },
+          select: { usage_limit_per_user: true },
+        });
+        const perUserLimit = promoMeta?.usage_limit_per_user ?? 1;
+        const redemptionEmail = customer.email?.trim() || null;
+        const usedByAccount = await prisma.$queryRaw<Array<{ cnt: bigint }>>`
+          SELECT COUNT(*)::bigint AS cnt
+          FROM coupon_redemptions cr
+          LEFT JOIN orders o ON o.id = cr.order_id
+          WHERE cr.coupon_id = ${BigInt(promo_code_id)}
+            AND (
+              cr.user_id = ${resolvedCustomerId}::uuid
+              OR (
+                ${redemptionEmail}::text IS NOT NULL
+                AND lower(cr.email) = lower(${redemptionEmail})
+              )
+            )
+            AND (o.id IS NULL OR o.status NOT IN ('CANCELLED', 'VOID', 'REJECTED'))
+        `;
+        if (Number(usedByAccount[0]?.cnt ?? 0) >= perUserLimit) {
+          return { data: null, error: "PROMO_ALREADY_USED" };
+        }
+
         const dup = await prisma.$queryRaw<Array<{ exists: boolean }>>`
           SELECT EXISTS (
             SELECT 1
@@ -297,6 +321,32 @@ export async function createOrder(
               }
               if (campaign.total_limit > 0 && campaign.usage_count >= campaign.total_limit) {
                 throw new Error("CAMPAIGN_EXHAUSTED");
+              }
+            }
+
+            if (!skipPromoPerUserReuseChecks && resolvedCustomerId) {
+              const promoMeta = await tx.promo_codes.findUnique({
+                where: { id: BigInt(promo_code_id) },
+                select: { usage_limit_per_user: true },
+              });
+              const perUserLimit = promoMeta?.usage_limit_per_user ?? 1;
+              const redemptionEmail = customer.email?.trim() || null;
+              const usedByAccount = await tx.$queryRaw<Array<{ cnt: bigint }>>`
+                SELECT COUNT(*)::bigint AS cnt
+                FROM coupon_redemptions cr
+                LEFT JOIN orders o ON o.id = cr.order_id
+                WHERE cr.coupon_id = ${BigInt(promo_code_id)}
+                  AND (
+                    cr.user_id = ${resolvedCustomerId}::uuid
+                    OR (
+                      ${redemptionEmail}::text IS NOT NULL
+                      AND lower(cr.email) = lower(${redemptionEmail})
+                    )
+                  )
+                  AND (o.id IS NULL OR o.status NOT IN ('CANCELLED', 'VOID', 'REJECTED'))
+              `;
+              if (Number(usedByAccount[0]?.cnt ?? 0) >= perUserLimit) {
+                throw new Error("PROMO_ALREADY_USED");
               }
             }
 
