@@ -197,6 +197,12 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+      if (error === "PROMO_ALREADY_USED") {
+        return NextResponse.json(
+          { error: "This promo code has already been used on your account" },
+          { status: 400 }
+        );
+      }
       console.error("POST /api/storefront/orders createOrder:", error);
       return NextResponse.json({ error: "สร้างคำสั่งซื้อไม่สำเร็จ" }, { status: 500 });
     }
