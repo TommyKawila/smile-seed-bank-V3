@@ -14,15 +14,11 @@ export type HomePageHeroClientProps = {
 
 export function HomePageHeroClient({ sections, heroCarousel, heroCtaButtons }: HomePageHeroClientProps) {
   const heroSection = sections.find((s) => s.key === "hero");
+  const st: SectionTitle = {
+    th: heroSection?.label_th ?? "แบนเนอร์หลัก",
+    en: heroSection?.label_en ?? "Hero",
+  };
 
-  const sectionTitle = (s: HomePageSectionPayload): SectionTitle => ({
-    th: s.label_th,
-    en: s.label_en,
-  });
-
-  if (!heroSection) return null;
-
-  const st = sectionTitle(heroSection);
   return (
     <div className="bg-background pb-6 sm:pb-8">
       <div className="w-full px-0 pt-0 lg:mx-auto lg:max-w-7xl lg:px-6 lg:pt-6">

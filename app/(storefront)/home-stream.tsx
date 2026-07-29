@@ -1,5 +1,6 @@
 import "server-only";
 
+import { Suspense } from "react";
 import { unstable_cache } from "next/cache";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
@@ -47,22 +48,24 @@ const getSectionsCached = unstable_cache(
   { tags: ["home-layout"] }
 );
 
-async function getSections(): Promise<HomePageSectionPayload[]> {
-  return getSectionsCached();
-}
-
 const getHeroCtaCached = unstable_cache(
   () => listHeroCtaButtons(true),
   ["storefront-home-hero-cta", "new-seeds-landing-v1"],
   { tags: ["home-layout"] }
 );
 
-/** Hero SSR + below-fold static client tree (`content-visibility` off-screen paint skip). */
-export async function HomeMainStream() {
-  const [sections, heroCtaButtons, bannersRaw] = await Promise.all([
-    getSections(),
-    getHeroCtaCached(),
+const HERO_SECTION_FALLBACK: HomePageSectionPayload = {
+  key: "hero",
+  label_th: DEFAULT_SECTION_FALLBACK_LABELS.hero.label_th,
+  label_en: DEFAULT_SECTION_FALLBACK_LABELS.hero.label_en,
+};
+
+/** LCP path only — banners + CTA; never waits on homepage_sections. */
+export async function HomeHeroStream() {
+  const [bannersRaw, heroCtaButtons, cookieStore] = await Promise.all([
     getHeroCarouselBannersCached().catch(() => null),
+    getHeroCtaCached(),
+    cookies(),
   ]);
   const banners = resolveHeroCarouselBanners(bannersRaw);
   const heroCtaPayload = heroCtaButtons.map(({ id, labelTh, labelEn, href, color }) => ({
@@ -72,21 +75,40 @@ export async function HomeMainStream() {
     href: normalizeHeroCtaHref(href, id),
     color,
   }));
-  const belowSections = normalizeBelowFoldSections(sections.filter((s) => s.key !== "hero"));
-  const vpHint = cookies().get(VIEWPORT_HINT_COOKIE)?.value;
-  const initialLcpDesktop = vpHint === "d";
+  const initialLcpDesktop = cookieStore.get(VIEWPORT_HINT_COOKIE)?.value === "d";
   const heroCarousel = (
     <HomeHeroCarousel banners={banners} initialLcpDesktop={initialLcpDesktop} />
   );
   return (
+    <HomePageHeroClient
+      sections={[HERO_SECTION_FALLBACK]}
+      heroCarousel={heroCarousel}
+      heroCtaButtons={heroCtaPayload}
+    />
+  );
+}
+
+async function HomeBelowFoldStream() {
+  const sections = await getSectionsCached();
+  const belowSections = normalizeBelowFoldSections(sections.filter((s) => s.key !== "hero"));
+  return (
+    <div className="w-full [content-visibility:auto] [contain-intrinsic-size:0_600px] overflow-hidden">
+      <HomePageBelowFoldHost
+        belowSections={belowSections}
+        initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
+      />
+    </div>
+  );
+}
+
+/** Hero first (no Suspense), below-fold streams after sections resolve. */
+export async function HomeMainStream() {
+  return (
     <div className="min-h-screen bg-background text-foreground">
-      <HomePageHeroClient sections={sections} heroCarousel={heroCarousel} heroCtaButtons={heroCtaPayload} />
-      <div className="w-full [content-visibility:auto] [contain-intrinsic-size:0_600px] overflow-hidden">
-        <HomePageBelowFoldHost
-          belowSections={belowSections}
-          initialData={EMPTY_STOREFRONT_HOME_PAYLOAD /* literal-empty — storefront-home-service */}
-        />
-      </div>
+      <HomeHeroStream />
+      <Suspense fallback={null}>
+        <HomeBelowFoldStream />
+      </Suspense>
     </div>
   );
 }

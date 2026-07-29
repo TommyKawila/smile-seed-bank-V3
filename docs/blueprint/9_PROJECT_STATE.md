@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-29 (PSI LCP — stream hero early)
+- **What:** หลัง Wave defer JS ได้ Perf 87 / TBT 10ms แต่ LCP 4.1s + TTFB ~617ms — ปลดบล็อก LCP img จาก sections/Suspense ว่าง
+- **Logic:** `HomeHeroStream` รอแค่ banners+CTA (ไม่รอ `homepage_sections`) · ลบ Suspense fallback ว่างบน `/` · `HomePageHeroClient` ไม่ `return null` · Navbar logo บน `/` → `priority=false` / `fetchPriority=low` · preload hero ตาม `ssb_vp` ข้างเดียว
+- **ไฟล์:** `home-stream.tsx`, `(home)/page.tsx`, `(home)/layout.tsx`, `HomePageHeroClient.tsx`, `HomeHeroLcpPreload.tsx`, `Navbar.tsx`
+- **PSI retest:** รอ deploy · Mobile `/` ×3 — เป้า LCP ≤2.5s / Perf ≥90 แล้วค่อย lock `6_PERF_BUDGETS.md`
+
 ### บันทึกการทำงาน — 2026-07-29 (PSI Mobile recovery — age gate + TBT/TTFB)
 - **What:** แก้ Mobile PSI regression (lab 68 / TBT 950ms / LCP 3.2s) — age gate mount เร็วเกิน, Framer idle arm, Speed Insights sync, framer ใน ProductCard graph, TTFB session hint, lazy nav dropdowns
 - **Logic:** `scheduleInteractionMount` fallback → `setTimeout` wall-clock 12s (ไม่ใช่ rIC idle) · ลบ Framer `scheduleIdleWork(2.5s)` · `VercelSpeedInsightsClient` interaction-only · `getGeneticPercents` → `lib/genetic-percents.ts` · guest `/` defer auth purge 5s · skip `getSession` เมื่อไม่มี sb auth cookie · lazy `GeneticsSeedsNav` / `GrowerToolsNavDropdown` on hover/mobile menu

@@ -230,8 +230,8 @@ export function Navbar() {
                 alt="Smile Seed Bank"
                 width={NAV_LOGO_INTRINSIC.width}
                 height={NAV_LOGO_INTRINSIC.height}
-                priority={true}
-                fetchPriority="high"
+                priority={!isHomePage}
+                fetchPriority={isHomePage ? "low" : "high"}
                 sizes={NAV_LOGO_SIZES}
                 className="h-11 w-auto max-w-[min(152px,46vw)] shrink-0 object-contain object-left sm:h-14 sm:max-w-[12.5rem] lg:max-w-[14rem]"
               />
