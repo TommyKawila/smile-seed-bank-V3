@@ -15,6 +15,7 @@ import { shippingFeeForSubtotal } from "@/lib/order-financials";
 import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-promo-math";
 import { customerHasCompletedOrderForFirstOrderPromo } from "@/lib/services/coupon-service";
 import { isPromoQaBypassEmail } from "@/lib/promo-qa-bypass-email";
+import { PRODUCT_KIND_MERCH } from "@/lib/product-kind";
 import type { CheckoutItem, CheckoutSummary } from "@/lib/services/order-service";
 
 type LineIn = {
@@ -250,7 +251,15 @@ export async function validateStorefrontCheckoutTotals(input: {
 
   const [variants, promotionRows, promoRow, brandRowsRaw] = await Promise.all([
     prisma.product_variants.findMany({
-      where: { id: { in: variantIds }, is_active: true },
+      where: {
+        id: { in: variantIds },
+        is_active: true,
+        products: {
+          is_active: true,
+          // Merch cart is Coming soon — reject even if variants are active/stocked.
+          NOT: { product_kind: PRODUCT_KIND_MERCH },
+        },
+      },
       include: {
         products: {
           select: {
@@ -439,7 +448,8 @@ export async function validateStorefrontCheckoutTotals(input: {
       variantId: line.variantId,
       quantity: line.quantity,
       price: gift ? 0 : unitBaht,
-      productName: line.productName,
+      // Always persist canonical DB name — never trust client productName (packing integrity).
+      productName: v.products?.name ?? "Unknown",
       isFreeGift: gift,
     };
   });
