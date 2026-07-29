@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-29 (PSI Mobile recovery — age gate + TBT/TTFB)
+- **What:** แก้ Mobile PSI regression (lab 68 / TBT 950ms / LCP 3.2s) — age gate mount เร็วเกิน, Framer idle arm, Speed Insights sync, framer ใน ProductCard graph, TTFB session hint, lazy nav dropdowns
+- **Logic:** `scheduleInteractionMount` fallback → `setTimeout` wall-clock 12s (ไม่ใช่ rIC idle) · ลบ Framer `scheduleIdleWork(2.5s)` · `VercelSpeedInsightsClient` interaction-only · `getGeneticPercents` → `lib/genetic-percents.ts` · guest `/` defer auth purge 5s · skip `getSession` เมื่อไม่มี sb auth cookie · lazy `GeneticsSeedsNav` / `GrowerToolsNavDropdown` on hover/mobile menu
+- **ไฟล์:** `lib/schedule-interaction-mount.ts`, `StorefrontLayoutClient.tsx`, `VercelSpeedInsightsClient.tsx`, `app/layout.tsx`, `lib/genetic-percents.ts`, `ProductSpecs.tsx`, `ProductCard.tsx`, `MicroGeneticsBar.tsx`, `hooks/use-auth.ts`, `storefront-auth-hint-service.ts`, `lib/supabase/has-auth-cookies.ts`, `app/(storefront)/layout.tsx`, `Navbar.tsx`
+- **PSI retest:** รอ Boss deploy แล้วรัน pagespeed.web.dev `/` Mobile ×3 (Incognito) — อัปเดต lock ใน `6_PERF_BUDGETS.md` เมื่อ median ≥90
+
 ### บันทึกการทำงาน — 2026-07-27 (Super soil: research → lock → blog → deterministic tool)
 - **What:** วิจัย+ล็อกสูตร Super soil · บทความอ้างอิง TH/EN (category Research + VerifiedResearch) · Soil Mixer คำนวณทันทีไม่รอ AI · optional explain/ask grounded
 - **Logic:** `lib/soil-mixer-research.ts` brief · `buildSoilMixResult()` deterministic · API `soil-mixer` ไม่ผ่าน AI gate · `soil-mixer-explain` / `soil-mixer-ask` optional · ลิงก์ `/blog/super-soil-recipe-smile-seed-bank`

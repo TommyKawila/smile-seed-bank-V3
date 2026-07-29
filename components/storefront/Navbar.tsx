@@ -22,8 +22,17 @@ import { cn } from "@/lib/utils";
 import { NAV_LOGO_INTRINSIC, NAV_LOGO_SIZES } from "@/lib/storefront-nav-logo";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
-import { GeneticsSeedsNav } from "@/components/storefront/GeneticsSeedsNav";
-import { GrowerToolsNavDropdown } from "@/components/storefront/GrowerToolsNavDropdown";
+const GeneticsSeedsNav = dynamic(
+  () => import("@/components/storefront/GeneticsSeedsNav").then((m) => ({ default: m.GeneticsSeedsNav })),
+  { ssr: false }
+);
+const GrowerToolsNavDropdown = dynamic(
+  () =>
+    import("@/components/storefront/GrowerToolsNavDropdown").then((m) => ({
+      default: m.GrowerToolsNavDropdown,
+    })),
+  { ssr: false }
+);
 
 function LanguageToggle({
   locale,
@@ -116,6 +125,8 @@ export function Navbar() {
   const [cartHitWobble, setCartHitWobble] = useState(false);
   const [cartSheetMounted, setCartSheetMounted] = useState(false);
   const [searchMounted, setSearchMounted] = useState(false);
+  const [seedsNavMounted, setSeedsNavMounted] = useState(false);
+  const [toolsNavMounted, setToolsNavMounted] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,6 +136,27 @@ export function Navbar() {
   useEffect(() => {
     if (searchOpen) setSearchMounted(true);
   }, [searchOpen]);
+
+  useEffect(() => {
+    if (menuOpen) {
+      setSeedsNavMounted(true);
+      setToolsNavMounted(true);
+    }
+  }, [menuOpen]);
+
+  useEffect(() => {
+    const seedsActive =
+      pathname === "/shop" ||
+      pathname.startsWith("/shop") ||
+      pathname === "/seeds" ||
+      pathname.startsWith("/seeds/") ||
+      pathname === "/breeders" ||
+      pathname.startsWith("/brand/") ||
+      pathname.startsWith("/breeders/");
+    const toolsActive = pathname === "/tools" || pathname.startsWith("/tools/");
+    if (seedsActive) setSeedsNavMounted(true);
+    if (toolsActive) setToolsNavMounted(true);
+  }, [pathname]);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -163,6 +195,8 @@ export function Navbar() {
   }, []);
 
   const homeLabel = t("หน้าแรก", "Home");
+  const seedsLabel = t("เมล็ดพันธุ์", "Seeds");
+  const toolsLabel = t("ผู้ช่วย AI", "AI Assistant");
   const merchLabel = t("Merchandise", "Merchandise");
   const blogLabel = t("Blog", "Blog");
 
@@ -218,21 +252,37 @@ export function Navbar() {
             <Link href="/" className={cn(navLinkClass, isHomeActive && navLinkActive)}>
               {homeLabel}
             </Link>
-            <GeneticsSeedsNav
-              navLinkClass={cn(navLinkClass, isSeedsActive && navLinkActive)}
-              solidLightNav={solidLightNav}
-              mode="desktop"
-            />
+            {seedsNavMounted ? (
+              <GeneticsSeedsNav
+                navLinkClass={cn(navLinkClass, isSeedsActive && navLinkActive)}
+                solidLightNav={solidLightNav}
+                mode="desktop"
+              />
+            ) : (
+              <div onMouseEnter={() => setSeedsNavMounted(true)} onFocus={() => setSeedsNavMounted(true)}>
+                <Link href="/seeds" className={cn(navLinkClass, isSeedsActive && navLinkActive)}>
+                  {seedsLabel}
+                </Link>
+              </div>
+            )}
             <Link href="/merch" className={cn(navLinkClass, isMerchActive && navLinkActive)}>
               {merchLabel}
             </Link>
             <Link href="/blog" className={cn(navLinkClass, isBlogActive && navLinkActive)}>
               {blogLabel}
             </Link>
-            <GrowerToolsNavDropdown
-              navLinkClass={cn(navLinkClass, isToolsActive && navLinkActive)}
-              mode="desktop"
-            />
+            {toolsNavMounted ? (
+              <GrowerToolsNavDropdown
+                navLinkClass={cn(navLinkClass, isToolsActive && navLinkActive)}
+                mode="desktop"
+              />
+            ) : (
+              <div onMouseEnter={() => setToolsNavMounted(true)} onFocus={() => setToolsNavMounted(true)}>
+                <Link href="/tools" className={cn(navLinkClass, isToolsActive && navLinkActive)}>
+                  {toolsLabel}
+                </Link>
+              </div>
+            )}
           </nav>
 
           {/* Right Side */}
@@ -379,14 +429,27 @@ export function Navbar() {
               >
                 {homeLabel}
               </Link>
-              <GeneticsSeedsNav
-                navLinkClass={cn(navLinkClass, isSeedsActive && navLinkActive)}
-                solidLightNav={solidLightNav}
-                mode="mobile"
-                menuOpen={menuOpen}
-                seedsActive={isSeedsActive}
-                onNavigate={() => setMenuOpen(false)}
-              />
+              {seedsNavMounted ? (
+                <GeneticsSeedsNav
+                  navLinkClass={cn(navLinkClass, isSeedsActive && navLinkActive)}
+                  solidLightNav={solidLightNav}
+                  mode="mobile"
+                  menuOpen={menuOpen}
+                  seedsActive={isSeedsActive}
+                  onNavigate={() => setMenuOpen(false)}
+                />
+              ) : (
+                <Link
+                  href="/seeds"
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    "flex min-h-12 items-center border-b border-border text-base font-medium tracking-wide transition-colors hover:text-primary",
+                    isSeedsActive ? "text-primary" : "text-foreground/85"
+                  )}
+                >
+                  {seedsLabel}
+                </Link>
+              )}
               <Link
                 href="/merch"
                 onClick={() => setMenuOpen(false)}
@@ -407,13 +470,26 @@ export function Navbar() {
               >
                 {blogLabel}
               </Link>
-              <GrowerToolsNavDropdown
-                navLinkClass={cn(navLinkClass, isToolsActive && navLinkActive)}
-                mode="mobile"
-                menuOpen={menuOpen}
-                toolsActive={isToolsActive}
-                onNavigate={() => setMenuOpen(false)}
-              />
+              {toolsNavMounted ? (
+                <GrowerToolsNavDropdown
+                  navLinkClass={cn(navLinkClass, isToolsActive && navLinkActive)}
+                  mode="mobile"
+                  menuOpen={menuOpen}
+                  toolsActive={isToolsActive}
+                  onNavigate={() => setMenuOpen(false)}
+                />
+              ) : (
+                <Link
+                  href="/tools"
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    "flex min-h-12 items-center border-b border-border text-base font-medium tracking-wide transition-colors hover:text-primary",
+                    isToolsActive ? "text-primary" : "text-foreground/85"
+                  )}
+                >
+                  {toolsLabel}
+                </Link>
+              )}
               {/* Auth Links — Mobile */}
               <div className="mt-3 border-t border-border pt-3">
                 {signedIn ? (

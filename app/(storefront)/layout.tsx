@@ -20,7 +20,7 @@ export default async function StorefrontLayout({
   const initialLocale = magazineLocaleFromCookie(cookieStore.get("locale")?.value);
   const initialAgeVerifiedCookie =
     cookieStore.get(SMIL_AGE_VERIFIED_COOKIE_NAME)?.value === "1";
-  const initialSessionHint = await getStorefrontSessionHint();
+  const initialSessionHint = await getStorefrontSessionHint(cookieStore);
 
   const initialSkipAgeGate =
     initialAgeVerifiedCookie || initialSessionHint !== null;

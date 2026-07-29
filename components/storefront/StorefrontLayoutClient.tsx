@@ -63,8 +63,6 @@ const PromoReturnHandler = dynamic(
 
 const PROMO_HANDLER_IDLE_MS = 2_500;
 
-const CATALOG_FRAMER_IDLE_MS = 2_500;
-
 export function StorefrontLayoutClient({
   children,
   initialAgeVerifiedCookie,
@@ -111,11 +109,9 @@ export function StorefrontLayoutClient({
     const arm = () => setFramerReady(true);
     window.addEventListener(FRAMER_MOTION_NEEDED_EVENT, arm);
     const cancelInteract = scheduleInteractionMount(arm, HOME_FRAMER_FALLBACK_MS);
-    const cancelIdle = scheduleIdleWork(arm, CATALOG_FRAMER_IDLE_MS);
     return () => {
       window.removeEventListener(FRAMER_MOTION_NEEDED_EVENT, arm);
       cancelInteract();
-      cancelIdle();
     };
   }, [framerReady]);
 

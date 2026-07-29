@@ -12,7 +12,7 @@ import type {
   ProductWithBreeder,
 } from "@/lib/supabase/types";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
-import { getGeneticPercents } from "@/components/storefront/ProductSpecs";
+import { getGeneticPercents } from "@/lib/genetic-percents";
 import { formatPrice } from "@/lib/utils";
 import { resolveListingUnitAfterBrand } from "@/lib/brand-promotion-checkout";
 import {

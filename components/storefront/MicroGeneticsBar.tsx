@@ -1,6 +1,6 @@
 "use client";
 
-import { getGeneticPercents } from "@/components/storefront/ProductSpecs";
+import { getGeneticPercents } from "@/lib/genetic-percents";
 import type { Product } from "@/types/supabase";
 
 /** Includes flowering_type so photoperiod & photo_ff stay aligned with storefront (bar uses genetics only). */

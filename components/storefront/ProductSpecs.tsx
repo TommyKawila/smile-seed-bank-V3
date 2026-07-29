@@ -3,6 +3,7 @@
 import { m } from "framer-motion";
 import { Mars, Venus } from "lucide-react";
 import type { Product } from "@/types/supabase";
+import { getGeneticPercents } from "@/lib/genetic-percents";
 import { cn } from "@/lib/utils";
 
 const CHIP = "inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1.5";
@@ -44,27 +45,6 @@ export function RegularStatCard({ label }: { label: string }) {
       <span className="mt-0.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
     </div>
   );
-}
-
-function toPct(v: unknown): number | null {
-  if (v == null || v === "") return null;
-  const n = Number(v);
-  if (!Number.isFinite(n)) return null;
-  return Math.min(100, Math.max(0, Math.round(n)));
-}
-
-export function getGeneticPercents(product: Pick<
-  Product,
-  "sativa_percent" | "indica_percent" | "sativa_ratio" | "indica_ratio"
->): { sativa: number; indica: number } | null {
-  let s = toPct(product.sativa_percent);
-  let i = toPct(product.indica_percent);
-  if (s == null && i == null) {
-    s = toPct(product.sativa_ratio);
-    i = toPct(product.indica_ratio);
-  }
-  if (s == null || i == null) return null;
-  return { sativa: s, indica: i };
 }
 
 type TFn = (th: string, en: string) => string;

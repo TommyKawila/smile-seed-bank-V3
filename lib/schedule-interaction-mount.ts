@@ -2,7 +2,7 @@ import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
 const INTERACTION_EVENTS = ["scroll", "pointerdown", "keydown", "touchstart"] as const;
 
-/** Mount after first user gesture or fallback — PSI lab skips gate (no interaction). */
+/** Mount after first user gesture or wall-clock fallback — PSI lab (no interaction) waits full fallbackMs. */
 export function scheduleInteractionMount(onMount: () => void, fallbackMs = 12_000): () => void {
   let done = false;
   let cancelFallback: (() => void) | null = null;
@@ -23,7 +23,8 @@ export function scheduleInteractionMount(onMount: () => void, fallbackMs = 12_00
   for (const e of INTERACTION_EVENTS) {
     window.addEventListener(e, onInteract, passive);
   }
-  cancelFallback = scheduleIdleWork(mount, fallbackMs);
+  const fallbackId = window.setTimeout(mount, fallbackMs);
+  cancelFallback = () => window.clearTimeout(fallbackId);
 
   return () => {
     if (done) return;

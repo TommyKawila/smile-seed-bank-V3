@@ -1,10 +1,10 @@
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { prompt } from "@/lib/fonts/prompt";
 import { PromptExtendedFacesLoader } from "@/components/storefront/PromptExtendedFacesLoader";
 import { LazyGoogleAnalytics } from "@/components/third-parties/LazyGoogleAnalytics";
 import { VercelAnalyticsClient } from "@/components/VercelAnalyticsClient";
+import { VercelSpeedInsightsClient } from "@/components/VercelSpeedInsightsClient";
 import "./globals.css";
 import { getSiteOrigin } from "@/lib/get-url";
 import { STOREFRONT_CRITICAL_CSS } from "@/lib/storefront-defer-css";
@@ -77,7 +77,7 @@ export default function RootLayout({
         {children}
         <LazyGoogleAnalytics gaId={GA_MEASUREMENT_ID} />
         <Analytics />
-        <SpeedInsights />
+        <VercelSpeedInsightsClient />
       </body>
     </html>
   );
