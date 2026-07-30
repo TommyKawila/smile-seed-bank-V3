@@ -8,6 +8,7 @@ import type { ProductVariantRow } from "@/lib/supabase/types";
 export type PosClearanceProductSlice = {
   is_clearance?: boolean | null;
   sale_price?: unknown;
+  clearance_discount_percent?: number | null;
   product_variants?: (Pick<ProductVariantRow, "price" | "stock" | "is_active"> &
     Partial<
       Pick<

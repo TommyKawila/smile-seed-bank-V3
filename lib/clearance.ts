@@ -26,6 +26,18 @@ export function normalizeClearanceDiscountPercent(
 }
 
 /**
+ * Product create/update: prefer body %, else stored DB %.
+ * Never silently invent 50% when a stored percent already exists.
+ */
+export function resolveClearancePercentForProductWrite(
+  bodyValue: unknown,
+  storedValue: unknown
+): ClearanceDiscountPercent {
+  if (isClearanceDiscountPercent(bodyValue)) return Math.trunc(Number(bodyValue));
+  return normalizeClearanceDiscountPercent(storedValue);
+}
+
+/**
  * Breeder banner box on `/clearance` — same frame on mobile (1-col) and desktop (3-col).
  * Upload at this ratio; storefront uses object-cover inside aspect-[16/10].
  */

@@ -151,6 +151,7 @@ const emptyForm: Partial<ProductFormData> = {
   new_arrival_priority: 0,
   is_clearance: false,
   sale_price: null as number | null,
+  clearance_discount_percent: null as number | null,
   variants: [{ ...emptyVariant }],
 };
 
@@ -241,6 +242,14 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         sale_price:
           (p as { sale_price?: number | string | null }).sale_price != null
             ? Number((p as { sale_price?: number | string | null }).sale_price)
+            : null,
+        clearance_discount_percent:
+          (p as { clearance_discount_percent?: number | null }).clearance_discount_percent !=
+          null
+            ? Number(
+                (p as { clearance_discount_percent?: number | null })
+                  .clearance_discount_percent
+              )
             : null,
         thc_percent: p.thc_percent,
         cbd_percent:

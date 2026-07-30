@@ -103,6 +103,14 @@ export const ProductSchema = z.object({
     .optional(),
   is_clearance: z.boolean().default(false).optional(),
   sale_price: z.number().min(0).nullable().optional(),
+  /** Clearance % off list (1–99). Required for correct resync on product save. */
+  clearance_discount_percent: z
+    .number()
+    .int()
+    .min(1)
+    .max(99)
+    .nullable()
+    .optional(),
 });
 
 /** Storefront visibility: no packages or zero total stock → not listed as available */
