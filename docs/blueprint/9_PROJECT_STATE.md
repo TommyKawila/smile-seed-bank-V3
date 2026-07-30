@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (Fix Vercel — server-only client import)
+- **What:** แก้ build fail — client `admin/orders` ไม่ดึง `order-access-token` (server-only) อีกต่อไป
+- **Logic:** quick-message รับ `paymentPageUrl` · `GET /api/admin/orders/[id]/payment-url` เซ็น HMAC ฝั่ง server
+- **ไฟล์:** `lib/admin-order-quick-messages.ts`, `app/api/admin/orders/[id]/payment-url/route.ts`, `app/admin/orders/page.tsx`
+
 ### บันทึกการทำงาน — 2026-07-30 (Cart UI — Clearance strikethrough)
 - **What:** ตะกร้า/เช็คเอาต์แสดงขีดฆ่าราคาเต็มเมื่อ Clearance ลด 50% (ยอดเรียกเก็บไม่เปลี่ยน)
 - **Logic:** `CartItem.listPrice` ตอน add เมื่อ list > unit · `cartItemBrandLineDisplay` ใช้ compare-at หลัง brand

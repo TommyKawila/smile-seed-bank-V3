@@ -1,4 +1,3 @@
-import { buildOrderPaymentUrl } from "@/lib/order-access-token";
 import { carrierLabelFromCode } from "@/lib/shipping-carriers";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import {
@@ -23,10 +22,6 @@ function formatTotalBaht(amount: number): string {
   return Number(amount).toLocaleString("th-TH", { maximumFractionDigits: 0 });
 }
 
-export function adminOrderPaymentPageUrl(orderNumber: string): string {
-  return buildOrderPaymentUrl(orderNumber);
-}
-
 /** Same copy as approvePayment LINE text — admin can send manually. */
 export function buildAdminPaymentReceivedQuickMessage(
   totalAmount: number,
@@ -43,6 +38,8 @@ export function buildAdminPaymentReceivedQuickMessage(
 
 export type AdminPaymentLinkOrderInput = {
   orderNumber: string;
+  /** Signed payment URL from server (`?t=&e=`) — never build HMAC on the client. */
+  paymentPageUrl: string;
   totalAmount: number;
   shippingFee: number;
   discountAmount: number;
@@ -69,7 +66,7 @@ export function buildAdminPaymentLinkQuickMessage(input: AdminPaymentLinkOrderIn
     paymentMethodLabel: input.paymentMethodLabel ?? null,
     customerName: input.customerName,
     customerPhone: input.customerPhone,
-    paymentPageUrl: adminOrderPaymentPageUrl(input.orderNumber),
+    paymentPageUrl: input.paymentPageUrl,
     bankLines: input.bankLines,
     promptPayQrUrl: input.promptPayQrUrl,
   });

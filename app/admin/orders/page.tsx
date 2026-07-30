@@ -1485,8 +1485,26 @@ export default function AdminOrdersPage() {
       const pm = detailModal.paymentMethod
         ? PAYMENT_LABELS[detailModal.paymentMethod] ?? detailModal.paymentMethod
         : null;
+      const urlRes = await fetch(`/api/admin/orders/${detailModal.id}/payment-url`);
+      if (!urlRes.ok) {
+        throw new Error(
+          lang === "en"
+            ? "Could not build payment link"
+            : "สร้างลิงก์ชำระเงินไม่สำเร็จ"
+        );
+      }
+      const urlJson = (await urlRes.json()) as { paymentUrl?: string };
+      const paymentPageUrl = urlJson.paymentUrl?.trim() ?? "";
+      if (!paymentPageUrl) {
+        throw new Error(
+          lang === "en"
+            ? "Could not build payment link"
+            : "สร้างลิงก์ชำระเงินไม่สำเร็จ"
+        );
+      }
       return buildAdminPaymentLinkQuickMessage({
         orderNumber: detailModal.orderNumber,
+        paymentPageUrl,
         totalAmount: detailModal.totalAmount,
         shippingFee: detailModal.shippingFee,
         discountAmount: detailModal.discountAmount,
@@ -1969,10 +1987,14 @@ export default function AdminOrdersPage() {
                             setQuickMessageKind("payment-link");
                             setQuickMessagePresetBody(null);
                             setQuickMessageLang(summaryLang);
-                            void buildPaymentLinkMessageForDetail(summaryLang).then((text) => {
-                              setQuickMessageBody(text);
-                              setQuickMessageOpen(true);
-                            });
+                            void buildPaymentLinkMessageForDetail(summaryLang)
+                              .then((text) => {
+                                setQuickMessageBody(text);
+                                setQuickMessageOpen(true);
+                              })
+                              .catch((err) => {
+                                pushToast(String(err), "error");
+                              });
                           }}
                         >
                           Payment link / ลิงก์ชำระเงิน
