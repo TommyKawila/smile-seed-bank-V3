@@ -7,10 +7,10 @@ import { useLanguage } from "@/context/LanguageContext";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import {
-  computeStartingPrice,
   computeTotalStock,
   getClearancePercentOff,
   getEffectiveListingPrice,
+  getPackSizeLabelFromUnitLabel,
   listClearancePackSummaries,
   productDetailHref,
 } from "@/lib/product-utils";
@@ -22,16 +22,31 @@ import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 
 export function ClearanceCard({ product }: { product: ProductWithBreederAndVariants }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const href = productDetailHref(product);
   const img = getListingThumbnailUrl(product);
   const pct = getClearancePercentOff(product);
   const clearancePacks = listClearancePackSummaries(product);
-  const packLine = clearancePacks
-    .map((p) => `${p.unitLabel} · −${p.percentOff}%`)
-    .join(" · ");
-  const regular = computeStartingPrice(product.product_variants);
-  const sale = getEffectiveListingPrice(product);
+  const activePackCount = (product.product_variants ?? []).filter(
+    (v) => v.is_active !== false
+  ).length;
+  const partialClearance =
+    clearancePacks.length > 0 && clearancePacks.length < activePackCount;
+
+  const bestPack =
+    clearancePacks.length > 0
+      ? clearancePacks.reduce((a, b) =>
+          a.clearancePrice <= b.clearancePrice ? a : b
+        )
+      : null;
+  const listPrice = bestPack?.listPrice ?? 0;
+  const sale =
+    bestPack?.clearancePrice ?? getEffectiveListingPrice(product);
+  const bestLabel = bestPack
+    ? getPackSizeLabelFromUnitLabel(bestPack.unitLabel, locale) ??
+      bestPack.unitLabel
+    : null;
+
   const totalStock = computeTotalStock(product.product_variants ?? []);
   const outOfStock = isProductAggregateOutOfStock(product);
 
@@ -86,20 +101,42 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
         >
           {product.name}
         </Link>
-        {packLine ? (
-          <p className="line-clamp-2 text-[11px] font-medium leading-snug text-amber-400/95">
-            {t(`ลดเฉพาะ: ${packLine}`, `Sale packs: ${packLine}`)}
-          </p>
+        {clearancePacks.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {clearancePacks.map((pack) => {
+              const label =
+                getPackSizeLabelFromUnitLabel(pack.unitLabel, locale) ??
+                pack.unitLabel;
+              return (
+                <span
+                  key={`${pack.variantId ?? pack.unitLabel}-${pack.percentOff}`}
+                  className="inline-flex max-w-full items-center rounded-md border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold leading-tight text-amber-300"
+                >
+                  <span className="truncate">{label}</span>
+                  <span className="ml-1 shrink-0 tabular-nums">−{pack.percentOff}%</span>
+                </span>
+              );
+            })}
+          </div>
         ) : null}
-        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-zinc-800 pt-2">
-          {regular > sale && (
-            <span className="text-xs tabular-nums text-muted-foreground line-through">{formatPrice(regular)}</span>
-          )}
-          <span
-            className={`text-base font-bold tabular-nums ${outOfStock ? "text-muted-foreground" : "text-emerald-400"}`}
-          >
-            {formatPrice(sale)}
-          </span>
+        <div className="mt-auto space-y-1 border-t border-zinc-800 pt-2">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            {listPrice > sale && sale > 0 ? (
+              <span className="text-xs tabular-nums text-muted-foreground line-through">
+                {formatPrice(listPrice)}
+              </span>
+            ) : null}
+            <span
+              className={`text-base font-bold tabular-nums ${outOfStock ? "text-muted-foreground" : "text-emerald-400"}`}
+            >
+              {formatPrice(sale)}
+            </span>
+          </div>
+          {partialClearance && bestLabel ? (
+            <p className="text-[10px] font-medium text-zinc-400">
+              {t(`จาก ${bestLabel}`, `From ${bestLabel}`)}
+            </p>
+          ) : null}
         </div>
         {!outOfStock && totalStock > 0 && totalStock < 10 && (
           <p className="text-[10px] font-medium uppercase tracking-wide text-amber-400/90">

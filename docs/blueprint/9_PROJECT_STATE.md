@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-31 (Clearance card — ชิปแพ็กที่ลด)
+- **What:** การ์ด Clearance ในกล่องค่ายโชว์ชิปแพ็กที่ลด + ราคาขีดฆ่าตรงแพ็กลดจริง
+- **Logic:** `listClearancePackSummaries` · ราคาจากแพ็ก clearance ถูกสุด · ข้อความ “จาก {แพ็ก}” เมื่อลดบางแพ็ก
+- **ไฟล์:** `components/storefront/ClearanceCard.tsx`
+
 ### บันทึกการทำงาน — 2026-07-31 (Clearance UI — badge ตามแพ็กที่เลือก)
 - **What:** ไม่โชว์ −% บนแพ็กที่ไม่ลด · ไฮไลต์แพ็ก Clearance บน PDP · การ์ดค่ายบอกแพ็กที่ร่วมรายการ
 - **Logic:** `getSelectedClearancePercentOff` · `listClearancePackSummaries` · `pickDefaultClearanceVariant`
