@@ -250,6 +250,20 @@ export async function POST(req: NextRequest) {
     })();
 
     const access = createOrderAccessQuery(data.orderNumber);
+    if (!access.t?.trim() || !access.e?.trim()) {
+      console.error(
+        "[POST /api/storefront/orders] access token empty — set RECEIPT_DOWNLOAD_SECRET"
+      );
+      return NextResponse.json(
+        {
+          error:
+            "ระบบชำระเงินยังตั้งค่าไม่ครบ (RECEIPT_DOWNLOAD_SECRET) — กรุณาติดต่อร้าน",
+          orderNumber: data.orderNumber,
+          orderId: data.orderId,
+        },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       {
         orderNumber: data.orderNumber,

@@ -229,17 +229,41 @@ export function PaymentPageClient({
                   <p className="mt-1 text-lg font-bold text-foreground">ส่งหลักฐานการโอนเงิน</p>
                   <p className="mt-1 text-xs text-muted-foreground">อัปโหลดสลิปหรือ PDF เพื่อยืนยันการชำระเงิน</p>
                 </div>
+                {!access?.t || !access?.e ? (
+                  <div
+                    className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800"
+                    role="alert"
+                  >
+                    <p className="font-semibold">ลิงก์ชำระเงินไม่สมบูรณ์</p>
+                    <p className="mt-1 text-xs leading-relaxed text-red-700">
+                      ขอลิงก์ใหม่จากแอดมินหรืออีเมลยืนยันออเดอร์ แล้วเปิดลิงก์ที่มีรหัสเข้าถึงก่อนอัปโหลดสลิป
+                    </p>
+                    <a
+                      href={
+                        process.env.NEXT_PUBLIC_LINE_OA_URL?.trim() ||
+                        "https://page.line.me/smileseedsbank"
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex min-h-11 items-center text-xs font-semibold text-red-900 underline underline-offset-2"
+                    >
+                      ติดต่อแอดมินทาง LINE
+                    </a>
+                  </div>
+                ) : null}
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp,application/pdf"
                   className="hidden"
                   onChange={handleFileChange}
+                  disabled={!access?.t || !access?.e}
                 />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/[0.04] py-4 font-semibold text-primary transition-colors hover:bg-primary/[0.08]"
+                  disabled={!access?.t || !access?.e}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/[0.04] py-4 font-semibold text-primary transition-colors hover:bg-primary/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Upload className="h-5 w-5" />
                   {selectedFile ? selectedFile.name : "เลือกไฟล์สลิป"}
@@ -248,7 +272,7 @@ export function PaymentPageClient({
 
                 <Button
                   onClick={() => void handleConfirm()}
-                  disabled={!selectedFile || uploading}
+                  disabled={!selectedFile || uploading || !access?.t || !access?.e}
                   className="h-12 w-full bg-primary text-base font-semibold text-white shadow-sm hover:bg-primary/90"
                 >
                   {uploading ? (

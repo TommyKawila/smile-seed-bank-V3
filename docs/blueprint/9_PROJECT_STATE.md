@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (Payment link incomplete — slip upload)
+- **What:** กันเคสอัปโหลดสลิปเจอ «ลิงก์ชำระเงินไม่สมบูรณ์» เมื่อไม่มี `?t=&e=`
+- **Ops:** ตั้ง `RECEIPT_DOWNLOAD_SECRET` บน Vercel Production แล้ว Redeploy · ส่ง Payment link ใหม่จาก Admin ให้ลูกค้าที่ค้าง
+- **Logic:** checkout POST คืน 503 ถ้า access token ว่าง · หน้า `/payment` แสดงแบนเนอร์ + ปิดอัปโหลดเมื่อไม่มี access
+- **ไฟล์:** `app/api/storefront/orders/route.ts`, `PaymentPageClient.tsx`
+
 ### บันทึกการทำงาน — 2026-07-30 (Fix Vercel — server-only client import)
 - **What:** แก้ build fail — client `admin/orders` ไม่ดึง `order-access-token` (server-only) อีกต่อไป
 - **Logic:** quick-message รับ `paymentPageUrl` · `GET /api/admin/orders/[id]/payment-url` เซ็น HMAC ฝั่ง server
