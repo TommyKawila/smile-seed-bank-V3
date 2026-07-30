@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (LIFF first-click nav)
+- **What:** กดลิงก์ครั้งแรกจาก LINE LIFF (เช่น Clearance) ไม่ค้างหน้าเดิมแล้ว
+- **Logic:** เลิกสลับ tree เป็น `FramerLazyRoot` ตอน interaction · ห่อ layout ตลอดด้วย static `FramerLazyRoot` (LazyMotion async features คงเดิม)
+- **ไฟล์:** `components/storefront/StorefrontLayoutClient.tsx`
+
 ### บันทึกการทำงาน — 2026-07-30 (Payment link incomplete — slip upload)
 - **What:** กันเคสอัปโหลดสลิปเจอ «ลิงก์ชำระเงินไม่สมบูรณ์» เมื่อไม่มี `?t=&e=`
 - **Ops:** ตั้ง `RECEIPT_DOWNLOAD_SECRET` บน Vercel Production แล้ว Redeploy · ส่ง Payment link ใหม่จาก Admin ให้ลูกค้าที่ค้าง

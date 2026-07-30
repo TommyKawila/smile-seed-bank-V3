@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/storefront/Navbar";
-import { FRAMER_MOTION_NEEDED_EVENT } from "@/lib/framer-motion-events";
+import { FramerLazyRoot } from "@/components/storefront/FramerLazyRoot";
 import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
 import { CART_FLY_EVENT, type CartFlyEventDetail } from "@/lib/cart-fly-events";
@@ -12,7 +12,6 @@ import { clearCatalogReturnPath } from "@/lib/catalog-return-path";
 
 const CART_ANIMATION_IDLE_MS = 8_000;
 const AGE_GATE_FALLBACK_MS = 12_000;
-const HOME_FRAMER_FALLBACK_MS = 15_000;
 const HOME_BANNER_IDLE_MS = 2_500;
 
 const AgeVerificationGate = dynamic(
@@ -49,10 +48,6 @@ const CartAnimation = dynamic(
   () => import("@/components/storefront/CartAnimation").then((m) => ({ default: m.CartAnimation })),
   { ssr: false }
 );
-const FramerLazyRoot = dynamic(
-  () => import("@/components/storefront/FramerLazyRoot").then((m) => ({ default: m.FramerLazyRoot })),
-  { ssr: false }
-);
 const PromoReturnHandler = dynamic(
   () =>
     import("@/components/storefront/PromoReturnHandler").then((m) => ({
@@ -83,7 +78,6 @@ export function StorefrontLayoutClient({
     }
   }, [pathname]);
   const [mountAgeGate, setMountAgeGate] = useState(false);
-  const [framerReady, setFramerReady] = useState(false);
   const [mountOffers, setMountOffers] = useState(false);
   const [mountHomeBanners, setMountHomeBanners] = useState(!isHomePath);
   const [cartFxMount, setCartFxMount] = useState(false);
@@ -103,17 +97,6 @@ export function StorefrontLayoutClient({
     if (initialSkipAgeGate) return;
     return scheduleInteractionMount(() => setMountAgeGate(true), AGE_GATE_FALLBACK_MS);
   }, [initialSkipAgeGate]);
-
-  useEffect(() => {
-    if (framerReady) return;
-    const arm = () => setFramerReady(true);
-    window.addEventListener(FRAMER_MOTION_NEEDED_EVENT, arm);
-    const cancelInteract = scheduleInteractionMount(arm, HOME_FRAMER_FALLBACK_MS);
-    return () => {
-      window.removeEventListener(FRAMER_MOTION_NEEDED_EVENT, arm);
-      cancelInteract();
-    };
-  }, [framerReady]);
 
   useEffect(() => {
     if (!isHomePath) return;
@@ -171,5 +154,6 @@ export function StorefrontLayoutClient({
     </>
   );
 
-  return framerReady ? <FramerLazyRoot>{layoutBody}</FramerLazyRoot> : layoutBody;
+  // Always wrap — never swap tree on first interaction (breaks soft nav in LINE LIFF).
+  return <FramerLazyRoot>{layoutBody}</FramerLazyRoot>;
 }
