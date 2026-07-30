@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
@@ -55,6 +56,8 @@ const CreateOrderSchema = z.object({
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const body = await req.json();
     const parsed = CreateOrderSchema.safeParse(body);

@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -23,6 +24,8 @@ function sortedUniquePackNums(nums: number[], min = 1, max = 99): number[] {
 }
 
 export async function GET(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const { searchParams } = new URL(req.url);
     const breederId = searchParams.get("breederId");

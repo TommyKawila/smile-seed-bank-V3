@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
@@ -22,6 +23,8 @@ function normalizeFloweringType(v: unknown): typeof FLOWERING_DB_PHOTO_3N | null
 }
 
 export async function POST(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const body = await req.json();
   const { masterSku, breederId, name, category, categoryId, strain_dominance, byPack, packSizes, flowering_type } =
     body as {

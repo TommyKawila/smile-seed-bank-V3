@@ -1,4 +1,4 @@
-import { getSiteOrigin } from "@/lib/get-url";
+import { buildOrderPaymentUrl } from "@/lib/order-access-token";
 import { carrierLabelFromCode } from "@/lib/shipping-carriers";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import {
@@ -24,7 +24,7 @@ function formatTotalBaht(amount: number): string {
 }
 
 export function adminOrderPaymentPageUrl(orderNumber: string): string {
-  return `${getSiteOrigin()}/payment/${encodeURIComponent(orderNumber)}`;
+  return buildOrderPaymentUrl(orderNumber);
 }
 
 /** Same copy as approvePayment LINE text — admin can send manually. */

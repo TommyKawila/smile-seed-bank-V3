@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -28,6 +29,8 @@ function sanitizePaths(paths: unknown): string[] | null {
  * Uses service role (createAdminClient) — no browser → Supabase Storage CORS.
  */
 export async function POST(req: Request) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const body = (await req.json()) as { bucketName?: unknown; paths?: unknown };
     const bucketName =

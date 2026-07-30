@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
@@ -6,6 +7,8 @@ import { parsePackFromUnitLabel } from "@/lib/sku-utils";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const { searchParams } = new URL(req.url);
     const breederId = searchParams.get("breederId");

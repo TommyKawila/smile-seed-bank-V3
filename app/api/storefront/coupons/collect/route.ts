@@ -3,13 +3,32 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimitIp } from "@/lib/rate-limit-ip";
+import { logSecurityEvent } from "@/lib/security-log";
 
 const BodySchema = z.object({
   promo_code_id: z.coerce.number().int().positive(),
 });
 
+function clientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip")?.trim() ||
+    "unknown"
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const limited = rateLimitIp(`coupon-collect:${clientIp(req)}`, 30, 15 * 60 * 1000);
+    if (!limited.ok) {
+      logSecurityEvent("rate_limit_trip", { route: "coupons/collect" });
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },

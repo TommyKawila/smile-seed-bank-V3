@@ -3,6 +3,7 @@ export { appendLineOpenExternalBrowserParam } from "@/lib/line-open-external-bro
 
 import { getSiteOrigin } from "@/lib/get-url";
 import { appendLineOpenExternalBrowserParam } from "@/lib/line-open-external-browser";
+import { buildOrderSuccessUrl } from "@/lib/order-access-token";
 import { computeOrderReceiptFinancials } from "@/lib/order-receipt-math";
 import type { OrderFlexMessageInput } from "@/lib/line-flex-types";
 
@@ -213,10 +214,7 @@ function buildMiniReceiptFlexParts(order: OrderFlexMessageInput): MiniReceiptPar
     },
   ];
 
-  const origin = getSiteOrigin();
-  const detailUrl = appendLineOpenExternalBrowserParam(
-    `${origin}/order-success/${encodeURIComponent(orderNum)}`
-  );
+  const detailUrl = appendLineOpenExternalBrowserParam(buildOrderSuccessUrl(orderNum));
   const bodyContents = [...itemNodes, ...financialRows, ...shipBlock];
 
   return {

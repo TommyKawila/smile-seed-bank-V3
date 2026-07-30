@@ -1,13 +1,24 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
-function secret(): string {
-  return process.env.RECEIPT_DOWNLOAD_SECRET?.trim() || "ssb-receipt-token-v1-set-RECEIPT_DOWNLOAD_SECRET";
+function secret(): string | null {
+  const fromEnv = process.env.RECEIPT_DOWNLOAD_SECRET?.trim() ?? "";
+  if (fromEnv) return fromEnv;
+  // Dev-only fallback so local links still work; never use a fixed secret in production.
+  if (process.env.NODE_ENV !== "production") {
+    return "ssb-receipt-token-dev-only";
+  }
+  return null;
 }
 
-/** Short signed token for LINE / email links (no Supabase cookie). TTL default 90d. */
+/** Short signed token for LINE / email / order-access links (no Supabase cookie). TTL default 90d. */
 export function createReceiptDownloadQuery(orderNumber: string): { t: string; e: string } {
   const s = secret();
-  if (!s) return { t: "", e: "" };
+  if (!s) {
+    console.error(
+      "[receipt-download-token] RECEIPT_DOWNLOAD_SECRET is required in production"
+    );
+    return { t: "", e: "" };
+  }
   const expSec = Math.floor(Date.now() / 1000) + 90 * 24 * 3600;
   const e = String(expSec);
   const t = createHmac("sha256", s).update(`${orderNumber}:${e}`).digest("hex");

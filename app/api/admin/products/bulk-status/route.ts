@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
@@ -19,6 +20,8 @@ const BodySchema = z.object({
 const CHUNK = 35;
 
 export async function PATCH(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   let body: unknown;
   try {
     body = await req.json();

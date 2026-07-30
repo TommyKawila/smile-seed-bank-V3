@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { resolveSkipCouponPerUserReuseForAdminSession } from "@/lib/coupon-usage-admin-bypass";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimitIp } from "@/lib/rate-limit-ip";
+import { logSecurityEvent } from "@/lib/security-log";
 import { validateCoupon } from "@/lib/services/coupon-service";
 
 const BodySchema = z.object({
@@ -12,8 +14,25 @@ const BodySchema = z.object({
   user_id: z.string().uuid().nullable().optional(),
 });
 
+function clientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip")?.trim() ||
+    "unknown"
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const limited = rateLimitIp(`coupon-validate:${clientIp(req)}`, 40, 15 * 60 * 1000);
+    if (!limited.ok) {
+      logSecurityEvent("rate_limit_trip", { route: "coupons/validate" });
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+      );
+    }
+
     const body = await req.json();
     const parsed = BodySchema.safeParse(body);
     if (!parsed.success) {

@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { dashboardRangeBounds } from "@/lib/dashboard-date-range";
@@ -30,6 +31,8 @@ function bucketOrderUser(o: {
 }
 
 export async function GET(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const preset = req.nextUrl.searchParams.get("range") ?? "30";
     const p = preset === "7" || preset === "month" ? preset : "30";

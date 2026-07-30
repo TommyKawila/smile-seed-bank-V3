@@ -6,16 +6,19 @@ import { Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackingCta";
 import { clearCheckoutPersistence } from "@/lib/checkout-persist";
+import { orderSuccessPathWithAccess } from "@/lib/order-access-url";
 import { lineOaPrefillUrlForOrderSuccess } from "@/lib/line-oa-url";
 import { cn } from "@/lib/utils";
 
 export function CheckoutSlipUploadSection({
   orderNumber,
+  access,
   lineId,
   t,
   serif,
 }: {
   orderNumber: string;
+  access: { t: string; e: string };
   lineId: string | null;
   t: (th: string, en: string) => string;
   serif: string;
@@ -43,12 +46,14 @@ export function CheckoutSlipUploadSection({
     try {
       const form = new FormData();
       form.append("order_number", orderNumber);
+      form.append("t", access.t);
+      form.append("e", access.e);
       form.append("file", selectedFile);
       const res = await fetch("/api/storefront/orders/upload-slip", { method: "POST", body: form });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Upload failed");
       clearCheckoutPersistence();
-      router.push(`/order-success/${encodeURIComponent(orderNumber)}`);
+      router.push(orderSuccessPathWithAccess(orderNumber, access.t, access.e));
     } catch (err) {
       setUploadError(String(err).replace("Error: ", ""));
     } finally {

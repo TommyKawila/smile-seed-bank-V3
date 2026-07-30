@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
@@ -41,6 +42,8 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const body = await req.json();
   const parsed = ShippingRulesAdminSchema.safeParse(body);
   if (!parsed.success) {

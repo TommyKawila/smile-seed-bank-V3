@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { isAutofloweringDb, isPhoto3nDb, isPhotoFfDb, isPhotoperiodDb } from "@/lib/cannabis-attributes";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -5,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const { searchParams } = new URL(req.url);
   const categoryId = searchParams.get("categoryId") ?? searchParams.get("category") ?? "";
   const typeFilter = searchParams.get("type") ?? "";

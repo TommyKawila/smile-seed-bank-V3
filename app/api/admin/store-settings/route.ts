@@ -1,9 +1,12 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const settings = await prisma.store_settings.findUnique({
       where: { id: 1 },

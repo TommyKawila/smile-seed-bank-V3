@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateClearanceStorefront } from "@/lib/revalidate-clearance";
 import {
@@ -9,6 +10,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const productId = parseInt(params.id, 10);
   if (!Number.isFinite(productId)) {
     return NextResponse.json({ error: "Invalid product ID" }, { status: 400 });
@@ -28,6 +31,8 @@ export async function PATCH(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const productId = parseInt(params.id, 10);
   if (!Number.isFinite(productId)) {
     return NextResponse.json({ error: "Invalid product ID" }, { status: 400 });

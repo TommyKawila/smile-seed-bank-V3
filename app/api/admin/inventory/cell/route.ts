@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toVariantSku } from "@/lib/sku-utils";
@@ -9,6 +10,8 @@ function packToLabel(pack: number): string {
 }
 
 export async function PATCH(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const body = await req.json();
     const { variantId, productId, pack, masterSku, stock, cost_price, price, low_stock_threshold } = body as {

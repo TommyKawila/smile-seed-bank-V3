@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -52,6 +53,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const body = await req.json();
   const parsed = CreateCouponSchema.safeParse(body);
   if (!parsed.success) {

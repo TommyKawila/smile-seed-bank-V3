@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
@@ -11,6 +12,8 @@ function toDateOnly(d: Date): string {
 }
 
 export async function POST(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const body = await req.json().catch(() => ({}));
     const dateParam = body.date as string | undefined;

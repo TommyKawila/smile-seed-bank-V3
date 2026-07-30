@@ -4,6 +4,35 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (Storefront cart — Clearance 50%)
+- **What:** กดเพิ่ม Clearance ลงตะกร้าแล้วคิดราคาลด 50% (เดิมเก็บ list เต็ม)
+- **Logic:** `resolveStorefrontCartStoredUnitBaht` — brand เก็บ list / clearance เก็บ effective · checkout `resolveListingUnitBaht` ใส่ clearance หลัง brand
+- **ไฟล์:** `lib/storefront-cart-unit.ts`, `ProductCard.tsx`, `product-detail-client.tsx`, `lib/checkout-server-validate.ts`
+
+### บันทึกการทำงาน — 2026-07-30 (SAF Phase B — R3/R4 + harden)
+- **What:** R3 `requireAdminUser` ครบ admin routes + `assertAdmin` เช็ค `customers.role` จาก DB · R4 ไม่ใช้ receipt secret fallback ใน prod · rate limit checkout/coupon · CSP Report-Only + HSTS + Permissions-Policy · security log
+- **Logic:** demotion มีผลทันที · mutating/GET admin มี defense-in-depth · `RECEIPT_DOWNLOAD_SECRET` บังคับใน production
+- **Env:** ตั้ง `RECEIPT_DOWNLOAD_SECRET` บน Vercel ก่อน deploy
+- **ไฟล์:** `lib/auth-utils.ts`, `lib/security-log.ts`, `lib/receipt-download-token.ts`, `app/api/admin/**`, `middleware.ts`, `next.config.mjs`, checkout/coupon routes
+
+### บันทึกการทำงาน — 2026-07-30 (SAF Phase B — R2 order-number IDOR)
+- **What:** ปิด IDOR slip / checkout-pending / guest success-view — ต้อง HMAC access (`t`/`e`) หรือเจ้าของที่ login
+- **Logic:** `createOrderAccessQuery` ตอนสร้างออเดอร์ · persist v2 · payment/LINE/admin links ใส่ token · `getOrderByNumber` ไม่คืน `slip_url`
+- **ไฟล์:** `lib/order-access-token.ts`, `lib/order-access-auth.ts`, `lib/order-access-url.ts`, `lib/checkout-persist.ts`, storefront order APIs, checkout/payment/success clients, payment-reminder / LINE URL builders
+
+### บันทึกการทำงาน — 2026-07-30 (SAF Phase B — R1 track/claim IDOR)
+- **What:** ปิด IDOR `POST /api/track/[orderId]/claim` — ไม่รับ `lineUserId` จาก client; ต้อง verify LINE `idToken` + rate limit
+- **Logic:** `verifyLiffIdToken` → ใช้ `sub` เท่านั้น · browser ยังใช้ `/api/line/login` OAuth · admin ใช้ `/api/admin/orders/[id]/link-line`
+- **ไฟล์:** `app/api/track/[orderId]/claim/route.ts`
+
+### บันทึกการทำงาน — 2026-07-30 (Security Assurance Flow — Phase A)
+- **What:** ล็อก SAF cadence + ขยาย `ssb-security-audit` Pass 9 + `npm run security:audit-deps` + Dependabot · รัน Pass 1–3
+- **Cadence:** PR (auth/checkout/admin/upload/LINE) → Security Review · ทุก 2 สัปดาห์ 1–2 passes · รายเดือน full 9 passes · หลังแก้ P0/P1 re-audit · รายไตรมาส Advisor + deps + Vercel secrets
+- **Boss commands:** `รัน ssb-security-audit Pass N` · `Security Review PR นี้` · `Full monthly security pass`
+- **Pass 1–3 P0/P1 (Open):** track/claim IDOR · slip upload by order_number · guest success-view/checkout-pending by order# · admin middleware-only (~88/106) + JWT role staleness · RECEIPT secret fallback (Pass 5 note)
+- **Phase B:** รอบอสจัดลำดับแก้ (IDOR / assertAdmin / rate limit / CSP / secrets)
+- **ไฟล์:** `.cursor/skills/ssb-security-audit/SKILL.md`, `package.json`, `.github/dependabot.yml`
+
 ### บันทึกการทำงาน — 2026-07-30 (Clearance listing — Sold Out badge)
 - **What:** แสดง Sold Out บนการ์ด Clearance ที่หน้ารวมเมื่อทุกแพ็คหมดสต็อก (เดิมซ่อนจาก list / ไม่มี overlay)
 - **Logic:** `isListableClearanceProduct` เหลือเช็คราคา · sort in-stock ก่อน OOS · `ClearanceCard` ใช้ `isProductAggregateOutOfStock` + grayscale/overlay

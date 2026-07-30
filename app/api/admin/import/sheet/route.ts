@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,8 @@ export function googleSheetUrlToCsvExportUrl(input: string): string | null {
  * Fetches public CSV export. Sheet must be shared (e.g. "Anyone with the link can view").
  */
 export async function GET(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const url = req.nextUrl.searchParams.get("url");
   if (!url?.trim()) {
     return NextResponse.json({ error: "url query required" }, { status: 400 });

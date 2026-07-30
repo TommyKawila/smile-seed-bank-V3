@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { getSiteOrigin } from "@/lib/get-url";
 import { loadAdminOrderDetail } from "@/lib/load-admin-order-detail";
@@ -11,6 +12,8 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const { id } = await params;
     const orderId = parseInt(id, 10);

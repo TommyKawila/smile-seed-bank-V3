@@ -95,6 +95,13 @@ export async function middleware(request: NextRequest) {
 
   if (isAdminApi || isAiApi) {
     if (!user || adminRoleFromMetadata(user) !== "ADMIN") {
+      console.warn(
+        JSON.stringify({
+          security: "admin_unauthorized",
+          path,
+          hasUser: Boolean(user),
+        })
+      );
       const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       copyCookies(supabaseResponse, res);
       return res;

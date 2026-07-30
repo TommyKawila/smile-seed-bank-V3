@@ -19,6 +19,7 @@ import {
   type BrandPromotionRuleRow,
 } from "@/lib/brand-promotion-checkout";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
+import { resolveStorefrontCartStoredUnitBaht } from "@/lib/storefront-cart-unit";
 import {
   getClearancePercentOff,
   getDetailDisplayLinePrices,
@@ -286,7 +287,12 @@ export default function ProductDetailClient({
 
   const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (!product || !selectedVariant) return;
-    const unit = roundCheckoutBahtWhole(Number(selectedVariant.price ?? 0));
+    const unit = resolveStorefrontCartStoredUnitBaht(
+      product,
+      Number(selectedVariant.price ?? 0),
+      product.breeders?.name,
+      brandPromotionRules,
+    );
     const { error } = addToCart({
       variantId: selectedVariant.id,
       productId: product.id,

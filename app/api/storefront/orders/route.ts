@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate";
 import { quantizeBaht2, roundCheckoutBahtWhole } from "@/lib/money-thb";
+import { createOrderAccessQuery } from "@/lib/order-access-token";
+import { rateLimitIp } from "@/lib/rate-limit-ip";
+import { logSecurityEvent } from "@/lib/security-log";
 import { createOrder, fetchEmailItems } from "@/lib/services/order-service";
 import { sendOrderConfirmationEmail } from "@/services/email-service";
 
@@ -52,8 +55,25 @@ const CheckoutSchema = z.object({
   order_note: z.string().max(2000).optional().nullable(),
 });
 
+function clientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip")?.trim() ||
+    "unknown"
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const limited = rateLimitIp(`checkout:${clientIp(req)}`, 12, 15 * 60 * 1000);
+    if (!limited.ok) {
+      logSecurityEvent("rate_limit_trip", { route: "storefront/orders", ip: clientIp(req) });
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+      );
+    }
+
     const body = await req.json();
     const parsed = CheckoutSchema.safeParse(body);
     if (!parsed.success) {
@@ -229,8 +249,13 @@ export async function POST(req: NextRequest) {
       });
     })();
 
+    const access = createOrderAccessQuery(data.orderNumber);
     return NextResponse.json(
-      { orderNumber: data.orderNumber, orderId: data.orderId },
+      {
+        orderNumber: data.orderNumber,
+        orderId: data.orderId,
+        access: { t: access.t, e: access.e },
+      },
       { status: 201 }
     );
   } catch (err) {

@@ -71,12 +71,12 @@ export interface CreateOrderResult {
   orderId: number;
 }
 
+/** Public payment-page fields only — no slip URL / PII. */
 export interface OrderPublicView {
   order_number: string;
   payment_method: string | null;
   status: string;
   total_amount: number;
-  slip_url: string | null;
 }
 
 export interface OrderSuccessItemRow {
@@ -387,8 +387,10 @@ export async function createOrder(
 // ─── getOrderForSuccessView ───────────────────────────────────────────────────
 
 /**
- * Order success page payload. If order has `customer_id`, only the same logged-in user may view it;
- * guest orders (`customer_id` null) are readable by anyone with the order number.
+ * Order success page payload.
+ * - Valid access token (`skipCustomerAuth`) → allow
+ * - Logged-in owner (`customer_id` match) → allow
+ * - Guest orders are NOT readable by order number alone (capability URL required)
  */
 export async function getOrderForSuccessView(
   orderNumber: string,
@@ -436,9 +438,13 @@ export async function getOrderForSuccessView(
     const order = rows[0];
     if (!order) return { data: null, error: "not_found" };
 
-    if (!options?.skipCustomerAuth && order.customer_id != null) {
-      if (!requesterUserId) return { data: null, error: "login_required" };
-      if (order.customer_id !== requesterUserId) return { data: null, error: "forbidden" };
+    if (!options?.skipCustomerAuth) {
+      if (order.customer_id != null) {
+        if (!requesterUserId) return { data: null, error: "login_required" };
+        if (order.customer_id !== requesterUserId) return { data: null, error: "forbidden" };
+      } else {
+        return { data: null, error: "login_required" };
+      }
     }
 
     const itemRows = await sql<
@@ -528,7 +534,7 @@ export async function getOrderByNumber(
   try {
     const sql = getSql();
     const rows = await sql<OrderPublicView[]>`
-      SELECT order_number, payment_method, status, total_amount, slip_url
+      SELECT order_number, payment_method, status, total_amount
       FROM orders
       WHERE order_number = ${orderNumber}
       LIMIT 1

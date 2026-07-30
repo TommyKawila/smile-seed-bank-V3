@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import {
@@ -15,6 +16,8 @@ const ALLOWED_BUCKETS = ["brand-assets", "site-assets"] as const;
  * With preset: optimizes to WebP before upload; stored path ends in .webp
  */
 export async function POST(req: Request) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const { searchParams } = new URL(req.url);
     const presetParam = searchParams.get("preset");

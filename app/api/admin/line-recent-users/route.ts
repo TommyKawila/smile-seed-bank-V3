@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -18,6 +19,8 @@ function parseGuestStoredAt(value: string | null | undefined, fallback: Date): D
 }
 
 export async function GET() {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const [custRows, guestRows] = await Promise.all([
       prisma.customers.findMany({

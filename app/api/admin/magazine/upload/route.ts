@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import {
@@ -17,6 +18,8 @@ import {
  * multipart/form-data: file (required)
  */
 export async function POST(req: Request) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const form = await req.formData();
     const file = form.get("file") as File | null;

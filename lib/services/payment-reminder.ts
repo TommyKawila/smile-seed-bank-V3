@@ -6,8 +6,8 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { getSiteOrigin } from "@/lib/get-url";
 import { createOrderLog } from "@/lib/order-logs";
+import { buildOrderPaymentUrl } from "@/lib/order-access-token";
 import { isOrderOnPaymentGrace, shouldAutoCancelUnpaidOrder } from "@/lib/payment-grace";
 import { sendPaymentReminderEmail } from "@/services/email-service";
 import { autoCancelUnpaidOrder24hStale } from "@/services/orders-service";
@@ -36,7 +36,7 @@ export type PaymentReminderRunResult = {
 type ReminderTier = 1 | 2 | 3;
 
 function paymentPageUrl(orderNumber: string): string {
-  return `${getSiteOrigin()}/payment/${encodeURIComponent(orderNumber)}`;
+  return buildOrderPaymentUrl(orderNumber);
 }
 
 function reminderCopy(tier: ReminderTier, orderNumber: string): string {

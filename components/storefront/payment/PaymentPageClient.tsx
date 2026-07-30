@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { LineParcelTrackingCta } from "@/components/storefront/LineParcelTrackingCta";
 import { lineOaPrefillUrlForOrderSuccess } from "@/lib/line-oa-url";
 import { formatPrice } from "@/lib/utils";
+import { orderSuccessPathWithAccess } from "@/lib/order-access-url";
 import type { ActiveBankAccount } from "@/lib/storefront-payment-shared";
 import { PAYMENT_CONFIG } from "@/lib/storefront-payment-shared";
 import { DynamicPromptPayQr } from "@/components/storefront/checkout/DynamicPromptPayQr";
@@ -17,6 +18,8 @@ import { BankTransferAccountList } from "@/components/storefront/checkout/BankTr
 
 export type PaymentPageClientProps = {
   orderNumber: string;
+  /** HMAC access from payment URL query — required for slip upload. */
+  access: { t: string; e: string } | null;
   bankAccounts: ActiveBankAccount[];
   bankAccountsError: boolean;
   lineId: string | null;
@@ -36,6 +39,7 @@ function tTh(th: string, _en: string) {
 
 export function PaymentPageClient({
   orderNumber,
+  access,
   bankAccounts,
   bankAccountsError,
   lineId,
@@ -56,12 +60,12 @@ export function PaymentPageClient({
   const lineCtaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!uploadSuccess || !orderNumber) return;
-    const t = setTimeout(() => {
-      router.push(`/order-success/${encodeURIComponent(orderNumber)}`);
+    if (!uploadSuccess || !orderNumber || !access) return;
+    const timer = setTimeout(() => {
+      router.push(orderSuccessPathWithAccess(orderNumber, access.t, access.e));
     }, 2400);
-    return () => clearTimeout(t);
-  }, [uploadSuccess, orderNumber, router]);
+    return () => clearTimeout(timer);
+  }, [uploadSuccess, orderNumber, access, router]);
 
   useEffect(() => {
     if (!uploadSuccess) return;
@@ -79,11 +83,17 @@ export function PaymentPageClient({
       setUploadError("กรุณาเลือกไฟล์หลักฐานการโอนเงิน");
       return;
     }
+    if (!access?.t || !access?.e) {
+      setUploadError("ลิงก์ชำระเงินไม่สมบูรณ์ — ขอลิงก์ใหม่จากแอดมินหรืออีเมลยืนยันออเดอร์");
+      return;
+    }
     setUploadError(null);
     setUploading(true);
     try {
       const form = new FormData();
       form.append("order_number", orderNumber);
+      form.append("t", access.t);
+      form.append("e", access.e);
       form.append("file", selectedFile);
       const res = await fetch("/api/storefront/orders/upload-slip", { method: "POST", body: form });
       const data = await res.json();

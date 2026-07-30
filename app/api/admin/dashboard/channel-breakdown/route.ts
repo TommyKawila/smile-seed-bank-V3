@@ -1,7 +1,10 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { getSalesChannelBreakdown } from "@/services/dashboard-service";
 
 export async function GET(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const { searchParams } = req.nextUrl;
   const from = searchParams.get("from") ?? undefined;
   const to = searchParams.get("to") ?? undefined;

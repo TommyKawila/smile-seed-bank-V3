@@ -47,7 +47,7 @@ export type CheckoutOrderPayload = {
 };
 
 export type CheckoutOrderResult =
-  | { ok: true; orderNumber: string }
+  | { ok: true; orderNumber: string; access: { t: string; e: string } }
   | { ok: false; code?: string; message: string };
 
 /** Hide inactive or past-end campaigns in checkout “saved coupons” UI. Local merge rows without dates stay visible. */
@@ -222,13 +222,19 @@ export async function fetchProfileOrdersCount(): Promise<number> {
 
 export async function fetchCheckoutPendingRestore(
   orderNumber: string,
+  access: { t: string; e: string },
 ): Promise<
   | { ok: true; data: CheckoutPendingRestorePayload }
   | { ok: false; code: string }
 > {
   const trimmed = orderNumber.trim();
+  const sp = new URLSearchParams({
+    orderNumber: trimmed,
+    t: access.t,
+    e: access.e,
+  });
   const res = await fetch(
-    `/api/storefront/orders/checkout-pending?orderNumber=${encodeURIComponent(trimmed)}`,
+    `/api/storefront/orders/checkout-pending?${sp.toString()}`,
     { cache: "no-store", credentials: "same-origin" },
   );
   const body = (await res.json().catch(() => ({}))) as {
@@ -250,6 +256,7 @@ export async function createStorefrontOrder(payload: CheckoutOrderPayload): Prom
   });
   const body = (await res.json().catch(() => ({}))) as {
     orderNumber?: string;
+    access?: { t?: string; e?: string };
     code?: string;
     error?: string;
   };
@@ -257,5 +264,10 @@ export async function createStorefrontOrder(payload: CheckoutOrderPayload): Prom
   if (!res.ok) {
     return { ok: false, code: body.code, message: body.error ?? "Could not create order" };
   }
-  return { ok: true, orderNumber: String(body.orderNumber ?? "") };
+  const t = String(body.access?.t ?? "").trim();
+  const e = String(body.access?.e ?? "").trim();
+  if (!t || !e) {
+    return { ok: false, message: "Order created but access token missing" };
+  }
+  return { ok: true, orderNumber: String(body.orderNumber ?? ""), access: { t, e } };
 }

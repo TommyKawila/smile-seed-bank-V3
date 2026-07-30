@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { revalidateClearanceStorefront } from "@/lib/revalidate-clearance";
@@ -32,6 +33,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const body = await req.json();
     const parsed = UpsertSchema.safeParse(body);
@@ -50,6 +53,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const body = await req.json();
     const parsed = ReorderSchema.safeParse(body);

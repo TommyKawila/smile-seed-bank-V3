@@ -86,6 +86,8 @@ export async function handleLineMessagingWebhookPost(req: Request): Promise<Resp
   const raw = await req.text();
   const sig = req.headers.get("x-line-signature");
   if (!verifyLineChannelWebhookSignature(raw, sig)) {
+    const { logSecurityEvent } = await import("@/lib/security-log");
+    logSecurityEvent("webhook_reject", { source: "line" });
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 

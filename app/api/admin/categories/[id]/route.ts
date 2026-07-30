@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
@@ -8,6 +9,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const { id } = await params;
   const bid = BigInt(id);
   if (bid < BigInt(1)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
@@ -31,6 +34,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const { id } = await params;
   const bid = BigInt(id);
   if (bid < BigInt(1)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });

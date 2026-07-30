@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -26,6 +27,8 @@ function serialize(row: ProductPick) {
 }
 
 export async function GET(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const { searchParams } = new URL(req.url);
     const idsParam = searchParams.get("ids");

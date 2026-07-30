@@ -7,6 +7,7 @@ import {
   generatePaymentConfirmedFlexMessage,
   type OrderFlexMessageInput,
 } from "@/lib/line-flex";
+import { buildOrderPaymentUrl, buildOrderSuccessUrl } from "@/lib/order-access-token";
 import { createReceiptDownloadQuery } from "@/lib/receipt-download-token";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import { pushFlexMessageToLineUser } from "@/services/line-messaging";
@@ -78,11 +79,10 @@ export async function sendLineFlexNotification(
       return;
     }
 
-    const origin = getSiteOrigin();
-    const detailUrl = `${origin}/order-success/${encodeURIComponent(detail.orderNumber)}`;
+    const detailUrl = buildOrderSuccessUrl(detail.orderNumber);
 
     if (kind === "ORDER_PLACED") {
-      const paymentUrl = `${origin}/payment/${encodeURIComponent(detail.orderNumber)}`;
+      const paymentUrl = buildOrderPaymentUrl(detail.orderNumber);
       const flex = generateOrderPlacedFlexMessage({
         ...detailToFlexInput(detail),
         paymentUrl,

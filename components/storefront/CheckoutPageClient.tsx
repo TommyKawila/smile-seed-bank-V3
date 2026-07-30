@@ -64,6 +64,7 @@ type CheckoutForm = z.infer<typeof CheckoutFormSchema>;
 
 type PlacedCheckoutState = {
   orderNumber: string;
+  access: { t: string; e: string };
   totalBaht: number;
   shippingIncluded: boolean;
   shipping: CheckoutForm;
@@ -75,7 +76,10 @@ type PlacedCheckoutState = {
   restoreFlatDiscountBaht?: number;
 };
 
-function placedFromRestorePayload(data: CheckoutPendingRestorePayload): PlacedCheckoutState {
+function placedFromRestorePayload(
+  data: CheckoutPendingRestorePayload,
+  access: { t: string; e: string },
+): PlacedCheckoutState {
   const lineItems: CartItem[] = data.items.map((it) => ({
     variantId: it.variantId,
     productId: it.productId,
@@ -109,6 +113,7 @@ function placedFromRestorePayload(data: CheckoutPendingRestorePayload): PlacedCh
 
   return {
     orderNumber: data.orderNumber,
+    access,
     totalBaht: tot,
     shippingIncluded: data.shippingIncluded,
     shipping: {
@@ -258,7 +263,10 @@ export function CheckoutPageClient({
     }
     let cancelled = false;
     setCheckoutRestoreFetching(true);
-    void fetchCheckoutPendingRestore(persisted.orderNumber)
+    void fetchCheckoutPendingRestore(persisted.orderNumber, {
+      t: persisted.t,
+      e: persisted.e,
+    })
       .then((res) => {
         if (cancelled) return;
         setCheckoutRestoreFetching(false);
@@ -267,7 +275,9 @@ export function CheckoutPageClient({
           clearCheckoutPersistence();
           return;
         }
-        setPlaced(placedFromRestorePayload(res.data));
+        setPlaced(
+          placedFromRestorePayload(res.data, { t: persisted.t, e: persisted.e }),
+        );
         setPhase("payment");
         toast.success(
           t(
@@ -501,6 +511,7 @@ export function CheckoutPageClient({
 
       setPlaced({
         orderNumber: result.orderNumber,
+        access: result.access,
         totalBaht: checkoutSummary.total,
         shippingIncluded: checkoutSummary.shipping > 0,
         shipping: parsed.data,
@@ -515,7 +526,7 @@ export function CheckoutPageClient({
           : null,
         summarySource: "live",
       });
-      persistCheckoutPendingPayment(result.orderNumber);
+      persistCheckoutPendingPayment(result.orderNumber, result.access);
       setPhase("payment");
       clearCart();
     } catch (err) {
@@ -1073,6 +1084,7 @@ export function CheckoutPageClient({
                 />
                 <CheckoutSlipUploadSection
                   orderNumber={placed.orderNumber}
+                  access={placed.access}
                   lineId={lineId}
                   t={t}
                   serif={serif}

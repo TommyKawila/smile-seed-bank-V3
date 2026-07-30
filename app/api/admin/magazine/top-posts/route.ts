@@ -1,8 +1,11 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 /** Top published posts by view_count (admin analytics). */
 export async function GET() {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const rows = await prisma.blog_posts.findMany({
       where: { status: "PUBLISHED" },

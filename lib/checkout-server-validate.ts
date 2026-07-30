@@ -12,6 +12,7 @@ import {
 } from "@/lib/brand-promotion-checkout";
 import { bahtToSatangInt, roundCheckoutBahtWhole, satangIntToBaht } from "@/lib/money-thb";
 import { shippingFeeForSubtotal } from "@/lib/order-financials";
+import { getEffectiveVariantPrice } from "@/lib/product-utils";
 import { computeCouponDiscountBahtOnSubtotal } from "@/lib/services/checkout-promo-math";
 import { customerHasCompletedOrderForFirstOrderPromo } from "@/lib/services/coupon-service";
 import { isPromoQaBypassEmail } from "@/lib/promo-qa-bypass-email";
@@ -25,7 +26,11 @@ type LineIn = {
   productName: string;
 };
 
-export type PriceSource = "variant" | "product_fallback" | "brand_promotion";
+export type PriceSource =
+  | "variant"
+  | "product_fallback"
+  | "brand_promotion"
+  | "clearance";
 
 export type CheckoutValidationFailureDetails = {
   clientValues: CheckoutSummary;
@@ -49,10 +54,13 @@ type VariantRow = {
   product_id: bigint | null;
   unit_label: string;
   price: unknown;
+  clearance_price: unknown;
   products: {
     id: bigint;
     name: string;
     price: unknown;
+    is_clearance: boolean | null;
+    sale_price: unknown;
     breeders: { name: string } | null;
   } | null;
 };
@@ -100,6 +108,33 @@ function resolveListingUnitBaht(
       source: "brand_promotion",
     };
   }
+
+  if (v.products?.is_clearance === true && base > 0) {
+    const clearanceRaw = coerceDbPriceBaht(v.clearance_price);
+    const listRaw = variantPrice > 0 ? variantPrice : base;
+    const clearanceUnit = getEffectiveVariantPrice(
+      {
+        is_clearance: true,
+        sale_price: v.products.sale_price,
+        product_variants: [
+          {
+            price: listRaw,
+            clearance_price: clearanceRaw > 0 ? clearanceRaw : null,
+            stock: 1,
+            is_active: true,
+          },
+        ],
+      },
+      base,
+    );
+    if (Number.isFinite(clearanceUnit) && clearanceUnit > 0) {
+      return {
+        unitBaht: roundCheckoutBahtWhole(clearanceUnit),
+        source: "clearance",
+      };
+    }
+  }
+
   return { unitBaht: base, source: baseSource };
 }
 
@@ -257,6 +292,8 @@ export async function validateStorefrontCheckoutTotals(input: {
             id: true,
             name: true,
             price: true,
+            is_clearance: true,
+            sale_price: true,
             breeders: { select: { name: true } },
           },
         },

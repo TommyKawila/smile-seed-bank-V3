@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
@@ -7,6 +8,8 @@ import type { TablesInsert } from "@/lib/supabase/types";
 import type { ProductVariant } from "@/types/supabase";
 
 export async function POST(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const body = await req.json();
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const breederId = body.breeder_id != null ? Number(body.breeder_id) : null;

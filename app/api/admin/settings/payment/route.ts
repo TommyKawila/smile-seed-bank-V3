@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
 import { PaymentSettingsSchema } from "@/lib/validations/payment-settings";
@@ -25,6 +26,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const body = await req.json();
   const parsed = PaymentSettingsSchema.safeParse(body);
   if (!parsed.success) {

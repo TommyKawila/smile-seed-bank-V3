@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   Loader2,
@@ -156,10 +156,13 @@ function ShippingRecipientBlock({ order, t }: { order: OrderSuccessView; t: TFn 
   );
 }
 
-export default function OrderSuccessDynamicPage() {
+function OrderSuccessDynamicInner() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const rawId = typeof params.orderId === "string" ? params.orderId : "";
   const orderNumber = decodeURIComponent(rawId).replace(/^#/, "").trim();
+  const accessT = searchParams.get("t")?.trim() ?? "";
+  const accessE = searchParams.get("e")?.trim() ?? "";
   const { t, locale } = useLanguage();
 
   const [order, setOrder] = useState<OrderSuccessView | null>(null);
@@ -191,8 +194,13 @@ export default function OrderSuccessDynamicPage() {
     if (!silent) setLoading(true);
     setLoadError(null);
     try {
+      const sp = new URLSearchParams({ order: orderNumber });
+      if (accessT && accessE) {
+        sp.set("t", accessT);
+        sp.set("e", accessE);
+      }
       const res = await fetch(
-        `/api/storefront/orders/success-view?order=${encodeURIComponent(orderNumber)}`,
+        `/api/storefront/orders/success-view?${sp.toString()}`,
         { credentials: "include", cache: "no-store" }
       );
       if (res.status === 404) {
@@ -223,7 +231,7 @@ export default function OrderSuccessDynamicPage() {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [orderNumber]);
+  }, [orderNumber, accessT, accessE]);
 
   useEffect(() => {
     void loadOrder();
@@ -268,8 +276,18 @@ export default function OrderSuccessDynamicPage() {
     setUploadError(null);
     setUploading(true);
     try {
+      if (!accessT || !accessE) {
+        throw new Error(
+          t(
+            "ลิงก์ไม่สมบูรณ์ — เข้าสู่ระบบหรือใช้ลิงก์จากอีเมล/LINE",
+            "Incomplete link — sign in or use the link from email/LINE",
+          ),
+        );
+      }
       const form = new FormData();
       form.append("order_number", orderNumber);
+      form.append("t", accessT);
+      form.append("e", accessE);
       form.append("file", selectedFile);
       const res = await fetch("/api/storefront/orders/upload-slip", { method: "POST", body: form });
       const data = await res.json();
@@ -306,13 +324,16 @@ export default function OrderSuccessDynamicPage() {
   }
 
   if (loadError === "auth") {
-    const next = `/order-success/${encodeURIComponent(orderNumber)}`;
+    const next =
+      accessT && accessE
+        ? `/order-success/${encodeURIComponent(orderNumber)}?${new URLSearchParams({ t: accessT, e: accessE }).toString()}`
+        : `/order-success/${encodeURIComponent(orderNumber)}`;
     return (
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-muted/30 px-4 pt-20 pb-12 text-center">
         <p className="text-muted-foreground">
           {t(
-            "กรุณาเข้าสู่ระบบเพื่อดูออเดอร์นี้",
-            "Please sign in to view this order."
+            "กรุณาเข้าสู่ระบบ หรือเปิดลิงก์ออเดอร์จากอีเมล/LINE",
+            "Please sign in, or open your order link from email/LINE."
           )}
         </p>
         <Button asChild className="bg-primary">
@@ -984,5 +1005,19 @@ export default function OrderSuccessDynamicPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function OrderSuccessDynamicPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-muted/30 pt-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <OrderSuccessDynamicInner />
+    </Suspense>
   );
 }

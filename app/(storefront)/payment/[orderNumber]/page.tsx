@@ -1,21 +1,31 @@
 import { PaymentPageClient } from "@/components/storefront/payment/PaymentPageClient";
 import { fetchActiveBankAccounts } from "@/lib/payment-settings-public";
+import { verifyOrderAccessQuery } from "@/lib/order-access-token";
 import { getOrderByNumber } from "@/lib/services/order-service";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaymentPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orderNumber: string }>;
+  searchParams: Promise<{ t?: string; e?: string }>;
 }) {
   const { orderNumber: raw } = await params;
+  const sp = await searchParams;
   let orderNumber = typeof raw === "string" ? raw.trim() : "";
   try {
     orderNumber = decodeURIComponent(orderNumber);
   } catch {
     /* keep raw */
   }
+
+  const accessT = typeof sp.t === "string" ? sp.t.trim() : "";
+  const accessE = typeof sp.e === "string" ? sp.e.trim() : "";
+  const accessOk = Boolean(
+    accessT && accessE && verifyOrderAccessQuery(orderNumber, accessT, accessE)
+  );
 
   const [{ accounts: bankAccounts, error: bankAccountsError, lineId, promptPay }, orderRes] =
     await Promise.all([
@@ -29,6 +39,7 @@ export default async function PaymentPage({
   return (
     <PaymentPageClient
       orderNumber={orderNumber}
+      access={accessOk ? { t: accessT, e: accessE } : null}
       bankAccounts={bankAccounts}
       bankAccountsError={bankAccountsError}
       lineId={lineId}

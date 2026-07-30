@@ -33,7 +33,7 @@ import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { StockAlert } from "@/components/storefront/StockAlert";
 import { toast } from "sonner";
 import { pickVariantForSeedPackSlugs, parseListParam } from "@/lib/shop-attribute-filters";
-import { roundCheckoutBahtWhole } from "@/lib/money-thb";
+import { resolveStorefrontCartStoredUnitBaht } from "@/lib/storefront-cart-unit";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { getProductAggregateStock } from "@/lib/product-stock";
 
@@ -186,7 +186,12 @@ function ProductCardBase({
     stopNavBubble(e);
     if (displayVariant) {
       const variantListPrice = Number(displayVariant.price ?? 0);
-      const unit = roundCheckoutBahtWhole(variantListPrice);
+      const unit = resolveStorefrontCartStoredUnitBaht(
+        product,
+        variantListPrice,
+        product.breeders?.name,
+        brandPromotionRules,
+      );
       if (typeof addToCart !== "function") {
         toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
         return;

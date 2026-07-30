@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -8,6 +9,8 @@ function digits(s: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   const d = digits(req.nextUrl.searchParams.get("phone") ?? "");
   if (d.length < 9) return NextResponse.json({ email: null, address: null });
   try {

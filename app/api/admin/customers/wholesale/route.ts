@@ -1,3 +1,4 @@
+import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { setWholesaleStatus } from "@/services/wholesale-service";
 import { z } from "zod";
@@ -9,6 +10,8 @@ const schema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);
