@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-31 (Clearance UI — badge ตามแพ็กที่เลือก)
+- **What:** ไม่โชว์ −% บนแพ็กที่ไม่ลด · ไฮไลต์แพ็ก Clearance บน PDP · การ์ดค่ายบอกแพ็กที่ร่วมรายการ
+- **Logic:** `getSelectedClearancePercentOff` · `listClearancePackSummaries` · `pickDefaultClearanceVariant`
+- **ไฟล์:** `lib/product-utils.ts` · `product-detail-client.tsx` · `ClearanceCard.tsx`
+
 ### บันทึกการทำงาน — 2026-07-31 (Clearance — เลือกแพ็ก ไม่บังคับทั้งสินค้า)
 - **What:** Admin เลือก/นำออก Clearance ระดับแพ็ก; แพ็กที่ไม่มี `clearance_price` ขายราคาปกติ
 - **Logic:** ตัด fallback % ทั้งสินค้า · add/resync เขียนเฉพาะแพ็กที่เลือกหรือที่ติดอยู่แล้ว · API `selections` / `variantIds`

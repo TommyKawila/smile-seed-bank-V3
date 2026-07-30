@@ -230,6 +230,7 @@ type ClearanceProductSlice = {
     Partial<
       Pick<
         ProductVariant,
+        | "id"
         | "discount_percent"
         | "discount_ends_at"
         | "final_price"
@@ -241,7 +242,7 @@ type ClearanceProductSlice = {
 };
 
 type VariantClearancePick = Pick<ProductVariant, "price"> &
-  Partial<Pick<ProductVariant, "clearance_price">>;
+  Partial<Pick<ProductVariant, "clearance_price" | "unit_label" | "id">>;
 
 /** Min variant clearance for card/listing; falls back to legacy product.sale_price. */
 export function deriveClearanceSalePrice(
@@ -340,6 +341,75 @@ export function getClearancePercentOff(product: ClearanceProductSlice): number |
   }
   if (!best) return null;
   return Math.round((1 - best.sale / best.list) * 100);
+}
+
+export type ClearancePackSummary = {
+  variantId: number | null;
+  unitLabel: string;
+  listPrice: number;
+  clearancePrice: number;
+  percentOff: number;
+};
+
+/** Packs currently on Clearance (`clearance_price > 0` and below list). */
+export function listClearancePackSummaries(
+  product: ClearanceProductSlice
+): ClearancePackSummary[] {
+  if (product.is_clearance !== true) return [];
+  const out: ClearancePackSummary[] = [];
+  for (const v of product.product_variants ?? []) {
+    if (v.is_active === false) continue;
+    const list = Number(v.price ?? 0);
+    const sale = resolveVariantClearancePrice(v, product, list);
+    if (sale == null || sale <= 0 || list <= sale) continue;
+    const unitLabel = (v.unit_label ?? "").trim() || "Pack";
+    const variantId =
+      "id" in v && v.id != null && Number.isFinite(Number(v.id)) ? Number(v.id) : null;
+    out.push({
+      variantId,
+      unitLabel,
+      listPrice: list,
+      clearancePrice: sale,
+      percentOff: Math.round((1 - sale / list) * 100),
+    });
+  }
+  return out;
+}
+
+/** % off for one selected pack; null when that pack is not on Clearance. */
+export function getSelectedClearancePercentOff(
+  product: ClearanceProductSlice,
+  variant: VariantClearancePick | null | undefined
+): number | null {
+  if (product.is_clearance !== true || !variant) return null;
+  const list = Number(variant.price ?? 0);
+  const sale = resolveVariantClearancePrice(variant, product, list);
+  if (sale == null || sale <= 0 || list <= sale) return null;
+  return Math.round((1 - sale / list) * 100);
+}
+
+/** True when this pack has an active clearance_price. */
+export function variantHasClearancePrice(
+  variant: { clearance_price?: number | null } | null | undefined
+): boolean {
+  return Number(variant?.clearance_price ?? 0) > 0;
+}
+
+/**
+ * Prefer first in-stock Clearance pack; else first Clearance pack; else first in-stock / first pack.
+ */
+export function pickDefaultClearanceVariant<T extends ProductVariant>(
+  product: ClearanceProductSlice,
+  activeSorted: T[]
+): T | null {
+  if (activeSorted.length === 0) return null;
+  if (product.is_clearance === true) {
+    const clearance = activeSorted.filter((v) => variantHasClearancePrice(v));
+    const inStock = clearance.find((v) => (v.stock ?? 0) > 0);
+    if (inStock) return inStock;
+    if (clearance[0]) return clearance[0];
+  }
+  return activeSorted.find((v) => (v.stock ?? 0) > 0) ?? activeSorted[0] ?? null;
 }
 
 /**

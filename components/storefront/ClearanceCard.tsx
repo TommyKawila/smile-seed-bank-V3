@@ -11,6 +11,7 @@ import {
   computeTotalStock,
   getClearancePercentOff,
   getEffectiveListingPrice,
+  listClearancePackSummaries,
   productDetailHref,
 } from "@/lib/product-utils";
 import { isProductAggregateOutOfStock } from "@/lib/product-stock";
@@ -25,6 +26,10 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
   const href = productDetailHref(product);
   const img = getListingThumbnailUrl(product);
   const pct = getClearancePercentOff(product);
+  const clearancePacks = listClearancePackSummaries(product);
+  const packLine = clearancePacks
+    .map((p) => `${p.unitLabel} · −${p.percentOff}%`)
+    .join(" · ");
   const regular = computeStartingPrice(product.product_variants);
   const sale = getEffectiveListingPrice(product);
   const totalStock = computeTotalStock(product.product_variants ?? []);
@@ -81,6 +86,11 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
         >
           {product.name}
         </Link>
+        {packLine ? (
+          <p className="line-clamp-2 text-[11px] font-medium leading-snug text-amber-400/95">
+            {t(`ลดเฉพาะ: ${packLine}`, `Sale packs: ${packLine}`)}
+          </p>
+        ) : null}
         <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-zinc-800 pt-2">
           {regular > sale && (
             <span className="text-xs tabular-nums text-muted-foreground line-through">{formatPrice(regular)}</span>

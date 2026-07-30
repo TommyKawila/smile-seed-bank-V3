@@ -21,9 +21,11 @@ import {
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 import { resolveStorefrontCartStoredUnitBaht } from "@/lib/storefront-cart-unit";
 import {
-  getClearancePercentOff,
   getDetailDisplayLinePrices,
   getEffectiveVariantPrice,
+  getSelectedClearancePercentOff,
+  pickDefaultClearanceVariant,
+  variantHasClearancePrice,
 } from "@/lib/product-utils";
 import { isProductAggregateOutOfStock } from "@/lib/product-stock";
 import { seedsBreederHref } from "@/lib/breeder-slug";
@@ -236,7 +238,7 @@ export default function ProductDetailClient({
     const active =
       initialProduct.product_variants?.filter((v) => v.is_active !== false) ?? [];
     const sorted = sortVariantsByPriceThenPack(active);
-    return sorted.find((v) => (v.stock ?? 0) > 0) ?? sorted[0] ?? null;
+    return pickDefaultClearanceVariant(initialProduct, sorted);
   });
   const [added, setAdded] = useState(false);
   const [infoTab, setInfoTab] = useState("specs");
@@ -384,7 +386,6 @@ export default function ProductDetailClient({
   );
   const aggregateOos = isProductAggregateOutOfStock(product);
   const outOfStock = !selectedVariant || (selectedVariant.stock ?? 0) <= 0;
-  const clearancePct = getClearancePercentOff(product);
   const { eff: selectedEff, list: selectedList } = getDetailDisplayLinePrices(
     product,
     activeVariants,
@@ -403,7 +404,13 @@ export default function ProductDetailClient({
   const displayEff = hasBrandSale ? brandLine.effectiveBaht : selectedEff;
   const displayList = hasBrandSale ? brandLine.baseBaht : selectedList;
   const brandPct = hasBrandSale ? brandLine.brandDiscountPercent : null;
-  const salePct = brandPct ?? clearancePct;
+  const selectedClearancePct = getSelectedClearancePercentOff(product, selectedVariant);
+  /** Badge only when the selected pack actually has a sale (brand or this pack's clearance). */
+  const salePct =
+    brandPct ??
+    (displayList > displayEff && selectedClearancePct != null && selectedClearancePct > 0
+      ? selectedClearancePct
+      : null);
 
   const mainPriceLine =
     !selectedVariant
@@ -597,19 +604,41 @@ export default function ProductDetailClient({
                       brandPromotionRules,
                     );
                     const showVariantStrike = variantList > variantEff;
+                    const isClearancePack =
+                      variantHasClearancePrice(v) && showVariantStrike;
+                    const packPct = getSelectedClearancePercentOff(product, v);
                     return (
                       <button
                         key={v.id}
                         onClick={() => !soldOut && setSelectedVariant(v)}
                         disabled={soldOut}
-                        className={`relative rounded-lg border-2 px-4 py-2.5 text-left transition-all ${
-                          isSelected
-                            ? "border-primary bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/25"
-                            : soldOut
-                            ? "border-border bg-muted/20 text-foreground/45 line-through cursor-not-allowed"
-                            : "border-border bg-card/60 text-foreground/75 hover:border-primary/40 hover:bg-primary/5"
-                        }`}
+                        className={cn(
+                          "relative rounded-lg border-2 px-4 py-2.5 text-left transition-all",
+                          soldOut &&
+                            "cursor-not-allowed border-border bg-muted/20 text-foreground/45 line-through",
+                          !soldOut &&
+                            isClearancePack &&
+                            isSelected &&
+                            "border-amber-500 bg-amber-500/15 text-foreground shadow-sm ring-1 ring-amber-500/30",
+                          !soldOut &&
+                            isClearancePack &&
+                            !isSelected &&
+                            "border-amber-500/50 bg-amber-500/10 text-foreground/90 hover:border-amber-500 hover:bg-amber-500/15",
+                          !soldOut &&
+                            !isClearancePack &&
+                            isSelected &&
+                            "border-primary bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/25",
+                          !soldOut &&
+                            !isClearancePack &&
+                            !isSelected &&
+                            "border-border bg-card/60 text-foreground/75 hover:border-primary/40 hover:bg-primary/5"
+                        )}
                       >
+                        {isClearancePack && packPct != null && packPct > 0 ? (
+                          <span className="mb-1 inline-flex rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-zinc-950">
+                            −{packPct}%
+                          </span>
+                        ) : null}
                         <span className="block text-[11px] font-normal leading-tight text-inherit opacity-90">
                           {v.unit_label}
                         </span>
@@ -617,7 +646,11 @@ export default function ProductDetailClient({
                           className={cn(
                             "block text-base font-semibold",
                             fontSansTabular,
-                            isSelected ? "text-primary" : "text-foreground"
+                            isSelected
+                              ? isClearancePack
+                                ? "text-amber-400"
+                                : "text-primary"
+                              : "text-foreground"
                           )}
                         >
                           {formatPrice(variantEff)}
