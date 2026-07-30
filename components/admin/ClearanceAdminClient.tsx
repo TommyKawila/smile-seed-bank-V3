@@ -7,6 +7,8 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
+  ChevronDown,
+  ChevronRight,
   Loader2,
   PackageX,
   Plus,
@@ -42,11 +44,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { CLEARANCE_DISCOUNT_PERCENT, clearancePriceFromList, CLEARANCE_BREEDER_BANNER, clearanceBreederBannerSizeLabel } from "@/lib/clearance";
+import {
+  CLEARANCE_DISCOUNT_PERCENT,
+  clearancePriceFromList,
+  CLEARANCE_BREEDER_BANNER,
+  clearanceBreederBannerSizeLabel,
+} from "@/lib/clearance";
 import { formatPrice } from "@/lib/utils";
 import { computeTotalStock } from "@/lib/product-utils";
 import type { ProductFull } from "@/types/supabase";
 import type { ClearanceBreederSummary } from "@/lib/clearance";
+import { cn } from "@/lib/utils";
 
 type PickerRow = {
   id: number;
@@ -58,11 +66,18 @@ type PickerRow = {
   product_variants?: { stock: number | null; is_active?: boolean | null }[] | null;
 };
 
+const NO_BREEDER_KEY = -1;
+
 function pickerRowHasStock(row: PickerRow): boolean {
   if (row.product_variants?.length) {
     return computeTotalStock(row.product_variants) > 0;
   }
   return Number(row.stock ?? 0) > 0;
+}
+
+function productBreederId(p: ProductFull): number {
+  const id = p.breeder_id != null ? Number(p.breeder_id) : NaN;
+  return Number.isFinite(id) && id > 0 ? id : NO_BREEDER_KEY;
 }
 
 export function ClearanceAdminClient() {
@@ -81,6 +96,7 @@ export function ClearanceAdminClient() {
   const [listSelectedIds, setListSelectedIds] = useState<number[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bannerBusyId, setBannerBusyId] = useState<number | null>(null);
+  const [expandedBreederId, setExpandedBreederId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -168,10 +184,69 @@ export function ClearanceAdminClient() {
     }
   }, [pickerOpen]);
 
+  const productsByBreederId = useMemo(() => {
+    const map = new Map<number, ProductFull[]>();
+    for (const p of products) {
+      const bid = productBreederId(p);
+      const prev = map.get(bid);
+      if (prev) prev.push(p);
+      else map.set(bid, [p]);
+    }
+    return map;
+  }, [products]);
+
+  const boxRows = useMemo(() => {
+    const rows: {
+      breederId: number;
+      name: string;
+      logoUrl: string | null;
+      summary: ClearanceBreederSummary | null;
+      products: ProductFull[];
+    }[] = breederSummary.map((b) => ({
+      breederId: b.breederId,
+      name: b.name,
+      logoUrl: b.logoUrl,
+      summary: b,
+      products: productsByBreederId.get(b.breederId) ?? [],
+    }));
+
+    const known = new Set(breederSummary.map((b) => b.breederId));
+    const orphans = products.filter((p) => !known.has(productBreederId(p)));
+    if (orphans.length > 0) {
+      rows.push({
+        breederId: NO_BREEDER_KEY,
+        name: "ไม่มีค่าย / ไม่ตรงสรุป",
+        logoUrl: null,
+        summary: null,
+        products: orphans,
+      });
+    }
+    return rows;
+  }, [breederSummary, products, productsByBreederId]);
+
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const listSelectedSet = useMemo(() => new Set(listSelectedIds), [listSelectedIds]);
-  const allListSelected =
-    products.length > 0 && listSelectedIds.length === products.length;
+
+  const expandedProducts =
+    expandedBreederId == null
+      ? []
+      : (boxRows.find((r) => r.breederId === expandedBreederId)?.products ?? []);
+
+  const allExpandedSelected =
+    expandedProducts.length > 0 &&
+    expandedProducts.every((p) => listSelectedSet.has(p.id as number));
+
+  const selectedInExpanded = expandedProducts.filter((p) =>
+    listSelectedSet.has(p.id as number)
+  ).length;
+
+  const toggleExpand = (breederId: number) => {
+    setExpandedBreederId((prev) => {
+      if (prev === breederId) return null;
+      setListSelectedIds([]);
+      return breederId;
+    });
+  };
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) =>
@@ -185,12 +260,12 @@ export function ClearanceAdminClient() {
     );
   };
 
-  const toggleListSelectAll = () => {
-    if (allListSelected) {
+  const toggleListSelectAllInExpanded = () => {
+    if (allExpandedSelected) {
       setListSelectedIds([]);
       return;
     }
-    setListSelectedIds(products.map((p) => p.id as number));
+    setListSelectedIds(expandedProducts.map((p) => p.id as number));
   };
 
   const removeSelectedFromList = async () => {
@@ -199,9 +274,7 @@ export function ClearanceAdminClient() {
       return;
     }
     if (
-      !window.confirm(
-        `นำสินค้าออกจาก Clearance ${listSelectedIds.length} รายการ?`
-      )
+      !window.confirm(`นำสินค้าออกจาก Clearance ${listSelectedIds.length} รายการ?`)
     ) {
       return;
     }
@@ -348,10 +421,11 @@ export function ClearanceAdminClient() {
   };
 
   const moveBreeder = async (breederId: number, dir: -1 | 1) => {
-    const idx = breederSummary.findIndex((b) => b.breederId === breederId);
+    const movable = breederSummary;
+    const idx = movable.findIndex((b) => b.breederId === breederId);
     const swapIdx = idx + dir;
-    if (idx < 0 || swapIdx < 0 || swapIdx >= breederSummary.length) return;
-    const next = [...breederSummary];
+    if (idx < 0 || swapIdx < 0 || swapIdx >= movable.length) return;
+    const next = [...movable];
     const tmp = next[idx]!;
     next[idx] = next[swapIdx]!;
     next[swapIdx] = tmp;
@@ -391,7 +465,7 @@ export function ClearanceAdminClient() {
         <div>
           <h1 className="text-xl font-bold text-zinc-900">สินค้า Clearance</h1>
           <p className="text-sm text-zinc-500">
-            กลุ่มลด 50% / 30% / 25% · ซิงค์ราคาตาม % ของแต่ละสินค้า · หน้าลูกค้า{" "}
+            คลิกกล่องค่ายเพื่อดู/นำออกสินค้า · หน้าลูกค้า{" "}
             <Link href="/clearance" className="text-emerald-800 underline-offset-2 hover:underline">
               /clearance
             </Link>
@@ -423,10 +497,10 @@ export function ClearanceAdminClient() {
       <Card>
         <CardHeader className="py-3">
           <CardTitle className="text-base">
-            กล่องแบนเนอร์ตามค่าย ({breederSummary.length})
+            กล่องตามค่าย ({boxRows.filter((r) => r.breederId !== NO_BREEDER_KEY).length})
           </CardTitle>
           <p className="text-xs text-zinc-500">
-            ระบบจัดกลุ่มจากสินค้าใน Clearance — อัปโหลดรูปแบนเนอร์ต่อค่ายสำหรับหน้า /clearance
+            คลิกแถวค่ายเพื่อขยายรายการสินค้าด้านล่าง · อัปโหลดแบนเนอร์สำหรับหน้า /clearance
           </p>
           <p className="mt-1 text-xs font-medium text-emerald-800">
             {clearanceBreederBannerSizeLabel("th")}
@@ -438,220 +512,279 @@ export function ClearanceAdminClient() {
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-zinc-500">
               <Loader2 className="h-4 w-4 animate-spin" /> กำลังโหลด…
             </div>
-          ) : breederSummary.length === 0 ? (
+          ) : boxRows.length === 0 ? (
             <p className="py-8 text-center text-sm text-zinc-500">
               ยังไม่มีค่ายใน Clearance — เพิ่มสินค้าก่อน
             </p>
           ) : (
-            breederSummary.map((b, index) => {
-              const busy = bannerBusyId === b.breederId;
-              const preview = b.banner?.imageUrl || b.logoUrl;
+            boxRows.map((box) => {
+              const b = box.summary;
+              const busy = bannerBusyId === box.breederId;
+              const preview = b?.banner?.imageUrl || box.logoUrl;
+              const expanded = expandedBreederId === box.breederId;
+              const count = box.products.length;
+              const canReorder = box.breederId !== NO_BREEDER_KEY;
+              const summaryIndex = canReorder
+                ? breederSummary.findIndex((x) => x.breederId === box.breederId)
+                : -1;
+
               return (
                 <div
-                  key={b.breederId}
-                  className="grid gap-4 rounded-xl border border-zinc-200 bg-white p-4 md:grid-cols-[11rem_minmax(0,1fr)_auto] md:items-center"
+                  key={box.breederId}
+                  className={cn(
+                    "overflow-hidden rounded-xl border border-zinc-200 bg-white",
+                    expanded && "ring-1 ring-emerald-700/20"
+                  )}
                 >
-                  <div className={`relative mx-auto w-full max-w-[11rem] overflow-hidden rounded-lg border border-zinc-100 bg-zinc-50 md:mx-0 ${CLEARANCE_BREEDER_BANNER.aspectClass}`}>
-                    {preview ? (
-                      <Image
-                        src={preview}
-                        alt=""
-                        fill
-                        className="object-cover object-center"
-                        sizes="176px"
-                      />
-                    ) : (
-                      <div className="flex h-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-zinc-400">
-                        <span>16:10</span>
-                        <span>
-                          {CLEARANCE_BREEDER_BANNER.recommendedWidth}×
-                          {CLEARANCE_BREEDER_BANNER.recommendedHeight}
-                        </span>
+                  <div className="grid gap-4 p-4 md:grid-cols-[11rem_minmax(0,1fr)_auto] md:items-center">
+                    <button
+                      type="button"
+                      className="flex min-w-0 items-start gap-3 text-left md:col-span-2 md:contents"
+                      onClick={() => toggleExpand(box.breederId)}
+                      aria-expanded={expanded}
+                    >
+                      <span className="mt-1 hidden text-zinc-400 md:inline" aria-hidden>
+                        {expanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </span>
+                      <div
+                        className={cn(
+                          "relative mx-auto w-full max-w-[11rem] overflow-hidden rounded-lg border border-zinc-100 bg-zinc-50 md:mx-0",
+                          CLEARANCE_BREEDER_BANNER.aspectClass
+                        )}
+                      >
+                        {preview ? (
+                          <Image
+                            src={preview}
+                            alt=""
+                            fill
+                            className="object-cover object-center"
+                            sizes="176px"
+                          />
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-zinc-400">
+                            <span>16:10</span>
+                            <span>
+                              {CLEARANCE_BREEDER_BANNER.recommendedWidth}×
+                              {CLEARANCE_BREEDER_BANNER.recommendedHeight}
+                            </span>
+                          </div>
+                        )}
                       </div>
+                      <div className="min-w-0 flex-1 text-center md:text-left">
+                        <p className="flex items-center justify-center gap-1.5 font-semibold text-zinc-900 md:justify-start">
+                          <span className="md:hidden" aria-hidden>
+                            {expanded ? (
+                              <ChevronDown className="inline h-4 w-4 text-zinc-400" />
+                            ) : (
+                              <ChevronRight className="inline h-4 w-4 text-zinc-400" />
+                            )}
+                          </span>
+                          {box.name}
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          {count} สินค้า
+                          {b?.banner?.isActive === false ? " · ซ่อนแบนเนอร์" : ""}
+                          {" · "}
+                          {expanded ? "คลิกเพื่อยุบ" : "คลิกเพื่อดูสินค้า"}
+                        </p>
+                      </div>
+                    </button>
+
+                    {canReorder && b ? (
+                      <div
+                        className="flex flex-wrap items-center justify-center gap-2 md:justify-end"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      >
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-200 px-2.5 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50">
+                          <Upload className="h-3.5 w-3.5" />
+                          อัปรูป
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            disabled={busy}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) void uploadBanner(box.breederId, f);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        <div className="flex items-center gap-1.5 text-xs text-zinc-600">
+                          <span>แสดง</span>
+                          <Switch
+                            checked={b.banner?.isActive ?? true}
+                            disabled={busy}
+                            onCheckedChange={(on) =>
+                              void upsertBanner(box.breederId, { isActive: on })
+                            }
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          className="h-9 w-9"
+                          disabled={busy || summaryIndex <= 0}
+                          onClick={() => void moveBreeder(box.breederId, -1)}
+                          aria-label="Move up"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          className="h-9 w-9"
+                          disabled={
+                            busy ||
+                            summaryIndex < 0 ||
+                            summaryIndex >= breederSummary.length - 1
+                          }
+                          onClick={() => void moveBreeder(box.breederId, 1)}
+                          aria-label="Move down"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        {busy ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className="text-center text-xs text-zinc-400 md:text-right">—</div>
                     )}
                   </div>
-                  <div className="min-w-0 text-center md:text-left">
-                    <p className="font-semibold text-zinc-900">{b.name}</p>
-                    <p className="text-xs text-zinc-500">
-                      {b.productCount} สินค้า · −{CLEARANCE_DISCOUNT_PERCENT}%
-                      {b.banner?.isActive === false ? " · ซ่อนแบนเนอร์" : ""}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
-                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-200 px-2.5 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50">
-                      <Upload className="h-3.5 w-3.5" />
-                      อัปรูป
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="sr-only"
-                        disabled={busy}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) void uploadBanner(b.breederId, f);
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-600">
-                      <span>แสดง</span>
-                      <Switch
-                        checked={b.banner?.isActive ?? true}
-                        disabled={busy}
-                        onCheckedChange={(on) =>
-                          void upsertBanner(b.breederId, { isActive: on })
-                        }
-                      />
+
+                  {expanded ? (
+                    <div className="border-t border-zinc-100 bg-zinc-50/60">
+                      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+                        <p className="text-xs font-medium text-zinc-600">
+                          สินค้าในค่ายนี้ ({count})
+                        </p>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          disabled={bulkBusy || selectedInExpanded === 0}
+                          onClick={() => void removeSelectedFromList()}
+                        >
+                          {bulkBusy ? (
+                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="mr-1.5 h-4 w-4" />
+                          )}
+                          นำออกที่เลือก ({selectedInExpanded})
+                        </Button>
+                      </div>
+                      {count === 0 ? (
+                        <p className="px-4 pb-4 text-center text-sm text-zinc-500">
+                          ไม่มีสินค้าในค่ายนี้
+                        </p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-12">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-zinc-300"
+                                  checked={allExpandedSelected}
+                                  onChange={toggleListSelectAllInExpanded}
+                                  aria-label="เลือกทั้งหมดในค่ายนี้"
+                                />
+                              </TableHead>
+                              <TableHead className="w-14" />
+                              <TableHead>สินค้า</TableHead>
+                              <TableHead>ราคา Clearance</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {box.products.map((p) => {
+                              const pid = p.id as number;
+                              const checked = listSelectedSet.has(pid);
+                              const variants = p.product_variants ?? [];
+                              const from = variants[0];
+                              const list = Number(from?.price ?? 0);
+                              const pct =
+                                typeof p.clearance_discount_percent === "number"
+                                  ? p.clearance_discount_percent
+                                  : CLEARANCE_DISCOUNT_PERCENT;
+                              const sale =
+                                from &&
+                                (from as { clearance_price?: number | null }).clearance_price !=
+                                  null
+                                  ? Number(
+                                      (from as { clearance_price?: number | null }).clearance_price
+                                    )
+                                  : clearancePriceFromList(list, pct);
+                              return (
+                                <TableRow
+                                  key={pid}
+                                  className={checked ? "bg-emerald-50/50" : undefined}
+                                  data-state={checked ? "selected" : undefined}
+                                >
+                                  <TableCell>
+                                    <input
+                                      type="checkbox"
+                                      className="h-4 w-4 rounded border-zinc-300"
+                                      checked={checked}
+                                      disabled={bulkBusy}
+                                      onChange={() => toggleListSelect(pid)}
+                                      aria-label={`เลือก ${p.name}`}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    {p.image_url ? (
+                                      <div className="relative h-11 w-11 overflow-hidden rounded-lg border border-zinc-200">
+                                        <Image
+                                          src={p.image_url}
+                                          alt=""
+                                          fill
+                                          className="object-cover"
+                                          sizes="44px"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-400">
+                                        <PackageX className="h-4 w-4" />
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <p className="font-medium text-zinc-900">{p.name}</p>
+                                    <p className="text-xs text-zinc-500">{variants.length} แพ็ก</p>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-wrap items-baseline gap-2 text-sm">
+                                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
+                                        −{pct}%
+                                      </span>
+                                      {list > 0 ? (
+                                        <span className="tabular-nums text-zinc-400 line-through">
+                                          {formatPrice(list)}
+                                        </span>
+                                      ) : null}
+                                      <span className="font-semibold tabular-nums text-emerald-800">
+                                        {formatPrice(sale)}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
                     </div>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      className="h-9 w-9"
-                      disabled={busy || index === 0}
-                      onClick={() => void moveBreeder(b.breederId, -1)}
-                      aria-label="Move up"
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      className="h-9 w-9"
-                      disabled={busy || index === breederSummary.length - 1}
-                      onClick={() => void moveBreeder(b.breederId, 1)}
-                      aria-label="Move down"
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin text-zinc-400" /> : null}
-                  </div>
+                  ) : null}
                 </div>
               );
             })
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 py-3">
-          <CardTitle className="text-base">
-            รายการ Clearance ({products.length})
-          </CardTitle>
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            disabled={bulkBusy || listSelectedIds.length === 0}
-            onClick={() => void removeSelectedFromList()}
-          >
-            {bulkBusy ? (
-              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="mr-1.5 h-4 w-4" />
-            )}
-            นำออกที่เลือก ({listSelectedIds.length})
-          </Button>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center gap-2 py-16 text-sm text-zinc-500">
-              <Loader2 className="h-4 w-4 animate-spin" /> กำลังโหลด…
-            </div>
-          ) : products.length === 0 ? (
-            <p className="px-6 py-12 text-center text-sm text-zinc-500">
-              ยังไม่มีสินค้า Clearance — กด «เพิ่มสินค้า» เพื่อเริ่ม
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-zinc-300"
-                      checked={allListSelected}
-                      onChange={toggleListSelectAll}
-                      aria-label="เลือกทั้งหมด"
-                    />
-                  </TableHead>
-                  <TableHead className="w-14" />
-                  <TableHead>สินค้า</TableHead>
-                  <TableHead>ค่าย</TableHead>
-                  <TableHead>ราคา Clearance</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((p) => {
-                  const pid = p.id as number;
-                  const checked = listSelectedSet.has(pid);
-                  const variants = p.product_variants ?? [];
-                  const from = variants[0];
-                  const list = Number(from?.price ?? 0);
-                  const pct =
-                    typeof p.clearance_discount_percent === "number"
-                      ? p.clearance_discount_percent
-                      : CLEARANCE_DISCOUNT_PERCENT;
-                  const sale =
-                    from &&
-                    (from as { clearance_price?: number | null }).clearance_price != null
-                      ? Number((from as { clearance_price?: number | null }).clearance_price)
-                      : clearancePriceFromList(list, pct);
-                  return (
-                    <TableRow
-                      key={pid}
-                      className={checked ? "bg-emerald-50/50" : undefined}
-                      data-state={checked ? "selected" : undefined}
-                    >
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-zinc-300"
-                          checked={checked}
-                          disabled={bulkBusy}
-                          onChange={() => toggleListSelect(pid)}
-                          aria-label={`เลือก ${p.name}`}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {p.image_url ? (
-                          <div className="relative h-11 w-11 overflow-hidden rounded-lg border border-zinc-200">
-                            <Image src={p.image_url} alt="" fill className="object-cover" sizes="44px" />
-                          </div>
-                        ) : (
-                          <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-400">
-                            <PackageX className="h-4 w-4" />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium text-zinc-900">{p.name}</p>
-                        <p className="text-xs text-zinc-500">{variants.length} แพ็ก</p>
-                      </TableCell>
-                      <TableCell className="text-sm text-zinc-600">
-                        {p.breeders?.name ?? "—"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap items-baseline gap-2 text-sm">
-                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
-                            −{pct}%
-                          </span>
-                          {list > 0 ? (
-                            <span className="tabular-nums text-zinc-400 line-through">
-                              {formatPrice(list)}
-                            </span>
-                          ) : null}
-                          <span className="font-semibold tabular-nums text-emerald-800">
-                            {formatPrice(sale)}
-                          </span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
           )}
         </CardContent>
       </Card>
@@ -691,9 +824,7 @@ export function ClearanceAdminClient() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             ) : pickerRows.length === 0 ? (
-              <p className="py-8 text-center text-sm text-zinc-500">
-                ไม่พบสินค้าที่มีสต็อก
-              </p>
+              <p className="py-8 text-center text-sm text-zinc-500">ไม่พบสินค้าที่มีสต็อก</p>
             ) : (
               pickerRows.map((row) => {
                 const inList = Boolean(row.is_clearance);

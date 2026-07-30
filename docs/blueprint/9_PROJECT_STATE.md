@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (Admin Clearance — accordion ตามค่าย)
+- **What:** รายการสินค้า Clearance อยู่ในกล่อง Breeder แบบคลิกขยาย (ไม่รวมทุกค่ายในตารางเดียว)
+- **Logic:** group ตาม `breeder_id` · เปิดทีละกล่อง · select-all / นำออกเฉพาะในกล่องที่ขยาย
+- **ไฟล์:** `components/admin/ClearanceAdminClient.tsx`
+
 ### บันทึกการทำงาน — 2026-07-30 (Clearance risk mitigations — multi-%)
 - **What:** กัน resync ทับราคาผิดกลุ่ม · ยืนยัน checkout เป็นเงินจริง · SEO canonical คง `/clearance`
 - **Logic:** `clearance_discount_percent` + allowlist 50/30/25 · `applyFixedClearancePrices(id, pct)` · resync อ่าน % ต่อสินค้า · admin toast เตือนตะกร้าค้าง · sitemap/canonical ไม่ใส่ query
