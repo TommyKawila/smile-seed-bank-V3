@@ -53,6 +53,14 @@ export async function PATCH(
         ? applyClearancePricesToVariants(rawVariants, clearancePct ?? undefined)
         : rawVariants.map((v) => ({ ...v, clearance_price: null }));
 
+    const syncedSalePrice = deriveClearanceSalePrice(
+      productData.is_clearance === true,
+      variants,
+      null
+    );
+    const isClearance =
+      productData.is_clearance === true && syncedSalePrice != null && syncedSalePrice > 0;
+
     const isActive = deriveProductIsActiveForCatalog(
       variants,
       productData.is_active
@@ -64,17 +72,13 @@ export async function PATCH(
     );
     const slug = await ensureUniqueProductSlug(baseSlug, productId);
 
-    const syncedSalePrice = deriveClearanceSalePrice(
-      productData.is_clearance,
-      variants,
-      productData.sale_price
-    );
-
     // Sanitize: undefined optional → null
     const sanitized = Object.fromEntries(
       Object.entries({
         ...productData,
         slug,
+        is_clearance: isClearance,
+        clearance_discount_percent: isClearance ? clearancePct : null,
         is_active: isActive,
         sale_price: syncedSalePrice,
       }).map(([k, v]) => [k, v === undefined ? null : v])

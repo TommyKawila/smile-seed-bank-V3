@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-31 (Clearance — เลือกแพ็ก ไม่บังคับทั้งสินค้า)
+- **What:** Admin เลือก/นำออก Clearance ระดับแพ็ก; แพ็กที่ไม่มี `clearance_price` ขายราคาปกติ
+- **Logic:** ตัด fallback % ทั้งสินค้า · add/resync เขียนเฉพาะแพ็กที่เลือกหรือที่ติดอยู่แล้ว · API `selections` / `variantIds`
+- **ไฟล์:** `lib/product-utils.ts` · `lib/clearance.ts` · `services/clearance-admin-service.ts` · `app/api/admin/clearance/route.ts` · `ClearanceAdminClient.tsx` · admin products routes
+
 ### บันทึกการทำงาน — 2026-07-30 (Admin Clearance — ก้อน % ก่อน แล้วค่อยค่าย)
 - **What:** หน้า Admin Clearance เริ่มที่ grid กลุ่ม % → คลิกเข้าค่าย (accordion) → แก้/นำออก/เพิ่ม
 - **Logic:** `viewPercent` drill-down · จัดกลุ่มจาก `clearance_discount_percent` · พรีเซ็ต % ตอนเพิ่มเมื่ออยู่ในกลุ่ม

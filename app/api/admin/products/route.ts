@@ -139,21 +139,26 @@ export async function POST(req: NextRequest) {
         ? applyClearancePricesToVariants(rawVariants, clearancePct ?? undefined)
         : rawVariants.map((v) => ({ ...v, clearance_price: null }));
 
+    const syncedSalePrice = deriveClearanceSalePrice(
+      productData.is_clearance === true,
+      variants,
+      null
+    );
+    /** Pack membership = clearance_price > 0; do not keep is_clearance without priced packs. */
+    const isClearance =
+      productData.is_clearance === true && syncedSalePrice != null && syncedSalePrice > 0;
+
     const isActive = deriveProductIsActiveForCatalog(
       variants,
       productData.is_active
-    );
-
-    const syncedSalePrice = deriveClearanceSalePrice(
-      productData.is_clearance,
-      variants,
-      productData.sale_price
     );
 
     // Sanitize: replace undefined optional strings with null for Supabase
     const sanitized = Object.fromEntries(
       Object.entries({
         ...productData,
+        is_clearance: isClearance,
+        clearance_discount_percent: isClearance ? clearancePct : null,
         is_active: isActive,
         sale_price: syncedSalePrice,
       }).map(([k, v]) => [k, v === undefined ? null : v])

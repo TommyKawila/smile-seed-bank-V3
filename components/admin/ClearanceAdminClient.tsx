@@ -48,16 +48,23 @@ import { useToast } from "@/hooks/use-toast";
 import {
   CLEARANCE_DISCOUNT_PERCENT,
   CLEARANCE_DISCOUNT_PRESETS,
-  clearancePriceFromList,
   CLEARANCE_BREEDER_BANNER,
   clearanceBreederBannerSizeLabel,
   normalizeClearanceDiscountPercent,
 } from "@/lib/clearance";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, cn } from "@/lib/utils";
 import { computeTotalStock } from "@/lib/product-utils";
 import type { ProductFull } from "@/types/supabase";
 import type { ClearanceBreederSummary } from "@/lib/clearance";
-import { cn } from "@/lib/utils";
+
+type PickerVariant = {
+  id: number;
+  unit_label?: string | null;
+  price?: number | null;
+  stock?: number | null;
+  is_active?: boolean | null;
+  clearance_price?: number | null;
+};
 
 type PickerRow = {
   id: number;
@@ -66,7 +73,18 @@ type PickerRow = {
   stock?: number | null;
   breeders?: { name: string } | null;
   is_clearance?: boolean | null;
-  product_variants?: { stock: number | null; is_active?: boolean | null }[] | null;
+  product_variants?: PickerVariant[] | null;
+};
+
+type ClearancePackRow = {
+  productId: number;
+  productName: string;
+  imageUrl: string | null;
+  variantId: number;
+  unitLabel: string;
+  listPrice: number;
+  clearancePrice: number;
+  discountPercent: number;
 };
 
 const NO_BREEDER_KEY = -1;
@@ -87,6 +105,38 @@ function productClearancePercent(p: ProductFull): number {
   return normalizeClearanceDiscountPercent(p.clearance_discount_percent);
 }
 
+function activePickerVariants(row: PickerRow): PickerVariant[] {
+  return (row.product_variants ?? []).filter((v) => v.is_active !== false);
+}
+
+function packLabel(unitLabel: string | null | undefined, locale: "th" | "en" = "th"): string {
+  const raw = unitLabel?.trim();
+  if (!raw) return locale === "th" ? "แพ็ก" : "Pack";
+  return raw;
+}
+
+function clearancePacksFromProduct(p: ProductFull): ClearancePackRow[] {
+  const pct = productClearancePercent(p);
+  const rows: ClearancePackRow[] = [];
+  for (const v of p.product_variants ?? []) {
+    const cp = Number(
+      (v as { clearance_price?: number | null }).clearance_price ?? 0
+    );
+    if (!(cp > 0)) continue;
+    rows.push({
+      productId: p.id as number,
+      productName: p.name,
+      imageUrl: p.image_url,
+      variantId: v.id as number,
+      unitLabel: packLabel(v.unit_label),
+      listPrice: Number(v.price ?? 0),
+      clearancePrice: cp,
+      discountPercent: pct,
+    });
+  }
+  return rows;
+}
+
 export function ClearanceAdminClient() {
   const { toast } = useToast();
   const [products, setProducts] = useState<ProductFull[]>([]);
@@ -99,11 +149,12 @@ export function ClearanceAdminClient() {
   const [pickerLoading, setPickerLoading] = useState(false);
   const [pickerBreederId, setPickerBreederId] = useState("all");
   const [breederOptions, setBreederOptions] = useState<{ id: number; name: string }[]>([]);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedVariantIds, setSelectedVariantIds] = useState<number[]>([]);
   const [listSelectedIds, setListSelectedIds] = useState<number[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bannerBusyId, setBannerBusyId] = useState<number | null>(null);
   const [expandedBreederId, setExpandedBreederId] = useState<number | null>(null);
+  const [expandedPickerProductId, setExpandedPickerProductId] = useState<number | null>(null);
   const [viewPercent, setViewPercent] = useState<number | null>(null);
   const [addDiscountPercent, setAddDiscountPercent] = useState(CLEARANCE_DISCOUNT_PERCENT);
   const [rowPercentDraft, setRowPercentDraft] = useState<Record<number, string>>({});
@@ -191,7 +242,8 @@ export function ClearanceAdminClient() {
       setPickerQ("");
       setPickerDebounced("");
       setPickerBreederId("all");
-      setSelectedIds([]);
+      setSelectedVariantIds([]);
+      setExpandedPickerProductId(null);
     }
   }, [pickerOpen]);
 
@@ -295,20 +347,25 @@ export function ClearanceAdminClient() {
     setListSelectedIds([]);
   };
 
-  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedVariantSet = useMemo(
+    () => new Set(selectedVariantIds),
+    [selectedVariantIds]
+  );
   const listSelectedSet = useMemo(() => new Set(listSelectedIds), [listSelectedIds]);
 
-  const expandedProducts =
-    expandedBreederId == null
-      ? []
-      : (boxRows.find((r) => r.breederId === expandedBreederId)?.products ?? []);
+  const expandedPackRows = useMemo(() => {
+    if (expandedBreederId == null) return [] as ClearancePackRow[];
+    const box = boxRows.find((r) => r.breederId === expandedBreederId);
+    if (!box) return [];
+    return box.products.flatMap((p) => clearancePacksFromProduct(p));
+  }, [boxRows, expandedBreederId]);
 
   const allExpandedSelected =
-    expandedProducts.length > 0 &&
-    expandedProducts.every((p) => listSelectedSet.has(p.id as number));
+    expandedPackRows.length > 0 &&
+    expandedPackRows.every((r) => listSelectedSet.has(r.variantId));
 
-  const selectedInExpanded = expandedProducts.filter((p) =>
-    listSelectedSet.has(p.id as number)
+  const selectedInExpanded = expandedPackRows.filter((r) =>
+    listSelectedSet.has(r.variantId)
   ).length;
 
   const toggleExpand = (breederId: number) => {
@@ -319,15 +376,19 @@ export function ClearanceAdminClient() {
     });
   };
 
-  const toggleSelect = (id: number) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  const toggleVariantSelect = (variantId: number) => {
+    setSelectedVariantIds((prev) =>
+      prev.includes(variantId)
+        ? prev.filter((x) => x !== variantId)
+        : [...prev, variantId]
     );
   };
 
-  const toggleListSelect = (id: number) => {
+  const toggleListSelect = (variantId: number) => {
     setListSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(variantId)
+        ? prev.filter((x) => x !== variantId)
+        : [...prev, variantId]
     );
   };
 
@@ -336,16 +397,16 @@ export function ClearanceAdminClient() {
       setListSelectedIds([]);
       return;
     }
-    setListSelectedIds(expandedProducts.map((p) => p.id as number));
+    setListSelectedIds(expandedPackRows.map((r) => r.variantId));
   };
 
   const removeSelectedFromList = async () => {
     if (listSelectedIds.length === 0) {
-      toast({ title: "เลือกสินค้าที่ต้องการนำออกก่อน" });
+      toast({ title: "เลือกแพ็กที่ต้องการนำออกก่อน" });
       return;
     }
     if (
-      !window.confirm(`นำสินค้าออกจาก Clearance ${listSelectedIds.length} รายการ?`)
+      !window.confirm(`นำแพ็กออกจาก Clearance ${listSelectedIds.length} รายการ?`)
     ) {
       return;
     }
@@ -354,12 +415,12 @@ export function ClearanceAdminClient() {
       const res = await fetch("/api/admin/clearance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "remove", productIds: listSelectedIds }),
+        body: JSON.stringify({ action: "remove", variantIds: listSelectedIds }),
       });
       const json = (await res.json()) as { error?: string; removed?: number };
       if (!res.ok) throw new Error(json.error ?? "นำออกไม่สำเร็จ");
       toast({
-        title: `นำออก ${json.removed ?? listSelectedIds.length} รายการแล้ว`,
+        title: `นำออก ${json.removed ?? listSelectedIds.length} แพ็กแล้ว`,
       });
       setListSelectedIds([]);
       await load();
@@ -375,12 +436,26 @@ export function ClearanceAdminClient() {
   };
 
   const addSelected = async () => {
-    const ids = selectedIds.filter((id) => {
-      const row = pickerRows.find((r) => r.id === id);
-      return row && !row.is_clearance;
-    });
-    if (ids.length === 0) {
-      toast({ title: "เลือกสินค้าที่ยังไม่อยู่ใน Clearance" });
+    const variantToProduct = new Map<number, number>();
+    for (const row of pickerRows) {
+      for (const v of activePickerVariants(row)) {
+        variantToProduct.set(Number(v.id), row.id);
+      }
+    }
+    const byProduct = new Map<number, number[]>();
+    for (const vid of selectedVariantIds) {
+      const pid = variantToProduct.get(vid);
+      if (pid == null) continue;
+      const list = byProduct.get(pid) ?? [];
+      list.push(vid);
+      byProduct.set(pid, list);
+    }
+    const selections = [...byProduct.entries()].map(([productId, variantIds]) => ({
+      productId,
+      variantIds,
+    }));
+    if (selections.length === 0) {
+      toast({ title: "เลือกแพ็กที่ต้องการเพิ่มใน Clearance" });
       return;
     }
     setBulkBusy(true);
@@ -389,7 +464,7 @@ export function ClearanceAdminClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          productIds: ids,
+          selections,
           discountPercent: normalizeClearanceDiscountPercent(addDiscountPercent),
         }),
       });
@@ -401,8 +476,8 @@ export function ClearanceAdminClient() {
       if (!res.ok) throw new Error(json.error ?? "เพิ่มไม่สำเร็จ");
       const pct = json.discountPercent ?? addDiscountPercent;
       toast({
-        title: `เพิ่ม ${json.added ?? ids.length} สินค้าแล้ว`,
-        description: `ตั้งราคา Clearance −${pct}% อัตโนมัติ`,
+        title: `เพิ่ม ${json.added ?? selectedVariantIds.length} แพ็กแล้ว`,
+        description: `ตั้งราคา Clearance −${pct}%`,
       });
       setPickerOpen(false);
       await load();
@@ -843,7 +918,7 @@ export function ClearanceAdminClient() {
                     <div className="border-t border-zinc-100 bg-zinc-50/60">
                       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
                         <p className="text-xs font-medium text-zinc-600">
-                          สินค้าในค่ายนี้ ({count})
+                          แพ็ก Clearance ({expandedPackRows.length}) · สินค้า {count}
                         </p>
                         <Button
                           type="button"
@@ -860,9 +935,9 @@ export function ClearanceAdminClient() {
                           นำออกที่เลือก ({selectedInExpanded})
                         </Button>
                       </div>
-                      {count === 0 ? (
+                      {expandedPackRows.length === 0 ? (
                         <p className="px-4 pb-4 text-center text-sm text-zinc-500">
-                          ไม่มีสินค้าในค่ายนี้
+                          ไม่มีแพ็ก Clearance ในค่ายนี้
                         </p>
                       ) : (
                         <Table>
@@ -874,37 +949,23 @@ export function ClearanceAdminClient() {
                                   className="h-4 w-4 rounded border-zinc-300"
                                   checked={allExpandedSelected}
                                   onChange={toggleListSelectAllInExpanded}
-                                  aria-label="เลือกทั้งหมดในค่ายนี้"
+                                  aria-label="เลือกแพ็กทั้งหมดในค่ายนี้"
                                 />
                               </TableHead>
                               <TableHead className="w-14" />
-                              <TableHead>สินค้า</TableHead>
+                              <TableHead>สินค้า / แพ็ก</TableHead>
                               <TableHead className="w-36">%</TableHead>
                               <TableHead>ราคา Clearance</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {box.products.map((p) => {
-                              const pid = p.id as number;
-                              const checked = listSelectedSet.has(pid);
-                              const variants = p.product_variants ?? [];
-                              const from = variants[0];
-                              const list = Number(from?.price ?? 0);
-                              const pct =
-                                typeof p.clearance_discount_percent === "number"
-                                  ? p.clearance_discount_percent
-                                  : CLEARANCE_DISCOUNT_PERCENT;
-                              const sale =
-                                from &&
-                                (from as { clearance_price?: number | null }).clearance_price !=
-                                  null
-                                  ? Number(
-                                      (from as { clearance_price?: number | null }).clearance_price
-                                    )
-                                  : clearancePriceFromList(list, pct);
+                            {expandedPackRows.map((pack) => {
+                              const checked = listSelectedSet.has(pack.variantId);
+                              const pid = pack.productId;
+                              const pct = pack.discountPercent;
                               return (
                                 <TableRow
-                                  key={pid}
+                                  key={pack.variantId}
                                   className={checked ? "bg-emerald-50/50" : undefined}
                                   data-state={checked ? "selected" : undefined}
                                 >
@@ -914,15 +975,15 @@ export function ClearanceAdminClient() {
                                       className="h-4 w-4 rounded border-zinc-300"
                                       checked={checked}
                                       disabled={bulkBusy}
-                                      onChange={() => toggleListSelect(pid)}
-                                      aria-label={`เลือก ${p.name}`}
+                                      onChange={() => toggleListSelect(pack.variantId)}
+                                      aria-label={`เลือก ${pack.productName} ${pack.unitLabel}`}
                                     />
                                   </TableCell>
                                   <TableCell>
-                                    {p.image_url ? (
+                                    {pack.imageUrl ? (
                                       <div className="relative h-11 w-11 overflow-hidden rounded-lg border border-zinc-200">
                                         <Image
-                                          src={p.image_url}
+                                          src={pack.imageUrl}
                                           alt=""
                                           fill
                                           className="object-cover"
@@ -936,8 +997,8 @@ export function ClearanceAdminClient() {
                                     )}
                                   </TableCell>
                                   <TableCell>
-                                    <p className="font-medium text-zinc-900">{p.name}</p>
-                                    <p className="text-xs text-zinc-500">{variants.length} แพ็ก</p>
+                                    <p className="font-medium text-zinc-900">{pack.productName}</p>
+                                    <p className="text-xs text-zinc-500">{pack.unitLabel}</p>
                                   </TableCell>
                                   <TableCell>
                                     <div className="flex items-center gap-1.5">
@@ -964,7 +1025,7 @@ export function ClearanceAdminClient() {
                                             );
                                           }
                                         }}
-                                        aria-label={`ส่วนลด % ของ ${p.name}`}
+                                        aria-label={`ส่วนลด % ของ ${pack.productName}`}
                                       />
                                       <Button
                                         type="button"
@@ -996,13 +1057,13 @@ export function ClearanceAdminClient() {
                                       <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
                                         −{pct}%
                                       </span>
-                                      {list > 0 ? (
+                                      {pack.listPrice > 0 ? (
                                         <span className="tabular-nums text-zinc-400 line-through">
-                                          {formatPrice(list)}
+                                          {formatPrice(pack.listPrice)}
                                         </span>
                                       ) : null}
                                       <span className="font-semibold tabular-nums text-emerald-800">
-                                        {formatPrice(sale)}
+                                        {formatPrice(pack.clearancePrice)}
                                       </span>
                                     </div>
                                   </TableCell>
@@ -1101,43 +1162,124 @@ export function ClearanceAdminClient() {
               <p className="py-8 text-center text-sm text-zinc-500">ไม่พบสินค้าที่มีสต็อก</p>
             ) : (
               pickerRows.map((row) => {
-                const inList = Boolean(row.is_clearance);
-                const on = selectedSet.has(row.id);
+                const packs = activePickerVariants(row);
+                const expandable = packs.length > 1;
+                const open = expandedPickerProductId === row.id;
+                const selectable = packs.filter(
+                  (v) => !(Number(v.clearance_price ?? 0) > 0)
+                );
+                const selectedCount = selectable.filter((v) =>
+                  selectedVariantSet.has(Number(v.id))
+                ).length;
+                const allOnClearance =
+                  packs.length > 0 && selectable.length === 0;
+
+                const onProductClick = () => {
+                  if (packs.length === 0) return;
+                  if (packs.length === 1) {
+                    const only = packs[0]!;
+                    if (Number(only.clearance_price ?? 0) > 0) return;
+                    toggleVariantSelect(Number(only.id));
+                    return;
+                  }
+                  setExpandedPickerProductId((prev) =>
+                    prev === row.id ? null : row.id
+                  );
+                };
+
                 return (
-                  <button
+                  <div
                     key={row.id}
-                    type="button"
-                    disabled={inList}
-                    onClick={() => toggleSelect(row.id)}
-                    className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
-                      on
-                        ? "border-emerald-700/30 bg-emerald-50"
-                        : "border-zinc-100 hover:bg-zinc-50"
-                    }`}
-                  >
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{row.name}</span>
-                    <span className="shrink-0 text-xs text-zinc-500">
-                      {row.breeders?.name ?? ""}
-                    </span>
-                    {inList ? (
-                      <span className="text-[10px] font-semibold uppercase text-amber-700">
-                        อยู่แล้ว
-                      </span>
-                    ) : on ? (
-                      <Check className="h-4 w-4 text-emerald-800" />
-                    ) : (
-                      <Plus className="h-4 w-4 text-zinc-400" />
+                    className={cn(
+                      "rounded-lg border",
+                      selectedCount > 0
+                        ? "border-emerald-700/30 bg-emerald-50/40"
+                        : "border-zinc-100"
                     )}
-                  </button>
+                  >
+                    <button
+                      type="button"
+                      disabled={allOnClearance || packs.length === 0}
+                      onClick={onProductClick}
+                      className="flex w-full items-center gap-3 px-3 py-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <span className="text-zinc-400" aria-hidden>
+                        {expandable ? (
+                          open ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )
+                        ) : selectedCount > 0 ? (
+                          <Check className="h-4 w-4 text-emerald-800" />
+                        ) : (
+                          <Plus className="h-4 w-4 text-zinc-400" />
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                        {row.name}
+                      </span>
+                      <span className="shrink-0 text-xs text-zinc-500">
+                        {row.breeders?.name ?? ""}
+                      </span>
+                      {allOnClearance ? (
+                        <span className="text-[10px] font-semibold uppercase text-amber-700">
+                          อยู่แล้ว
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-500">
+                          {packs.length} แพ็ก
+                          {selectedCount > 0 ? ` · เลือก ${selectedCount}` : ""}
+                        </span>
+                      )}
+                    </button>
+                    {expandable && open ? (
+                      <div className="space-y-1 border-t border-zinc-100 px-3 py-2">
+                        {packs.map((v) => {
+                          const vid = Number(v.id);
+                          const onClearance = Number(v.clearance_price ?? 0) > 0;
+                          const on = selectedVariantSet.has(vid);
+                          return (
+                            <button
+                              key={vid}
+                              type="button"
+                              disabled={onClearance}
+                              onClick={() => toggleVariantSelect(vid)}
+                              className={cn(
+                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm disabled:opacity-50",
+                                on ? "bg-emerald-100/80" : "hover:bg-zinc-50"
+                              )}
+                            >
+                              <span className="min-w-0 flex-1 truncate">
+                                {packLabel(v.unit_label)}
+                              </span>
+                              <span className="tabular-nums text-xs text-zinc-500">
+                                {formatPrice(Number(v.price ?? 0))}
+                              </span>
+                              {onClearance ? (
+                                <span className="text-[10px] font-semibold text-amber-700">
+                                  อยู่แล้ว
+                                </span>
+                              ) : on ? (
+                                <Check className="h-4 w-4 text-emerald-800" />
+                              ) : (
+                                <Plus className="h-4 w-4 text-zinc-400" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
                 );
               })
             )}
           </div>
           <DialogFooter className="mt-3 gap-2 sm:justify-between">
-            <p className="text-xs text-zinc-500">เลือกแล้ว {selectedIds.length} รายการ</p>
+            <p className="text-xs text-zinc-500">เลือกแล้ว {selectedVariantIds.length} แพ็ก</p>
             <Button
               type="button"
-              disabled={bulkBusy || selectedIds.length === 0}
+              disabled={bulkBusy || selectedVariantIds.length === 0}
               className="bg-emerald-800 hover:bg-emerald-900"
               onClick={() => void addSelected()}
             >

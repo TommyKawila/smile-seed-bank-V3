@@ -90,10 +90,18 @@ export function clearancePriceFromList(
   return Math.max(1, Math.round((list * (100 - pct)) / 100));
 }
 
+/**
+ * Reprice only packs already on Clearance (`clearance_price > 0`).
+ * Packs without a clearance price stay null (list price on storefront).
+ */
 export function applyClearancePricesToVariants<
   T extends { price?: number | null; clearance_price?: number | null },
 >(variants: T[], percent: number = CLEARANCE_DISCOUNT_PERCENT): T[] {
   return variants.map((v) => {
+    const existing = Number(v.clearance_price ?? 0);
+    if (!(existing > 0)) {
+      return { ...v, clearance_price: null };
+    }
     const list = Number(v.price ?? 0);
     const cp = clearancePriceFromList(list, percent);
     return { ...v, clearance_price: cp > 0 ? cp : null };

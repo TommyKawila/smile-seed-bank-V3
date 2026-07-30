@@ -8,11 +8,13 @@ import {
 } from "@/lib/clearance";
 import { revalidateClearanceStorefront } from "@/lib/revalidate-clearance";
 import {
+  addClearanceSelections,
   addProductToClearance,
   addProductsToClearance,
   listAdminClearanceProducts,
   listClearanceBreederSummary,
   removeProductsFromClearance,
+  removeVariantsFromClearance,
   resyncAllClearancePrices,
   setClearanceProductDiscountPercent,
 } from "@/services/clearance-admin-service";
@@ -21,11 +23,19 @@ export const dynamic = "force-dynamic";
 
 const DiscountPercentSchema = z.coerce.number().int().min(1).max(99);
 
+const SelectionSchema = z.object({
+  productId: z.coerce.number().int().positive(),
+  variantIds: z.array(z.coerce.number().int().positive()).min(1).max(50),
+});
+
 const AddSchema = z.union([
   z.object({ action: z.literal("resync") }),
   z.object({
     action: z.literal("remove"),
-    productIds: z.array(z.coerce.number().int().positive()).min(1).max(200),
+    productIds: z.array(z.coerce.number().int().positive()).min(1).max(200).optional(),
+    variantIds: z.array(z.coerce.number().int().positive()).min(1).max(500).optional(),
+  }).refine((d) => (d.productIds?.length ?? 0) > 0 || (d.variantIds?.length ?? 0) > 0, {
+    message: "productIds or variantIds required",
   }),
   z.object({
     action: z.literal("setDiscountPercent"),
@@ -33,8 +43,13 @@ const AddSchema = z.union([
     discountPercent: DiscountPercentSchema,
   }),
   z.object({
+    discountPercent: DiscountPercentSchema.optional(),
+    selections: z.array(SelectionSchema).min(1).max(200),
+  }),
+  z.object({
     productId: z.coerce.number().int().positive(),
     discountPercent: DiscountPercentSchema.optional(),
+    variantIds: z.array(z.coerce.number().int().positive()).min(1).max(50).optional(),
   }),
   z.object({
     productIds: z.array(z.coerce.number().int().positive()).min(1).max(200),
@@ -89,12 +104,19 @@ export async function POST(req: NextRequest) {
     }
 
     if ("action" in data && data.action === "remove") {
-      const { error, removed } = await removeProductsFromClearance(data.productIds);
+      if (data.variantIds && data.variantIds.length > 0) {
+        const { error, removed } = await removeVariantsFromClearance(data.variantIds);
+        if (error) return NextResponse.json({ error }, { status: 500 });
+        revalidateClearanceStorefront();
+        return NextResponse.json({ ok: true, removed, mode: "variants" });
+      }
+      const { error, removed } = await removeProductsFromClearance(data.productIds ?? []);
       if (error) return NextResponse.json({ error }, { status: 500 });
       revalidateClearanceStorefront();
       return NextResponse.json({
         ok: true,
         removed,
+        mode: "products",
       });
     }
 
@@ -109,6 +131,20 @@ export async function POST(req: NextRequest) {
         discountPercent: pct,
         cartNote:
           "ลูกค้าที่ค้างในตะกร้าอาจยังเห็นราคาเก่า — ต้องลบแล้วเพิ่มสินค้าใหม่ (ยอด checkout คิดจาก DB)",
+      });
+    }
+
+    if ("selections" in data) {
+      const pct = normalizeClearanceDiscountPercent(
+        data.discountPercent ?? CLEARANCE_DISCOUNT_PERCENT
+      );
+      const { error, added } = await addClearanceSelections(data.selections, pct);
+      if (error) return NextResponse.json({ error }, { status: 500 });
+      revalidateClearanceStorefront();
+      return NextResponse.json({
+        ok: true,
+        added,
+        discountPercent: pct,
       });
     }
 
@@ -129,7 +165,7 @@ export async function POST(req: NextRequest) {
     const pct = normalizeClearanceDiscountPercent(
       data.discountPercent ?? CLEARANCE_DISCOUNT_PERCENT
     );
-    const { error } = await addProductToClearance(data.productId, pct);
+    const { error } = await addProductToClearance(data.productId, pct, data.variantIds);
     if (error) {
       return NextResponse.json({ error }, { status: 500 });
     }
