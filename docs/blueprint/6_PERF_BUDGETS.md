@@ -2,14 +2,16 @@
 
 **Single source of truth** for locked perf config. Do **not** duplicate these values in `9_PROJECT_STATE.md`.
 
-Last PSI lock: **2026-05-23** · commit **`62d7585`** (Phase 4K) · A11y **100** after **`6b2f4c3`**
+Last PSI lock: **2026-07-29** · commit **`9a53da5`** (PSI recovery + LCP hero stream) · Boss accepted
 
 | Score | Mobile | Desktop |
 |-------|--------|---------|
-| Performance | **90** (variance 88–90 OK) | **94** |
-| Accessibility | **100** | **100** |
+| Performance | **91** (variance 88–90 OK · DoD ≥90) | **100** |
+| Accessibility | **95** | **95** |
 | Best Practices | **100** | **100** |
 | SEO | **100** | **100** |
+
+**Lab notes (2026-07-29 `/`):** Mobile — FCP 1.1s · SI 2.4s · TBT 40ms · CLS 0.001 · LCP 3.5s (orange; TTFB-bound · accepted). Desktop — FCP 0.3s · LCP 0.7s · TBT 0 · CLS 0. Do **not** chase unused Prompt CSS / chunk JS while score ≥90.
 
 ---
 

@@ -4,6 +4,18 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (POS Manual Order — Clearance price)
+- **What:** Admin `/admin/orders/create` คิดราคา Clearance 50% ตอนเพิ่มสินค้าและรวมยอด (เดิมใช้ list เต็ม)
+- **Logic:** `resolvePosVariantUnitPrice` รับ product slice → `getEffectiveVariantPrice` เมื่อ `is_clearance` ก่อน wholesale · shelf/cart ใช้ `unitCharge` เดิม
+- **ไฟล์:** `lib/pos-pricing.ts`, `app/admin/orders/create/page.tsx`
+
+### บันทึกการทำงาน — 2026-07-29 (PSI Mobile lock ≥90)
+- **What:** PSI ผ่าน · Boss พอใจ — Mobile Perf **91** · Desktop Perf **100**
+- **Lab Mobile:** FCP 1.1s · SI 2.4s · TBT 40ms · CLS 0.001 · LCP 3.5s (orange · accepted)
+- **Lab Desktop:** FCP 0.3s · LCP 0.7s · TBT 0 · CLS 0
+- **Decision:** ล็อกงบจบรอบ · ไม่ไล่ Unused CSS/JS / LCP ต่อจนกว่า Boss สั่ง
+- **ไฟล์ lock:** `6_PERF_BUDGETS.md`, `0_PSI_ACCEPTANCE.md`
+
 ### บันทึกการทำงาน — 2026-07-29 (PSI LCP — stream hero early)
 - **What:** หลัง Wave defer JS ได้ Perf 87 / TBT 10ms แต่ LCP 4.1s + TTFB ~617ms — ปลดบล็อก LCP img จาก sections/Suspense ว่าง
 - **Logic:** `HomeHeroStream` รอแค่ banners+CTA (ไม่รอ `homepage_sections`) · ลบ Suspense fallback ว่างบน `/` · `HomePageHeroClient` ไม่ `return null` · Navbar logo บน `/` → `priority=false` / `fetchPriority=low` · preload hero ตาม `ssb_vp` ข้างเดียว

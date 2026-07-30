@@ -820,7 +820,12 @@ export default function CreateOrderPage() {
                         <div className="divide-y divide-zinc-100">
                           {variants.map((variant) => {
                             const pv = variant as ProductVariantRow & { final_price?: number };
-                            const posPrice = resolvePosVariantUnitPrice(pv, wholesaleDiscount);
+                            const posPrice = resolvePosVariantUnitPrice(pv, wholesaleDiscount, {
+                              is_clearance: prod.is_clearance,
+                              sale_price: prod.sale_price,
+                              product_variants: prod.product_variants ?? null,
+                              price: prod.price ?? null,
+                            });
                             const { unitCharge, strikeDisplay, showListStrike } = posPrice;
                             const brandLine = resolveListingUnitAfterBrand(
                               unitCharge,

@@ -15,7 +15,7 @@
 
 **Accepted variance:** Mobile Performance **88–90** is lab noise if LCP/FCP/CLS remain green — do not chase diagnostics to recover ±2 points.
 
-**Current lock (2026-05-23):** Mobile **90** · Desktop **94** · A11y **100** · BP **100** · SEO **100** — numeric config lives in `6_PERF_BUDGETS.md`.
+**Current lock (2026-07-29):** Mobile **91** · Desktop **100** · A11y **95** · BP **100** · SEO **100** — numeric config lives in `6_PERF_BUDGETS.md`.
 
 ---
 
