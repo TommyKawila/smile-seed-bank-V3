@@ -153,6 +153,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Fail closed BEFORE createOrder — otherwise stock is deducted with no payable link.
+    const accessPreflight = createOrderAccessQuery("__access_preflight__");
+    if (!accessPreflight.t?.trim() || !accessPreflight.e?.trim()) {
+      console.error(
+        "[POST /api/storefront/orders] access token empty — set RECEIPT_DOWNLOAD_SECRET"
+      );
+      return NextResponse.json(
+        {
+          error:
+            "ระบบชำระเงินยังตั้งค่าไม่ครบ (RECEIPT_DOWNLOAD_SECRET) — กรุณาติดต่อร้าน",
+        },
+        { status: 503 }
+      );
+    }
+
     const { data, error } = await createOrder({
       customer: {
         full_name: customer.full_name,
@@ -251,8 +266,10 @@ export async function POST(req: NextRequest) {
 
     const access = createOrderAccessQuery(data.orderNumber);
     if (!access.t?.trim() || !access.e?.trim()) {
+      // Preflight passed; empty here is unexpected — still return tokens failure
+      // without inventing a success path (order already exists; ops must set secret).
       console.error(
-        "[POST /api/storefront/orders] access token empty — set RECEIPT_DOWNLOAD_SECRET"
+        "[POST /api/storefront/orders] access token empty after create — set RECEIPT_DOWNLOAD_SECRET"
       );
       return NextResponse.json(
         {

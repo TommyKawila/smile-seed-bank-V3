@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (Critical: product save overwrote Clearance %)
+- **What:** แก้ PATCH/POST admin products ที่บังคับ `clearance_price` เป็น −50% ทุกครั้งที่เซฟสินค้า Clearance
+- **Logic:** `ProductSchema.clearance_discount_percent` · `resolveClearancePercentForProductWrite(body, stored)` · persist % ตอนเซฟ · ProductModal โหลด field · checkout mint access token ก่อน `createOrder`
+- **ไฟล์:** `lib/clearance.ts`, `lib/validations/product.ts`, `app/api/admin/products/[id]/route.ts`, `app/api/admin/products/route.ts`, `ProductModal.tsx`, `app/api/storefront/orders/route.ts`
+
 ### บันทึกการทำงาน — 2026-07-30 (Admin Clearance — ก้อน % ก่อน แล้วค่อยค่าย)
 - **What:** หน้า Admin Clearance เริ่มที่ grid กลุ่ม % → คลิกเข้าค่าย (accordion) → แก้/นำออก/เพิ่ม
 - **Logic:** `viewPercent` drill-down · จัดกลุ่มจาก `clearance_discount_percent` · พรีเซ็ต % ตอนเพิ่มเมื่ออยู่ในกลุ่ม

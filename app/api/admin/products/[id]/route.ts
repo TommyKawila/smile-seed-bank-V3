@@ -7,13 +7,17 @@ import {
   ProductSchema,
   deriveProductIsActiveForCatalog,
 } from "@/lib/validations/product";
-import { applyClearancePricesToVariants, normalizeClearanceDiscountPercent } from "@/lib/clearance";
+import {
+  applyClearancePricesToVariants,
+  resolveClearancePercentForProductWrite,
+} from "@/lib/clearance";
 import {
   computeStartingPrice,
   computeTotalStock,
   deriveClearanceSalePrice,
   resolveProductSlugFromName,
 } from "@/lib/product-utils";
+import { prisma } from "@/lib/prisma";
 import { ensureUniqueProductSlug } from "@/services/product-service";
 import type { ProductVariant } from "@/types/supabase";
 import { syncProductImagesForProduct } from "@/lib/product-images-sync";
@@ -41,13 +45,17 @@ export async function PATCH(
     }
 
     const { variants: rawVariants, gallery_entries, ...productData } = parsed.data;
-    const clearancePct =
-      productData.is_clearance === true
-        ? normalizeClearanceDiscountPercent(
-            (productData as { clearance_discount_percent?: number | null })
-              .clearance_discount_percent
-          )
-        : null;
+    let clearancePct: number | null = null;
+    if (productData.is_clearance === true) {
+      const existing = await prisma.products.findUnique({
+        where: { id: BigInt(productId) },
+        select: { clearance_discount_percent: true },
+      });
+      clearancePct = resolveClearancePercentForProductWrite(
+        productData.clearance_discount_percent,
+        existing?.clearance_discount_percent
+      );
+    }
     const variants =
       productData.is_clearance === true
         ? applyClearancePricesToVariants(rawVariants, clearancePct ?? undefined)
@@ -77,6 +85,8 @@ export async function PATCH(
         slug,
         is_active: isActive,
         sale_price: syncedSalePrice,
+        clearance_discount_percent:
+          productData.is_clearance === true ? clearancePct : null,
       }).map(([k, v]) => [k, v === undefined ? null : v])
     );
 
