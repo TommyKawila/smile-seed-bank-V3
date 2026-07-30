@@ -70,6 +70,7 @@ import type {
 } from "@/types/supabase";
 import { bigintToJson } from "@/lib/bigint-json";
 import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
+import { isProductAggregateOutOfStock } from "@/lib/product-stock";
 
 export {
   computeStartingPrice,
@@ -1431,17 +1432,8 @@ export async function hasStorefrontClearanceProducts(): Promise<boolean> {
   }
 }
 
-function clearanceProductStock(
-  p: Pick<ProductWithBreederAndVariants, "stock" | "product_variants">
-): number {
-  const variantStock = computeTotalStock(p.product_variants ?? []);
-  if (variantStock > 0) return variantStock;
-  const legacy = Number(p.stock ?? 0);
-  return Number.isFinite(legacy) ? Math.max(0, legacy) : 0;
-}
-
 function isListableClearanceProduct(p: ProductWithBreederAndVariants): boolean {
-  return clearanceProductStock(p) > 0 && getEffectiveListingPrice(p) > 0;
+  return getEffectiveListingPrice(p) > 0;
 }
 
 /** Clearance breeder box counts — same listable rules as drill-down grid. */
@@ -1467,6 +1459,9 @@ async function filterAndSortClearanceProducts(
 ): Promise<ProductWithBreederAndVariants[]> {
   const filtered = mapped.filter(isListableClearanceProduct);
   filtered.sort((a, b) => {
+    const aOos = isProductAggregateOutOfStock(a) ? 1 : 0;
+    const bOos = isProductAggregateOutOfStock(b) ? 1 : 0;
+    if (aOos !== bOos) return aOos - bOos;
     const pa = getEffectiveListingPrice(a);
     const pb = getEffectiveListingPrice(b);
     const ra = computeStartingPrice(a.product_variants);

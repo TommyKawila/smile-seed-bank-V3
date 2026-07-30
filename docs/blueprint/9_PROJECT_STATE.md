@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (Clearance listing — Sold Out badge)
+- **What:** แสดง Sold Out บนการ์ด Clearance ที่หน้ารวมเมื่อทุกแพ็คหมดสต็อก (เดิมซ่อนจาก list / ไม่มี overlay)
+- **Logic:** `isListableClearanceProduct` เหลือเช็คราคา · sort in-stock ก่อน OOS · `ClearanceCard` ใช้ `isProductAggregateOutOfStock` + grayscale/overlay
+- **ไฟล์:** `services/product-service.ts`, `components/storefront/ClearanceCard.tsx`
+
 ### บันทึกการทำงาน — 2026-07-30 (POS Manual Order — Clearance price)
 - **What:** Admin `/admin/orders/create` คิดราคา Clearance 50% ตอนเพิ่มสินค้าและรวมยอด (เดิมใช้ list เต็ม)
 - **Logic:** `resolvePosVariantUnitPrice` รับ product slice → `getEffectiveVariantPrice` เมื่อ `is_clearance` ก่อน wholesale · shelf/cart ใช้ `unitCharge` เดิม
