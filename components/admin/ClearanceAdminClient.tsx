@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowDown,
+  ArrowLeft,
   ArrowUp,
   Check,
   ChevronDown,
@@ -46,9 +47,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   CLEARANCE_DISCOUNT_PERCENT,
+  CLEARANCE_DISCOUNT_PRESETS,
   clearancePriceFromList,
   CLEARANCE_BREEDER_BANNER,
   clearanceBreederBannerSizeLabel,
+  normalizeClearanceDiscountPercent,
 } from "@/lib/clearance";
 import { formatPrice } from "@/lib/utils";
 import { computeTotalStock } from "@/lib/product-utils";
@@ -80,6 +83,10 @@ function productBreederId(p: ProductFull): number {
   return Number.isFinite(id) && id > 0 ? id : NO_BREEDER_KEY;
 }
 
+function productClearancePercent(p: ProductFull): number {
+  return normalizeClearanceDiscountPercent(p.clearance_discount_percent);
+}
+
 export function ClearanceAdminClient() {
   const { toast } = useToast();
   const [products, setProducts] = useState<ProductFull[]>([]);
@@ -97,6 +104,10 @@ export function ClearanceAdminClient() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bannerBusyId, setBannerBusyId] = useState<number | null>(null);
   const [expandedBreederId, setExpandedBreederId] = useState<number | null>(null);
+  const [viewPercent, setViewPercent] = useState<number | null>(null);
+  const [addDiscountPercent, setAddDiscountPercent] = useState(CLEARANCE_DISCOUNT_PERCENT);
+  const [rowPercentDraft, setRowPercentDraft] = useState<Record<number, string>>({});
+  const [percentBusyId, setPercentBusyId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -184,16 +195,51 @@ export function ClearanceAdminClient() {
     }
   }, [pickerOpen]);
 
+  const percentBuckets = useMemo(() => {
+    const map = new Map<number, { products: ProductFull[]; breederIds: Set<number> }>();
+    for (const p of products) {
+      const pct = productClearancePercent(p);
+      let bucket = map.get(pct);
+      if (!bucket) {
+        bucket = { products: [], breederIds: new Set() };
+        map.set(pct, bucket);
+      }
+      bucket.products.push(p);
+      bucket.breederIds.add(productBreederId(p));
+    }
+    return [...map.entries()]
+      .map(([percent, b]) => ({
+        percent,
+        productCount: b.products.length,
+        breederCount: b.breederIds.size,
+      }))
+      .sort((a, b) => b.percent - a.percent);
+  }, [products]);
+
+  const scopedProducts = useMemo(() => {
+    if (viewPercent == null) return products;
+    return products.filter((p) => productClearancePercent(p) === viewPercent);
+  }, [products, viewPercent]);
+
+  useEffect(() => {
+    if (viewPercent == null) return;
+    if (scopedProducts.length === 0) {
+      setViewPercent(null);
+      setExpandedBreederId(null);
+      setListSelectedIds([]);
+    }
+  }, [viewPercent, scopedProducts.length]);
+
   const productsByBreederId = useMemo(() => {
     const map = new Map<number, ProductFull[]>();
-    for (const p of products) {
+    for (const p of scopedProducts) {
       const bid = productBreederId(p);
       const prev = map.get(bid);
       if (prev) prev.push(p);
       else map.set(bid, [p]);
     }
     return map;
-  }, [products]);
+  }, [scopedProducts]);
 
   const boxRows = useMemo(() => {
     const rows: {
@@ -202,16 +248,22 @@ export function ClearanceAdminClient() {
       logoUrl: string | null;
       summary: ClearanceBreederSummary | null;
       products: ProductFull[];
-    }[] = breederSummary.map((b) => ({
-      breederId: b.breederId,
-      name: b.name,
-      logoUrl: b.logoUrl,
-      summary: b,
-      products: productsByBreederId.get(b.breederId) ?? [],
-    }));
+    }[] = [];
+
+    for (const b of breederSummary) {
+      const list = productsByBreederId.get(b.breederId) ?? [];
+      if (list.length === 0) continue;
+      rows.push({
+        breederId: b.breederId,
+        name: b.name,
+        logoUrl: b.logoUrl,
+        summary: b,
+        products: list,
+      });
+    }
 
     const known = new Set(breederSummary.map((b) => b.breederId));
-    const orphans = products.filter((p) => !known.has(productBreederId(p)));
+    const orphans = scopedProducts.filter((p) => !known.has(productBreederId(p)));
     if (orphans.length > 0) {
       rows.push({
         breederId: NO_BREEDER_KEY,
@@ -222,7 +274,26 @@ export function ClearanceAdminClient() {
       });
     }
     return rows;
-  }, [breederSummary, products, productsByBreederId]);
+  }, [breederSummary, scopedProducts, productsByBreederId]);
+
+  const openAddPicker = () => {
+    setAddDiscountPercent(
+      viewPercent != null ? viewPercent : CLEARANCE_DISCOUNT_PERCENT
+    );
+    setPickerOpen(true);
+  };
+
+  const enterPercent = (percent: number) => {
+    setViewPercent(percent);
+    setExpandedBreederId(null);
+    setListSelectedIds([]);
+  };
+
+  const exitPercent = () => {
+    setViewPercent(null);
+    setExpandedBreederId(null);
+    setListSelectedIds([]);
+  };
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const listSelectedSet = useMemo(() => new Set(listSelectedIds), [listSelectedIds]);
@@ -317,13 +388,21 @@ export function ClearanceAdminClient() {
       const res = await fetch("/api/admin/clearance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productIds: ids }),
+        body: JSON.stringify({
+          productIds: ids,
+          discountPercent: normalizeClearanceDiscountPercent(addDiscountPercent),
+        }),
       });
-      const json = (await res.json()) as { error?: string; added?: number };
+      const json = (await res.json()) as {
+        error?: string;
+        added?: number;
+        discountPercent?: number;
+      };
       if (!res.ok) throw new Error(json.error ?? "เพิ่มไม่สำเร็จ");
+      const pct = json.discountPercent ?? addDiscountPercent;
       toast({
         title: `เพิ่ม ${json.added ?? ids.length} สินค้าแล้ว`,
-        description: `ตั้งราคา Clearance −${CLEARANCE_DISCOUNT_PERCENT}% อัตโนมัติ`,
+        description: `ตั้งราคา Clearance −${pct}% อัตโนมัติ`,
       });
       setPickerOpen(false);
       await load();
@@ -361,6 +440,49 @@ export function ClearanceAdminClient() {
       });
     } finally {
       setBulkBusy(false);
+    }
+  };
+
+  const setProductDiscountPercent = async (productId: number, raw: string) => {
+    const pct = normalizeClearanceDiscountPercent(Number(raw));
+    if (!Number.isInteger(Number(raw)) || Number(raw) < 1 || Number(raw) > 99) {
+      toast({
+        variant: "destructive",
+        title: "ส่วนลดต้องเป็นจำนวนเต็ม 1–99",
+      });
+      return;
+    }
+    setPercentBusyId(productId);
+    try {
+      const res = await fetch("/api/admin/clearance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "setDiscountPercent",
+          productId,
+          discountPercent: pct,
+        }),
+      });
+      const json = (await res.json()) as { error?: string; cartNote?: string };
+      if (!res.ok) throw new Error(json.error ?? "เปลี่ยน % ไม่สำเร็จ");
+      toast({
+        title: `ตั้ง −${pct}% แล้ว`,
+        description: json.cartNote,
+      });
+      setRowPercentDraft((prev) => {
+        const next = { ...prev };
+        delete next[productId];
+        return next;
+      });
+      await load();
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "เปลี่ยน % ไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setPercentBusyId(null);
     }
   };
 
@@ -465,7 +587,9 @@ export function ClearanceAdminClient() {
         <div>
           <h1 className="text-xl font-bold text-zinc-900">สินค้า Clearance</h1>
           <p className="text-sm text-zinc-500">
-            คลิกกล่องค่ายเพื่อดู/นำออกสินค้า · หน้าลูกค้า{" "}
+            {viewPercent == null
+              ? "เลือกกลุ่มส่วนลด % ก่อน แล้วจัดการค่าย/สินค้า · หน้าลูกค้า "
+              : `กลุ่ม −${viewPercent}% · คลิกค่ายเพื่อดู/นำออกสินค้า · หน้าลูกค้า `}
             <Link href="/clearance" className="text-emerald-800 underline-offset-2 hover:underline">
               /clearance
             </Link>
@@ -486,19 +610,74 @@ export function ClearanceAdminClient() {
             ซิงค์ราคาตาม % ของแต่ละสินค้า
           </Button>
           <Button
-            onClick={() => setPickerOpen(true)}
+            onClick={openAddPicker}
             className="bg-emerald-800 hover:bg-emerald-900"
           >
             <Plus className="mr-1.5 h-4 w-4" /> เพิ่มสินค้า
+            {viewPercent != null ? ` (−${viewPercent}%)` : ""}
           </Button>
         </div>
       </div>
 
+      {viewPercent == null ? (
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="text-base">กลุ่มส่วนลด ({percentBuckets.length})</CardTitle>
+            <p className="text-xs text-zinc-500">
+              คลิกก้อน % เพื่อดูค่ายและสินค้าในกลุ่มนั้น
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center gap-2 py-10 text-sm text-zinc-500">
+                <Loader2 className="h-4 w-4 animate-spin" /> กำลังโหลด…
+              </div>
+            ) : percentBuckets.length === 0 ? (
+              <p className="py-8 text-center text-sm text-zinc-500">
+                ยังไม่มีสินค้า Clearance — กด “เพิ่มสินค้า” เพื่อเริ่ม
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {percentBuckets.map((bucket) => (
+                  <button
+                    key={bucket.percent}
+                    type="button"
+                    onClick={() => enterPercent(bucket.percent)}
+                    className="flex min-h-[7.5rem] flex-col items-start justify-between rounded-xl border border-zinc-200 bg-gradient-to-br from-emerald-50 to-white p-4 text-left shadow-sm transition hover:border-emerald-700/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+                  >
+                    <span className="text-2xl font-bold tabular-nums text-emerald-900 sm:text-3xl">
+                      −{bucket.percent}%
+                    </span>
+                    <span className="mt-3 space-y-0.5 text-xs text-zinc-600">
+                      <span className="block font-medium text-zinc-800">
+                        {bucket.productCount} สินค้า
+                      </span>
+                      <span className="block">{bucket.breederCount} ค่าย</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
       <Card>
         <CardHeader className="py-3">
-          <CardTitle className="text-base">
-            กล่องตามค่าย ({boxRows.filter((r) => r.breederId !== NO_BREEDER_KEY).length})
-          </CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9"
+              onClick={exitPercent}
+            >
+              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              กลับกลุ่ม %
+            </Button>
+            <CardTitle className="text-base">
+              Clearance −{viewPercent}% · ค่าย ({boxRows.filter((r) => r.breederId !== NO_BREEDER_KEY).length})
+            </CardTitle>
+          </div>
           <p className="text-xs text-zinc-500">
             คลิกแถวค่ายเพื่อขยายรายการสินค้าด้านล่าง · อัปโหลดแบนเนอร์สำหรับหน้า /clearance
           </p>
@@ -514,7 +693,7 @@ export function ClearanceAdminClient() {
             </div>
           ) : boxRows.length === 0 ? (
             <p className="py-8 text-center text-sm text-zinc-500">
-              ยังไม่มีค่ายใน Clearance — เพิ่มสินค้าก่อน
+              ไม่มีสินค้าในกลุ่ม −{viewPercent}% — เพิ่มสินค้าหรือกลับไปเลือกกลุ่มอื่น
             </p>
           ) : (
             boxRows.map((box) => {
@@ -700,6 +879,7 @@ export function ClearanceAdminClient() {
                               </TableHead>
                               <TableHead className="w-14" />
                               <TableHead>สินค้า</TableHead>
+                              <TableHead className="w-36">%</TableHead>
                               <TableHead>ราคา Clearance</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -760,6 +940,58 @@ export function ClearanceAdminClient() {
                                     <p className="text-xs text-zinc-500">{variants.length} แพ็ก</p>
                                   </TableCell>
                                   <TableCell>
+                                    <div className="flex items-center gap-1.5">
+                                      <Input
+                                        type="number"
+                                        min={1}
+                                        max={99}
+                                        step={1}
+                                        className="h-9 w-16 px-2 tabular-nums"
+                                        value={rowPercentDraft[pid] ?? String(pct)}
+                                        disabled={bulkBusy || percentBusyId === pid}
+                                        onChange={(e) =>
+                                          setRowPercentDraft((prev) => ({
+                                            ...prev,
+                                            [pid]: e.target.value,
+                                          }))
+                                        }
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            void setProductDiscountPercent(
+                                              pid,
+                                              rowPercentDraft[pid] ?? String(pct)
+                                            );
+                                          }
+                                        }}
+                                        aria-label={`ส่วนลด % ของ ${p.name}`}
+                                      />
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-9 px-2 text-xs"
+                                        disabled={
+                                          bulkBusy ||
+                                          percentBusyId === pid ||
+                                          (rowPercentDraft[pid] ?? String(pct)) === String(pct)
+                                        }
+                                        onClick={() =>
+                                          void setProductDiscountPercent(
+                                            pid,
+                                            rowPercentDraft[pid] ?? String(pct)
+                                          )
+                                        }
+                                      >
+                                        {percentBusyId === pid ? (
+                                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        ) : (
+                                          "ใช้"
+                                        )}
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
                                     <div className="flex flex-wrap items-baseline gap-2 text-sm">
                                       <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
                                         −{pct}%
@@ -788,13 +1020,55 @@ export function ClearanceAdminClient() {
           )}
         </CardContent>
       </Card>
+      )}
 
-      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+      <Dialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+      >
         <DialogContent className="flex max-h-[85vh] max-w-lg flex-col overflow-hidden">
           <DialogHeader>
-            <DialogTitle>เพิ่มสินค้าใน Clearance (−{CLEARANCE_DISCOUNT_PERCENT}%)</DialogTitle>
+            <DialogTitle>เพิ่มสินค้าใน Clearance (−{addDiscountPercent}%)</DialogTitle>
           </DialogHeader>
           <div className="mb-3 min-w-0 space-y-2">
+            <div className="space-y-1.5 rounded-lg border border-zinc-200 bg-zinc-50/80 p-3">
+              <label className="text-xs font-medium text-zinc-700" htmlFor="clearance-add-pct">
+                ส่วนลด % (1–99)
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  id="clearance-add-pct"
+                  type="number"
+                  min={1}
+                  max={99}
+                  step={1}
+                  className="h-10 w-20 bg-white tabular-nums"
+                  value={addDiscountPercent}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    if (!Number.isFinite(n)) return;
+                    setAddDiscountPercent(Math.min(99, Math.max(1, Math.trunc(n))));
+                  }}
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {CLEARANCE_DISCOUNT_PRESETS.map((p) => (
+                    <Button
+                      key={p}
+                      type="button"
+                      size="sm"
+                      variant={addDiscountPercent === p ? "default" : "outline"}
+                      className={cn(
+                        "h-9 min-w-[48px] px-2.5 text-xs",
+                        addDiscountPercent === p && "bg-emerald-800 hover:bg-emerald-900"
+                      )}
+                      onClick={() => setAddDiscountPercent(p)}
+                    >
+                      −{p}%
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
             <Select value={pickerBreederId} onValueChange={setPickerBreederId}>
               <SelectTrigger className="h-10 w-full min-w-0 border-zinc-200">
                 <SelectValue placeholder="ทุกค่าย" />
@@ -868,7 +1142,7 @@ export function ClearanceAdminClient() {
               onClick={() => void addSelected()}
             >
               {bulkBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-              เพิ่มที่เลือก (−{CLEARANCE_DISCOUNT_PERCENT}%)
+              เพิ่มที่เลือก (−{addDiscountPercent}%)
             </Button>
           </DialogFooter>
         </DialogContent>

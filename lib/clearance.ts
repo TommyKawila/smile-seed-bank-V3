@@ -1,22 +1,28 @@
 /** Default Clearance discount when adding a product (pay 50% of list). */
 export const CLEARANCE_DISCOUNT_PERCENT = 50 as const;
 
-/** Allowed Clearance discount groups (percent off list). */
-export const CLEARANCE_DISCOUNT_PERCENTS = [50, 30, 25] as const;
+/** Free-form Clearance % off list (whole number 1–99). */
+export type ClearanceDiscountPercent = number;
 
-export type ClearanceDiscountPercent = (typeof CLEARANCE_DISCOUNT_PERCENTS)[number];
+/** UI quick-pick chips only — not an allowlist. */
+export const CLEARANCE_DISCOUNT_PRESETS = [50, 35, 30, 25] as const;
+
+/** @deprecated Use CLEARANCE_DISCOUNT_PRESETS — kept for older imports. */
+export const CLEARANCE_DISCOUNT_PERCENTS = CLEARANCE_DISCOUNT_PRESETS;
 
 export function isClearanceDiscountPercent(value: unknown): value is ClearanceDiscountPercent {
+  if (typeof value !== "number" && typeof value !== "string") return false;
   const n = Number(value);
-  return CLEARANCE_DISCOUNT_PERCENTS.some((p) => p === n);
+  return Number.isInteger(n) && n >= 1 && n <= 99;
 }
 
-/** Normalize to allowlist; invalid/missing → default 50. */
+/** Normalize to int 1–99; invalid/missing → default 50. */
 export function normalizeClearanceDiscountPercent(
   value: unknown,
   fallback: ClearanceDiscountPercent = CLEARANCE_DISCOUNT_PERCENT
 ): ClearanceDiscountPercent {
-  return isClearanceDiscountPercent(value) ? value : fallback;
+  if (isClearanceDiscountPercent(value)) return Math.trunc(Number(value));
+  return isClearanceDiscountPercent(fallback) ? Math.trunc(Number(fallback)) : CLEARANCE_DISCOUNT_PERCENT;
 }
 
 /**

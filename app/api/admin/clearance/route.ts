@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   CLEARANCE_DISCOUNT_PERCENT,
-  CLEARANCE_DISCOUNT_PERCENTS,
+  CLEARANCE_DISCOUNT_PRESETS,
   normalizeClearanceDiscountPercent,
 } from "@/lib/clearance";
 import { revalidateClearanceStorefront } from "@/lib/revalidate-clearance";
@@ -19,12 +19,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const DiscountPercentSchema = z
-  .number()
-  .int()
-  .refine((n) => (CLEARANCE_DISCOUNT_PERCENTS as readonly number[]).includes(n), {
-    message: "Invalid clearance discount percent",
-  });
+const DiscountPercentSchema = z.coerce.number().int().min(1).max(99);
 
 const AddSchema = z.union([
   z.object({ action: z.literal("resync") }),
@@ -57,7 +52,9 @@ export async function GET() {
       products,
       breederSummary,
       discountPercent: CLEARANCE_DISCOUNT_PERCENT,
-      discountPercents: [...CLEARANCE_DISCOUNT_PERCENTS],
+      discountPresets: [...CLEARANCE_DISCOUNT_PRESETS],
+      /** @deprecated Prefer discountPresets */
+      discountPercents: [...CLEARANCE_DISCOUNT_PRESETS],
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

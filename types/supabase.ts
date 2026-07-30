@@ -70,7 +70,7 @@ export interface Product {
   /** Clearance: sale applies to listing price; packs scale from starting variant. */
   is_clearance?: boolean | null;
   sale_price?: number | null;
-  /** Clearance tier % off (50 | 30 | 25). */
+  /** Clearance % off list (1–99). */
   clearance_discount_percent?: number | null;
   product_kind?: string | null;
   merch_category?: string | null;

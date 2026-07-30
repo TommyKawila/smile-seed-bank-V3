@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-import { CLEARANCE_DISCOUNT_PERCENT } from "@/lib/clearance";
 import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
 import { ClearanceBreederBoxCard } from "@/components/storefront/ClearanceBreederBoxCard";
 import { ClearanceCard } from "@/components/storefront/ClearanceCard";
@@ -56,17 +55,17 @@ export function ClearanceLandingClient({
           <h1 className="mt-1.5 max-w-2xl font-sans text-2xl font-semibold tracking-tight text-white sm:mt-2 sm:text-4xl">
             {drillDown
               ? breederName ?? t("ค่ายนี้", "This breeder")
-              : t("Clearance −50%", "Clearance −50%")}
+              : t("Clearance", "Clearance")}
           </h1>
           <p className="mt-1.5 max-w-xl text-xs font-light text-muted-foreground sm:mt-2 sm:text-sm">
             {drillDown
               ? t(
-                  `สินค้า Clearance ของค่ายนี้ · ลดคงที่ ${CLEARANCE_DISCOUNT_PERCENT}%`,
-                  `Clearance strains from this breeder · fixed ${CLEARANCE_DISCOUNT_PERCENT}% off`
+                  "สินค้า Clearance ของค่ายนี้ · ราคาลดตามแต่ละรายการ",
+                  "Clearance strains from this breeder · discount varies by product"
                 )
               : t(
-                  `เลือกค่ายที่ร่วมโปร · ลดคงที่ ${CLEARANCE_DISCOUNT_PERCENT}%`,
-                  `Pick a participating breeder · fixed ${CLEARANCE_DISCOUNT_PERCENT}% off`
+                  "เลือกค่ายที่ร่วมโปร · ส่วนลดตามแต่ละสินค้า",
+                  "Pick a participating breeder · discount varies by product"
                 )}
           </p>
         </div>

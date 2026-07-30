@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (Admin Clearance — ก้อน % ก่อน แล้วค่อยค่าย)
+- **What:** หน้า Admin Clearance เริ่มที่ grid กลุ่ม % → คลิกเข้าค่าย (accordion) → แก้/นำออก/เพิ่ม
+- **Logic:** `viewPercent` drill-down · จัดกลุ่มจาก `clearance_discount_percent` · พรีเซ็ต % ตอนเพิ่มเมื่ออยู่ในกลุ่ม
+- **ไฟล์:** `components/admin/ClearanceAdminClient.tsx`
+
+### บันทึกการทำงาน — 2026-07-30 (Admin Clearance — พิมพ์ % อิสระ 1–99)
+- **What:** เพิ่มสินค้า Clearance ได้ทุก % (1–99) + เปลี่ยน % ในแถวสินค้า; เลิก allowlist 50/30/25
+- **Logic:** `normalizeClearanceDiscountPercent` ช่วง 1–99 · presets 50/35/30/25 เป็นทางลัด UI · storefront ไม่ hardcode −50%
+- **ไฟล์:** `lib/clearance.ts` · `app/api/admin/clearance/route.ts` · `components/admin/ClearanceAdminClient.tsx` · `ClearanceBreederBoxCard.tsx` · `ClearanceLandingClient.tsx`
+
 ### บันทึกการทำงาน — 2026-07-30 (Admin Clearance — accordion ตามค่าย)
 - **What:** รายการสินค้า Clearance อยู่ในกล่อง Breeder แบบคลิกขยาย (ไม่รวมทุกค่ายในตารางเดียว)
 - **Logic:** group ตาม `breeder_id` · เปิดทีละกล่อง · select-all / นำออกเฉพาะในกล่องที่ขยาย
