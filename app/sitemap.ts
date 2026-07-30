@@ -31,6 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/seeds`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/blog`, lastModified: now, changeFrequency: "daily", priority: 0.85 },
     { url: `${base}/shop`, lastModified: now, changeFrequency: "daily", priority: 0.88 },
+    // Clean path only — never `/clearance?discount=` or `?breeder=` (8_SEO_SCHEMA).
     { url: `${base}/clearance`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/new`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/merch`, lastModified: now, changeFrequency: "weekly", priority: 0.75 },

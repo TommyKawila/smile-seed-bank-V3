@@ -114,6 +114,7 @@ const STOREFRONT_HOME_CARD_PRODUCT_SELECT = {
   is_active: true,
   sale_price: true,
   is_clearance: true,
+  clearance_discount_percent: true,
   is_featured: true,
   created_at: true,
   is_pinned_new_arrival: true,

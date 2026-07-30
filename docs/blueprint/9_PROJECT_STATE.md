@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (Clearance risk mitigations — multi-%)
+- **What:** กัน resync ทับราคาผิดกลุ่ม · ยืนยัน checkout เป็นเงินจริง · SEO canonical คง `/clearance`
+- **Logic:** `clearance_discount_percent` + allowlist 50/30/25 · `applyFixedClearancePrices(id, pct)` · resync อ่าน % ต่อสินค้า · admin toast เตือนตะกร้าค้าง · sitemap/canonical ไม่ใส่ query
+- **ไฟล์:** `lib/clearance.ts`, `services/clearance-admin-service.ts`, `app/api/admin/clearance/route.ts`, `ClearanceAdminClient.tsx`, `product-utils.ts`, `checkout-server-validate.ts`, `clearance/page.tsx`, migrations
+
 ### บันทึกการทำงาน — 2026-07-30 (LIFF first-click nav)
 - **What:** กดลิงก์ครั้งแรกจาก LINE LIFF (เช่น Clearance) ไม่ค้างหน้าเดิมแล้ว
 - **Logic:** เลิกสลับ tree เป็น `FramerLazyRoot` ตอน interaction · ห่อ layout ตลอดด้วย static `FramerLazyRoot` (LazyMotion async features คงเดิม)

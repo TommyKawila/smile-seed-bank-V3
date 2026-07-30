@@ -61,6 +61,7 @@ type VariantRow = {
     price: unknown;
     is_clearance: boolean | null;
     sale_price: unknown;
+    clearance_discount_percent: number | null;
     breeders: { name: string } | null;
   } | null;
 };
@@ -116,6 +117,7 @@ function resolveListingUnitBaht(
       {
         is_clearance: true,
         sale_price: v.products.sale_price,
+        clearance_discount_percent: v.products.clearance_discount_percent,
         product_variants: [
           {
             price: listRaw,
@@ -294,6 +296,7 @@ export async function validateStorefrontCheckoutTotals(input: {
             price: true,
             is_clearance: true,
             sale_price: true,
+            clearance_discount_percent: true,
             breeders: { select: { name: true } },
           },
         },

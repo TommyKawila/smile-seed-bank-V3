@@ -1,7 +1,11 @@
 import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { CLEARANCE_DISCOUNT_PERCENT } from "@/lib/clearance";
+import {
+  CLEARANCE_DISCOUNT_PERCENT,
+  CLEARANCE_DISCOUNT_PERCENTS,
+  normalizeClearanceDiscountPercent,
+} from "@/lib/clearance";
 import { revalidateClearanceStorefront } from "@/lib/revalidate-clearance";
 import {
   addProductToClearance,
@@ -10,9 +14,17 @@ import {
   listClearanceBreederSummary,
   removeProductsFromClearance,
   resyncAllClearancePrices,
+  setClearanceProductDiscountPercent,
 } from "@/services/clearance-admin-service";
 
 export const dynamic = "force-dynamic";
+
+const DiscountPercentSchema = z
+  .number()
+  .int()
+  .refine((n) => (CLEARANCE_DISCOUNT_PERCENTS as readonly number[]).includes(n), {
+    message: "Invalid clearance discount percent",
+  });
 
 const AddSchema = z.union([
   z.object({ action: z.literal("resync") }),
@@ -20,9 +32,18 @@ const AddSchema = z.union([
     action: z.literal("remove"),
     productIds: z.array(z.coerce.number().int().positive()).min(1).max(200),
   }),
-  z.object({ productId: z.coerce.number().int().positive() }),
+  z.object({
+    action: z.literal("setDiscountPercent"),
+    productId: z.coerce.number().int().positive(),
+    discountPercent: DiscountPercentSchema,
+  }),
+  z.object({
+    productId: z.coerce.number().int().positive(),
+    discountPercent: DiscountPercentSchema.optional(),
+  }),
   z.object({
     productIds: z.array(z.coerce.number().int().positive()).min(1).max(200),
+    discountPercent: DiscountPercentSchema.optional(),
   }),
 ]);
 
@@ -36,6 +57,7 @@ export async function GET() {
       products,
       breederSummary,
       discountPercent: CLEARANCE_DISCOUNT_PERCENT,
+      discountPercents: [...CLEARANCE_DISCOUNT_PERCENTS],
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
@@ -61,7 +83,12 @@ export async function POST(req: NextRequest) {
       const { error, synced } = await resyncAllClearancePrices();
       if (error) return NextResponse.json({ error }, { status: 500 });
       revalidateClearanceStorefront();
-      return NextResponse.json({ ok: true, synced, discountPercent: CLEARANCE_DISCOUNT_PERCENT });
+      return NextResponse.json({
+        ok: true,
+        synced,
+        /** Per-product percent used — not a single global override. */
+        resyncMode: "per_product_percent",
+      });
     }
 
     if ("action" in data && data.action === "remove") {
@@ -71,22 +98,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         ok: true,
         removed,
-        discountPercent: CLEARANCE_DISCOUNT_PERCENT,
+      });
+    }
+
+    if ("action" in data && data.action === "setDiscountPercent") {
+      const pct = normalizeClearanceDiscountPercent(data.discountPercent);
+      const { error } = await setClearanceProductDiscountPercent(data.productId, pct);
+      if (error) return NextResponse.json({ error }, { status: 500 });
+      revalidateClearanceStorefront();
+      return NextResponse.json({
+        ok: true,
+        productId: data.productId,
+        discountPercent: pct,
+        cartNote:
+          "ลูกค้าที่ค้างในตะกร้าอาจยังเห็นราคาเก่า — ต้องลบแล้วเพิ่มสินค้าใหม่ (ยอด checkout คิดจาก DB)",
       });
     }
 
     if ("productIds" in data) {
-      const { error, added } = await addProductsToClearance(data.productIds);
+      const pct = normalizeClearanceDiscountPercent(
+        data.discountPercent ?? CLEARANCE_DISCOUNT_PERCENT
+      );
+      const { error, added } = await addProductsToClearance(data.productIds, pct);
       if (error) return NextResponse.json({ error }, { status: 500 });
       revalidateClearanceStorefront();
       return NextResponse.json({
         ok: true,
         added,
-        discountPercent: CLEARANCE_DISCOUNT_PERCENT,
+        discountPercent: pct,
       });
     }
 
-    const { error } = await addProductToClearance(data.productId);
+    const pct = normalizeClearanceDiscountPercent(
+      data.discountPercent ?? CLEARANCE_DISCOUNT_PERCENT
+    );
+    const { error } = await addProductToClearance(data.productId, pct);
     if (error) {
       return NextResponse.json({ error }, { status: 500 });
     }
@@ -95,7 +141,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       productId: data.productId,
-      discountPercent: CLEARANCE_DISCOUNT_PERCENT,
+      discountPercent: pct,
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

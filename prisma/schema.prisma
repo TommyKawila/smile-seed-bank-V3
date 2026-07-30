@@ -431,6 +431,8 @@ model products {
   /// Clearance: flat sale aligns to starting (lowest in-stock) variant; other packs scale by ratio.
   sale_price            Decimal?            @db.Decimal
   is_clearance          Boolean?            @default(false)
+  /// Clearance tier % off list (50 | 30 | 25). Required when is_clearance.
+  clearance_discount_percent Int?
   is_pinned_new_arrival Boolean?            @default(false)
   new_arrival_priority  Int?                @default(0)
   /// `seed` (default) | `merch` — apparel/gear uses `merch` + `merch_category`.

@@ -276,8 +276,8 @@ export function ClearanceAdminClient() {
       const json = (await res.json()) as { error?: string; synced?: number };
       if (!res.ok) throw new Error(json.error ?? "ซิงค์ไม่สำเร็จ");
       toast({
-        title: `ซิงค์ราคา −${CLEARANCE_DISCOUNT_PERCENT}% แล้ว`,
-        description: `${json.synced ?? 0} สินค้า`,
+        title: "ซิงค์ราคาตาม % ของแต่ละสินค้าแล้ว",
+        description: `${json.synced ?? 0} สินค้า · ลูกค้าที่ค้างในตะกร้าอาจต้องเพิ่มสินค้าใหม่ (ยอด checkout คิดจาก DB)`,
       });
       await load();
     } catch (e) {
@@ -391,7 +391,7 @@ export function ClearanceAdminClient() {
         <div>
           <h1 className="text-xl font-bold text-zinc-900">สินค้า Clearance</h1>
           <p className="text-sm text-zinc-500">
-            ลดคงที่ −{CLEARANCE_DISCOUNT_PERCENT}% · หน้าลูกค้า{" "}
+            กลุ่มลด 50% / 30% / 25% · ซิงค์ราคาตาม % ของแต่ละสินค้า · หน้าลูกค้า{" "}
             <Link href="/clearance" className="text-emerald-800 underline-offset-2 hover:underline">
               /clearance
             </Link>
@@ -409,7 +409,7 @@ export function ClearanceAdminClient() {
             ) : (
               <RefreshCw className="mr-1.5 h-4 w-4" />
             )}
-            ซิงค์ราคา {CLEARANCE_DISCOUNT_PERCENT}%
+            ซิงค์ราคาตาม % ของแต่ละสินค้า
           </Button>
           <Button
             onClick={() => setPickerOpen(true)}
@@ -579,7 +579,7 @@ export function ClearanceAdminClient() {
                   <TableHead className="w-14" />
                   <TableHead>สินค้า</TableHead>
                   <TableHead>ค่าย</TableHead>
-                  <TableHead>ราคา (−{CLEARANCE_DISCOUNT_PERCENT}%)</TableHead>
+                  <TableHead>ราคา Clearance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -589,11 +589,15 @@ export function ClearanceAdminClient() {
                   const variants = p.product_variants ?? [];
                   const from = variants[0];
                   const list = Number(from?.price ?? 0);
+                  const pct =
+                    typeof p.clearance_discount_percent === "number"
+                      ? p.clearance_discount_percent
+                      : CLEARANCE_DISCOUNT_PERCENT;
                   const sale =
                     from &&
                     (from as { clearance_price?: number | null }).clearance_price != null
                       ? Number((from as { clearance_price?: number | null }).clearance_price)
-                      : clearancePriceFromList(list);
+                      : clearancePriceFromList(list, pct);
                   return (
                     <TableRow
                       key={pid}
@@ -630,6 +634,9 @@ export function ClearanceAdminClient() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap items-baseline gap-2 text-sm">
+                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
+                            −{pct}%
+                          </span>
                           {list > 0 ? (
                             <span className="tabular-nums text-zinc-400 line-through">
                               {formatPrice(list)}

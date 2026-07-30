@@ -66,6 +66,8 @@ export function serializeAdminProductForList(p: AdminProductListPayload) {
     is_pinned_new_arrival: p.is_pinned_new_arrival,
     new_arrival_priority: p.new_arrival_priority,
     is_clearance: p.is_clearance ?? false,
+    clearance_discount_percent:
+      p.clearance_discount_percent != null ? Number(p.clearance_discount_percent) : null,
     product_kind: p.product_kind,
     merch_category: p.merch_category,
     sale_price: dec(p.sale_price),

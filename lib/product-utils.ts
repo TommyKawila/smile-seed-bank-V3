@@ -5,7 +5,7 @@
 import type { ProductVariant } from "@/types/supabase";
 import { getMessage } from "@/lib/i18n-messages";
 import { parsePackFromUnitLabel } from "@/lib/sku-utils";
-import { clearancePriceFromList, CLEARANCE_DISCOUNT_PERCENT } from "@/lib/clearance";
+import { clearancePriceFromList, normalizeClearanceDiscountPercent } from "@/lib/clearance";
 
 /** Deterministic fallback when name has no Latin letters (e.g. Thai-only). */
 function slugFallbackFromName(name: string): string {
@@ -226,6 +226,7 @@ export function computeStartingPrice(
 type ClearanceProductSlice = {
   is_clearance?: boolean | null;
   sale_price?: unknown;
+  clearance_discount_percent?: number | null;
   product_variants?: (Pick<ProductVariant, "price" | "stock" | "is_active"> &
     Partial<
       Pick<
@@ -273,7 +274,10 @@ function resolveVariantClearancePrice(
   }
 
   if (product.is_clearance === true) {
-    const fixed = clearancePriceFromList(list, CLEARANCE_DISCOUNT_PERCENT);
+    const fixed = clearancePriceFromList(
+      list,
+      normalizeClearanceDiscountPercent(product.clearance_discount_percent)
+    );
     if (fixed > 0) return fixed;
   }
 

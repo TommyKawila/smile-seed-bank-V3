@@ -3,7 +3,9 @@ import { PRODUCT_KIND_MERCH, seedCatalogProductWhere } from "@/lib/product-kind"
 import {
   CLEARANCE_DISCOUNT_PERCENT,
   clearancePriceFromList,
+  normalizeClearanceDiscountPercent,
   type ClearanceBreederSummary,
+  type ClearanceDiscountPercent,
 } from "@/lib/clearance";
 import { deriveClearanceSalePrice, computeTotalStock } from "@/lib/product-utils";
 import { prisma } from "@/lib/prisma";
@@ -111,9 +113,15 @@ async function productHasAvailableStock(productId: number): Promise<boolean> {
   return Number.isFinite(legacy) && legacy > 0;
 }
 
+/**
+ * Write clearance_price from list using `percent` only (never silent global 50 on resync).
+ * Also persists `clearance_discount_percent` on the product.
+ */
 async function applyFixedClearancePrices(
-  productId: number
+  productId: number,
+  percent: ClearanceDiscountPercent
 ): Promise<{ error: string | null; salePrice: number | null }> {
+  const pct = normalizeClearanceDiscountPercent(percent);
   const supabase = await createAdminClient();
   const { data: variants, error: fetchErr } = await supabase
     .from("product_variants")
@@ -123,7 +131,7 @@ async function applyFixedClearancePrices(
 
   const priced: { clearance_price: number | null }[] = [];
   for (const v of variants ?? []) {
-    const cp = clearancePriceFromList(Number(v.price ?? 0));
+    const cp = clearancePriceFromList(Number(v.price ?? 0), pct);
     const clearance_price = cp > 0 ? cp : null;
     priced.push({ clearance_price });
     const { error } = await supabase
@@ -139,14 +147,26 @@ async function applyFixedClearancePrices(
     .update({
       is_clearance: true,
       sale_price: salePrice,
+      clearance_discount_percent: pct,
     })
     .eq("id", productId);
   if (syncErr) return { error: syncErr.message, salePrice: null };
   return { error: null, salePrice };
 }
 
-export async function addProductToClearance(
+async function resolveProductClearancePercent(
   productId: number
+): Promise<ClearanceDiscountPercent> {
+  const row = await prisma.products.findUnique({
+    where: { id: BigInt(productId) },
+    select: { clearance_discount_percent: true },
+  });
+  return normalizeClearanceDiscountPercent(row?.clearance_discount_percent);
+}
+
+export async function addProductToClearance(
+  productId: number,
+  discountPercent: ClearanceDiscountPercent = CLEARANCE_DISCOUNT_PERCENT
 ): Promise<{ error: string | null }> {
   const kindRow = await prisma.products.findUnique({
     where: { id: BigInt(productId) },
@@ -158,21 +178,41 @@ export async function addProductToClearance(
   if (!(await productHasAvailableStock(productId))) {
     return { error: "สินค้านี้หมดสต็อก — ไม่สามารถเพิ่มใน Clearance ได้" };
   }
-  const applied = await applyFixedClearancePrices(productId);
+  const pct = normalizeClearanceDiscountPercent(discountPercent);
+  const applied = await applyFixedClearancePrices(productId, pct);
   return { error: applied.error };
 }
 
 export async function addProductsToClearance(
-  productIds: number[]
+  productIds: number[],
+  discountPercent: ClearanceDiscountPercent = CLEARANCE_DISCOUNT_PERCENT
 ): Promise<{ error: string | null; added: number }> {
   const unique = [...new Set(productIds.filter((id) => Number.isFinite(id) && id > 0))];
+  const pct = normalizeClearanceDiscountPercent(discountPercent);
   let added = 0;
   for (const id of unique) {
-    const { error } = await addProductToClearance(id);
+    const { error } = await addProductToClearance(id, pct);
     if (error) return { error, added };
     added += 1;
   }
   return { error: null, added };
+}
+
+/** Move product to another Clearance % group and rewrite clearance_price. */
+export async function setClearanceProductDiscountPercent(
+  productId: number,
+  discountPercent: ClearanceDiscountPercent
+): Promise<{ error: string | null }> {
+  const pct = normalizeClearanceDiscountPercent(discountPercent);
+  const row = await prisma.products.findUnique({
+    where: { id: BigInt(productId) },
+    select: { is_clearance: true },
+  });
+  if (row?.is_clearance !== true) {
+    return { error: "สินค้านี้ไม่อยู่ใน Clearance" };
+  }
+  const applied = await applyFixedClearancePrices(productId, pct);
+  return { error: applied.error };
 }
 
 export async function removeProductFromClearance(
@@ -182,7 +222,11 @@ export async function removeProductFromClearance(
     await prisma.$transaction([
       prisma.products.update({
         where: { id: BigInt(productId) },
-        data: { is_clearance: false, sale_price: null },
+        data: {
+          is_clearance: false,
+          sale_price: null,
+          clearance_discount_percent: null,
+        },
       }),
       prisma.product_variants.updateMany({
         where: { product_id: BigInt(productId) },
@@ -208,30 +252,40 @@ export async function removeProductsFromClearance(
   return { error: null, removed };
 }
 
-/** Re-sync all clearance members to fixed % (e.g. after list price edits). */
+/**
+ * Re-sync clearance prices using each product's stored clearance_discount_percent.
+ * Never forces a single global 50% onto every SKU.
+ */
 export async function resyncAllClearancePrices(): Promise<{
   error: string | null;
   synced: number;
 }> {
   const rows = await prisma.products.findMany({
     where: { is_clearance: true, ...seedCatalogProductWhere },
-    select: { id: true },
+    select: { id: true, clearance_discount_percent: true },
   });
   let synced = 0;
   for (const row of rows) {
-    const { error } = await applyFixedClearancePrices(Number(row.id));
+    const pct = normalizeClearanceDiscountPercent(row.clearance_discount_percent);
+    const { error } = await applyFixedClearancePrices(Number(row.id), pct);
     if (error) return { error, synced };
     synced += 1;
   }
   return { error: null, synced };
 }
 
+/** Re-sync one product using its stored percent (or explicit override). */
 export async function updateClearanceVariantPrices(
   productId: number,
-  variants: ClearanceVariantPriceInput[]
+  variants: ClearanceVariantPriceInput[],
+  discountPercent?: ClearanceDiscountPercent
 ): Promise<{ error: string | null }> {
   void variants;
-  const applied = await applyFixedClearancePrices(productId);
+  const pct =
+    discountPercent != null
+      ? normalizeClearanceDiscountPercent(discountPercent)
+      : await resolveProductClearancePercent(productId);
+  const applied = await applyFixedClearancePrices(productId, pct);
   return { error: applied.error };
 }
 

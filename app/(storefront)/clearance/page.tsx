@@ -3,13 +3,13 @@ import { withTimeout } from "@/lib/timeout";
 import { ClearanceLandingClient } from "@/components/storefront/ClearanceLandingClient";
 import { getStorefrontClearanceBreederBoxes } from "@/services/clearance-breeder-banner-service";
 import { getClearanceStorefrontProductsByBreederSlug } from "@/services/product-service";
-import { CLEARANCE_DISCOUNT_PERCENT } from "@/lib/clearance";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: `Clearance −${CLEARANCE_DISCOUNT_PERCENT}% | Smile Seed Bank`,
-  description: `Clearance sale — fixed ${CLEARANCE_DISCOUNT_PERCENT}% off by participating breeders.`,
+  title: "Clearance | Smile Seed Bank",
+  description: "Clearance sale by participating breeders — fixed percent off by group.",
+  // Always canonical /clearance — never per ?discount= / ?breeder= (8_SEO_SCHEMA: no query in sitemap).
   alternates: { canonical: "/clearance" },
 };
 

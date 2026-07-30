@@ -1,5 +1,23 @@
-/** Fixed Clearance discount — pay (100 - percent)% of list price. */
+/** Default Clearance discount when adding a product (pay 50% of list). */
 export const CLEARANCE_DISCOUNT_PERCENT = 50 as const;
+
+/** Allowed Clearance discount groups (percent off list). */
+export const CLEARANCE_DISCOUNT_PERCENTS = [50, 30, 25] as const;
+
+export type ClearanceDiscountPercent = (typeof CLEARANCE_DISCOUNT_PERCENTS)[number];
+
+export function isClearanceDiscountPercent(value: unknown): value is ClearanceDiscountPercent {
+  const n = Number(value);
+  return CLEARANCE_DISCOUNT_PERCENTS.some((p) => p === n);
+}
+
+/** Normalize to allowlist; invalid/missing → default 50. */
+export function normalizeClearanceDiscountPercent(
+  value: unknown,
+  fallback: ClearanceDiscountPercent = CLEARANCE_DISCOUNT_PERCENT
+): ClearanceDiscountPercent {
+  return isClearanceDiscountPercent(value) ? value : fallback;
+}
 
 /**
  * Breeder banner box on `/clearance` — same frame on mobile (1-col) and desktop (3-col).
@@ -27,7 +45,7 @@ export function clearanceBreederBannerSizeLabel(locale: "th" | "en" = "th"): str
   return `แนะนำ ${w}×${h} px (อัตราส่วน 16:10) · ขั้นต่ำ ${minWidth}×${minHeight} px`;
 }
 
-/** Storefront Clearance landing — one banner box per participating breeder. */
+/** Storefront Clearance landing — one banner box per participating breeder (per % section). */
 export type StorefrontClearanceBreederBox = {
   breederId: number;
   name: string;
@@ -37,7 +55,7 @@ export type StorefrontClearanceBreederBox = {
   titleTh: string;
   titleEn: string | null;
   productCount: number;
-  discountPercent: typeof CLEARANCE_DISCOUNT_PERCENT;
+  discountPercent: ClearanceDiscountPercent;
 };
 
 export type ClearanceBreederSummary = {
@@ -55,7 +73,7 @@ export type ClearanceBreederSummary = {
   } | null;
 };
 
-/** Whole-baht clearance price from list price at fixed % off. */
+/** Whole-baht clearance price from list price at % off. */
 export function clearancePriceFromList(
   listPrice: number,
   percent: number = CLEARANCE_DISCOUNT_PERCENT

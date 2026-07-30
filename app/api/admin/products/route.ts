@@ -11,7 +11,7 @@ import {
   ProductSchema,
   deriveProductIsActiveForCatalog,
 } from "@/lib/validations/product";
-import { applyClearancePricesToVariants } from "@/lib/clearance";
+import { applyClearancePricesToVariants, normalizeClearanceDiscountPercent } from "@/lib/clearance";
 import { deriveClearanceSalePrice } from "@/lib/product-utils";
 import { prisma } from "@/lib/prisma";
 import {
@@ -127,9 +127,16 @@ export async function POST(req: NextRequest) {
     }
 
     const { variants: rawVariants, gallery_entries, ...productData } = parsed.data;
+    const clearancePct =
+      productData.is_clearance === true
+        ? normalizeClearanceDiscountPercent(
+            (productData as { clearance_discount_percent?: number | null })
+              .clearance_discount_percent
+          )
+        : null;
     const variants =
       productData.is_clearance === true
-        ? applyClearancePricesToVariants(rawVariants)
+        ? applyClearancePricesToVariants(rawVariants, clearancePct ?? undefined)
         : rawVariants.map((v) => ({ ...v, clearance_price: null }));
 
     const isActive = deriveProductIsActiveForCatalog(
