@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-30 (Cart UI — Clearance strikethrough)
+- **What:** ตะกร้า/เช็คเอาต์แสดงขีดฆ่าราคาเต็มเมื่อ Clearance ลด 50% (ยอดเรียกเก็บไม่เปลี่ยน)
+- **Logic:** `CartItem.listPrice` ตอน add เมื่อ list > unit · `cartItemBrandLineDisplay` ใช้ compare-at หลัง brand
+- **ไฟล์:** `types/supabase.ts`, `hooks/useCart.ts`, `lib/cart-utils.ts`, `ProductCard.tsx`, `product-detail-client.tsx`
+
 ### บันทึกการทำงาน — 2026-07-30 (Storefront cart — Clearance 50%)
 - **What:** กดเพิ่ม Clearance ลงตะกร้าแล้วคิดราคาลด 50% (เดิมเก็บ list เต็ม)
 - **Logic:** `resolveStorefrontCartStoredUnitBaht` — brand เก็บ list / clearance เก็บ effective · checkout `resolveListingUnitBaht` ใส่ clearance หลัง brand

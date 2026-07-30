@@ -87,9 +87,9 @@ export function evaluateFreeGifts(
   });
 }
 
-/** Per-line totals for cart UI: matches `calculateCartSummary` brand math (whole Baht). */
+/** Per-line totals for cart UI: brand % and optional clearance compare-at (`listPrice`). */
 export function cartItemBrandLineDisplay(
-  item: Pick<CartItem, "price" | "quantity" | "breederName" | "isFreeGift">,
+  item: Pick<CartItem, "price" | "quantity" | "breederName" | "isFreeGift" | "listPrice">,
   brandRules: BrandPromotionRuleRow[],
 ): { effLine: number; listLine: number; showBrandStrike: boolean } {
   if (item.isFreeGift) {
@@ -101,9 +101,25 @@ export function cartItemBrandLineDisplay(
     brandRules,
   );
   const showBrandStrike = baseBaht > 0 && effectiveBaht < baseBaht;
+  if (showBrandStrike) {
+    return {
+      effLine: roundCheckoutBahtWhole(effectiveBaht * item.quantity),
+      listLine: roundCheckoutBahtWhole(baseBaht * item.quantity),
+      showBrandStrike: true,
+    };
+  }
+  const compareAt = Number(item.listPrice ?? 0);
+  const unit = roundCheckoutBahtWhole(item.price);
+  if (compareAt > unit && unit > 0) {
+    return {
+      effLine: roundCheckoutBahtWhole(unit * item.quantity),
+      listLine: roundCheckoutBahtWhole(compareAt * item.quantity),
+      showBrandStrike: true,
+    };
+  }
   const effLine = roundCheckoutBahtWhole(effectiveBaht * item.quantity);
   const listLine = roundCheckoutBahtWhole(baseBaht * item.quantity);
-  return { effLine, listLine, showBrandStrike };
+  return { effLine, listLine, showBrandStrike: false };
 }
 
 /** Unit after list price + optional brand % (whole Baht). */

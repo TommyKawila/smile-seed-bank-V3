@@ -286,6 +286,8 @@ export interface CartItem {
   productImage: string | null;
   unitLabel: string;
   price: number;
+  /** Compare-at list unit (e.g. clearance) when higher than `price` — display strike only. */
+  listPrice?: number;
   quantity: number;
   /** Variant available stock (from `product_variants.stock`) at add-to-cart time */
   stock_quantity?: number;

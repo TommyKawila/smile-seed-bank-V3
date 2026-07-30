@@ -144,11 +144,23 @@ function OrderItemRow({
   const linePricing =
     brandPromotionRules != null
       ? cartItemBrandLineDisplay(item, brandPromotionRules)
-      : {
-          effLine: roundCheckoutBahtWhole(item.price * item.quantity),
-          listLine: roundCheckoutBahtWhole(item.price * item.quantity),
-          showBrandStrike: false,
-        };
+      : (() => {
+          const unit = roundCheckoutBahtWhole(item.price);
+          const compareAt = Number(item.listPrice ?? 0);
+          const qty = item.quantity;
+          if (compareAt > unit && unit > 0) {
+            return {
+              effLine: roundCheckoutBahtWhole(unit * qty),
+              listLine: roundCheckoutBahtWhole(compareAt * qty),
+              showBrandStrike: true,
+            };
+          }
+          return {
+            effLine: roundCheckoutBahtWhole(unit * qty),
+            listLine: roundCheckoutBahtWhole(unit * qty),
+            showBrandStrike: false,
+          };
+        })();
   const { effLine, listLine, showBrandStrike } = linePricing;
 
   return (

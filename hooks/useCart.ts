@@ -42,6 +42,7 @@ const AddToCartSchema = z.object({
   productImage: z.string().nullable(),
   unitLabel: z.string().min(1),
   price: z.number().positive("ราคาต้องมากกว่า 0"),
+  listPrice: z.number().positive().optional(),
   quantity: z.number().int().positive("จำนวนต้องมากกว่า 0"),
   stock_quantity: z.number().int().min(0).optional(),
   masterSku: z.string().nullable().optional(),
@@ -63,6 +64,14 @@ function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<Cart
   const quantity = Number.isFinite(q) && q > 0 ? q : 1;
   const priceRaw = Number(raw.price);
   const price = Number.isFinite(priceRaw) ? priceRaw : 0;
+  const listRaw = raw.listPrice;
+  const listPrice =
+    listRaw === undefined
+      ? undefined
+      : (() => {
+          const n = Number(listRaw);
+          return Number.isFinite(n) && n > 0 ? n : undefined;
+        })();
   const sq = raw.stock_quantity;
   const stock_quantity =
     sq === undefined
@@ -84,6 +93,7 @@ function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<Cart
     productId,
     quantity,
     price,
+    ...(listPrice !== undefined ? { listPrice } : {}),
     stock_quantity,
     breeder_id,
   };
@@ -309,6 +319,9 @@ export function useCart(): UseCartReturn {
                   quantity: nextQty,
                   stock_quantity:
                     maxStock !== undefined ? maxStock : i.stock_quantity,
+                  ...(parsed.data.listPrice !== undefined
+                    ? { listPrice: parsed.data.listPrice }
+                    : {}),
                 }
               : i
           );

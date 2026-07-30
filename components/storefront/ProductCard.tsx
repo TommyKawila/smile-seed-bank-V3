@@ -33,6 +33,7 @@ import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { StockAlert } from "@/components/storefront/StockAlert";
 import { toast } from "sonner";
 import { pickVariantForSeedPackSlugs, parseListParam } from "@/lib/shop-attribute-filters";
+import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 import { resolveStorefrontCartStoredUnitBaht } from "@/lib/storefront-cart-unit";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { getProductAggregateStock } from "@/lib/product-stock";
@@ -196,6 +197,7 @@ function ProductCardBase({
         toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
         return;
       }
+      const listRounded = roundCheckoutBahtWhole(variantListPrice);
       const { error } = addToCart({
         variantId: displayVariant.id,
         productId: product.id,
@@ -203,6 +205,7 @@ function ProductCardBase({
         productImage: cardImage,
         unitLabel: displayVariant.unit_label,
         price: unit,
+        ...(listRounded > unit ? { listPrice: listRounded } : {}),
         quantity: 1,
         stock_quantity: displayVariant.stock ?? 0,
         masterSku: (product as { master_sku?: string | null }).master_sku ?? null,

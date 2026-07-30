@@ -287,12 +287,14 @@ export default function ProductDetailClient({
 
   const handleAddToCart = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (!product || !selectedVariant) return;
+    const listRaw = Number(selectedVariant.price ?? 0);
     const unit = resolveStorefrontCartStoredUnitBaht(
       product,
-      Number(selectedVariant.price ?? 0),
+      listRaw,
       product.breeders?.name,
       brandPromotionRules,
     );
+    const listRounded = roundCheckoutBahtWhole(listRaw);
     const { error } = addToCart({
       variantId: selectedVariant.id,
       productId: product.id,
@@ -300,6 +302,7 @@ export default function ProductDetailClient({
       productImage: resolveDetailHeroUrl(product, selectedVariant.id),
       unitLabel: selectedVariant.unit_label,
       price: unit,
+      ...(listRounded > unit ? { listPrice: listRounded } : {}),
       quantity: 1,
       stock_quantity: selectedVariant.stock ?? 0,
       masterSku: (product as { master_sku?: string | null }).master_sku ?? null,
