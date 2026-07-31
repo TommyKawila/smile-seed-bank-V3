@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-31 (Clearance breeder header — logo)
+- **What:** หน้า `/clearance?breeder=` โชว์โลโก้ค่ายใน Header ข้างชื่อ
+- **Logic:** `getClearanceStorefrontProductsByBreederSlug` คืน `breederLogoUrl` · `BreederLogoImage` ใน `ClearanceLandingClient`
+- **ไฟล์:** `services/product-service.ts` · `app/(storefront)/clearance/page.tsx` · `ClearanceLandingClient.tsx`
+
 ### บันทึกการทำงาน — 2026-07-31 (Clearance card — ชิปแพ็กที่ลด)
 - **What:** การ์ด Clearance ในกล่องค่ายโชว์ชิปแพ็กที่ลด + ราคาขีดฆ่าตรงแพ็กลดจริง
 - **Logic:** `listClearancePackSummaries` · ราคาจากแพ็ก clearance ถูกสุด · ข้อความ “จาก {แพ็ก}” เมื่อลดบางแพ็ก

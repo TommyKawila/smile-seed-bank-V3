@@ -1509,17 +1509,24 @@ export async function getClearanceStorefrontProductsByBreederSlug(
   ServiceResult<{
     products: ProductWithBreederAndVariants[];
     breederName: string | null;
+    breederLogoUrl: string | null;
   }>
 > {
   try {
     const want = breederSlug.trim().toLowerCase();
     if (!want) {
-      return { data: { products: [], breederName: null }, error: null };
+      return {
+        data: { products: [], breederName: null, breederLogoUrl: null },
+        error: null,
+      };
     }
 
     const match = await resolveBreederBySlugFromCache(want);
     if (!match) {
-      return { data: { products: [], breederName: null }, error: null };
+      return {
+        data: { products: [], breederName: null, breederLogoUrl: null },
+        error: null,
+      };
     }
 
     const take = Math.min(120, Math.max(1, Math.floor(limit)));
@@ -1538,6 +1545,7 @@ export async function getClearanceStorefrontProductsByBreederSlug(
       data: {
         products: await filterAndSortClearanceProducts(mapped, take),
         breederName: match.name,
+        breederLogoUrl: match.logo_url ?? null,
       },
       error: null,
     };

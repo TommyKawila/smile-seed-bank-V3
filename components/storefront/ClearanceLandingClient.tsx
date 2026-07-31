@@ -7,6 +7,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
 import { ClearanceBreederBoxCard } from "@/components/storefront/ClearanceBreederBoxCard";
 import { ClearanceCard } from "@/components/storefront/ClearanceCard";
+import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { StorefrontClearanceBreederBox } from "@/lib/clearance";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
@@ -15,15 +16,20 @@ export function ClearanceLandingClient({
   boxes,
   breederSlug,
   breederName,
+  breederLogoUrl = null,
   products,
 }: {
   boxes: StorefrontClearanceBreederBox[];
   breederSlug: string | null;
   breederName: string | null;
+  breederLogoUrl?: string | null;
   products: ProductWithBreederAndVariants[];
 }) {
   const { t } = useLanguage();
   const drillDown = Boolean(breederSlug);
+  const title = drillDown
+    ? breederName ?? t("ค่ายนี้", "This breeder")
+    : t("Clearance", "Clearance");
 
   useEffect(() => {
     const path = breederSlug
@@ -49,25 +55,43 @@ export function ClearanceLandingClient({
               {t("กลับไปกล่องค่าย", "Back to breeders")}
             </Link>
           ) : null}
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-emerald-500/90">
-            {t("ล้างสต็อก", "CLEARANCE")}
-          </p>
-          <h1 className="mt-1.5 max-w-2xl font-sans text-2xl font-semibold tracking-tight text-white sm:mt-2 sm:text-4xl">
-            {drillDown
-              ? breederName ?? t("ค่ายนี้", "This breeder")
-              : t("Clearance", "Clearance")}
-          </h1>
-          <p className="mt-1.5 max-w-xl text-xs font-light text-muted-foreground sm:mt-2 sm:text-sm">
-            {drillDown
-              ? t(
-                  "สินค้า Clearance ของค่ายนี้ · ราคาลดตามแต่ละรายการ",
-                  "Clearance strains from this breeder · discount varies by product"
-                )
-              : t(
-                  "เลือกค่ายที่ร่วมโปร · ส่วนลดตามแต่ละสินค้า",
-                  "Pick a participating breeder · discount varies by product"
-                )}
-          </p>
+          <div className="flex items-start gap-4 sm:gap-6">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-emerald-500/90">
+                {t("ล้างสต็อก", "CLEARANCE")}
+              </p>
+              <h1 className="mt-1.5 max-w-2xl font-sans text-2xl font-semibold tracking-tight text-white sm:mt-2 sm:text-4xl">
+                {title}
+              </h1>
+              <p className="mt-1.5 max-w-xl text-xs font-light text-muted-foreground sm:mt-2 sm:text-sm">
+                {drillDown
+                  ? t(
+                      "สินค้า Clearance ของค่ายนี้ · ราคาลดตามแต่ละรายการ",
+                      "Clearance strains from this breeder · discount varies by product"
+                    )
+                  : t(
+                      "เลือกค่ายที่ร่วมโปร · ส่วนลดตามแต่ละสินค้า",
+                      "Pick a participating breeder · discount varies by product"
+                    )}
+              </p>
+            </div>
+            {drillDown ? (
+              <div
+                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-md ring-1 ring-zinc-800 sm:h-20 sm:w-20"
+                aria-hidden={!breederName}
+              >
+                <BreederLogoImage
+                  src={breederLogoUrl}
+                  breederName={breederName ?? title}
+                  width={80}
+                  height={80}
+                  className="h-16 w-16 rounded-xl sm:h-20 sm:w-20"
+                  imgClassName="object-contain p-1.5"
+                  sizes="80px"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 

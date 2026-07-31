@@ -29,13 +29,17 @@ export default async function ClearancePage({ searchParams }: Props) {
     const result = await withTimeout(
       getClearanceStorefrontProductsByBreederSlug(breederSlug),
       4000,
-      { data: { products: [], breederName: null }, error: null }
+      {
+        data: { products: [], breederName: null, breederLogoUrl: null },
+        error: null,
+      }
     );
     return (
       <ClearanceLandingClient
         boxes={[]}
         breederSlug={breederSlug}
         breederName={result.data?.breederName ?? null}
+        breederLogoUrl={result.data?.breederLogoUrl ?? null}
         products={result.data?.products ?? []}
       />
     );
@@ -47,6 +51,7 @@ export default async function ClearancePage({ searchParams }: Props) {
       boxes={boxes}
       breederSlug={null}
       breederName={null}
+      breederLogoUrl={null}
       products={[]}
     />
   );
