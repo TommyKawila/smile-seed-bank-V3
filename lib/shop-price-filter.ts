@@ -20,7 +20,7 @@ export function computePriceSliderCap(products: ProductListItem[]): number {
     if (start > hi) hi = start;
     for (const v of p.product_variants ?? []) {
       if (v.is_active === false) continue;
-      const n = getEffectiveVariantPrice(p, Number(v.price ?? 0));
+      const n = getEffectiveVariantPrice(p, Number(v.price ?? 0), v);
       if (n > hi) hi = n;
     }
   }

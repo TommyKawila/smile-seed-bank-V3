@@ -67,7 +67,8 @@ export function ShopSpotlightCard({
   const listFrom = displayVariant
     ? getEffectiveVariantPrice(
         { ...product, product_variants: variantsList ?? null },
-        listRegular
+        listRegular,
+        displayVariant
       )
     : getEffectiveListingPrice({
         ...product,

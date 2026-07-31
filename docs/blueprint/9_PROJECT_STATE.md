@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-31 (Critical — inventory dedupe stock/clearance loss)
+- **What:** `PATCH /api/admin/inventory/cell` path `variantId` ลบแพ็กซ้ำโดยไม่รวม stock/clearance → สต็อกหายเมื่อแก้ราคา/cost; sync เสี่ยงเหมือนกัน; `getEffectiveVariantPrice` จับแพ็กด้วยราคาอย่างเดียวเมื่อ list ซ้ำ
+- **Logic:** `collapsePackDuplicateFields` รวม stock + ย้าย `clearance_price` ก่อนลบ · grid/sync แสดง stock รวมต่อแพ็ก · price match ใช้ hint / unique-only
+- **ไฟล์:** `lib/product-variants-dedupe.ts` · `app/api/admin/inventory/cell|sync|grid/route.ts` · `lib/product-utils.ts` · cart/POS/PDP/card call sites
+
 ### บันทึกการทำงาน — 2026-07-31 (Duplicate pack variants — upsert/dedupe)
 - **What:** แก้แพ็กซ้ำ (เช่น Banana Mango 3×5 seeds) ที่ทำให้ SKU unique พัง / inventory เพิ่มสต็อกไม่ได้
 - **Logic:** `dedupeVariantsByPack` ตอน POST/PATCH · cell/sync upsert ตาม pack รวม inactive + ลบแถวซ้ำ · ProductModal กัน pack ซ้ำ

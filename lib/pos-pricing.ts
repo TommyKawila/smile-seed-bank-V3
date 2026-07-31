@@ -53,7 +53,7 @@ export function resolvePosVariantUnitPrice(
         ? product.product_variants
         : [variant],
     };
-    const clearance = getEffectiveVariantPrice(withVariant, baseList);
+    const clearance = getEffectiveVariantPrice(withVariant, baseList, variant);
     if (clearance > 0) finalRetail = clearance;
   }
 

@@ -6,6 +6,10 @@ import { bigintToJson } from "@/lib/bigint-json";
 import { parsePackFromUnitLabel, toBreederPart, toBreederPrefix } from "@/lib/sku-utils";
 import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
 import { adminGridCategoryWhereInput } from "@/lib/admin-grid-category-filter";
+import {
+  pickKeeperVariantId,
+  sumStockForPackRows,
+} from "@/lib/product-variants-dedupe";
 
 export const dynamic = "force-dynamic";
 
@@ -203,10 +207,12 @@ export async function GET(req: NextRequest) {
     // 3. แปลงข้อมูลให้อยู่ในรูปแบบ Table Rows
     const rows = products.map((p) => {
       try {
-        const variantByPackSize = new Map<number, (typeof p.product_variants)[0]>();
+        const variantsByPack = new Map<number, (typeof p.product_variants)>();
         for (const v of p.product_variants) {
           const packSize = parsePackFromUnitLabel(v.unit_label);
-          if (!variantByPackSize.has(packSize)) variantByPackSize.set(packSize, v);
+          const list = variantsByPack.get(packSize) ?? [];
+          list.push(v);
+          variantsByPack.set(packSize, list);
         }
 
         const variantSizes = p.product_variants.map((v) => parsePackFromUnitLabel(v.unit_label));
@@ -215,15 +221,24 @@ export async function GET(req: NextRequest) {
         const variantIdsByPack: Record<string, number | null> = {};
         const lowStockThresholdByPack: Record<string, number> = {};
         for (const packSize of allSizes) {
-          const v = variantByPackSize.get(packSize);
+          const packRows = variantsByPack.get(packSize) ?? [];
           const key = String(packSize);
-          const stock = v != null ? Math.max(0, Number(v.stock) || 0) : 0;
-          const cost = v != null ? Math.max(0, Number((v as { cost_price?: unknown }).cost_price) || 0) : 0;
-          const price = v != null ? Math.max(0, Number(v.price) || 0) : 0;
+          const keeper =
+            packRows.length > 0
+              ? packRows.find((r) => r.id === pickKeeperVariantId(packRows)) ??
+                packRows[0]!
+              : null;
+          const stock = sumStockForPackRows(packRows);
+          const cost =
+            keeper != null
+              ? Math.max(0, Number((keeper as { cost_price?: unknown }).cost_price) || 0)
+              : 0;
+          const price = keeper != null ? Math.max(0, Number(keeper.price) || 0) : 0;
           byPack[key] = { stock, cost, price };
-          variantIdsByPack[key] = v ? Number(v.id) : null;
-          const vExt = v as { low_stock_threshold?: number } | undefined;
-          lowStockThresholdByPack[key] = vExt?.low_stock_threshold != null ? Number(vExt.low_stock_threshold) : 5;
+          variantIdsByPack[key] = keeper ? Number(keeper.id) : null;
+          const vExt = keeper as { low_stock_threshold?: number } | undefined;
+          lowStockThresholdByPack[key] =
+            vExt?.low_stock_threshold != null ? Number(vExt.low_stock_threshold) : 5;
         }
 
         const primaryImg = Array.isArray(p.image_urls) && (p.image_urls as string[]).length > 0

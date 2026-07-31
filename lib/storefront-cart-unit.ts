@@ -17,11 +17,12 @@ export function resolveStorefrontCartStoredUnitBaht(
   variantListPrice: number,
   breederName: string | null | undefined,
   brandRules: BrandPromotionRuleRow[],
+  variantHint?: { id?: number | null; clearance_price?: number | null; price?: number | null } | null,
 ): number {
   const list = roundCheckoutBahtWhole(variantListPrice);
   const brandLine = resolveListingUnitAfterBrand(list, breederName ?? null, brandRules);
   if (brandLine.effectiveBaht < brandLine.baseBaht && brandLine.baseBaht > 0) {
     return list;
   }
-  return roundCheckoutBahtWhole(getEffectiveVariantPrice(product, list));
+  return roundCheckoutBahtWhole(getEffectiveVariantPrice(product, list, variantHint));
 }
