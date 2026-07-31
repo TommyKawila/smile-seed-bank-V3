@@ -21,7 +21,7 @@ export function ClearanceBreederBoxCard({ box }: { box: StorefrontClearanceBreed
     <article className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-lg sm:rounded-2xl">
       <Link
         href={href}
-        className="relative block min-h-[48px] overflow-hidden bg-zinc-900 aspect-[4/3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:aspect-[16/10]"
+        className="relative block min-h-[48px] overflow-hidden bg-white aspect-[4/3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:aspect-[16/10]"
         aria-label={`${title} — Clearance`}
       >
         {img ? (
@@ -36,8 +36,8 @@ export function ClearanceBreederBoxCard({ box }: { box: StorefrontClearanceBreed
             unoptimized={shouldOffloadImageOptimization(img)}
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-zinc-900">
-            <Leaf className="h-10 w-10 text-muted-foreground" />
+          <div className="flex h-full items-center justify-center bg-white">
+            <Leaf className="h-10 w-10 text-zinc-400" />
           </div>
         )}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/20 to-transparent" />

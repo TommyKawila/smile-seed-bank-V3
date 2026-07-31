@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (Clearance breeder box — white logo bg)
+- **What:** พื้นกล่องโลโก้ค่ายบน `/clearance` เป็นขาว เพื่อให้ PNG โปร่งแสง (Humboldt / Barney's ฯลฯ) เห็นชัด
+- **Logic:** `ClearanceBreederBoxCard` ลิงก์ภาพ `bg-white` แทน `bg-zinc-900`
+- **ไฟล์:** `components/storefront/ClearanceBreederBoxCard.tsx`
+
 ### บันทึกการทำงาน — 2026-07-31 (Duplicate pack variants — upsert/dedupe)
 - **What:** แก้แพ็กซ้ำ (เช่น Banana Mango 3×5 seeds) ที่ทำให้ SKU unique พัง / inventory เพิ่มสต็อกไม่ได้
 - **Logic:** `dedupeVariantsByPack` ตอน POST/PATCH · cell/sync upsert ตาม pack รวม inactive + ลบแถวซ้ำ · ProductModal กัน pack ซ้ำ
