@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (Home BreederShowcase logo — white bg)
+- **What:** พื้นโลโก้ค่ายในแถว Breeder หน้าแรกเป็นขาว (PNG โปร่งแสงเห็นชัด)
+- **Logic:** `BreederShowcase` กล่องโลโก้ `bg-white rounded-xl`
+- **ไฟล์:** `components/storefront/BreederShowcase.tsx`
+
+### บันทึกการทำงาน — 2026-08-01 (Clearance breeder header logo — white bg)
+- **What:** โลโก้ค่ายใน header drill-down `/clearance?breeder=` พื้นขาว
+- **Logic:** `ClearanceLandingClient` wrapper `bg-white`
+- **ไฟล์:** `components/storefront/ClearanceLandingClient.tsx`
+
 ### บันทึกการทำงาน — 2026-08-01 (Clearance breeder box — white logo bg)
 - **What:** พื้นกล่องโลโก้ค่ายบน `/clearance` เป็นขาว เพื่อให้ PNG โปร่งแสง (Humboldt / Barney's ฯลฯ) เห็นชัด
 - **Logic:** `ClearanceBreederBoxCard` ลิงก์ภาพ `bg-white` แทน `bg-zinc-900`

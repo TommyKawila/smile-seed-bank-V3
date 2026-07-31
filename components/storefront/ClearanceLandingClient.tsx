@@ -77,7 +77,7 @@ export function ClearanceLandingClient({
             </div>
             {drillDown ? (
               <div
-                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-md ring-1 ring-zinc-800 sm:h-20 sm:w-20"
+                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-zinc-700 bg-white shadow-md ring-1 ring-zinc-800 sm:h-20 sm:w-20"
                 aria-hidden={!breederName}
               >
                 <BreederLogoImage

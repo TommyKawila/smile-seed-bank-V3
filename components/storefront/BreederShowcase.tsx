@@ -100,7 +100,7 @@ export default function BreederShowcase({
                   href={seedsBreederHref(b)}
                   className="group flex h-full flex-col rounded-2xl surface-glass p-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
-                  <div className="relative mx-auto flex h-20 w-full items-center justify-center">
+                  <div className="relative mx-auto flex h-20 w-full items-center justify-center rounded-xl bg-white px-2">
                     <div className="opacity-85 grayscale transition duration-300 group-hover:opacity-100 group-hover:grayscale-0">
                       <BreederLogoImage
                         src={b.logoUrl}
