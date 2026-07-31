@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-31 (Duplicate pack variants — upsert/dedupe)
+- **What:** แก้แพ็กซ้ำ (เช่น Banana Mango 3×5 seeds) ที่ทำให้ SKU unique พัง / inventory เพิ่มสต็อกไม่ได้
+- **Logic:** `dedupeVariantsByPack` ตอน POST/PATCH · cell/sync upsert ตาม pack รวม inactive + ลบแถวซ้ำ · ProductModal กัน pack ซ้ำ
+- **ไฟล์:** `lib/product-variants-dedupe.ts` · `app/api/admin/inventory/cell/route.ts` · `sync/route.ts` · admin products routes · `ProductModal.tsx`
+
 ### บันทึกการทำงาน — 2026-07-31 (Mobile catalog load-more — multi-breeder)
 - **What:** Audit ค่ายใหญ่บน prod — bug ไม่เฉพาะ Humboldt: page2×30 ข้ามแถว 16–29 (HSC ได้ `[]`; ค่าย >30 ชิ้นโหลดได้แต่หายกลางชุด)
 - **Logic:** path เดียว `/shop`+`/seeds/*`+`/brand/*` · `catalogLoadMoreOffset` · `offset` API

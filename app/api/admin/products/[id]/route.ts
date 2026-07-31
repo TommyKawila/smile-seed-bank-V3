@@ -18,6 +18,7 @@ import { ensureUniqueProductSlug } from "@/services/product-service";
 import type { ProductVariant } from "@/types/supabase";
 import { syncProductImagesForProduct } from "@/lib/product-images-sync";
 import { toMasterSku, toVariantSku } from "@/lib/sku-utils";
+import { dedupeVariantsByPack } from "@/lib/product-variants-dedupe";
 
 export async function PATCH(
   req: NextRequest,
@@ -69,10 +70,11 @@ export async function PATCH(
       if (brand) masterSku = toMasterSku(brand, productData.name);
     }
 
+    const dedupedRaw = dedupeVariantsByPack(rawVariants);
     const variantsWithClearance =
       productData.is_clearance === true
-        ? applyClearancePricesToVariants(rawVariants, clearancePct ?? undefined)
-        : rawVariants.map((v) => ({ ...v, clearance_price: null }));
+        ? applyClearancePricesToVariants(dedupedRaw, clearancePct ?? undefined)
+        : dedupedRaw.map((v) => ({ ...v, clearance_price: null }));
 
     const variants = masterSku
       ? variantsWithClearance.map((v) => ({

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
 import { toVariantSku, parsePackFromUnitLabel } from "@/lib/sku-utils";
+import { pickKeeperVariantId } from "@/lib/product-variants-dedupe";
 import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -119,15 +120,34 @@ export async function POST(req: NextRequest) {
     const label = packToLabel(packSize);
     const sku = toVariantSku(masterSkuTrim, label);
 
-    const existing = product.product_variants.find(
+    const samePack = product.product_variants.filter(
       (v) => parsePackFromUnitLabel(v.unit_label) === packSize
     );
 
     const hasEconomics = stock > 0 || price > 0 || cost > 0;
 
-    if (existing) {
+    if (samePack.length > 0) {
+      const keeperId = pickKeeperVariantId(samePack);
+      for (const dup of samePack) {
+        if (dup.id === keeperId) continue;
+        if (dup.sku) {
+          await prisma.product_variants.update({
+            where: { id: dup.id },
+            data: { sku: null, is_active: false },
+          });
+        }
+        try {
+          await prisma.product_variants.delete({ where: { id: dup.id } });
+        } catch {
+          await prisma.product_variants.update({
+            where: { id: dup.id },
+            data: { is_active: false, sku: null, stock: 0 },
+          });
+        }
+        product.product_variants = product.product_variants.filter((v) => v.id !== dup.id);
+      }
       await prisma.product_variants.update({
-        where: { id: existing.id },
+        where: { id: keeperId },
         data: {
           unit_label: label,
           stock: Math.max(0, stock),

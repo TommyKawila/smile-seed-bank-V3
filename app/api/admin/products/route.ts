@@ -23,6 +23,7 @@ import {
   serializeAdminProductForList,
 } from "@/lib/serialize-admin-product-list";
 import { toMasterSku, toVariantSku } from "@/lib/sku-utils";
+import { dedupeVariantsByPack } from "@/lib/product-variants-dedupe";
 
 type ProductInsert = Omit<Product, "id" | "price" | "stock">;
 type VariantInsert = Omit<ProductVariant, "id" | "product_id">;
@@ -155,10 +156,11 @@ export async function POST(req: NextRequest) {
       if (brand) masterSku = toMasterSku(brand, productData.name);
     }
 
+    const dedupedRaw = dedupeVariantsByPack(rawVariants);
     const variantsWithClearance =
       productData.is_clearance === true
-        ? applyClearancePricesToVariants(rawVariants, clearancePct ?? undefined)
-        : rawVariants.map((v) => ({ ...v, clearance_price: null }));
+        ? applyClearancePricesToVariants(dedupedRaw, clearancePct ?? undefined)
+        : dedupedRaw.map((v) => ({ ...v, clearance_price: null }));
 
     const variants = masterSku
       ? variantsWithClearance.map((v) => ({

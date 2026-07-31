@@ -20,7 +20,8 @@ import Link from "next/link";
 import { useProducts, type ProductFormData } from "@/hooks/useProducts";
 import { useBreeders } from "@/hooks/useBreeders";
 import { unknownFields } from "@/lib/validations/product";
-import { packSizeNum, toMasterSku, toVariantSku } from "@/lib/sku-utils";
+import { parsePackFromUnitLabel, toMasterSku, toVariantSku } from "@/lib/sku-utils";
+import { dedupeVariantsByPack } from "@/lib/product-variants-dedupe";
 import { useToast } from "@/hooks/use-toast";
 import { ProductImageUpload, type ProductGalleryEntry } from "@/components/admin/ProductImageUpload";
 import { normalizeFloweringFromDb, normalizeSexFromDb } from "@/lib/cannabis-attributes";
@@ -441,14 +442,48 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
   };
 
   const setVariant = (index: number, field: string, value: unknown) => {
+    if (field === "unit_label") {
+      const label = String(value ?? "").trim();
+      if (label) {
+        const pack = parsePackFromUnitLabel(label);
+        const clash = variants.some(
+          (v, i) =>
+            i !== index &&
+            (v.unit_label ?? "").toString().trim() &&
+            parsePackFromUnitLabel(v.unit_label) === pack
+        );
+        if (clash) {
+          setSubmitLocalError(
+            `แพ็ก ${pack} seeds มีอยู่แล้ว — ลบแถวซ้ำหรือเลือกขนาดอื่น`
+          );
+          return;
+        }
+      }
+    }
     const updated = variants.map((v, i) =>
       i === index ? { ...v, [field]: value } : v
     );
     setField("variants", updated as ProductFormData["variants"]);
   };
 
-  const addVariant = () =>
+  const addVariant = () => {
+    const usedPacks = new Set(
+      variants
+        .map((v) => (v.unit_label ?? "").toString().trim())
+        .filter(Boolean)
+        .map((l) => parsePackFromUnitLabel(l))
+    );
+    const hasEmpty = variants.some((v) => !(v.unit_label ?? "").toString().trim());
+    if (hasEmpty) {
+      setSubmitLocalError("กรอกขนาดแพ็กแถวว่างก่อน แล้วค่อยเพิ่มแพ็กใหม่");
+      return;
+    }
+    if (usedPacks.size >= 20) {
+      setSubmitLocalError("จำนวนแพ็กครบแล้ว");
+      return;
+    }
     setField("variants", [...variants, { ...emptyVariant }] as ProductFormData["variants"]);
+  };
 
   const removeVariant = (index: number) => {
     setField("variants", variants.filter((_, i) => i !== index) as ProductFormData["variants"]);
@@ -622,6 +657,16 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         };
       }
     }
+    const beforeDedup = formWithImages.variants?.length ?? 0;
+    formWithImages.variants = dedupeVariantsByPack(formWithImages.variants ?? []);
+    if ((formWithImages.variants?.length ?? 0) < beforeDedup) {
+      setForm((prev) => ({ ...prev, variants: formWithImages.variants }));
+      toast({
+        title: "รวมแพ็กซ้ำแล้ว",
+        description: "เหลือแพ็กละ 1 แถวก่อนบันทึก",
+      });
+    }
+
     let masterSkuVal = (formWithImages.master_sku ?? "").toString().trim();
     if (!masterSkuVal) {
       const filled = deriveMasterSkuValue(
