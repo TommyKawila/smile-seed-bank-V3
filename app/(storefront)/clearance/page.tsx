@@ -45,7 +45,8 @@ export default async function ClearancePage({ searchParams }: Props) {
     );
   }
 
-  const boxes = await withTimeout(getStorefrontClearanceBreederBoxes(), 2000, []);
+  // Primary page content — do not use 2s empty fallback (cold count query often >2s).
+  const boxes = await withTimeout(getStorefrontClearanceBreederBoxes(), 8000, []);
   return (
     <ClearanceLandingClient
       boxes={boxes}

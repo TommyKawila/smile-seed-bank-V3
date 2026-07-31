@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
+import { fetchWithTimeout } from "@/lib/timeout";
 import { ClearanceBreederBoxCard } from "@/components/storefront/ClearanceBreederBoxCard";
 import { ClearanceCard } from "@/components/storefront/ClearanceCard";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
@@ -30,6 +31,39 @@ export function ClearanceLandingClient({
   const title = drillDown
     ? breederName ?? t("ค่ายนี้", "This breeder")
     : t("Clearance", "Clearance");
+  const [liveBoxes, setLiveBoxes] = useState(boxes);
+  const [loadingBoxes, setLoadingBoxes] = useState(!drillDown && boxes.length === 0);
+
+  useEffect(() => {
+    setLiveBoxes(boxes);
+    if (boxes.length > 0) setLoadingBoxes(false);
+  }, [boxes]);
+
+  /** Recover when SSR timed out / prefetch cached empty first paint. */
+  useEffect(() => {
+    if (drillDown || boxes.length > 0) return;
+    let cancelled = false;
+    setLoadingBoxes(true);
+    void (async () => {
+      try {
+        const res = await fetchWithTimeout(
+          "/api/storefront/clearance-breeders",
+          { cache: "no-store" },
+          8000
+        );
+        if (!res.ok || res.status === 408) return;
+        const json = (await res.json()) as { boxes?: StorefrontClearanceBreederBox[] };
+        if (!cancelled && Array.isArray(json.boxes) && json.boxes.length > 0) {
+          setLiveBoxes(json.boxes);
+        }
+      } finally {
+        if (!cancelled) setLoadingBoxes(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [drillDown, boxes.length]);
 
   useEffect(() => {
     const path = breederSlug
@@ -108,13 +142,22 @@ export function ClearanceLandingClient({
               ))}
             </div>
           )
-        ) : boxes.length === 0 ? (
+        ) : loadingBoxes ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="aspect-[4/3] animate-pulse rounded-xl bg-zinc-900 sm:aspect-[16/10] sm:rounded-2xl"
+              />
+            ))}
+          </div>
+        ) : liveBoxes.length === 0 ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
             {t("ยังไม่มีสินค้า Clearance", "No clearance products yet")}
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {boxes.map((box) => (
+            {liveBoxes.map((box) => (
               <ClearanceBreederBoxCard key={box.breederId} box={box} />
             ))}
           </div>

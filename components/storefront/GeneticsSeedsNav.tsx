@@ -129,7 +129,12 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
         <ul className="space-y-0.5">
           {entryLinks.map((item) => (
             <li key={item.href}>
-              <Link href={item.href} onClick={onNavigate} className={entryLinkClass}>
+              <Link
+                href={item.href}
+                onClick={onNavigate}
+                className={entryLinkClass}
+                prefetch={item.href === "/clearance" ? false : undefined}
+              >
                 {item.label} →
               </Link>
             </li>
@@ -192,6 +197,7 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
                       href={item.href}
                       className={entryLinkClass}
                       onClick={() => setOpen(false)}
+                      prefetch={item.href === "/clearance" ? false : undefined}
                     >
                       {item.label} →
                     </Link>

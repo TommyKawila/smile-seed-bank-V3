@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (Clearance first visit empty flash)
+- **What:** กดเมนู Clearance ครั้งแรกโชว์ "ยังไม่มีสินค้า" จน refresh — เพราะ SSR `withTimeout` 2s คืน `[]` / prefetch ค้าง empty
+- **Logic:** SSR+API timeout 8s · client refetch เมื่อ boxes ว่าง · `prefetch={false}` ลิงก์ Clearance
+- **ไฟล์:** `clearance/page.tsx` · `ClearanceLandingClient.tsx` · `api/storefront/clearance-breeders` · `GeneticsSeedsNav` · `ShopQuickFilterBar`
+
 ### บันทึกการทำงาน — 2026-08-01 (Home BreederShowcase logo — white bg)
 - **What:** พื้นโลโก้ค่ายในแถว Breeder หน้าแรกเป็นขาว (PNG โปร่งแสงเห็นชัด)
 - **Logic:** `BreederShowcase` กล่องโลโก้ `bg-white rounded-xl`

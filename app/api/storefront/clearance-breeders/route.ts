@@ -6,8 +6,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const boxes = await withTimeout(getStorefrontClearanceBreederBoxes(), 2000, []);
-    return NextResponse.json({ boxes });
+    const boxes = await withTimeout(getStorefrontClearanceBreederBoxes(), 8000, []);
+    return NextResponse.json(
+      { boxes },
+      { headers: { "Cache-Control": "private, no-store, max-age=0, must-revalidate" } }
+    );
   } catch (err) {
     return NextResponse.json({ error: String(err), boxes: [] }, { status: 500 });
   }

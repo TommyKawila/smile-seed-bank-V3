@@ -38,6 +38,7 @@ export function ShopQuickFilterBar({
       {showClearance ? (
         <Link
           href="/clearance"
+          prefetch={false}
           className={shopQuickChipClasses(false, compact)}
         >
           🏷️ {t("ล้างสต็อก", "Clearance")}
