@@ -72,17 +72,17 @@ function normalizeSpecCompare(s: string | null | undefined): string {
 /** Pack button: brand promo first (same as header), else clearance per variant. */
 function resolvePackButtonPrices(
   product: ProductWithSpecs,
-  variantPrice: number,
+  variant: { price?: number | null; clearance_price?: number | null; id?: number | null },
   breederName: string | null | undefined,
   brandRules: BrandPromotionRuleRow[],
 ): { eff: number; list: number } {
-  const listRaw = roundCheckoutBahtWhole(variantPrice);
+  const listRaw = roundCheckoutBahtWhole(Number(variant.price ?? 0));
   const brandLine = resolveListingUnitAfterBrand(listRaw, breederName ?? null, brandRules);
   const hasBrandSale = brandLine.effectiveBaht < brandLine.baseBaht && brandLine.baseBaht > 0;
   if (hasBrandSale) {
     return { eff: brandLine.effectiveBaht, list: brandLine.baseBaht };
   }
-  const eff = getEffectiveVariantPrice(product, listRaw);
+  const eff = getEffectiveVariantPrice(product, listRaw, variant);
   return { eff, list: listRaw };
 }
 
@@ -295,6 +295,7 @@ export default function ProductDetailClient({
       listRaw,
       product.breeders?.name,
       brandPromotionRules,
+      selectedVariant,
     );
     const listRounded = roundCheckoutBahtWhole(listRaw);
     const { error } = addToCart({
@@ -599,7 +600,7 @@ export default function ProductDetailClient({
                     const isSelected = selectedVariant?.id === v.id;
                     const { eff: variantEff, list: variantList } = resolvePackButtonPrices(
                       product,
-                      Number(v.price ?? 0),
+                      v,
                       product.breeders?.name,
                       brandPromotionRules,
                     );

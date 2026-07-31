@@ -314,14 +314,21 @@ export function getCatalogCardSortPrice(
 
 /**
  * Per-pack clearance: uses variant `clearance_price` when set; otherwise list / pack final price.
+ * Prefer `variantHint` (selected pack). Price-only lookup is used only when exactly one pack
+ * matches — never `.find` the first of several equal list prices (wrong clearance).
  */
 export function getEffectiveVariantPrice(
   product: ClearanceProductSlice,
-  variantListPrice: number
+  variantListPrice: number,
+  variantHint?: VariantClearancePick | null
 ): number {
-  const variant = product.product_variants?.find(
-    (v) => Number(v.price ?? 0) === Number(variantListPrice)
-  );
+  let variant: VariantClearancePick | undefined = variantHint ?? undefined;
+  if (!variant) {
+    const matches = (product.product_variants ?? []).filter(
+      (v) => Number(v.price ?? 0) === Number(variantListPrice)
+    );
+    variant = matches.length === 1 ? matches[0] : undefined;
+  }
   const directPrice = variant ? getVariantFinalPrice(variant) : variantListPrice;
   if (product.is_clearance !== true) return directPrice;
   const clearance = resolveVariantClearancePrice(variant, product, variantListPrice);
@@ -423,7 +430,7 @@ export function getDetailDisplayLinePrices(
 ): { eff: number; list: number } {
   if (!selected) return { eff: 0, list: 0 };
   const list = Number(selected.price ?? 0);
-  let eff = getEffectiveVariantPrice(product, list);
+  let eff = getEffectiveVariantPrice(product, list, selected);
   const variantOos = (selected.stock ?? 0) <= 0;
   const bad =
     variantOos ||
@@ -432,16 +439,17 @@ export function getDetailDisplayLinePrices(
     !Number.isFinite(list) ||
     list <= 0;
   if (bad) {
+    // Keep selected pack for clearance math — do not re-match by denorm/other pack list price.
     const denorm = Number(product.price ?? 0);
-    if (denorm > 0) {
-      eff = getEffectiveVariantPrice(product, denorm);
+    if (denorm > 0 && !(list > 0)) {
+      eff = getEffectiveVariantPrice(product, denorm, selected);
     }
     if (!Number.isFinite(eff) || eff <= 0) {
       const v0 = activeVariantsSorted[0];
       if (v0) {
         const lp = Number(v0.price ?? 0);
         if (lp > 0) {
-          eff = getEffectiveVariantPrice(product, lp);
+          eff = getEffectiveVariantPrice(product, lp, v0);
         }
       }
     }

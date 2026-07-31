@@ -111,3 +111,86 @@ export function pickKeeperVariantId(rows: DbVariantPackRow[]): bigint {
   });
   return sorted[0]!.id;
 }
+
+export type PackCollapseFields = {
+  id: bigint;
+  stock?: number | null;
+  price?: number | null;
+  cost_price?: number | null;
+  clearance_price?: number | null;
+  is_active?: boolean | null;
+};
+
+/**
+ * Collapse duplicate pack rows onto a keeper before delete.
+ * - stock: `stockOverride` when provided (pack-total intent); else sum of all rows
+ * - clearance_price: prefer keeper if > 0, else any other row with clearance
+ * - price / cost_price: prefer keeper non-zero, else last non-zero from siblings
+ */
+export function collapsePackDuplicateFields(
+  samePack: PackCollapseFields[],
+  keeperId: bigint,
+  stockOverride?: number | null
+): {
+  stock: number;
+  clearance_price: number | null;
+  price: number | null;
+  cost_price: number | null;
+  dupIds: bigint[];
+} {
+  const keeper = samePack.find((r) => r.id === keeperId);
+  const dups = samePack.filter((r) => r.id !== keeperId);
+  const sumStock = samePack.reduce(
+    (s, r) => s + Math.max(0, Number(r.stock ?? 0) || 0),
+    0
+  );
+  const stock =
+    stockOverride != null && Number.isFinite(Number(stockOverride))
+      ? Math.max(0, Math.round(Number(stockOverride)))
+      : sumStock;
+
+  let clearance: number | null = null;
+  const keeperCp = Number(keeper?.clearance_price ?? 0);
+  if (keeperCp > 0) {
+    clearance = keeperCp;
+  } else {
+    for (const r of dups) {
+      const cp = Number(r.clearance_price ?? 0);
+      if (cp > 0) {
+        clearance = cp;
+        break;
+      }
+    }
+  }
+
+  const pickPositive = (
+    primary: number | null | undefined,
+    rows: PackCollapseFields[],
+    key: "price" | "cost_price"
+  ): number | null => {
+    const p = Number(primary ?? 0);
+    if (p > 0) return p;
+    for (const r of rows) {
+      const n = Number(r[key] ?? 0);
+      if (n > 0) return n;
+    }
+    return null;
+  };
+  const price = pickPositive(keeper?.price, dups, "price");
+  const cost = pickPositive(keeper?.cost_price, dups, "cost_price");
+
+  return {
+    stock,
+    clearance_price: clearance,
+    price,
+    cost_price: cost,
+    dupIds: dups.map((d) => d.id),
+  };
+}
+
+/** Sum stock across all rows that share a pack size (grid display / sync). */
+export function sumStockForPackRows(
+  rows: { stock?: number | null }[]
+): number {
+  return rows.reduce((s, r) => s + Math.max(0, Number(r.stock ?? 0) || 0), 0);
+}

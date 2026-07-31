@@ -2,7 +2,10 @@ import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parsePackFromUnitLabel, toVariantSku } from "@/lib/sku-utils";
-import { pickKeeperVariantId } from "@/lib/product-variants-dedupe";
+import {
+  collapsePackDuplicateFields,
+  pickKeeperVariantId,
+} from "@/lib/product-variants-dedupe";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +13,10 @@ function packToLabel(pack: number): string {
   return pack === 1 ? "1 Seed" : `${pack} Seeds`;
 }
 
+/**
+ * Delete (or soft-disable) duplicate pack rows. Caller MUST merge stock /
+ * clearance_price onto the keeper first — this helper never transfers stock.
+ */
 async function removeDuplicatePackVariants(
   productId: bigint,
   pack: number,
@@ -86,18 +93,59 @@ export async function PATCH(req: NextRequest) {
 
     let vid: bigint;
     if (variantId) {
+      const keeperId = BigInt(variantId);
+      const existing = await prisma.product_variants.findUnique({
+        where: { id: keeperId },
+        select: {
+          product_id: true,
+          unit_label: true,
+          stock: true,
+          price: true,
+          cost_price: true,
+          clearance_price: true,
+          is_active: true,
+        },
+      });
+      if (!existing?.product_id) {
+        return NextResponse.json({ error: "Variant not found" }, { status: 404 });
+      }
+      vid = existing.product_id;
+      const packSize = parsePackFromUnitLabel(existing.unit_label);
+
+      const siblings = await prisma.product_variants.findMany({
+        where: { product_id: vid },
+        select: {
+          id: true,
+          unit_label: true,
+          stock: true,
+          price: true,
+          cost_price: true,
+          clearance_price: true,
+          is_active: true,
+          sku: true,
+        },
+      });
+      const samePack = siblings.filter(
+        (v) => parsePackFromUnitLabel(v.unit_label) === packSize
+      );
+      const collapsed = collapsePackDuplicateFields(
+        samePack,
+        keeperId,
+        updates.stock != null ? updates.stock : null
+      );
+
       await prisma.product_variants.update({
-        where: { id: BigInt(variantId) },
-        data: updates,
+        where: { id: keeperId },
+        data: {
+          ...updates,
+          stock: collapsed.stock,
+          ...(collapsed.clearance_price != null
+            ? { clearance_price: collapsed.clearance_price }
+            : {}),
+          is_active: true,
+        },
       });
-      const v = await prisma.product_variants.findUnique({
-        where: { id: BigInt(variantId) },
-        select: { product_id: true, unit_label: true },
-      });
-      if (!v?.product_id) return NextResponse.json({ error: "Variant not found" }, { status: 404 });
-      vid = v.product_id;
-      const packSize = parsePackFromUnitLabel(v.unit_label);
-      await removeDuplicatePackVariants(vid, packSize, BigInt(variantId));
+      await removeDuplicatePackVariants(vid, packSize, keeperId);
     } else if (productId && pack && masterSku) {
       const label = packToLabel(pack);
       const sku = toVariantSku(masterSku, label);
@@ -111,6 +159,7 @@ export async function PATCH(req: NextRequest) {
           stock: true,
           price: true,
           cost_price: true,
+          clearance_price: true,
           sku: true,
           is_active: true,
         },
@@ -121,26 +170,38 @@ export async function PATCH(req: NextRequest) {
 
       if (samePack.length > 0) {
         const keeperId = pickKeeperVariantId(samePack);
-        const mergedStock =
-          updates.stock != null
-            ? updates.stock
-            : samePack.reduce((s, x) => s + Math.max(0, Number(x.stock ?? 0)), 0);
+        const collapsed = collapsePackDuplicateFields(
+          samePack,
+          keeperId,
+          updates.stock != null ? updates.stock : null
+        );
 
-        await removeDuplicatePackVariants(pid, pack, keeperId);
         await prisma.product_variants.update({
           where: { id: keeperId },
           data: {
             unit_label: label,
             is_active: true,
             sku,
-            stock: mergedStock,
-            ...(updates.cost_price != null ? { cost_price: updates.cost_price } : {}),
-            ...(updates.price != null ? { price: updates.price } : {}),
+            stock: collapsed.stock,
+            ...(collapsed.clearance_price != null
+              ? { clearance_price: collapsed.clearance_price }
+              : { clearance_price: null }),
+            ...(updates.cost_price != null
+              ? { cost_price: updates.cost_price }
+              : collapsed.cost_price != null
+                ? { cost_price: collapsed.cost_price }
+                : {}),
+            ...(updates.price != null
+              ? { price: updates.price }
+              : collapsed.price != null
+                ? { price: collapsed.price }
+                : {}),
             ...(updates.low_stock_threshold != null
               ? { low_stock_threshold: updates.low_stock_threshold }
               : {}),
           },
         });
+        await removeDuplicatePackVariants(pid, pack, keeperId);
       } else {
         await prisma.product_variants.create({
           data: {

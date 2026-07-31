@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
 import { toVariantSku, parsePackFromUnitLabel } from "@/lib/sku-utils";
-import { pickKeeperVariantId } from "@/lib/product-variants-dedupe";
+import {
+  collapsePackDuplicateFields,
+  pickKeeperVariantId,
+  sumStockForPackRows,
+} from "@/lib/product-variants-dedupe";
 import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -128,6 +132,34 @@ export async function POST(req: NextRequest) {
 
     if (samePack.length > 0) {
       const keeperId = pickKeeperVariantId(samePack);
+      const summed = collapsePackDuplicateFields(samePack, keeperId, null);
+      const keeperRow = samePack.find((r) => r.id === keeperId);
+      const keeperOnlyStock = Math.max(0, Number(keeperRow?.stock ?? 0) || 0);
+      // Stale grid may still send keeper-only stock while dups hold the rest.
+      const looksUnmerged =
+        samePack.length > 1 &&
+        stock === keeperOnlyStock &&
+        summed.stock > keeperOnlyStock;
+      const collapsed = collapsePackDuplicateFields(
+        samePack,
+        keeperId,
+        looksUnmerged ? null : stock
+      );
+      // Merge clearance onto keeper before deletes (request stock is pack-total from grid).
+      await prisma.product_variants.update({
+        where: { id: keeperId },
+        data: {
+          unit_label: label,
+          stock: collapsed.stock,
+          cost_price: cost,
+          price: Math.max(0, price),
+          sku,
+          is_active: true,
+          ...(collapsed.clearance_price != null
+            ? { clearance_price: collapsed.clearance_price }
+            : {}),
+        },
+      });
       for (const dup of samePack) {
         if (dup.id === keeperId) continue;
         if (dup.sku) {
@@ -146,17 +178,6 @@ export async function POST(req: NextRequest) {
         }
         product.product_variants = product.product_variants.filter((v) => v.id !== dup.id);
       }
-      await prisma.product_variants.update({
-        where: { id: keeperId },
-        data: {
-          unit_label: label,
-          stock: Math.max(0, stock),
-          cost_price: cost,
-          price: Math.max(0, price),
-          sku,
-          is_active: true,
-        },
-      });
     } else if (hasEconomics) {
       const created = await prisma.product_variants.create({
         data: {
@@ -198,10 +219,12 @@ export async function POST(req: NextRequest) {
   let gridRow: Record<string, unknown> | null = null;
   if (updated) {
     const p = updated;
-    const variantByPackSize = new Map<number, (typeof p.product_variants)[0]>();
+    const variantsByPack = new Map<number, (typeof p.product_variants)>();
     for (const v of p.product_variants) {
       const ps = parsePackFromUnitLabel(v.unit_label);
-      if (!variantByPackSize.has(ps)) variantByPackSize.set(ps, v);
+      const list = variantsByPack.get(ps) ?? [];
+      list.push(v);
+      variantsByPack.set(ps, list);
     }
     const fromReq = Array.isArray(packSizes)
       ? packSizes.filter((n) => typeof n === "number" && n >= 1 && n <= 99)
@@ -220,14 +243,19 @@ export async function POST(req: NextRequest) {
     const variantIdsByPack: Record<string, number | null> = {};
     const lowStockThresholdByPack: Record<string, number> = {};
     for (const packSize of allSizes) {
-      const v = variantByPackSize.get(packSize);
+      const packRows = variantsByPack.get(packSize) ?? [];
       const key = String(packSize);
-      const stock = v != null ? Math.max(0, Number(v.stock) || 0) : 0;
-      const cost = v != null ? Math.max(0, Number((v as { cost_price?: unknown }).cost_price) || 0) : 0;
-      const price = v != null ? Math.max(0, Number(v.price) || 0) : 0;
+      const keeper =
+        packRows.length > 0
+          ? packRows.find((r) => r.id === pickKeeperVariantId(packRows)) ?? packRows[0]!
+          : null;
+      const stock = sumStockForPackRows(packRows);
+      const cost =
+        keeper != null ? Math.max(0, Number((keeper as { cost_price?: unknown }).cost_price) || 0) : 0;
+      const price = keeper != null ? Math.max(0, Number(keeper.price) || 0) : 0;
       byPackOut[key] = { stock, cost, price };
-      variantIdsByPack[key] = v ? Number(v.id) : null;
-      const vExt = v as { low_stock_threshold?: number } | undefined;
+      variantIdsByPack[key] = keeper ? Number(keeper.id) : null;
+      const vExt = keeper as { low_stock_threshold?: number } | undefined;
       lowStockThresholdByPack[key] =
         vExt?.low_stock_threshold != null ? Number(vExt.low_stock_threshold) : 5;
     }

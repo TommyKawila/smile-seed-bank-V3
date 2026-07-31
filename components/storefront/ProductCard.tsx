@@ -192,6 +192,7 @@ function ProductCardBase({
         variantListPrice,
         product.breeders?.name,
         brandPromotionRules,
+        displayVariant,
       );
       if (typeof addToCart !== "function") {
         toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
@@ -288,7 +289,7 @@ function ProductCardBase({
     displayVariant?.price ?? computeStartingPrice(product.product_variants)
   );
   const listFrom = displayVariant
-    ? getEffectiveVariantPrice(product, listRegular)
+    ? getEffectiveVariantPrice(product, listRegular, displayVariant)
     : listingFallbackPrice;
   const clearancePct = getClearancePercentOff(product);
 
