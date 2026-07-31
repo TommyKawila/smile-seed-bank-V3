@@ -20,6 +20,11 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, Math.floor(numParam(searchParams.get("page")) ?? 1));
   const cursorId = numParam(searchParams.get("cursor"));
+  const offsetRaw = numParam(searchParams.get("offset"));
+  const offset =
+    offsetRaw != null && Number.isFinite(offsetRaw)
+      ? Math.max(0, Math.floor(offsetRaw))
+      : undefined;
   const limit = Math.min(100, Math.max(1, Math.floor(numParam(searchParams.get("limit")) ?? 50)));
   const breederParam =
     searchParams.get("breeder")?.trim() ||
@@ -74,6 +79,7 @@ export async function GET(req: Request) {
           maxPrice,
           page,
           limit,
+          offset,
           cursor_id: cursorId,
           includeVariants,
           sort,
@@ -99,6 +105,7 @@ export async function GET(req: Request) {
       maxPrice,
       page,
       limit,
+      offset,
       includeVariants: true,
       seeds_param: searchParams.get("seeds"),
       genetics_param: searchParams.get("genetics"),

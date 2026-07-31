@@ -4,6 +4,21 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-07-31 (Mobile catalog load-more — multi-breeder)
+- **What:** Audit ค่ายใหญ่บน prod — bug ไม่เฉพาะ Humboldt: page2×30 ข้ามแถว 16–29 (HSC ได้ `[]`; ค่าย >30 ชิ้นโหลดได้แต่หายกลางชุด)
+- **Logic:** path เดียว `/shop`+`/seeds/*`+`/brand/*` · `catalogLoadMoreOffset` · `offset` API
+- **ไฟล์:** `lib/shop-catalog-pagination.ts` · `ShopPageClient.tsx` · `product-service.ts` · `app/api/products/route.ts`
+
+### บันทึกการทำงาน — 2026-07-31 (Mobile catalog load-more offset)
+- **What:** แก้ปุ่ม "โหลดเพิ่ม" บน mobile ค้างที่ 16 จาก N (เช่น Humboldt) เพราะ SSR limit 16 แต่ page=2 ใช้ limit 30 → ข้ามแถว
+- **Logic:** API/service รับ `offset` · client ส่ง `offset=products.length` · `catalogServerExhausted` กัน hasMore ถูกเปิดซ้ำจาก filter-counts
+- **ไฟล์:** `services/product-service.ts` · `app/api/products/route.ts` · `app/(storefront)/shop/ShopPageClient.tsx`
+
+### บันทึกการทำงาน — 2026-07-31 (Master SKU autofill)
+- **What:** Auto-generate `master_sku` จากชื่อ + Breeder (เหมือน slug) + backfill ได้เมื่อว่าง; server guard บน POST/PATCH
+- **Logic:** `toMasterSku` ใน ProductModal · unlock ช่องเมื่อ DB ว่าง · API เติม master + variant SKU · manual grid ใช้ `toMasterSku` แทน short prefix
+- **ไฟล์:** `components/admin/ProductModal.tsx` · `app/api/admin/products/route.ts` · `app/api/admin/products/[id]/route.ts` · `app/admin/inventory/manual/page.tsx`
+
 ### บันทึกการทำงาน — 2026-07-31 (Clearance breeder header — logo)
 - **What:** หน้า `/clearance?breeder=` โชว์โลโก้ค่ายใน Header ข้างชื่อ
 - **Logic:** `getClearanceStorefrontProductsByBreederSlug` คืน `breederLogoUrl` · `BreederLogoImage` ใน `ClearanceLandingClient`

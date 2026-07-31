@@ -605,6 +605,11 @@ export async function getActiveProducts(opts?: {
   /** Continue `id DESC` scan below this product id (load-more without offset). */
   cursor_id?: number;
   /**
+   * Absolute row offset for non-cursor pagination (preferred when SSR page size ≠ API limit).
+   * When set, overrides `(page - 1) * limit`.
+   */
+  offset?: number;
+  /**
    * `service_role` — no cookies; safe inside `unstable_cache` for public catalog SSR.
    * Default `cookie` keeps anon + session for authenticated API paths.
    */
@@ -672,7 +677,12 @@ export async function getActiveProducts(opts?: {
       Math.max(1, opts?.limit ?? DEFAULT_ACTIVE_PRODUCTS_LIMIT)
     );
     const page = Math.max(1, opts?.page ?? 1);
-    const pageEndIndex = page * limit;
+    const offsetOpt =
+      opts?.offset != null && Number.isFinite(Number(opts.offset))
+        ? Math.max(0, Math.floor(Number(opts.offset)))
+        : null;
+    const rangeFrom = offsetOpt ?? (page - 1) * limit;
+    const pageEndIndex = rangeFrom + limit;
 
     const sortRaw = opts?.sort?.trim();
     const sortKey =
@@ -932,12 +942,12 @@ export async function getActiveProducts(opts?: {
           return idB - idA;
         });
       }
-      const from = (page - 1) * limit;
+      const from = rangeFrom;
       const slice = enriched.slice(from, from + limit) as unknown as ProductWithBreeder[];
       const catalogTotalCount =
         typeof explicitTotal === "number" ? explicitTotal : truncated ? null : enriched.length;
       const catalogHasMore =
-        from + limit < enriched.length || (truncated && enriched.length >= page * limit);
+        from + limit < enriched.length || (truncated && enriched.length >= from + limit);
       return {
         data: slice,
         error: null,
@@ -1121,7 +1131,7 @@ export async function getActiveProducts(opts?: {
       }
 
       const catalogTotalCount = ordered.length;
-      const from = (page - 1) * limit;
+      const from = rangeFrom;
       const slice = ordered.slice(from, from + limit) as unknown as ProductWithBreeder[];
       const catalogHasMore = from + limit < ordered.length || dbHasMore;
 
@@ -1171,7 +1181,7 @@ export async function getActiveProducts(opts?: {
       }
 
       const truncated = needFullScan && !dbExhausted && hits.length >= CATALOG_ENRICH_CAP;
-      const from = needFullScan ? (page - 1) * limit : 0;
+      const from = needFullScan ? rangeFrom : 0;
       const needsEnrichedSort =
         sortKey === "price_asc" ||
         sortKey === "price_desc" ||
@@ -1284,7 +1294,7 @@ export async function getActiveProducts(opts?: {
         if (cursorId != null) query = query.lt("id", cursorId);
         query = query.limit(fetchLimit);
       } else {
-        const from = (page - 1) * limit;
+        const from = rangeFrom;
         query = query.range(from, from + limit - 1);
       }
 
@@ -1305,7 +1315,7 @@ export async function getActiveProducts(opts?: {
           hasExtra ||
           (sqlTotal != null && cursorId == null && sqlTotal > limit);
       } else {
-        const from = (page - 1) * limit;
+        const from = rangeFrom;
         catalogHasMore =
           sqlTotal != null ? from + limit < sqlTotal : fetched.length === limit;
       }
@@ -1336,7 +1346,7 @@ export async function getActiveProducts(opts?: {
       }
       const catalogHasMore =
         rows.length > pageEndIndex || (Array.isArray(data) && data.length === MEM_BREEDER_SMART_CAP);
-      const slice = rows.slice((page - 1) * limit, pageEndIndex);
+      const slice = rows.slice(rangeFrom, pageEndIndex);
       return {
         data: await withBrandListingEnrichment(postSeedAndSanitize(slice)),
         error: null,
@@ -1390,7 +1400,7 @@ export async function getActiveProducts(opts?: {
     }
 
     const truncated = needFullScan && !dbExhausted && hits.length >= CATALOG_ENRICH_CAP;
-    const from = needFullScan ? (page - 1) * limit : 0;
+    const from = needFullScan ? rangeFrom : 0;
     const sliced = hits.slice(from, from + limit);
 
     const catalogTotalCount = needFullScan ? hits.length : null;

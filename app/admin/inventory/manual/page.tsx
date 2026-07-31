@@ -20,7 +20,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { Fragment } from "react";
-import { toBreederPrefix, toProductPart } from "@/lib/sku-utils";
+import { toMasterSku } from "@/lib/sku-utils";
 import { processAndUploadImages } from "@/lib/supabase/storage-utils";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { toPng } from "html-to-image";
@@ -951,9 +951,7 @@ export default function ManualInventoryPage() {
   const handleNameChange = (row: InventoryRow, name: string) => {
     const updates: Partial<InventoryRow> = { name };
     if (row.isNew && selectedBreeder && name.trim()) {
-      const prefix = toBreederPrefix(selectedBreeder.name);
-      const part = toProductPart(name);
-      updates.masterSku = `${prefix}-${part}`;
+      updates.masterSku = toMasterSku(selectedBreeder.name, name);
     }
     updateRow(row.productId, updates);
   };

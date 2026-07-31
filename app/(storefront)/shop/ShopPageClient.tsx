@@ -71,6 +71,7 @@ import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import {
   SHOP_CATALOG_API_LIMIT,
   SHOP_CATALOG_VISIBLE_STEP,
+  catalogLoadMoreOffset,
   inferCatalogHasMore,
 } from "@/lib/shop-catalog-pagination";
 import type { Breeder } from "@/types/supabase";
@@ -347,6 +348,8 @@ export function ShopPageClient({
   const [hasMoreServerProducts, setHasMoreServerProducts] = useState(() =>
     inferCatalogHasMore(initialProducts.length, initialCatalogTotal ?? null, initialPageSize)
   );
+  /** After API reports no more rows, do not re-open hasMore from filter-count totals. */
+  const [catalogServerExhausted, setCatalogServerExhausted] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const gridTopRef = useRef<HTMLDivElement | null>(null);
   const didMountScrollRef = useRef(false);
@@ -392,6 +395,7 @@ export function ShopPageClient({
     setHasMoreServerProducts(
       inferCatalogHasMore(initialProducts.length, initialCatalogTotal ?? null, initialPageSize)
     );
+    setCatalogServerExhausted(false);
     setVisibleCount(Math.max(initialProducts.length, initialPageSize));
   }, [
     serverHydrateKey,
@@ -453,9 +457,13 @@ export function ShopPageClient({
           typeof json.nextCursor === "number" ? json.nextCursor : null
         );
         setCatalogUseCursor(Boolean(json.useCursor));
+        setCatalogServerExhausted(false);
         setHasMoreServerProducts(Boolean(json.hasMore));
       } catch {
-        if (!cancelled) setHasMoreServerProducts(false);
+        if (!cancelled) {
+          setHasMoreServerProducts(false);
+          setCatalogServerExhausted(true);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -892,12 +900,10 @@ export function ShopPageClient({
 
   const hasMoreProducts =
     shownCount < totalFiltered ||
-    (!isNarrowedByClientFilters &&
-      (hasMoreServerProducts ||
-        (catalogDisplayTotal != null && products.length < catalogDisplayTotal)));
+    (!isNarrowedByClientFilters && hasMoreServerProducts && !catalogServerExhausted);
 
   useEffect(() => {
-    if (isNarrowedByClientFilters) return;
+    if (isNarrowedByClientFilters || catalogServerExhausted) return;
     const scopedTotal = catalogTotal ?? filterCountsScopedTotal;
     if (scopedTotal == null) return;
     if (products.length < scopedTotal) {
@@ -905,7 +911,13 @@ export function ShopPageClient({
     } else if (products.length >= scopedTotal) {
       setHasMoreServerProducts(false);
     }
-  }, [catalogTotal, filterCountsScopedTotal, products.length, isNarrowedByClientFilters]);
+  }, [
+    catalogTotal,
+    filterCountsScopedTotal,
+    products.length,
+    isNarrowedByClientFilters,
+    catalogServerExhausted,
+  ]);
 
   useEffect(
     () => subscribeScrollYBeyond(BACK_TO_TOP_SCROLL_THRESHOLD, setShowBackToTop),
@@ -917,7 +929,7 @@ export function ShopPageClient({
       setVisibleCount((c) => Math.min(c + SHOP_PAGE_STEP, totalFiltered));
       return;
     }
-    if (!hasMoreServerProducts || loadingMore) return;
+    if (!hasMoreServerProducts || catalogServerExhausted || loadingMore) return;
     setLoadingMore(true);
     try {
       const nextPage = loadedPage + 1;
@@ -928,7 +940,9 @@ export function ShopPageClient({
         sp.set("cursor", String(catalogNextCursor));
         sp.set("page", "1");
       } else {
+        // All breeders/shop: absolute offset — not (page-1)*limit (mobile SSR=16).
         sp.set("page", String(nextPage));
+        sp.set("offset", String(catalogLoadMoreOffset(products.length)));
       }
       if (seedsParam.trim()) sp.set("includeVariants", "true");
       if (breederParam?.trim()) sp.set("breeder", breederParam.trim());
@@ -967,6 +981,15 @@ export function ShopPageClient({
       if (typeof json.nextCursor === "number") setCatalogNextCursor(json.nextCursor);
       else setCatalogNextCursor(null);
       if (typeof json.useCursor === "boolean") setCatalogUseCursor(json.useCursor);
+
+      const prevIds = new Set(products.map((p) => String(p.id)));
+      let added = 0;
+      for (const product of nextProducts) {
+        if (prevIds.has(String(product.id))) continue;
+        prevIds.add(String(product.id));
+        added += 1;
+      }
+
       setProducts((prev) => {
         const seen = new Set(prev.map((p) => String(p.id)));
         const merged = [...prev];
@@ -981,21 +1004,14 @@ export function ShopPageClient({
       if (!json.useCursor || json.nextCursor == null) {
         setLoadedPage(nextPage);
       }
-      setHasMoreServerProducts(Boolean(json.hasMore));
-      setVisibleCount((c) => {
-        const seen = new Set(
-          products.map((p) => String(p.id))
-        );
-        let added = 0;
-        for (const product of nextProducts) {
-          const key = String(product.id);
-          if (seen.has(key)) continue;
-          seen.add(key);
-          added += 1;
-        }
-        if (added <= 0) return c;
-        return c + added;
-      });
+      const more = Boolean(json.hasMore) && nextProducts.length > 0 && added > 0;
+      setHasMoreServerProducts(more);
+      if (!more) {
+        setCatalogServerExhausted(true);
+      }
+      if (added > 0) {
+        setVisibleCount((c) => c + added);
+      }
     } catch {
       toast.error(t("โหลดสินค้าเพิ่มไม่สำเร็จ", "Could not load more products"));
     } finally {
@@ -1005,6 +1021,7 @@ export function ShopPageClient({
     shownCount,
     totalFiltered,
     hasMoreServerProducts,
+    catalogServerExhausted,
     loadingMore,
     loadedPage,
     catalogUseCursor,
@@ -1026,7 +1043,6 @@ export function ShopPageClient({
     priceMin,
     priceMax,
     t,
-    catalogTotal,
     products,
   ]);
 

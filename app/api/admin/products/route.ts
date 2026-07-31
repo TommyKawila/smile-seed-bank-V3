@@ -22,6 +22,7 @@ import {
   adminProductListInclude,
   serializeAdminProductForList,
 } from "@/lib/serialize-admin-product-list";
+import { toMasterSku, toVariantSku } from "@/lib/sku-utils";
 
 type ProductInsert = Omit<Product, "id" | "price" | "stock">;
 type VariantInsert = Omit<ProductVariant, "id" | "product_id">;
@@ -134,10 +135,37 @@ export async function POST(req: NextRequest) {
               .clearance_discount_percent
           )
         : null;
-    const variants =
+
+    const supabase = await createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any;
+
+    let masterSku = (productData.master_sku ?? "").toString().trim() || null;
+    if (
+      !masterSku &&
+      productData.name?.trim() &&
+      productData.breeder_id != null
+    ) {
+      const { data: breeder } = await db
+        .from("breeders")
+        .select("name")
+        .eq("id", productData.breeder_id)
+        .maybeSingle();
+      const brand = (breeder?.name ?? "").toString().trim();
+      if (brand) masterSku = toMasterSku(brand, productData.name);
+    }
+
+    const variantsWithClearance =
       productData.is_clearance === true
         ? applyClearancePricesToVariants(rawVariants, clearancePct ?? undefined)
         : rawVariants.map((v) => ({ ...v, clearance_price: null }));
+
+    const variants = masterSku
+      ? variantsWithClearance.map((v) => ({
+          ...v,
+          sku: toVariantSku(masterSku, v.unit_label),
+        }))
+      : variantsWithClearance;
 
     const syncedSalePrice = deriveClearanceSalePrice(
       productData.is_clearance === true,
@@ -157,6 +185,7 @@ export async function POST(req: NextRequest) {
     const sanitized = Object.fromEntries(
       Object.entries({
         ...productData,
+        master_sku: masterSku,
         is_clearance: isClearance,
         clearance_discount_percent: isClearance ? clearancePct : null,
         is_active: isActive,

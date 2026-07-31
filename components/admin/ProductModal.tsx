@@ -20,7 +20,7 @@ import Link from "next/link";
 import { useProducts, type ProductFormData } from "@/hooks/useProducts";
 import { useBreeders } from "@/hooks/useBreeders";
 import { unknownFields } from "@/lib/validations/product";
-import { packSizeNum, toVariantSku } from "@/lib/sku-utils";
+import { packSizeNum, toMasterSku, toVariantSku } from "@/lib/sku-utils";
 import { useToast } from "@/hooks/use-toast";
 import { ProductImageUpload, type ProductGalleryEntry } from "@/components/admin/ProductImageUpload";
 import { normalizeFloweringFromDb, normalizeSexFromDb } from "@/lib/cannabis-attributes";
@@ -182,8 +182,29 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
   const [submitLocalError, setSubmitLocalError] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
   const slugTouchedRef = useRef(false);
+  const masterSkuTouchedRef = useRef(false);
+  /** Edit mode: lock Master SKU only if DB already had one (backfill stays editable). */
+  const [masterSkuLocked, setMasterSkuLocked] = useState(false);
 
   const [form, setForm] = useState<Partial<ProductFormData>>(emptyForm);
+
+  const resolveBreederName = useCallback(
+    (breederId: number | null | undefined) => {
+      if (breederId == null) return "";
+      return breeders.find((b) => Number(b.id) === Number(breederId))?.name ?? "";
+    },
+    [breeders]
+  );
+
+  const deriveMasterSkuValue = useCallback(
+    (name: string, breederId: number | null | undefined) => {
+      const n = name.trim();
+      const brand = resolveBreederName(breederId);
+      if (!n || !brand) return null;
+      return toMasterSku(brand, n);
+    },
+    [resolveBreederName]
+  );
 
   // ── Populate form + slots when modal opens ──────────────────────────────────
   useEffect(() => {
@@ -196,10 +217,15 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
   useEffect(() => {
     if (!open) return;
     slugTouchedRef.current = false;
+    masterSkuTouchedRef.current = false;
     const p = initialData as (typeof initialData & { image_url_4?: string | null; image_url_5?: string | null }) | null;
     if (p) {
       const firstVariantSku = p.product_variants?.[0] ? (p.product_variants[0] as { sku?: string | null }).sku : null;
-      const derivedMasterSku = firstVariantSku?.replace(/-?\d+$/, "") ?? "";
+      const fromVariant = firstVariantSku?.replace(/-?\d+$/, "") ?? "";
+      const existingMaster = ((p as { master_sku?: string | null }).master_sku ?? "").trim();
+      setMasterSkuLocked(!!existingMaster);
+      const fromNameBreeder = deriveMasterSkuValue(p.name ?? "", p.breeder_id);
+      const derivedMasterSku = existingMaster || fromVariant || fromNameBreeder || "";
       const catId = (p as { category_id?: number | bigint | null }).category_id;
       let floweringNorm: FloweringType | null = normalizeFloweringFromDb(p.flowering_type) || null;
       let sexNorm: ProductSexType | null = normalizeSexFromDb((p as { sex_type?: string | null }).sex_type) || null;
@@ -219,7 +245,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         category: p.category ?? null,
         category_id: catId != null ? Number(catId) : null,
         breeder_id: p.breeder_id,
-        master_sku: (p as { master_sku?: string | null }).master_sku ?? (derivedMasterSku || null),
+        master_sku: derivedMasterSku || null,
         description_th: p.description_th,
         description_en: p.description_en,
         image_url: p.image_url,
@@ -324,6 +350,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         );
       }
     } else {
+      setMasterSkuLocked(false);
       setForm(emptyForm);
       setGalleryEntries([]);
     }
@@ -332,7 +359,7 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
     setAiError(null);
     setSubmitLocalError(null);
     setFormKey((k) => k + 1);
-  }, [open, initialData]);
+  }, [open, initialData, deriveMasterSkuValue]);
 
   useEffect(() => {
     aiScanStagingRef.current = aiScanStaging;
@@ -595,7 +622,17 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
         };
       }
     }
-    const masterSkuVal = (formWithImages.master_sku ?? "").toString().trim();
+    let masterSkuVal = (formWithImages.master_sku ?? "").toString().trim();
+    if (!masterSkuVal) {
+      const filled = deriveMasterSkuValue(
+        formWithImages.name ?? "",
+        formWithImages.breeder_id
+      );
+      if (filled) {
+        masterSkuVal = filled;
+        formWithImages.master_sku = filled;
+      }
+    }
     if (masterSkuVal) {
       formWithImages.variants = formWithImages.variants.map((v) => ({
         ...v,
@@ -961,6 +998,13 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                       setField("slug", generateSlug(v));
                     }
                   }
+                  if (!masterSkuTouchedRef.current) {
+                    const hasMaster = !!(form.master_sku ?? "").trim();
+                    if (!isEditMode || !hasMaster) {
+                      const sku = deriveMasterSkuValue(v, form.breeder_id);
+                      if (sku) setField("master_sku", sku);
+                    }
+                  }
                 }}
                 placeholder="เช่น Blue Dream Auto"
               />
@@ -1003,9 +1047,17 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
                 <select
                   id="breeder"
                   value={form.breeder_id ?? ""}
-                  onChange={(e) =>
-                    setField("breeder_id", e.target.value ? Number(e.target.value) : null)
-                  }
+                  onChange={(e) => {
+                    const breederId = e.target.value ? Number(e.target.value) : null;
+                    setField("breeder_id", breederId);
+                    if (!masterSkuTouchedRef.current) {
+                      const hasMaster = !!(form.master_sku ?? "").trim();
+                      if (!isEditMode || !hasMaster) {
+                        const sku = deriveMasterSkuValue(form.name ?? "", breederId);
+                        if (sku) setField("master_sku", sku);
+                      }
+                    }
+                  }}
                   className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">— ไม่ระบุ Breeder —</option>
@@ -1043,11 +1095,18 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               <Input
                 id="master_sku"
                 value={form.master_sku ?? ""}
-                onChange={(e) => !isEditMode && setField("master_sku", e.target.value.trim() || null)}
+                onChange={(e) => {
+                  if (isEditMode && masterSkuLocked) return;
+                  masterSkuTouchedRef.current = true;
+                  setField("master_sku", e.target.value.trim() || null);
+                }}
                 placeholder="เช่น 420FASTBUDS-RAINBOW-MELON (ตัวพิมพ์ใหญ่, variants เป็น …-1, …-3, …-5)"
                 className="font-mono text-sm"
-                readOnly={isEditMode}
+                readOnly={isEditMode && masterSkuLocked}
               />
+              <p className="text-[11px] text-zinc-500">
+                สร้างอัตโนมัติจาก Breeder + ชื่อ — ถ้าว่างตอนแก้ไขสามารถพิมพ์หรือเปลี่ยนชื่อ/breeder เพื่อเติมได้
+              </p>
             </div>
           </div>
 
