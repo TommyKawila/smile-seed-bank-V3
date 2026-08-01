@@ -15,8 +15,8 @@ export type HomePageHeroClientProps = {
 export function HomePageHeroClient({ sections, heroCarousel, heroCtaButtons }: HomePageHeroClientProps) {
   const heroSection = sections.find((s) => s.key === "hero");
   const st: SectionTitle = {
-    th: heroSection?.label_th ?? "แบนเนอร์หลัก",
-    en: heroSection?.label_en ?? "Hero",
+    th: heroSection?.label_th ?? "สไมล์ซี้ดแบงค์",
+    en: heroSection?.label_en ?? "Smile Seed Bank",
   };
 
   return (

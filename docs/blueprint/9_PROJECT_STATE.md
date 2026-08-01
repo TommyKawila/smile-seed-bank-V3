@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (Hero H1 fallback — brand name)
+- **What:** fallback หัวข้อ Hero จาก「แบนเนอร์หลัก」→「สไมล์ซี้ดแบงค์」/ Smile Seed Bank
+- **Logic:** `HomePageHeroClient` เมื่อไม่มี `label_th` จาก homepage sections
+- **ไฟล์:** `components/storefront/HomePageHeroClient.tsx`
+
 ### บันทึกการทำงาน — 2026-08-01 (PDP Photo 3N advantage box)
 - **What:** สินค้า `flowering_type = photo_3n` โชว์กล่อง 3N Seed Advantage ใต้คำอธิบายบน PDP (TH/EN)
 - **Logic:** ไม่แก้ DB · `Photo3nAdvantageBox` + `lib/photo-3n-copy.ts` · แสดงในแท็บ Description
