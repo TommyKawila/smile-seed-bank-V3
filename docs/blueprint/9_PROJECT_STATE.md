@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (Hero H1 editable from Admin)
+- **What:** หัวข้อ Hero (H1) แก้ได้ที่ `/admin/settings/homepage` แถว hero — เดิม Admin บันทึกได้แต่หน้าแรกไม่ดึง
+- **Logic:** `HomeHeroStream` อ่าน `homepage_sections` (cache tag `home-layout`) · UX ป้าย “หัวข้อ Hero H1”
+- **ไฟล์:** `app/(storefront)/home-stream.tsx` · `lib/homepage-sections.ts` · `app/admin/settings/homepage/page.tsx`
+
 ### บันทึกการทำงาน — 2026-08-01 (Hero H1 fallback — brand name)
 - **What:** fallback หัวข้อ Hero จาก「แบนเนอร์หลัก」→「สไมล์ซี้ดแบงค์」/ Smile Seed Bank
 - **Logic:** `HomePageHeroClient` เมื่อไม่มี `label_th` จาก homepage sections

@@ -28,7 +28,7 @@ export const DEFAULT_SECTION_FALLBACK_LABELS: Record<
   string,
   { label_th: string; label_en: string }
 > = {
-  hero: { label_th: "แบนเนอร์หลัก", label_en: "Hero" },
+  hero: { label_th: "สไมล์ซี้ดแบงค์", label_en: "Smile Seed Bank" },
   ai_quick_tools_dock: {
     label_th: "เครื่องมือ AI ด่วน",
     label_en: "AI Quick Tools Dock",

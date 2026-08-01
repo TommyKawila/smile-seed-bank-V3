@@ -60,12 +60,31 @@ const HERO_SECTION_FALLBACK: HomePageSectionPayload = {
   label_en: DEFAULT_SECTION_FALLBACK_LABELS.hero.label_en,
 };
 
-/** LCP path only — banners + CTA; never waits on homepage_sections. */
+/** Hero H1 labels — ignore is_active so Admin edits always apply while hero shell stays mounted. */
+const getHeroSectionLabelsCached = unstable_cache(
+  async (): Promise<HomePageSectionPayload> => {
+    const row = await prisma.homepage_sections.findFirst({
+      where: { key: "hero" },
+      select: { label_th: true, label_en: true },
+    });
+    if (!row) return HERO_SECTION_FALLBACK;
+    return {
+      key: "hero",
+      label_th: row.label_th?.trim() || HERO_SECTION_FALLBACK.label_th,
+      label_en: row.label_en?.trim() || HERO_SECTION_FALLBACK.label_en,
+    };
+  },
+  ["storefront-homepage-hero-labels"],
+  { tags: ["home-layout"] }
+);
+
+/** LCP path — banners + CTA; hero H1 labels from cached homepage_sections (admin-editable). */
 export async function HomeHeroStream() {
-  const [bannersRaw, heroCtaButtons, cookieStore] = await Promise.all([
+  const [bannersRaw, heroCtaButtons, cookieStore, heroSection] = await Promise.all([
     getHeroCarouselBannersCached().catch(() => null),
     getHeroCtaCached(),
     cookies(),
+    getHeroSectionLabelsCached().catch(() => HERO_SECTION_FALLBACK),
   ]);
   const banners = resolveHeroCarouselBanners(bannersRaw);
   const heroCtaPayload = heroCtaButtons.map(({ id, labelTh, labelEn, href, color }) => ({
@@ -81,7 +100,7 @@ export async function HomeHeroStream() {
   );
   return (
     <HomePageHeroClient
-      sections={[HERO_SECTION_FALLBACK]}
+      sections={[heroSection]}
       heroCarousel={heroCarousel}
       heroCtaButtons={heroCtaPayload}
     />

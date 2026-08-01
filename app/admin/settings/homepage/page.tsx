@@ -68,6 +68,7 @@ const HOMEPAGE_SECTION_ROW_ICONS: Partial<Record<string, LucideIcon>> = {
 
 /** Short hint under the technical `key` in admin list (not stored in DB). */
 const HOMEPAGE_SECTION_KEY_HINTS: Record<string, string> = {
+  hero: "หัวข้อใหญ่บน Hero (H1) — แก้ป้าย TH/EN แล้วกด Save Layout",
   promotion_banner: "Carousel · dynamic_banners (mobile 4:5 / desktop cinematic)",
   breeder_showcase: "Top 8 grid · strain count · BreederShowcase",
   breeders: "Full marquee · all logos · BreederRibbon",
@@ -186,10 +187,14 @@ function SortableRow({
             onPointerDown={(e) => e.stopPropagation()}
           >
             <div className="space-y-3">
-              <p className="text-xs font-medium text-zinc-500">ป้ายชื่อส่วน (บันทึกเมื่อกด Save Layout)</p>
+              <p className="text-xs font-medium text-zinc-500">
+                {row.key === "hero"
+                  ? "หัวข้อ Hero (H1 หน้าแรก) — บันทึกเมื่อกด Save Layout"
+                  : "ป้ายชื่อส่วน (บันทึกเมื่อกด Save Layout)"}
+              </p>
               <div className="space-y-1.5">
                 <Label htmlFor={`lt-${row.id}`} className="text-xs">
-                  ไทย (TH)
+                  {row.key === "hero" ? "หัวข้อไทย (TH)" : "ไทย (TH)"}
                 </Label>
                 <Input
                   id={`lt-${row.id}`}
@@ -197,11 +202,12 @@ function SortableRow({
                   onChange={(e) => onLabelsChange(row.id, { label_th: e.target.value })}
                   className="h-9 text-sm"
                   maxLength={240}
+                  placeholder={row.key === "hero" ? "เช่น สไมล์ซี้ดแบงค์" : undefined}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor={`le-${row.id}`} className="text-xs">
-                  English (EN)
+                  {row.key === "hero" ? "Headline EN" : "English (EN)"}
                 </Label>
                 <Input
                   id={`le-${row.id}`}
@@ -209,6 +215,7 @@ function SortableRow({
                   onChange={(e) => onLabelsChange(row.id, { label_en: e.target.value })}
                   className="h-9 text-sm"
                   maxLength={240}
+                  placeholder={row.key === "hero" ? "e.g. Smile Seed Bank" : undefined}
                 />
               </div>
             </div>
@@ -347,7 +354,7 @@ export default function HomepageLayoutSettingsPage() {
             <div>
               <CardTitle>หน้าแรก (Homepage)</CardTitle>
               <CardDescription>
-                ลากจัดลำดับ เปิด/ปิดส่วน แก้ป้ายชื่อ TH/EN — รูปย่อเป็นตัวอย่างเท่านั้น
+                ลากจัดลำดับ เปิด/ปิดส่วน แก้ป้ายชื่อ TH/EN — แถว hero = หัวข้อ H1 หน้าแรก (กดไอคอนตั้งค่า)
               </CardDescription>
             </div>
           </div>
@@ -359,7 +366,7 @@ export default function HomepageLayoutSettingsPage() {
                 Preview Storefront Labels
               </Label>
               <p className="text-xs text-zinc-500">
-                แสดงตัวอย่างป้าย TH/EN ในรายการ (ชื่อในหน้าร้านยังอิงคอมโพเนนต์เดิมจนกว่าจะผูกจาก DB)
+                แสดงตัวอย่างป้าย TH/EN ในรายการ — หลัง Save Layout หน้าร้านใช้ค่านี้ (hero = H1)
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
