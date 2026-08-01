@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Legacy `/admin/promotions` (bulk + promotion_rules) removed — brand checkout promos live under `/admin/promotions/brands`. */
+/** Legacy hub — brand/popup promo UIs retired; coupons live under discounts. */
 export default function AdminPromotionsLegacyRedirect() {
-  redirect("/admin/promotions/brands");
+  redirect("/admin/discounts");
 }

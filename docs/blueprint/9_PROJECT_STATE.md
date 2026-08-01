@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (Retire brand promo + popup campaign)
+- **What:** ถอดเมนูส่วนลดแบรนด์ + แคมเปญป๊อปอัพ; หยุดผลบน storefront โดยไม่ลบตาราง / ไม่แตะคูปอง
+- **Logic:** Sidebar ลบ 2 รายการ · `/admin/promotions*` → `/admin/discounts` · brand API/listing/checkout rules = `[]` · ไม่ mount `PromotionBanner`
+- **ไฟล์:** `AdminSidebar.tsx` · `promotions/*/page.tsx` · `brand-promotions/route.ts` · `product-brand-listing.ts` · `checkout-server-validate.ts` · `StorefrontLayoutClient.tsx` · `ProductModal.tsx`
+
 ### บันทึกการทำงาน — 2026-08-01 (Cursor rules tracked in git)
 - **What:** un-ignore `.cursor/rules/**` เพื่อให้ modular rules ติด repo ข้ามเครื่อง
 - **Logic:** `.gitignore` = `.cursor/*` + `!.cursor/rules/**` · commit `.mdc` + stub `.cursorrules`

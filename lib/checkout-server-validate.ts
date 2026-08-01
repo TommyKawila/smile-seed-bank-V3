@@ -285,7 +285,7 @@ export async function validateStorefrontCheckoutTotals(input: {
   const mergedLines = mergeCheckoutDuplicateLines(rawLines);
   const variantIds = [...new Set(mergedLines.map((l) => l.variantId))].map((id) => BigInt(id));
 
-  const [variants, promotionRows, promoRow, brandRowsRaw] = await Promise.all([
+  const [variants, promotionRows, promoRow] = await Promise.all([
     prisma.product_variants.findMany({
       where: { id: { in: variantIds }, is_active: true },
       include: {
@@ -308,19 +308,10 @@ export async function validateStorefrontCheckoutTotals(input: {
           where: { id: BigInt(promo_code_id), is_active: true },
         })
       : Promise.resolve(null),
-    prisma.brand_promotions.findMany({
-      where: { is_active: true },
-      orderBy: { id: "asc" },
-    }),
   ]);
 
-  const brandRules = activeBrandRulesFromRows(
-    brandRowsRaw.map((r) => ({
-      brand_name: r.brand_name,
-      discount_percent: r.discount_percent,
-      is_active: r.is_active,
-    })),
-  );
+  // Brand checkout promotions retired — empty rules (coupons/clearance unchanged).
+  const brandRules = activeBrandRulesFromRows([]);
 
   const vmap = new Map<number, VariantRow>();
   for (const v of variants) {

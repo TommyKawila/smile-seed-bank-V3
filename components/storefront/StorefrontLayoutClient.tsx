@@ -33,10 +33,6 @@ const OfferManager = dynamic(
   () => import("@/components/storefront/OfferManager").then((m) => ({ default: m.OfferManager })),
   { ssr: false }
 );
-const PromotionBanner = dynamic(
-  () => import("@/components/storefront/PromotionBanner").then((m) => ({ default: m.PromotionBanner })),
-  { ssr: false }
-);
 const BrowserDetectionBanner = dynamic(
   () =>
     import("@/components/storefront/BrowserDetectionBanner").then((m) => ({
@@ -144,7 +140,6 @@ export function StorefrontLayoutClient({
           <PromoReturnHandler />
         </Suspense>
       ) : null}
-      {mountHomeBanners ? <PromotionBanner /> : null}
       <div className="flex min-h-screen flex-col">
         <Navbar />
         <main className="flex-1 bg-background pt-20 sm:pt-28">{children}</main>
