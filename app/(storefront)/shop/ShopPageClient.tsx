@@ -1127,7 +1127,7 @@ export function ShopPageClient({
               </Button>
             </div>
             <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-              <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/30 sm:h-[4.75rem] sm:w-[4.75rem]">
+              <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-white sm:h-[4.75rem] sm:w-[4.75rem]">
                 <BreederLogoImage
                   src={urlBreeder.logo_url}
                   breederName={urlBreeder.name}

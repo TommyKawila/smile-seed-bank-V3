@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (Shop breeder header logo — white bg)
+- **What:** โลโก้ค่ายใน header หน้า shop/seeds พื้นขาว
+- **Logic:** `ShopPageClient` กล่องโลโก้ `bg-white` แทน `bg-muted/30`
+- **ไฟล์:** `app/(storefront)/shop/ShopPageClient.tsx`
+
 ### บันทึกการทำงาน — 2026-08-01 (Clearance first visit empty flash)
 - **What:** กดเมนู Clearance ครั้งแรกโชว์ "ยังไม่มีสินค้า" จน refresh — เพราะ SSR `withTimeout` 2s คืน `[]` / prefetch ค้าง empty
 - **Logic:** SSR+API timeout 8s · client refetch เมื่อ boxes ว่าง · `prefetch={false}` ลิงก์ Clearance
