@@ -81,8 +81,10 @@ export function resolveProductListBackPath(opts: {
   const refFull = refPath ? refPath + refSearch : null;
   const stored = readCatalogReturnPath();
 
-  if (refPath && isProductListReturnPath(refPath)) return refFull;
+  // Catalog session wins — document.referrer is often stale across SPA soft-nav
+  // (e.g. /seeds → /clearance → ?breeder= → PDP must not drop ?breeder=).
   if (stored) return stored;
+  if (refPath && isProductListReturnPath(refPath)) return refFull;
   if (refPath && isBlogArticlePath(refPath)) return refFull;
   return refFull;
 }

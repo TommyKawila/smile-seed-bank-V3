@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (Clearance PDP back — prefer sessionStorage)
+- **What:** กด Back จาก PDP หลัง Clearance → breeder ไม่กลับไป `/clearance?breeder=`
+- **Logic:** `resolveProductListBackPath` ให้ `ssb:catalog-return` ชนะ `document.referrer` ที่ค้างจาก SPA soft-nav
+- **ไฟล์:** `lib/catalog-return-path.ts`
+
 ### บันทึกการทำงาน — 2026-08-01 (Retire brand promo + popup campaign)
 - **What:** ถอดเมนูส่วนลดแบรนด์ + แคมเปญป๊อปอัพ; หยุดผลบน storefront โดยไม่ลบตาราง / ไม่แตะคูปอง
 - **Logic:** Sidebar ลบ 2 รายการ · `/admin/promotions*` → `/admin/discounts` · brand API/listing/checkout rules = `[]` · ไม่ mount `PromotionBanner`
