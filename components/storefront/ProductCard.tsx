@@ -384,7 +384,7 @@ function ProductCardBase({
             <Link
               href={seedsBreederHref(product.breeders)}
               onClick={(e) => e.stopPropagation()}
-              className={`absolute left-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-card shadow-md ring-2 ring-background transition-transform hover:scale-105 ${topLeftSalePct ? "top-10" : "top-2"}`}
+              className={`absolute left-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-white shadow-md ring-2 ring-background transition-transform hover:scale-105 ${topLeftSalePct ? "top-10" : "top-2"}`}
               aria-label={product.breeders.name}
             >
               <BreederLogoImage

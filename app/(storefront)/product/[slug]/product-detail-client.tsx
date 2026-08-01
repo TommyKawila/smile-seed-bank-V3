@@ -510,7 +510,7 @@ export default function ProductDetailClient({
               {product.breeders && (
                 <Link
                   href={seedsBreederHref(product.breeders)}
-                  className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border bg-card shadow-md ring-2 ring-background transition-transform hover:scale-[1.02] hover:shadow-lg"
+                  className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-border bg-white shadow-md ring-2 ring-background transition-transform hover:scale-[1.02] hover:shadow-lg"
                   aria-label={product.breeders.name}
                 >
                   <BreederLogoImage
