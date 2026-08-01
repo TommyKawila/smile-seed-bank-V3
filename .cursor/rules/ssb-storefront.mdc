@@ -1,0 +1,31 @@
+---
+description: Storefront V4 Cyber-Organic UI, LCP hero, bilingual SEO, card a11y
+globs:
+  - app/(storefront)/**
+  - components/storefront/**
+  - lib/seo/**
+  - lib/magazine-seo.ts
+alwaysApply: false
+---
+
+# Storefront rules
+
+## Design
+- Mobile-first **V4 Cyber-Organic**: dark `slate-950` + emerald semantic tokens (`docs/blueprint/5_UI_UX_DESIGN_SYSTEM.md`).
+- Do not apply admin light-theme patterns to the storefront.
+
+## LCP / images
+- Hero/banner: `next/image` with `priority={true}` on the **single** LCP candidate only.
+- Never dual mobile+desktop hero priority — SSR one side via `ssb_vp` (`6_PERF_BUDGETS.md`).
+- Every image container: defined aspect ratio or dimensions. Prefer WebP.
+
+## A11y / cards
+- One primary link per card — no duplicate URLs (`7_A11Y_CHECKLIST.md`).
+- Interactive targets min 48×48px.
+
+## SEO
+- Canonical, sitemap, JSON-LD per `8_SEO_SCHEMA.md`.
+- TH/EN metadata for storefront pages.
+
+## Shell
+- Never `dynamic()` the entire Navbar or root layout shell without PSI retest.

@@ -1,0 +1,26 @@
+---
+description: Admin panel light UI, assertAdmin APIs, service-layer admin features
+globs:
+  - app/admin/**
+  - components/admin/**
+  - app/api/admin/**
+  - app/actions/**
+alwaysApply: false
+---
+
+# Admin rules
+
+## Design
+- Admin stays **light UI** (slate/white). Do not apply storefront Cyber-Organic dark theme to admin.
+
+## Auth & APIs
+- Gate admin routes/APIs with `assertAdmin` / `requireAdminUser` as established in the codebase.
+- Prefer Zod validation on request bodies; return clear JSON errors.
+
+## Architecture
+- Keep admin UI thin; put mutations/queries in `services/` (or existing service modules).
+- Hooks only wrap fetch to `/api/admin/*` or server actions — no business rules in components.
+- After content mutations that affect the storefront, use existing `revalidateTag` / `revalidatePath` patterns — do not invent a second cache system.
+
+## Documents / B2B
+- Thai retail quotations (`/admin/quotations`) and B2B pro-forma (`/admin/documents/b2b-quote`) are separate domains — do not merge schemas or convert paths casually.

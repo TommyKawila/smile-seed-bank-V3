@@ -1,0 +1,26 @@
+---
+description: 2s timeout resilience, route error/loading boundaries, PSI/A11y guardrails
+globs:
+  - app/**/*.tsx
+  - lib/timeout.ts
+  - services/**
+alwaysApply: false
+---
+
+# Perf, resilience & a11y
+
+## 2-Second Rule
+- Non-critical fetches (related products, ads, secondary widgets): wrap with `withTimeout` from `lib/timeout.ts` (2000ms).
+- Always provide Skeleton or empty fallback on timeout/failure.
+
+## Route boundaries
+- Every route segment that needs graceful failure: `error.tsx` and `loading.tsx` with clear Shadcn-friendly messages.
+
+## PSI guardrails (`0_PSI_ACCEPTANCE.md`, `6_PERF_BUDGETS.md`)
+- GA / Vercel Analytics: interaction-only load.
+- Do not chase unscored unused CSS/JS diagnostics if PSI ≥ 90.
+- Do not `dynamic()` the entire Navbar / root shell without PSI retest.
+
+## A11y checklist highlights
+- Touch targets ≥ 48×48px.
+- One primary link per card (`7_A11Y_CHECKLIST.md`).

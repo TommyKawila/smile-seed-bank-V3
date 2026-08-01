@@ -4,6 +4,21 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (Cursor rules tracked in git)
+- **What:** un-ignore `.cursor/rules/**` เพื่อให้ modular rules ติด repo ข้ามเครื่อง
+- **Logic:** `.gitignore` = `.cursor/*` + `!.cursor/rules/**` · commit `.mdc` + stub `.cursorrules`
+- **ไฟล์:** `.gitignore` · `.cursor/rules/*.mdc` · `.cursorrules`
+
+### บันทึกการทำงาน — 2026-08-01 (Cursor Modular Rules)
+- **What:** Progressive Disclosure ของ Agent rules — แยก `.cursorrules` โมโนลิธ → `.cursor/rules/*.mdc`
+- **Logic:** `ssb-core` alwaysApply · storefront/admin/perf ติดตาม globs · `.cursorrules` เหลือ stub ชี้ไปโฟลเดอร์ใหม่
+- **ไฟล์:** `.cursor/rules/ssb-core.mdc` · `ssb-storefront.mdc` · `ssb-admin.mdc` · `ssb-perf-a11y.mdc` · `.cursorrules`
+
+### บันทึกการทำงาน — 2026-08-01 (B2B Pro-Forma Invoice module v1)
+- **What:** Admin `/admin/documents/b2b-quote` — Quotation / Pro-Forma (EUR/THB), MOQ soft warning, Malikha Option A/B, A4 preview, Save draft, Resend email, print PDF
+- **Logic:** ตาราง `b2b_quotes` + `b2b_quote_items` + yearly seq `SSB-B2B-YYYY-NNN` · calc ใน `lib/b2b-quote-calc.ts` · service/API แยกจากใบเสนอราคาไทย · PDF ผ่าน print iframe
+- **ไฟล์:** `prisma/schema.prisma` · `migrations/20260801130000_b2b_quotes` · `services/b2b-quote-service.ts` · `app/api/admin/b2b-quotes/*` · `components/admin/b2b-quote/*` · hooks · email/print HTML · `AdminSidebar`
+
 ### บันทึกการทำงาน — 2026-08-01 (B2B letter — signature upload + draft history)
 - **What:** อัปโหลดรูปลายเซ็น + บันทึก draft/ประวัติใน DB บน `/admin/documents/dispatcher`
 - **Logic:** ตาราง `business_documents` (DRAFT/SENT) · signature → Supabase `brand-assets` + `site_settings.founder_signature_url` · email/print/preview แสดงรูป · Save draft / History load-delete · ส่งอีเมลแล้ว mark SENT
