@@ -26,14 +26,20 @@ export function recalculateItem(
   };
 }
 
+/** Lines that appear on invoices / are persisted — empty placeholder rows are ignored. */
+export function billableB2BItems(items: B2BQuoteLineItem[]): B2BQuoteLineItem[] {
+  return items.filter((it) => it.strainName.trim().length > 0);
+}
+
 export function calculateB2BQuoteTotals(
   items: B2BQuoteLineItem[],
   discountAmount: number,
   shippingFee: number,
   currency: B2BCurrency = "EUR"
 ): B2BQuoteTotals {
+  const billable = billableB2BItems(items);
   const subtotal = roundMoney(
-    items.reduce((sum, it) => sum + lineTotal(it.quantity, it.unitPrice, currency), 0),
+    billable.reduce((sum, it) => sum + lineTotal(it.quantity, it.unitPrice, currency), 0),
     currency
   );
   const discount = roundMoney(Math.max(0, discountAmount), currency);
