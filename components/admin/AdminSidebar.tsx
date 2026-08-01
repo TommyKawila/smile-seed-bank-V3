@@ -58,6 +58,7 @@ const navItems = [
   { href: "/admin/m", label: "Orders (Mobile)", icon: Smartphone },
   { href: "/admin/quotations", label: "ใบเสนอราคา", icon: FileText },
   { href: "/admin/documents/dispatcher", label: "Business Documents", icon: Mail },
+  { href: "/admin/documents/b2b-quote", label: "B2B Pro-Forma", icon: FileText },
   { href: "/admin/orders/create", label: "สร้างออเดอร์ (POS)", icon: PlusSquare },
   { href: "/admin/reports/daily", label: "รายงานยอดขาย", icon: FileText },
   { href: "/admin/customers", label: "ลูกค้า", icon: Users },
