@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (B2B quote — blank-line totals + send integrity)
+- **What:** Pro-forma รวมยอดจากแถวว่าง (qty 500 @ €1.35) ทั้งที่ตารางไม่โชว์; save ลบ items นอก transaction; mark SENT ก่อน Resend สำเร็จ
+- **Logic:** `billableB2BItems` ใน `calculateB2BQuoteTotals` · update ใช้ `$transaction` · `sendB2BQuoteEmail` ส่งอีเมลก่อนแล้วค่อย save SENT
+- **ไฟล์:** `lib/b2b-quote-calc.ts` · `services/b2b-quote-service.ts`
+
 ### บันทึกการทำงาน — 2026-08-01 (Clearance PDP back — prefer sessionStorage)
 - **What:** กด Back จาก PDP หลัง Clearance → breeder ไม่กลับไป `/clearance?breeder=`
 - **Logic:** `resolveProductListBackPath` ให้ `ssb:catalog-return` ชนะ `document.referrer` ที่ค้างจาก SPA soft-nav

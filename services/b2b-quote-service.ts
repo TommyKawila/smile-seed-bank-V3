@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { calculateB2BQuoteTotals, lineTotal } from "@/lib/b2b-quote-calc";
+import { billableB2BItems, calculateB2BQuoteTotals, lineTotal } from "@/lib/b2b-quote-calc";
 import { currentB2BQuoteYear, formatB2BQuoteNumber } from "@/lib/b2b-quote-number";
 import {
   buildB2BQuoteEmailHtml,
@@ -104,15 +104,13 @@ export type SaveB2BQuoteInput = B2BQuoteDraft & {
 };
 
 function normalizeItems(items: B2BQuoteLineItem[], currency: B2BCurrency) {
-  return items
-    .filter((it) => it.strainName.trim())
-    .map((it, i) => ({
-      strain_name: it.strainName.trim(),
-      quantity: Math.max(0, Math.floor(it.quantity)),
-      unit_price: new Prisma.Decimal(it.unitPrice),
-      line_total: new Prisma.Decimal(lineTotal(it.quantity, it.unitPrice, currency)),
-      sort_order: i,
-    }));
+  return billableB2BItems(items).map((it, i) => ({
+    strain_name: it.strainName.trim(),
+    quantity: Math.max(0, Math.floor(it.quantity)),
+    unit_price: new Prisma.Decimal(it.unitPrice),
+    line_total: new Prisma.Decimal(lineTotal(it.quantity, it.unitPrice, currency)),
+    sort_order: i,
+  }));
 }
 
 export async function listB2BQuotes(limit = 40): Promise<B2BQuoteRecord[]> {
@@ -145,26 +143,28 @@ export async function saveB2BQuote(input: SaveB2BQuoteInput): Promise<B2BQuoteRe
 
   if (input.id) {
     const id = BigInt(input.id);
-    await prisma.b2b_quote_items.deleteMany({ where: { quote_id: id } });
-    const row = await prisma.b2b_quotes.update({
-      where: { id },
-      data: {
-        client_name: input.clientName.trim(),
-        client_email: input.clientEmail.trim(),
-        shipping_address: input.shippingAddress.trim(),
-        invoice_date: input.invoiceDate,
-        valid_until: input.validUntil,
-        currency,
-        subtotal: new Prisma.Decimal(totals.subtotal),
-        discount_amount: new Prisma.Decimal(totals.discountAmount),
-        shipping_fee: new Prisma.Decimal(totals.shippingFee),
-        total_amount: new Prisma.Decimal(totals.totalAmount),
-        payment_notes: input.paymentNotes?.trim() || null,
-        status,
-        ...(status === "SENT" ? { sent_at: new Date() } : {}),
-        items: { create: itemRows },
-      },
-      include: { items: true },
+    const row = await prisma.$transaction(async (tx) => {
+      await tx.b2b_quote_items.deleteMany({ where: { quote_id: id } });
+      return tx.b2b_quotes.update({
+        where: { id },
+        data: {
+          client_name: input.clientName.trim(),
+          client_email: input.clientEmail.trim(),
+          shipping_address: input.shippingAddress.trim(),
+          invoice_date: input.invoiceDate,
+          valid_until: input.validUntil,
+          currency,
+          subtotal: new Prisma.Decimal(totals.subtotal),
+          discount_amount: new Prisma.Decimal(totals.discountAmount),
+          shipping_fee: new Prisma.Decimal(totals.shippingFee),
+          total_amount: new Prisma.Decimal(totals.totalAmount),
+          payment_notes: input.paymentNotes?.trim() || null,
+          status,
+          ...(status === "SENT" ? { sent_at: new Date() } : {}),
+          items: { create: itemRows },
+        },
+        include: { items: true },
+      });
     });
     return toRecord(row);
   }
@@ -239,13 +239,16 @@ export async function sendB2BQuoteEmail(input: B2BQuoteDispatchInput): Promise<{
   }
 
   try {
-    const saved = await saveB2BQuote({
-      ...input,
-      id: input.quoteId ?? null,
-      quoteNumber: input.quoteNumber?.trim() || null,
-      status: "SENT",
-    });
-    const quoteNumber = saved.quoteNumber;
+    // Resolve quote number before send; mark SENT only after Resend succeeds
+    // (same order as business-document dispatch — avoid false SENT history).
+    let quoteNumber = input.quoteNumber?.trim() || null;
+    if (!quoteNumber && input.quoteId) {
+      const existing = await getB2BQuote(input.quoteId);
+      quoteNumber = existing?.quoteNumber ?? null;
+    }
+    if (!quoteNumber) {
+      quoteNumber = await nextB2BQuoteNumber();
+    }
 
     const site = await fetchCompanyAndLogo();
     const html = buildB2BQuoteEmailHtml(input, quoteNumber, site.logoUrl, site);
@@ -270,7 +273,14 @@ export async function sendB2BQuoteEmail(input: B2BQuoteDispatchInput): Promise<{
       throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
     }
 
-    return { success: true, error: null, quoteId: saved.id, quoteNumber };
+    const saved = await saveB2BQuote({
+      ...input,
+      id: input.quoteId ?? null,
+      quoteNumber,
+      status: "SENT",
+    });
+
+    return { success: true, error: null, quoteId: saved.id, quoteNumber: saved.quoteNumber };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
