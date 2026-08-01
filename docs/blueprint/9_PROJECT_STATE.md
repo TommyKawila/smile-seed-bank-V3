@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (PDP Photo 3N advantage box)
+- **What:** สินค้า `flowering_type = photo_3n` โชว์กล่อง 3N Seed Advantage ใต้คำอธิบายบน PDP (TH/EN)
+- **Logic:** ไม่แก้ DB · `Photo3nAdvantageBox` + `lib/photo-3n-copy.ts` · แสดงในแท็บ Description
+- **ไฟล์:** `lib/photo-3n-copy.ts` · `components/storefront/Photo3nAdvantageBox.tsx` · `product-detail-client.tsx`
+
 ### บันทึกการทำงาน — 2026-08-01 (Shop breeder header logo — white bg)
 - **What:** โลโก้ค่ายใน header หน้า shop/seeds พื้นขาว
 - **Logic:** `ShopPageClient` กล่องโลโก้ `bg-white` แทน `bg-muted/30`

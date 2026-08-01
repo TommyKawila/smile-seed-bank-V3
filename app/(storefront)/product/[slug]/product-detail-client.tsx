@@ -35,7 +35,9 @@ import { StickyBuyBar } from "@/components/storefront/StickyBuyBar";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
+import { Photo3nAdvantageBox } from "@/components/storefront/Photo3nAdvantageBox";
 import { StockAlert } from "@/components/storefront/StockAlert";
+import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
 import {
   FeminizedSeedSpecChip,
   FeminizedStatCard,
@@ -979,6 +981,9 @@ export default function ProductDetailClient({
                     </>
                   );
                 })()}
+                {product.flowering_type === FLOWERING_DB_PHOTO_3N ? (
+                  <Photo3nAdvantageBox />
+                ) : null}
               </div>
             </TabsContent>
           </Tabs>
