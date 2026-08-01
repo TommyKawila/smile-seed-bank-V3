@@ -3,8 +3,18 @@
 import { buildBusinessDocumentPrintHtmlFromBody } from "@/lib/business-document-template";
 
 /** Client-only: print via hidden iframe (no pop-up). */
-export function exportBusinessDocumentPdf(bodyText: string, logoUrl: string | null): void {
-  const html = buildBusinessDocumentPrintHtmlFromBody(bodyText, logoUrl);
+export function exportBusinessDocumentPdf(
+  bodyText: string,
+  logoUrl: string | null,
+  subject?: string,
+  signatureImageUrl?: string | null
+): void {
+  const html = buildBusinessDocumentPrintHtmlFromBody(
+    bodyText,
+    logoUrl,
+    subject,
+    signatureImageUrl ?? null
+  );
   const iframe = document.createElement("iframe");
   iframe.setAttribute("title", "Business document print");
   iframe.style.cssText =

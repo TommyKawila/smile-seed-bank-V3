@@ -7,10 +7,17 @@ type Props = {
   bodyText: string;
   onBodyChange: (value: string) => void;
   logoUrl: string | null;
+  signatureImageUrl?: string | null;
   className?: string;
 };
 
-export function BusinessDocumentPreview({ bodyText, onBodyChange, logoUrl, className }: Props) {
+export function BusinessDocumentPreview({
+  bodyText,
+  onBodyChange,
+  logoUrl,
+  signatureImageUrl,
+  className,
+}: Props) {
   return (
     <article
       className={cn(
@@ -41,7 +48,7 @@ export function BusinessDocumentPreview({ bodyText, onBodyChange, logoUrl, class
         spellCheck={false}
         aria-label="Document body — spaces and line breaks are preserved"
         className={cn(
-          "min-h-[220mm] w-full flex-1 resize-y border-0 bg-transparent p-0",
+          "min-h-[200mm] w-full flex-1 resize-y border-0 bg-transparent p-0",
           "font-[inherit] text-[11pt] leading-[1.22] text-slate-700",
           "whitespace-pre-wrap break-words outline-none",
           "focus:ring-0 placeholder:text-slate-400",
@@ -49,6 +56,17 @@ export function BusinessDocumentPreview({ bodyText, onBodyChange, logoUrl, class
         )}
         placeholder="Type your letter here…"
       />
+
+      {signatureImageUrl ? (
+        <div className="mt-2 shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={signatureImageUrl}
+            alt="Signature"
+            className="h-[72px] w-auto max-w-[200px] object-contain object-left"
+          />
+        </div>
+      ) : null}
 
       <p className="mt-3 shrink-0 text-[10px] text-slate-400 lg:hidden">
         Tap inside the document — Space &amp; Enter keep your layout.

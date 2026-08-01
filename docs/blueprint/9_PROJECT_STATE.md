@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-01 (B2B letter — signature upload + draft history)
+- **What:** อัปโหลดรูปลายเซ็น + บันทึก draft/ประวัติใน DB บน `/admin/documents/dispatcher`
+- **Logic:** ตาราง `business_documents` (DRAFT/SENT) · signature → Supabase `brand-assets` + `site_settings.founder_signature_url` · email/print/preview แสดงรูป · Save draft / History load-delete · ส่งอีเมลแล้ว mark SENT
+- **ไฟล์:** `prisma/schema.prisma` · `migrations/20260801120000_business_documents` · `services/business-document-service.ts` · `app/api/admin/business-documents/*` · Dispatcher/Controls/Preview · `hooks/useBusinessDocumentDrafts.ts` · email/print HTML
+
+### บันทึกการทำงาน — 2026-08-01 (B2B letter — raw paste format)
+- **What:** `/admin/documents/dispatcher` วางข้อความดิบ → จัดรูปแบบจดหมาย (ย่อหน้า/ตัวหนา/ลายเซ็น) + Subject แก้ได้ → ส่งอีเมล / Print / Save as PDF
+- **Logic:** `formatRawBusinessLetter` + `plainLetterBodyToHtml` · dispatch รับ `subject` · email/print ใช้ paragraph HTML ไม่ใช่ pre-wrap ทั้งก้อน
+- **ไฟล์:** `lib/business-document-raw-format.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx` · `types/business-document.ts` · dispatch API · `email-business-document-html.ts` · `business-document-template.ts` · `business-document-pdf.client.ts` · `business-document-service.ts`
+
 ### บันทึกการทำงาน — 2026-08-01 (Hero H1 editable from Admin)
 - **What:** หัวข้อ Hero (H1) แก้ได้ที่ `/admin/settings/homepage` แถว hero — เดิม Admin บันทึกได้แต่หน้าแรกไม่ดึง
 - **Logic:** `HomeHeroStream` อ่าน `homepage_sections` (cache tag `home-layout`) · UX ป้าย “หัวข้อ Hero H1”

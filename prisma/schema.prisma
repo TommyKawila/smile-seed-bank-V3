@@ -797,6 +797,28 @@ model grower_tool_usage_logs {
   @@schema("public")
 }
 
+/// Admin B2B business letters — drafts + sent history
+model business_documents {
+  id                  BigInt    @id @default(autoincrement())
+  subject             String    @db.VarChar(300)
+  body_text           String
+  recipient_name      String    @default("") @db.VarChar(200)
+  recipient_email     String    @default("") @db.VarChar(320)
+  brand_name          String    @default("") @db.VarChar(120)
+  sender_name         String    @default("") @db.VarChar(120)
+  document_date       String    @db.VarChar(10)
+  signature_image_url String?
+  status              String    @default("DRAFT") @db.VarChar(20)
+  sent_at             DateTime? @db.Timestamptz(6)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([status, updated_at], map: "idx_business_documents_status_updated")
+  @@index([updated_at], map: "idx_business_documents_updated_at")
+  @@map("business_documents")
+  @@schema("public")
+}
+
 /// Admin-only wholesale CSV rows. Standalone: NO foreign keys to `products`, `product_variants`, or storefront pricing.
 model bulk_seeds {
   id          BigInt   @id @default(autoincrement())

@@ -1,4 +1,4 @@
-import { escapeHtmlPlainForEmail } from "@/lib/business-document-template";
+import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
 import { BUSINESS_DOCUMENT_SUBJECT } from "@/types/business-document";
 
 function escapeHtml(s: string): string {
@@ -9,12 +9,19 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function signatureImageBlock(signatureImageUrl: string | null): string {
+  if (!signatureImageUrl?.trim()) return "";
+  return `<p style="margin:8px 0 0;"><img src="${escapeHtml(signatureImageUrl.trim())}" alt="Signature" width="160" style="max-height:72px;width:auto;height:auto;display:block;" /></p>`;
+}
+
 /** Transactional email wrapper — muted Eco-Clinical palette. */
 export function buildBusinessDocumentEmailHtml(
   bodyText: string,
-  logoUrl: string | null
+  logoUrl: string | null,
+  subject: string = BUSINESS_DOCUMENT_SUBJECT,
+  signatureImageUrl: string | null = null
 ): string {
-  const safeBody = escapeHtmlPlainForEmail(bodyText);
+  const bodyHtml = plainLetterBodyToHtml(bodyText);
   const logo = logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="Smile Seed Bank" width="180" style="max-width:180px;height:auto;display:block;margin-bottom:20px;" />`
     : `<p style="margin:0 0 20px;font-size:18px;font-weight:600;color:#12463e;">Smile Seed Bank</p>`;
@@ -25,9 +32,12 @@ export function buildBusinessDocumentEmailHtml(
 <body style="margin:0;padding:24px;background:#f8fafc;font-family:system-ui,sans-serif;color:#1e293b;">
   <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:28px 32px;">
     ${logo}
-    <div style="font-size:15px;line-height:1.22;color:#334155;white-space:pre-wrap;word-wrap:break-word;">${safeBody}</div>
+    <div style="font-size:15px;line-height:1.45;color:#334155;">
+      ${bodyHtml}
+      ${signatureImageBlock(signatureImageUrl)}
+    </div>
     <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;">
-      Sent via Smile Seed Bank Admin · ${escapeHtml(BUSINESS_DOCUMENT_SUBJECT)}
+      Sent via Smile Seed Bank Admin · ${escapeHtml(subject)}
     </p>
   </div>
 </body>

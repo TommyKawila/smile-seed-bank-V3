@@ -12,8 +12,7 @@ export default function BusinessDocumentDispatcherPage() {
           Business Document &amp; Email Dispatcher
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Preview, edit, email, or export partnership inquiry letters — UI only; delivery runs via
-          isolated service layers.
+          Paste raw text, format, attach signature, save drafts, email via Resend, or Save as PDF.
         </p>
       </header>
       <BusinessDocumentDispatcher />

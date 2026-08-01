@@ -16,9 +16,12 @@ export function useBusinessDocumentDispatch() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        documentId?: string | null;
+      };
       if (!res.ok) throw new Error(data.error ?? "Failed to send email");
-      return { success: true as const };
+      return { success: true as const, documentId: data.documentId ?? null };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);

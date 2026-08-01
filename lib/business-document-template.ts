@@ -1,3 +1,4 @@
+import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
 import type { BusinessDocumentFields } from "@/types/business-document";
 import { BUSINESS_DOCUMENT_SUBJECT } from "@/types/business-document";
 
@@ -102,7 +103,7 @@ export function syncFieldsInBodyText(
   return out;
 }
 
-/** Print / email body — preserves spaces & line breaks via pre-wrap. */
+/** Print / email body — paragraph HTML + bold via raw-format helpers. */
 export function escapeHtmlPlainForEmail(text: string): string {
   return text
     .replace(/&/g, "&amp;")
@@ -112,23 +113,29 @@ export function escapeHtmlPlainForEmail(text: string): string {
 }
 
 export function buildBusinessDocumentBodyBlockHtml(bodyText: string): string {
-  return `<div class="doc-body">${escapeHtmlPlainForEmail(bodyText)}</div>`;
+  return `<div class="doc-body">${plainLetterBodyToHtml(bodyText)}</div>`;
 }
 
 export function buildBusinessDocumentPrintHtmlFromBody(
   bodyText: string,
-  logoUrl: string | null
+  logoUrl: string | null,
+  subject: string = BUSINESS_DOCUMENT_SUBJECT,
+  signatureImageUrl: string | null = null
 ): string {
   const body = buildBusinessDocumentBodyBlockHtml(bodyText);
+  const title = subject.trim() || BUSINESS_DOCUMENT_SUBJECT;
   const logoBlock = logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="Smile Seed Bank" class="doc-logo" />`
     : `<div class="doc-logo-fallback">Smile Seed Bank</div>`;
+  const sigImg = signatureImageUrl?.trim()
+    ? `<p class="doc-sig-img"><img src="${escapeHtml(signatureImageUrl.trim())}" alt="Signature" /></p>`
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>${escapeHtml(BUSINESS_DOCUMENT_SUBJECT)}</title>
+  <title>${escapeHtml(title)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -147,17 +154,20 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     .doc-header { margin-bottom: 10mm; padding-bottom: 6mm; border-bottom: 1px solid #e2e8f0; }
     .doc-logo { max-height: 14mm; max-width: 55mm; object-fit: contain; object-position: left center; }
     .doc-logo-fallback { font-size: 14pt; font-weight: 600; color: #12463e; letter-spacing: 0.02em; }
-    .doc-body {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      line-height: 1.22;
-      tab-size: 4;
-    }
+    .doc-body { word-wrap: break-word; line-height: 1.22; }
+    .doc-body p { margin-bottom: 4mm; }
+    .doc-subject { font-size: 12pt; font-weight: 600; color: #12463e; margin-bottom: 4mm; line-height: 1.25; }
+    .doc-date { font-size: 10pt; color: #64748b; margin-bottom: 8mm; }
+    .doc-signoff { margin-top: 6mm; margin-bottom: 2mm; }
+    .doc-signature { font-weight: 500; color: #0f172a; line-height: 1.35; }
+    .doc-sig-img { margin-top: 2mm; }
+    .doc-sig-img img { max-height: 18mm; width: auto; display: block; }
   </style>
 </head>
 <body>
   <header class="doc-header">${logoBlock}</header>
   ${body}
+  ${sigImg}
 </body>
 </html>`;
 }

@@ -5,6 +5,7 @@ export type SocialLink = { platform: string; handle: string };
 export interface SiteSettings {
   logo_main_url?: string;
   logo_secondary_png_url?: string;
+  founder_signature_url?: string;
   site_name?: string;
   hero_bg_mode?: "static_image" | "video" | "animated_svg";
   hero_svg_code?: string;
