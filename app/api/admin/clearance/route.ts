@@ -58,6 +58,8 @@ const AddSchema = z.union([
 ]);
 
 export async function GET() {
+  const __adminGate = await requireAdminUser();
+  if (!__adminGate.ok) return __adminGate.response;
   try {
     const [products, breederSummary] = await Promise.all([
       listAdminClearanceProducts(),
