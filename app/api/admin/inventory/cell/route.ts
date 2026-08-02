@@ -1,6 +1,8 @@
 import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { clearancePriceAfterListEdit } from "@/lib/clearance";
+import { deriveClearanceSalePrice } from "@/lib/product-utils";
 import { parsePackFromUnitLabel, toVariantSku } from "@/lib/sku-utils";
 import { pickKeeperVariantId } from "@/lib/product-variants-dedupe";
 
@@ -70,6 +72,7 @@ export async function PATCH(req: NextRequest) {
       stock?: number;
       cost_price?: number;
       price?: number;
+      clearance_price?: number | null;
       low_stock_threshold?: number;
       is_active?: boolean;
       sku?: string;
@@ -86,22 +89,42 @@ export async function PATCH(req: NextRequest) {
 
     let vid: bigint;
     if (variantId) {
+      const existing = await prisma.product_variants.findUnique({
+        where: { id: BigInt(variantId) },
+        select: {
+          product_id: true,
+          unit_label: true,
+          clearance_price: true,
+          products: { select: { clearance_discount_percent: true } },
+        },
+      });
+      if (!existing?.product_id) {
+        return NextResponse.json({ error: "Variant not found" }, { status: 404 });
+      }
+      if (typeof updates.price === "number") {
+        const nextCp = clearancePriceAfterListEdit(
+          updates.price,
+          existing.clearance_price != null ? Number(existing.clearance_price) : null,
+          existing.products?.clearance_discount_percent
+        );
+        if (nextCp !== undefined) updates.clearance_price = nextCp;
+      }
       await prisma.product_variants.update({
         where: { id: BigInt(variantId) },
         data: updates,
       });
-      const v = await prisma.product_variants.findUnique({
-        where: { id: BigInt(variantId) },
-        select: { product_id: true, unit_label: true },
-      });
-      if (!v?.product_id) return NextResponse.json({ error: "Variant not found" }, { status: 404 });
-      vid = v.product_id;
-      const packSize = parsePackFromUnitLabel(v.unit_label);
+      vid = existing.product_id;
+      const packSize = parsePackFromUnitLabel(existing.unit_label);
       await removeDuplicatePackVariants(vid, packSize, BigInt(variantId));
     } else if (productId && pack && masterSku) {
       const label = packToLabel(pack);
       const sku = toVariantSku(masterSku, label);
       const pid = BigInt(productId);
+
+      const productMeta = await prisma.products.findUnique({
+        where: { id: pid },
+        select: { clearance_discount_percent: true },
+      });
 
       const candidates = await prisma.product_variants.findMany({
         where: { product_id: pid },
@@ -111,6 +134,7 @@ export async function PATCH(req: NextRequest) {
           stock: true,
           price: true,
           cost_price: true,
+          clearance_price: true,
           sku: true,
           is_active: true,
         },
@@ -121,10 +145,20 @@ export async function PATCH(req: NextRequest) {
 
       if (samePack.length > 0) {
         const keeperId = pickKeeperVariantId(samePack);
+        const keeper = samePack.find((x) => x.id === keeperId) ?? samePack[0]!;
         const mergedStock =
           updates.stock != null
             ? updates.stock
             : samePack.reduce((s, x) => s + Math.max(0, Number(x.stock ?? 0)), 0);
+
+        let nextClearance: number | undefined;
+        if (typeof updates.price === "number") {
+          nextClearance = clearancePriceAfterListEdit(
+            updates.price,
+            keeper.clearance_price != null ? Number(keeper.clearance_price) : null,
+            productMeta?.clearance_discount_percent
+          );
+        }
 
         await removeDuplicatePackVariants(pid, pack, keeperId);
         await prisma.product_variants.update({
@@ -136,6 +170,7 @@ export async function PATCH(req: NextRequest) {
             stock: mergedStock,
             ...(updates.cost_price != null ? { cost_price: updates.cost_price } : {}),
             ...(updates.price != null ? { price: updates.price } : {}),
+            ...(nextClearance !== undefined ? { clearance_price: nextClearance } : {}),
             ...(updates.low_stock_threshold != null
               ? { low_stock_threshold: updates.low_stock_threshold }
               : {}),
@@ -162,16 +197,28 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "variantId or (productId, pack, masterSku) required" }, { status: 400 });
     }
 
+    const product = await prisma.products.findUnique({
+      where: { id: vid },
+      select: { is_clearance: true },
+    });
     const variants = await prisma.product_variants.findMany({
       where: { product_id: vid, is_active: true },
-      select: { price: true, stock: true },
+      select: { price: true, stock: true, clearance_price: true },
     });
     const totalStock = variants.reduce((s, x) => s + Number(x.stock ?? 0), 0);
     const minPrice = Math.min(...variants.map((x) => Number(x.price)).filter((n) => n > 0), Infinity) || 0;
+    const sale_price =
+      product?.is_clearance === true
+        ? deriveClearanceSalePrice(true, variants, null)
+        : undefined;
 
     await prisma.products.update({
       where: { id: vid },
-      data: { stock: totalStock, price: minPrice || undefined },
+      data: {
+        stock: totalStock,
+        price: minPrice || undefined,
+        ...(sale_price !== undefined ? { sale_price } : {}),
+      },
     });
 
     return NextResponse.json({ ok: true });

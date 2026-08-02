@@ -190,7 +190,9 @@ async function applyFixedClearancePrices(
   for (const v of variants ?? []) {
     const vid = Number(v.id);
     const alreadyOn = Number(v.clearance_price ?? 0) > 0;
-    const shouldWrite = idFilter ? idFilter.has(vid) : alreadyOn;
+    // Selected packs + any pack already on Clearance share one product %.
+    // Adding a pack at a new % must reprice siblings or checkout under/over-charges.
+    const shouldWrite = idFilter ? idFilter.has(vid) || alreadyOn : alreadyOn;
     if (!shouldWrite) continue;
 
     const cp = clearancePriceFromList(Number(v.price ?? 0), pct);
