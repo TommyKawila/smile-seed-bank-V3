@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-02 (Fix — inventory clearance reprice + clearance admin integrity)
+- **What:** Manual Inventory / sync แก้ list price แล้ว `clearance_price` ค้าง → checkout undercharge; เพิ่มแพ็ก Clearance คนละ % แล้ว product % เปลี่ยนโดยไม่ reprice พี่น้อง; GET clearance ไม่มี `requireAdminUser`
+- **Logic:** `clearancePriceAfterListEdit` + sync `sale_price` · `applyFixedClearancePrices` เขียน selected **หรือ** already-on · GET ใช้ `requireAdminUser` เหมือน POST
+- **ไฟล์:** `lib/clearance.ts` · `app/api/admin/inventory/cell/route.ts` · `app/api/admin/inventory/sync/route.ts` · `services/clearance-admin-service.ts` · `app/api/admin/clearance/route.ts`
+
 ### บันทึกการทำงาน — 2026-08-02 (Bug hunt — clearance-by-pack + inventory dedupe)
 - **What:** Deep hunt on tip `5d68a19` / branch `cursor/critical-bug-investigation-b20b` for novel HIGH bugs on clearance-by-pack + pack dedupe paths
 - **Logic:** Confirmed PR #65/#66 fixes **not** on tip · novel: inventory price edit leaves stale `clearance_price` (undercharge) · add-pack overwrites product % without repricing siblings · GET `/api/admin/clearance` lacks `requireAdminUser` (demotion gap)
