@@ -91,6 +91,23 @@ export function clearancePriceFromList(
 }
 
 /**
+ * After a list-price edit: if the pack is already on Clearance (`clearance_price > 0`),
+ * return the recomputed clearance baht. Otherwise `undefined` (leave column unchanged).
+ */
+export function clearancePriceAfterListEdit(
+  listPrice: number,
+  existingClearancePrice: number | null | undefined,
+  discountPercent: unknown
+): number | undefined {
+  if (!(Number(existingClearancePrice ?? 0) > 0)) return undefined;
+  const cp = clearancePriceFromList(
+    listPrice,
+    normalizeClearanceDiscountPercent(discountPercent)
+  );
+  return cp > 0 ? cp : undefined;
+}
+
+/**
  * Reprice only packs already on Clearance (`clearance_price > 0`).
  * Packs without a clearance price stay null (list price on storefront).
  */

@@ -2,6 +2,8 @@ import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
+import { clearancePriceAfterListEdit } from "@/lib/clearance";
+import { deriveClearanceSalePrice } from "@/lib/product-utils";
 import { toVariantSku, parsePackFromUnitLabel } from "@/lib/sku-utils";
 import { pickKeeperVariantId } from "@/lib/product-variants-dedupe";
 import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
@@ -146,15 +148,23 @@ export async function POST(req: NextRequest) {
         }
         product.product_variants = product.product_variants.filter((v) => v.id !== dup.id);
       }
+      const keeper = samePack.find((v) => v.id === keeperId) ?? samePack[0]!;
+      const listPrice = Math.max(0, price);
+      const nextClearance = clearancePriceAfterListEdit(
+        listPrice,
+        keeper.clearance_price != null ? Number(keeper.clearance_price) : null,
+        product.clearance_discount_percent
+      );
       await prisma.product_variants.update({
         where: { id: keeperId },
         data: {
           unit_label: label,
           stock: Math.max(0, stock),
           cost_price: cost,
-          price: Math.max(0, price),
+          price: listPrice,
           sku,
           is_active: true,
+          ...(nextClearance !== undefined ? { clearance_price: nextClearance } : {}),
         },
       });
     } else if (hasEconomics) {
@@ -175,16 +185,24 @@ export async function POST(req: NextRequest) {
 
   const allVariants = await prisma.product_variants.findMany({
     where: { product_id: product.id, is_active: true },
-    select: { price: true, stock: true },
+    select: { price: true, stock: true, clearance_price: true },
   });
   const totalStock = allVariants.reduce((s, x) => s + Number(x.stock ?? 0), 0);
   const minPrice = Math.min(
     ...allVariants.map((x) => Number(x.price)).filter((n) => n > 0),
     Infinity
   ) || 0;
+  const sale_price =
+    product.is_clearance === true
+      ? deriveClearanceSalePrice(true, allVariants, null)
+      : undefined;
   await prisma.products.update({
     where: { id: product.id },
-    data: { stock: totalStock, price: minPrice },
+    data: {
+      stock: totalStock,
+      price: minPrice,
+      ...(sale_price !== undefined ? { sale_price } : {}),
+    },
   });
 
   const updated = await prisma.products.findUnique({
