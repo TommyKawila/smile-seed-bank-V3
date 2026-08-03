@@ -819,6 +819,21 @@ model business_documents {
   @@schema("public")
 }
 
+/// B2B letter contacts — name + email evidence for Business Documents
+model business_contacts {
+  id                BigInt   @id @default(autoincrement())
+  name              String   @default("") @db.VarChar(200)
+  email             String   @unique @db.VarChar(320)
+  last_subject      String   @default("") @db.VarChar(300)
+  last_contacted_at DateTime @default(now()) @db.Timestamptz(6)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([last_contacted_at], map: "idx_business_contacts_last_contacted")
+  @@map("business_contacts")
+  @@schema("public")
+}
+
 /// Yearly sequence for SSB-B2B-YYYY-NNN quote numbers
 model b2b_quote_yearly_seq {
   year String @id @db.VarChar(4)

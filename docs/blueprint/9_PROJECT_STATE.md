@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-03 (Business Documents admin polish)
+- **What:** ลบ Edit fields · Subject ใน Dispatch · Sender ใกล้ Signature · History แยก Drafts/Sent · Contacts CRM · ส่งผ่าน Gmail SMTP หรือ Resend+Reply-To
+- **Logic:** ตาราง `business_contacts` upsert ตอน Save draft/Send · `B2B_GMAIL_USER` + `B2B_GMAIL_APP_PASSWORD` → Nodemailer SMTP · ไม่มี env → Resend `orders@` + `reply_to` Gmail · `GET /api/admin/business-contacts`
+- **ไฟล์:** `prisma/schema.prisma` · `migrations/20260803120000_business_contacts` · `services/business-document-service.ts` · `app/api/admin/business-contacts/route.ts` · `BusinessDocumentControls.tsx` · `BusinessDocumentDispatcher.tsx` · `hooks/useBusinessContacts.ts` · `types/business-contact.ts`
+
 ### บันทึกการทำงาน — 2026-08-01 (Clearance PDP back — prefer sessionStorage)
 - **What:** กด Back จาก PDP หลัง Clearance → breeder ไม่กลับไป `/clearance?breeder=`
 - **Logic:** `resolveProductListBackPath` ให้ `ssb:catalog-return` ชนะ `document.referrer` ที่ค้างจาก SPA soft-nav

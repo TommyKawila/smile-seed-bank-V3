@@ -1,11 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   FileDown,
   Loader2,
   Mail,
-  RefreshCw,
   Save,
   Trash2,
   Upload,
@@ -17,28 +16,33 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FOUNDER_SIGNATURE_SETTING_KEY } from "@/types/business-document";
-import type { BusinessDocumentFields, BusinessDocumentRecord } from "@/types/business-document";
+import type { BusinessDocumentRecord } from "@/types/business-document";
+import type { BusinessContactRecord } from "@/types/business-contact";
 
 type Props = {
-  fields: BusinessDocumentFields;
   subject: string;
   bodyText: string;
+  senderName: string;
+  recipientName: string;
   recipientEmail: string;
   rawPaste: string;
   signatureImageUrl: string | null;
   documents: BusinessDocumentRecord[];
+  contacts: BusinessContactRecord[];
   historyLoading: boolean;
+  contactsLoading: boolean;
   savingDraft: boolean;
   activeDocumentId: string | null;
-  onFieldChange: (patch: Partial<BusinessDocumentFields>) => void;
   onSubjectChange: (value: string) => void;
+  onSenderNameChange: (value: string) => void;
+  onRecipientNameChange: (value: string) => void;
   onRecipientEmailChange: (value: string) => void;
   onRawPasteChange: (value: string) => void;
   onFormatRaw: () => void;
-  onApplyFields: () => void;
   onSignatureUrlChange: (url: string | null) => void;
   onPersistSignatureDefault: (url: string) => Promise<void>;
   onClearSignatureDefault: () => Promise<void>;
+  onSelectContact: (contact: BusinessContactRecord) => void;
   onSaveDraft: () => void;
   onLoadDocument: (doc: BusinessDocumentRecord) => void;
   onDeleteDocument: (id: string) => void;
@@ -49,25 +53,29 @@ type Props = {
 };
 
 export function BusinessDocumentControls({
-  fields,
   subject,
   bodyText,
+  senderName,
+  recipientName,
   recipientEmail,
   rawPaste,
   signatureImageUrl,
   documents,
+  contacts,
   historyLoading,
+  contactsLoading,
   savingDraft,
   activeDocumentId,
-  onFieldChange,
   onSubjectChange,
+  onSenderNameChange,
+  onRecipientNameChange,
   onRecipientEmailChange,
   onRawPasteChange,
   onFormatRaw,
-  onApplyFields,
   onSignatureUrlChange,
   onPersistSignatureDefault,
   onClearSignatureDefault,
+  onSelectContact,
   onSaveDraft,
   onLoadDocument,
   onDeleteDocument,
@@ -78,6 +86,17 @@ export function BusinessDocumentControls({
 }: Props) {
   const sigInputRef = useRef<HTMLInputElement>(null);
   const [uploadingSig, setUploadingSig] = useState(false);
+  const [historyTab, setHistoryTab] = useState<"DRAFT" | "SENT">("SENT");
+
+  const drafts = useMemo(
+    () => documents.filter((d) => d.status === "DRAFT"),
+    [documents]
+  );
+  const sent = useMemo(
+    () => documents.filter((d) => d.status === "SENT"),
+    [documents]
+  );
+  const historyList = historyTab === "DRAFT" ? drafts : sent;
 
   const handleSignatureUpload = async (file: File) => {
     setUploadingSig(true);
@@ -135,10 +154,22 @@ export function BusinessDocumentControls({
       <Card className="border-slate-200/80 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-slate-800">
-            Signature image
+            Signature
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="doc-sender" className="text-xs text-slate-600">
+              Sender name
+            </Label>
+            <Input
+              id="doc-sender"
+              value={senderName}
+              onChange={(e) => onSenderNameChange(e.target.value)}
+              placeholder="Your name"
+              className="h-9 border-slate-200 bg-white"
+            />
+          </div>
           <div
             className="relative flex h-24 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-200 bg-slate-50"
             onClick={() => sigInputRef.current?.click()}
@@ -198,7 +229,7 @@ export function BusinessDocumentControls({
 
       <Card className="border-slate-200/80 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-slate-800">Edit fields</CardTitle>
+          <CardTitle className="text-base font-semibold text-slate-800">Dispatch</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1.5">
@@ -213,67 +244,18 @@ export function BusinessDocumentControls({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="doc-recipient" className="text-xs text-slate-600">
+            <Label htmlFor="doc-recipient-name" className="text-xs text-slate-600">
               Recipient name
             </Label>
             <Input
-              id="doc-recipient"
-              value={fields.recipientName}
-              onChange={(e) => onFieldChange({ recipientName: e.target.value })}
+              id="doc-recipient-name"
+              value={recipientName}
+              onChange={(e) => onRecipientNameChange(e.target.value)}
+              placeholder="Green Future Team"
               className="h-9 border-slate-200 bg-white"
+              list="biz-contact-names"
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="doc-brand" className="text-xs text-slate-600">
-              Brand name
-            </Label>
-            <Input
-              id="doc-brand"
-              value={fields.brandName}
-              onChange={(e) => onFieldChange({ brandName: e.target.value })}
-              className="h-9 border-slate-200 bg-white"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="doc-sender" className="text-xs text-slate-600">
-              Sender name
-            </Label>
-            <Input
-              id="doc-sender"
-              value={fields.senderName}
-              onChange={(e) => onFieldChange({ senderName: e.target.value })}
-              className="h-9 border-slate-200 bg-white"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="doc-date" className="text-xs text-slate-600">
-              Date
-            </Label>
-            <Input
-              id="doc-date"
-              type="date"
-              value={fields.documentDate}
-              onChange={(e) => onFieldChange({ documentDate: e.target.value })}
-              className="h-9 border-slate-200 bg-white"
-            />
-          </div>
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full bg-slate-100 text-slate-700 hover:bg-slate-200"
-            onClick={onApplyFields}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Apply fields to document
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="border-slate-200/80 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-slate-800">Dispatch</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="doc-email" className="text-xs text-slate-600">
               Recipient email
@@ -283,10 +265,27 @@ export function BusinessDocumentControls({
               type="email"
               value={recipientEmail}
               onChange={(e) => onRecipientEmailChange(e.target.value)}
-              placeholder="partner@greenfuture.example"
+              placeholder="partner@example.com"
               className="h-9 border-slate-200 bg-white"
+              list="biz-contact-emails"
             />
+            <datalist id="biz-contact-emails">
+              {contacts.map((c) => (
+                <option key={c.id} value={c.email}>
+                  {c.name}
+                </option>
+              ))}
+            </datalist>
+            <datalist id="biz-contact-names">
+              {contacts.map((c) => (
+                <option key={`n-${c.id}`} value={c.name} />
+              ))}
+            </datalist>
           </div>
+          <p className="text-[11px] text-slate-500">
+            Sends from Gmail when <code className="text-[10px]">B2B_GMAIL_APP_PASSWORD</code> is
+            set; otherwise Resend + Reply-To Gmail.
+          </p>
           <Button
             type="button"
             variant="secondary"
@@ -334,19 +333,84 @@ export function BusinessDocumentControls({
       <Card className="border-slate-200/80 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-slate-800">
+            Contacts
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {contactsLoading ? (
+            <div className="flex justify-center py-3">
+              <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+            </div>
+          ) : contacts.length === 0 ? (
+            <p className="text-xs text-slate-500">
+              Saved when you draft or send — name + email for business records.
+            </p>
+          ) : (
+            <ul className="max-h-40 space-y-1 overflow-y-auto">
+              {contacts.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    className="min-h-12 w-full rounded-md border border-slate-100 bg-white px-2 py-1.5 text-left hover:bg-slate-50"
+                    onClick={() => onSelectContact(c)}
+                  >
+                    <p className="text-xs font-medium text-slate-800">
+                      {c.name || c.email}
+                    </p>
+                    <p className="text-[10px] text-slate-500">
+                      {c.email}
+                      {c.lastSubject ? ` · ${c.lastSubject}` : ""}
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200/80 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-slate-800">
             History
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
+          <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+            <button
+              type="button"
+              className={`min-h-10 flex-1 rounded-md text-xs font-medium ${
+                historyTab === "SENT"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500"
+              }`}
+              onClick={() => setHistoryTab("SENT")}
+            >
+              Sent ({sent.length})
+            </button>
+            <button
+              type="button"
+              className={`min-h-10 flex-1 rounded-md text-xs font-medium ${
+                historyTab === "DRAFT"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500"
+              }`}
+              onClick={() => setHistoryTab("DRAFT")}
+            >
+              Drafts ({drafts.length})
+            </button>
+          </div>
           {historyLoading ? (
             <div className="flex justify-center py-4">
               <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
             </div>
-          ) : documents.length === 0 ? (
-            <p className="text-xs text-slate-500">No saved documents yet.</p>
+          ) : historyList.length === 0 ? (
+            <p className="text-xs text-slate-500">
+              {historyTab === "SENT" ? "No sent letters yet." : "No drafts yet."}
+            </p>
           ) : (
             <ul className="max-h-64 space-y-1 overflow-y-auto">
-              {documents.map((doc) => (
+              {historyList.map((doc) => (
                 <li
                   key={doc.id}
                   className={`flex items-start gap-1 rounded-md border px-2 py-1.5 ${
@@ -364,7 +428,12 @@ export function BusinessDocumentControls({
                       {doc.subject}
                     </p>
                     <p className="mt-0.5 text-[10px] text-slate-500">
-                      {doc.status} · {new Date(doc.updatedAt).toLocaleString("th-TH")}
+                      {doc.recipientName || "—"} · {doc.recipientEmail || "no email"}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {doc.status === "SENT" && doc.sentAt
+                        ? `Sent ${new Date(doc.sentAt).toLocaleString("th-TH")}`
+                        : `Updated ${new Date(doc.updatedAt).toLocaleString("th-TH")}`}
                     </p>
                   </button>
                   <Button

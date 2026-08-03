@@ -5,9 +5,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useBusinessDocumentDispatch } from "@/hooks/useBusinessDocumentDispatch";
 import { useBusinessDocumentDrafts } from "@/hooks/useBusinessDocumentDrafts";
+import { useBusinessContacts } from "@/hooks/useBusinessContacts";
 import { formatRawBusinessLetter } from "@/lib/business-document-raw-format";
 import { exportBusinessDocumentPdf } from "@/lib/business-document-pdf.client";
-import { buildBusinessDocumentPlainText, syncFieldsInBodyText } from "@/lib/business-document-template";
+import { buildBusinessDocumentPlainText } from "@/lib/business-document-template";
 import {
   BUSINESS_DOCUMENT_SUBJECT,
   DEFAULT_BUSINESS_DOCUMENT_FIELDS,
@@ -17,6 +18,7 @@ import type {
   BusinessDocumentFields,
   BusinessDocumentRecord,
 } from "@/types/business-document";
+import type { BusinessContactRecord } from "@/types/business-contact";
 import { BusinessDocumentPreview } from "./BusinessDocumentPreview";
 import { BusinessDocumentControls } from "./BusinessDocumentControls";
 
@@ -39,6 +41,11 @@ export function BusinessDocumentDispatcher() {
     remove,
     refresh,
   } = useBusinessDocumentDrafts();
+  const {
+    contacts,
+    loading: contactsLoading,
+    refresh: refreshContacts,
+  } = useBusinessContacts();
 
   const [fields, setFields] = useState<BusinessDocumentFields>(initialFields);
   const [bodyText, setBodyText] = useState(() => buildBusinessDocumentPlainText(initialFields()));
@@ -63,20 +70,6 @@ export function BusinessDocumentDispatcher() {
     }
   }, [settings, sigHydrated, historyLoading]);
 
-  const patchFields = useCallback((patch: Partial<BusinessDocumentFields>) => {
-    setFields((prev) => {
-      const next = { ...prev, ...patch };
-      setBodyText((body) => syncFieldsInBodyText(body, prev, next));
-      return next;
-    });
-  }, []);
-
-  const applyFieldsToDocument = useCallback(() => {
-    setBodyText(buildBusinessDocumentPlainText(fields));
-    setSubject(BUSINESS_DOCUMENT_SUBJECT);
-    toast({ title: "Applied", description: "Fields merged into document text." });
-  }, [fields, toast]);
-
   const handleFormatRaw = useCallback(() => {
     if (!rawPaste.trim()) return;
     const formatted = formatRawBusinessLetter(rawPaste, {
@@ -100,6 +93,7 @@ export function BusinessDocumentDispatcher() {
     if (result.success) {
       setActiveDocumentId(result.document.id);
       toast({ title: "Draft saved", description: "Document stored in history." });
+      await refreshContacts();
     } else {
       toast({
         title: "Save failed",
@@ -116,22 +110,34 @@ export function BusinessDocumentDispatcher() {
     signatureImageUrl,
     recipientEmail,
     toast,
+    refreshContacts,
   ]);
 
-  const handleLoadDocument = useCallback((doc: BusinessDocumentRecord) => {
-    setActiveDocumentId(doc.id);
-    setFields({
-      recipientName: doc.recipientName,
-      brandName: doc.brandName,
-      senderName: doc.senderName,
-      documentDate: doc.documentDate,
-    });
-    setBodyText(doc.bodyText);
-    setSubject(doc.subject);
-    setRecipientEmail(doc.recipientEmail);
-    setSignatureImageUrl(doc.signatureImageUrl);
-    toast({ title: "Loaded", description: doc.status === "SENT" ? "Sent letter loaded." : "Draft loaded." });
-  }, [toast]);
+  const handleLoadDocument = useCallback(
+    (doc: BusinessDocumentRecord) => {
+      setActiveDocumentId(doc.id);
+      setFields({
+        recipientName: doc.recipientName,
+        brandName: doc.brandName,
+        senderName: doc.senderName,
+        documentDate: doc.documentDate,
+      });
+      setBodyText(doc.bodyText);
+      setSubject(doc.subject);
+      setRecipientEmail(doc.recipientEmail);
+      setSignatureImageUrl(doc.signatureImageUrl);
+      toast({
+        title: "Loaded",
+        description: doc.status === "SENT" ? "Sent letter loaded." : "Draft loaded.",
+      });
+    },
+    [toast]
+  );
+
+  const handleSelectContact = useCallback((c: BusinessContactRecord) => {
+    setFields((prev) => ({ ...prev, recipientName: c.name || prev.recipientName }));
+    setRecipientEmail(c.email);
+  }, []);
 
   const handleDeleteDocument = useCallback(
     async (id: string) => {
@@ -161,8 +167,12 @@ export function BusinessDocumentDispatcher() {
     });
     if (result.success) {
       if (result.documentId) setActiveDocumentId(result.documentId);
-      toast({ title: "Email sent", description: `Delivered to ${recipientEmail.trim()}` });
+      toast({
+        title: "Email sent",
+        description: `Delivered to ${recipientEmail.trim()}`,
+      });
       await refresh();
+      await refreshContacts();
     } else {
       toast({
         title: "Send failed",
@@ -179,6 +189,7 @@ export function BusinessDocumentDispatcher() {
     activeDocumentId,
     sendEmail,
     refresh,
+    refreshContacts,
     toast,
   ]);
 
@@ -214,27 +225,31 @@ export function BusinessDocumentDispatcher() {
           signatureImageUrl={signatureImageUrl}
         />
       </div>
-      <aside className="lg:sticky lg:top-6 lg:self-start">
+      <aside className="lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
         <BusinessDocumentControls
-          fields={fields}
           subject={subject}
           bodyText={bodyText}
+          senderName={fields.senderName}
+          recipientName={fields.recipientName}
           recipientEmail={recipientEmail}
           rawPaste={rawPaste}
           signatureImageUrl={signatureImageUrl}
           documents={documents}
+          contacts={contacts}
           historyLoading={historyLoading}
+          contactsLoading={contactsLoading}
           savingDraft={savingDraft}
           activeDocumentId={activeDocumentId}
-          onFieldChange={patchFields}
           onSubjectChange={setSubject}
+          onSenderNameChange={(v) => setFields((prev) => ({ ...prev, senderName: v }))}
+          onRecipientNameChange={(v) => setFields((prev) => ({ ...prev, recipientName: v }))}
           onRecipientEmailChange={setRecipientEmail}
           onRawPasteChange={setRawPaste}
           onFormatRaw={handleFormatRaw}
-          onApplyFields={applyFieldsToDocument}
           onSignatureUrlChange={setSignatureImageUrl}
           onPersistSignatureDefault={(url) => updateSetting(FOUNDER_SIGNATURE_SETTING_KEY, url)}
           onClearSignatureDefault={() => updateSetting(FOUNDER_SIGNATURE_SETTING_KEY, "")}
+          onSelectContact={handleSelectContact}
           onSaveDraft={() => void handleSaveDraft()}
           onLoadDocument={handleLoadDocument}
           onDeleteDocument={(id) => void handleDeleteDocument(id)}

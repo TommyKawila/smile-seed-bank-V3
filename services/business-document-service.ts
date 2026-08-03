@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/get-url";
 import { buildBusinessDocumentPlainText } from "@/lib/business-document-template";
@@ -12,14 +13,19 @@ import type {
   BusinessDocumentRecord,
   BusinessDocumentStatus,
 } from "@/types/business-document";
+import type { BusinessContactRecord } from "@/types/business-contact";
+
+export type { BusinessContactRecord };
 
 const RESEND_URL = "https://api.resend.com/emails";
-const FROM_EMAIL = "Smile Seed Bank <orders@smileseedbank.com>";
+const FROM_RESEND = "Smile Seed Bank <orders@smileseedbank.com>";
+const DEFAULT_GMAIL_USER = "smileseedsbank@gmail.com";
 
 export type BusinessDocumentSendResult = {
   success: boolean;
   error: string | null;
   documentId?: string;
+  via?: "gmail" | "resend";
 };
 
 function toRecord(row: {
@@ -73,6 +79,53 @@ export async function getBusinessDocument(id: string): Promise<BusinessDocumentR
   return row ? toRecord(row) : null;
 }
 
+export async function upsertBusinessContact(input: {
+  name: string;
+  email: string;
+  subject?: string;
+}): Promise<BusinessContactRecord | null> {
+  const email = input.email.trim().toLowerCase();
+  if (!email || !email.includes("@")) return null;
+  const name = input.name.trim();
+  const subject = (input.subject ?? "").trim().slice(0, 300);
+  const now = new Date();
+  const row = await prisma.business_contacts.upsert({
+    where: { email },
+    create: {
+      email,
+      name,
+      last_subject: subject,
+      last_contacted_at: now,
+    },
+    update: {
+      ...(name ? { name } : {}),
+      ...(subject ? { last_subject: subject } : {}),
+      last_contacted_at: now,
+    },
+  });
+  return {
+    id: String(row.id),
+    name: row.name,
+    email: row.email,
+    lastSubject: row.last_subject,
+    lastContactedAt: row.last_contacted_at.toISOString(),
+  };
+}
+
+export async function listBusinessContacts(limit = 50): Promise<BusinessContactRecord[]> {
+  const rows = await prisma.business_contacts.findMany({
+    orderBy: { last_contacted_at: "desc" },
+    take: Math.min(Math.max(limit, 1), 100),
+  });
+  return rows.map((r) => ({
+    id: String(r.id),
+    name: r.name,
+    email: r.email,
+    lastSubject: r.last_subject,
+    lastContactedAt: r.last_contacted_at.toISOString(),
+  }));
+}
+
 export async function saveBusinessDocument(
   input: SaveBusinessDocumentInput
 ): Promise<BusinessDocumentRecord> {
@@ -90,15 +143,25 @@ export async function saveBusinessDocument(
     ...(status === "SENT" ? { sent_at: new Date() } : {}),
   };
 
+  let row;
   if (input.id) {
-    const row = await prisma.business_documents.update({
+    row = await prisma.business_documents.update({
       where: { id: BigInt(input.id) },
       data,
     });
-    return toRecord(row);
+  } else {
+    row = await prisma.business_documents.create({ data });
   }
 
-  const row = await prisma.business_documents.create({ data });
+  const email = data.recipient_email.trim();
+  if (email) {
+    await upsertBusinessContact({
+      name: data.recipient_name,
+      email,
+      subject: data.subject,
+    });
+  }
+
   return toRecord(row);
 }
 
@@ -135,12 +198,68 @@ export async function fetchDefaultSignatureUrl(): Promise<string | null> {
   return fetchSiteSettingRow(FOUNDER_SIGNATURE_SETTING_KEY);
 }
 
+function gmailSmtpConfigured(): { user: string; pass: string } | null {
+  const user = (process.env.B2B_GMAIL_USER ?? DEFAULT_GMAIL_USER).trim();
+  const pass = (process.env.B2B_GMAIL_APP_PASSWORD ?? "").trim();
+  if (!pass) return null;
+  return { user, pass };
+}
+
+async function sendViaGmail(opts: {
+  user: string;
+  pass: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<void> {
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user: opts.user, pass: opts.pass },
+  });
+  await transporter.sendMail({
+    from: `Smile Seed Bank <${opts.user}>`,
+    to: opts.to,
+    subject: opts.subject,
+    html: opts.html,
+    text: opts.text,
+  });
+}
+
+async function sendViaResend(opts: {
+  apiKey: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  replyTo: string;
+}): Promise<void> {
+  const res = await fetch(RESEND_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${opts.apiKey}`,
+    },
+    body: JSON.stringify({
+      from: FROM_RESEND,
+      to: [opts.to],
+      reply_to: opts.replyTo,
+      subject: opts.subject,
+      html: opts.html,
+      text: opts.text,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
+  }
+}
+
 export async function sendBusinessDocumentEmail(
   input: BusinessDocumentDispatchInput
 ): Promise<BusinessDocumentSendResult> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return { success: false, error: "RESEND_API_KEY is not configured" };
-
   const to = input.recipientEmail.trim();
   if (!to) return { success: false, error: "Recipient email is required" };
 
@@ -159,24 +278,38 @@ export async function sendBusinessDocumentEmail(
     signatureImageUrl?.trim() || (await fetchDefaultSignatureUrl()) || null;
   const html = buildBusinessDocumentEmailHtml(plain, logoUrl, subject, sigUrl);
 
+  const gmail = gmailSmtpConfigured();
+  const replyTo = (process.env.B2B_GMAIL_USER ?? DEFAULT_GMAIL_USER).trim();
+
   try {
-    const res = await fetch(RESEND_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [to],
+    let via: "gmail" | "resend" = "resend";
+    if (gmail) {
+      await sendViaGmail({
+        user: gmail.user,
+        pass: gmail.pass,
+        to,
         subject,
         html,
         text: plain,
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
+      });
+      via = "gmail";
+    } else {
+      const apiKey = process.env.RESEND_API_KEY;
+      if (!apiKey) {
+        return {
+          success: false,
+          error:
+            "Set B2B_GMAIL_APP_PASSWORD (Gmail App Password) or RESEND_API_KEY to send",
+        };
+      }
+      await sendViaResend({
+        apiKey,
+        to,
+        subject,
+        html,
+        text: plain,
+        replyTo,
+      });
     }
 
     const saved = await saveBusinessDocument({
@@ -189,7 +322,7 @@ export async function sendBusinessDocumentEmail(
       status: "SENT",
     });
 
-    return { success: true, error: null, documentId: saved.id };
+    return { success: true, error: null, documentId: saved.id, via };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
