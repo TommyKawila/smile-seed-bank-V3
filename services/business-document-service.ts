@@ -1,10 +1,9 @@
 import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/get-url";
-import { buildBusinessDocumentPlainText } from "@/lib/business-document-template";
 import { buildBusinessDocumentEmailHtml } from "@/lib/email-business-document-html";
 import {
-  BUSINESS_DOCUMENT_SUBJECT,
+  BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
   FOUNDER_SIGNATURE_SETTING_KEY,
 } from "@/types/business-document";
 import type {
@@ -131,7 +130,7 @@ export async function saveBusinessDocument(
 ): Promise<BusinessDocumentRecord> {
   const status = input.status ?? "DRAFT";
   const data = {
-    subject: input.subject.trim() || BUSINESS_DOCUMENT_SUBJECT,
+    subject: input.subject.trim() || BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
     body_text: input.bodyText,
     recipient_name: input.recipientName.trim(),
     recipient_email: (input.recipientEmail ?? "").trim(),
@@ -271,8 +270,9 @@ export async function sendBusinessDocumentEmail(
     documentId,
     ...fields
   } = input;
-  const plain = bodyText.trim() || buildBusinessDocumentPlainText(fields);
-  const subject = subjectIn.trim() || BUSINESS_DOCUMENT_SUBJECT;
+  const plain = bodyText.trim();
+  if (!plain) return { success: false, error: "Letter body is required" };
+  const subject = subjectIn.trim() || BUSINESS_DOCUMENT_FALLBACK_SUBJECT;
   const logoUrl = await fetchLogoUrl();
   const sigUrl =
     signatureImageUrl?.trim() || (await fetchDefaultSignatureUrl()) || null;

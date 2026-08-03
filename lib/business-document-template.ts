@@ -1,6 +1,9 @@
 import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
 import type { BusinessDocumentFields } from "@/types/business-document";
-import { BUSINESS_DOCUMENT_SUBJECT } from "@/types/business-document";
+import {
+  BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
+  BUSINESS_DOCUMENT_SUBJECT,
+} from "@/types/business-document";
 
 function escapeHtml(s: string): string {
   return s
@@ -22,11 +25,13 @@ export function formatBusinessDocumentDate(isoDate: string): string {
 
 export function buildBusinessDocumentPlainText(fields: BusinessDocumentFields): string {
   const dateLabel = formatBusinessDocumentDate(fields.documentDate);
-  const brand = fields.brandName.trim() || "Mellow Moon";
-  const recipient = fields.recipientName.trim() || "Green Future Team";
+  const brand = fields.brandName.trim() || "Our Brand";
+  const recipient = fields.recipientName.trim() || "Partner";
   const sender = fields.senderName.trim() || "[Your Name]";
+  const subjectLine =
+    BUSINESS_DOCUMENT_SUBJECT.trim() || BUSINESS_DOCUMENT_FALLBACK_SUBJECT;
 
-  return `${BUSINESS_DOCUMENT_SUBJECT}
+  return `${subjectLine}
 
 ${dateLabel}
 
@@ -44,7 +49,7 @@ MOQ Flexibility: Regarding your Minimum Order Quantity of 1,000 seeds, can this 
 
 White-Label Authorization: We require confirmation that we have full authorization to rebrand and market these seeds under "${brand}" without any Plant Variety Protection (PVP) or intellectual property conflicts.
 
-Germination Guarantee & Claims: For retail customers experiencing germination failures, if we provide documented proof that the issue stems from the seed viability, what is your policy for replacements? Can we claim replacement stock directly from Green Future?
+Germination Guarantee & Claims: For retail customers experiencing germination failures, if we provide documented proof that the issue stems from the seed viability, what is your policy for replacements? Can we claim replacement stock directly from the partner?
 
 Please let us know your standard protocols regarding these points, or provide a draft agreement if available.
 
@@ -119,11 +124,11 @@ export function buildBusinessDocumentBodyBlockHtml(bodyText: string): string {
 export function buildBusinessDocumentPrintHtmlFromBody(
   bodyText: string,
   logoUrl: string | null,
-  subject: string = BUSINESS_DOCUMENT_SUBJECT,
+  subject: string = BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
   signatureImageUrl: string | null = null
 ): string {
   const body = buildBusinessDocumentBodyBlockHtml(bodyText);
-  const title = subject.trim() || BUSINESS_DOCUMENT_SUBJECT;
+  const title = subject.trim() || BUSINESS_DOCUMENT_FALLBACK_SUBJECT;
   const logoBlock = logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="Smile Seed Bank" class="doc-logo" />`
     : `<div class="doc-logo-fallback">Smile Seed Bank</div>`;
@@ -174,10 +179,12 @@ export function buildBusinessDocumentPrintHtmlFromBody(
 
 export function buildBusinessDocumentLetterHtml(fields: BusinessDocumentFields): string {
   const dateLabel = escapeHtml(formatBusinessDocumentDate(fields.documentDate));
-  const brand = escapeHtml(fields.brandName.trim() || "Mellow Moon");
-  const recipient = escapeHtml(fields.recipientName.trim() || "Green Future Team");
+  const brand = escapeHtml(fields.brandName.trim() || "Our Brand");
+  const recipient = escapeHtml(fields.recipientName.trim() || "Partner");
   const sender = escapeHtml(fields.senderName.trim() || "[Your Name]");
-  const subject = escapeHtml(BUSINESS_DOCUMENT_SUBJECT);
+  const subject = escapeHtml(
+    BUSINESS_DOCUMENT_SUBJECT.trim() || BUSINESS_DOCUMENT_FALLBACK_SUBJECT
+  );
 
   return `
     <p class="doc-subject">${subject}</p>
@@ -189,7 +196,7 @@ export function buildBusinessDocumentLetterHtml(fields: BusinessDocumentFields):
     <p><strong>COA Readiness &amp; Compliance:</strong> Which specific strains on your list currently hold complete, batch-specific COAs that our clients can immediately use for their GACP cultivation license applications?</p>
     <p><strong>MOQ Flexibility:</strong> Regarding your Minimum Order Quantity of 1,000 seeds, can this volume be mixed across different strains, or is it strictly per single strain?</p>
     <p><strong>White-Label Authorization:</strong> We require confirmation that we have full authorization to rebrand and market these seeds under &ldquo;${brand}&rdquo; without any Plant Variety Protection (PVP) or intellectual property conflicts.</p>
-    <p><strong>Germination Guarantee &amp; Claims:</strong> For retail customers experiencing germination failures, if we provide documented proof that the issue stems from the seed viability, what is your policy for replacements? Can we claim replacement stock directly from Green Future?</p>
+    <p><strong>Germination Guarantee &amp; Claims:</strong> For retail customers experiencing germination failures, if we provide documented proof that the issue stems from the seed viability, what is your policy for replacements? Can we claim replacement stock directly from the partner?</p>
     <p>Please let us know your standard protocols regarding these points, or provide a draft agreement if available.</p>
     <p>Looking forward to your response.</p>
     <p class="doc-signoff">Best regards,</p>
@@ -210,7 +217,7 @@ export function buildBusinessDocumentPrintHtml(
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>${escapeHtml(BUSINESS_DOCUMENT_SUBJECT)}</title>
+  <title>${escapeHtml(BUSINESS_DOCUMENT_FALLBACK_SUBJECT)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }

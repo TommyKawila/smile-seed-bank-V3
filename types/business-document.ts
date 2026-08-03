@@ -32,16 +32,18 @@ export type BusinessDocumentRecord = BusinessDocumentDraft & {
   updatedAt: string;
 };
 
-/** Default subject for the OEM partnership template */
-export const BUSINESS_DOCUMENT_SUBJECT =
-  "Business Partnership Inquiry & OEM Terms (Smile Seed Bank x Green Future)";
+/** Blank default — letters are built from raw paste */
+export const BUSINESS_DOCUMENT_SUBJECT = "";
+
+/** Used when save/send has an empty subject */
+export const BUSINESS_DOCUMENT_FALLBACK_SUBJECT = "(No subject)";
 
 /** site_settings key for default founder signature image */
 export const FOUNDER_SIGNATURE_SETTING_KEY = "founder_signature_url";
 
 export const DEFAULT_BUSINESS_DOCUMENT_FIELDS: BusinessDocumentFields = {
-  recipientName: "Green Future Team",
-  brandName: "Mellow Moon",
-  senderName: "[Your Name]",
+  recipientName: "",
+  brandName: "",
+  senderName: "",
   documentDate: new Date().toISOString().slice(0, 10),
 };

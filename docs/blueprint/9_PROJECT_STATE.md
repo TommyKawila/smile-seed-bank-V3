@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-03 (Business Documents — blank start)
+- **What:** เปิด `/admin/documents/dispatcher` ว่าง — ไม่ preload จดหมาย Green Future
+- **Logic:** defaults subject/body/recipient ว่าง · placeholder กลาง · save/send ใช้ `(No subject)` · ไม่ inject sample letter ตอนส่ง
+- **ไฟล์:** `types/business-document.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx` · `business-document-service.ts` · `business-document-template.ts` · `email-business-document-html.ts`
+
 ### บันทึกการทำงาน — 2026-08-03 (Business Documents admin polish)
 - **What:** ลบ Edit fields · Subject ใน Dispatch · Sender ใกล้ Signature · History แยก Drafts/Sent · Contacts CRM · ส่งผ่าน Gmail SMTP หรือ Resend+Reply-To
 - **Logic:** ตาราง `business_contacts` upsert ตอน Save draft/Send · `B2B_GMAIL_USER` + `B2B_GMAIL_APP_PASSWORD` → Nodemailer SMTP · ไม่มี env → Resend `orders@` + `reply_to` Gmail · `GET /api/admin/business-contacts`

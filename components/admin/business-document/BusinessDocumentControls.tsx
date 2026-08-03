@@ -240,6 +240,7 @@ export function BusinessDocumentControls({
               id="doc-subject"
               value={subject}
               onChange={(e) => onSubjectChange(e.target.value)}
+              placeholder="Email subject"
               className="h-9 border-slate-200 bg-white"
             />
           </div>
@@ -251,7 +252,7 @@ export function BusinessDocumentControls({
               id="doc-recipient-name"
               value={recipientName}
               onChange={(e) => onRecipientNameChange(e.target.value)}
-              placeholder="Green Future Team"
+              placeholder="Partner name"
               className="h-9 border-slate-200 bg-white"
               list="biz-contact-names"
             />

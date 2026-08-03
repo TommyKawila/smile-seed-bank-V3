@@ -8,9 +8,7 @@ import { useBusinessDocumentDrafts } from "@/hooks/useBusinessDocumentDrafts";
 import { useBusinessContacts } from "@/hooks/useBusinessContacts";
 import { formatRawBusinessLetter } from "@/lib/business-document-raw-format";
 import { exportBusinessDocumentPdf } from "@/lib/business-document-pdf.client";
-import { buildBusinessDocumentPlainText } from "@/lib/business-document-template";
 import {
-  BUSINESS_DOCUMENT_SUBJECT,
   DEFAULT_BUSINESS_DOCUMENT_FIELDS,
   FOUNDER_SIGNATURE_SETTING_KEY,
 } from "@/types/business-document";
@@ -48,8 +46,8 @@ export function BusinessDocumentDispatcher() {
   } = useBusinessContacts();
 
   const [fields, setFields] = useState<BusinessDocumentFields>(initialFields);
-  const [bodyText, setBodyText] = useState(() => buildBusinessDocumentPlainText(initialFields()));
-  const [subject, setSubject] = useState(BUSINESS_DOCUMENT_SUBJECT);
+  const [bodyText, setBodyText] = useState("");
+  const [subject, setSubject] = useState("");
   const [rawPaste, setRawPaste] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [signatureImageUrl, setSignatureImageUrl] = useState<string | null>(null);

@@ -1,5 +1,5 @@
 import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
-import { BUSINESS_DOCUMENT_SUBJECT } from "@/types/business-document";
+import { BUSINESS_DOCUMENT_FALLBACK_SUBJECT } from "@/types/business-document";
 
 function escapeHtml(s: string): string {
   return s
@@ -18,7 +18,7 @@ function signatureImageBlock(signatureImageUrl: string | null): string {
 export function buildBusinessDocumentEmailHtml(
   bodyText: string,
   logoUrl: string | null,
-  subject: string = BUSINESS_DOCUMENT_SUBJECT,
+  subject: string = BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
   signatureImageUrl: string | null = null
 ): string {
   const bodyHtml = plainLetterBodyToHtml(bodyText);
