@@ -11,9 +11,9 @@ export const dynamic = "force-dynamic";
 const SaveSchema = z.object({
   id: z.string().optional().nullable(),
   recipientEmail: z.string().max(320).optional().default(""),
-  recipientName: z.string().min(1).max(200),
-  brandName: z.string().min(1).max(120),
-  senderName: z.string().min(1).max(120),
+  recipientName: z.string().max(200),
+  brandName: z.string().max(120),
+  senderName: z.string().max(120),
   documentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   bodyText: z.string().min(1).max(50000),
   subject: z.string().min(1).max(300),

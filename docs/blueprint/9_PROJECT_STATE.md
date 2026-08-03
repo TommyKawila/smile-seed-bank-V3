@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-03 (Business Documents — fix Save draft Zod)
+- **What:** Save draft ไม่พังเมื่อ brandName/senderName/recipientName ว่าง
+- **Logic:** Zod เลิก `.min(1)` บนฟิลด์ที่ UI ไม่บังคับหลัง blank/raw-paste · คง bodyText/subject/email
+- **ไฟล์:** `app/api/admin/business-documents/route.ts` · `[id]/route.ts` · `dispatch/route.ts`
+
 ### บันทึกการทำงาน — 2026-08-03 (Business Documents — blank start)
 - **What:** เปิด `/admin/documents/dispatcher` ว่าง — ไม่ preload จดหมาย Green Future
 - **Logic:** defaults subject/body/recipient ว่าง · placeholder กลาง · save/send ใช้ `(No subject)` · ไม่ inject sample letter ตอนส่ง
