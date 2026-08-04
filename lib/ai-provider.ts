@@ -27,9 +27,9 @@ const DEFAULT_MODEL: AIModel = "gemini";
 const MAX_TOKENS = 4096;
 const OPENAI_TEMPERATURE = 0.4;
 
-/** Override with env GEMINI_MODEL (e.g. gemini-2.5-flash). */
+/** Override with env GEMINI_MODEL (e.g. gemini-3.5-flash). */
 function getGeminiModelId(): string {
-  return process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
+  return process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
 }
 
 const OPENAI_MODEL_ID = "gpt-4o";

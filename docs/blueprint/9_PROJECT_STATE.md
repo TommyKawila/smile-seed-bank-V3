@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Gemini default → gemini-3.5-flash)
+- **What:** แก้ TG 404 — `gemini-2.5-flash` ไม่ให้ new users แล้ว
+- **Logic:** default `getGeminiModelId()` → `gemini-3.5-flash` · override ด้วย `GEMINI_MODEL` ได้
+- **ไฟล์:** `lib/ai-provider.ts`
+
 ### บันทึกการทำงาน — 2026-08-04 (SSB Assistant — fix Gemini 404 + schema)
 - **What:** แก้บอท TG ตอบ “ระบบขัดข้อง” จาก Vercel log
 - **Logic:** default model → `gemini-2.5-flash` (+ `GEMINI_MODEL` override) · log ApiError · webhook ส่ง reply ก่อน save · GRANT `ssb_assistant` · **บอสยังต้อง Exposed schemas ใน Supabase API settings**
