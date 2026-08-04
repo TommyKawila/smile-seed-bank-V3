@@ -143,7 +143,7 @@ export function BulkOrderCalculator({
                     สายพันธุ์
                   </label>
                   <select
-                    className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                    className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900"
                     value={line.strainId}
                     onChange={(e) => {
                       const s = catalog.find((c) => c.id === e.target.value);
@@ -172,6 +172,7 @@ export function BulkOrderCalculator({
                         quantity: Math.max(0, Math.floor(Number(e.target.value) || 0)),
                       })
                     }
+                    className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
                   />
                 </div>
                 <Button
@@ -196,7 +197,7 @@ export function BulkOrderCalculator({
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="border-amber-400 bg-white"
+                    className="border-amber-400 bg-white text-slate-900 hover:bg-amber-50"
                     onClick={() =>
                       updateLine(idx, { quantity: config.microPackQty })
                     }
@@ -217,7 +218,13 @@ export function BulkOrderCalculator({
           );
         })}
 
-        <Button type="button" variant="outline" onClick={addLine} disabled={!catalog.length}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={addLine}
+          disabled={!catalog.length}
+          className="border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
+        >
           <Plus className="mr-1 h-4 w-4" />
           เพิ่มสายพันธุ์
         </Button>

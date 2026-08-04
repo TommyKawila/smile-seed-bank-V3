@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Wholesale — fix black inputs)
+- **What:** ช่องจำนวนเมล็ด/ปุ่ม outline บน `/wholesale` พื้นดำจาก dark `bg-background`
+- **Logic:** override `bg-white text-slate-900 border-slate-200` ใน BulkOrderCalculator + CoaAddonSection
+- **ไฟล์:** `BulkOrderCalculator.tsx` · `CoaAddonSection.tsx`
+
+### บันทึกการทำงาน — 2026-08-04 (Admin SSB Assistant — แนบรูป/PDF)
+- **What:** `/admin/assistant` แนบรูป+PDF, ลากวาง, Gemini อ่านรูปได้
+- **Logic:** POST files base64 → `callAIWithTools` · history เก็บ label เท่านั้น · จำกัด jpeg/png/webp/pdf
+- **ไฟล์:** `app/api/admin/chat/route.ts` · `AdminAssistantChat.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (B2B Bulk Order calculator)
 - **What:** `/wholesale` calculator ใหม่ — MOQ 500 / แพ็ค 100 · bulk perk ตามยอดรวม · COA none/with · add-on A/B · สรุป 50/50
 - **Logic:** `BulkPricingConfig` v2 ใน `wholesale_settings.tiers` · ราคา THB ปัดขึ้นจำนวนเต็ม · Admin Pricing แก้ได้ · RFQ เก็บ COA + deposit ใน paymentNotes

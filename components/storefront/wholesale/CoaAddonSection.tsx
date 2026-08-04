@@ -51,6 +51,7 @@ export function CoaAddonSection({
               onChange={(e) =>
                 onPackageAChange(Math.max(0, Math.floor(Number(e.target.value) || 0)))
               }
+              className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
             />
           </div>
           <div className="space-y-1">
@@ -65,6 +66,7 @@ export function CoaAddonSection({
               onChange={(e) =>
                 onPackageBChange(Math.max(0, Math.floor(Number(e.target.value) || 0)))
               }
+              className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
             />
           </div>
         </div>
