@@ -67,6 +67,8 @@ export function StorefrontLayoutClient({
   const isLiffEntry =
     pathname === "/line/entry" || pathname.startsWith("/line/entry/");
   const isHomePath = pathname === "/";
+  const hideBrowserBanner =
+    pathname === "/checkout" || Boolean(pathname?.startsWith("/checkout/"));
 
   useEffect(() => {
     if (pathname === "/blog" || pathname?.startsWith("/blog/")) {
@@ -131,7 +133,7 @@ export function StorefrontLayoutClient({
     <>
       {cartFxMount ? <CartAnimation replay={cartFxReplay} /> : null}
       <Toaster />
-      {mountHomeBanners ? <BrowserDetectionBanner /> : null}
+      {mountHomeBanners && !hideBrowserBanner ? <BrowserDetectionBanner /> : null}
       {mountAgeGate ? (
         <AgeVerificationGate initialVerifiedCookie={initialAgeVerifiedCookie} />
       ) : null}

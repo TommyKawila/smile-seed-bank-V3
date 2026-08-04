@@ -587,29 +587,6 @@ export function CheckoutPageClient({
           </h1>
         </div>
 
-        {!user && !authLoading && phase === "details" && (
-          <div className="mx-auto mb-4 max-w-3xl rounded-lg border border-amber-200/90 bg-amber-50/95 px-4 py-3 text-[12px] leading-relaxed text-amber-950 shadow-sm">
-            <p>
-              {t(
-                "การสั่งซื้อในฐานะบุคคลทั่วไปจะไม่สามารถใช้โค้ดส่วนลดสมาชิก (เช่น 420DAY) ได้",
-                "Guest checkout cannot use member promo codes (e.g. 420DAY).",
-              )}
-            </p>
-            <p className="mt-2 text-[11px] text-amber-900/90">
-              {t(
-                "สมัครหรือเข้าสู่ระบบเพื่อใช้โค้ดและสะสมสิทธิประโยชน์",
-                "Sign up or log in to apply codes and unlock member benefits.",
-              )}{" "}
-              <Link
-                href="/login?next=/checkout"
-                className="font-semibold text-amber-950 underline underline-offset-2 hover:text-amber-900"
-              >
-                {t("เข้าสู่ระบบ / สมัครสมาชิก", "Log in / Register")}
-              </Link>
-            </p>
-          </div>
-        )}
-
         {phase === "details" ? (
         <form onSubmit={handleSubmit}>
           <div className="mx-auto max-w-3xl space-y-4">
@@ -866,37 +843,71 @@ export function CheckoutPageClient({
                 <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{submitError}</p>
               )}
 
-              <a
-                href={process.env.NEXT_PUBLIC_LINE_OA_URL ?? "https://page.line.me/smileseedsbank"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-lg border border-[#06C755]/30 bg-[#06C755]/10 px-3 py-2.5 text-[11px] font-medium text-[#06C755] hover:bg-[#06C755]/15"
-              >
-                <span className="text-base leading-none">💬</span>
-                {t(
-                  "อย่าลืมเพิ่มเพื่อน @smileseedsbank เพื่อรับเลขพัสดุอัตโนมัติทาง LINE",
-                  "Add @smileseedsbank as a friend to receive tracking updates on LINE",
-                )}
-              </a>
+              {/* Desktop / in-flow CTA */}
+              <div className="hidden space-y-3 sm:block">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={cn(
+                    "h-12 w-full rounded-sm bg-primary text-base font-semibold tracking-wide text-white shadow-none hover:bg-primary/90 active:scale-[0.98]",
+                    checkoutAmount,
+                  )}
+                >
+                  {isSubmitting ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("กำลังสร้างออเดอร์...", "Placing order...")}</>
+                  ) : (
+                    `${t("ยืนยันออเดอร์", "Confirm order")} · ${formatPrice(summary.total)}`
+                  )}
+                </Button>
+                <a
+                  href={process.env.NEXT_PUBLIC_LINE_OA_URL ?? "https://page.line.me/smileseedsbank"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-center text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  {t(
+                    "เพิ่มเพื่อน @smileseedsbank เพื่อรับเลขพัสดุทาง LINE",
+                    "Add @smileseedsbank for tracking updates on LINE",
+                  )}
+                </a>
+                <p className="text-center text-xs text-muted-foreground">
+                  {t("🔒 ข้อมูลของคุณปลอดภัยและถูกเข้ารหัส", "🔒 Your data is encrypted")}
+                </p>
+              </div>
 
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className={cn(
-                  "h-12 w-full rounded-sm bg-primary text-base font-semibold tracking-wide text-white shadow-none hover:bg-primary/90 active:scale-[0.98]",
-                  checkoutAmount,
-                )}
+              {/* Mobile sticky CTA */}
+              <div
+                className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 pt-3 backdrop-blur-sm sm:hidden"
+                style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
               >
-                {isSubmitting ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("กำลังสร้างออเดอร์...", "Placing order...")}</>
-                ) : (
-                  `${t("ยืนยันออเดอร์", "Confirm order")} · ${formatPrice(summary.total)}`
-                )}
-              </Button>
-
-              <p className="text-center text-xs text-muted-foreground">
-                {t("🔒 ข้อมูลของคุณปลอดภัยและถูกเข้ารหัส", "🔒 Your data is encrypted")}
-              </p>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={cn(
+                    "h-12 w-full min-h-12 rounded-sm bg-primary text-base font-semibold tracking-wide text-white shadow-none hover:bg-primary/90 active:scale-[0.98]",
+                    checkoutAmount,
+                  )}
+                >
+                  {isSubmitting ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("กำลังสร้างออเดอร์...", "Placing order...")}</>
+                  ) : (
+                    `${t("ยืนยันออเดอร์", "Confirm order")} · ${formatPrice(summary.total)}`
+                  )}
+                </Button>
+                <a
+                  href={process.env.NEXT_PUBLIC_LINE_OA_URL ?? "https://page.line.me/smileseedsbank"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 block text-center text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  {t(
+                    "เพิ่มเพื่อน @smileseedsbank เพื่อรับเลขพัสดุทาง LINE",
+                    "Add @smileseedsbank for tracking updates on LINE",
+                  )}
+                </a>
+              </div>
+              {/* Spacer so sticky bar doesn’t cover form fields */}
+              <div className="h-28 sm:hidden" aria-hidden />
           </div>
         </form>
         ) : placed ? (

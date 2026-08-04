@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Checkout — remove cream friction)
+- **What:** ลบกล่องครีม guest/member + ซ่อน FB in-app banner บน `/checkout` · sticky CTA มือถือ
+- **Logic:** ไม่เตือน 420DAY ก่อนซื้อ · banner ยังโชว์หน้าอื่น · หมายเหตุ 1 แถว · LINE CTA เบาใต้ปุ่มยืนยัน
+- **ไฟล์:** `CheckoutPageClient.tsx` · `StorefrontLayoutClient.tsx` · `ShippingSection.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (Telegram webhook — schema polish)
 - **What:** จัดคอลัมน์ `chat_history` ให้ตรง DB + persona/error ตามสเปก
 - **Logic:** `source: telegram` · `model_used` (assistant เท่านั้น) · fallback persona Tommy secretary · error TH · truncate 4000

@@ -108,7 +108,7 @@ export function ShippingSection({
             value={form.order_note}
             onChange={(e) => setField("order_note", e.target.value)}
             placeholder={t("เช่น วันเวลาที่สะดวกรับ", "e.g. preferred delivery time")}
-            rows={3}
+            rows={1}
             className="resize-none rounded-sm border-border bg-card"
           />
           {fieldErrors.order_note && <p className="text-xs text-red-500">{fieldErrors.order_note}</p>}
