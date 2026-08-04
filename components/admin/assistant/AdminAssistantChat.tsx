@@ -4,6 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Paperclip, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AiModelSwitcher,
+  readStoredAdminAiModel,
+  type AdminAiModel,
+} from "@/components/admin/assistant/AiModelSwitcher";
 
 type ChatMsg = {
   id: string;
@@ -53,6 +59,7 @@ function readFileAsBase64(file: File): Promise<string> {
 }
 
 export function AdminAssistantChat() {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState<PendingFile[]>([]);
@@ -60,10 +67,16 @@ export function AdminAssistantChat() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [activeAIModel, setActiveAIModel] =
+    useState<AdminAiModel>("gemini");
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
+
+  useEffect(() => {
+    setActiveAIModel(readStoredAdminAiModel());
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -168,6 +181,15 @@ export function AdminAssistantChat() {
     const text = input.trim();
     if ((!text && !pending.length) || sending) return;
 
+    if (activeAIModel === "gpt-4o" && pending.length > 0) {
+      toast({
+        title: "Attachments require Gemini",
+        description: "File uploads are only supported with Google Gemini.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setError(null);
     const filesPayload = pending.map((p) => ({
       mimeType: p.mimeType,
@@ -205,6 +227,7 @@ export function AdminAssistantChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text,
+          model: activeAIModel,
           files: filesPayload,
         }),
       });
@@ -293,6 +316,8 @@ export function AdminAssistantChat() {
         </div>
       ) : null}
 
+      <AiModelSwitcher value={activeAIModel} onChange={setActiveAIModel} />
+
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-base font-semibold text-foreground">
           SSB Assistant
@@ -300,7 +325,9 @@ export function AdminAssistantChat() {
         <p className="text-xs text-muted-foreground">
           Shared with Telegram Founder · session{" "}
           <code className="text-[10px]">tommy</code>
-          {" · "}แนบรูป/PDF หรือลากวางได้
+          {" · "}แนบรูป/PDF หรือลากวางได้ (Gemini)
+          {" · "}model{" "}
+          <code className="text-[10px]">{activeAIModel}</code>
         </p>
       </div>
 

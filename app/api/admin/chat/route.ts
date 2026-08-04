@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminUser } from "@/lib/auth-utils";
-import type { AIFilePart, ChatMessage } from "@/lib/ai-provider";
+import { callAI, type AIFilePart, type ChatMessage } from "@/lib/ai-provider";
 import { callAIWithTools, EMPTY_AI_REPLY_TH } from "@/lib/ai-tools";
 import {
   ADMIN_CHAT_SESSION_ID,
@@ -46,6 +46,7 @@ const fileSchema = z.object({
 const postSchema = z
   .object({
     message: z.string().max(8000).optional().default(""),
+    model: z.enum(["gemini", "gpt-4o"]).default("gemini"),
     files: z.array(fileSchema).max(MAX_FILES).optional().default([]),
   })
   .refine(
@@ -120,7 +121,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { message, files: rawFiles } = parsed.data;
+  const { message, model, files: rawFiles } = parsed.data;
+
+  if (model === "gpt-4o" && rawFiles.length > 0) {
+    return NextResponse.json(
+      { error: "File attachments require model 'gemini'" },
+      { status: 400 }
+    );
+  }
 
   const aiFiles: AIFilePart[] = [];
   for (const f of rawFiles) {
@@ -159,16 +167,22 @@ export async function POST(req: NextRequest) {
       getRecentHistory(ADMIN_CHAT_SESSION_ID, MODEL_HISTORY_LIMIT),
     ]);
 
+    const systemBase =
+      model === "gemini" ? `${persona}\n\n${TOOLS_RULE}` : persona;
+
     const messages: ChatMessage[] = [
-      { role: "system", content: `${persona}\n\n${TOOLS_RULE}` },
+      { role: "system", content: systemBase },
       ...history,
       { role: "user", content: userContent },
     ];
 
-    const ai = await callAIWithTools(messages, {
-      files: aiFiles.length ? aiFiles : undefined,
-      maxRounds: 3,
-    });
+    const ai =
+      model === "gpt-4o"
+        ? await callAI(messages, "gpt-4o")
+        : await callAIWithTools(messages, {
+            files: aiFiles.length ? aiFiles : undefined,
+            maxRounds: 3,
+          });
     const reply =
       ai.content?.trim() || EMPTY_AI_REPLY_TH || "(empty response)";
 

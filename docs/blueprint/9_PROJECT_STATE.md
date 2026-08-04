@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Admin AI Model Switcher)
+- **What:** floating Gemini / GPT-4o switcher บน `/admin/assistant` เท่านั้น
+- **Logic:** `localStorage ssb_admin_ai_model` · POST `model` · gemini→`callAIWithTools` · gpt-4o→`callAI` (ไม่มี tools/files) · บล็อกแนบไฟล์เมื่อ gpt-4o
+- **ไฟล์:** `AiModelSwitcher.tsx` · `AdminAssistantChat.tsx` · `app/api/admin/chat/route.ts`
+
 ### บันทึกการทำงาน — 2026-08-04 (Wholesale — TH/EN i18n calculator)
 - **What:** `/wholesale` calculator/COA/summary สลับภาษาได้ด้วย `t(th,en)`
 - **Logic:** upsell เป็น structured data · เลิก hardcode ไทยใน BulkOrder*
