@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import type { AIFilePart, ChatMessage } from "@/lib/ai-provider";
 import { callAIWithTools, EMPTY_AI_REPLY_TH } from "@/lib/ai-tools";
 import { env } from "@/lib/env";
+import {
+  FOUNDER_CHAT_ID,
+  FOUNDER_SESSION_ID,
+} from "@/lib/ssb-assistant-db";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -298,7 +302,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  const sessionId = String(chatIdRaw);
+  // chatId = Telegram API target / allowlist. historySessionId = DB thread.
+  // Founder (988973577) shares session "tommy" with Admin chat for continuity.
+  const chatId = String(chatIdRaw);
+  const historySessionId =
+    chatId === FOUNDER_CHAT_ID ? FOUNDER_SESSION_ID : chatId;
   const text = message?.text?.trim() ?? "";
   const caption = message?.caption?.trim() ?? "";
   const document = message?.document;
@@ -308,10 +316,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  if (!isAllowedChat(sessionId)) {
-    console.warn("[telegram webhook] chat denied", { sessionId });
+  if (!isAllowedChat(chatId)) {
+    console.warn("[telegram webhook] chat denied", { chatId });
     try {
-      await sendTelegramMessage(sessionId, DENIED_REPLY_TH);
+      await sendTelegramMessage(chatId, DENIED_REPLY_TH);
     } catch (err) {
       console.error("[telegram webhook] deny reply failed:", err);
     }
@@ -321,7 +329,7 @@ export async function POST(req: NextRequest) {
   try {
     if (document && !isPdfDocument(document) && !isImageDocument(document)) {
       await sendTelegramMessage(
-        sessionId,
+        chatId,
         "ตอนนี้รองรับเฉพาะ PDF และรูปภาพ (JPEG/PNG/WebP) ครับ"
       );
       return NextResponse.json({ ok: true });
@@ -342,7 +350,8 @@ export async function POST(req: NextRequest) {
       const prompt = caption || text || DEFAULT_PDF_PROMPT;
       userContent = `[PDF attached: ${fileName}]\n${prompt}`;
       console.log("[telegram webhook] pdf downloaded", {
-        sessionId,
+        chatId,
+        historySessionId,
         fileName,
         bytesApprox: Math.round((pdf.dataBase64.length * 3) / 4),
       });
@@ -360,7 +369,8 @@ export async function POST(req: NextRequest) {
       const prompt = caption || text || DEFAULT_IMAGE_PROMPT;
       userContent = `[Image attached: ${fileName}]\n${prompt}`;
       console.log("[telegram webhook] image doc downloaded", {
-        sessionId,
+        chatId,
+        historySessionId,
         fileName,
         mime: img.mimeType,
       });
@@ -377,7 +387,8 @@ export async function POST(req: NextRequest) {
         const prompt = caption || text || DEFAULT_IMAGE_PROMPT;
         userContent = `[Image attached: photo]\n${prompt}`;
         console.log("[telegram webhook] photo downloaded", {
-          sessionId,
+          chatId,
+          historySessionId,
           w: best.width,
           h: best.height,
         });
@@ -390,7 +401,7 @@ export async function POST(req: NextRequest) {
 
     const [persona, history] = await Promise.all([
       getSystemPersona(),
-      getRecentHistory(sessionId),
+      getRecentHistory(historySessionId),
     ]);
 
     const messages: ChatMessage[] = [
@@ -409,17 +420,19 @@ export async function POST(req: NextRequest) {
     const ai = await callAIWithTools(messages, { files, maxRounds: 3 });
     console.log("[telegram webhook] callAIWithTools ok", {
       model: ai.model,
-      sessionId,
+      chatId,
+      historySessionId,
       hadFiles: Boolean(files?.length),
     });
 
-    await sendTelegramMessage(sessionId, ai.content || EMPTY_AI_REPLY_TH);
-    console.log("[telegram webhook] send ok", { sessionId });
+    await sendTelegramMessage(chatId, ai.content || EMPTY_AI_REPLY_TH);
+    console.log("[telegram webhook] send ok", { chatId, historySessionId });
 
     try {
-      await saveMessage(sessionId, "user", userContent);
-      await saveMessage(sessionId, "assistant", ai.content, ai.model);
-      console.log("[telegram webhook] save ok", { sessionId });
+      // Always source=telegram; founder rows land on session "tommy" with Admin.
+      await saveMessage(historySessionId, "user", userContent);
+      await saveMessage(historySessionId, "assistant", ai.content, ai.model);
+      console.log("[telegram webhook] save ok", { chatId, historySessionId });
     } catch (saveErr) {
       console.error("[telegram webhook] save failed:", saveErr);
     }
@@ -436,7 +449,7 @@ export async function POST(req: NextRequest) {
             ? "ไฟล์รูปใหญ่เกินไปครับ (สูงสุดประมาณ 10MB) กรุณาส่งไฟล์ที่เล็กกว่า"
             : "ไฟล์ PDF ใหญ่เกินไปครับ (สูงสุดประมาณ 15MB) กรุณาส่งไฟล์ที่เล็กกว่า";
       }
-      await sendTelegramMessage(sessionId, msg);
+      await sendTelegramMessage(chatId, msg);
     } catch (sendErr) {
       console.error("[telegram webhook] error reply failed:", sendErr);
     }

@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Tommy shared session TG + Admin)
+- **What:** Founder Telegram `988973577` กับ Admin chat ใช้ `session_id=tommy` ร่วมกัน
+- **Logic:** webhook แยก `chatId` (ส่ง TG) vs `historySessionId` · admin โหลด history ไม่ filter source · save ยัง tag `telegram` / `admin`
+- **ไฟล์:** `lib/ssb-assistant-db.ts` · `app/api/telegram/webhook/route.ts` · `app/api/admin/chat/route.ts` · `AdminAssistantChat.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (รื้อ Bulk Seeds → Admin Wholesale)
 - **What:** ลบ Bulk Seeds ทั้งก้อน · Admin `/admin/wholesale` (Catalog / Pricing / RFQs) · `/wholesale` อ่านจาก DB
 - **Logic:** `wholesale_settings` + `wholesale_catalog_strains` · DROP `bulk_seeds` · public RFQ filter `Source: /wholesale public RFQ` · ไม่แตะ POS Wholesale tier

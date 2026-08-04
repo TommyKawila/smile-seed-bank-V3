@@ -7,7 +7,16 @@ import type { ChatMessage } from "@/lib/ai-provider";
 import { env } from "@/lib/env";
 
 export const SSB_ASSISTANT_SCHEMA = "ssb_assistant";
-export const ADMIN_CHAT_SESSION_ID = "admin";
+
+/**
+ * Founder Telegram chat_id maps to FOUNDER_SESSION_ID so Telegram + Admin
+ * share one continuous thread (same session_id, different source tags).
+ */
+export const FOUNDER_CHAT_ID = "988973577";
+export const FOUNDER_SESSION_ID = "tommy";
+
+/** Admin chat uses the founder shared session ("tommy"). */
+export const ADMIN_CHAT_SESSION_ID = FOUNDER_SESSION_ID;
 export const ADMIN_CHAT_SOURCE = "admin";
 
 export const DEFAULT_ASSISTANT_PERSONA =

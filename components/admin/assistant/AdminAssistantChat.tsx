@@ -112,7 +112,8 @@ export function AdminAssistantChat() {
           SSB Assistant
         </h2>
         <p className="text-xs text-muted-foreground">
-          Private admin chat · session <code className="text-[10px]">admin</code>
+          Shared with Telegram Founder · session{" "}
+          <code className="text-[10px]">tommy</code>
         </p>
       </div>
 

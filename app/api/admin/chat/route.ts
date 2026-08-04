@@ -21,6 +21,13 @@ const postSchema = z.object({
   message: z.string().trim().min(1).max(8000),
 });
 
+/**
+ * Admin chat always uses session "tommy" (ADMIN_CHAT_SESSION_ID).
+ * History is loaded by session only (no source filter) so Telegram Founder
+ * messages and Admin messages stay one continuous conversation.
+ * Saves still tag source = "admin".
+ */
+
 export async function GET(req: NextRequest) {
   const gate = await requireAdminUser();
   if (!gate.ok) return gate.response;
@@ -31,11 +38,7 @@ export async function GET(req: NextRequest) {
     50
   );
 
-  const messages = await listHistoryForUi(
-    ADMIN_CHAT_SESSION_ID,
-    limit,
-    ADMIN_CHAT_SOURCE
-  );
+  const messages = await listHistoryForUi(ADMIN_CHAT_SESSION_ID, limit);
 
   return NextResponse.json({ messages });
 }
@@ -64,11 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     const [persona, history] = await Promise.all([
       getSystemPersona(),
-      getRecentHistory(
-        ADMIN_CHAT_SESSION_ID,
-        MODEL_HISTORY_LIMIT,
-        ADMIN_CHAT_SOURCE
-      ),
+      getRecentHistory(ADMIN_CHAT_SESSION_ID, MODEL_HISTORY_LIMIT),
     ]);
 
     const messages: ChatMessage[] = [
