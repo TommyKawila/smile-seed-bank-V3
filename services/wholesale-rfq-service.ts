@@ -8,8 +8,8 @@ import {
   gacpFeePerStrain,
   lineTotal as wholesaleLineTotal,
   unitPrice,
-  WHOLESALE_PUBLIC_MOQ,
 } from "@/lib/wholesale-public-pricing";
+import { getWholesaleSettings } from "@/services/wholesale-catalog-service";
 import {
   defaultValidUntil,
   type B2BCurrency,
@@ -94,30 +94,35 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
   totalAmount: number;
 }> {
   const currency: B2BCurrency = input.currency === "THB" ? "THB" : "EUR";
+  const settings = await getWholesaleSettings();
+  const moq = settings.moq;
+  const tiers = settings.tiers;
+  const gacpFees = { thb: settings.gacpFeeThb, eur: settings.gacpFeeEur };
+
   const lines = input.lines
     .map((l) => ({
       strainName: l.strainName.trim(),
       quantity: Math.floor(l.quantity),
     }))
-    .filter((l) => l.strainName && l.quantity >= WHOLESALE_PUBLIC_MOQ);
+    .filter((l) => l.strainName && l.quantity >= moq);
 
   if (!lines.length) {
-    throw new Error("At least one strain with quantity ≥ 100 is required");
+    throw new Error(`At least one strain with quantity ≥ ${moq} is required`);
   }
 
   const items: B2BQuoteLineItem[] = lines.map((l, i) => {
-    const up = unitPrice(l.quantity, currency);
+    const up = unitPrice(l.quantity, currency, tiers);
     return {
       id: `rfq-${i}`,
       strainName: l.strainName,
       quantity: l.quantity,
       unitPrice: up,
-      lineTotal: wholesaleLineTotal(l.quantity, currency),
+      lineTotal: wholesaleLineTotal(l.quantity, currency, tiers),
     };
   });
 
   if (input.requireGacp) {
-    const fee = gacpFeePerStrain(currency);
+    const fee = gacpFeePerStrain(currency, gacpFees);
     items.push({
       id: "rfq-gacp",
       strainName: "GACP Documentation Package (per strain)",

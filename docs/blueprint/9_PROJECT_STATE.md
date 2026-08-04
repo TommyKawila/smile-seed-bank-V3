@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (รื้อ Bulk Seeds → Admin Wholesale)
+- **What:** ลบ Bulk Seeds ทั้งก้อน · Admin `/admin/wholesale` (Catalog / Pricing / RFQs) · `/wholesale` อ่านจาก DB
+- **Logic:** `wholesale_settings` + `wholesale_catalog_strains` · DROP `bulk_seeds` · public RFQ filter `Source: /wholesale public RFQ` · ไม่แตะ POS Wholesale tier
+- **ไฟล์:** `prisma/migrations/20260804180000_wholesale_replace_bulk_seeds` · `services/wholesale-catalog-service.ts` · `app/admin/wholesale/*` · `app/api/admin/wholesale/*` · `components/admin/wholesale/WholesaleAdminClient.tsx` · `lib/wholesale-public-pricing.ts` · storefront wholesale client/page · ลบ `bulk-seeds` admin/API/lib/service · `AdminSidebar.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (Clearance landing — section by %)
 - **What:** `/clearance` แยก section ตาม % (−50% / −20% ฯลฯ) + badge บนกล่องค่าย
 - **Logic:** นับ/emit กล่องต่อ `breeder×percent` · ลิงก์ `?breeder=&pct=` · drill-down กรองสินค้าตาม % · ไม่ hardcode 50

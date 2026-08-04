@@ -8,7 +8,10 @@ import { StrainPricingGrid } from "./StrainPricingGrid";
 import { TrustCompliance } from "./TrustCompliance";
 import { WholesaleHero } from "./WholesaleHero";
 import type { QuoteCartLine, RfqFormState, WholesaleCurrency } from "./types";
-import { WHOLESALE_PUBLIC_MOQ } from "@/lib/wholesale-public-pricing";
+import type {
+  WholesaleCatalogStrain,
+  WholesaleTier,
+} from "@/lib/wholesale-public-pricing";
 
 const emptyForm: RfqFormState = {
   companyName: "",
@@ -21,7 +24,19 @@ const emptyForm: RfqFormState = {
   message: "",
 };
 
-export function WholesalePageClient() {
+export function WholesalePageClient({
+  catalog,
+  tiers,
+  moq,
+  gacpFeeThb,
+  gacpFeeEur,
+}: {
+  catalog: WholesaleCatalogStrain[];
+  tiers: WholesaleTier[];
+  moq: number;
+  gacpFeeThb: number;
+  gacpFeeEur: number;
+}) {
   const [currency, setCurrency] = useState<WholesaleCurrency>("THB");
   const [cart, setCart] = useState<QuoteCartLine[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -34,7 +49,7 @@ export function WholesalePageClient() {
 
   const addToQuote = useCallback(
     (strainId: string, name: string, quantity: number) => {
-      const qty = Math.max(WHOLESALE_PUBLIC_MOQ, Math.floor(quantity));
+      const qty = Math.max(moq, Math.floor(quantity));
       setCart((prev) => {
         const idx = prev.findIndex((l) => l.strainId === strainId);
         if (idx >= 0) {
@@ -47,7 +62,7 @@ export function WholesalePageClient() {
       setModalOpen(false);
       setSuccessQuoteNumber(null);
     },
-    []
+    [moq]
   );
 
   const openRfq = () => {
@@ -111,7 +126,13 @@ export function WholesalePageClient() {
         </div>
       </div>
 
-      <StrainPricingGrid currency={currency} onAdd={addToQuote} />
+      <StrainPricingGrid
+        currency={currency}
+        catalog={catalog}
+        tiers={tiers}
+        moq={moq}
+        onAdd={addToQuote}
+      />
       <TrustCompliance />
 
       <FloatingQuoteBar itemCount={cart.length} onOpen={openRfq} />
@@ -130,6 +151,9 @@ export function WholesalePageClient() {
         submitting={submitting}
         submitError={submitError}
         successQuoteNumber={successQuoteNumber}
+        tiers={tiers}
+        gacpFeeThb={gacpFeeThb}
+        gacpFeeEur={gacpFeeEur}
       />
     </div>
   );

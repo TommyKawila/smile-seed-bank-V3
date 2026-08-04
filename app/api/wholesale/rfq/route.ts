@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { submitWholesaleRfq } from "@/services/wholesale-rfq-service";
-import { WHOLESALE_PUBLIC_MOQ } from "@/lib/wholesale-public-pricing";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -20,7 +19,7 @@ const bodySchema = z.object({
     .array(
       z.object({
         strainName: z.string().trim().min(1).max(120),
-        quantity: z.number().int().min(WHOLESALE_PUBLIC_MOQ).max(1_000_000),
+        quantity: z.number().int().min(1).max(1_000_000),
       })
     )
     .min(1)

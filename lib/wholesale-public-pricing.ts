@@ -1,15 +1,14 @@
 /**
  * Public B2B wholesale landing — tiered seed pricing (THB / EUR).
- * Separate from admin B2B_MOQ_SEEDS (500).
+ * Defaults used for seed/migration; runtime values come from wholesale_settings.
  */
 
 import type { B2BCurrency } from "@/types/b2b-quote";
-import { B2B_PRESET_STRAINS } from "@/types/b2b-quote";
 import { formatB2BMoney, roundMoney } from "@/lib/b2b-quote-calc";
 
 export const WHOLESALE_PUBLIC_MOQ = 100;
 
-export type WholesaleTierId = 1 | 2 | 3;
+export type WholesaleTierId = 1 | 2 | 3 | number;
 
 export type WholesaleTier = {
   id: WholesaleTierId;
@@ -20,7 +19,8 @@ export type WholesaleTier = {
   bestValue: boolean;
 };
 
-export const WHOLESALE_TIERS: WholesaleTier[] = [
+/** Seed / fallback tiers (same as original landing). */
+export const DEFAULT_WHOLESALE_TIERS: WholesaleTier[] = [
   {
     id: 1,
     minQty: 100,
@@ -47,6 +47,9 @@ export const WHOLESALE_TIERS: WholesaleTier[] = [
   },
 ];
 
+/** @deprecated Use settings from DB — kept as alias for defaults. */
+export const WHOLESALE_TIERS = DEFAULT_WHOLESALE_TIERS;
+
 export const GACP_FEE_THB = 3500;
 export const GACP_FEE_EUR = 100;
 
@@ -56,43 +59,59 @@ export type WholesaleCatalogStrain = {
   typeLabel: string;
 };
 
-export const WHOLESALE_CATALOG: WholesaleCatalogStrain[] =
-  B2B_PRESET_STRAINS.map((name) => ({
-    id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    name,
-    typeLabel: "Feminized",
-  }));
+export type WholesalePricingContext = {
+  moq: number;
+  tiers: WholesaleTier[];
+  gacpFeeThb: number;
+  gacpFeeEur: number;
+};
 
-export function resolveTier(quantity: number): WholesaleTier {
+export function resolveTier(
+  quantity: number,
+  tiers: WholesaleTier[] = DEFAULT_WHOLESALE_TIERS
+): WholesaleTier {
   const qty = Math.max(0, Math.floor(quantity));
-  if (qty >= 2500) return WHOLESALE_TIERS[2];
-  if (qty >= 1000) return WHOLESALE_TIERS[1];
-  return WHOLESALE_TIERS[0];
+  const sorted = [...tiers].sort((a, b) => b.minQty - a.minQty);
+  for (const tier of sorted) {
+    if (qty >= tier.minQty) return tier;
+  }
+  return sorted[sorted.length - 1] ?? DEFAULT_WHOLESALE_TIERS[0];
 }
 
-export function unitPrice(quantity: number, currency: B2BCurrency): number {
-  const tier = resolveTier(quantity);
+export function unitPrice(
+  quantity: number,
+  currency: B2BCurrency,
+  tiers: WholesaleTier[] = DEFAULT_WHOLESALE_TIERS
+): number {
+  const tier = resolveTier(quantity, tiers);
   return currency === "THB" ? tier.thbPerSeed : tier.eurPerSeed;
 }
 
 export function lineTotal(
   quantity: number,
-  currency: B2BCurrency
+  currency: B2BCurrency,
+  tiers: WholesaleTier[] = DEFAULT_WHOLESALE_TIERS
 ): number {
   const qty = Math.max(0, Math.floor(quantity));
-  return roundMoney(qty * unitPrice(qty, currency), currency);
+  return roundMoney(qty * unitPrice(qty, currency, tiers), currency);
 }
 
-export function gacpFeePerStrain(currency: B2BCurrency): number {
-  return currency === "THB" ? GACP_FEE_THB : GACP_FEE_EUR;
+export function gacpFeePerStrain(
+  currency: B2BCurrency,
+  fees?: { thb: number; eur: number }
+): number {
+  const thb = fees?.thb ?? GACP_FEE_THB;
+  const eur = fees?.eur ?? GACP_FEE_EUR;
+  return currency === "THB" ? thb : eur;
 }
 
 export function gacpFeeTotal(
   strainCount: number,
-  currency: B2BCurrency
+  currency: B2BCurrency,
+  fees?: { thb: number; eur: number }
 ): number {
   const n = Math.max(0, Math.floor(strainCount));
-  return roundMoney(n * gacpFeePerStrain(currency), currency);
+  return roundMoney(n * gacpFeePerStrain(currency, fees), currency);
 }
 
 export function formatWholesaleMoney(

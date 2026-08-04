@@ -14,6 +14,7 @@ import {
   lineTotal,
   resolveTier,
   unitPrice,
+  type WholesaleTier,
 } from "@/lib/wholesale-public-pricing";
 import type {
   QuoteCartLine,
@@ -34,6 +35,9 @@ type Props = {
   submitting: boolean;
   submitError: string | null;
   successQuoteNumber: string | null;
+  tiers: WholesaleTier[];
+  gacpFeeThb: number;
+  gacpFeeEur: number;
 };
 
 const PAYMENTS: { id: WholesalePaymentMethod; th: string; en: string }[] = [
@@ -54,15 +58,19 @@ export function RfqModal({
   submitting,
   submitError,
   successQuoteNumber,
+  tiers,
+  gacpFeeThb,
+  gacpFeeEur,
 }: Props) {
   const { t } = useLanguage();
+  const gacpFees = { thb: gacpFeeThb, eur: gacpFeeEur };
 
   const subtotal = lines.reduce(
-    (sum, l) => sum + lineTotal(l.quantity, currency),
+    (sum, l) => sum + lineTotal(l.quantity, currency, tiers),
     0
   );
   const gacp = form.requireGacp
-    ? gacpFeeTotal(lines.length, currency)
+    ? gacpFeeTotal(lines.length, currency, gacpFees)
     : 0;
   const estimated = subtotal + gacp;
 
@@ -104,7 +112,7 @@ export function RfqModal({
               ) : (
                 <ul className="mt-3 space-y-2 text-sm">
                   {lines.map((l) => {
-                    const tier = resolveTier(l.quantity);
+                    const tier = resolveTier(l.quantity, tiers);
                     return (
                       <li
                         key={l.strainId}
@@ -115,7 +123,7 @@ export function RfqModal({
                           <p className="text-xs text-slate-500">
                             {l.quantity.toLocaleString()} seeds · Tier {tier.id} ·{" "}
                             {formatWholesaleMoney(
-                              unitPrice(l.quantity, currency),
+                              unitPrice(l.quantity, currency, tiers),
                               currency
                             )}
                             /seed
@@ -124,7 +132,7 @@ export function RfqModal({
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-slate-900">
                             {formatWholesaleMoney(
-                              lineTotal(l.quantity, currency),
+                              lineTotal(l.quantity, currency, tiers),
                               currency
                             )}
                           </span>
@@ -246,8 +254,8 @@ export function RfqModal({
                 </span>
                 <span className="mt-1 block text-xs text-slate-500">
                   {t(
-                    "หมายเหตุ: แพ็กเกจเอกสาร GACP ทางการมีค่าดำเนินการเพิ่ม 3,500 บาท (€100) ต่อสายพันธุ์",
-                    "Note: Official GACP-certified documentation package incurs an additional processing fee of 3,500 THB (€100) per strain."
+                    `หมายเหตุ: แพ็กเกจเอกสาร GACP ทางการมีค่าดำเนินการเพิ่ม ${gacpFeeThb.toLocaleString()} บาท (€${gacpFeeEur}) ต่อสายพันธุ์`,
+                    `Note: Official GACP-certified documentation package incurs an additional processing fee of ${gacpFeeThb.toLocaleString()} THB (€${gacpFeeEur}) per strain.`
                   )}
                 </span>
               </span>
