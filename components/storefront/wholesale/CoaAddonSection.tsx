@@ -39,11 +39,17 @@ export function CoaAddonSection({
 
       {buyExtra && (
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label>
-              Package A (Purity + Germination) — +
-              {config.coaPackageAThb.toLocaleString("en-US")} THB/สาย
-            </Label>
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <Label className="text-sm font-medium leading-snug text-slate-900">
+                Package A (Purity + Germination) — +
+                {config.coaPackageAThb.toLocaleString("en-US")} THB/สายพันธุ์
+              </Label>
+              <p className="text-xs leading-snug text-slate-500">
+                ตรวจวิเคราะห์ความบริสุทธิ์ของเมล็ดพันธุ์และอัตราการงอกมาตรฐานสากล
+                (ISTA Standard)
+              </p>
+            </div>
             <Input
               type="number"
               min={0}
@@ -54,11 +60,17 @@ export function CoaAddonSection({
               className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
             />
           </div>
-          <div className="space-y-1">
-            <Label>
-              Package B (+ Moisture) — +
-              {config.coaPackageBThb.toLocaleString("en-US")} THB/สาย
-            </Label>
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <Label className="text-sm font-medium leading-snug text-slate-900">
+                Package B (Purity + Germination + Moisture) — +
+                {config.coaPackageBThb.toLocaleString("en-US")} THB/สายพันธุ์
+              </Label>
+              <p className="text-xs leading-snug text-slate-500">
+                ตรวจเต็มรูปแบบ ครอบคลุมความบริสุทธิ์ อัตราการงอก
+                และตรวจวัดค่าความชื้นของเมล็ดพันธุ์ (Full ISTA Standard)
+              </p>
+            </div>
             <Input
               type="number"
               min={0}

@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Wholesale — clarify COA Package A/B)
+- **What:** ป้าย Package B เป็นชุดเต็ม (Purity + Germination + Moisture) + คำอธิบาย ISTA
+- **ไฟล์:** `CoaAddonSection.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (Wholesale — fix black inputs)
 - **What:** ช่องจำนวนเมล็ด/ปุ่ม outline บน `/wholesale` พื้นดำจาก dark `bg-background`
 - **Logic:** override `bg-white text-slate-900 border-slate-200` ใน BulkOrderCalculator + CoaAddonSection
