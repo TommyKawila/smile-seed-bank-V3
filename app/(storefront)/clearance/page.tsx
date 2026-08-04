@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { withTimeout } from "@/lib/timeout";
+import { isClearanceDiscountPercent } from "@/lib/clearance";
 import { ClearanceLandingClient } from "@/components/storefront/ClearanceLandingClient";
 import { getStorefrontClearanceBreederBoxes } from "@/services/clearance-breeder-banner-service";
 import { getClearanceStorefrontProductsByBreederSlug } from "@/services/product-service";
@@ -14,20 +15,34 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  searchParams?: Promise<{ breeder?: string | string[] }>;
+  searchParams?: Promise<{
+    breeder?: string | string[];
+    pct?: string | string[];
+  }>;
 };
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function parsePct(raw: string | undefined): number | null {
+  if (raw == null || raw.trim() === "") return null;
+  const n = Number(raw);
+  return isClearanceDiscountPercent(n) ? Math.trunc(n) : null;
+}
+
 export default async function ClearancePage({ searchParams }: Props) {
   const sp = searchParams ? await searchParams : undefined;
   const breederSlug = firstParam(sp?.breeder)?.trim() || null;
+  const discountPercent = parsePct(firstParam(sp?.pct));
 
   if (breederSlug) {
     const result = await withTimeout(
-      getClearanceStorefrontProductsByBreederSlug(breederSlug),
+      getClearanceStorefrontProductsByBreederSlug(
+        breederSlug,
+        60,
+        discountPercent
+      ),
       4000,
       {
         data: { products: [], breederName: null, breederLogoUrl: null },
@@ -41,6 +56,7 @@ export default async function ClearancePage({ searchParams }: Props) {
         breederName={result.data?.breederName ?? null}
         breederLogoUrl={result.data?.breederLogoUrl ?? null}
         products={result.data?.products ?? []}
+        discountPercent={discountPercent}
       />
     );
   }
@@ -54,6 +70,7 @@ export default async function ClearancePage({ searchParams }: Props) {
       breederName={null}
       breederLogoUrl={null}
       products={[]}
+      discountPercent={null}
     />
   );
 }

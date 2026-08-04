@@ -2,11 +2,11 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { breederSlugFromName } from "@/lib/breeder-slug";
-import { getListableClearanceCountsByBreeder } from "@/services/product-service";
 import {
-  CLEARANCE_DISCOUNT_PERCENT,
-  type StorefrontClearanceBreederBox,
-} from "@/lib/clearance";
+  getListableClearanceCountsByBreeder,
+  getListableClearanceCountsByBreederAndPercent,
+} from "@/services/product-service";
+import { type StorefrontClearanceBreederBox } from "@/lib/clearance";
 
 export type { StorefrontClearanceBreederBox };
 
@@ -105,14 +105,14 @@ export async function reorderClearanceBreederBanners(
   );
 }
 
-/** Active boxes for storefront: breeders with clearance SKUs, banner image or logo fallback. */
+/** Active boxes: one card per (breeder × discount %) with listable SKU counts. */
 export async function getStorefrontClearanceBreederBoxes(): Promise<
   StorefrontClearanceBreederBox[]
 > {
-  const counts = await clearanceCountsByBreeder();
-  if (counts.size === 0) return [];
+  const countRows = await getListableClearanceCountsByBreederAndPercent();
+  if (countRows.length === 0) return [];
 
-  const breederIds = [...counts.keys()];
+  const breederIds = [...new Set(countRows.map((r) => r.breederId))];
   const breeders = await prisma.breeders.findMany({
     where: { id: { in: breederIds.map((id) => BigInt(id)) } },
     select: { id: true, name: true, logo_url: true },
@@ -125,26 +125,29 @@ export async function getStorefrontClearanceBreederBoxes(): Promise<
   const bannerMap = new Map(banners.map((b) => [Number(b.breeder_id), b]));
 
   const boxes: StorefrontClearanceBreederBox[] = [];
-  for (const breederId of breederIds) {
-    const breeder = breederMap.get(breederId);
+  for (const row of countRows) {
+    const breeder = breederMap.get(row.breederId);
     if (!breeder) continue;
-    const banner = bannerMap.get(breederId);
+    const banner = bannerMap.get(row.breederId);
     if (banner && !banner.is_active) continue;
     const imageUrl = banner?.image_url?.trim() || breeder.logo_url;
     boxes.push({
-      breederId,
+      breederId: row.breederId,
       name: breeder.name,
       slug: breederSlugFromName(breeder.name),
       logoUrl: breeder.logo_url,
       imageUrl: imageUrl ?? null,
       titleTh: banner?.title_th?.trim() || breeder.name,
       titleEn: banner?.title_en?.trim() || null,
-      productCount: counts.get(breederId) ?? 0,
-      discountPercent: CLEARANCE_DISCOUNT_PERCENT,
+      productCount: row.count,
+      discountPercent: row.discountPercent,
     });
   }
 
   boxes.sort((a, b) => {
+    if (b.discountPercent !== a.discountPercent) {
+      return b.discountPercent - a.discountPercent;
+    }
     const ao = bannerMap.get(a.breederId)?.sort_order ?? 9999;
     const bo = bannerMap.get(b.breederId)?.sort_order ?? 9999;
     if (ao !== bo) return ao - bo;

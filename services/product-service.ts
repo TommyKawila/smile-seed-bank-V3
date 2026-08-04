@@ -19,6 +19,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { seedCatalogProductWhere } from "@/lib/product-kind";
+import { normalizeClearanceDiscountPercent } from "@/lib/clearance";
 import { resolveBreederBySlugFromCache } from "@/services/breeder-slug-resolve-service";
 import {
   computeStartingPrice,
@@ -1449,19 +1450,51 @@ function isListableClearanceProduct(p: ProductWithBreederAndVariants): boolean {
 
 /** Clearance breeder box counts — same listable rules as drill-down grid. */
 export async function getListableClearanceCountsByBreeder(): Promise<Map<number, number>> {
+  const byPct = await getListableClearanceCountsByBreederAndPercent();
+  const map = new Map<number, number>();
+  for (const row of byPct) {
+    map.set(row.breederId, (map.get(row.breederId) ?? 0) + row.count);
+  }
+  return map;
+}
+
+export type ClearanceBreederPercentCount = {
+  breederId: number;
+  discountPercent: number;
+  count: number;
+};
+
+/** One count per (breeder × clearance_discount_percent) for storefront sections. */
+export async function getListableClearanceCountsByBreederAndPercent(): Promise<
+  ClearanceBreederPercentCount[]
+> {
   const rows = await prisma.products.findMany({
-    where: { is_clearance: true, is_active: true, breeder_id: { not: null }, ...seedCatalogProductWhere },
+    where: {
+      is_clearance: true,
+      is_active: true,
+      breeder_id: { not: null },
+      ...seedCatalogProductWhere,
+    },
     select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
   });
-  const map = new Map<number, number>();
+  const map = new Map<string, ClearanceBreederPercentCount>();
   for (const row of rows) {
     const p = bigintToJson(row) as unknown as ProductWithBreederAndVariants;
     if (!isListableClearanceProduct(p)) continue;
     const breederId = Number(p.breeder_id);
     if (!Number.isFinite(breederId)) continue;
-    map.set(breederId, (map.get(breederId) ?? 0) + 1);
+    const discountPercent = normalizeClearanceDiscountPercent(
+      (p as { clearance_discount_percent?: number | null }).clearance_discount_percent
+    );
+    const key = `${breederId}:${discountPercent}`;
+    const prev = map.get(key);
+    if (prev) {
+      prev.count += 1;
+    } else {
+      map.set(key, { breederId, discountPercent, count: 1 });
+    }
   }
-  return map;
+  return [...map.values()];
 }
 
 async function filterAndSortClearanceProducts(
@@ -1511,10 +1544,11 @@ export async function getClearanceStorefrontProducts(
   }
 }
 
-/** Clearance products for one breeder (landing drill-down). */
+/** Clearance products for one breeder (landing drill-down). Optional % filter. */
 export async function getClearanceStorefrontProductsByBreederSlug(
   breederSlug: string,
-  limit = 60
+  limit = 60,
+  discountPercent?: number | null
 ): Promise<
   ServiceResult<{
     products: ProductWithBreederAndVariants[];
@@ -1539,7 +1573,14 @@ export async function getClearanceStorefrontProductsByBreederSlug(
       };
     }
 
+    const pctFilter =
+      discountPercent != null && Number.isFinite(discountPercent)
+        ? normalizeClearanceDiscountPercent(discountPercent)
+        : null;
+
+    // Fetch wider when filtering by % — null DB % normalizes to 50 in memory.
     const take = Math.min(120, Math.max(1, Math.floor(limit)));
+    const fetchTake = pctFilter != null ? Math.min(200, take * 3) : take;
     const rows = await prisma.products.findMany({
       where: {
         is_active: true,
@@ -1547,10 +1588,19 @@ export async function getClearanceStorefrontProductsByBreederSlug(
         breeder_id: BigInt(match.id),
       },
       orderBy: [{ id: "desc" }],
-      take,
+      take: fetchTake,
       select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
     });
-    const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
+    let mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
+    if (pctFilter != null) {
+      mapped = mapped.filter(
+        (p) =>
+          normalizeClearanceDiscountPercent(
+            (p as { clearance_discount_percent?: number | null })
+              .clearance_discount_percent
+          ) === pctFilter
+      );
+    }
     return {
       data: {
         products: await filterAndSortClearanceProducts(mapped, take),

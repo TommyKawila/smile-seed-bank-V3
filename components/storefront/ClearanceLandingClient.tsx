@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
@@ -13,18 +13,34 @@ import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-produ
 import type { StorefrontClearanceBreederBox } from "@/lib/clearance";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 
+function groupBoxesByPercent(
+  boxes: StorefrontClearanceBreederBox[]
+): { percent: number; boxes: StorefrontClearanceBreederBox[] }[] {
+  const map = new Map<number, StorefrontClearanceBreederBox[]>();
+  for (const box of boxes) {
+    const list = map.get(box.discountPercent) ?? [];
+    list.push(box);
+    map.set(box.discountPercent, list);
+  }
+  return [...map.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .map(([percent, group]) => ({ percent, boxes: group }));
+}
+
 export function ClearanceLandingClient({
   boxes,
   breederSlug,
   breederName,
   breederLogoUrl = null,
   products,
+  discountPercent = null,
 }: {
   boxes: StorefrontClearanceBreederBox[];
   breederSlug: string | null;
   breederName: string | null;
   breederLogoUrl?: string | null;
   products: ProductWithBreederAndVariants[];
+  discountPercent?: number | null;
 }) {
   const { t } = useLanguage();
   const drillDown = Boolean(breederSlug);
@@ -33,6 +49,11 @@ export function ClearanceLandingClient({
     : t("Clearance", "Clearance");
   const [liveBoxes, setLiveBoxes] = useState(boxes);
   const [loadingBoxes, setLoadingBoxes] = useState(!drillDown && boxes.length === 0);
+
+  const sections = useMemo(
+    () => groupBoxesByPercent(liveBoxes),
+    [liveBoxes]
+  );
 
   useEffect(() => {
     setLiveBoxes(boxes);
@@ -66,11 +87,14 @@ export function ClearanceLandingClient({
   }, [drillDown, boxes.length]);
 
   useEffect(() => {
-    const path = breederSlug
-      ? `/clearance?breeder=${encodeURIComponent(breederSlug)}`
-      : "/clearance";
-    saveCatalogReturnPath(path);
-  }, [breederSlug]);
+    if (!breederSlug) {
+      saveCatalogReturnPath("/clearance");
+      return;
+    }
+    const qs = new URLSearchParams({ breeder: breederSlug });
+    if (discountPercent != null) qs.set("pct", String(discountPercent));
+    saveCatalogReturnPath(`/clearance?${qs.toString()}`);
+  }, [breederSlug, discountPercent]);
 
   return (
     <div className={`min-h-0 bg-zinc-950 text-zinc-100 sm:min-h-[60vh] ${JOURNAL_PRODUCT_FONT_VARS}`}>
@@ -96,16 +120,26 @@ export function ClearanceLandingClient({
               </p>
               <h1 className="mt-1.5 max-w-2xl font-sans text-2xl font-semibold tracking-tight text-white sm:mt-2 sm:text-4xl">
                 {title}
+                {drillDown && discountPercent != null ? (
+                  <span className="ml-2 inline-flex align-middle rounded-md bg-emerald-500 px-2 py-0.5 text-sm font-bold text-white sm:text-base">
+                    −{discountPercent}%
+                  </span>
+                ) : null}
               </h1>
               <p className="mt-1.5 max-w-xl text-xs font-light text-muted-foreground sm:mt-2 sm:text-sm">
                 {drillDown
-                  ? t(
-                      "สินค้า Clearance ของค่ายนี้ · ราคาลดตามแต่ละรายการ",
-                      "Clearance strains from this breeder · discount varies by product"
-                    )
+                  ? discountPercent != null
+                    ? t(
+                        `สินค้า Clearance ลด ${discountPercent}% ของค่ายนี้`,
+                        `${discountPercent}% off clearance strains from this breeder`
+                      )
+                    : t(
+                        "สินค้า Clearance ของค่ายนี้ · ราคาลดตามแต่ละรายการ",
+                        "Clearance strains from this breeder · discount varies by product"
+                      )
                   : t(
-                      "เลือกค่ายที่ร่วมโปร · ส่วนลดตามแต่ละสินค้า",
-                      "Pick a participating breeder · discount varies by product"
+                      "เลือกตามระดับส่วนลด — แยกชัด −50% / −20% และระดับอื่น",
+                      "Browse by discount tier — clear −50% / −20% and other groups"
                     )}
               </p>
             </div>
@@ -156,9 +190,46 @@ export function ClearanceLandingClient({
             {t("ยังไม่มีสินค้า Clearance", "No clearance products yet")}
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {liveBoxes.map((box) => (
-              <ClearanceBreederBoxCard key={box.breederId} box={box} />
+          <div className="space-y-10 sm:space-y-14">
+            {sections.map((section) => (
+              <section
+                key={section.percent}
+                aria-labelledby={`clearance-tier-${section.percent}`}
+              >
+                <div className="mb-4 flex flex-wrap items-end justify-between gap-2 border-b border-zinc-800 pb-3 sm:mb-5">
+                  <div>
+                    <h2
+                      id={`clearance-tier-${section.percent}`}
+                      className="text-xl font-semibold tracking-tight text-white sm:text-2xl"
+                    >
+                      {t(`ลด ${section.percent}%`, `${section.percent}% off`)}
+                      <span className="ml-2 text-emerald-400">
+                        −{section.percent}%
+                      </span>
+                    </h2>
+                    <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
+                      {t(
+                        "ค่ายที่มีสินค้าในระดับส่วนลดนี้เท่านั้น",
+                        "Breeders with products at this discount tier only"
+                      )}
+                    </p>
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    {t(
+                      `${section.boxes.length} ค่าย`,
+                      `${section.boxes.length} breeders`
+                    )}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {section.boxes.map((box) => (
+                    <ClearanceBreederBoxCard
+                      key={`${box.breederId}-${box.discountPercent}`}
+                      box={box}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}

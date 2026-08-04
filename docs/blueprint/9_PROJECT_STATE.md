@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Clearance landing — section by %)
+- **What:** `/clearance` แยก section ตาม % (−50% / −20% ฯลฯ) + badge บนกล่องค่าย
+- **Logic:** นับ/emit กล่องต่อ `breeder×percent` · ลิงก์ `?breeder=&pct=` · drill-down กรองสินค้าตาม % · ไม่ hardcode 50
+- **ไฟล์:** `product-service.ts` · `clearance-breeder-banner-service.ts` · `ClearanceLandingClient.tsx` · `ClearanceBreederBoxCard.tsx` · `clearance/page.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (Admin SSB Assistant chat)
 - **What:** แชท Admin ↔ AI ที่ `/admin/assistant` (ไม่ทับ financial dashboard)
 - **Logic:** `lib/ssb-assistant-db.ts` · `GET/POST /api/admin/chat` (`requireAdminUser` + `callAI`) · `session_id=admin` · `source=admin` · history 40
