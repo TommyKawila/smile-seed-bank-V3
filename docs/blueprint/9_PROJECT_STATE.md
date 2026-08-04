@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-05 (Admin chat — RUNTIME_MODEL identity)
+- **What:** กันบอท hallucinate ว่าเป็น Gemini 1.5 Pro หลังสลับ model
+- **Logic:** inject `RUNTIME_MODEL` ใน system prompt · คืน `modelLabel` · badge บน bubble จาก API/history `model_used`
+- **ไฟล์:** `lib/ai-provider.ts` · `app/api/admin/chat/route.ts` · `AdminAssistantChat.tsx`
+
 ### บันทึกการทำงาน — 2026-08-05 (AI Model Switcher — header + push)
 - **What:** push `6e6eff1` ที่ค้าง + ย้าย switcher จาก floating ไป header แชทให้เห็นชัด
 - **Logic:** pill Gemini|GPT-4o ใน card header ตลอด · คง localStorage/toast/POST model

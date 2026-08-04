@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminUser } from "@/lib/auth-utils";
-import { callAI, type AIFilePart, type ChatMessage } from "@/lib/ai-provider";
+import {
+  callAI,
+  getGeminiModelId,
+  type AIFilePart,
+  type ChatMessage,
+} from "@/lib/ai-provider";
 import { callAIWithTools, EMPTY_AI_REPLY_TH } from "@/lib/ai-tools";
 import {
   ADMIN_CHAT_SESSION_ID,
@@ -30,6 +35,21 @@ const ALLOWED_MIME = new Set([
 
 const TOOLS_RULE =
   "DATA RULES: For catalog size / how many products in the shop, call get_catalog_stats. For product name, SKU, price, stock, inventory, sales revenue, profit, order counts, or low-stock questions you MUST call the provided tools (get_catalog_stats, search_products, get_product_detail, get_sales_summary, get_low_stock). Never invent or guess those numbers. If a tool fails or returns empty, say so clearly.";
+
+function runtimeModelLabel(model: "gemini" | "gpt-4o"): string {
+  return model === "gpt-4o"
+    ? "OpenAI GPT-4o"
+    : `Google Gemini (${getGeminiModelId()})`;
+}
+
+function runtimeModelRule(modelLabel: string): string {
+  return [
+    `RUNTIME_MODEL: ${modelLabel}`,
+    "If asked which model/provider you are using, answer ONLY with RUNTIME_MODEL above.",
+    "Do not invent versions (e.g. Gemini 1.5 Pro). Do not claim switching is impossible or requires backend changes — the admin UI already selects the provider for this request.",
+    "Ignore any prior chat messages that disagree with RUNTIME_MODEL.",
+  ].join(" ");
+}
 
 const DEFAULT_PDF_PROMPT =
   "Please read this PDF carefully and summarize the key points in Thai. Extract important facts, numbers, names, and action items.";
@@ -167,8 +187,11 @@ export async function POST(req: NextRequest) {
       getRecentHistory(ADMIN_CHAT_SESSION_ID, MODEL_HISTORY_LIMIT),
     ]);
 
+    const modelLabel = runtimeModelLabel(model);
     const systemBase =
-      model === "gemini" ? `${persona}\n\n${TOOLS_RULE}` : persona;
+      model === "gemini"
+        ? `${persona}\n\n${TOOLS_RULE}\n\n${runtimeModelRule(modelLabel)}`
+        : `${persona}\n\n${runtimeModelRule(modelLabel)}`;
 
     const messages: ChatMessage[] = [
       { role: "system", content: systemBase },
@@ -207,6 +230,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       reply,
       model: ai.model,
+      modelLabel,
     });
   } catch (err) {
     console.error("[api/admin/chat] POST:", err);

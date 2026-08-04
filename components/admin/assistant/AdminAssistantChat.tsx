@@ -16,7 +16,19 @@ type ChatMsg = {
   role: "user" | "assistant";
   content: string;
   created_at?: string;
+  model_used?: string | null;
+  modelLabel?: string | null;
 };
+
+function modelBadgeLabel(
+  model?: string | null,
+  modelLabel?: string | null
+): string | null {
+  if (modelLabel?.trim()) return modelLabel.trim();
+  if (model === "gpt-4o") return "GPT-4o";
+  if (model === "gemini") return "Gemini";
+  return model?.trim() || null;
+}
 
 type PendingFile = {
   id: string;
@@ -90,8 +102,19 @@ export function AdminAssistantChat() {
       try {
         const res = await fetch("/api/admin/chat?limit=40");
         if (!res.ok) throw new Error("Failed to load history");
-        const data = (await res.json()) as { messages?: ChatMsg[] };
-        if (!cancelled) setMessages(data.messages ?? []);
+        const data = (await res.json()) as {
+          messages?: Array<
+            ChatMsg & { model_used?: string | null }
+          >;
+        };
+        if (!cancelled) {
+          setMessages(
+            (data.messages ?? []).map((m) => ({
+              ...m,
+              model_used: m.model_used ?? null,
+            }))
+          );
+        }
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -234,6 +257,8 @@ export function AdminAssistantChat() {
       const body = (await res.json().catch(() => ({}))) as {
         reply?: string;
         error?: string;
+        model?: string;
+        modelLabel?: string;
       };
       if (!res.ok) {
         throw new Error(body.error || "Send failed");
@@ -244,6 +269,8 @@ export function AdminAssistantChat() {
           id: `asst-${Date.now()}`,
           role: "assistant",
           content: body.reply || "(empty)",
+          model_used: body.model ?? null,
+          modelLabel: body.modelLabel ?? null,
         },
       ]);
     } catch (err) {
@@ -341,26 +368,39 @@ export function AdminAssistantChat() {
             No messages yet. Ask anything — or drop a screenshot.
           </p>
         ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={cn(
-                "flex",
-                m.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
+          messages.map((m) => {
+            const badge =
+              m.role === "assistant"
+                ? modelBadgeLabel(m.model_used, m.modelLabel)
+                : null;
+            return (
               <div
+                key={m.id}
                 className={cn(
-                  "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
-                  m.role === "user"
-                    ? "rounded-br-md bg-emerald-600 text-white"
-                    : "rounded-bl-md bg-muted text-foreground"
+                  "flex",
+                  m.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
-                {m.content}
+                <div className="max-w-[85%]">
+                  <div
+                    className={cn(
+                      "whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
+                      m.role === "user"
+                        ? "rounded-br-md bg-emerald-600 text-white"
+                        : "rounded-bl-md bg-muted text-foreground"
+                    )}
+                  >
+                    {m.content}
+                  </div>
+                  {badge ? (
+                    <p className="mt-1 px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      {badge}
+                    </p>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
         {sending ? (
           <div className="flex justify-start">
