@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Admin SSB Assistant chat)
+- **What:** แชท Admin ↔ AI ที่ `/admin/assistant` (ไม่ทับ financial dashboard)
+- **Logic:** `lib/ssb-assistant-db.ts` · `GET/POST /api/admin/chat` (`requireAdminUser` + `callAI`) · `session_id=admin` · `source=admin` · history 40
+- **ไฟล์:** `app/admin/assistant/page.tsx` · `components/admin/assistant/AdminAssistantChat.tsx` · `app/api/admin/chat/route.ts` · `AdminSidebar.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (B2B Wholesale landing `/wholesale`)
 - **What:** หน้าขายส่ง B2B corporate light — hero, tier calculator THB/EUR, quote cart, RFQ → draft B2B quote, COA email unlock
 - **Logic:** `lib/wholesale-public-pricing.ts` (MOQ 100, tiers 65/55/50 THB) · `POST /api/wholesale/rfq` + `coa-lead` · scoped light UI ไม่แตะ global V4 dark

@@ -32,6 +32,7 @@ import {
   Smartphone,
   Table2,
   Activity,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -40,6 +41,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/assistant", label: "SSB Assistant", icon: Bot },
   { href: "/admin/analytics", label: "Executive analytics", icon: BarChart3 },
   { href: "/admin/grower-tools/usage", label: "AI Tools Usage", icon: Activity },
   { href: "/admin/products", label: "สินค้า", icon: Package },
