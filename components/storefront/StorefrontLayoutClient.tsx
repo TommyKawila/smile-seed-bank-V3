@@ -12,7 +12,6 @@ import { clearCatalogReturnPath } from "@/lib/catalog-return-path";
 
 const CART_ANIMATION_IDLE_MS = 8_000;
 const AGE_GATE_FALLBACK_MS = 12_000;
-const HOME_BANNER_IDLE_MS = 2_500;
 
 const AgeVerificationGate = dynamic(
   () =>
@@ -31,13 +30,6 @@ const Footer = dynamic(
 );
 const OfferManager = dynamic(
   () => import("@/components/storefront/OfferManager").then((m) => ({ default: m.OfferManager })),
-  { ssr: false }
-);
-const BrowserDetectionBanner = dynamic(
-  () =>
-    import("@/components/storefront/BrowserDetectionBanner").then((m) => ({
-      default: m.BrowserDetectionBanner,
-    })),
   { ssr: false }
 );
 const CartAnimation = dynamic(
@@ -66,9 +58,6 @@ export function StorefrontLayoutClient({
   const pathname = usePathname();
   const isLiffEntry =
     pathname === "/line/entry" || pathname.startsWith("/line/entry/");
-  const isHomePath = pathname === "/";
-  const hideBrowserBanner =
-    pathname === "/checkout" || Boolean(pathname?.startsWith("/checkout/"));
 
   useEffect(() => {
     if (pathname === "/blog" || pathname?.startsWith("/blog/")) {
@@ -77,7 +66,6 @@ export function StorefrontLayoutClient({
   }, [pathname]);
   const [mountAgeGate, setMountAgeGate] = useState(false);
   const [mountOffers, setMountOffers] = useState(false);
-  const [mountHomeBanners, setMountHomeBanners] = useState(!isHomePath);
   const [cartFxMount, setCartFxMount] = useState(false);
   const [cartFxReplay, setCartFxReplay] = useState<CartFlyEventDetail | null>(null);
   const [mountPromoHandler, setMountPromoHandler] = useState(false);
@@ -95,11 +83,6 @@ export function StorefrontLayoutClient({
     if (initialSkipAgeGate) return;
     return scheduleInteractionMount(() => setMountAgeGate(true), AGE_GATE_FALLBACK_MS);
   }, [initialSkipAgeGate]);
-
-  useEffect(() => {
-    if (!isHomePath) return;
-    return scheduleIdleWork(() => setMountHomeBanners(true), HOME_BANNER_IDLE_MS);
-  }, [isHomePath]);
 
   useEffect(() => {
     return scheduleIdleWork(() => setMountOffers(true), 5000);
@@ -133,7 +116,6 @@ export function StorefrontLayoutClient({
     <>
       {cartFxMount ? <CartAnimation replay={cartFxReplay} /> : null}
       <Toaster />
-      {mountHomeBanners && !hideBrowserBanner ? <BrowserDetectionBanner /> : null}
       {mountAgeGate ? (
         <AgeVerificationGate initialVerifiedCookie={initialAgeVerifiedCookie} />
       ) : null}

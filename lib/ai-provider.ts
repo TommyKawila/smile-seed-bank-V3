@@ -4,7 +4,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { GoogleGenerativeAI, type Content } from "@google/generative-ai";
+import { GoogleGenAI, type Content } from "@google/genai";
 import OpenAI from "openai";
 
 export type AIModel = "gemini" | "gpt-4o" | "claude";
@@ -82,13 +82,13 @@ function requireAnthropicKey(): string {
 // Lazy clients
 // ---------------------------------------------------------------------------
 
-let geminiClient: GoogleGenerativeAI | null = null;
+let geminiClient: GoogleGenAI | null = null;
 let openaiClient: OpenAI | null = null;
 let anthropicClient: Anthropic | null = null;
 
-function getGeminiClient(): GoogleGenerativeAI {
+function getGeminiClient(): GoogleGenAI {
   if (!geminiClient) {
-    geminiClient = new GoogleGenerativeAI(requireGeminiKey());
+    geminiClient = new GoogleGenAI({ apiKey: requireGeminiKey() });
   }
   return geminiClient;
 }
@@ -134,14 +134,6 @@ function splitSystemMessages(messages: ChatMessage[]): {
 
 async function callGemini(messages: ChatMessage[]): Promise<AIResponse> {
   const { system, rest } = splitSystemMessages(messages);
-  const model = getGeminiClient().getGenerativeModel({
-    model: GEMINI_MODEL_ID,
-    ...(system ? { systemInstruction: system } : {}),
-    generationConfig: {
-      maxOutputTokens: MAX_TOKENS,
-      temperature: OPENAI_TEMPERATURE,
-    },
-  });
 
   const contents: Content[] = rest.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
@@ -153,9 +145,17 @@ async function callGemini(messages: ChatMessage[]): Promise<AIResponse> {
     contents.push({ role: "user", parts: [{ text: "" }] });
   }
 
-  const result = await model.generateContent({ contents });
-  const response = result.response;
-  const content = response.text();
+  const response = await getGeminiClient().models.generateContent({
+    model: GEMINI_MODEL_ID,
+    contents,
+    config: {
+      ...(system ? { systemInstruction: system } : {}),
+      maxOutputTokens: MAX_TOKENS,
+      temperature: OPENAI_TEMPERATURE,
+    },
+  });
+
+  const content = response.text ?? "";
   const usageMeta = response.usageMetadata;
 
   return {

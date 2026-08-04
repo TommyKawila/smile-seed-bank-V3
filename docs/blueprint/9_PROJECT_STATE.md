@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Gemini → @google/genai)
+- **What:** ย้าย Gemini ใน `lib/ai-provider.ts` จาก `@google/generative-ai` → `@google/genai`
+- **Logic:** `GoogleGenAI` + `models.generateContent` · `systemInstruction` ใน config · `response.text` · ถอนแพ็กเกจเก่า
+- **ไฟล์:** `lib/ai-provider.ts` · `package.json`
+
+### บันทึกการทำงาน — 2026-08-04 (Remove FB in-app banner sitewide)
+- **What:** ถอดแถบเตือน “เปิดในเบราว์เซอร์” จาก FB/IG ทั้ง storefront
+- **Logic:** เลิก mount `BrowserDetectionBanner` · ลบคอมโพเนนต์ · Google login ยังมี overlay เฉพาะตอนจำเป็น
+- **ไฟล์:** `StorefrontLayoutClient.tsx` · ลบ `BrowserDetectionBanner.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (Checkout — remove cream friction)
 - **What:** ลบกล่องครีม guest/member + ซ่อน FB in-app banner บน `/checkout` · sticky CTA มือถือ
 - **Logic:** ไม่เตือน 420DAY ก่อนซื้อ · banner ยังโชว์หน้าอื่น · หมายเหตุ 1 แถว · LINE CTA เบาใต้ปุ่มยืนยัน
