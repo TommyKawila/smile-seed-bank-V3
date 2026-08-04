@@ -4,6 +4,21 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Telegram webhook — schema polish)
+- **What:** จัดคอลัมน์ `chat_history` ให้ตรง DB + persona/error ตามสเปก
+- **Logic:** `source: telegram` · `model_used` (assistant เท่านั้น) · fallback persona Tommy secretary · error TH · truncate 4000
+- **ไฟล์:** `app/api/telegram/webhook/route.ts`
+
+### บันทึกการทำงาน — 2026-08-04 (Telegram SSB Assistant webhook)
+- **What:** `POST /api/telegram/webhook` — SSB Assistant Bot รับข้อความ → callAI → ตอบ Telegram
+- **Logic:** optional `TELEGRAM_WEBHOOK_SECRET` · persona จาก `ssb_assistant.user_profile` · history 15 จาก `chat_history` · บันทึก user+assistant · คืน 200 แม้ process พลาด
+- **ไฟล์:** `app/api/telegram/webhook/route.ts`
+
+### บันทึกการทำงาน — 2026-08-04 (Dynamic AI Router)
+- **What:** `lib/ai-provider.ts` — route chat ไป gemini / gpt-4o / claude
+- **Logic:** lazy clients · Gemini key = `GOOGLE_API_KEY` หรือ `GEMINI_API_KEY` · `getAvailableModels()` ตาม key · error ชัดเมื่อขาด key · ยังไม่ refactor extractor/importer
+- **ไฟล์:** `lib/ai-provider.ts` · `package.json` (`openai`, `@google/generative-ai`)
+
 ### บันทึกการทำงาน — 2026-08-03 (Business Documents — fix Save draft Zod)
 - **What:** Save draft ไม่พังเมื่อ brandName/senderName/recipientName ว่าง
 - **Logic:** Zod เลิก `.min(1)` บนฟิลด์ที่ UI ไม่บังคับหลัง blank/raw-paste · คง bodyText/subject/email
