@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (B2B Wholesale landing `/wholesale`)
+- **What:** หน้าขายส่ง B2B corporate light — hero, tier calculator THB/EUR, quote cart, RFQ → draft B2B quote, COA email unlock
+- **Logic:** `lib/wholesale-public-pricing.ts` (MOQ 100, tiers 65/55/50 THB) · `POST /api/wholesale/rfq` + `coa-lead` · scoped light UI ไม่แตะ global V4 dark
+- **ไฟล์:** `app/(storefront)/wholesale/*` · `components/storefront/wholesale/*` · `services/wholesale-rfq-service.ts` · `Footer.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (SSB Assistant — deploy harden tool fallback)
 - **What:** push catalog tools + กัน empty ด้วยสรุปจากผล tool ฝั่งเซิร์ฟเวอร์ · detail หาด้วยชื่อ/slug ได้
 - **Logic:** `formatToolResultsTh` ก่อน EMPTY · `get_product_detail` รับ productId|slug|query · log tool ok/fail
