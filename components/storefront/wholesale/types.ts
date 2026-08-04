@@ -1,4 +1,5 @@
 import type { B2BCurrency } from "@/types/b2b-quote";
+import type { CoaMode } from "@/lib/wholesale-bulk-pricing";
 
 export type QuoteCartLine = {
   strainId: string;
@@ -15,7 +16,12 @@ export type RfqFormState = {
   phone: string;
   address: string;
   paymentMethod: WholesalePaymentMethod;
-  requireGacp: boolean;
+  /** @deprecated Prefer coaMode */
+  requireGacp?: boolean;
+  coaMode: CoaMode;
+  buyExtraCoa: boolean;
+  coaPackageA: number;
+  coaPackageB: number;
   message: string;
 };
 

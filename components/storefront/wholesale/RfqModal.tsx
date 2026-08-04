@@ -9,13 +9,11 @@ import {
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/context/LanguageContext";
 import {
-  formatWholesaleMoney,
-  gacpFeeTotal,
-  lineTotal,
-  resolveTier,
-  unitPrice,
-  type WholesaleTier,
-} from "@/lib/wholesale-public-pricing";
+  formatThb,
+  resolveQuote,
+  thbToEurDisplay,
+  type BulkPricingConfig,
+} from "@/lib/wholesale-bulk-pricing";
 import type {
   QuoteCartLine,
   RfqFormState,
@@ -35,9 +33,7 @@ type Props = {
   submitting: boolean;
   submitError: string | null;
   successQuoteNumber: string | null;
-  tiers: WholesaleTier[];
-  gacpFeeThb: number;
-  gacpFeeEur: number;
+  bulkPricing: BulkPricingConfig;
 };
 
 const PAYMENTS: { id: WholesalePaymentMethod; th: string; en: string }[] = [
@@ -45,6 +41,17 @@ const PAYMENTS: { id: WholesalePaymentMethod; th: string; en: string }[] = [
   { id: "EUR_WIRE", th: "โอนยูโร (EUR Wire)", en: "EUR Wire" },
   { id: "USDT", th: "USDT", en: "USDT" },
 ];
+
+function money(
+  thb: number,
+  currency: WholesaleCurrency,
+  fx: number
+): string {
+  if (currency === "EUR") {
+    return `€${thbToEurDisplay(thb, fx).toLocaleString("en-US")}`;
+  }
+  return formatThb(thb);
+}
 
 export function RfqModal({
   open,
@@ -58,21 +65,23 @@ export function RfqModal({
   submitting,
   submitError,
   successQuoteNumber,
-  tiers,
-  gacpFeeThb,
-  gacpFeeEur,
+  bulkPricing,
 }: Props) {
   const { t } = useLanguage();
-  const gacpFees = { thb: gacpFeeThb, eur: gacpFeeEur };
-
-  const subtotal = lines.reduce(
-    (sum, l) => sum + lineTotal(l.quantity, currency, tiers),
-    0
+  const quote = resolveQuote(
+    lines.map((l) => ({
+      strainId: l.strainId,
+      name: l.name,
+      quantity: l.quantity,
+    })),
+    bulkPricing,
+    {
+      mode: form.coaMode,
+      buyExtra: form.buyExtraCoa,
+      packageACount: form.coaPackageA,
+      packageBCount: form.coaPackageB,
+    }
   );
-  const gacp = form.requireGacp
-    ? gacpFeeTotal(lines.length, currency, gacpFees)
-    : 0;
-  const estimated = subtotal + gacp;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,64 +114,54 @@ export function RfqModal({
               <h3 className="text-sm font-semibold text-slate-800">
                 {t("สรุปรายการ", "Quote summary")}
               </h3>
-              {lines.length === 0 ? (
+              {quote.lines.length === 0 ? (
                 <p className="mt-2 text-sm text-slate-500">
                   {t("ยังไม่มีรายการ", "No items yet")}
                 </p>
               ) : (
                 <ul className="mt-3 space-y-2 text-sm">
-                  {lines.map((l) => {
-                    const tier = resolveTier(l.quantity, tiers);
-                    return (
-                      <li
-                        key={l.strainId}
-                        className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200/80 pb-2 last:border-0"
-                      >
-                        <div>
-                          <p className="font-medium text-slate-900">{l.name}</p>
-                          <p className="text-xs text-slate-500">
-                            {l.quantity.toLocaleString()} seeds · Tier {tier.id} ·{" "}
-                            {formatWholesaleMoney(
-                              unitPrice(l.quantity, currency, tiers),
-                              currency
-                            )}
-                            /seed
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900">
-                            {formatWholesaleMoney(
-                              lineTotal(l.quantity, currency, tiers),
-                              currency
-                            )}
-                          </span>
-                          <button
-                            type="button"
-                            className="min-h-10 text-xs font-medium text-red-600 hover:underline"
-                            onClick={() => onRemoveLine(l.strainId)}
-                          >
-                            {t("ลบ", "Remove")}
-                          </button>
-                        </div>
-                      </li>
-                    );
-                  })}
+                  {quote.lines.map((l) => (
+                    <li
+                      key={l.strainId}
+                      className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200/80 pb-2 last:border-0"
+                    >
+                      <div>
+                        <p className="font-medium text-slate-900">{l.name}</p>
+                        <p className="text-xs text-slate-500">
+                          {l.quantity.toLocaleString()} seeds ·{" "}
+                          {money(l.unitThb, currency, bulkPricing.eurThb)}/seed
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-900">
+                          {money(l.lineTotalThb, currency, bulkPricing.eurThb)}
+                        </span>
+                        <button
+                          type="button"
+                          className="min-h-10 text-xs font-medium text-red-600 hover:underline"
+                          onClick={() => onRemoveLine(l.strainId)}
+                        >
+                          {t("ลบ", "Remove")}
+                        </button>
+                      </div>
+                    </li>
+                  ))}
                 </ul>
               )}
               <dl className="mt-3 space-y-1 border-t border-slate-200 pt-3 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-slate-600">{t("ยอดเมล็ด", "Seeds subtotal")}</dt>
+                  <dt className="text-slate-600">
+                    {t("ยอดเมล็ด", "Seeds subtotal")}
+                  </dt>
                   <dd className="font-medium">
-                    {formatWholesaleMoney(subtotal, currency)}
+                    {money(quote.seedTotalThb, currency, bulkPricing.eurThb)}
                   </dd>
                 </div>
-                {form.requireGacp ? (
+                {quote.extraCoaThb > 0 ? (
                   <div className="flex justify-between">
-                    <dt className="text-slate-600">
-                      {t("ค่าเอกสาร GACP", "GACP documentation fee")}
-                    </dt>
+                    <dt className="text-slate-600">Extra COA</dt>
                     <dd className="font-medium">
-                      {formatWholesaleMoney(gacp, currency)}
+                      {money(quote.extraCoaThb, currency, bulkPricing.eurThb)}
                     </dd>
                   </div>
                 ) : null}
@@ -171,10 +170,21 @@ export function RfqModal({
                     {t("ประมาณการรวม", "Estimated total")}
                   </dt>
                   <dd className="font-bold text-emerald-800">
-                    {formatWholesaleMoney(estimated, currency)}
+                    {money(quote.grandTotalThb, currency, bulkPricing.eurThb)}
                   </dd>
                 </div>
+                <div className="flex justify-between text-xs text-slate-600">
+                  <dt>มัดจำ 50%</dt>
+                  <dd>{money(quote.depositThb, currency, bulkPricing.eurThb)}</dd>
+                </div>
+                <div className="flex justify-between text-xs text-slate-600">
+                  <dt>ยอดค้าง 50%</dt>
+                  <dd>{money(quote.balanceThb, currency, bulkPricing.eurThb)}</dd>
+                </div>
               </dl>
+              <p className="mt-2 text-xs text-slate-500">
+                COA: {form.coaMode === "with" ? "With COA (~35–40 days)" : "No COA (3–7 days)"}
+              </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -236,30 +246,6 @@ export function RfqModal({
                 ))}
               </div>
             </fieldset>
-            <label className="flex cursor-pointer gap-3 rounded-lg border border-slate-200 p-3">
-              <input
-                type="checkbox"
-                checked={form.requireGacp}
-                onChange={(e) =>
-                  onFormChange({ requireGacp: e.target.checked })
-                }
-                className="mt-1 h-4 w-4 accent-emerald-600"
-              />
-              <span className="text-sm text-slate-800">
-                <span className="font-medium">
-                  {t(
-                    "ต้องการแพ็กเกจเอกสารตามมาตรฐาน GACP (COA เต็ม, Heavy Metals & Pesticides, Genetic Lineage Certificate)",
-                    "Require GACP-Compliant Documentation Package (Full COA, Heavy Metals & Pesticides Lab Reports, Genetic Lineage Certificate)"
-                  )}
-                </span>
-                <span className="mt-1 block text-xs text-slate-500">
-                  {t(
-                    `หมายเหตุ: แพ็กเกจเอกสาร GACP ทางการมีค่าดำเนินการเพิ่ม ${gacpFeeThb.toLocaleString()} บาท (€${gacpFeeEur}) ต่อสายพันธุ์`,
-                    `Note: Official GACP-certified documentation package incurs an additional processing fee of ${gacpFeeThb.toLocaleString()} THB (€${gacpFeeEur}) per strain.`
-                  )}
-                </span>
-              </span>
-            </label>
             <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
               {t("ข้อความ / ความต้องการพิเศษ", "Message / Special Requirements")}
               <textarea
@@ -274,7 +260,7 @@ export function RfqModal({
             ) : null}
             <button
               type="button"
-              disabled={submitting || lines.length === 0}
+              disabled={submitting || !quote.allValid || quote.lines.length === 0}
               onClick={onSubmit}
               className="inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
             >

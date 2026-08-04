@@ -5,11 +5,12 @@
 import { saveB2BQuote } from "@/services/b2b-quote-service";
 import { upsertBusinessContact } from "@/services/business-document-service";
 import {
-  gacpFeePerStrain,
-  lineTotal as wholesaleLineTotal,
-  unitPrice,
-} from "@/lib/wholesale-public-pricing";
-import { getWholesaleSettings } from "@/services/wholesale-catalog-service";
+  isValidQty,
+  resolveQuote,
+  thbToEurDisplay,
+  type CoaMode,
+} from "@/lib/wholesale-bulk-pricing";
+import { getBulkPricingConfig } from "@/services/wholesale-catalog-service";
 import {
   defaultValidUntil,
   type B2BCurrency,
@@ -28,7 +29,10 @@ export type WholesaleRfqInput = {
   phone: string;
   address: string;
   paymentMethod: "THB_BANK" | "EUR_WIRE" | "USDT";
-  requireGacp: boolean;
+  coaMode: CoaMode;
+  buyExtraCoa: boolean;
+  coaPackageA: number;
+  coaPackageB: number;
   message?: string;
   currency: B2BCurrency;
   lines: WholesaleRfqLineInput[];
@@ -94,42 +98,70 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
   totalAmount: number;
 }> {
   const currency: B2BCurrency = input.currency === "THB" ? "THB" : "EUR";
-  const settings = await getWholesaleSettings();
-  const moq = settings.moq;
-  const tiers = settings.tiers;
-  const gacpFees = { thb: settings.gacpFeeThb, eur: settings.gacpFeeEur };
+  const config = await getBulkPricingConfig();
 
   const lines = input.lines
     .map((l) => ({
       strainName: l.strainName.trim(),
       quantity: Math.floor(l.quantity),
     }))
-    .filter((l) => l.strainName && l.quantity >= moq);
+    .filter((l) => l.strainName && isValidQty(l.quantity, config));
 
   if (!lines.length) {
-    throw new Error(`At least one strain with quantity ≥ ${moq} is required`);
+    throw new Error(
+      "At least one strain with qty 100 (SSB pack) or ≥ 500 is required"
+    );
   }
 
-  const items: B2BQuoteLineItem[] = lines.map((l, i) => {
-    const up = unitPrice(l.quantity, currency, tiers);
-    return {
-      id: `rfq-${i}`,
-      strainName: l.strainName,
+  const quoteCalc = resolveQuote(
+    lines.map((l, i) => ({
+      strainId: `rfq-${i}`,
+      name: l.strainName,
       quantity: l.quantity,
-      unitPrice: up,
-      lineTotal: wholesaleLineTotal(l.quantity, currency, tiers),
-    };
-  });
+    })),
+    config,
+    {
+      mode: input.coaMode,
+      buyExtra: input.buyExtraCoa,
+      packageACount: input.coaPackageA,
+      packageBCount: input.coaPackageB,
+    }
+  );
 
-  if (input.requireGacp) {
-    const fee = gacpFeePerStrain(currency, gacpFees);
-    items.push({
-      id: "rfq-gacp",
-      strainName: "GACP Documentation Package (per strain)",
-      quantity: lines.length,
-      unitPrice: fee,
-      lineTotal: fee * lines.length,
-    });
+  const toUnit = (thb: number) =>
+    currency === "THB" ? thb : thbToEurDisplay(thb, config.eurThb);
+  const toLine = (thb: number) =>
+    currency === "THB" ? thb : thbToEurDisplay(thb, config.eurThb);
+
+  const items: B2BQuoteLineItem[] = quoteCalc.lines.map((l, i) => ({
+    id: `rfq-${i}`,
+    strainName: l.name,
+    quantity: l.quantity,
+    unitPrice: toUnit(l.unitThb),
+    lineTotal: toLine(l.lineTotalThb),
+  }));
+
+  if (input.coaMode === "with" && input.buyExtraCoa) {
+    const a = Math.max(0, Math.floor(input.coaPackageA));
+    const b = Math.max(0, Math.floor(input.coaPackageB));
+    if (a > 0) {
+      items.push({
+        id: "rfq-coa-a",
+        strainName: "COA Package A (Purity + Germination)",
+        quantity: a,
+        unitPrice: toUnit(config.coaPackageAThb),
+        lineTotal: toLine(a * config.coaPackageAThb),
+      });
+    }
+    if (b > 0) {
+      items.push({
+        id: "rfq-coa-b",
+        strainName: "COA Package B (Purity + Germination + Moisture)",
+        quantity: b,
+        unitPrice: toUnit(config.coaPackageBThb),
+        lineTotal: toLine(b * config.coaPackageBThb),
+      });
+    }
   }
 
   const invoiceDate = new Date().toISOString().slice(0, 10);
@@ -138,7 +170,20 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
     `Company: ${input.companyName.trim()}`,
     `Contact: ${input.contactName.trim()}`,
     `Phone: ${input.phone.trim()}`,
-    input.requireGacp ? "GACP package: YES" : "GACP package: NO",
+    `COA mode: ${input.coaMode === "with" ? "With COA" : "No COA"}`,
+    quoteCalc.freeCoaCount > 0
+      ? `Free COA entitlement: ${quoteCalc.freeCoaCount}`
+      : null,
+    input.buyExtraCoa
+      ? `Extra COA: A×${input.coaPackageA}, B×${input.coaPackageB}`
+      : null,
+    `Deposit 50%: ${quoteCalc.depositThb} THB`,
+    `Balance 50%: ${quoteCalc.balanceThb} THB`,
+    `ETA: ${
+      input.coaMode === "with"
+        ? "approx 35-40 days (incl. lab)"
+        : "3-7 business days"
+    }`,
     input.message?.trim() ? `Message: ${input.message.trim()}` : null,
     "Source: /wholesale public RFQ",
   ]

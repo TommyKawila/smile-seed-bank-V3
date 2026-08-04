@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (B2B Bulk Order calculator)
+- **What:** `/wholesale` calculator ใหม่ — MOQ 500 / แพ็ค 100 · bulk perk ตามยอดรวม · COA none/with · add-on A/B · สรุป 50/50
+- **Logic:** `BulkPricingConfig` v2 ใน `wholesale_settings.tiers` · ราคา THB ปัดขึ้นจำนวนเต็ม · Admin Pricing แก้ได้ · RFQ เก็บ COA + deposit ใน paymentNotes
+- **ไฟล์:** `lib/wholesale-bulk-pricing.ts` · `BulkOrderCalculator` + COA/Summary · `WholesalePageClient` · `wholesale-rfq-service` · `WholesaleAdminClient` · `wholesale-catalog-service`
+
 ### บันทึกการทำงาน — 2026-08-04 (Tommy shared session TG + Admin)
 - **What:** Founder Telegram `988973577` กับ Admin chat ใช้ `session_id=tommy` ร่วมกัน
 - **Logic:** webhook แยก `chatId` (ส่ง TG) vs `historySessionId` · admin โหลด history ไม่ filter source · save ยัง tag `telegram` / `admin`

@@ -2,25 +2,38 @@ import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
+  DEFAULT_BULK_PRICING,
+  type BulkPricingConfig,
+} from "@/lib/wholesale-bulk-pricing";
+import {
   getWholesaleSettings,
-  updateWholesaleSettings,
+  updateBulkPricingConfig,
 } from "@/services/wholesale-catalog-service";
 
 export const dynamic = "force-dynamic";
 
-const TierSchema = z.object({
+const StrainTierSchema = z.object({
   minQty: z.coerce.number().int().min(1),
   maxQty: z.union([z.coerce.number().int().min(1), z.null()]),
   thbPerSeed: z.coerce.number().min(0),
-  eurPerSeed: z.coerce.number().min(0),
-  bestValue: z.boolean().optional().default(false),
+});
+
+const BulkPerkSchema = z.object({
+  minTotalQty: z.coerce.number().int().min(1),
+  thbPerSeed: z.coerce.number().min(0),
+  freeCoaCount: z.coerce.number().int().min(0),
+  freeCoaValueEachThb: z.coerce.number().min(0),
 });
 
 const PutSchema = z.object({
-  moq: z.coerce.number().int().min(1).optional(),
-  gacpFeeThb: z.coerce.number().min(0).optional(),
-  gacpFeeEur: z.coerce.number().min(0).optional(),
-  tiers: z.array(TierSchema).min(1).max(10).optional(),
+  version: z.literal(2).optional(),
+  eurThb: z.coerce.number().positive(),
+  microPackQty: z.coerce.number().int().min(1),
+  microPackThb: z.coerce.number().min(0),
+  strainTiers: z.array(StrainTierSchema).min(1).max(10),
+  bulkPerks: z.array(BulkPerkSchema).min(1).max(10),
+  coaPackageAThb: z.coerce.number().min(0),
+  coaPackageBThb: z.coerce.number().min(0),
 });
 
 export async function GET() {
@@ -46,8 +59,13 @@ export async function PUT(req: NextRequest) {
         { status: 400 }
       );
     }
-    const settings = await updateWholesaleSettings(parsed.data);
-    return NextResponse.json({ settings });
+    const config: BulkPricingConfig = {
+      ...DEFAULT_BULK_PRICING,
+      ...parsed.data,
+      version: 2,
+    };
+    const bulkPricing = await updateBulkPricingConfig(config);
+    return NextResponse.json({ settings: { bulkPricing } });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

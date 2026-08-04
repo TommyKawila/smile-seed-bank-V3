@@ -12,7 +12,10 @@ const bodySchema = z.object({
   phone: z.string().trim().min(3).max(40),
   address: z.string().trim().min(5).max(1000),
   paymentMethod: z.enum(["THB_BANK", "EUR_WIRE", "USDT"]),
-  requireGacp: z.boolean(),
+  coaMode: z.enum(["none", "with"]).default("none"),
+  buyExtraCoa: z.boolean().default(false),
+  coaPackageA: z.number().int().min(0).max(100).default(0),
+  coaPackageB: z.number().int().min(0).max(100).default(0),
   message: z.string().trim().max(2000).optional(),
   currency: z.enum(["THB", "EUR"]),
   lines: z

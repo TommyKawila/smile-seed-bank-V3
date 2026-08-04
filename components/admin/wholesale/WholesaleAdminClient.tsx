@@ -16,18 +16,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import type { WholesaleTier } from "@/lib/wholesale-public-pricing";
+import {
+  DEFAULT_BULK_PRICING,
+  type BulkPricingConfig,
+} from "@/lib/wholesale-bulk-pricing";
 
 type Tab = "catalog" | "pricing" | "rfqs";
-
-type TierEdit = Omit<WholesaleTier, "id">;
-
-type WholesaleSettingsDTO = {
-  moq: number;
-  gacpFeeThb: number;
-  gacpFeeEur: number;
-  tiers: WholesaleTier[];
-};
 
 type WholesaleStrainDTO = {
   id: string;
@@ -55,7 +49,7 @@ export function WholesaleAdminClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [strains, setStrains] = useState<WholesaleStrainDTO[]>([]);
-  const [settings, setSettings] = useState<WholesaleSettingsDTO | null>(null);
+  const [pricing, setPricing] = useState<BulkPricingConfig>(DEFAULT_BULK_PRICING);
   const [rfqs, setRfqs] = useState<WholesaleRfqListItem[]>([]);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("Feminized");
@@ -73,7 +67,7 @@ export function WholesaleAdminClient() {
         error?: string;
       };
       const stJson = (await stRes.json()) as {
-        settings?: WholesaleSettingsDTO;
+        settings?: { bulkPricing?: BulkPricingConfig };
         error?: string;
       };
       const rJson = (await rRes.json()) as {
@@ -84,7 +78,7 @@ export function WholesaleAdminClient() {
       if (!stRes.ok) throw new Error(stJson.error ?? "settings");
       if (!rRes.ok) throw new Error(rJson.error ?? "rfqs");
       setStrains(sJson.strains ?? []);
-      setSettings(stJson.settings ?? null);
+      setPricing(stJson.settings?.bulkPricing ?? DEFAULT_BULK_PRICING);
       setRfqs(rJson.rfqs ?? []);
     } catch (e) {
       toast({
@@ -184,35 +178,20 @@ export function WholesaleAdminClient() {
   };
 
   const savePricing = async () => {
-    if (!settings) return;
     setSaving(true);
     try {
-      const tiers: TierEdit[] = settings.tiers.map(
-        ({ minQty, maxQty, thbPerSeed, eurPerSeed, bestValue }) => ({
-          minQty,
-          maxQty,
-          thbPerSeed,
-          eurPerSeed,
-          bestValue,
-        })
-      );
       const res = await fetch("/api/admin/wholesale/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          moq: settings.moq,
-          gacpFeeThb: settings.gacpFeeThb,
-          gacpFeeEur: settings.gacpFeeEur,
-          tiers,
-        }),
+        body: JSON.stringify(pricing),
       });
       const json = (await res.json()) as {
-        settings?: WholesaleSettingsDTO;
+        settings?: { bulkPricing?: BulkPricingConfig };
         error?: string;
       };
       if (!res.ok) throw new Error(json.error ?? "save failed");
-      setSettings(json.settings ?? settings);
-      toast({ title: "บันทึกราคาแล้ว" });
+      setPricing(json.settings?.bulkPricing ?? pricing);
+      toast({ title: "บันทึกราคาแล้ว (จำนวนเต็ม THB)" });
     } catch (e) {
       toast({
         variant: "destructive",
@@ -222,14 +201,6 @@ export function WholesaleAdminClient() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const updateTier = (index: number, patch: Partial<TierEdit>) => {
-    if (!settings) return;
-    const tiers = settings.tiers.map((t, i) =>
-      i === index ? { ...t, ...patch } : t
-    );
-    setSettings({ ...settings, tiers });
   };
 
   const tabs: { id: Tab; label: string }[] = [
@@ -253,7 +224,7 @@ export function WholesaleAdminClient() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Wholesale</h1>
           <p className="text-sm text-slate-500">
-            Catalog, tiers &amp; public RFQ inbox for{" "}
+            Bulk pricing (editable) &amp; RFQ inbox for{" "}
             <Link href="/wholesale" className="text-emerald-700 underline">
               /wholesale
             </Link>
@@ -385,10 +356,15 @@ export function WholesaleAdminClient() {
         </Card>
       )}
 
-      {tab === "pricing" && settings && (
+      {tab === "pricing" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Pricing &amp; GACP</CardTitle>
+            <div>
+              <CardTitle className="text-lg">Bulk pricing (v2)</CardTitle>
+              <p className="text-xs text-slate-500">
+                ราคาบันทึกเป็นจำนวนเต็ม THB (ปัดขึ้น) · แก้ได้เมื่อต้นทุนขึ้น
+              </p>
+            </div>
             <Button type="button" onClick={() => void savePricing()} disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save
@@ -397,119 +373,201 @@ export function WholesaleAdminClient() {
           <CardContent className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label>MOQ (seeds)</Label>
+                <Label>EUR → THB rate</Label>
                 <Input
                   type="number"
-                  value={settings.moq}
+                  step="0.01"
+                  value={pricing.eurThb}
                   onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      moq: Math.max(1, Math.floor(Number(e.target.value) || 1)),
+                    setPricing({
+                      ...pricing,
+                      eurThb: Math.max(0.01, Number(e.target.value) || 38.44),
                     })
                   }
                 />
               </div>
               <div className="space-y-1">
-                <Label>GACP fee (THB)</Label>
+                <Label>Micro pack qty</Label>
                 <Input
                   type="number"
-                  value={settings.gacpFeeThb}
+                  value={pricing.microPackQty}
                   onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      gacpFeeThb: Math.max(0, Number(e.target.value) || 0),
+                    setPricing({
+                      ...pricing,
+                      microPackQty: Math.max(1, Math.floor(Number(e.target.value) || 100)),
                     })
                   }
                 />
               </div>
               <div className="space-y-1">
-                <Label>GACP fee (EUR)</Label>
+                <Label>Micro pack THB/seed</Label>
                 <Input
                   type="number"
-                  value={settings.gacpFeeEur}
+                  value={pricing.microPackThb}
                   onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      gacpFeeEur: Math.max(0, Number(e.target.value) || 0),
+                    setPricing({
+                      ...pricing,
+                      microPackThb: Math.max(0, Math.ceil(Number(e.target.value) || 0)),
                     })
                   }
                 />
               </div>
             </div>
 
-            <div className="space-y-3">
-              <Label>Tiers</Label>
-              {settings.tiers.map((tier, i) => (
+            <div className="space-y-2">
+              <Label>Strain tiers (per strain qty)</Label>
+              {pricing.strainTiers.map((tier, i) => (
                 <div
                   key={i}
-                  className="grid gap-2 rounded-md border border-slate-200 p-3 sm:grid-cols-6"
+                  className="grid gap-2 rounded-md border border-slate-200 p-3 sm:grid-cols-3"
+                >
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={tier.minQty}
+                    onChange={(e) => {
+                      const strainTiers = [...pricing.strainTiers];
+                      strainTiers[i] = {
+                        ...tier,
+                        minQty: Math.floor(Number(e.target.value) || 0),
+                      };
+                      setPricing({ ...pricing, strainTiers });
+                    }}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={tier.maxQty ?? ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.trim();
+                      const strainTiers = [...pricing.strainTiers];
+                      strainTiers[i] = {
+                        ...tier,
+                        maxQty: raw === "" ? null : Math.floor(Number(raw) || 0),
+                      };
+                      setPricing({ ...pricing, strainTiers });
+                    }}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="THB/seed"
+                    value={tier.thbPerSeed}
+                    onChange={(e) => {
+                      const strainTiers = [...pricing.strainTiers];
+                      strainTiers[i] = {
+                        ...tier,
+                        thbPerSeed: Math.ceil(Number(e.target.value) || 0),
+                      };
+                      setPricing({ ...pricing, strainTiers });
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bulk perks (total qty, all lines ≥500)</Label>
+              {pricing.bulkPerks.map((perk, i) => (
+                <div
+                  key={i}
+                  className="grid gap-2 rounded-md border border-slate-200 p-3 sm:grid-cols-4"
                 >
                   <div className="space-y-1">
-                    <span className="text-xs text-slate-500">Min qty</span>
+                    <span className="text-xs text-slate-500">Min total</span>
                     <Input
                       type="number"
-                      value={tier.minQty}
-                      onChange={(e) =>
-                        updateTier(i, {
-                          minQty: Math.max(1, Math.floor(Number(e.target.value) || 1)),
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs text-slate-500">Max qty</span>
-                    <Input
-                      type="number"
-                      placeholder="∞"
-                      value={tier.maxQty ?? ""}
+                      value={perk.minTotalQty}
                       onChange={(e) => {
-                        const raw = e.target.value.trim();
-                        updateTier(i, {
-                          maxQty: raw === "" ? null : Math.floor(Number(raw) || 0),
-                        });
+                        const bulkPerks = [...pricing.bulkPerks];
+                        bulkPerks[i] = {
+                          ...perk,
+                          minTotalQty: Math.floor(Number(e.target.value) || 0),
+                        };
+                        setPricing({ ...pricing, bulkPerks });
                       }}
                     />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs text-slate-500">THB / seed</span>
+                    <span className="text-xs text-slate-500">THB/seed</span>
                     <Input
                       type="number"
-                      step="0.01"
-                      value={tier.thbPerSeed}
-                      onChange={(e) =>
-                        updateTier(i, {
-                          thbPerSeed: Math.max(0, Number(e.target.value) || 0),
-                        })
-                      }
+                      value={perk.thbPerSeed}
+                      onChange={(e) => {
+                        const bulkPerks = [...pricing.bulkPerks];
+                        bulkPerks[i] = {
+                          ...perk,
+                          thbPerSeed: Math.ceil(Number(e.target.value) || 0),
+                        };
+                        setPricing({ ...pricing, bulkPerks });
+                      }}
                     />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-xs text-slate-500">EUR / seed</span>
+                    <span className="text-xs text-slate-500">Free COAs</span>
                     <Input
                       type="number"
-                      step="0.01"
-                      value={tier.eurPerSeed}
-                      onChange={(e) =>
-                        updateTier(i, {
-                          eurPerSeed: Math.max(0, Number(e.target.value) || 0),
-                        })
-                      }
+                      value={perk.freeCoaCount}
+                      onChange={(e) => {
+                        const bulkPerks = [...pricing.bulkPerks];
+                        bulkPerks[i] = {
+                          ...perk,
+                          freeCoaCount: Math.max(
+                            0,
+                            Math.floor(Number(e.target.value) || 0)
+                          ),
+                        };
+                        setPricing({ ...pricing, bulkPerks });
+                      }}
                     />
                   </div>
-                  <div className="flex items-end gap-2 pb-1">
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={tier.bestValue}
-                        onChange={(e) =>
-                          updateTier(i, { bestValue: e.target.checked })
-                        }
-                      />
-                      Best value
-                    </label>
+                  <div className="space-y-1">
+                    <span className="text-xs text-slate-500">COA value each</span>
+                    <Input
+                      type="number"
+                      value={perk.freeCoaValueEachThb}
+                      onChange={(e) => {
+                        const bulkPerks = [...pricing.bulkPerks];
+                        bulkPerks[i] = {
+                          ...perk,
+                          freeCoaValueEachThb: Math.ceil(
+                            Number(e.target.value) || 0
+                          ),
+                        };
+                        setPricing({ ...pricing, bulkPerks });
+                      }}
+                    />
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label>COA Package A (THB)</Label>
+                <Input
+                  type="number"
+                  value={pricing.coaPackageAThb}
+                  onChange={(e) =>
+                    setPricing({
+                      ...pricing,
+                      coaPackageAThb: Math.ceil(Number(e.target.value) || 0),
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>COA Package B (THB)</Label>
+                <Input
+                  type="number"
+                  value={pricing.coaPackageBThb}
+                  onChange={(e) =>
+                    setPricing({
+                      ...pricing,
+                      coaPackageBThb: Math.ceil(Number(e.target.value) || 0),
+                    })
+                  }
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

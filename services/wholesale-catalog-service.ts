@@ -1,26 +1,16 @@
 /**
- * Wholesale catalog + settings for /wholesale and /admin/wholesale.
+ * Wholesale catalog + bulk pricing settings for /wholesale and /admin/wholesale.
  */
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import type {
-  WholesaleCatalogStrain,
-  WholesaleTier,
-} from "@/lib/wholesale-public-pricing";
+import type { WholesaleCatalogStrain } from "@/lib/wholesale-public-pricing";
 import {
-  DEFAULT_WHOLESALE_TIERS,
-  GACP_FEE_EUR,
-  GACP_FEE_THB,
-  WHOLESALE_PUBLIC_MOQ,
-} from "@/lib/wholesale-public-pricing";
-
-export type WholesaleSettingsDTO = {
-  moq: number;
-  gacpFeeThb: number;
-  gacpFeeEur: number;
-  tiers: WholesaleTier[];
-};
+  DEFAULT_BULK_PRICING,
+  normalizeBulkPricingConfig,
+  parseBulkPricingConfig,
+  type BulkPricingConfig,
+} from "@/lib/wholesale-bulk-pricing";
 
 export type WholesaleStrainDTO = {
   id: string;
@@ -42,6 +32,10 @@ export type WholesaleRfqListItem = {
   updatedAt: string;
 };
 
+export type WholesaleSettingsDTO = {
+  bulkPricing: BulkPricingConfig;
+};
+
 function slugId(name: string, id: string): string {
   const base = name
     .toLowerCase()
@@ -50,81 +44,63 @@ function slugId(name: string, id: string): string {
   return base || `strain-${id}`;
 }
 
-function parseTiers(raw: unknown): WholesaleTier[] {
-  if (!Array.isArray(raw) || raw.length === 0) return DEFAULT_WHOLESALE_TIERS;
-  const out: WholesaleTier[] = [];
-  for (let i = 0; i < raw.length; i++) {
-    const t = raw[i] as Record<string, unknown>;
-    const minQty = Number(t.minQty);
-    const thbPerSeed = Number(t.thbPerSeed);
-    const eurPerSeed = Number(t.eurPerSeed);
-    if (!Number.isFinite(minQty) || !Number.isFinite(thbPerSeed) || !Number.isFinite(eurPerSeed)) {
-      continue;
-    }
-    const maxRaw = t.maxQty;
-    const maxQty =
-      maxRaw == null || maxRaw === ""
-        ? null
-        : Number.isFinite(Number(maxRaw))
-          ? Number(maxRaw)
-          : null;
-    out.push({
-      id: (i + 1) as WholesaleTier["id"],
-      minQty: Math.floor(minQty),
-      maxQty,
-      thbPerSeed,
-      eurPerSeed,
-      bestValue: Boolean(t.bestValue),
+async function ensureSettingsRow(): Promise<void> {
+  const existing = await prisma.wholesale_settings.findUnique({
+    where: { id: 1 },
+  });
+  if (!existing) {
+    await prisma.wholesale_settings.create({
+      data: {
+        id: 1,
+        moq: 500,
+        tiers: DEFAULT_BULK_PRICING as unknown as Prisma.InputJsonValue,
+      },
+    });
+    return;
+  }
+  const parsed = parseBulkPricingConfig(existing.tiers);
+  const raw = existing.tiers as { version?: number } | unknown[];
+  const isV2 =
+    raw &&
+    typeof raw === "object" &&
+    !Array.isArray(raw) &&
+    (raw as { version?: number }).version === 2;
+  if (!isV2) {
+    await prisma.wholesale_settings.update({
+      where: { id: 1 },
+      data: {
+        moq: 500,
+        tiers: parsed as unknown as Prisma.InputJsonValue,
+      },
     });
   }
-  return out.length ? out : DEFAULT_WHOLESALE_TIERS;
 }
 
-async function ensureSettingsRow(): Promise<void> {
-  const existing = await prisma.wholesale_settings.findUnique({ where: { id: 1 } });
-  if (existing) return;
-  await prisma.wholesale_settings.create({
-    data: {
-      id: 1,
-      moq: WHOLESALE_PUBLIC_MOQ,
-      gacp_fee_thb: new Prisma.Decimal(GACP_FEE_THB),
-      gacp_fee_eur: new Prisma.Decimal(GACP_FEE_EUR),
-      tiers: DEFAULT_WHOLESALE_TIERS.map(({ id: _id, ...rest }) => rest) as unknown as Prisma.InputJsonValue,
-    },
+export async function getBulkPricingConfig(): Promise<BulkPricingConfig> {
+  await ensureSettingsRow();
+  const row = await prisma.wholesale_settings.findUniqueOrThrow({
+    where: { id: 1 },
   });
+  return parseBulkPricingConfig(row.tiers);
 }
 
 export async function getWholesaleSettings(): Promise<WholesaleSettingsDTO> {
-  await ensureSettingsRow();
-  const row = await prisma.wholesale_settings.findUniqueOrThrow({ where: { id: 1 } });
-  return {
-    moq: row.moq,
-    gacpFeeThb: Number(row.gacp_fee_thb),
-    gacpFeeEur: Number(row.gacp_fee_eur),
-    tiers: parseTiers(row.tiers),
-  };
+  return { bulkPricing: await getBulkPricingConfig() };
 }
 
-export async function updateWholesaleSettings(input: {
-  moq?: number;
-  gacpFeeThb?: number;
-  gacpFeeEur?: number;
-  tiers?: Omit<WholesaleTier, "id">[];
-}): Promise<WholesaleSettingsDTO> {
+export async function updateBulkPricingConfig(
+  input: BulkPricingConfig
+): Promise<BulkPricingConfig> {
   await ensureSettingsRow();
-  const data: Prisma.wholesale_settingsUpdateInput = {};
-  if (input.moq != null) data.moq = Math.max(1, Math.floor(input.moq));
-  if (input.gacpFeeThb != null) {
-    data.gacp_fee_thb = new Prisma.Decimal(input.gacpFeeThb);
-  }
-  if (input.gacpFeeEur != null) {
-    data.gacp_fee_eur = new Prisma.Decimal(input.gacpFeeEur);
-  }
-  if (input.tiers) {
-    data.tiers = input.tiers as unknown as Prisma.InputJsonValue;
-  }
-  await prisma.wholesale_settings.update({ where: { id: 1 }, data });
-  return getWholesaleSettings();
+  const normalized = normalizeBulkPricingConfig(input);
+  await prisma.wholesale_settings.update({
+    where: { id: 1 },
+    data: {
+      moq: 500,
+      tiers: normalized as unknown as Prisma.InputJsonValue,
+    },
+  });
+  return getBulkPricingConfig();
 }
 
 export async function listWholesaleStrains(opts?: {
@@ -143,7 +119,9 @@ export async function listWholesaleStrains(opts?: {
   }));
 }
 
-export async function listPublicWholesaleCatalog(): Promise<WholesaleCatalogStrain[]> {
+export async function listPublicWholesaleCatalog(): Promise<
+  WholesaleCatalogStrain[]
+> {
   const rows = await listWholesaleStrains({ activeOnly: true });
   return rows.map((r) => ({
     id: slugId(r.name, r.id),
@@ -210,14 +188,18 @@ export async function updateWholesaleStrain(
 
 export async function deleteWholesaleStrain(id: string): Promise<boolean> {
   try {
-    await prisma.wholesale_catalog_strains.delete({ where: { id: BigInt(id) } });
+    await prisma.wholesale_catalog_strains.delete({
+      where: { id: BigInt(id) },
+    });
     return true;
   } catch {
     return false;
   }
 }
 
-export async function listWholesaleRfqs(limit = 40): Promise<WholesaleRfqListItem[]> {
+export async function listWholesaleRfqs(
+  limit = 40
+): Promise<WholesaleRfqListItem[]> {
   const rows = await prisma.b2b_quotes.findMany({
     where: {
       payment_notes: { contains: "Source: /wholesale public RFQ" },

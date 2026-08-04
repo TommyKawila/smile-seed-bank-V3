@@ -1,17 +1,19 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { CurrencyToggle } from "./CurrencyToggle";
 import { FloatingQuoteBar } from "./FloatingQuoteBar";
 import { RfqModal } from "./RfqModal";
-import { StrainPricingGrid } from "./StrainPricingGrid";
+import {
+  BulkOrderCalculator,
+  type BulkOrderState,
+} from "./BulkOrderCalculator";
 import { TrustCompliance } from "./TrustCompliance";
 import { WholesaleHero } from "./WholesaleHero";
 import type { QuoteCartLine, RfqFormState, WholesaleCurrency } from "./types";
-import type {
-  WholesaleCatalogStrain,
-  WholesaleTier,
-} from "@/lib/wholesale-public-pricing";
+import type { WholesaleCatalogStrain } from "@/lib/wholesale-public-pricing";
+import type { BulkPricingConfig } from "@/lib/wholesale-bulk-pricing";
+import { isValidQty } from "@/lib/wholesale-bulk-pricing";
 
 const emptyForm: RfqFormState = {
   companyName: "",
@@ -20,25 +22,23 @@ const emptyForm: RfqFormState = {
   phone: "",
   address: "",
   paymentMethod: "THB_BANK",
-  requireGacp: false,
+  coaMode: "none",
+  buyExtraCoa: false,
+  coaPackageA: 0,
+  coaPackageB: 0,
   message: "",
 };
 
 export function WholesalePageClient({
   catalog,
-  tiers,
-  moq,
-  gacpFeeThb,
-  gacpFeeEur,
+  bulkPricing,
 }: {
   catalog: WholesaleCatalogStrain[];
-  tiers: WholesaleTier[];
-  moq: number;
-  gacpFeeThb: number;
-  gacpFeeEur: number;
+  bulkPricing: BulkPricingConfig;
 }) {
   const [currency, setCurrency] = useState<WholesaleCurrency>("THB");
   const [cart, setCart] = useState<QuoteCartLine[]>([]);
+  const [bulkState, setBulkState] = useState<BulkOrderState | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<RfqFormState>(emptyForm);
   const [submitting, setSubmitting] = useState(false);
@@ -47,25 +47,26 @@ export function WholesalePageClient({
     null
   );
 
-  const addToQuote = useCallback(
-    (strainId: string, name: string, quantity: number) => {
-      const qty = Math.max(moq, Math.floor(quantity));
-      setCart((prev) => {
-        const idx = prev.findIndex((l) => l.strainId === strainId);
-        if (idx >= 0) {
-          const next = [...prev];
-          next[idx] = { ...next[idx], quantity: qty };
-          return next;
-        }
-        return [...prev, { strainId, name, quantity: qty }];
-      });
-      setModalOpen(false);
-      setSuccessQuoteNumber(null);
-    },
-    [moq]
-  );
-
-  const openRfq = () => {
+  const openRfqFromCalc = (state: BulkOrderState) => {
+    const validLines = state.lines.filter((l) =>
+      isValidQty(l.quantity, bulkPricing)
+    );
+    if (!validLines.length) return;
+    setBulkState(state);
+    setCart(
+      validLines.map((l) => ({
+        strainId: l.strainId,
+        name: l.name,
+        quantity: l.quantity,
+      }))
+    );
+    setForm((f) => ({
+      ...f,
+      coaMode: state.coaMode,
+      buyExtraCoa: state.buyExtra,
+      coaPackageA: state.packageACount,
+      coaPackageB: state.packageBCount,
+    }));
     setSuccessQuoteNumber(null);
     setSubmitError(null);
     setModalOpen(true);
@@ -78,7 +79,7 @@ export function WholesalePageClient({
   const submitRfq = async () => {
     setSubmitError(null);
     if (!cart.length) {
-      setSubmitError("Add at least one strain to your quote.");
+      setSubmitError("Add at least one valid strain line.");
       return;
     }
     setSubmitting(true);
@@ -87,8 +88,18 @@ export function WholesalePageClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
+          companyName: form.companyName,
+          contactName: form.contactName,
+          email: form.email,
+          phone: form.phone,
+          address: form.address,
+          paymentMethod: form.paymentMethod,
+          message: form.message,
           currency,
+          coaMode: form.coaMode,
+          buyExtraCoa: form.buyExtraCoa,
+          coaPackageA: form.coaPackageA,
+          coaPackageB: form.coaPackageB,
           lines: cart.map((l) => ({
             strainName: l.name,
             quantity: l.quantity,
@@ -120,22 +131,29 @@ export function WholesalePageClient({
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-sm font-medium text-slate-600">
-            Catalog · interactive tier calculator
+            Bulk order · live THB calculator (EUR ≈ THB ÷{" "}
+            {bulkPricing.eurThb})
           </p>
           <CurrencyToggle currency={currency} onChange={setCurrency} />
         </div>
       </div>
 
-      <StrainPricingGrid
-        currency={currency}
+      <BulkOrderCalculator
         catalog={catalog}
-        tiers={tiers}
-        moq={moq}
-        onAdd={addToQuote}
+        config={bulkPricing}
+        currency={currency}
+        onStateChange={setBulkState}
+        onRequestQuote={openRfqFromCalc}
       />
       <TrustCompliance />
 
-      <FloatingQuoteBar itemCount={cart.length} onOpen={openRfq} />
+      <FloatingQuoteBar
+        itemCount={cart.length || (bulkState?.lines.length ?? 0)}
+        onOpen={() => {
+          if (bulkState) openRfqFromCalc(bulkState);
+          else document.getElementById("rfq")?.scrollIntoView({ behavior: "smooth" });
+        }}
+      />
 
       <RfqModal
         open={modalOpen}
@@ -151,9 +169,7 @@ export function WholesalePageClient({
         submitting={submitting}
         submitError={submitError}
         successQuoteNumber={successQuoteNumber}
-        tiers={tiers}
-        gacpFeeThb={gacpFeeThb}
-        gacpFeeEur={gacpFeeEur}
+        bulkPricing={bulkPricing}
       />
     </div>
   );
