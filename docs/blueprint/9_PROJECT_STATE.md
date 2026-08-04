@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (SSB Assistant — fix Gemini 404 + schema)
+- **What:** แก้บอท TG ตอบ “ระบบขัดข้อง” จาก Vercel log
+- **Logic:** default model → `gemini-2.5-flash` (+ `GEMINI_MODEL` override) · log ApiError · webhook ส่ง reply ก่อน save · GRANT `ssb_assistant` · **บอสยังต้อง Exposed schemas ใน Supabase API settings**
+- **ไฟล์:** `lib/ai-provider.ts` · `app/api/telegram/webhook/route.ts` · `prisma/migrations/20260804130000_ssb_assistant_grants`
+
 ### บันทึกการทำงาน — 2026-08-04 (Gemini → @google/genai)
 - **What:** ย้าย Gemini ใน `lib/ai-provider.ts` จาก `@google/generative-ai` → `@google/genai`
 - **Logic:** `GoogleGenAI` + `models.generateContent` · `systemInstruction` ใน config · `response.text` · ถอนแพ็กเกจเก่า

@@ -27,7 +27,11 @@ const DEFAULT_MODEL: AIModel = "gemini";
 const MAX_TOKENS = 4096;
 const OPENAI_TEMPERATURE = 0.4;
 
-const GEMINI_MODEL_ID = "gemini-2.0-flash";
+/** Override with env GEMINI_MODEL (e.g. gemini-2.5-flash). */
+function getGeminiModelId(): string {
+  return process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
+}
+
 const OPENAI_MODEL_ID = "gpt-4o";
 const CLAUDE_MODEL_ID = "claude-3-5-sonnet-20241022";
 
@@ -134,6 +138,7 @@ function splitSystemMessages(messages: ChatMessage[]): {
 
 async function callGemini(messages: ChatMessage[]): Promise<AIResponse> {
   const { system, rest } = splitSystemMessages(messages);
+  const modelId = getGeminiModelId();
 
   const contents: Content[] = rest.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
@@ -145,29 +150,38 @@ async function callGemini(messages: ChatMessage[]): Promise<AIResponse> {
     contents.push({ role: "user", parts: [{ text: "" }] });
   }
 
-  const response = await getGeminiClient().models.generateContent({
-    model: GEMINI_MODEL_ID,
-    contents,
-    config: {
-      ...(system ? { systemInstruction: system } : {}),
-      maxOutputTokens: MAX_TOKENS,
-      temperature: OPENAI_TEMPERATURE,
-    },
-  });
+  try {
+    const response = await getGeminiClient().models.generateContent({
+      model: modelId,
+      contents,
+      config: {
+        ...(system ? { systemInstruction: system } : {}),
+        maxOutputTokens: MAX_TOKENS,
+        temperature: OPENAI_TEMPERATURE,
+      },
+    });
 
-  const content = response.text ?? "";
-  const usageMeta = response.usageMetadata;
+    const content = response.text ?? "";
+    const usageMeta = response.usageMetadata;
 
-  return {
-    content,
-    model: "gemini",
-    usage: usageMeta
-      ? {
-          inputTokens: usageMeta.promptTokenCount,
-          outputTokens: usageMeta.candidatesTokenCount,
-        }
-      : undefined,
-  };
+    return {
+      content,
+      model: "gemini",
+      usage: usageMeta
+        ? {
+            inputTokens: usageMeta.promptTokenCount,
+            outputTokens: usageMeta.candidatesTokenCount,
+          }
+        : undefined,
+    };
+  } catch (err) {
+    const detail =
+      err && typeof err === "object"
+        ? JSON.stringify(err, Object.getOwnPropertyNames(err))
+        : String(err);
+    console.error(`[ai-provider] Gemini generateContent failed (model=${modelId}):`, detail);
+    throw err;
+  }
 }
 
 async function callOpenAI(messages: ChatMessage[]): Promise<AIResponse> {

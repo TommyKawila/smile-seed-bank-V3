@@ -116,9 +116,10 @@ async function sendTelegramMessage(chatId: string, text: string): Promise<void> 
     throw new Error("TELEGRAM_BOT_TOKEN is not set");
   }
 
-  const body = text.length > TELEGRAM_MAX_CHARS
-    ? `${text.slice(0, TELEGRAM_MAX_CHARS - 1)}…`
-    : text;
+  const body =
+    text.length > TELEGRAM_MAX_CHARS
+      ? `${text.slice(0, TELEGRAM_MAX_CHARS - 1)}…`
+      : text;
 
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
@@ -176,11 +177,19 @@ export async function POST(req: NextRequest) {
     ];
 
     const ai = await callAI(messages);
+    console.log("[telegram webhook] callAI ok", { model: ai.model, sessionId });
 
-    await saveMessage(sessionId, "user", text);
-    await saveMessage(sessionId, "assistant", ai.content, ai.model);
-
+    // Reply first — never block the user on DB write failures
     await sendTelegramMessage(sessionId, ai.content || "(empty response)");
+    console.log("[telegram webhook] send ok", { sessionId });
+
+    try {
+      await saveMessage(sessionId, "user", text);
+      await saveMessage(sessionId, "assistant", ai.content, ai.model);
+      console.log("[telegram webhook] save ok", { sessionId });
+    } catch (saveErr) {
+      console.error("[telegram webhook] save failed:", saveErr);
+    }
   } catch (err) {
     console.error("[telegram webhook] process error:", err);
     try {
