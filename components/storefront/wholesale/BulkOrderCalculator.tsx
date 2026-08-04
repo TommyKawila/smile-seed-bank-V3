@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useLanguage } from "@/context/LanguageContext";
 import type { WholesaleCatalogStrain } from "@/lib/wholesale-public-pricing";
 import {
   formatThb,
@@ -48,6 +49,7 @@ export function BulkOrderCalculator({
   onStateChange,
   onRequestQuote,
 }: Props) {
+  const { t } = useLanguage();
   const [lines, setLines] = useState<BulkQuoteLineInput[]>(() =>
     catalog.slice(0, 1).map((s) => ({
       strainId: s.id,
@@ -116,15 +118,40 @@ export function BulkOrderCalculator({
     packageBCount,
   };
 
+  const upsellText = quote.upsell
+    ? t(
+        `💡 เพิ่มอีก ${quote.upsell.needSeeds.toLocaleString("en-US")} เมล็ด เพื่อปลดล็อกเรท ${quote.upsell.nextThbPerSeed.toLocaleString("en-US")} บาท/เมล็ด${
+          quote.upsell.nextFreeCoaCount > 0
+            ? ` และรับฟรี COA ${quote.upsell.nextFreeCoaCount} ใบ`
+            : ""
+        }!`,
+        `💡 Add ${quote.upsell.needSeeds.toLocaleString("en-US")} more seeds to unlock ${quote.upsell.nextThbPerSeed.toLocaleString("en-US")} THB/seed${
+          quote.upsell.nextFreeCoaCount > 0
+            ? ` and ${quote.upsell.nextFreeCoaCount} free COA(s)`
+            : ""
+        }!`
+      )
+    : null;
+
+  const freeCoaText =
+    quote.freeCoaCount > 0
+      ? t(
+          `คุณได้รับสิทธิ์ตรวจ COA ฟรี ${quote.freeCoaCount} สายพันธุ์! (ประหยัดเงินได้ ${quote.freeCoaValueThb.toLocaleString("en-US")} บาท)`,
+          `You qualify for ${quote.freeCoaCount} free COA strain(s)! (Save ${quote.freeCoaValueThb.toLocaleString("en-US")} THB)`
+        )
+      : null;
+
   return (
     <section id="rfq" className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6">
       <div>
         <h2 className="text-xl font-semibold text-slate-900">
-          B2B Bulk Order Calculator
+          {t("เครื่องคำนวณออเดอร์ขายส่ง B2B", "B2B Bulk Order Calculator")}
         </h2>
         <p className="mt-1 text-sm text-slate-600">
-          ขั้นต่ำ 500 เมล็ด/สาย หรือแพ็คเกจ Smile Seed Bank 100 เมล็ด · ราคาเป็นจำนวนเต็ม
-          THB
+          {t(
+            "ขั้นต่ำ 500 เมล็ด/สาย หรือแพ็คเกจ Smile Seed Bank 100 เมล็ด · ราคาเป็นจำนวนเต็ม THB",
+            "Min. 500 seeds/strain or Smile Seed Bank 100-seed pack · Whole-number THB pricing"
+          )}
         </p>
       </div>
 
@@ -140,7 +167,7 @@ export function BulkOrderCalculator({
               <div className="grid gap-3 sm:grid-cols-[1fr_140px_auto] sm:items-end">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-500">
-                    สายพันธุ์
+                    {t("สายพันธุ์", "Strain")}
                   </label>
                   <select
                     className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900"
@@ -161,7 +188,7 @@ export function BulkOrderCalculator({
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-500">
-                    จำนวนเมล็ด
+                    {t("จำนวนเมล็ด", "Seed quantity")}
                   </label>
                   <Input
                     type="number"
@@ -181,7 +208,7 @@ export function BulkOrderCalculator({
                   size="icon"
                   className="min-h-12 min-w-12"
                   onClick={() => removeLine(idx)}
-                  aria-label="Remove strain"
+                  aria-label={t("ลบสายพันธุ์", "Remove strain")}
                 >
                   <Trash2 className="h-4 w-4 text-red-600" />
                 </Button>
@@ -190,8 +217,10 @@ export function BulkOrderCalculator({
               {nudge && (
                 <div className="mt-3 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
                   <p>
-                    ขั้นต่ำสำหรับเรทราคาส่ง B2B คือ 500 เมล็ดต่อสายพันธุ์ หรือเลือกสั่งซื้อ
-                    &apos;แพ็คเกจ Smile Seed Bank (100 เมล็ด)&apos;
+                    {t(
+                      "ขั้นต่ำสำหรับเรทราคาส่ง B2B คือ 500 เมล็ดต่อสายพันธุ์ หรือเลือกสั่งซื้อ 'แพ็คเกจ Smile Seed Bank (100 เมล็ด)'",
+                      "B2B wholesale rate requires 500 seeds per strain, or order the 'Smile Seed Bank Pack (100 seeds)'"
+                    )}
                   </p>
                   <Button
                     type="button"
@@ -202,7 +231,10 @@ export function BulkOrderCalculator({
                       updateLine(idx, { quantity: config.microPackQty })
                     }
                   >
-                    เปลี่ยนเป็นแพ็คเกจ Smile Seed Bank (100 เมล็ด)
+                    {t(
+                      "เปลี่ยนเป็นแพ็คเกจ Smile Seed Bank (100 เมล็ด)",
+                      "Switch to Smile Seed Bank Pack (100 seeds)"
+                    )}
                   </Button>
                 </div>
               )}
@@ -210,7 +242,8 @@ export function BulkOrderCalculator({
               {resolved?.valid && (
                 <p className="mt-2 text-sm text-slate-600">
                   {resolved.isMicroPack ? "SSB Branded Pack · " : ""}
-                  {money(resolved.unitThb, currency, config.eurThb)}/seed · Line{" "}
+                  {money(resolved.unitThb, currency, config.eurThb)}
+                  {t("/เมล็ด · ราคารวม ", "/seed · Line ")}
                   {money(resolved.lineTotalThb, currency, config.eurThb)}
                 </p>
               )}
@@ -226,19 +259,19 @@ export function BulkOrderCalculator({
           className="border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
         >
           <Plus className="mr-1 h-4 w-4" />
-          เพิ่มสายพันธุ์
+          {t("เพิ่มสายพันธุ์", "Add strain")}
         </Button>
       </div>
 
-      {quote.upsell && (
+      {upsellText && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-          {quote.upsell}
+          {upsellText}
         </div>
       )}
 
-      {quote.freeCoaMessage && (
+      {freeCoaText && (
         <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
-          {quote.freeCoaMessage}
+          {freeCoaText}
         </div>
       )}
 
@@ -279,7 +312,7 @@ export function BulkOrderCalculator({
         disabled={!quote.allValid || !quote.lines.length}
         onClick={() => onRequestQuote(state)}
       >
-        ขอใบเสนอราคา (RFQ)
+        {t("ขอใบเสนอราคา (RFQ)", "Request quote (RFQ)")}
       </Button>
     </section>
   );

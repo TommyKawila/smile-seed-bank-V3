@@ -62,8 +62,12 @@ export type BulkQuoteResult = {
   grandTotalThb: number;
   depositThb: number;
   balanceThb: number;
-  upsell: string | null;
-  freeCoaMessage: string | null;
+  /** Structured upsell — format in UI with locale */
+  upsell: {
+    needSeeds: number;
+    nextThbPerSeed: number;
+    nextFreeCoaCount: number;
+  } | null;
 };
 
 export const DEFAULT_BULK_PRICING: BulkPricingConfig = {
@@ -165,11 +169,15 @@ function resolveActivePerk(
   return null;
 }
 
-export function upsellNudge(
+export function getUpsellInfo(
   totalSeeds: number,
   allLinesMin500: boolean,
   config: BulkPricingConfig
-): string | null {
+): {
+  needSeeds: number;
+  nextThbPerSeed: number;
+  nextFreeCoaCount: number;
+} | null {
   if (!allLinesMin500 || totalSeeds <= 0) return null;
   const sorted = [...config.bulkPerks].sort(
     (a, b) => a.minTotalQty - b.minTotalQty
@@ -178,11 +186,26 @@ export function upsellNudge(
   if (!next) return null;
   const need = next.minTotalQty - totalSeeds;
   if (need <= 0 || need > 2000) return null;
+  return {
+    needSeeds: need,
+    nextThbPerSeed: ceilThb(next.thbPerSeed),
+    nextFreeCoaCount: next.freeCoaCount,
+  };
+}
+
+/** @deprecated Use getUpsellInfo + UI locale formatting */
+export function upsellNudge(
+  totalSeeds: number,
+  allLinesMin500: boolean,
+  config: BulkPricingConfig
+): string | null {
+  const info = getUpsellInfo(totalSeeds, allLinesMin500, config);
+  if (!info) return null;
   const free =
-    next.freeCoaCount > 0
-      ? ` และรับฟรี COA ${next.freeCoaCount} ใบ`
+    info.nextFreeCoaCount > 0
+      ? ` และรับฟรี COA ${info.nextFreeCoaCount} ใบ`
       : "";
-  return `💡 เพิ่มอีก ${need.toLocaleString("en-US")} เมล็ด เพื่อปลดล็อกเรท ${ceilThb(next.thbPerSeed).toLocaleString("en-US")} บาท/เมล็ด${free}!`;
+  return `💡 เพิ่มอีก ${info.needSeeds.toLocaleString("en-US")} เมล็ด เพื่อปลดล็อกเรท ${info.nextThbPerSeed.toLocaleString("en-US")} บาท/เมล็ด${free}!`;
 }
 
 export function parseBulkPricingConfig(raw: unknown): BulkPricingConfig {
@@ -316,11 +339,6 @@ export function resolveQuote(
   const depositThb = ceilThb(grandTotalThb / 2);
   const balanceThb = Math.max(0, grandTotalThb - depositThb);
 
-  const freeCoaMessage =
-    freeCoaCount > 0
-      ? `คุณได้รับสิทธิ์ตรวจ COA ฟรี ${freeCoaCount} สายพันธุ์! (ประหยัดเงินได้ ${freeCoaValueThb.toLocaleString("en-US")} บาท)`
-      : null;
-
   return {
     lines,
     totalSeeds,
@@ -335,7 +353,6 @@ export function resolveQuote(
     grandTotalThb,
     depositThb,
     balanceThb,
-    upsell: upsellNudge(totalSeeds, allLinesMin500, config),
-    freeCoaMessage,
+    upsell: getUpsellInfo(totalSeeds, allLinesMin500, config),
   };
 }

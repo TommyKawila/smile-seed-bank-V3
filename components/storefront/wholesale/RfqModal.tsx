@@ -174,16 +174,22 @@ export function RfqModal({
                   </dd>
                 </div>
                 <div className="flex justify-between text-xs text-slate-600">
-                  <dt>มัดจำ 50%</dt>
+                  <dt>{t("มัดจำ 50%", "Deposit 50%")}</dt>
                   <dd>{money(quote.depositThb, currency, bulkPricing.eurThb)}</dd>
                 </div>
                 <div className="flex justify-between text-xs text-slate-600">
-                  <dt>ยอดค้าง 50%</dt>
+                  <dt>{t("ยอดค้าง 50%", "Balance 50%")}</dt>
                   <dd>{money(quote.balanceThb, currency, bulkPricing.eurThb)}</dd>
                 </div>
               </dl>
               <p className="mt-2 text-xs text-slate-500">
-                COA: {form.coaMode === "with" ? "With COA (~35–40 days)" : "No COA (3–7 days)"}
+                COA:{" "}
+                {form.coaMode === "with"
+                  ? t(
+                      "With COA (~35–40 วัน)",
+                      "With COA (~35–40 days)"
+                    )
+                  : t("No COA (3–7 วันทำการ)", "No COA (3–7 days)")}
               </p>
             </div>
 

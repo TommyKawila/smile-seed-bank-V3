@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (Wholesale — TH/EN i18n calculator)
+- **What:** `/wholesale` calculator/COA/summary สลับภาษาได้ด้วย `t(th,en)`
+- **Logic:** upsell เป็น structured data · เลิก hardcode ไทยใน BulkOrder*
+- **ไฟล์:** `BulkOrderCalculator` · `CoaOptionCards` · `CoaAddonSection` · `BulkOrderSummary` · `wholesale-bulk-pricing.ts`
+
+### บันทึกการทำงาน — 2026-08-04 (Wholesale — COA sample preview modal)
+- **What:** ลิงก์ดูตัวอย่างใบรับรอง Package A/B + modal placeholder (รอ URL จาก supplier)
+- **Logic:** `COA_SAMPLE_PACKAGE_*_URL = null` + TODO Green Future · Dialog ESC/backdrop
+- **ไฟล์:** `CoaSamplePreviewModal.tsx` · `CoaAddonSection.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (Wholesale — clarify COA Package A/B)
 - **What:** ป้าย Package B เป็นชุดเต็ม (Purity + Germination + Moisture) + คำอธิบาย ISTA
 - **ไฟล์:** `CoaAddonSection.tsx`

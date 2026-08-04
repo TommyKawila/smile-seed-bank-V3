@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import { CurrencyToggle } from "./CurrencyToggle";
 import { FloatingQuoteBar } from "./FloatingQuoteBar";
 import { RfqModal } from "./RfqModal";
@@ -36,6 +37,7 @@ export function WholesalePageClient({
   catalog: WholesaleCatalogStrain[];
   bulkPricing: BulkPricingConfig;
 }) {
+  const { t } = useLanguage();
   const [currency, setCurrency] = useState<WholesaleCurrency>("THB");
   const [cart, setCart] = useState<QuoteCartLine[]>([]);
   const [bulkState, setBulkState] = useState<BulkOrderState | null>(null);
@@ -131,8 +133,10 @@ export function WholesalePageClient({
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-sm font-medium text-slate-600">
-            Bulk order · live THB calculator (EUR ≈ THB ÷{" "}
-            {bulkPricing.eurThb})
+            {t(
+              `ออเดอร์ขายส่ง · คำนวณราคา THB แบบสด (EUR ≈ THB ÷ ${bulkPricing.eurThb})`,
+              `Bulk order · live THB calculator (EUR ≈ THB ÷ ${bulkPricing.eurThb})`
+            )}
           </p>
           <CurrencyToggle currency={currency} onChange={setCurrency} />
         </div>
