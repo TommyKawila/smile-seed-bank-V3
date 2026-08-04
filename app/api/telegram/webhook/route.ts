@@ -1,6 +1,7 @@
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { callAI, type ChatMessage } from "@/lib/ai-provider";
+import type { AIFilePart, ChatMessage } from "@/lib/ai-provider";
+import { callAIWithTools } from "@/lib/ai-tools";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -9,11 +10,44 @@ export const runtime = "nodejs";
 const SCHEMA = "ssb_assistant";
 const HISTORY_LIMIT = 15;
 const TELEGRAM_MAX_CHARS = 4000;
+/** Telegram bots can download files up to 20MB; keep a safer cap for Gemini. */
+const MAX_PDF_BYTES = 15 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
 const DEFAULT_PERSONA =
   "You are the private AI secretary of Tommy Kawila, Founder of Smile Seed Bank. Be precise, professional, and helpful.";
 
+const TOOLS_RULE =
+  "DATA RULES: For any product name, SKU, price, stock, inventory, sales revenue, profit, order counts, or low-stock questions you MUST call the provided tools (search_products, get_product_detail, get_sales_summary, get_low_stock). Never invent or guess those numbers. If a tool fails or returns empty, say so clearly.";
+
 const ERROR_REPLY_TH =
   "ขออภัยครับ ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้งในอีกสักครู่";
+
+const DENIED_REPLY_TH =
+  "ขออภัยครับ แชทนี้ไม่ได้รับอนุญาตให้ใช้ SSB Assistant";
+
+const DEFAULT_PDF_PROMPT =
+  "Please read this PDF carefully and summarize the key points in Thai. Extract important facts, numbers, names, and action items.";
+
+const DEFAULT_IMAGE_PROMPT =
+  "Please describe this image and extract any useful text, numbers, or product details in Thai.";
+
+const IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+type TelegramDocument = {
+  file_id: string;
+  file_name?: string;
+  mime_type?: string;
+  file_size?: number;
+};
+
+type TelegramPhotoSize = {
+  file_id: string;
+  file_unique_id?: string;
+  width?: number;
+  height?: number;
+  file_size?: number;
+};
 
 type TelegramUpdate = {
   update_id?: number;
@@ -21,6 +55,9 @@ type TelegramUpdate = {
     message_id?: number;
     chat?: { id?: number | string };
     text?: string;
+    caption?: string;
+    document?: TelegramDocument;
+    photo?: TelegramPhotoSize[];
   };
 };
 
@@ -40,6 +77,20 @@ function assistantDb() {
     auth: { persistSession: false, autoRefreshToken: false },
     db: { schema: SCHEMA },
   });
+}
+
+function isAllowedChat(chatId: string): boolean {
+  const raw = process.env.TELEGRAM_ALLOWED_CHAT_IDS?.trim();
+  if (!raw) {
+    // Unset = allow (dev/setup); set env in production for sales secrecy.
+    return true;
+  }
+  const allowed = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (allowed.length === 0) return true;
+  return allowed.includes(chatId);
 }
 
 async function getSystemPersona(): Promise<string> {
@@ -143,6 +194,92 @@ function verifyWebhookSecret(req: NextRequest): boolean {
   return header === secret;
 }
 
+function isPdfDocument(doc: TelegramDocument): boolean {
+  const mime = (doc.mime_type ?? "").toLowerCase();
+  const name = (doc.file_name ?? "").toLowerCase();
+  return mime === "application/pdf" || name.endsWith(".pdf");
+}
+
+function isImageDocument(doc: TelegramDocument): boolean {
+  const mime = (doc.mime_type ?? "").toLowerCase();
+  if (IMAGE_MIME.has(mime)) return true;
+  const name = (doc.file_name ?? "").toLowerCase();
+  return (
+    name.endsWith(".jpg") ||
+    name.endsWith(".jpeg") ||
+    name.endsWith(".png") ||
+    name.endsWith(".webp")
+  );
+}
+
+function mimeFromImagePath(filePath: string, fallback: string): string {
+  const lower = filePath.toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  return fallback;
+}
+
+async function downloadTelegramFile(
+  fileId: string,
+  maxBytes: number,
+  mimeType: string
+): Promise<AIFilePart> {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not set");
+
+  const metaRes = await fetch(
+    `https://api.telegram.org/bot${token}/getFile?file_id=${encodeURIComponent(fileId)}`
+  );
+  const metaJson = (await metaRes.json()) as {
+    ok?: boolean;
+    result?: { file_path?: string; file_size?: number };
+    description?: string;
+  };
+  if (!metaRes.ok || !metaJson.ok || !metaJson.result?.file_path) {
+    throw new Error(
+      `Telegram getFile failed: ${metaJson.description ?? metaRes.status}`
+    );
+  }
+
+  const size = metaJson.result.file_size ?? 0;
+  if (size > maxBytes) {
+    throw new Error(`FILE_TOO_LARGE:${size}:${maxBytes}`);
+  }
+
+  const fileUrl = `https://api.telegram.org/file/bot${token}/${metaJson.result.file_path}`;
+  const fileRes = await fetch(fileUrl);
+  if (!fileRes.ok) {
+    throw new Error(`Telegram file download failed: ${fileRes.status}`);
+  }
+
+  const buf = Buffer.from(await fileRes.arrayBuffer());
+  if (buf.byteLength > maxBytes) {
+    throw new Error(`FILE_TOO_LARGE:${buf.byteLength}:${maxBytes}`);
+  }
+
+  const resolvedMime =
+    mimeType.startsWith("image/")
+      ? mimeFromImagePath(metaJson.result.file_path, mimeType)
+      : mimeType;
+
+  return {
+    mimeType: resolvedMime,
+    dataBase64: buf.toString("base64"),
+  };
+}
+
+function pickLargestPhoto(
+  photos: TelegramPhotoSize[]
+): TelegramPhotoSize | null {
+  if (!photos.length) return null;
+  return photos.reduce((best, p) => {
+    const bestArea = (best.width ?? 0) * (best.height ?? 0);
+    const area = (p.width ?? 0) * (p.height ?? 0);
+    return area >= bestArea ? p : best;
+  });
+}
+
 export async function POST(req: NextRequest) {
   if (!verifyWebhookSecret(req)) {
     return NextResponse.json({ ok: false }, { status: 401 });
@@ -156,35 +293,131 @@ export async function POST(req: NextRequest) {
   }
 
   const message = update.message;
-  const text = message?.text?.trim();
   const chatIdRaw = message?.chat?.id;
-  if (!text || chatIdRaw === undefined || chatIdRaw === null) {
+  if (chatIdRaw === undefined || chatIdRaw === null) {
     return NextResponse.json({ ok: true });
   }
 
   const sessionId = String(chatIdRaw);
+  const text = message?.text?.trim() ?? "";
+  const caption = message?.caption?.trim() ?? "";
+  const document = message?.document;
+  const photos = message?.photo;
+
+  if (!text && !document && !photos?.length) {
+    return NextResponse.json({ ok: true });
+  }
+
+  if (!isAllowedChat(sessionId)) {
+    console.warn("[telegram webhook] chat denied", { sessionId });
+    try {
+      await sendTelegramMessage(sessionId, DENIED_REPLY_TH);
+    } catch (err) {
+      console.error("[telegram webhook] deny reply failed:", err);
+    }
+    return NextResponse.json({ ok: true });
+  }
 
   try {
+    if (document && !isPdfDocument(document) && !isImageDocument(document)) {
+      await sendTelegramMessage(
+        sessionId,
+        "ตอนนี้รองรับเฉพาะ PDF และรูปภาพ (JPEG/PNG/WebP) ครับ"
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    let files: AIFilePart[] | undefined;
+    let userContent = text;
+
+    if (document && isPdfDocument(document)) {
+      const fileName = document.file_name || "document.pdf";
+      const pdf = await downloadTelegramFile(
+        document.file_id,
+        MAX_PDF_BYTES,
+        "application/pdf"
+      );
+      pdf.fileName = fileName;
+      files = [pdf];
+      const prompt = caption || text || DEFAULT_PDF_PROMPT;
+      userContent = `[PDF attached: ${fileName}]\n${prompt}`;
+      console.log("[telegram webhook] pdf downloaded", {
+        sessionId,
+        fileName,
+        bytesApprox: Math.round((pdf.dataBase64.length * 3) / 4),
+      });
+    } else if (document && isImageDocument(document)) {
+      const fileName = document.file_name || "image";
+      const mime = (document.mime_type ?? "image/jpeg").toLowerCase();
+      const resolved = IMAGE_MIME.has(mime) ? mime : "image/jpeg";
+      const img = await downloadTelegramFile(
+        document.file_id,
+        MAX_IMAGE_BYTES,
+        resolved
+      );
+      img.fileName = fileName;
+      files = [img];
+      const prompt = caption || text || DEFAULT_IMAGE_PROMPT;
+      userContent = `[Image attached: ${fileName}]\n${prompt}`;
+      console.log("[telegram webhook] image doc downloaded", {
+        sessionId,
+        fileName,
+        mime: img.mimeType,
+      });
+    } else if (photos?.length) {
+      const best = pickLargestPhoto(photos);
+      if (best) {
+        const img = await downloadTelegramFile(
+          best.file_id,
+          MAX_IMAGE_BYTES,
+          "image/jpeg"
+        );
+        img.fileName = "photo.jpg";
+        files = [img];
+        const prompt = caption || text || DEFAULT_IMAGE_PROMPT;
+        userContent = `[Image attached: photo]\n${prompt}`;
+        console.log("[telegram webhook] photo downloaded", {
+          sessionId,
+          w: best.width,
+          h: best.height,
+        });
+      }
+    }
+
+    if (!userContent.trim() && !files?.length) {
+      return NextResponse.json({ ok: true });
+    }
+
     const [persona, history] = await Promise.all([
       getSystemPersona(),
       getRecentHistory(sessionId),
     ]);
 
     const messages: ChatMessage[] = [
-      { role: "system", content: persona },
+      { role: "system", content: `${persona}\n\n${TOOLS_RULE}` },
       ...history,
-      { role: "user", content: text },
+      {
+        role: "user",
+        content:
+          userContent ||
+          (files?.[0]?.mimeType === "application/pdf"
+            ? DEFAULT_PDF_PROMPT
+            : DEFAULT_IMAGE_PROMPT),
+      },
     ];
 
-    const ai = await callAI(messages);
-    console.log("[telegram webhook] callAI ok", { model: ai.model, sessionId });
+    const ai = await callAIWithTools(messages, { files, maxRounds: 3 });
+    console.log("[telegram webhook] callAIWithTools ok", {
+      model: ai.model,
+      sessionId,
+      hadFiles: Boolean(files?.length),
+    });
 
-    // Reply first — never block the user on DB write failures
     await sendTelegramMessage(sessionId, ai.content || "(empty response)");
     console.log("[telegram webhook] send ok", { sessionId });
 
     try {
-      await saveMessage(sessionId, "user", text);
+      await saveMessage(sessionId, "user", userContent);
       await saveMessage(sessionId, "assistant", ai.content, ai.model);
       console.log("[telegram webhook] save ok", { sessionId });
     } catch (saveErr) {
@@ -193,7 +426,17 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[telegram webhook] process error:", err);
     try {
-      await sendTelegramMessage(sessionId, ERROR_REPLY_TH);
+      const msgText = err instanceof Error ? err.message : "";
+      let msg = ERROR_REPLY_TH;
+      if (msgText.startsWith("FILE_TOO_LARGE:")) {
+        const parts = msgText.split(":");
+        const max = Number(parts[2] ?? 0);
+        msg =
+          max <= MAX_IMAGE_BYTES
+            ? "ไฟล์รูปใหญ่เกินไปครับ (สูงสุดประมาณ 10MB) กรุณาส่งไฟล์ที่เล็กกว่า"
+            : "ไฟล์ PDF ใหญ่เกินไปครับ (สูงสุดประมาณ 15MB) กรุณาส่งไฟล์ที่เล็กกว่า";
+      }
+      await sendTelegramMessage(sessionId, msg);
     } catch (sendErr) {
       console.error("[telegram webhook] error reply failed:", sendErr);
     }

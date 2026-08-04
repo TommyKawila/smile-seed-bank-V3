@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (SSB Assistant — images + live DB tools)
+- **What:** TG บอทอ่านรูป + ตอบสินค้า/สต็อก/ราคา/ยอดขายจาก DB จริงผ่าน Gemini tools
+- **Logic:** webhook รับ `photo` / image docs → Gemini inlineData · `callAIWithTools` loop (max 3) · tools: search_products / get_product_detail / get_sales_summary / get_low_stock · `TELEGRAM_ALLOWED_CHAT_IDS` · history เก็บ label ไม่เก็บ binary
+- **ไฟล์:** `app/api/telegram/webhook/route.ts` · `lib/ai-tools.ts` · `services/assistant-tools-service.ts`
+
+### บันทึกการทำงาน — 2026-08-04 (Telegram SSB Assistant — read PDF)
+- **What:** บอท TG อ่านไฟล์ PDF ที่ส่งในแชทได้
+- **Logic:** webhook รับ `message.document` → Telegram getFile/download → `callAI(..., files)` Gemini inlineData PDF · history เก็บข้อความอย่างเดียว · จำกัด ~15MB
+- **ไฟล์:** `app/api/telegram/webhook/route.ts` · `lib/ai-provider.ts`
+
 ### บันทึกการทำงาน — 2026-08-04 (Gemini default → gemini-3.5-flash)
 - **What:** แก้ TG 404 — `gemini-2.5-flash` ไม่ให้ new users แล้ว
 - **Logic:** default `getGeminiModelId()` → `gemini-3.5-flash` · override ด้วย `GEMINI_MODEL` ได้

@@ -14,6 +14,14 @@ export type ChatMessage = {
   content: string;
 };
 
+/** Binary attachment for multimodal Gemini (e.g. PDF). */
+export type AIFilePart = {
+  mimeType: string;
+  /** Raw base64 (no data: URL prefix) */
+  dataBase64: string;
+  fileName?: string;
+};
+
 export type AIResponse = {
   content: string;
   model: AIModel;
@@ -136,18 +144,55 @@ function splitSystemMessages(messages: ChatMessage[]): {
 // Providers
 // ---------------------------------------------------------------------------
 
-async function callGemini(messages: ChatMessage[]): Promise<AIResponse> {
+async function callGemini(
+  messages: ChatMessage[],
+  files?: AIFilePart[]
+): Promise<AIResponse> {
   const { system, rest } = splitSystemMessages(messages);
   const modelId = getGeminiModelId();
 
-  const contents: Content[] = rest.map((m) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
-  }));
+  // Attach files to the last user turn (Gemini multimodal)
+  let lastUserIdx = -1;
+  for (let i = rest.length - 1; i >= 0; i--) {
+    if (rest[i].role === "user") {
+      lastUserIdx = i;
+      break;
+    }
+  }
+
+  const contents: Content[] = rest.map((m, idx) => {
+    const parts: Content["parts"] = [{ text: m.content || " " }];
+    if (
+      files?.length &&
+      idx === lastUserIdx &&
+      m.role === "user"
+    ) {
+      for (const f of files) {
+        parts!.push({
+          inlineData: {
+            mimeType: f.mimeType,
+            data: f.dataBase64,
+          },
+        });
+      }
+    }
+    return {
+      role: m.role === "assistant" ? "model" : "user",
+      parts,
+    };
+  });
 
   // Gemini requires at least one user turn
   if (contents.length === 0) {
-    contents.push({ role: "user", parts: [{ text: "" }] });
+    const parts: Content["parts"] = [{ text: " " }];
+    if (files?.length) {
+      for (const f of files) {
+        parts!.push({
+          inlineData: { mimeType: f.mimeType, data: f.dataBase64 },
+        });
+      }
+    }
+    contents.push({ role: "user", parts });
   }
 
   try {
@@ -265,13 +310,25 @@ export function getAvailableModels(): AIModel[] {
 
 /**
  * Route a chat completion to Gemini, OpenAI (gpt-4o), or Claude.
+ * File attachments (PDF, etc.) require Gemini — other models ignore/throw.
  * @param messages - Conversation turns (system / user / assistant)
  * @param model - Provider key; defaults to gemini
+ * @param files - Optional multimodal parts (used with gemini only)
  */
 export async function callAI(
   messages: ChatMessage[],
-  model: AIModel = DEFAULT_MODEL
+  model: AIModel = DEFAULT_MODEL,
+  files?: AIFilePart[]
 ): Promise<AIResponse> {
+  if (files?.length) {
+    if (model !== "gemini") {
+      throw new Error(
+        `File attachments are only supported with model 'gemini' (got '${model}').`
+      );
+    }
+    return callGemini(messages, files);
+  }
+
   switch (model) {
     case "gemini":
       return callGemini(messages);
