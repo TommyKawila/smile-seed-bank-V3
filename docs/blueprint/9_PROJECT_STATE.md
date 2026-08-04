@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-05 (AI Model Switcher — header + push)
+- **What:** push `6e6eff1` ที่ค้าง + ย้าย switcher จาก floating ไป header แชทให้เห็นชัด
+- **Logic:** pill Gemini|GPT-4o ใน card header ตลอด · คง localStorage/toast/POST model
+- **ไฟล์:** `AiModelSwitcher.tsx` · `AdminAssistantChat.tsx`
+
 ### บันทึกการทำงาน — 2026-08-04 (Admin AI Model Switcher)
 - **What:** floating Gemini / GPT-4o switcher บน `/admin/assistant` เท่านั้น
 - **Logic:** `localStorage ssb_admin_ai_model` · POST `model` · gemini→`callAIWithTools` · gpt-4o→`callAI` (ไม่มี tools/files) · บล็อกแนบไฟล์เมื่อ gpt-4o

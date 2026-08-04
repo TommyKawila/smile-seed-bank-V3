@@ -316,19 +316,18 @@ export function AdminAssistantChat() {
         </div>
       ) : null}
 
-      <AiModelSwitcher value={activeAIModel} onChange={setActiveAIModel} />
-
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="text-base font-semibold text-foreground">
-          SSB Assistant
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          Shared with Telegram Founder · session{" "}
-          <code className="text-[10px]">tommy</code>
-          {" · "}แนบรูป/PDF หรือลากวางได้ (Gemini)
-          {" · "}model{" "}
-          <code className="text-[10px]">{activeAIModel}</code>
-        </p>
+      <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground">
+            SSB Assistant
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Shared with Telegram Founder · session{" "}
+            <code className="text-[10px]">tommy</code>
+            {" · "}แนบรูป/PDF หรือลากวางได้ (Gemini)
+          </p>
+        </div>
+        <AiModelSwitcher value={activeAIModel} onChange={setActiveAIModel} />
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
