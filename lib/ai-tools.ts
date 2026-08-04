@@ -60,16 +60,23 @@ export const ASSISTANT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
   {
     name: "get_product_detail",
     description:
-      "Get full product detail and variants by numeric product id (from search_products).",
+      "Get full product detail and variants by productId (from search_products), or by slug / name query.",
     parameters: {
       type: Type.OBJECT,
       properties: {
         productId: {
           type: Type.NUMBER,
-          description: "Product id from search_products",
+          description: "Numeric product id (optional if slug or query set)",
+        },
+        slug: {
+          type: Type.STRING,
+          description: "Product URL slug (optional)",
+        },
+        query: {
+          type: Type.STRING,
+          description: "Product name or SKU search text (optional)",
         },
       },
-      required: ["productId"],
     },
   },
   {
@@ -99,7 +106,19 @@ export const ASSISTANT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
       properties: {},
     },
   },
+  {
+    name: "get_catalog_stats",
+    description:
+      "Get catalog size: active product count, active variant count, total stock units, and counts by product_kind (seed/merch). Use for questions like how many products are in the shop.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {},
+    },
+  },
 ];
+
+export const EMPTY_AI_REPLY_TH =
+  "ขออภัยครับ ยังสรุปคำตอบไม่ได้ในรอบนี้ กรุณาลองถามใหม่อีกครั้ง";
 
 function splitSystem(messages: ChatMessage[]): {
   system: string | undefined;
@@ -185,6 +204,139 @@ export type CallAIWithToolsOptions = {
   executeTool?: (name: string, args: Record<string, unknown>) => Promise<unknown>;
 };
 
+type ToolResultRow = { name: string; result: unknown };
+
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" && !Array.isArray(v)
+    ? (v as Record<string, unknown>)
+    : null;
+}
+
+function formatOneToolTh(name: string, result: unknown): string | null {
+  const r = asRecord(result);
+  if (!r) return null;
+  if (typeof r.error === "string") return `ข้อผิดพลาด (${name}): ${r.error}`;
+
+  if (name === "get_catalog_stats") {
+    const byKind = asRecord(r.byKind);
+    return [
+      `สินค้า active ${String(r.activeProducts ?? "—")} รายการ`,
+      `variant ${String(r.activeVariants ?? "—")}`,
+      `สต็อกรวม ${String(r.totalVariantStockUnits ?? "—")} ชิ้น`,
+      `(seed ${String(byKind?.seed ?? "—")} / merch ${String(byKind?.merch ?? "—")})`,
+    ].join(" · ");
+  }
+
+  if (name === "search_products") {
+    const products = Array.isArray(r.products) ? r.products : [];
+    if (!products.length) return "ไม่พบสินค้าที่ตรงกับคำค้น";
+    const lines = products.slice(0, 8).map((raw) => {
+      const p = asRecord(raw);
+      if (!p) return "—";
+      return `• ${String(p.name)} (id ${String(p.id)}) · ราคา ${String(p.listPrice ?? "—")} · สต็อก ${String(p.aggregateStock ?? "—")}`;
+    });
+    return `ผลค้นหา ${products.length} รายการ:\n${lines.join("\n")}`;
+  }
+
+  if (name === "get_product_detail") {
+    const variants = Array.isArray(r.variants) ? r.variants : [];
+    const vLines = variants.slice(0, 6).map((raw) => {
+      const v = asRecord(raw);
+      if (!v) return "—";
+      return `  - ${String(v.unitLabel)} · ฿${String(v.price)} · stock ${String(v.stock ?? 0)}`;
+    });
+    return [
+      `${String(r.name)}${r.brand ? ` (${String(r.brand)})` : ""}`,
+      `SKU: ${String(r.masterSku ?? "—")} · slug: ${String(r.slug ?? "—")}`,
+      `ราคา ${String(r.listPrice ?? "—")}${r.salePrice != null ? ` · ลด ${String(r.salePrice)}` : ""} · สต็อก ${String(r.aggregateStock ?? "—")}`,
+      vLines.length ? `Variants:\n${vLines.join("\n")}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (name === "get_sales_summary") {
+    return [
+      `ยอดขาย ${String(r.totalRevenue ?? r.total_revenue ?? "—")}`,
+      `ออเดอร์ ${String(r.totalOrders ?? r.total_orders ?? "—")}`,
+      `กำไรสุทธิ ${String(r.netProfit ?? r.net_profit ?? "—")}`,
+    ].join(" · ");
+  }
+
+  if (name === "get_low_stock") {
+    const items = Array.isArray(r.items) ? r.items : [];
+    if (!items.length) return "ไม่มีรายการใกล้หมดสต็อก";
+    const lines = items.slice(0, 10).map((raw) => {
+      const v = asRecord(raw);
+      if (!v) return "—";
+      return `• ${String(v.productName)} ${String(v.unitLabel)} · stock ${String(v.stock)}`;
+    });
+    return `ใกล้หมด ${String(r.count ?? items.length)} รายการ:\n${lines.join("\n")}`;
+  }
+
+  return null;
+}
+
+/** Deterministic Thai summary from tool payloads when Gemini returns empty text. */
+export function formatToolResultsTh(rows: ToolResultRow[]): string | null {
+  if (!rows.length) return null;
+  const parts: string[] = [];
+  for (const row of rows) {
+    const line = formatOneToolTh(row.name, row.result);
+    if (line) parts.push(line);
+  }
+  return parts.length ? parts.join("\n\n") : null;
+}
+
+async function resolveEmptyReply(
+  contents: Content[],
+  system: string | undefined,
+  modelId: string,
+  toolResults: ToolResultRow[],
+  lastUsage?: { inputTokens?: number; outputTokens?: number }
+): Promise<AIResponse> {
+  const formatted = formatToolResultsTh(toolResults);
+  if (formatted) {
+    console.log("[ai-tools] using formatToolResultsTh fallback", {
+      tools: toolResults.map((t) => t.name),
+    });
+    return { content: formatted, model: "gemini", usage: lastUsage };
+  }
+
+  const nudge: Content = {
+    role: "user",
+    parts: [
+      {
+        text: "สรุปคำตอบจากผล tool ด้านบนเป็นภาษาไทยให้ชัดเจน กระชับ ห้ามเว้นว่าง",
+      },
+    ],
+  };
+  const retry = await getClient().models.generateContent({
+    model: modelId,
+    contents: [...contents, nudge],
+    config: {
+      ...(system ? { systemInstruction: system } : {}),
+      maxOutputTokens: MAX_TOKENS,
+      temperature: TEMPERATURE,
+    },
+  });
+  const text = retry.text?.trim() ?? "";
+  if (text) {
+    return {
+      content: text,
+      model: "gemini",
+      usage: retry.usageMetadata
+        ? {
+            inputTokens: retry.usageMetadata.promptTokenCount,
+            outputTokens: retry.usageMetadata.candidatesTokenCount,
+          }
+        : lastUsage,
+    };
+  }
+
+  return { content: EMPTY_AI_REPLY_TH, model: "gemini", usage: lastUsage };
+}
+
 /**
  * Gemini generateContent loop with functionDeclarations.
  * Max rounds of tool calls then final text reply.
@@ -203,6 +355,7 @@ export async function callAIWithTools(
   let lastUsage:
     | { inputTokens?: number; outputTokens?: number }
     | undefined;
+  const toolResults: ToolResultRow[] = [];
 
   for (let round = 0; round < maxRounds; round++) {
     const response = await getClient().models.generateContent({
@@ -226,11 +379,17 @@ export async function callAIWithTools(
 
     const calls = response.functionCalls;
     if (!calls?.length) {
-      return {
-        content: response.text ?? "",
-        model: "gemini",
-        usage: lastUsage,
-      };
+      const text = response.text?.trim() ?? "";
+      if (text) {
+        return { content: text, model: "gemini", usage: lastUsage };
+      }
+      return resolveEmptyReply(
+        contents,
+        system,
+        modelId,
+        toolResults,
+        lastUsage
+      );
     }
 
     const modelParts = response.candidates?.[0]?.content?.parts ?? [];
@@ -254,11 +413,18 @@ export async function callAIWithTools(
       let result: unknown;
       try {
         result = await execute(name, args);
+        const rec = asRecord(result);
+        console.log("[ai-tools] tool ok", {
+          name,
+          error: typeof rec?.error === "string" ? rec.error : undefined,
+        });
       } catch (err) {
         result = {
           error: err instanceof Error ? err.message : "Tool execution failed",
         };
+        console.error("[ai-tools] tool failed", { name, err });
       }
+      toolResults.push({ name, result });
       responseParts.push(
         createPartFromFunctionResponse(
           call.id ?? name,
@@ -281,14 +447,19 @@ export async function callAIWithTools(
     },
   });
 
-  return {
-    content: final.text ?? "",
-    model: "gemini",
-    usage: final.usageMetadata
-      ? {
-          inputTokens: final.usageMetadata.promptTokenCount,
-          outputTokens: final.usageMetadata.candidatesTokenCount,
-        }
-      : lastUsage,
-  };
+  const finalText = final.text?.trim() ?? "";
+  if (finalText) {
+    return {
+      content: finalText,
+      model: "gemini",
+      usage: final.usageMetadata
+        ? {
+            inputTokens: final.usageMetadata.promptTokenCount,
+            outputTokens: final.usageMetadata.candidatesTokenCount,
+          }
+        : lastUsage,
+    };
+  }
+
+  return resolveEmptyReply(contents, system, modelId, toolResults, lastUsage);
 }

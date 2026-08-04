@@ -13,7 +13,8 @@ export type AssistantToolName =
   | "search_products"
   | "get_product_detail"
   | "get_sales_summary"
-  | "get_low_stock";
+  | "get_low_stock"
+  | "get_catalog_stats";
 
 export async function searchProducts(query: string): Promise<unknown> {
   const q = query.trim();
@@ -88,50 +89,71 @@ export async function searchProducts(query: string): Promise<unknown> {
   };
 }
 
-export async function getProductDetail(productId: number): Promise<unknown> {
-  if (!Number.isFinite(productId) || productId <= 0) {
-    return { error: "Invalid productId" };
-  }
-
-  const p = await prisma.products.findFirst({
-    where: { id: BigInt(productId), is_active: true },
+const productDetailSelect = {
+  id: true,
+  name: true,
+  master_sku: true,
+  slug: true,
+  description_th: true,
+  description_en: true,
+  price: true,
+  sale_price: true,
+  stock: true,
+  is_clearance: true,
+  product_kind: true,
+  thc_percent: true,
+  cbd_percent: true,
+  flowering_type: true,
+  genetics: true,
+  breeders: { select: { name: true } },
+  product_variants: {
+    where: { is_active: true },
     select: {
       id: true,
-      name: true,
-      master_sku: true,
-      slug: true,
-      description_th: true,
-      description_en: true,
+      unit_label: true,
+      sku: true,
       price: true,
-      sale_price: true,
+      cost_price: true,
       stock: true,
-      is_clearance: true,
-      product_kind: true,
-      thc_percent: true,
-      cbd_percent: true,
-      flowering_type: true,
-      genetics: true,
-      breeders: { select: { name: true } },
-      product_variants: {
-        where: { is_active: true },
-        select: {
-          id: true,
-          unit_label: true,
-          sku: true,
-          price: true,
-          cost_price: true,
-          stock: true,
-          clearance_price: true,
-          discount_percent: true,
-          low_stock_threshold: true,
-        },
-        orderBy: { id: "asc" },
-      },
+      clearance_price: true,
+      discount_percent: true,
+      low_stock_threshold: true,
     },
-  });
+    orderBy: { id: "asc" as const },
+  },
+};
 
-  if (!p) return { error: "Product not found", productId };
-
+function mapProductDetail(
+  p: {
+    id: bigint;
+    name: string;
+    master_sku: string | null;
+    slug: string | null;
+    description_th: string | null;
+    description_en: string | null;
+    price: unknown;
+    sale_price: unknown;
+    stock: number | null;
+    is_clearance: boolean | null;
+    product_kind: string;
+    thc_percent: unknown;
+    cbd_percent: string | null;
+    flowering_type: string | null;
+    genetics: string | null;
+    breeders: { name: string } | null;
+    product_variants: Array<{
+      id: bigint;
+      unit_label: string;
+      sku: string | null;
+      price: unknown;
+      cost_price: unknown;
+      stock: number | null;
+      clearance_price: unknown;
+      discount_percent: number;
+      low_stock_threshold: number | null;
+    }>;
+  }
+) {
   return {
     id: Number(p.id),
     name: p.name,
@@ -163,6 +185,52 @@ export async function getProductDetail(productId: number): Promise<unknown> {
   };
 }
 
+export async function getProductDetail(args: {
+  productId?: number;
+  query?: string;
+  slug?: string;
+}): Promise<unknown> {
+  const productId = args.productId;
+  const slug = args.slug?.trim();
+  const query = args.query?.trim();
+
+  if (productId != null && Number.isFinite(productId) && productId > 0) {
+    const p = await prisma.products.findFirst({
+      where: { id: BigInt(productId), is_active: true },
+      select: productDetailSelect,
+    });
+    if (!p) return { error: "Product not found", productId };
+    return mapProductDetail(p);
+  }
+
+  if (slug) {
+    const p = await prisma.products.findFirst({
+      where: { slug: { equals: slug, mode: "insensitive" }, is_active: true },
+      select: productDetailSelect,
+    });
+    if (!p) return { error: "Product not found", slug };
+    return mapProductDetail(p);
+  }
+
+  if (query) {
+    const p = await prisma.products.findFirst({
+      where: {
+        is_active: true,
+        OR: [
+          { slug: { equals: query, mode: "insensitive" } },
+          { name: { contains: query, mode: "insensitive" } },
+          { master_sku: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      select: productDetailSelect,
+    });
+    if (!p) return { error: "Product not found", query };
+    return mapProductDetail(p);
+  }
+
+  return { error: "Provide productId, slug, or query" };
+}
+
 export async function getSalesSummary(args: {
   from?: string;
   to?: string;
@@ -179,6 +247,39 @@ export async function getSalesSummary(args: {
     to: args.to ?? null,
     note: !args.from && !args.to ? "All-time paid orders (unless dates provided)" : null,
     ...result.data,
+  };
+}
+
+export async function getCatalogStats(): Promise<unknown> {
+  const [
+    activeProducts,
+    activeVariants,
+    seedProducts,
+    merchProducts,
+    stockAgg,
+  ] = await Promise.all([
+    prisma.products.count({ where: { is_active: true } }),
+    prisma.product_variants.count({ where: { is_active: true } }),
+    prisma.products.count({
+      where: { is_active: true, product_kind: "seed" },
+    }),
+    prisma.products.count({
+      where: { is_active: true, product_kind: "merch" },
+    }),
+    prisma.product_variants.aggregate({
+      where: { is_active: true },
+      _sum: { stock: true },
+    }),
+  ]);
+
+  return {
+    activeProducts,
+    activeVariants,
+    totalVariantStockUnits: stockAgg._sum.stock ?? 0,
+    byKind: {
+      seed: seedProducts,
+      merch: merchProducts,
+    },
   };
 }
 
@@ -229,8 +330,24 @@ export async function executeAssistantTool(
   switch (name as AssistantToolName) {
     case "search_products":
       return searchProducts(String(args.query ?? args.q ?? ""));
-    case "get_product_detail":
-      return getProductDetail(Number(args.productId ?? args.product_id ?? 0));
+    case "get_product_detail": {
+      const rawId = args.productId ?? args.product_id;
+      const productId =
+        rawId != null && String(rawId).trim() !== ""
+          ? Number(rawId)
+          : undefined;
+      return getProductDetail({
+        productId:
+          productId != null && Number.isFinite(productId) ? productId : undefined,
+        query:
+          args.query != null
+            ? String(args.query)
+            : args.q != null
+              ? String(args.q)
+              : undefined,
+        slug: args.slug != null ? String(args.slug) : undefined,
+      });
+    }
     case "get_sales_summary":
       return getSalesSummary({
         from: args.from != null ? String(args.from) : undefined,
@@ -238,6 +355,8 @@ export async function executeAssistantTool(
       });
     case "get_low_stock":
       return getLowStock();
+    case "get_catalog_stats":
+      return getCatalogStats();
     default:
       return { error: `Unknown tool: ${name}` };
   }

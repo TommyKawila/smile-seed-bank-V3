@@ -1,7 +1,7 @@
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import type { AIFilePart, ChatMessage } from "@/lib/ai-provider";
-import { callAIWithTools } from "@/lib/ai-tools";
+import { callAIWithTools, EMPTY_AI_REPLY_TH } from "@/lib/ai-tools";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ const DEFAULT_PERSONA =
   "You are the private AI secretary of Tommy Kawila, Founder of Smile Seed Bank. Be precise, professional, and helpful.";
 
 const TOOLS_RULE =
-  "DATA RULES: For any product name, SKU, price, stock, inventory, sales revenue, profit, order counts, or low-stock questions you MUST call the provided tools (search_products, get_product_detail, get_sales_summary, get_low_stock). Never invent or guess those numbers. If a tool fails or returns empty, say so clearly.";
+  "DATA RULES: For catalog size / how many products in the shop, call get_catalog_stats. For product name, SKU, price, stock, inventory, sales revenue, profit, order counts, or low-stock questions you MUST call the provided tools (get_catalog_stats, search_products, get_product_detail, get_sales_summary, get_low_stock). Never invent or guess those numbers. If a tool fails or returns empty, say so clearly.";
 
 const ERROR_REPLY_TH =
   "ขออภัยครับ ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้งในอีกสักครู่";
@@ -413,7 +413,7 @@ export async function POST(req: NextRequest) {
       hadFiles: Boolean(files?.length),
     });
 
-    await sendTelegramMessage(sessionId, ai.content || "(empty response)");
+    await sendTelegramMessage(sessionId, ai.content || EMPTY_AI_REPLY_TH);
     console.log("[telegram webhook] send ok", { sessionId });
 
     try {

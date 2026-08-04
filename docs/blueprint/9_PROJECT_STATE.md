@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-04 (SSB Assistant — deploy harden tool fallback)
+- **What:** push catalog tools + กัน empty ด้วยสรุปจากผล tool ฝั่งเซิร์ฟเวอร์ · detail หาด้วยชื่อ/slug ได้
+- **Logic:** `formatToolResultsTh` ก่อน EMPTY · `get_product_detail` รับ productId|slug|query · log tool ok/fail
+- **ไฟล์:** `lib/ai-tools.ts` · `services/assistant-tools-service.ts` · `app/api/telegram/webhook/route.ts`
+
+### บันทึกการทำงาน — 2026-08-04 (SSB Assistant — catalog stats + empty reply guard)
+- **What:** บอทตอบจำนวนสินค้าในร้านได้ + กัน `(empty response)`
+- **Logic:** tool `get_catalog_stats` (active products/variants/stock + seed/merch) · `callAIWithTools` retry text-only เมื่อ text ว่าง · fallback TH
+- **ไฟล์:** `services/assistant-tools-service.ts` · `lib/ai-tools.ts` · `app/api/telegram/webhook/route.ts`
+
 ### บันทึกการทำงาน — 2026-08-04 (SSB Assistant — images + live DB tools)
 - **What:** TG บอทอ่านรูป + ตอบสินค้า/สต็อก/ราคา/ยอดขายจาก DB จริงผ่าน Gemini tools
 - **Logic:** webhook รับ `photo` / image docs → Gemini inlineData · `callAIWithTools` loop (max 3) · tools: search_products / get_product_detail / get_sales_summary / get_low_stock · `TELEGRAM_ALLOWED_CHAT_IDS` · history เก็บ label ไม่เก็บ binary
