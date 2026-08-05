@@ -4,6 +4,21 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-05 (Admin Knowledge Manager — RAG ingest)
+- **What:** แท็บ Knowledge ใน `/admin/assistant` — วางข้อความ/อัปโหลด .txt/.md → chunk + embed → `ssb_assistant.long_term_memories`
+- **Logic:** OpenAI `text-embedding-3-small` · chunk ~900/overlap 100 · GET/POST/DELETE `/api/admin/knowledge` · ยังไม่ inject เข้า chat
+- **ไฟล์:** `lib/embeddings.ts` · `lib/knowledge-chunk.ts` · `services/assistant-knowledge-service.ts` · `app/api/admin/knowledge/*` · `AdminKnowledgePanel.tsx` · `app/admin/assistant/page.tsx`
+
+### บันทึกการทำงาน — 2026-08-05 (Telegram — hardcoded allow-list)
+- **What:** อนุญาตเฉพาะ chat_id ใน `ALLOWED_CHAT_IDS` (Tommy `988973577`) — ไม่พึ่ง env ที่ว่างแล้วเปิดทุกคน
+- **Logic:** ปฏิเสธก่อน commands/AI/DB save · session `tommy` คงเดิมสำหรับ founder
+- **ไฟล์:** `app/api/telegram/webhook/route.ts`
+
+### บันทึกการทำงาน — 2026-08-05 (Telegram — basic slash commands)
+- **What:** `/start` `/status` `/model` `/help` บน TG webhook ตอบตรงไม่เรียก AI
+- **Logic:** `lib/telegram-commands.ts` · intercept ก่อน PDF/AI · session `tommy` เหมือนเดิม · model จาก getDefaultModel/getGeminiModelId + getAvailableModels
+- **ไฟล์:** `lib/telegram-commands.ts` · `app/api/telegram/webhook/route.ts`
+
 ### บันทึกการทำงาน — 2026-08-05 (Admin chat — RUNTIME_MODEL identity)
 - **What:** กันบอท hallucinate ว่าเป็น Gemini 1.5 Pro หลังสลับ model
 - **Logic:** inject `RUNTIME_MODEL` ใน system prompt · คืน `modelLabel` · badge บน bubble จาก API/history `model_used`

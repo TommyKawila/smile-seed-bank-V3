@@ -7,6 +7,11 @@ import {
   FOUNDER_CHAT_ID,
   FOUNDER_SESSION_ID,
 } from "@/lib/ssb-assistant-db";
+import {
+  handleTelegramCommand,
+  parseCommand,
+  UNKNOWN_COMMAND_REPLY_TH,
+} from "@/lib/telegram-commands";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,7 +33,10 @@ const ERROR_REPLY_TH =
   "ขออภัยครับ ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้งในอีกสักครู่";
 
 const DENIED_REPLY_TH =
-  "ขออภัยครับ แชทนี้ไม่ได้รับอนุญาตให้ใช้ SSB Assistant";
+  "ขออภัยครับ ระบบนี้สำหรับผู้ได้รับอนุญาตเท่านั้น";
+
+// Simple allow-list authentication – only authorized Telegram users can use the bot
+const ALLOWED_CHAT_IDS = ["988973577"]; // Tommy - Founder
 
 const DEFAULT_PDF_PROMPT =
   "Please read this PDF carefully and summarize the key points in Thai. Extract important facts, numbers, names, and action items.";
@@ -84,17 +92,7 @@ function assistantDb() {
 }
 
 function isAllowedChat(chatId: string): boolean {
-  const raw = process.env.TELEGRAM_ALLOWED_CHAT_IDS?.trim();
-  if (!raw) {
-    // Unset = allow (dev/setup); set env in production for sales secrecy.
-    return true;
-  }
-  const allowed = raw
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (allowed.length === 0) return true;
-  return allowed.includes(chatId);
+  return ALLOWED_CHAT_IDS.includes(chatId);
 }
 
 async function getSystemPersona(): Promise<string> {
@@ -322,6 +320,20 @@ export async function POST(req: NextRequest) {
       await sendTelegramMessage(chatId, DENIED_REPLY_TH);
     } catch (err) {
       console.error("[telegram webhook] deny reply failed:", err);
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // Slash commands → direct reply (no AI). Skip when message has attachments.
+  if (text.startsWith("/") && !document && !photos?.length) {
+    const cmd = parseCommand(text);
+    const reply =
+      handleTelegramCommand(cmd, { sessionId: historySessionId }) ??
+      UNKNOWN_COMMAND_REPLY_TH;
+    try {
+      await sendTelegramMessage(chatId, reply);
+    } catch (err) {
+      console.error("[telegram webhook] command reply failed:", err);
     }
     return NextResponse.json({ ok: true });
   }
