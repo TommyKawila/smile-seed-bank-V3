@@ -4,10 +4,11 @@
 
 import { saveB2BQuote } from "@/services/b2b-quote-service";
 import { upsertBusinessContact } from "@/services/business-document-service";
+import { lineTotal as b2bLineTotal } from "@/lib/b2b-quote-calc";
 import {
+  eurUnitPriceFromThbLine,
   isValidQty,
   resolveQuote,
-  thbToEurDisplay,
   type CoaMode,
 } from "@/lib/wholesale-bulk-pricing";
 import { getBulkPricingConfig } from "@/services/wholesale-catalog-service";
@@ -16,6 +17,24 @@ import {
   type B2BCurrency,
   type B2BQuoteLineItem,
 } from "@/types/b2b-quote";
+
+/** Persist unit/line so B2B qty×unit totals match storefront EUR display. */
+function toQuoteMoney(
+  unitThb: number,
+  lineTotalThb: number,
+  quantity: number,
+  currency: B2BCurrency,
+  eurThb: number
+): { unitPrice: number; lineTotal: number } {
+  if (currency === "THB") {
+    return { unitPrice: unitThb, lineTotal: lineTotalThb };
+  }
+  const unitPrice = eurUnitPriceFromThbLine(lineTotalThb, quantity, eurThb);
+  return {
+    unitPrice,
+    lineTotal: b2bLineTotal(quantity, unitPrice, "EUR"),
+  };
+}
 
 export type WholesaleRfqLineInput = {
   strainName: string;
@@ -128,38 +147,56 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
     }
   );
 
-  const toUnit = (thb: number) =>
-    currency === "THB" ? thb : thbToEurDisplay(thb, config.eurThb);
-  const toLine = (thb: number) =>
-    currency === "THB" ? thb : thbToEurDisplay(thb, config.eurThb);
-
-  const items: B2BQuoteLineItem[] = quoteCalc.lines.map((l, i) => ({
-    id: `rfq-${i}`,
-    strainName: l.name,
-    quantity: l.quantity,
-    unitPrice: toUnit(l.unitThb),
-    lineTotal: toLine(l.lineTotalThb),
-  }));
+  const items: B2BQuoteLineItem[] = quoteCalc.lines.map((l, i) => {
+    const money = toQuoteMoney(
+      l.unitThb,
+      l.lineTotalThb,
+      l.quantity,
+      currency,
+      config.eurThb
+    );
+    return {
+      id: `rfq-${i}`,
+      strainName: l.name,
+      quantity: l.quantity,
+      unitPrice: money.unitPrice,
+      lineTotal: money.lineTotal,
+    };
+  });
 
   if (input.coaMode === "with" && input.buyExtraCoa) {
     const a = Math.max(0, Math.floor(input.coaPackageA));
     const b = Math.max(0, Math.floor(input.coaPackageB));
     if (a > 0) {
+      const money = toQuoteMoney(
+        config.coaPackageAThb,
+        a * config.coaPackageAThb,
+        a,
+        currency,
+        config.eurThb
+      );
       items.push({
         id: "rfq-coa-a",
         strainName: "COA Package A (Purity + Germination)",
         quantity: a,
-        unitPrice: toUnit(config.coaPackageAThb),
-        lineTotal: toLine(a * config.coaPackageAThb),
+        unitPrice: money.unitPrice,
+        lineTotal: money.lineTotal,
       });
     }
     if (b > 0) {
+      const money = toQuoteMoney(
+        config.coaPackageBThb,
+        b * config.coaPackageBThb,
+        b,
+        currency,
+        config.eurThb
+      );
       items.push({
         id: "rfq-coa-b",
         strainName: "COA Package B (Purity + Germination + Moisture)",
         quantity: b,
-        unitPrice: toUnit(config.coaPackageBThb),
-        lineTotal: toLine(b * config.coaPackageBThb),
+        unitPrice: money.unitPrice,
+        lineTotal: money.lineTotal,
       });
     }
   }

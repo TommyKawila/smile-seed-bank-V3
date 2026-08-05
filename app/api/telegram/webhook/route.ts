@@ -36,7 +36,7 @@ const DENIED_REPLY_TH =
   "ขออภัยครับ ระบบนี้สำหรับผู้ได้รับอนุญาตเท่านั้น";
 
 // Simple allow-list authentication – only authorized Telegram users can use the bot
-const ALLOWED_CHAT_IDS = ["988973577"]; // Tommy - Founder
+const ALLOWED_CHAT_IDS = [FOUNDER_CHAT_ID]; // Tommy - Founder
 
 const DEFAULT_PDF_PROMPT =
   "Please read this PDF carefully and summarize the key points in Thai. Extract important facts, numbers, names, and action items.";
@@ -191,7 +191,14 @@ async function sendTelegramMessage(chatId: string, text: string): Promise<void> 
 
 function verifyWebhookSecret(req: NextRequest): boolean {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
-  if (!secret) return true;
+  // Fail closed: Founder chat id is public in source; without a secret anyone
+  // can POST spoofed updates and hit private assistant tools / shared history.
+  if (!secret) {
+    console.error(
+      "[telegram webhook] TELEGRAM_WEBHOOK_SECRET is not set — rejecting request"
+    );
+    return false;
+  }
   const header = req.headers.get("x-telegram-bot-api-secret-token");
   return header === secret;
 }

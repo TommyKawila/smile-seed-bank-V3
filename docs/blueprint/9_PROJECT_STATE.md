@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-05 (Critical — EUR RFQ overcharge + TG webhook fail-closed)
+- **What:** Public `/wholesale` EUR RFQ บันทึก draft B2B แพงเกือบ 2× · Telegram webhook ปฏิเสธเมื่อไม่มี `TELEGRAM_WEBHOOK_SECRET`
+- **Logic:** `eurUnitPriceFromThbLine` ให้ qty×unit ตรง `thbToEurDisplay(line)` · B2B `calculateB2BQuoteTotals` ไม่พอง · webhook fail-closed (Founder chat id อยู่ใน source)
+- **ไฟล์:** `lib/wholesale-bulk-pricing.ts` · `services/wholesale-rfq-service.ts` · `app/api/telegram/webhook/route.ts`
+
 ### บันทึกการทำงาน — 2026-08-05 (Admin Knowledge Manager — RAG ingest)
 - **What:** แท็บ Knowledge ใน `/admin/assistant` — วางข้อความ/อัปโหลด .txt/.md → chunk + embed → `ssb_assistant.long_term_memories`
 - **Logic:** OpenAI `text-embedding-3-small` · chunk ~900/overlap 100 · GET/POST/DELETE `/api/admin/knowledge` · ยังไม่ inject เข้า chat
