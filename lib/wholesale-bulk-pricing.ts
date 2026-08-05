@@ -123,6 +123,25 @@ export function thbToEurDisplay(thb: number, eurThb: number): number {
   return ceilThb(thb / fx);
 }
 
+/**
+ * EUR unit price derived from a THB line total so B2B `qty * unitPrice`
+ * matches the storefront `thbToEurDisplay(lineTotalThb)` amount.
+ *
+ * Never convert unit THB with integer ceil first — e.g. ceil(39/38.44)=€2
+ * then ×500 seeds would save €1000 instead of the displayed €508.
+ */
+export function eurUnitPriceFromThbLine(
+  lineTotalThb: number,
+  quantity: number,
+  eurThb: number
+): number {
+  const q = Math.floor(quantity);
+  if (q <= 0) return 0;
+  const lineEur = thbToEurDisplay(lineTotalThb, eurThb);
+  // 4 dp so roundMoney(qty * unit, 2dp) recovers lineEur for typical seed qtys
+  return Math.round((lineEur / q + Number.EPSILON) * 10_000) / 10_000;
+}
+
 export function isMicroPackQty(qty: number, config: BulkPricingConfig): boolean {
   return Math.floor(qty) === config.microPackQty;
 }
