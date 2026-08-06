@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
@@ -36,13 +36,24 @@ function resolveHeroAlt(b: HeroBanner, locale: AppLocale): string {
   return th;
 }
 
-type Props = { banners: HeroBanner[]; initialLcpDesktop?: boolean };
+type Props = {
+  banners: HeroBanner[];
+  initialLcpDesktop?: boolean;
+  /** SSR LCP `<img>` — slide 0 skips client `next/image` so one candidate survives hydrate. */
+  ssrLcpImg?: ReactNode;
+};
 
-export function HomeHeroCarousel({ banners, initialLcpDesktop = false }: Props) {
+export function HomeHeroCarousel({
+  banners,
+  initialLcpDesktop = false,
+  ssrLcpImg,
+}: Props) {
   const { locale, t } = useLanguage();
   const [index, setIndex] = useState(0);
   const slides = banners.length ? banners : [];
   const current = slides[index];
+  const useSsrLcp = Boolean(ssrLcpImg);
+  const showSsrLcp = useSsrLcp && index === 0;
 
   const slideVisual = useMemo(() => {
     if (!current) return null;
@@ -92,36 +103,51 @@ export function HomeHeroCarousel({ banners, initialLcpDesktop = false }: Props) 
     <div
       key={current.id}
       className={cn(
-        "absolute inset-0 overflow-hidden bg-muted/30 md:flex md:items-center md:justify-center",
+        "absolute inset-0 overflow-hidden md:flex md:items-center md:justify-center",
+        !showSsrLcp && "bg-muted/30",
         index !== 0 && "animate-hero-fade-in"
       )}
-      style={panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
+      style={!showSsrLcp && panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
       suppressHydrationWarning
     >
       <div className="relative h-full w-full min-h-0 flex-1 overflow-hidden md:flex md:items-center md:justify-center">
-        <HeroCarouselSlideImages
-          mobileSrc={mobileSrc}
-          desktopSrc={desktopSrc}
-          heroAlt={heroAlt}
-          priority={index === 0}
-          initialLcpDesktop={initialLcpDesktop}
-        />
+        {showSsrLcp ? null : (
+          <HeroCarouselSlideImages
+            mobileSrc={mobileSrc}
+            desktopSrc={desktopSrc}
+            heroAlt={heroAlt}
+            priority={!useSsrLcp && index === 0}
+            initialLcpDesktop={initialLcpDesktop}
+          />
+        )}
       </div>
     </div>
   );
 
   return (
     <div className="relative isolate h-full min-h-0 w-full overflow-hidden bg-muted/30 p-0">
+      {ssrLcpImg ? (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 z-0 overflow-hidden",
+            !showSsrLcp && "invisible"
+          )}
+          aria-hidden={!showSsrLcp}
+        >
+          {ssrLcpImg}
+        </div>
+      ) : null}
+
       {href ? (
         <Link
           href={href}
           aria-label={heroAlt}
-          className="absolute inset-0 z-0 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-0"
+          className="absolute inset-0 z-[1] block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-0"
         >
           <div className="relative h-full min-h-0 w-full p-0">{slidesMarkup}</div>
         </Link>
       ) : (
-        slidesMarkup
+        <div className="absolute inset-0 z-[1]">{slidesMarkup}</div>
       )}
 
       {slides.length > 1 ? (

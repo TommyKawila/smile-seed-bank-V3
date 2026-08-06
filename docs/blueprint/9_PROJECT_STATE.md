@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-06 (PSI Lab `/` 88→≥95 — SSR hero LCP img)
+- **What:** Lab Mobile `/` ตก **88** (LCP **3.6s**) — ใส่ SSR native `<img>` ใน hero + แยก CTA/H1 ออกจาก critical path
+- **Logic:** `HomeHeroLcpImg` URL ตรง `HomeHeroLcpPreload` / `ssb_vp` · slide 0 ไม่ remount `next/image` หลัง hydrate · `HomeHeroStream` รอแค่ banners+cookie แล้ว Suspense CTA/labels
+- **ไฟล์:** `HomeHeroLcpImg.tsx` · `HomeHeroCarousel.tsx` · `home-stream.tsx`
+- **อย่าทำ:** Unused JS/CSS · `dynamic(Navbar)` · dual priority · sync age-gate
+- **Pending บอส:** deploy → View Source ตรวจ preload+`<img fetchpriority=high>` · PSI `/` Mobile ×3 median ≥95 → ค่อย lock `6_PERF_BUDGETS.md` + `0_PSI_ACCEPTANCE.md` (ยังไม่แตะ lock ตอนนี้)
+
 ### บันทึกการทำงาน — 2026-08-06 (อธิบาย Vercel CLS 0.83 — ไม่ไล่ Lab)
 - **What:** Boss ถามทำไม SI Mobile CLS **0.83 Poor** (path `/checkout` 0.88 · `/` 0.84 · `/clearance` 0.83)
 - **Meaning:** Field P75 7 วัน · CLS≈0.8 = กระเด้งเกือบเต็มจอครั้งเดียว · คนละชั้นกับ Lab CLS ~0.003

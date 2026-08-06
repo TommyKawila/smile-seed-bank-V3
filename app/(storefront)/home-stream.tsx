@@ -1,10 +1,11 @@
 import "server-only";
 
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { unstable_cache } from "next/cache";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { HomeHeroCarousel } from "@/components/storefront/HomeHeroCarousel";
+import { HomeHeroLcpImg } from "@/components/storefront/HomeHeroLcpImg";
 import { HomePageHeroClient } from "@/components/storefront/HomePageHeroClient";
 import { HomePageBelowFoldHost } from "@/components/storefront/HomePageBelowFoldHost";
 import { resolveHeroCarouselBanners } from "@/lib/hero-carousel-banners";
@@ -78,15 +79,33 @@ const getHeroSectionLabelsCached = unstable_cache(
   { tags: ["home-layout"] }
 );
 
-/** LCP path — banners + CTA; hero H1 labels from cached homepage_sections (admin-editable). */
-export async function HomeHeroStream() {
-  const [bannersRaw, heroCtaButtons, cookieStore, heroSection] = await Promise.all([
-    getHeroCarouselBannersCached().catch(() => null),
+function buildHeroCarousel(
+  banners: ReturnType<typeof resolveHeroCarouselBanners>,
+  initialLcpDesktop: boolean
+) {
+  const first = banners[0];
+  const hasLink = Boolean(first?.link?.trim());
+  return (
+    <HomeHeroCarousel
+      banners={banners}
+      initialLcpDesktop={initialLcpDesktop}
+      ssrLcpImg={
+        <HomeHeroLcpImg
+          banner={first}
+          initialLcpDesktop={initialLcpDesktop}
+          decorative={hasLink}
+        />
+      }
+    />
+  );
+}
+
+/** CTA + H1 labels — streamed after LCP img is already in the document. */
+async function HomeHeroCopyStream({ heroCarousel }: { heroCarousel: ReactNode }) {
+  const [heroCtaButtons, heroSection] = await Promise.all([
     getHeroCtaCached(),
-    cookies(),
     getHeroSectionLabelsCached().catch(() => HERO_SECTION_FALLBACK),
   ]);
-  const banners = resolveHeroCarouselBanners(bannersRaw);
   const heroCtaPayload = heroCtaButtons.map(({ id, labelTh, labelEn, href, color }) => ({
     id,
     labelTh,
@@ -94,16 +113,39 @@ export async function HomeHeroStream() {
     href: normalizeHeroCtaHref(href, id),
     color,
   }));
-  const initialLcpDesktop = cookieStore.get(VIEWPORT_HINT_COOKIE)?.value === "d";
-  const heroCarousel = (
-    <HomeHeroCarousel banners={banners} initialLcpDesktop={initialLcpDesktop} />
-  );
   return (
     <HomePageHeroClient
       sections={[heroSection]}
       heroCarousel={heroCarousel}
       heroCtaButtons={heroCtaPayload}
     />
+  );
+}
+
+/**
+ * LCP path — banners + `ssb_vp` first (SSR `<img>` + preload match).
+ * CTA / H1 labels stream via Suspense so they do not block hero image HTML.
+ */
+export async function HomeHeroStream() {
+  const [bannersRaw, cookieStore] = await Promise.all([
+    getHeroCarouselBannersCached().catch(() => null),
+    cookies(),
+  ]);
+  const banners = resolveHeroCarouselBanners(bannersRaw);
+  const initialLcpDesktop = cookieStore.get(VIEWPORT_HINT_COOKIE)?.value === "d";
+  const heroCarousel = buildHeroCarousel(banners, initialLcpDesktop);
+
+  return (
+    <Suspense
+      fallback={
+        <HomePageHeroClient
+          sections={[HERO_SECTION_FALLBACK]}
+          heroCarousel={heroCarousel}
+        />
+      }
+    >
+      <HomeHeroCopyStream heroCarousel={heroCarousel} />
+    </Suspense>
   );
 }
 
@@ -120,7 +162,7 @@ async function HomeBelowFoldStream() {
   );
 }
 
-/** Hero first (no Suspense), below-fold streams after sections resolve. */
+/** Hero first (no Suspense around LCP img path), below-fold streams after sections resolve. */
 export async function HomeMainStream() {
   return (
     <div className="min-h-screen bg-background text-foreground">
