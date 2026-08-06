@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-06 (PSI Lab `/` 91→พยายาม 95 — cache site_settings TTFB)
+- **What:** Boss รายงาน Lab **91** (LCP 3.1s) หลัง lock 93 — ยิงเลเวอร์แอปที่เหลือ: cache SSR `site_settings`
+- **Logic:** `getStorefrontSiteSettingsServer` → Prisma + `unstable_cache` 120s tag `storefront-site-settings` (ไม่มี cookies) · `upsertSiteSetting` → `revalidateTag`
+- **ไฟล์:** `storefront-site-settings-server.ts` · `storefront-site-setting-keys.ts` · `setting-service.ts`
+- **อย่าทำ:** Unused JS/CSS · Suspense รอบ hero · ลด q32
+- **Pending บอส:** deploy → PSI `/` Mobile ×3 — median ≥95 ค่อย lock ใหม่ · ไม่งั้นคง lock **93** (TTFB ceiling)
+
 ### บันทึกการทำงาน — 2026-08-06 (PSI Lab lock — Mobile **93** · stop chase)
 - **What:** Boss ยืนยัน Lab `/` Mobile **93** หลัง `a19c5f6` (กู้จาก 86 / LCP 4.1s)
 - **Lab:** FCP 1.1s · SI 2.6s · TBT 50ms · CLS 0 · LCP 3.2s (ส้ม · TTFB-bound ~614ms · ยอมรับ) · A11y 95 / BP·SEO 100

@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { STOREFRONT_SITE_SETTINGS_CACHE_TAG } from "@/lib/storefront-site-setting-keys";
 import {
   resolveGrowerToolAiEnabled,
   resolveGrowerToolsAiFlags,
@@ -20,6 +22,7 @@ export async function upsertSiteSetting(
     .from("site_settings")
     .upsert({ key, value }, { onConflict: "key" });
   if (error) return { ok: false, error: error.message };
+  revalidateTag(STOREFRONT_SITE_SETTINGS_CACHE_TAG);
   return { ok: true };
 }
 

@@ -20,3 +20,6 @@ export const STOREFRONT_SITE_SETTING_KEYS = [
   "legal_business_registration_url",
   "legal_business_registration_number",
 ] as const;
+
+/** Next Data Cache tag for SSR storefront site_settings (layout TTFB). */
+export const STOREFRONT_SITE_SETTINGS_CACHE_TAG = "storefront-site-settings";
