@@ -19,7 +19,11 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth, useStorefrontSignedIn } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { NAV_LOGO_INTRINSIC, NAV_LOGO_SIZES } from "@/lib/storefront-nav-logo";
+import {
+  NAV_LOGO_IMAGE_CLASS,
+  NAV_LOGO_INTRINSIC,
+  NAV_LOGO_SIZES,
+} from "@/lib/storefront-nav-logo";
 import { subscribeScrollYBeyond } from "@/lib/subscribe-scroll-y-beyond";
 import { CART_HIT_EVENT } from "@/lib/cart-fly-events";
 const GeneticsSeedsNav = dynamic(
@@ -223,7 +227,10 @@ export function Navbar() {
       <header className="no-print fixed inset-x-0 top-0 z-50 border-b border-border bg-background/95 shadow-sm backdrop-blur-md transition-all duration-300">
         <div className="mx-auto flex h-20 w-full min-w-0 max-w-7xl flex-row flex-nowrap items-center justify-between gap-2 px-4 sm:h-28 sm:gap-3 sm:px-5 lg:gap-4 lg:px-8">
           {/* Logo — aligned to nav link cap height */}
-          <Link href="/" className="flex min-w-0 shrink-0 items-center self-center leading-none">
+          <Link
+            href="/"
+            className="relative flex h-11 w-[min(152px,46vw)] shrink-0 items-center self-center leading-none sm:h-14 sm:w-[12.5rem] lg:w-[14rem]"
+          >
             {settings.logo_main_url ? (
               <Image
                 src={settings.logo_main_url}
@@ -233,17 +240,17 @@ export function Navbar() {
                 priority={!isHomePage}
                 fetchPriority={isHomePage ? "low" : "high"}
                 sizes={NAV_LOGO_SIZES}
-                className="h-11 w-auto max-w-[min(152px,46vw)] shrink-0 object-contain object-left sm:h-14 sm:max-w-[12.5rem] lg:max-w-[14rem]"
+                className={NAV_LOGO_IMAGE_CLASS}
               />
             ) : (
-              <>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+              <span className="flex h-full w-full items-center gap-2" aria-label="Smile Seed Bank">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
                   <Leaf className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <span className="max-w-[9rem] truncate text-base font-bold tracking-tight text-foreground sm:max-w-none">
+                </span>
+                <span className="truncate text-base font-normal tracking-tight text-foreground">
                   Smile Seed Bank
                 </span>
-              </>
+              </span>
             )}
           </Link>
 

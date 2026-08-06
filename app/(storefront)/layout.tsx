@@ -9,6 +9,7 @@ import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import { StorefrontStructuredData } from "@/components/seo/StorefrontStructuredData";
 import { SMIL_AGE_VERIFIED_COOKIE_NAME } from "@/components/storefront/age-verification-gate";
 import { getStorefrontSessionHint } from "@/services/storefront-auth-hint-service";
+import { getStorefrontSiteSettingsServer } from "@/services/storefront-site-settings-server";
 import { StorefrontLayoutClient } from "@/components/storefront/StorefrontLayoutClient";
 
 export default async function StorefrontLayout({
@@ -20,7 +21,10 @@ export default async function StorefrontLayout({
   const initialLocale = magazineLocaleFromCookie(cookieStore.get("locale")?.value);
   const initialAgeVerifiedCookie =
     cookieStore.get(SMIL_AGE_VERIFIED_COOKIE_NAME)?.value === "1";
-  const initialSessionHint = await getStorefrontSessionHint(cookieStore);
+  const [initialSessionHint, initialSiteSettings] = await Promise.all([
+    getStorefrontSessionHint(cookieStore),
+    getStorefrontSiteSettingsServer(),
+  ]);
 
   const initialSkipAgeGate =
     initialAgeVerifiedCookie || initialSessionHint !== null;
@@ -30,7 +34,7 @@ export default async function StorefrontLayout({
       <LanguageProvider initialLocale={initialLocale}>
       <BreederCatalogProvider>
         <AuthProvider initialSessionHint={initialSessionHint}>
-          <SiteSettingsProvider>
+          <SiteSettingsProvider initialSettings={initialSiteSettings}>
             <CartProvider>
               <StorefrontStructuredData />
               <StorefrontLayoutClient

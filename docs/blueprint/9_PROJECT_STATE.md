@@ -4,6 +4,19 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-06 (Field CLS sprint — logo/checkout/age-gate/font)
+- **What:** แก้ Field CLS ตาม SI Mobile CLS **0.83** / `/checkout` RES **18** (ไม่ไล่ Lab)
+- **Logic:** SSR `getStorefrontSiteSettingsServer` → `SiteSettingsProvider` ไม่ blank logo · Navbar slot ขนาดคงที่ · `cartReady` ก่อน checkout empty · ตัด double `pt-20` · QR `minHeight` คงที่ · `scrollbar-gutter: stable` · age-gate logo box · Prompt `adjustFontFallback` + 600/700 `font-display:optional` · persist cart หลัง hydrate เท่านั้น
+- **ไฟล์:** `storefront-site-settings-server.ts` · `useSiteSettings.ts` · `(storefront)/layout.tsx` · `Navbar.tsx` · `useCart.ts` · `CheckoutPageClient.tsx` · `DynamicPromptPayQr.tsx` · `age-verification-gate.tsx` · `globals.css` · `prompt.ts` · `inject-prompt-extended-faces.ts`
+- **วัดซ้ำ:** Vercel SI path `/checkout`, `/`, `/profile` หลัง deploy หลายวัน (CrUX ช้า)
+
+### บันทึกการทำงาน — 2026-08-06 (Vercel Speed Insights — กังวล Field ไม่ไล่ Lab)
+- **What:** Boss ถามจาก Vercel SI (7d) — Desktop RES **83** · Mobile RES **66** · Mobile CLS **0.83 Poor** · `/checkout` Mobile RES **18**
+- **Verdict:** **กังวลถูกที่ = Field/RUM** · ไม่ขัด Lab **92** (คนละชั้น) · **ไม่ไล่ Lab / unused JS-CSS**
+- **Suspects:** Navbar Leaf→logo หลัง SiteSettings idle 3.5s · Prompt 600/700 swap · checkout cart hydrate/QR height · age gate overflow scrollbar · `/profile` auth hydrate
+- **Next:** สปริ้นต์ Field CLS เมื่อบอสสั่ง — ลำดับใน `6_PERF_BUDGETS.md` (checkout → logo/`/` → age gate → font)
+- **ไฟล์ lock/note:** `6_PERF_BUDGETS.md` · `0_PSI_ACCEPTANCE.md`
+
 ### บันทึกการทำงาน — 2026-08-06 (PSI Lab lock — stop chase)
 - **What:** Boss รายงาน Lab Mobile **92–93** (ภาพ 92) หลัง `dbe2b63` — ผ่าน DoD ≥90 · **ไม่ไล่ Lab สูงขึ้น**
 - **Lab:** FCP 1.1s · SI 3.5s · TBT 60ms · CLS 0.003 · LCP 3.2s (ส้ม ยอมรับ) · A11y 95 / BP·SEO 100

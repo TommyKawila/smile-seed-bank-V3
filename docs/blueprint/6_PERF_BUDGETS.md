@@ -11,7 +11,21 @@ Last PSI lock: **2026-08-06** · commit **`dbe2b63`** (PSI SI + Framer defer rec
 | Best Practices | **100** | **100** |
 | SEO | **100** | **100** |
 
-**Lab notes (2026-08-06 `/`):** Mobile — FCP 1.1s · SI 3.5s · TBT 60ms · CLS 0.003 · LCP 3.2s (orange; TTFB-bound · accepted). Do **not** chase unused Prompt CSS / chunk JS while score ≥90. Field Origin CWV Failed (CLS 0.34 / LCP 4s) = **separate sprint** — not a Lab chase.
+**Lab notes (2026-08-06 `/`):** Mobile — FCP 1.1s · SI 3.5s · TBT 60ms · CLS 0.003 · LCP 3.2s (orange; TTFB-bound · accepted). Do **not** chase unused Prompt CSS / chunk JS while score ≥90.
+
+### Field / Vercel Speed Insights (RUM) — worry, not Lab chase
+
+Boss snapshot **2026-08-06** · Production · Last 7 days (not a Lab lock):
+
+| Device | RES | CLS (p75) | LCP | Notes |
+|--------|-----|-----------|-----|-------|
+| Mobile | **66** Needs Improvement | **0.83 Poor** | 3.27s | Primary worry |
+| Desktop | **83** Needs Improvement | **0.19** | 3.24s | Secondary |
+
+**Worst mobile paths:** `/checkout` RES **18** · `/profile` **34** · `/` **61**  
+**Do not confuse with Lab 92** — RUM includes interaction, age gate, cart hydrate, multi-route traffic.
+
+**Field CLS sprint shipped 2026-08-06** (await RUM): SSR logo · stable nav slot · checkout `cartReady` + no double `pt-20` · QR min-height · `scrollbar-gutter: stable` · age-gate logo box · Prompt `adjustFontFallback` + extended faces `optional`. Re-check SI `/checkout`, `/`, `/profile` after several days. Admin poor Desktop paths remain lower priority.
 
 ---
 

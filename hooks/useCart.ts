@@ -116,6 +116,8 @@ interface UseCartReturn {
   summary: CartSummary;
   promo: PromoState;
   isLoadingRules: boolean;
+  /** False until localStorage cart restore finishes — gate checkout empty-state CLS. */
+  cartReady: boolean;
   isValidatingPromo: boolean;
   brandPromotionRules: BrandPromotionRuleRow[];
   addToCart: (item: Omit<CartItem, "isFreeGift">) => { error: string | null };
@@ -132,6 +134,7 @@ interface UseCartReturn {
 
 export function useCart(): UseCartReturn {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [cartReady, setCartReady] = useState(false);
   const [brandPromotionRules, setBrandPromotionRules] = useState<BrandPromotionRuleRow[]>([]);
   const [shippingRules, setShippingRules] = useState<ShippingRule[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -152,17 +155,20 @@ export function useCart(): UseCartReturn {
     } catch {
       // Corrupted storage — start fresh
       localStorage.removeItem(CART_STORAGE_KEY);
+    } finally {
+      setCartReady(true);
     }
   }, []);
 
-  // ── Persist cart to localStorage on every change ──────────────────────────
+  // ── Persist cart to localStorage on every change (after hydrate) ─────────
   useEffect(() => {
+    if (!cartReady) return;
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
     } catch {
       // localStorage might be unavailable (private mode, etc.)
     }
-  }, [items]);
+  }, [items, cartReady]);
 
   // ── Fetch shipping rules, promotions, brand promotions (idle — off LCP path) ─
   const refetchShippingRules = useCallback(async () => {
@@ -536,6 +542,7 @@ export function useCart(): UseCartReturn {
     summary,
     promo,
     isLoadingRules,
+    cartReady,
     isValidatingPromo,
     brandPromotionRules,
     addToCart,

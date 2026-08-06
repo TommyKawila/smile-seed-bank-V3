@@ -39,6 +39,11 @@
     --radius: 0.75rem;
   }
 
+  /* Reserve scrollbar width — age-gate overflow-hidden must not shift layout (Field CLS). */
+  html:has(.storefront-v4) {
+    scrollbar-gutter: stable;
+  }
+
   /* Storefront V4 Cyber-Organic — scoped; Admin stays on :root light */
   .storefront-v4 {
     --background: 222 47% 4%;

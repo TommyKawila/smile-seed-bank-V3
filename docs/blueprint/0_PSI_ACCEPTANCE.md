@@ -15,7 +15,9 @@
 
 **Accepted variance:** Mobile Performance **88–90** is lab noise if LCP/FCP/CLS remain green — do not chase diagnostics to recover ±2 points.
 
-**Current lock (2026-08-06):** Mobile **92** · Desktop **100** · A11y **95** · BP **100** · SEO **100** — numeric config lives in `6_PERF_BUDGETS.md`. Do **not** chase Lab above DoD; Field CLS is a separate sprint.
+**Current lock (2026-08-06):** Mobile **92** · Desktop **100** · A11y **95** · BP **100** · SEO **100** — numeric config lives in `6_PERF_BUDGETS.md`. Do **not** chase Lab above DoD.
+
+**Field / Vercel Speed Insights:** Lab pass ≠ RUM pass. Mobile RES **66** / CLS **0.83** / `/checkout` RES **18** (2026-08-06) = open **Field CLS sprint** when Boss prioritizes — see `6_PERF_BUDGETS.md` Field section.
 
 ---
 

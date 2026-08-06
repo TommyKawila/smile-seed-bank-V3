@@ -22,7 +22,7 @@ import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
 export type { SiteSettings, SocialLink };
 
-/** Home LCP path — defer settings fetch (logo/footer) past SI window. */
+/** Soft refresh only — never blank SSR logo on the LCP path. */
 const HOME_SETTINGS_IDLE_MS = 3_500;
 
 type SiteSettingsState = {
@@ -35,35 +35,51 @@ type SiteSettingsState = {
 
 const SiteSettingsContext = createContext<SiteSettingsState | null>(null);
 
-export function SiteSettingsProvider({ children }: { children: ReactNode }) {
+export function SiteSettingsProvider({
+  children,
+  initialSettings = {},
+}: {
+  children: ReactNode;
+  initialSettings?: SiteSettings;
+}) {
   const pathname = usePathname();
   const useAdmin = useMemo(
     () => pathname?.startsWith("/admin") ?? false,
     [pathname]
   );
   const isHome = pathname === "/";
-  const [settings, setSettings] = useState<SiteSettings>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const hasInitial = Object.keys(initialSettings).length > 0;
+  const [settings, setSettings] = useState<SiteSettings>(initialSettings);
+  const [isLoading, setIsLoading] = useState(!hasInitial);
 
   const fetch_ = useCallback(async () => {
-    setIsLoading(true);
-    setSettings({});
+    // Do not clear settings before fetch — blanking logo causes Field CLS.
+    if (!hasInitial) setIsLoading(true);
     try {
       setSettings(await fetchSiteSettings(useAdmin));
     } finally {
       setIsLoading(false);
     }
-  }, [useAdmin]);
+  }, [useAdmin, hasInitial]);
 
   useEffect(() => {
-    if (useAdmin || !isHome) {
+    if (useAdmin) {
       void fetch_();
       return;
     }
-    return scheduleIdleWork(() => {
-      void fetch_();
-    }, HOME_SETTINGS_IDLE_MS);
-  }, [fetch_, useAdmin, isHome]);
+    if (hasInitial && isHome) {
+      return scheduleIdleWork(() => {
+        void fetch_();
+      }, HOME_SETTINGS_IDLE_MS);
+    }
+    if (hasInitial) {
+      setIsLoading(false);
+      return scheduleIdleWork(() => {
+        void fetch_();
+      }, HOME_SETTINGS_IDLE_MS);
+    }
+    void fetch_();
+  }, [fetch_, useAdmin, isHome, hasInitial]);
 
   const updateSetting = useCallback(async (key: string, value: string) => {
     await updateSiteSetting(key, value);

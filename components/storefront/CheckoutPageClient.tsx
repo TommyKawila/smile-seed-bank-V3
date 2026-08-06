@@ -239,7 +239,19 @@ export function CheckoutPageClient({
   promptPay,
   lineId,
 }: CheckoutPageClientProps) {
-  const { items, summary, promo, applyPromoCode, clearPromoCode, isValidatingPromo, clearCart, itemCount, isLoadingRules, brandPromotionRules } = useCartContext();
+  const {
+    items,
+    summary,
+    promo,
+    applyPromoCode,
+    clearPromoCode,
+    isValidatingPromo,
+    clearCart,
+    itemCount,
+    isLoadingRules,
+    cartReady,
+    brandPromotionRules,
+  } = useCartContext();
   const { user, customer, isLoading: authLoading } = useAuth();
   const { locale, t } = useLanguage();
 
@@ -548,9 +560,9 @@ export function CheckoutPageClient({
     }
   };
 
-  if (!persistProbeComplete || checkoutRestoreFetching) {
+  if (!persistProbeComplete || checkoutRestoreFetching || !cartReady) {
     return (
-      <div className={`flex min-h-screen flex-col items-center justify-center gap-3 bg-card px-4 pt-24 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+      <div className={`flex min-h-[70vh] flex-col items-center justify-center gap-3 bg-card px-4 ${JOURNAL_PRODUCT_FONT_VARS}`}>
         <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
         <p className={cn(serif, "text-sm text-muted-foreground")}>
           {t("กำลังโหลด...", "Loading...")}
@@ -562,7 +574,7 @@ export function CheckoutPageClient({
   if (itemCount === 0 && !isSubmitting && !(phase === "payment" && placed)) {
     return (
       <div
-        className={`flex min-h-screen flex-col items-center justify-center gap-4 bg-card px-4 pt-16 text-center ${JOURNAL_PRODUCT_FONT_VARS}`}
+        className={`flex min-h-[70vh] flex-col items-center justify-center gap-4 bg-card px-4 text-center ${JOURNAL_PRODUCT_FONT_VARS}`}
       >
         <ShoppingBag className="h-10 w-10 text-zinc-200" strokeWidth={1} />
         <p className={cn(serif, "text-lg font-medium text-foreground")}>
@@ -576,7 +588,7 @@ export function CheckoutPageClient({
   }
 
   return (
-    <div className={`min-h-screen bg-background pt-20 ${JOURNAL_PRODUCT_FONT_VARS}`}>
+    <div className={`min-h-[70vh] bg-background ${JOURNAL_PRODUCT_FONT_VARS}`}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <div className="mb-5 flex items-center gap-3">
           <Link href="/shop" className="text-muted-foreground hover:text-primary">

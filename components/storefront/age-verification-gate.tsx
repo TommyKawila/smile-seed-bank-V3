@@ -150,22 +150,24 @@ export function AgeVerificationGate({
           </button>
         </div>
 
-        <div className="mb-5 flex justify-center pr-14 sm:pr-16">
-          {settings.logo_main_url ? (
-            <Image
-              src={settings.logo_main_url}
-              alt="Smile Seed Bank"
-              width={160}
-              height={44}
-              sizes="160px"
-              className="h-10 w-auto object-contain"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-sm">
-              <Leaf className="h-6 w-6 text-primary-foreground" />
-            </div>
-          )}
+        <div className="mb-5 flex h-11 w-full items-center justify-center pr-14 sm:pr-16">
+          <div className="flex h-11 w-40 shrink-0 items-center justify-center">
+            {settings.logo_main_url ? (
+              <Image
+                src={settings.logo_main_url}
+                alt="Smile Seed Bank"
+                width={160}
+                height={44}
+                sizes="160px"
+                className="h-10 w-auto max-w-full object-contain"
+                loading="lazy"
+              />
+            ) : (
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-sm">
+                <Leaf className="h-6 w-6 text-primary-foreground" />
+              </div>
+            )}
+          </div>
         </div>
 
         <div id="age-gate-title" className="flex flex-col gap-1.5 text-center">

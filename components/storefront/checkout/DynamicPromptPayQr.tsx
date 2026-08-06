@@ -10,6 +10,8 @@ import { PROMPTPAY_CHECKOUT_DISPLAY_NAME } from "@/lib/payment-utils";
 import { quantizeBaht2 } from "@/lib/money-thb";
 
 const QR_SIZE = 280;
+/** Match loaded QR block height (amount + payee + canvas + button) to avoid Field CLS. */
+const QR_BLOCK_MIN_HEIGHT = QR_SIZE + 200;
 const AMOUNT_DEBOUNCE_MS = 320;
 const QR_FILENAME = "smile-seed-qr.png";
 
@@ -262,11 +264,13 @@ export function DynamicPromptPayQr({
   const wrap = (node: ReactNode) =>
     embedded ? <div className="w-full">{node}</div> : <CardShell t={t}>{node}</CardShell>;
 
+  const blockMinH = embedded ? QR_SIZE + 48 : QR_BLOCK_MIN_HEIGHT;
+
   if (loading) {
     return wrap(
       <div
         className="flex w-full flex-col items-center justify-center gap-3 py-6"
-        style={{ minHeight: embedded ? QR_SIZE : QR_SIZE + 48 }}
+        style={{ minHeight: blockMinH }}
       >
         <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
         <p className="text-xs text-muted-foreground">
@@ -278,17 +282,19 @@ export function DynamicPromptPayQr({
 
   if (!payload) {
     return wrap(
-      <p className="rounded-lg bg-muted/30 px-3 py-2 text-center text-sm text-muted-foreground">
-        {t(
-          "พร้อมเพย์ไม่พร้อมให้บริการในขณะนี้ — กรุณาโอนตามเลขบัญชีด้านบน",
-          "PromptPay is not available — please transfer using the account number above.",
-        )}
-      </p>
+      <div className="flex w-full items-center justify-center" style={{ minHeight: blockMinH }}>
+        <p className="rounded-lg bg-muted/30 px-3 py-2 text-center text-sm text-muted-foreground">
+          {t(
+            "พร้อมเพย์ไม่พร้อมให้บริการในขณะนี้ — กรุณาโอนตามเลขบัญชีด้านบน",
+            "PromptPay is not available — please transfer using the account number above.",
+          )}
+        </p>
+      </div>
     );
   }
 
   return wrap(
-    <>
+    <div className="w-full" style={{ minHeight: blockMinH }}>
       <div className="space-y-4 text-sm">
         <div className="flex justify-between gap-3 rounded-2xl border border-border bg-muted/30 px-3 py-3">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -336,7 +342,7 @@ export function DynamicPromptPayQr({
           {t("บันทึก QR ลงเครื่อง", "Save QR image")}
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 
