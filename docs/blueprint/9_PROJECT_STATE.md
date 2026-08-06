@@ -4,6 +4,14 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-06 (PSI Lab `/` LCP regression 86 — Suspense remount)
+- **What:** หลัง a5f2e45 Lab ตก **86** / LCP **4.1s** (แย่กว่า 88 / 3.6s)
+- **Root cause:** Suspense fallback→`HomeHeroCopyStream` remount ทั้ง `HomePageHeroClient` + SSR LCP `<img>`
+- **Fix:** ลบ Suspense รอบ hero · `Promise.all` banners+cookie+CTA+labels ครั้งเดียว · `decoding=sync` · ย้าย `ssrLcpImg` เข้าชั้น slide 0 (เลิก underlay z-0)
+- **ไฟล์:** `home-stream.tsx` · `HomeHeroLcpImg.tsx` · `HomeHeroCarousel.tsx`
+- **อย่าทำ:** Unused JS/CSS · lock `6_PERF` ก่อน PSI
+- **Pending บอส:** deploy → PSI `/` Mobile ×3 — กู้ median ≥90 ก่อน แล้วไล่ ≥95 ถ้า LCP ยังส้ม
+
 ### บันทึกการทำงาน — 2026-08-06 (PSI Lab `/` 88→≥95 — SSR hero LCP img)
 - **What:** Lab Mobile `/` ตก **88** (LCP **3.6s**) — ใส่ SSR native `<img>` ใน hero + แยก CTA/H1 ออกจาก critical path
 - **Logic:** `HomeHeroLcpImg` URL ตรง `HomeHeroLcpPreload` / `ssb_vp` · slide 0 ไม่ remount `next/image` หลัง hydrate · `HomeHeroStream` รอแค่ banners+cookie แล้ว Suspense CTA/labels

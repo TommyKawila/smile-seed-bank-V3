@@ -47,7 +47,7 @@ export function HomeHeroLcpImg({
       height={height}
       fetchPriority="high"
       loading="eager"
-      decoding="async"
+      decoding="sync"
       className="h-full w-full object-cover object-center"
     />
   );

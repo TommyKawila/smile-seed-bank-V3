@@ -103,15 +103,16 @@ export function HomeHeroCarousel({
     <div
       key={current.id}
       className={cn(
-        "absolute inset-0 overflow-hidden md:flex md:items-center md:justify-center",
-        !showSsrLcp && "bg-muted/30",
+        "absolute inset-0 overflow-hidden bg-muted/30 md:flex md:items-center md:justify-center",
         index !== 0 && "animate-hero-fade-in"
       )}
-      style={!showSsrLcp && panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
+      style={panelBackdrop ? { backgroundColor: panelBackdrop } : undefined}
       suppressHydrationWarning
     >
       <div className="relative h-full w-full min-h-0 flex-1 overflow-hidden md:flex md:items-center md:justify-center">
-        {showSsrLcp ? null : (
+        {showSsrLcp ? (
+          ssrLcpImg
+        ) : (
           <HeroCarouselSlideImages
             mobileSrc={mobileSrc}
             desktopSrc={desktopSrc}
@@ -126,28 +127,16 @@ export function HomeHeroCarousel({
 
   return (
     <div className="relative isolate h-full min-h-0 w-full overflow-hidden bg-muted/30 p-0">
-      {ssrLcpImg ? (
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-0 z-0 overflow-hidden",
-            !showSsrLcp && "invisible"
-          )}
-          aria-hidden={!showSsrLcp}
-        >
-          {ssrLcpImg}
-        </div>
-      ) : null}
-
       {href ? (
         <Link
           href={href}
           aria-label={heroAlt}
-          className="absolute inset-0 z-[1] block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-0"
+          className="absolute inset-0 z-0 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-0"
         >
           <div className="relative h-full min-h-0 w-full p-0">{slidesMarkup}</div>
         </Link>
       ) : (
-        <div className="absolute inset-0 z-[1]">{slidesMarkup}</div>
+        slidesMarkup
       )}
 
       {slides.length > 1 ? (
