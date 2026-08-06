@@ -12,6 +12,8 @@ export type BreederCatalogContextValue = {
 
 const BreederCatalogContext = createContext<BreederCatalogContextValue | null>(null);
 
+const BREEDER_CATALOG_IDLE_MS = 3_500;
+
 export function BreederCatalogProvider({ children }: { children: React.ReactNode }) {
   const [breeders, setBreeders] = useState<Breeder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +31,7 @@ export function BreederCatalogProvider({ children }: { children: React.ReactNode
         .finally(() => {
           if (!cancelled) setIsLoading(false);
         });
-    });
+    }, BREEDER_CATALOG_IDLE_MS);
     return () => {
       cancelled = true;
       cancelIdle();

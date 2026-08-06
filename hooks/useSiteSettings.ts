@@ -18,8 +18,12 @@ import {
   type SiteSettings,
   type SocialLink,
 } from "@/services/site-settings-service";
+import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
 export type { SiteSettings, SocialLink };
+
+/** Home LCP path — defer settings fetch (logo/footer) past SI window. */
+const HOME_SETTINGS_IDLE_MS = 3_500;
 
 type SiteSettingsState = {
   settings: SiteSettings;
@@ -37,6 +41,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
     () => pathname?.startsWith("/admin") ?? false,
     [pathname]
   );
+  const isHome = pathname === "/";
   const [settings, setSettings] = useState<SiteSettings>({});
   const [isLoading, setIsLoading] = useState(true);
 
@@ -51,8 +56,14 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   }, [useAdmin]);
 
   useEffect(() => {
-    void fetch_();
-  }, [fetch_]);
+    if (useAdmin || !isHome) {
+      void fetch_();
+      return;
+    }
+    return scheduleIdleWork(() => {
+      void fetch_();
+    }, HOME_SETTINGS_IDLE_MS);
+  }, [fetch_, useAdmin, isHome]);
 
   const updateSetting = useCallback(async (key: string, value: string) => {
     await updateSiteSetting(key, value);

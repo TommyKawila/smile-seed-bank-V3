@@ -212,7 +212,7 @@ export function useCart(): UseCartReturn {
 
     const cancelIdle = scheduleIdleWork(() => {
       void loadRules();
-    });
+    }, 3_500);
 
     return () => {
       cancelled = true;

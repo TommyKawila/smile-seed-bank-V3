@@ -143,7 +143,7 @@ export default function Hero({
               )}
             </p>
 
-            <h1 className="text-h1-cyber font-sans text-[1.65rem] font-bold leading-[1.3] tracking-tight break-words sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]">
+            <h1 className="text-h1-cyber font-sans text-[1.65rem] font-normal leading-[1.3] tracking-tight break-words sm:text-4xl sm:leading-[1.28] lg:text-[2.35rem] lg:leading-[1.25] xl:text-5xl xl:leading-[1.2]">
               {headline}
             </h1>
 

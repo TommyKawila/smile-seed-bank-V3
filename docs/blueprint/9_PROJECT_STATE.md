@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-06 (PSI Mobile `/` recovery — SI + Framer defer)
+- **What:** กู้ Lab Mobile regression **83** (SI **5.3s** / LCP **3.9s**) — คืน below-fold idle + เลื่อน Framer/features + defer guest fetches บน `/`
+- **Logic:** `HomePageBelowFoldHost` — `scheduleInteractionMount` ≥2.5s ก่อน mount/fetch · timeout **2s** · `dynamic` ProductCard + AiQuickToolsDock · `FramerLazyRoot` โหลด `domAnimation` หลัง interaction / `ssb:framer-motion-needed` / idle ≥2.5s (promise gate ไม่ remount children) · SiteSettings idle **3.5s** บน `/` · Breeder/cart-rules idle **3.5s** · Hero H1 `font-normal` (400) จน extended faces
+- **ไฟล์:** `HomePageBelowFoldHost.tsx` · `HomePageBelowFold.tsx` · `FramerLazyRoot.tsx` · `useSiteSettings.ts` · `BreederCatalogContext.tsx` · `useCart.ts` · `Hero.tsx`
+- **PSI retest:** รอ Boss deploy → pagespeed.web.dev `/` Mobile ×3 Incognito — median ≥90 แล้วค่อย lock `6_PERF_BUDGETS.md` (อย่าไล่ unused Prompt/JS)
+- **Forbidden:** `dynamic(Navbar)` · dual hero priority
+
 ### บันทึกการทำงาน — 2026-08-05 (Admin Knowledge Manager — RAG ingest)
 - **What:** แท็บ Knowledge ใน `/admin/assistant` — วางข้อความ/อัปโหลด .txt/.md → chunk + embed → `ssb_assistant.long_term_memories`
 - **Logic:** OpenAI `text-embedding-3-small` · chunk ~900/overlap 100 · GET/POST/DELETE `/api/admin/knowledge` · ยังไม่ inject เข้า chat

@@ -10,10 +10,8 @@ import dynamic from "next/dynamic";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/context/LanguageContext";
-import { AiQuickToolsDock } from "@/components/storefront/AiQuickToolsDock";
 import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import { HomeNewsletterSection } from "@/components/storefront/HomeNewsletterSection";
-import { ProductCard } from "@/components/storefront/ProductCard";
 import { JOURNAL_PRODUCT_MONO_CLASS } from "@/components/storefront/journal-product-mono-class";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import {
@@ -29,6 +27,22 @@ const BELOW_FOLD_CV =
 
 const BELOW_FOLD_REVEAL =
   "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-500 motion-safe:fill-mode-both";
+
+const ProductCard = dynamic(
+  () =>
+    import("@/components/storefront/ProductCard").then((m) => ({
+      default: m.ProductCard,
+    })),
+  { ssr: false }
+);
+
+const AiQuickToolsDock = dynamic(
+  () =>
+    import("@/components/storefront/AiQuickToolsDock").then((m) => ({
+      default: m.AiQuickToolsDock,
+    })),
+  { ssr: false }
+);
 
 const FeaturedProductHero = dynamic(
   () =>

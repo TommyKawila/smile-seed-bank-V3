@@ -7,8 +7,13 @@ import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/su
 import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
+import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
 import { fetchWithTimeout } from "@/lib/timeout";
 import type { StorefrontHomePayload } from "@/services/storefront-home-service";
+
+/** PSI SI budget — wall-clock floor; interaction (scroll) may arm earlier. */
+const BELOW_FOLD_IDLE_MS = 2_500;
+const HOME_FETCH_TIMEOUT_MS = 2_000;
 
 type RawHomePayload = Partial<StorefrontHomePayload> & {
   data?: ProductWithBreederAndVariants[];
@@ -35,7 +40,11 @@ async function fetchStorefrontHomeClient(): Promise<StorefrontHomePayload> {
     clearance: [],
     magazine: [],
   };
-  const response = await fetchWithTimeout("/api/storefront/home", { cache: "no-store" }, 8000);
+  const response = await fetchWithTimeout(
+    "/api/storefront/home",
+    { cache: "no-store" },
+    HOME_FETCH_TIMEOUT_MS
+  );
   if (!response.ok) return empty;
   const result = (await response.json()) as RawHomePayload | ProductWithBreederAndVariants[];
   const newArrivals = Array.isArray(result) ? result : result.newArrivals ?? result.data ?? [];
@@ -49,6 +58,7 @@ async function fetchStorefrontHomeClient(): Promise<StorefrontHomePayload> {
 
 export function HomePageBelowFoldHost({ belowSections, initialData }: HomePageBelowFoldHostProps) {
   const hasInitialData = hasHomePayload(initialData);
+  const [armed, setArmed] = useState(hasInitialData);
   const [newArrivals, setNewArrivals] = useState<ProductWithBreederAndVariants[]>(initialData.newArrivals);
   const [newArrivalsLoading, setNewArrivalsLoading] = useState(!hasInitialData);
   const [featuredProducts, setFeaturedProducts] = useState<ProductWithBreeder[]>(initialData.featured);
@@ -63,34 +73,39 @@ export function HomePageBelowFoldHost({ belowSections, initialData }: HomePageBe
   useEffect(() => {
     if (hasInitialData) return;
     let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchStorefrontHomeClient();
-        if (!cancelled) {
-          setNewArrivals(data.newArrivals);
-          setFeaturedProducts(data.featured);
-          setInsights(data.magazine);
-          setClearanceProducts(data.clearance);
+    const cancelArm = scheduleInteractionMount(() => {
+      if (cancelled) return;
+      setArmed(true);
+      (async () => {
+        try {
+          const data = await fetchStorefrontHomeClient();
+          if (!cancelled) {
+            setNewArrivals(data.newArrivals);
+            setFeaturedProducts(data.featured);
+            setInsights(data.magazine);
+            setClearanceProducts(data.clearance);
+          }
+        } catch (err) {
+          console.error("[HomePageBelowFoldHost] storefront/home fetch failed:", err);
+          if (!cancelled) {
+            setNewArrivals([]);
+            setFeaturedProducts([]);
+            setInsights([]);
+            setClearanceProducts([]);
+          }
+        } finally {
+          if (!cancelled) {
+            setNewArrivalsLoading(false);
+            setFeaturedLoading(false);
+            setInsightsLoading(false);
+            setClearanceLoading(false);
+          }
         }
-      } catch (err) {
-        console.error("[HomePageBelowFoldHost] storefront/home fetch failed:", err);
-        if (!cancelled) {
-          setNewArrivals([]);
-          setFeaturedProducts([]);
-          setInsights([]);
-          setClearanceProducts([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setNewArrivalsLoading(false);
-          setFeaturedLoading(false);
-          setInsightsLoading(false);
-          setClearanceLoading(false);
-        }
-      }
-    })();
+      })();
+    }, BELOW_FOLD_IDLE_MS);
     return () => {
       cancelled = true;
+      cancelArm();
     };
   }, [hasInitialData]);
 
@@ -114,17 +129,19 @@ export function HomePageBelowFoldHost({ belowSections, initialData }: HomePageBe
 
   return (
     <div ref={belowFoldRef}>
-    <HomePageBelowFold
-        sections={belowSections}
-        newArrivals={newArrivals}
-        newArrivalsLoading={newArrivalsLoading}
-        featuredProducts={featuredProducts}
-        featuredLoading={featuredLoading}
-        insights={insights}
-        insightsLoading={insightsLoading}
-        clearanceProducts={clearanceProducts}
-        clearanceLoading={clearanceLoading}
-    />
+      {armed ? (
+        <HomePageBelowFold
+          sections={belowSections}
+          newArrivals={newArrivals}
+          newArrivalsLoading={newArrivalsLoading}
+          featuredProducts={featuredProducts}
+          featuredLoading={featuredLoading}
+          insights={insights}
+          insightsLoading={insightsLoading}
+          clearanceProducts={clearanceProducts}
+          clearanceLoading={clearanceLoading}
+        />
+      ) : null}
     </div>
   );
 }
