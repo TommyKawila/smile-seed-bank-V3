@@ -2,16 +2,16 @@
 
 **Single source of truth** for locked perf config. Do **not** duplicate these values in `9_PROJECT_STATE.md`.
 
-Last PSI lock: **2026-08-06** · commit **`dbe2b63`** (PSI SI + Framer defer recovery) · Boss accepted Lab ≥90 — **stop chasing Lab score**
+Last PSI lock: **2026-08-06** · commit **`a19c5f6`** (hero Suspense remount fix · SSR LCP img) · Boss accepted Lab **93** — **stop chasing Lab score**
 
 | Score | Mobile | Desktop |
 |-------|--------|---------|
-| Performance | **92** (Boss run 92–93 · variance 88–90 OK · DoD ≥90) | **100** *(prior lock; not retested this sprint)* |
+| Performance | **93** (Boss run · variance 88–90 OK · DoD ≥90) | **100** *(prior lock; not retested this sprint)* |
 | Accessibility | **95** | **95** |
 | Best Practices | **100** | **100** |
 | SEO | **100** | **100** |
 
-**Lab notes (2026-08-06 `/`):** Mobile — FCP 1.1s · SI 3.5s · TBT 60ms · CLS 0.003 · LCP 3.2s (orange; TTFB-bound · accepted). Do **not** chase unused Prompt CSS / chunk JS while score ≥90.
+**Lab notes (2026-08-06 `/`):** Mobile — FCP 1.1s · SI 2.6s · TBT 50ms · CLS 0 · LCP 3.2s (orange; TTFB-bound ~614ms document · accepted). Do **not** chase unused Prompt CSS / chunk JS while score ≥90. Do **not** chase Lab 93→95.
 
 ### Field / Vercel Speed Insights (RUM) — worry, not Lab chase
 
@@ -23,7 +23,7 @@ Boss snapshot **2026-08-06** · Production · Last 7 days (not a Lab lock):
 | Desktop | **83** Needs Improvement | **0.19** | 3.24s | Secondary |
 
 **Worst mobile paths:** `/checkout` RES **18** / CLS **0.88** · `/` CLS **0.84** · `/clearance` **0.83** · `/seeds` **0.74** · `/profile` RES **34**  
-**Do not confuse with Lab 92** — RUM includes interaction, age gate, cart hydrate, multi-route traffic.
+**Do not confuse with Lab 93** — RUM includes interaction, age gate, cart hydrate, multi-route traffic.
 
 **Why CLS ≈ 0.83 on many paths:** shared storefront shell (`StorefrontLayoutClient`) — one near-full-viewport shift (not small logo jitter). Root causes (ranked): (1) age gate late mount + `html.overflow-hidden` scrollbar lock after interact/12s · (2) Navbar logo Leaf→Image / settings blank (pre-`2e8407b`) · (3) checkout empty→localStorage cart flash · (4) font swap / removed banners still in 7d window. Product/blog often Great because soft-nav after age cookie + reserved media.
 
