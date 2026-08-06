@@ -22,10 +22,12 @@ Boss snapshot **2026-08-06** · Production · Last 7 days (not a Lab lock):
 | Mobile | **66** Needs Improvement | **0.83 Poor** | 3.27s | Primary worry |
 | Desktop | **83** Needs Improvement | **0.19** | 3.24s | Secondary |
 
-**Worst mobile paths:** `/checkout` RES **18** · `/profile` **34** · `/` **61**  
+**Worst mobile paths:** `/checkout` RES **18** / CLS **0.88** · `/` CLS **0.84** · `/clearance` **0.83** · `/seeds` **0.74** · `/profile` RES **34**  
 **Do not confuse with Lab 92** — RUM includes interaction, age gate, cart hydrate, multi-route traffic.
 
-**Field CLS sprint shipped 2026-08-06** (await RUM): SSR logo · stable nav slot · checkout `cartReady` + no double `pt-20` · QR min-height · `scrollbar-gutter: stable` · age-gate logo box · Prompt `adjustFontFallback` + extended faces `optional`. Re-check SI `/checkout`, `/`, `/profile` after several days. Admin poor Desktop paths remain lower priority.
+**Why CLS ≈ 0.83 on many paths:** shared storefront shell (`StorefrontLayoutClient`) — one near-full-viewport shift (not small logo jitter). Root causes (ranked): (1) age gate late mount + `html.overflow-hidden` scrollbar lock after interact/12s · (2) Navbar logo Leaf→Image / settings blank (pre-`2e8407b`) · (3) checkout empty→localStorage cart flash · (4) font swap / removed banners still in 7d window. Product/blog often Great because soft-nav after age cookie + reserved media.
+
+**Field CLS sprint shipped 2026-08-06** `2e8407b` (await RUM 3–7d): SSR logo · stable nav slot · checkout `cartReady` + no double `pt-20` · QR min-height · `scrollbar-gutter: stable` · age-gate logo box · Prompt `adjustFontFallback` + extended faces `optional`. Graph dip Aug 4–6 = early signal only — do not treat same-day P75 as cured. **Next if catalog still ~0.8:** age-gate scroll-lock (avoid post-paint `overflow-hidden` toggle on mobile). Admin poor Desktop paths remain lower priority.
 
 ---
 

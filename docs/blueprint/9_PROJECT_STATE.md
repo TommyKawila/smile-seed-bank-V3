@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-06 (อธิบาย Vercel CLS 0.83 — ไม่ไล่ Lab)
+- **What:** Boss ถามทำไม SI Mobile CLS **0.83 Poor** (path `/checkout` 0.88 · `/` 0.84 · `/clearance` 0.83)
+- **Meaning:** Field P75 7 วัน · CLS≈0.8 = กระเด้งเกือบเต็มจอครั้งเดียว · คนละชั้นกับ Lab CLS ~0.003
+- **Root cause:** shell ร่วม — (1) age gate + `overflow-hidden` หลัง interact · (2) logo/settings ก่อน `2e8407b` · (3) checkout cart hydrate · (4) font/แบนเนอร์เก่าในหน้าต่าง 7d
+- **Decision:** ไม่ไล่ Lab · รอ RUM หลัง `2e8407b` 3–7 วัน · ถัดไปถ้า catalog ยัง ~0.8 = age-gate scroll-lock
+- **Note:** กราฟลง Aug 4–6 = สัญญาณต้นๆ ยังไม่สรุป P75 หาย
+
 ### บันทึกการทำงาน — 2026-08-06 (Field CLS sprint — logo/checkout/age-gate/font)
 - **What:** แก้ Field CLS ตาม SI Mobile CLS **0.83** / `/checkout` RES **18** (ไม่ไล่ Lab)
 - **Logic:** SSR `getStorefrontSiteSettingsServer` → `SiteSettingsProvider` ไม่ blank logo · Navbar slot ขนาดคงที่ · `cartReady` ก่อน checkout empty · ตัด double `pt-20` · QR `minHeight` คงที่ · `scrollbar-gutter: stable` · age-gate logo box · Prompt `adjustFontFallback` + 600/700 `font-display:optional` · persist cart หลัง hydrate เท่านั้น

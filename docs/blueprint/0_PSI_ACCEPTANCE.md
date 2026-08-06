@@ -17,7 +17,7 @@
 
 **Current lock (2026-08-06):** Mobile **92** · Desktop **100** · A11y **95** · BP **100** · SEO **100** — numeric config lives in `6_PERF_BUDGETS.md`. Do **not** chase Lab above DoD.
 
-**Field / Vercel Speed Insights:** Lab pass ≠ RUM pass. Mobile RES **66** / CLS **0.83** / `/checkout` RES **18** (2026-08-06) = open **Field CLS sprint** when Boss prioritizes — see `6_PERF_BUDGETS.md` Field section.
+**Field / Vercel Speed Insights:** Lab pass ≠ RUM pass. Mobile RES **66** / CLS **0.83** ≈ full-viewport shell shift (age gate scrollbar lock · logo · checkout hydrate) — see `6_PERF_BUDGETS.md` Field section. Sprint `2e8407b` shipped; await RUM 3–7d before next age-gate lock pass.
 
 ---
 
