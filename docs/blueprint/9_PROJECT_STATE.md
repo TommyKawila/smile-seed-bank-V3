@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-06 (PSI Lab 87 — เอา Prisma ออกจาก layout settings)
+- **What:** Lab `/` ตก **87** / LCP **4.0s** หลัง `e66cdb4` (Prisma ใน layout ตอน cache miss)
+- **Fix:** `getStorefrontSiteSettingsServer` → `createServiceRoleClient` + module-level `unstable_cache` v2 (ไม่มี Prisma / cookies)
+- **ไฟล์:** `storefront-site-settings-server.ts`
+- **อย่าทำ:** Unused JS/CSS · Suspense hero · ไล่ 95 ก่อนกู้ ≥90
+- **Pending บอส:** deploy → **รอ warm** → PSI `/` Mobile ×3 — median ≥90 หยุด · ≥95 ค่อย lock · &lt;90 พิจารณา revert cache
+
 ### บันทึกการทำงาน — 2026-08-06 (PSI Lab `/` 91→พยายาม 95 — cache site_settings TTFB)
 - **What:** Boss รายงาน Lab **91** (LCP 3.1s) หลัง lock 93 — ยิงเลเวอร์แอปที่เหลือ: cache SSR `site_settings`
 - **Logic:** `getStorefrontSiteSettingsServer` → Prisma + `unstable_cache` 120s tag `storefront-site-settings` (ไม่มี cookies) · `upsertSiteSetting` → `revalidateTag`
