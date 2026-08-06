@@ -4,11 +4,17 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-06 (PSI Lab lock — stop chase)
+- **What:** Boss รายงาน Lab Mobile **92–93** (ภาพ 92) หลัง `dbe2b63` — ผ่าน DoD ≥90 · **ไม่ไล่ Lab สูงขึ้น**
+- **Lab:** FCP 1.1s · SI 3.5s · TBT 60ms · CLS 0.003 · LCP 3.2s (ส้ม ยอมรับ) · A11y 95 / BP·SEO 100
+- **Decision:** ห้ามไล่ Unused CSS/JS (Prompt ~22 KiB · chunks ~80 KiB) · อย่า `dynamic(Navbar)` · Field Origin Failed (CLS 0.34 / LCP 4s) = สปริ้นต์แยกถ้าต้องการ CWV Pass
+- **Lock:** `6_PERF_BUDGETS.md` + `0_PSI_ACCEPTANCE.md` → Mobile **92** · commit **`dbe2b63`**
+
 ### บันทึกการทำงาน — 2026-08-06 (PSI Mobile `/` recovery — SI + Framer defer)
 - **What:** กู้ Lab Mobile regression **83** (SI **5.3s** / LCP **3.9s**) — คืน below-fold idle + เลื่อน Framer/features + defer guest fetches บน `/`
 - **Logic:** `HomePageBelowFoldHost` — `scheduleInteractionMount` ≥2.5s ก่อน mount/fetch · timeout **2s** · `dynamic` ProductCard + AiQuickToolsDock · `FramerLazyRoot` โหลด `domAnimation` หลัง interaction / `ssb:framer-motion-needed` / idle ≥2.5s (promise gate ไม่ remount children) · SiteSettings idle **3.5s** บน `/` · Breeder/cart-rules idle **3.5s** · Hero H1 `font-normal` (400) จน extended faces
 - **ไฟล์:** `HomePageBelowFoldHost.tsx` · `HomePageBelowFold.tsx` · `FramerLazyRoot.tsx` · `useSiteSettings.ts` · `BreederCatalogContext.tsx` · `useCart.ts` · `Hero.tsx`
-- **PSI retest:** รอ Boss deploy → pagespeed.web.dev `/` Mobile ×3 Incognito — median ≥90 แล้วค่อย lock `6_PERF_BUDGETS.md` (อย่าไล่ unused Prompt/JS)
+- **PSI retest:** Boss ยืนยัน Lab **92–93** → locked (ดูบันทึก lock ด้านบน)
 - **Forbidden:** `dynamic(Navbar)` · dual hero priority
 
 ### บันทึกการทำงาน — 2026-08-05 (Admin Knowledge Manager — RAG ingest)

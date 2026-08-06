@@ -2,16 +2,16 @@
 
 **Single source of truth** for locked perf config. Do **not** duplicate these values in `9_PROJECT_STATE.md`.
 
-Last PSI lock: **2026-07-29** · commit **`9a53da5`** (PSI recovery + LCP hero stream) · Boss accepted
+Last PSI lock: **2026-08-06** · commit **`dbe2b63`** (PSI SI + Framer defer recovery) · Boss accepted Lab ≥90 — **stop chasing Lab score**
 
 | Score | Mobile | Desktop |
 |-------|--------|---------|
-| Performance | **91** (variance 88–90 OK · DoD ≥90) | **100** |
+| Performance | **92** (Boss run 92–93 · variance 88–90 OK · DoD ≥90) | **100** *(prior lock; not retested this sprint)* |
 | Accessibility | **95** | **95** |
 | Best Practices | **100** | **100** |
 | SEO | **100** | **100** |
 
-**Lab notes (2026-07-29 `/`):** Mobile — FCP 1.1s · SI 2.4s · TBT 40ms · CLS 0.001 · LCP 3.5s (orange; TTFB-bound · accepted). Desktop — FCP 0.3s · LCP 0.7s · TBT 0 · CLS 0. Do **not** chase unused Prompt CSS / chunk JS while score ≥90.
+**Lab notes (2026-08-06 `/`):** Mobile — FCP 1.1s · SI 3.5s · TBT 60ms · CLS 0.003 · LCP 3.2s (orange; TTFB-bound · accepted). Do **not** chase unused Prompt CSS / chunk JS while score ≥90. Field Origin CWV Failed (CLS 0.34 / LCP 4s) = **separate sprint** — not a Lab chase.
 
 ---
 
