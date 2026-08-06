@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-06 (PSI Lab 86 — revert site_settings cache · หยุดไล่ 95)
+- **What:** Lab ยัง **86** / LCP **4.0s** / doc TTFB **~607ms** หลังทดลอง cache settings — ไม่ช่วยคะแนน
+- **Fix:** revert `getStorefrontSiteSettingsServer` → `createClient()` (path ที่เคยได้ 91–93) · ลบ `unstable_cache` + `revalidateTag`
+- **Decision:** **หยุดไล่ Lab 95** · ห้าม Unused JS/CSS · ยอมรับ TTFB ceiling · คง lock **93** ใน budget
+- **ไฟล์:** `storefront-site-settings-server.ts` · `setting-service.ts` · `storefront-site-setting-keys.ts`
+- **Pending บอส:** deploy → warm PSI `/` ×3 — เป้ากู้ median ≥90 · 95 = infra TTFB คนละสปริ้นต์
+
 ### บันทึกการทำงาน — 2026-08-06 (PSI Lab 87 — เอา Prisma ออกจาก layout settings)
 - **What:** Lab `/` ตก **87** / LCP **4.0s** หลัง `e66cdb4` (Prisma ใน layout ตอน cache miss)
 - **Fix:** `getStorefrontSiteSettingsServer` → `createServiceRoleClient` + module-level `unstable_cache` v2 (ไม่มี Prisma / cookies)
