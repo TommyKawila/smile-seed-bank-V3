@@ -509,6 +509,11 @@
 - **Logic:** active ถึง `2026-07-27T23:59:59+07:00` แล้วหายอัตโนมัติ · กดยืนยัน → ปิด cart + ไป checkout
 - **ไฟล์:** `components/storefront/CartSheet.tsx`
 
+### บันทึกการทำงาน — 2026-08-06 (Admin chat — auto Gemini on attachments)
+- **Issue:** toast "Attachments require Gemini" บล็อกส่งเมื่อสวิตช์ค้างที่ GPT-4o
+- **Fix:** แนบไฟล์/ส่งที่มีไฟล์ → auto-switch Gemini + toast TH · API coerce `model=gemini` แทน 400
+- **ไฟล์:** `AdminAssistantChat.tsx`, `app/api/admin/chat/route.ts`
+
 ### คิวรอบหน้า — PSI `/seeds` mobile **83** (พัก 2026-07-18)
 - **ตอนนี้:** Perf **83** · LCP **4.2s** · SI **4.4s** · FCP/TBT/CLS เขียว · A11y 95 / BP·SEO 100
 - **ได้แล้ว:** empty SSR แก้แล้ว · LCP “discoverable in initial document” ผ่าน · ยัง**ไม่** lock `6_PERF_BUDGETS` (รอ ≥90)

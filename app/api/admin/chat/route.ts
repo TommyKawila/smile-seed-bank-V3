@@ -141,13 +141,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { message, model, files: rawFiles } = parsed.data;
+  const { message, files: rawFiles } = parsed.data;
+  let model = parsed.data.model;
 
-  if (model === "gpt-4o" && rawFiles.length > 0) {
-    return NextResponse.json(
-      { error: "File attachments require model 'gemini'" },
-      { status: 400 }
+  // Multimodal attachments are Gemini-only — coerce instead of 400.
+  if (rawFiles.length > 0 && model !== "gemini") {
+    console.info(
+      `[admin/chat] coercing model '${model}' → gemini (attachments present)`
     );
+    model = "gemini";
   }
 
   const aiFiles: AIFilePart[] = [];

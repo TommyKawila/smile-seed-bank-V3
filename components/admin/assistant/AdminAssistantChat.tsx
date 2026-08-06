@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
   AiModelSwitcher,
+  ADMIN_AI_MODEL_STORAGE_KEY,
   readStoredAdminAiModel,
   type AdminAiModel,
 } from "@/components/admin/assistant/AiModelSwitcher";
@@ -85,10 +86,29 @@ export function AdminAssistantChat() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
+  const activeAIModelRef = useRef(activeAIModel);
+  activeAIModelRef.current = activeAIModel;
 
   useEffect(() => {
     setActiveAIModel(readStoredAdminAiModel());
   }, []);
+
+  /** Attachments are Gemini-only — switch quietly so send is never blocked. */
+  const ensureGeminiForAttachments = useCallback((): AdminAiModel => {
+    if (activeAIModelRef.current === "gemini") return "gemini";
+    setActiveAIModel("gemini");
+    activeAIModelRef.current = "gemini";
+    try {
+      localStorage.setItem(ADMIN_AI_MODEL_STORAGE_KEY, "gemini");
+    } catch {
+      /* ignore */
+    }
+    toast({
+      title: "สลับเป็น Gemini",
+      description: "ไฟล์แนบใช้ Gemini อ่านเอกสารได้",
+    });
+    return "gemini";
+  }, [toast]);
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -190,7 +210,8 @@ export function AdminAssistantChat() {
       }
       return merged;
     });
-  }, []);
+    ensureGeminiForAttachments();
+  }, [ensureGeminiForAttachments]);
 
   const removePending = (id: string) => {
     setPending((prev) => {
@@ -204,14 +225,8 @@ export function AdminAssistantChat() {
     const text = input.trim();
     if ((!text && !pending.length) || sending) return;
 
-    if (activeAIModel === "gpt-4o" && pending.length > 0) {
-      toast({
-        title: "Attachments require Gemini",
-        description: "File uploads are only supported with Google Gemini.",
-        variant: "destructive",
-      });
-      return;
-    }
+    const modelForRequest =
+      pending.length > 0 ? ensureGeminiForAttachments() : activeAIModel;
 
     setError(null);
     const filesPayload = pending.map((p) => ({
@@ -250,7 +265,7 @@ export function AdminAssistantChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text,
-          model: activeAIModel,
+          model: modelForRequest,
           files: filesPayload,
         }),
       });
