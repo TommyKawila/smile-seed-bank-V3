@@ -37,3 +37,14 @@ export function buildOrderSuccessUrl(orderNumber: string): string {
   const q = orderAccessQueryString(orderNumber);
   return q ? `${base}?${q}` : base;
 }
+
+/**
+ * Storefront `/track/{dbId}` URL with HMAC capability query.
+ * Connect LINE on that page requires `t`/`e` (same secret as payment/receipt).
+ */
+export function buildOrderTrackUrl(orderId: string | number | bigint, orderNumber: string): string {
+  const id = String(orderId).trim();
+  const base = `${getSiteOrigin()}/track/${encodeURIComponent(id)}`;
+  const q = orderAccessQueryString(orderNumber);
+  return q ? `${base}?${q}` : base;
+}

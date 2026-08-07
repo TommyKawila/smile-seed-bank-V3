@@ -2,17 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { verifyLiffIdToken } from "@/lib/line-liff-verify";
+import { verifyOrderAccessQuery } from "@/lib/order-access-token";
 import { rateLimitIp } from "@/lib/rate-limit-ip";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Link LINE user to an order. Requires a verified LINE Login / LIFF id_token —
- * never trust a client-supplied lineUserId (IDOR / notification hijack).
- * Prefer the OAuth flow at `/api/line/login?orderId=` for browser users.
+ * Link LINE user to an order. Requires:
+ * 1) verified LINE Login / LIFF id_token (never trust client lineUserId)
+ * 2) HMAC order-access token (t/e) so sequential /track/{id} cannot claim
+ * Prefer `/api/line/login?orderId=&t=&e=` for browser users.
  */
 const BodySchema = z.object({
   idToken: z.string().min(20, "Invalid id token"),
+  t: z.string().min(16, "Missing claim token"),
+  e: z.string().min(1, "Missing claim expiry"),
 });
 
 function clientIp(req: NextRequest): string {
@@ -74,6 +78,13 @@ export async function POST(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    if (!verifyOrderAccessQuery(order.order_number, parsed.data.t, parsed.data.e)) {
+      return NextResponse.json(
+        { error: "Invalid or expired claim token" },
+        { status: 403 }
+      );
+    }
+
     const existing = order.line_user_id?.trim();
     if (existing) {
       if (existing === lineUserId) {
@@ -91,10 +102,30 @@ export async function POST(
       );
     }
 
-    await prisma.orders.update({
-      where: { id },
+    const claimed = await prisma.orders.updateMany({
+      where: {
+        id,
+        OR: [{ line_user_id: null }, { line_user_id: "" }],
+      },
       data: { line_user_id: lineUserId },
     });
+    if (claimed.count !== 1) {
+      const again = await prisma.orders.findUnique({
+        where: { id },
+        select: { line_user_id: true },
+      });
+      if (again?.line_user_id?.trim() === lineUserId) {
+        return NextResponse.json({
+          ok: true,
+          alreadyLinked: true,
+          orderNumber: order.order_number,
+        });
+      }
+      return NextResponse.json(
+        { error: "This order is already linked to another LINE account" },
+        { status: 403 }
+      );
+    }
     console.log("[track/claim] linked ok", { orderId: String(id) });
 
     return NextResponse.json({

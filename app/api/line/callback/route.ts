@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/get-url";
+import { verifyOrderAccessQuery } from "@/lib/order-access-token";
+import { decodeLineClaimOAuthState } from "@/lib/line-claim-oauth-state";
 
 export const dynamic = "force-dynamic";
 
@@ -18,26 +20,29 @@ export async function GET(req: NextRequest) {
   const site = getSiteOrigin();
   const { searchParams } = req.nextUrl;
   const code = searchParams.get("code");
-  const orderIdRaw = searchParams.get("state")?.trim() ?? "";
+  const stateRaw = searchParams.get("state")?.trim() ?? "";
   const lineError = searchParams.get("error");
+
+  const parsedState = decodeLineClaimOAuthState(stateRaw);
+  const orderIdForRedirect = parsedState?.orderId ?? stateRaw.replace(/\D/g, "");
 
   console.log("🍎 [line/callback] incoming", {
     hasCode: Boolean(code),
-    orderIdRaw: orderIdRaw || null,
+    orderIdRaw: orderIdForRedirect || null,
     lineError,
   });
 
   if (lineError) {
     console.log("🍊 [line/callback] LINE error param", lineError);
-    return redirectTrackAuthFailed(site, orderIdRaw);
+    return redirectTrackAuthFailed(site, orderIdForRedirect);
   }
 
-  if (!code || !orderIdRaw) {
-    console.log("🍋 [line/callback] missing code or state");
-    return redirectTrackAuthFailed(site, orderIdRaw);
+  if (!code || !parsedState) {
+    console.log("🍋 [line/callback] missing code or signed state");
+    return redirectTrackAuthFailed(site, orderIdForRedirect);
   }
 
-  const id = BigInt(orderIdRaw.replace(/\D/g, "") || "0");
+  const id = BigInt(parsedState.orderId);
   if (id <= BigInt(0)) {
     console.log("🍎 [line/callback] invalid order id in state");
     return NextResponse.redirect(`${site}/?error=auth_failed`);
@@ -47,12 +52,27 @@ export async function GET(req: NextRequest) {
   const clientSecret = process.env.LINE_LOGIN_CHANNEL_SECRET?.trim();
   if (!clientId || !clientSecret) {
     console.log("🍊 [line/callback] missing LINE_LOGIN_CHANNEL_ID or LINE_LOGIN_CHANNEL_SECRET");
-    return redirectTrackAuthFailed(site, orderIdRaw);
+    return redirectTrackAuthFailed(site, parsedState.orderId);
   }
 
   const redirectUri = `${site}/api/line/callback`;
 
   try {
+    const order = await prisma.orders.findUnique({
+      where: { id },
+      select: { order_number: true, line_user_id: true },
+    });
+
+    if (!order?.order_number) {
+      console.log("🍊 [line/callback] order not found", { id: String(id) });
+      return redirectTrackAuthFailed(site, parsedState.orderId);
+    }
+
+    if (!verifyOrderAccessQuery(order.order_number, parsedState.t, parsedState.e)) {
+      console.log("🍋 [line/callback] claim token invalid");
+      return redirectTrackAuthFailed(site, parsedState.orderId);
+    }
+
     const tokenRes = await fetch(LINE_TOKEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -70,14 +90,14 @@ export async function GET(req: NextRequest) {
     if (!tokenRes.ok) {
       const err = await tokenRes.json().catch(() => ({}));
       console.log("🍎 [line/callback] token body", err);
-      return redirectTrackAuthFailed(site, orderIdRaw);
+      return redirectTrackAuthFailed(site, parsedState.orderId);
     }
 
     const tokenJson = (await tokenRes.json()) as { access_token?: string };
     const access_token = tokenJson.access_token;
     if (!access_token) {
       console.log("🍊 [line/callback] no access_token in response");
-      return redirectTrackAuthFailed(site, orderIdRaw);
+      return redirectTrackAuthFailed(site, parsedState.orderId);
     }
 
     const profileRes = await fetch(LINE_PROFILE_URL, {
@@ -87,40 +107,51 @@ export async function GET(req: NextRequest) {
     console.log("🍋 [line/callback] profile", { ok: profileRes.ok, status: profileRes.status });
 
     if (!profileRes.ok) {
-      return redirectTrackAuthFailed(site, orderIdRaw);
+      return redirectTrackAuthFailed(site, parsedState.orderId);
     }
 
     const profile = (await profileRes.json()) as { userId: string };
     const lineUserId = profile.userId;
     console.log("🍎 [line/callback] profile userId prefix", lineUserId?.slice(0, 4));
 
-    const order = await prisma.orders.findUnique({
-      where: { id },
-      select: { line_user_id: true },
-    });
-
-    if (!order) {
-      console.log("🍊 [line/callback] order not found", { id: String(id) });
-      return redirectTrackAuthFailed(site, orderIdRaw);
-    }
-
     const existing = order.line_user_id?.trim();
     if (existing && existing !== lineUserId) {
       console.log("🍋 [line/callback] order already linked to another LINE user");
-      return redirectTrackAuthFailed(site, orderIdRaw);
+      return redirectTrackAuthFailed(site, parsedState.orderId);
     }
 
     if (!existing) {
-      await prisma.orders.update({
-        where: { id },
+      const claimed = await prisma.orders.updateMany({
+        where: {
+          id,
+          OR: [{ line_user_id: null }, { line_user_id: "" }],
+        },
         data: { line_user_id: lineUserId },
       });
-      console.log("🍎 [line/callback] orders.line_user_id updated");
+      if (claimed.count !== 1) {
+        const again = await prisma.orders.findUnique({
+          where: { id },
+          select: { line_user_id: true },
+        });
+        if (again?.line_user_id?.trim() !== lineUserId) {
+          console.log("🍋 [line/callback] lost race to another LINE user");
+          return redirectTrackAuthFailed(site, parsedState.orderId);
+        }
+      } else {
+        console.log("🍎 [line/callback] orders.line_user_id updated");
+      }
     }
 
-    return NextResponse.redirect(`${site}/track/${orderIdRaw}?success=true`);
+    const q = new URLSearchParams({
+      success: "true",
+      t: parsedState.t,
+      e: parsedState.e,
+    });
+    return NextResponse.redirect(
+      `${site}/track/${parsedState.orderId}?${q.toString()}`
+    );
   } catch (err) {
     console.log("🍊 [line/callback] catch", err);
-    return redirectTrackAuthFailed(site, orderIdRaw);
+    return redirectTrackAuthFailed(site, parsedState.orderId);
   }
 }

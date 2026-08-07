@@ -659,9 +659,14 @@ export default function CreateOrderPage() {
         lineTotal: i.isFreeGift ? 0 : i.price * i.quantity,
         isFreeGift: !!i.isFreeGift,
       }));
+      const trackUrl =
+        typeof result.trackUrl === "string" && result.trackUrl.includes("t=")
+          ? String(result.trackUrl)
+          : undefined;
       setMiniInvoice({
         orderNumber,
         orderId,
+        trackUrl,
         lines: miniLines,
         grandTotal,
         paymentMethodLabel: posPaymentMethodLabelTh(customer.payment_method),
