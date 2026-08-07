@@ -202,10 +202,9 @@ export function ClearanceLandingClient({
                       id={`clearance-tier-${section.percent}`}
                       className="text-xl font-semibold tracking-tight text-white sm:text-2xl"
                     >
-                      {t(`ลด ${section.percent}%`, `${section.percent}% off`)}
-                      <span className="ml-2 text-emerald-400">
-                        −{section.percent}%
-                      </span>
+                      {t("ลด ", "")}
+                      <span className="text-emerald-400">{section.percent}%</span>
+                      {t("", " off")}
                     </h2>
                     <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
                       {t(

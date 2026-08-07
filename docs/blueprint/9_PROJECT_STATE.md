@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-08 (Clearance — หัวข้อ tier ไม่ซ้ำ %)
+- **What:** `/clearance` หัวข้อ `ลด 50% −50%` ซ้ำ — เหลือเลขเดียว + accent เขียว
+- **ไฟล์:** `ClearanceLandingClient.tsx`
+
 ### บันทึกการทำงาน — 2026-08-08 (หลัง Lab 93 — age-gate Field CLS · ไม่ไล่ Lab)
 - **What:** Boss Lab `/` **93** (FCP 1.1 · SI 3.6 · TBT 60 · CLS 0 · LCP 3.1 · A11y 100) — **ไม่ไล่** Unused 8536/Prompt · **ไม่ดัน** 93→95
 - **Logic:** เลิก `documentElement.overflow-hidden` ใน age gate → `body` `position:fixed` + คืน `scrollY` · `overscroll-contain` บน overlay · คง mount interaction/12s · คง `scrollbar-gutter: stable`
