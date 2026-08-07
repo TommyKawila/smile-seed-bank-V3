@@ -114,7 +114,7 @@ export async function handleLineMessagingWebhookPost(req: Request): Promise<Resp
         if (!suppress && rt) {
           await replyLineText(
             rt,
-            "ส่งรูปแบบ เช่น Order #เลขออเดอร์ หรือ #SSB-12345 เพื่อเชื่อม LINE\nSend e.g. Order #YOUR_ORDER_NUMBER or #SSB-12345"
+            "ส่งรูปแบบ เช่น Order #เลขออเดอร์ เพื่อเชื่อม LINE\nSend e.g. Order #YOUR_ORDER_NUMBER"
           );
         }
       } else if (result.outcome === "linked" && rt && result.orderNumber) {
