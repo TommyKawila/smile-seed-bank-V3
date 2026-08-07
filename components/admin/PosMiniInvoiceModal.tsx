@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { getSiteOrigin } from "@/lib/get-url";
 
 export type PosMiniInvoiceLine = {
   productName: string;
@@ -27,6 +26,8 @@ export type PosMiniInvoiceData = {
   orderNumber: string;
   /** Numeric DB id for /track/{orderId} — optional for legacy sessions */
   orderId?: string;
+  /** Signed `/track/{id}?t=&e=` — required for Connect LINE (HMAC capability) */
+  trackUrl?: string;
   lines: PosMiniInvoiceLine[];
   grandTotal: number;
   paymentMethodLabel: string;
@@ -37,11 +38,6 @@ type BankRow = {
   accountNo: string;
   accountName: string;
 };
-
-/** Storefront HTTPS track URL (same origin as `getSiteOrigin()`). */
-function trackUrlForInvoice(orderId: string): string {
-  return `${getSiteOrigin()}/track/${orderId}`;
-}
 
 /** Maps POS Thai payment labels to English for the EN clipboard template. */
 function paymentMethodLabelToEnglish(thLabel: string): string {
@@ -57,7 +53,6 @@ function paymentMethodLabelToEnglish(thLabel: string): string {
 }
 
 function buildClipboardText(data: PosMiniInvoiceData, bank: BankRow | null): string {
-  const siteBase = getSiteOrigin();
   const dash = "----------------------------------";
   const lineStr = data.lines
     .map((l) => {
@@ -72,10 +67,10 @@ function buildClipboardText(data: PosMiniInvoiceData, bank: BankRow | null): str
     ? `ธนาคาร: ${bank.bankName}\nเลขบัญชี: ${bank.accountNo}\nชื่อบัญชี: ${bank.accountName}`
     : `ธนาคาร: (ตั้งค่าใน Admin → การชำระเงิน)\nเลขบัญชี: —\nชื่อบัญชี: —`;
 
-  const oid = data.orderId?.trim();
+  const track = data.trackUrl?.trim();
   const trackLine =
-    oid && oid.length > 0
-      ? `\n🔗 ตรวจสอบสถานะและรับแจ้งเตือนผ่าน Line: ${trackUrlForInvoice(oid)}`
+    track && track.length > 0
+      ? `\n🔗 ตรวจสอบสถานะและรับแจ้งเตือนผ่าน Line: ${track}`
       : "";
 
   return `🌱 *Smile Seed Bank - สรุปรายการสั่งซื้อ*
@@ -95,7 +90,6 @@ ${dash}
 }
 
 function buildClipboardTextEn(data: PosMiniInvoiceData, bank: BankRow | null): string {
-  const siteBase = getSiteOrigin();
   const dash = "----------------------------------";
   const payEn = paymentMethodLabelToEnglish(data.paymentMethodLabel);
   const lineStr = data.lines
@@ -111,10 +105,10 @@ function buildClipboardTextEn(data: PosMiniInvoiceData, bank: BankRow | null): s
     ? `Bank: ${bank.bankName}\nAccount number: ${bank.accountNo}\nAccount name: ${bank.accountName}`
     : `Bank: (set in Admin → Payment)\nAccount number: —\nAccount name: —`;
 
-  const oid = data.orderId?.trim();
+  const track = data.trackUrl?.trim();
   const trackLine =
-    oid && oid.length > 0
-      ? `\n🔗 Track status & LINE notifications: ${trackUrlForInvoice(oid)}`
+    track && track.length > 0
+      ? `\n🔗 Track status & LINE notifications: ${track}`
       : "";
 
   return `🌱 *Smile Seed Bank — Order summary*

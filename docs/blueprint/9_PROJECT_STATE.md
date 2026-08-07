@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-07 (Critical — LINE claim IDOR)
+- **What:** กันผูก LINE กับออเดอร์โดยไม่มี proof — ปิด notification/payment-link hijack
+- **Bug:** `/api/line/login?orderId=` + `POST /api/track/.../claim` + OA chat digits→DB id ผูก `orders.line_user_id` ได้โดยไม่พิสูจน์เจ้าของ; OA ยัง overwrite `customers.line_user_id`
+- **Fix:** HMAC `t`/`e` (เดียวกับ receipt/payment) บังคับบน login/callback/claim · track UI โชว์ Connect เฉพาะมี token · POS คืน `trackUrl` เซ็นแล้ว · OA resolve แค่ `order_number` · `updateMany` atomic · ไม่ overwrite customer LINE ที่ตั้งแล้ว
+- **ไฟล์:** `line-order-message-link.ts` · `line-claim-oauth-state.ts` · `order-access-token.ts` · `api/line/login|callback` · `api/track/.../claim` · `track/[orderId]/page` · `orders/simple` · `track-link` · `PosMiniInvoiceModal` · create POS page
+- **Pending บอส:** `RECEIPT_DOWNLOAD_SECRET` ต้องตั้งใน prod · ลิงก์ `/track/{id}` เก่าไม่มี `t/e` จะเชื่อม LINE ไม่ได้ — ใช้ลิงก์จาก POS ใหม่
+
 ### บันทึกการทำงาน — 2026-08-07 (Override — Unused CSS/JS on `/`)
 - **What:** Boss **override** Blueprint — ไล่ลด Unscored Unused CSS (~23 KiB Prompt) + Unused JS (~80 KiB chunks 5890/4671)
 - **Logic:** guest `/` skip auth purge (ไม่ดึง Supabase) · Framer fallback **12s** · below-fold framer IO หลัง interact/12s · OfferManager idle **12s** · `adjustFontFallback: false`

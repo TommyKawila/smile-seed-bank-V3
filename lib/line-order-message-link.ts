@@ -49,6 +49,7 @@ export function extractOrderNumberFromLineMessage(text: string): string | null {
 }
 
 async function findOrderByToken(token: string) {
+  // Resolve by public order_number only — never by sequential DB PK (IDOR).
   let order = await prisma.orders.findFirst({
     where: { order_number: token },
     select: { id: true, customer_id: true, line_user_id: true, order_number: true },
@@ -64,23 +65,12 @@ async function findOrderByToken(token: string) {
     if (order) return order;
   }
 
-  if (/^\d{1,18}$/.test(token)) {
-    try {
-      order = await prisma.orders.findUnique({
-        where: { id: BigInt(token) },
-        select: { id: true, customer_id: true, line_user_id: true, order_number: true },
-      });
-    } catch {
-      /* invalid id */
-    }
-  }
-
   return order;
 }
 
 /**
- * Webhook: user sends order ref → save `line_user_id` on `customers` (if any) and `orders`
- * when `orders.line_user_id` is still empty.
+ * Webhook: user sends order ref → save `line_user_id` on `orders` when empty.
+ * Never bind by DB id. Never overwrite a different customers.line_user_id.
  */
 export async function linkLineUserFromOrderChatMessage(
   lineUserId: string,
@@ -103,10 +93,33 @@ export async function linkLineUserFromOrderChatMessage(
     return { outcome: "already_linked_other" };
   }
 
-  await prisma.$transaction(async (tx) => {
+  const linked = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.orders.updateMany({
+      where: {
+        id: order.id,
+        OR: [{ line_user_id: null }, { line_user_id: "" }],
+      },
+      data: { line_user_id: uid },
+    });
+    if (claimed.count !== 1) {
+      const again = await tx.orders.findUnique({
+        where: { id: order.id },
+        select: { line_user_id: true, order_number: true },
+      });
+      const againUid = again?.line_user_id?.trim() || null;
+      if (againUid === uid) {
+        return "already_linked_you" as const;
+      }
+      return "already_linked_other" as const;
+    }
+
     if (order.customer_id) {
-      await tx.customers.update({
-        where: { id: order.customer_id },
+      // Only set customer LINE when unset — never steal an existing profile link.
+      await tx.customers.updateMany({
+        where: {
+          id: order.customer_id,
+          OR: [{ line_user_id: null }, { line_user_id: "" }],
+        },
         data: {
           line_user_id: uid,
           is_linked: true,
@@ -114,11 +127,15 @@ export async function linkLineUserFromOrderChatMessage(
         },
       });
     }
-    await tx.orders.update({
-      where: { id: order.id },
-      data: { line_user_id: uid },
-    });
+
+    return "linked" as const;
   });
 
-  return { outcome: "linked", orderNumber: order.order_number };
+  if (linked === "linked") {
+    return { outcome: "linked", orderNumber: order.order_number };
+  }
+  if (linked === "already_linked_you") {
+    return { outcome: "already_linked_you", orderNumber: order.order_number };
+  }
+  return { outcome: "already_linked_other" };
 }

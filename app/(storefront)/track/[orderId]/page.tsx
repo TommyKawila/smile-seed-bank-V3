@@ -24,6 +24,9 @@ function TrackOrderInner() {
 
   const success = searchParams.get("success") === "true";
   const oauthError = searchParams.get("error");
+  const claimT = searchParams.get("t")?.trim() ?? "";
+  const claimE = searchParams.get("e")?.trim() ?? "";
+  const canConnectLine = Boolean(claimT && claimE);
 
   const [data, setData] = useState<TrackPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +62,13 @@ function TrackOrderInner() {
   }, [load]);
 
   const showLinked = data?.lineLinked ?? false;
-  const connectHref = `/api/line/login?orderId=${encodeURIComponent(orderId)}`;
+  const connectHref = canConnectLine
+    ? `/api/line/login?${new URLSearchParams({
+        orderId,
+        t: claimT,
+        e: claimE,
+      }).toString()}`
+    : "";
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10 sm:py-14">
@@ -116,13 +125,17 @@ function TrackOrderInner() {
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
                 LINE Linked ✅
               </div>
-            ) : (
+            ) : canConnectLine ? (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">รับแจ้งเตือนจัดส่งผ่าน LINE (ไม่บังคับ)</p>
                 <Button asChild className="w-full bg-emerald-700 text-white hover:bg-primary">
                   <Link href={connectHref}>Connect LINE Notifications</Link>
                 </Button>
               </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                เชื่อม LINE ได้จากลิงก์ที่ร้านส่งให้ (อีเมล / ใบเสร็จ) เท่านั้น
+              </p>
             )}
 
             <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">

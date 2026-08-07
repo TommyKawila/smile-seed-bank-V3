@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { bigintToJson } from "@/lib/bigint-json";
 import { randomUUID } from "crypto";
 import { generateOrderNumber } from "@/lib/order-utils";
+import { buildOrderTrackUrl } from "@/lib/order-access-token";
 import { sendLowStockAlert } from "@/services/line-messaging";
 import { deductVariantStockForOrderItems, InsufficientStockError } from "@/lib/order-inventory";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
@@ -242,12 +243,15 @@ export async function POST(req: NextRequest) {
       })();
     }
 
+    const trackUrl = buildOrderTrackUrl(createdOrderId, orderNumber);
+
     return NextResponse.json(
       bigintToJson({
         orderNumber,
         status,
         orderId: createdOrderId,
         claimToken: claimToken ?? undefined,
+        trackUrl: trackUrl.includes("t=") ? trackUrl : undefined,
       }),
       { status: 201 }
     );
