@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Leaf from "lucide-react/dist/esm/icons/leaf";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
-import { scheduleLayoutRead } from "@/lib/schedule-layout-read";
 
 const COOKIE_NAME = "smil_age_verified";
 /** Same name as `document.cookie` entry — use from server layout for SSR-aligned initial open state. */
@@ -36,6 +35,36 @@ function setAgeCookie(): void {
   }`;
 }
 
+/**
+ * Lock background scroll without `html.overflow-hidden` (scrollbar gutter CLS ~0.8 on Field).
+ * Body `position: fixed` keeps layout width; restore scrollY on unlock.
+ */
+function lockBodyScroll(): () => void {
+  const body = document.body;
+  const scrollY = window.scrollY;
+  const prev = {
+    position: body.style.position,
+    top: body.style.top,
+    left: body.style.left,
+    right: body.style.right,
+    width: body.style.width,
+  };
+  body.style.position = "fixed";
+  body.style.top = `-${scrollY}px`;
+  body.style.left = "0";
+  body.style.right = "0";
+  body.style.width = "100%";
+
+  return () => {
+    body.style.position = prev.position;
+    body.style.top = prev.top;
+    body.style.left = prev.left;
+    body.style.right = prev.right;
+    body.style.width = prev.width;
+    window.scrollTo(0, scrollY);
+  };
+}
+
 export function AgeVerificationGate({
   initialVerifiedCookie = false,
 }: {
@@ -47,6 +76,7 @@ export function AgeVerificationGate({
   const { settings } = useSiteSettings();
   /** When true, overlay is hidden via CSS only (DOM stays mounted). */
   const [isVerified, setIsVerified] = useState(initialVerifiedCookie);
+  const unlockScrollRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     setIsVerified(initialVerifiedCookie);
@@ -65,20 +95,19 @@ export function AgeVerificationGate({
   }, [isLoading, user, sessionHint, initialVerifiedCookie]);
 
   useEffect(() => {
-    if (isVerified) return;
-    const cancel = scheduleLayoutRead(() => {
-      document.documentElement.classList.add("overflow-hidden");
-    });
-    return () => {
-      cancel();
-      document.documentElement.classList.remove("overflow-hidden");
-    };
-  }, [isVerified]);
-
-  useEffect(() => {
     if (isVerified) {
+      unlockScrollRef.current?.();
+      unlockScrollRef.current = null;
+      // Clean any legacy class from older builds
       document.documentElement.classList.remove("overflow-hidden");
+      return;
     }
+    unlockScrollRef.current?.();
+    unlockScrollRef.current = lockBodyScroll();
+    return () => {
+      unlockScrollRef.current?.();
+      unlockScrollRef.current = null;
+    };
   }, [isVerified]);
 
   function onConfirm() {
@@ -93,7 +122,7 @@ export function AgeVerificationGate({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[100] flex items-center justify-center p-3 transition-opacity duration-300",
+        "fixed inset-0 z-[100] flex items-center justify-center overscroll-contain p-3 transition-opacity duration-300",
         isVerified
           ? "pointer-events-none invisible opacity-0"
           : "pointer-events-auto visible opacity-100"
@@ -111,7 +140,7 @@ export function AgeVerificationGate({
 
       <div
         className={cn(
-          "relative z-10 w-[calc(100%-1.5rem)] max-w-md rounded-2xl border border-primary/25 bg-card p-6 pt-7 shadow-2xl ring-1 ring-primary/10",
+          "relative z-10 w-[calc(100%-1.5rem)] max-w-md overscroll-contain rounded-2xl border border-primary/25 bg-card p-6 pt-7 shadow-2xl ring-1 ring-primary/10",
           "focus:outline-none",
           "[font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe_UI,Roboto,Helvetica_Neue,Arial,sans-serif]"
         )}

@@ -15,9 +15,9 @@
 
 **Accepted variance:** Mobile Performance **88–90** is lab noise if LCP/FCP/CLS remain green — do not chase diagnostics to recover ±2 points.
 
-**Current lock (2026-08-06):** Mobile **93** · Desktop **100** · A11y **95** · BP **100** · SEO **100** — numeric config lives in `6_PERF_BUDGETS.md`. Do **not** chase Lab above DoD.
+**Current lock (2026-08-08):** Mobile **93** · Desktop **100** · A11y **100** · BP **100** · SEO **100** — numeric config lives in `6_PERF_BUDGETS.md`. Do **not** chase Lab above DoD / Unused JS·CSS.
 
-**Field / Vercel Speed Insights:** Lab pass ≠ RUM pass. Mobile RES **66** / CLS **0.83** ≈ full-viewport shell shift (age gate scrollbar lock · logo · checkout hydrate) — see `6_PERF_BUDGETS.md` Field section. Sprint `2e8407b` shipped; await RUM 3–7d before next age-gate lock pass.
+**Field / Vercel Speed Insights:** Lab pass ≠ RUM pass. Age-gate scroll-lock (no `html.overflow-hidden`) shipped 2026-08-08 — await SI CLS P75 on `/`, `/checkout`, `/seeds` 3–7d. See `6_PERF_BUDGETS.md` Field section.
 
 ---
 

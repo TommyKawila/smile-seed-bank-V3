@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-08 (หลัง Lab 93 — age-gate Field CLS · ไม่ไล่ Lab)
+- **What:** Boss Lab `/` **93** (FCP 1.1 · SI 3.6 · TBT 60 · CLS 0 · LCP 3.1 · A11y 100) — **ไม่ไล่** Unused 8536/Prompt · **ไม่ดัน** 93→95
+- **Logic:** เลิก `documentElement.overflow-hidden` ใน age gate → `body` `position:fixed` + คืน `scrollY` · `overscroll-contain` บน overlay · คง mount interaction/12s · คง `scrollbar-gutter: stable`
+- **ไฟล์:** `age-verification-gate.tsx` · `6_PERF_BUDGETS.md` · `0_PSI_ACCEPTANCE.md`
+- **วัด:** Vercel SI CLS `/`, `/checkout`, `/seeds` หลัง 3–7 วัน · Lab `/` ต้องคง ≥90
+
 ### บันทึกการทำงาน — 2026-08-07 (Override — Unused CSS/JS on `/`)
 - **What:** Boss **override** Blueprint — ไล่ลด Unscored Unused CSS (~23 KiB Prompt) + Unused JS (~80 KiB chunks 5890/4671)
 - **Logic:** guest `/` skip auth purge (ไม่ดึง Supabase) · Framer fallback **12s** · below-fold framer IO หลัง interact/12s · OfferManager idle **12s** · `adjustFontFallback: false`
