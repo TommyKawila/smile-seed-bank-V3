@@ -80,9 +80,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className={cn(sectionHeadingClass, "mb-4")}>
+            <p className={cn(sectionHeadingClass, "mb-4")}>
               {t("ลิงก์ด่วน", "Quick Links")}
-            </h4>
+            </p>
             <ul className="space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.href}>
@@ -98,9 +98,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className={cn(sectionHeadingClass, "mb-4")}>
+            <p className={cn(sectionHeadingClass, "mb-4")}>
               {t("ติดต่อเรา", "Contact Us")}
-            </h4>
+            </p>
             <ul className="space-y-3 text-sm leading-relaxed text-foreground/65">
               <li>
                 <span className="font-medium text-foreground/85">Line:</span> @smileseedsbank

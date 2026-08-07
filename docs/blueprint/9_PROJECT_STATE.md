@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-07 (A11y — contrast insight CTA + Footer heading order)
+- **What:** PSI a11y — contrast ปุ่มอ่านบทความ + heading order `ลิงก์ด่วน`
+- **Fix:** `HomeInsightSection` `text-white` → `text-primary-foreground` · Footer `h4` → `p`
+- **ไฟล์:** `HomeInsightSection.tsx` · `Footer.tsx`
+
 ### บันทึกการทำงาน — 2026-08-07 (Formal legal identity — Docs + About Us)
 - **What:** SSOT นิติบุคคล 2 ชั้น (หจก. ทีเอ็มวาย + Smile) · letterhead Business Document/Email · หน้า `/about` + ปุ่มเปิดเอกสารจาก Admin upload
 - **Logic:** `lib/company-legal-identity.ts` · หัวจดหมาย = หจก. + operating as Smile · footer = ร้าน + ทะเบียน/ใบอนุญาต · key ใหม่ `legal_company_seed_license_*` + RLS

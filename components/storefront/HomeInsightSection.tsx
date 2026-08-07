@@ -69,7 +69,7 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
           {cardExcerpt && (
             <p className="mt-2 line-clamp-3 flex-1 text-sm text-muted-foreground">{cardExcerpt}</p>
           )}
-          <span className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-white group-hover:bg-primary/90 sm:w-auto sm:self-start">
+          <span className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground group-hover:bg-primary/90 sm:w-auto sm:self-start">
             {t("อ่านเพิ่มเติม", "Read article")}
           </span>
         </div>
@@ -160,7 +160,7 @@ export function HomeInsightSection({
                     <Button
                       asChild
                       size="lg"
-                      className="min-h-11 rounded-sm bg-primary px-8 font-semibold text-white shadow-none hover:bg-primary/90"
+                      className="min-h-11 rounded-sm bg-primary px-8 font-semibold text-primary-foreground shadow-none hover:bg-primary/90"
                     >
                       <Link href={`/blog/${featured.slug}`}>{t("อ่านบทความ", "Read article")}</Link>
                     </Button>
