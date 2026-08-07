@@ -26,6 +26,7 @@ export function Footer() {
   ];
 
   const legalLinks = [
+    { href: "/about", label: t("เกี่ยวกับเรา", "About Us") },
     { href: "/privacy", label: t("นโยบายความเป็นส่วนตัว", "Privacy Policy") },
     { href: "/terms", label: t("เงื่อนไขการใช้งาน", "Terms of Service") },
   ];

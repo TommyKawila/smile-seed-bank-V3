@@ -17,6 +17,8 @@ export const STOREFRONT_SITE_SETTING_KEYS = [
   "social_media",
   "legal_seed_license_url",
   "legal_seed_license_number",
+  "legal_company_seed_license_url",
+  "legal_company_seed_license_number",
   "legal_business_registration_url",
   "legal_business_registration_number",
 ] as const;

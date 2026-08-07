@@ -7,13 +7,15 @@ export function exportBusinessDocumentPdf(
   bodyText: string,
   logoUrl: string | null,
   subject?: string,
-  signatureImageUrl?: string | null
+  signatureImageUrl?: string | null,
+  letterheadOpts?: { companyEmail?: string | null; companyPhone?: string | null }
 ): void {
   const html = buildBusinessDocumentPrintHtmlFromBody(
     bodyText,
     logoUrl,
     subject,
-    signatureImageUrl ?? null
+    signatureImageUrl ?? null,
+    letterheadOpts
   );
   const iframe = document.createElement("iframe");
   iframe.setAttribute("title", "Business document print");

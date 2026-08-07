@@ -1,4 +1,10 @@
 import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
+import {
+  BUSINESS_DOCUMENT_LETTERHEAD_CSS,
+  buildBusinessDocumentFooterHtml,
+  buildBusinessDocumentLetterheadHtml,
+  type BusinessDocumentLetterheadOpts,
+} from "@/lib/business-document-letterhead";
 import type { BusinessDocumentFields } from "@/types/business-document";
 import {
   BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
@@ -125,13 +131,18 @@ export function buildBusinessDocumentPrintHtmlFromBody(
   bodyText: string,
   logoUrl: string | null,
   subject: string = BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
-  signatureImageUrl: string | null = null
+  signatureImageUrl: string | null = null,
+  letterheadOpts?: Omit<BusinessDocumentLetterheadOpts, "logoUrl">
 ): string {
   const body = buildBusinessDocumentBodyBlockHtml(bodyText);
   const title = subject.trim() || BUSINESS_DOCUMENT_FALLBACK_SUBJECT;
-  const logoBlock = logoUrl
-    ? `<img src="${escapeHtml(logoUrl)}" alt="Smile Seed Bank" class="doc-logo" />`
-    : `<div class="doc-logo-fallback">Smile Seed Bank</div>`;
+  const header = buildBusinessDocumentLetterheadHtml({
+    logoUrl,
+    companyEmail: letterheadOpts?.companyEmail,
+    companyPhone: letterheadOpts?.companyPhone,
+    locale: letterheadOpts?.locale ?? "en",
+  });
+  const footer = buildBusinessDocumentFooterHtml(letterheadOpts?.locale ?? "en");
   const sigImg = signatureImageUrl?.trim()
     ? `<p class="doc-sig-img"><img src="${escapeHtml(signatureImageUrl.trim())}" alt="Signature" /></p>`
     : "";
@@ -156,9 +167,7 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     @media print {
       body { padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
-    .doc-header { margin-bottom: 10mm; padding-bottom: 6mm; border-bottom: 1px solid #e2e8f0; }
-    .doc-logo { max-height: 14mm; max-width: 55mm; object-fit: contain; object-position: left center; }
-    .doc-logo-fallback { font-size: 14pt; font-weight: 600; color: #12463e; letter-spacing: 0.02em; }
+    ${BUSINESS_DOCUMENT_LETTERHEAD_CSS}
     .doc-body { word-wrap: break-word; line-height: 1.22; }
     .doc-body p { margin-bottom: 4mm; }
     .doc-subject { font-size: 12pt; font-weight: 600; color: #12463e; margin-bottom: 4mm; line-height: 1.25; }
@@ -170,9 +179,10 @@ export function buildBusinessDocumentPrintHtmlFromBody(
   </style>
 </head>
 <body>
-  <header class="doc-header">${logoBlock}</header>
+  ${header}
   ${body}
   ${sigImg}
+  ${footer}
 </body>
 </html>`;
 }
@@ -206,12 +216,17 @@ export function buildBusinessDocumentLetterHtml(fields: BusinessDocumentFields):
 
 export function buildBusinessDocumentPrintHtml(
   fields: BusinessDocumentFields,
-  logoUrl: string | null
+  logoUrl: string | null,
+  letterheadOpts?: Omit<BusinessDocumentLetterheadOpts, "logoUrl">
 ): string {
   const letter = buildBusinessDocumentLetterHtml(fields);
-  const logoBlock = logoUrl
-    ? `<img src="${escapeHtml(logoUrl)}" alt="Smile Seed Bank" class="doc-logo" />`
-    : `<div class="doc-logo-fallback">Smile Seed Bank</div>`;
+  const header = buildBusinessDocumentLetterheadHtml({
+    logoUrl,
+    companyEmail: letterheadOpts?.companyEmail,
+    companyPhone: letterheadOpts?.companyPhone,
+    locale: letterheadOpts?.locale ?? "en",
+  });
+  const footer = buildBusinessDocumentFooterHtml(letterheadOpts?.locale ?? "en");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -233,9 +248,7 @@ export function buildBusinessDocumentPrintHtml(
     @media print {
       body { padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
-    .doc-header { margin-bottom: 10mm; padding-bottom: 6mm; border-bottom: 1px solid #e2e8f0; }
-    .doc-logo { max-height: 14mm; max-width: 55mm; object-fit: contain; object-position: left center; }
-    .doc-logo-fallback { font-size: 14pt; font-weight: 600; color: #12463e; letter-spacing: 0.02em; }
+    ${BUSINESS_DOCUMENT_LETTERHEAD_CSS}
     .doc-subject { font-size: 12pt; font-weight: 600; color: #12463e; margin-bottom: 4mm; line-height: 1.25; }
     .doc-date { font-size: 10pt; color: #64748b; margin-bottom: 8mm; }
     p { margin-bottom: 4mm; line-height: 1.22; }
@@ -244,8 +257,9 @@ export function buildBusinessDocumentPrintHtml(
   </style>
 </head>
 <body>
-  <header class="doc-header">${logoBlock}</header>
+  ${header}
   ${letter}
+  ${footer}
 </body>
 </html>`;
 }

@@ -276,7 +276,15 @@ export async function sendBusinessDocumentEmail(
   const logoUrl = await fetchLogoUrl();
   const sigUrl =
     signatureImageUrl?.trim() || (await fetchDefaultSignatureUrl()) || null;
-  const html = buildBusinessDocumentEmailHtml(plain, logoUrl, subject, sigUrl);
+  const [companyEmail, companyPhone] = await Promise.all([
+    fetchSiteSettingRow("company_email"),
+    fetchSiteSettingRow("company_phone"),
+  ]);
+  const html = buildBusinessDocumentEmailHtml(plain, logoUrl, subject, sigUrl, {
+    companyEmail,
+    companyPhone,
+    locale: "en",
+  });
 
   const gmail = gmailSmtpConfigured();
   const replyTo = (process.env.B2B_GMAIL_USER ?? DEFAULT_GMAIL_USER).trim();

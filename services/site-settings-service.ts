@@ -18,6 +18,8 @@ export interface SiteSettings {
   social_media?: string;
   legal_seed_license_url?: string;
   legal_seed_license_number?: string;
+  legal_company_seed_license_url?: string;
+  legal_company_seed_license_number?: string;
   legal_business_registration_url?: string;
   legal_business_registration_number?: string;
   grower_tools_ai_enabled?: string;

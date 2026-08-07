@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-07 (Formal legal identity — Docs + About Us)
+- **What:** SSOT นิติบุคคล 2 ชั้น (หจก. ทีเอ็มวาย + Smile) · letterhead Business Document/Email · หน้า `/about` + ปุ่มเปิดเอกสารจาก Admin upload
+- **Logic:** `lib/company-legal-identity.ts` · หัวจดหมาย = หจก. + operating as Smile · footer = ร้าน + ทะเบียน/ใบอนุญาต · key ใหม่ `legal_company_seed_license_*` + RLS
+- **ไฟล์:** `company-legal-identity.ts` · `business-document-letterhead.ts` · template/email/preview/dispatcher · `about/page.tsx` · `AboutPageClient.tsx` · `Footer.tsx` · admin settings · migration `20260807120000_site_settings_company_seed_license_rls.sql`
+- **Pending บอส:** apply migration RLS · อัปโหลดเอกสาร 3 ไฟล์ใน Brand Settings · ตรวจพรีวิว Dispatcher + `/about`
+
 ### บันทึกการทำงาน — 2026-08-06 (PSI Lab 86 — revert site_settings cache · หยุดไล่ 95)
 - **What:** Lab ยัง **86** / LCP **4.0s** / doc TTFB **~607ms** หลังทดลอง cache settings — ไม่ช่วยคะแนน
 - **Fix:** revert `getStorefrontSiteSettingsServer` → `createClient()` (path ที่เคยได้ 91–93) · ลบ `unstable_cache` + `revalidateTag`

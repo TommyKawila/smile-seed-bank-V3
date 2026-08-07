@@ -56,6 +56,8 @@ export function BusinessDocumentDispatcher() {
   const [sigHydrated, setSigHydrated] = useState(false);
 
   const logoUrl = settings.logo_main_url ?? null;
+  const companyEmail = settings.company_email ?? null;
+  const companyPhone = settings.company_phone ?? null;
 
   useEffect(() => {
     if (sigHydrated) return;
@@ -194,7 +196,10 @@ export function BusinessDocumentDispatcher() {
   const handleExportPdf = useCallback(() => {
     setExporting(true);
     try {
-      exportBusinessDocumentPdf(bodyText, logoUrl, subject, signatureImageUrl);
+      exportBusinessDocumentPdf(bodyText, logoUrl, subject, signatureImageUrl, {
+        companyEmail,
+        companyPhone,
+      });
       toast({
         title: "Print dialog opened",
         description: 'Select "Save as PDF" in the print dialog.',
@@ -208,7 +213,7 @@ export function BusinessDocumentDispatcher() {
     } finally {
       setTimeout(() => setExporting(false), 400);
     }
-  }, [bodyText, logoUrl, subject, signatureImageUrl, toast]);
+  }, [bodyText, logoUrl, subject, signatureImageUrl, companyEmail, companyPhone, toast]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -221,6 +226,8 @@ export function BusinessDocumentDispatcher() {
           onBodyChange={setBodyText}
           logoUrl={logoUrl}
           signatureImageUrl={signatureImageUrl}
+          companyEmail={companyEmail}
+          companyPhone={companyPhone}
         />
       </div>
       <aside className="lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
