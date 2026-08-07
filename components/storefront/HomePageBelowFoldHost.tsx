@@ -111,20 +111,29 @@ export function HomePageBelowFoldHost({ belowSections, initialData }: HomePageBe
 
   const belowFoldRef = useRef<HTMLDivElement>(null);
 
+  // Arm IO only after interaction / 12s — avoid early framer pull during PSI.
   useEffect(() => {
     const el = belowFoldRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          signalFramerMotionNeeded();
-          io.disconnect();
-        }
-      },
-      { rootMargin: "240px 0px" }
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    let io: IntersectionObserver | null = null;
+    const arm = () => {
+      if (io) return;
+      io = new IntersectionObserver(
+        ([entry]) => {
+          if (entry?.isIntersecting) {
+            signalFramerMotionNeeded();
+            io?.disconnect();
+          }
+        },
+        { rootMargin: "0px" }
+      );
+      io.observe(el);
+    };
+    const cancel = scheduleInteractionMount(arm, 12_000);
+    return () => {
+      cancel();
+      io?.disconnect();
+    };
   }, []);
 
   return (

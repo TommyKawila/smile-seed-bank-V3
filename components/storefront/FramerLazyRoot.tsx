@@ -5,13 +5,14 @@ import { useEffect, useState, type ReactNode } from "react";
 import { FRAMER_MOTION_NEEDED_EVENT } from "@/lib/framer-motion-events";
 import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
 
-const FRAMER_IDLE_FALLBACK_MS = 2_500;
+/** Match age-gate: PSI lab (no interact) must not load framer in the measurement window. */
+const FRAMER_IDLE_FALLBACK_MS = 12_000;
 
 type DomAnimation = typeof import("framer-motion").domAnimation;
 
 /**
  * Keep LazyMotion mounted (no remount of layout children) but delay loading
- * `domAnimation` until interaction, `ssb:framer-motion-needed`, or idle ≥2.5s.
+ * `domAnimation` until interaction, `ssb:framer-motion-needed`, or idle ≥12s.
  */
 export function FramerLazyRoot({ children }: { children: ReactNode }) {
   const [featuresGate] = useState(() => {

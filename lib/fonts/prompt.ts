@@ -7,6 +7,6 @@ export const prompt = localFont({
   display: "swap",
   preload: true,
   fallback: ["Noto Sans Thai", "sans-serif"],
-  /** Reduce Field CLS from metric mismatch vs system fallback before Prompt paints. */
-  adjustFontFallback: true,
+  /** Boss override Unused CSS: false shrinks inline @font-face; watch Field CLS. */
+  adjustFontFallback: false,
 });

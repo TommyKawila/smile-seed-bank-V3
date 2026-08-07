@@ -4,6 +4,14 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-07 (Override — Unused CSS/JS on `/`)
+- **What:** Boss **override** Blueprint — ไล่ลด Unscored Unused CSS (~23 KiB Prompt) + Unused JS (~80 KiB chunks 5890/4671)
+- **Logic:** guest `/` skip auth purge (ไม่ดึง Supabase) · Framer fallback **12s** · below-fold framer IO หลัง interact/12s · OfferManager idle **12s** · `adjustFontFallback: false`
+- **Risk:** Field CLS / FOUT — ถ้า RUM CLS พุ่ง revert `adjustFontFallback` ก่อน
+- **ไฟล์:** `use-auth.ts` · `FramerLazyRoot.tsx` · `HomePageBelowFoldHost.tsx` · `StorefrontLayoutClient.tsx` · `prompt.ts`
+- **อย่าทำ:** `dynamic(Navbar)` · อัปเดต `6_PERF` ก่อน PSI 3-run
+- **Pending บอส:** deploy → PSI `/` ×3 median — ตรวจ Unused ลด + Performance ไม่ตก >2 จาก lock 93
+
 ### บันทึกการทำงาน — 2026-08-07 (A11y — contrast insight CTA + Footer heading order)
 - **What:** PSI a11y — contrast ปุ่มอ่านบทความ + heading order `ลิงก์ด่วน`
 - **Fix:** `HomeInsightSection` `text-white` → `text-primary-foreground` · Footer `h4` → `p`

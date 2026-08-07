@@ -31,7 +31,6 @@ const AuthContext = createContext<AuthState | null>(null);
 
 /** Non-home routes: boot after idle. Home: interaction / navigation / ensureAuthLoaded only. */
 const AUTH_BOOT_IDLE_MS = 3_000;
-const AUTH_PURGE_IDLE_MS = 5_000;
 
 type AuthServiceModule = typeof import("@/services/auth-service");
 
@@ -99,15 +98,10 @@ export function AuthProvider({
   }, [runBoot]);
 
   useEffect(() => {
-    const purge = () => {
-      void getAuth().then((auth) => auth.purgeStaleAuthStorage());
-    };
-    if (pathname !== "/") {
-      purge();
-      return;
-    }
-    return scheduleIdleWork(purge, AUTH_PURGE_IDLE_MS);
-  }, [getAuth, pathname]);
+    // Guest `/` without session: skip purge so PSI does not pull Supabase chunk.
+    if (pathname === "/" && !initialSessionHint) return;
+    void getAuth().then((auth) => auth.purgeStaleAuthStorage());
+  }, [getAuth, pathname, initialSessionHint]);
 
   useEffect(() => {
     if (initialSessionHint) {

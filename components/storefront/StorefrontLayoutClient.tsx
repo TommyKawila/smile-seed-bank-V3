@@ -85,7 +85,7 @@ export function StorefrontLayoutClient({
   }, [initialSkipAgeGate]);
 
   useEffect(() => {
-    return scheduleIdleWork(() => setMountOffers(true), 5000);
+    return scheduleIdleWork(() => setMountOffers(true), AGE_GATE_FALLBACK_MS);
   }, []);
 
   useEffect(() => {
