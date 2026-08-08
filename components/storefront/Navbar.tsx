@@ -17,7 +17,6 @@ import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth, useStorefrontSignedIn } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   NAV_LOGO_IMAGE_CLASS,

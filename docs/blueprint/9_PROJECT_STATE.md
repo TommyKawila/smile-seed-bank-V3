@@ -4,6 +4,15 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-08 (Finish Unused JS/CSS diagnostics)
+- **What:** Boss ไล่จบ PSI Unused JS chunk **8536** (~20 KiB) + Unused CSS Prompt (~23 KiB)
+- **Root cause JS:** chunk **8536** = **Zod** ถูกดึงผ่าน `hooks/useCart.ts` → `CartProvider` ใน storefront layout
+- **Fix JS:** ถอด `zod` จาก `useCart` → validator มือ; ตัด dead `Button` import ใน `Navbar`
+- **Fix CSS:** `prompt.ts` `preload: false` (คง `display:swap` + weight 400) — ไม่ defer ทั้งฟอนต์ (กัน Field CLS)
+- **ไฟล์:** `hooks/useCart.ts` · `Navbar.tsx` · `lib/fonts/prompt.ts`
+- **อย่าทำ:** `dynamic(Navbar)` · อัป `6_PERF` ก่อน PSI 3-run
+- **Pending บอส:** deploy → PSI `/` Mobile ×3 — เป้า chunk 8536/Zod หายจาก Unused JS · Prompt unused ลดหรือยังเหลือ (Lighthouse @font-face) · Performance ไม่ตกจาก lock 93
+
 ### บันทึกการทำงาน — 2026-08-08 (Clearance — หัวข้อ tier ไม่ซ้ำ %)
 - **What:** `/clearance` หัวข้อ `ลด 50% −50%` ซ้ำ — เหลือเลขเดียว + accent เขียว
 - **ไฟล์:** `ClearanceLandingClient.tsx`

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { z } from "zod";
 import {
   evaluateFreeGifts,
   calculateCartSummary,
@@ -24,44 +23,38 @@ import {
 } from "@/lib/storefront-shipping";
 import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 
-// ─── Zod Schemas ──────────────────────────────────────────────────────────────
-
-// Promo code: uppercase alphanumeric, 3–20 chars
-const PromoCodeSchema = z
-  .string()
-  .trim()
-  .toUpperCase()
-  .min(3, "Promo code must be at least 3 characters")
-  .max(20, "Promo code must be at most 20 characters")
-  .regex(/^[A-Z0-9_-]+$/, "Use uppercase letters, numbers, hyphen, or underscore only");
-
-const AddToCartSchema = z.object({
-  variantId: z.number().int().positive(),
-  productId: z.number().int().positive(),
-  productName: z.string().min(1),
-  productImage: z.string().nullable(),
-  unitLabel: z.string().min(1),
-  price: z.number().positive("ราคาต้องมากกว่า 0"),
-  listPrice: z.number().positive().optional(),
-  quantity: z.number().int().positive("จำนวนต้องมากกว่า 0"),
-  stock_quantity: z.number().int().min(0).optional(),
-  masterSku: z.string().nullable().optional(),
-  breeder_id: z.number().int().positive().nullable().optional(),
-  breederLogoUrl: z.string().nullable().optional(),
-  breederName: z.string().nullable().optional(),
-});
-
+/** Keep Zod off the storefront layout chunk (PSI unused JS ~8536). */
 function safeNumber(val: unknown, fallback: number): number {
   const parsed = Number(val);
   return Number.isNaN(parsed) ? fallback : Math.trunc(parsed);
 }
 
-/** Coerce IDs/qty/stock from JSON/API strings before Zod (avoids "expected number, received string"). */
-function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<CartItem, "isFreeGift"> {
+function parsePromoCodeInput(
+  raw: string
+): { ok: true; code: string } | { ok: false; error: string } {
+  const code = raw.trim().toUpperCase();
+  if (code.length < 3) {
+    return { ok: false, error: "Promo code must be at least 3 characters" };
+  }
+  if (code.length > 20) {
+    return { ok: false, error: "Promo code must be at most 20 characters" };
+  }
+  if (!/^[A-Z0-9_-]+$/.test(code)) {
+    return {
+      ok: false,
+      error: "Use uppercase letters, numbers, hyphen, or underscore only",
+    };
+  }
+  return { ok: true, code };
+}
+
+function parseAddToCartPayload(
+  raw: Omit<CartItem, "isFreeGift">
+): { ok: true; data: Omit<CartItem, "isFreeGift"> } | { ok: false; error: string } {
   const variantId = safeNumber(raw.variantId, 0);
   const productId = safeNumber(raw.productId, 0);
   const q = safeNumber(raw.quantity ?? 1, 1);
-  const quantity = Number.isFinite(q) && q > 0 ? q : 1;
+  const quantity = Number.isFinite(q) && q > 0 ? q : 0;
   const priceRaw = Number(raw.price);
   const price = Number.isFinite(priceRaw) ? priceRaw : 0;
   const listRaw = raw.listPrice;
@@ -87,15 +80,36 @@ function normalizeAddToCartPayload(raw: Omit<CartItem, "isFreeGift">): Omit<Cart
     const b = safeNumber(breeder_id, 0);
     breeder_id = b > 0 ? b : null;
   }
+
+  if (!(variantId > 0) || !(productId > 0)) {
+    return { ok: false, error: "ข้อมูลไม่ถูกต้อง" };
+  }
+  if (typeof raw.productName !== "string" || raw.productName.trim().length < 1) {
+    return { ok: false, error: "ข้อมูลไม่ถูกต้อง" };
+  }
+  if (typeof raw.unitLabel !== "string" || raw.unitLabel.trim().length < 1) {
+    return { ok: false, error: "ข้อมูลไม่ถูกต้อง" };
+  }
+  if (!(price > 0)) {
+    return { ok: false, error: "ราคาต้องมากกว่า 0" };
+  }
+  if (!(quantity > 0)) {
+    return { ok: false, error: "จำนวนต้องมากกว่า 0" };
+  }
+
   return {
-    ...raw,
-    variantId,
-    productId,
-    quantity,
-    price,
-    ...(listPrice !== undefined ? { listPrice } : {}),
-    stock_quantity,
-    breeder_id,
+    ok: true,
+    data: {
+      ...raw,
+      variantId,
+      productId,
+      quantity,
+      price,
+      productImage: raw.productImage ?? null,
+      ...(listPrice !== undefined ? { listPrice } : {}),
+      stock_quantity,
+      breeder_id,
+    },
   };
 }
 
@@ -294,9 +308,9 @@ export function useCart(): UseCartReturn {
 
   const addToCart = useCallback(
     (itemData: Omit<CartItem, "isFreeGift">): { error: string | null } => {
-      const parsed = AddToCartSchema.safeParse(normalizeAddToCartPayload(itemData));
-      if (!parsed.success) {
-        return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
+      const parsed = parseAddToCartPayload(itemData);
+      if (!parsed.ok) {
+        return { error: parsed.error };
       }
 
       const { variantId, quantity: addQty } = parsed.data;
@@ -401,12 +415,12 @@ export function useCart(): UseCartReturn {
       setPromo({ code: null, discountAmount: 0, error: null });
       setIsValidatingPromo(true);
 
-      const parsed = PromoCodeSchema.safeParse(trimmedIn);
-      if (!parsed.success) {
+      const parsed = parsePromoCodeInput(trimmedIn);
+      if (!parsed.ok) {
         setPromo({
           code: null,
           discountAmount: 0,
-          error: parsed.error.issues[0]?.message ?? "Invalid promo code format",
+          error: parsed.error,
         });
         setIsValidatingPromo(false);
         return { success: false };
@@ -418,7 +432,7 @@ export function useCart(): UseCartReturn {
         return {
           success: false,
           requireLogin: true,
-          attemptedCode: parsed.data,
+          attemptedCode: parsed.code,
           message:
             "Sign up or log in to use promo codes (Google, Email, or LINE)",
         };
@@ -436,7 +450,7 @@ export function useCart(): UseCartReturn {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            code: parsed.data,
+            code: parsed.code,
             subtotal,
             email: customerEmail || null,
             phone: customerPhone || null,
@@ -466,7 +480,7 @@ export function useCart(): UseCartReturn {
             error: data?.requireLogin ? null : errMsg,
           });
           if (res.status === 401 && data?.requireLogin) {
-            return { success: false, requireLogin: true, attemptedCode: parsed.data, message: data?.error };
+            return { success: false, requireLogin: true, attemptedCode: parsed.code, message: data?.error };
           }
           return { success: false };
         }

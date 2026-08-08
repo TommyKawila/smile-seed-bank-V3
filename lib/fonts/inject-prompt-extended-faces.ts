@@ -11,7 +11,7 @@ export function injectPromptExtendedFaces(): void {
 
   const style = document.createElement("style");
   style.id = STYLE_ID;
-  // optional — avoid late 600/700 swap reflow (Field CLS); 400 remains critical with swap
+  // optional — avoid late 600/700 swap reflow (Field CLS); 400 remains critical with optional
   style.textContent = `@font-face{font-family:${family};src:url(/fonts/Prompt-SemiBold.woff2) format("woff2");font-weight:600;font-style:normal;font-display:optional}@font-face{font-family:${family};src:url(/fonts/Prompt-Bold.woff2) format("woff2");font-weight:700;font-style:normal;font-display:optional}`;
   document.head.appendChild(style);
 }
