@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-08 (Lab triage — 93 ยืนยัน · ไม่ไล่ diagnostics)
+- **What:** Boss Lab `/` Mobile **93** (FCP 1.4 · LCP **3.0** ส้ม · TBT 70 · CLS 0 · SI 3.3 · A11y/BP/SEO 100) — triage ตาม plan: **ไม่แก้โค้ด** · **ไม่ดัน** 93→95 · **ไม่อัป** `6_PERF`
+- **Critical chain:** HTML ~**1677** ms → Prompt woff2 ~**1754** ms (font ต่อท้ายเพราะ `preload: false`) — ceiling = **TTFB/doc** ไม่ใช่ font/preconnect
+- **Unused preconnect `/`:** ไม่มีใน repo — น่าจะ Next/Vercel · ไม่ไล่
+- **Next:** ติดตาม Field CLS (Vercel SI) `/`, `/checkout`, `/seeds` 3–7d หลัง age-gate scroll-lock · infra/TTFB = สปริ้นต์แยกถ้าบอสสั่ง
+
 ### บันทึกการทำงาน — 2026-08-08 (Finish Unused JS/CSS diagnostics)
 - **What:** Boss ไล่จบ PSI Unused JS chunk **8536** (~20 KiB) + Unused CSS Prompt (~23 KiB)
 - **Root cause JS:** chunk **8536** = **Zod** ถูกดึงผ่าน `hooks/useCart.ts` → `CartProvider` ใน storefront layout
@@ -11,7 +17,7 @@
 - **Fix CSS:** `prompt.ts` `preload: false` (คง `display:swap` + weight 400) — ไม่ defer ทั้งฟอนต์ (กัน Field CLS)
 - **ไฟล์:** `hooks/useCart.ts` · `Navbar.tsx` · `lib/fonts/prompt.ts`
 - **อย่าทำ:** `dynamic(Navbar)` · อัป `6_PERF` ก่อน PSI 3-run
-- **Pending บอส:** deploy → PSI `/` Mobile ×3 — เป้า chunk 8536/Zod หายจาก Unused JS · Prompt unused ลดหรือยังเหลือ (Lighthouse @font-face) · Performance ไม่ตกจาก lock 93
+- **Closed:** deploy + Lab `/` ยัง **93** — ไม่ไล่ diagnostics ต่อ (ดู triage ด้านบน)
 
 ### บันทึกการทำงาน — 2026-08-08 (Clearance — หัวข้อ tier ไม่ซ้ำ %)
 - **What:** `/clearance` หัวข้อ `ลด 50% −50%` ซ้ำ — เหลือเลขเดียว + accent เขียว
