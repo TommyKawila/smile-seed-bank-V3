@@ -32,7 +32,11 @@ export type AssistantHistoryRow = {
   model_used?: string | null;
 };
 
-/** Untyped client — `ssb_assistant` is outside generated Database types. */
+/**
+ * Untyped client — `ssb_assistant` is outside generated Database types.
+ * Must use the service role only. Schema privileges are service_role-only
+ * (see prisma migrations `*_ssb_assistant_*`); never call this with the anon key.
+ */
 export function assistantDb() {
   const key =
     env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;

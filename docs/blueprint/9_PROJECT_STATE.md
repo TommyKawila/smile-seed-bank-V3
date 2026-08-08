@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-08 (Critical — ssb_assistant GRANT anon leak)
+- **What:** Migration `20260804130000_ssb_assistant_grants` ให้ `GRANT ALL` กับ `anon`/`authenticated` พร้อมสั่ง expose schema → public anon key อ่าน/เขียน `chat_history` / `long_term_memories` / `user_profile` (รวม session `tommy`) ได้โดยไม่ผ่าน admin/Telegram auth
+- **Fix:** revoke จาก anon/authenticated · grant เฉพาะ `service_role` · ENABLE RLS แบบไม่มี policy (deny-all; service_role bypass)
+- **ไฟล์:** `prisma/migrations/20260804130000_ssb_assistant_grants/migration.sql` · `prisma/migrations/20260808120000_ssb_assistant_revoke_anon/migration.sql` · `lib/ssb-assistant-db.ts`
+- **Pending บอส:** apply migration บน Supabase ทันทีถ้า schema ถูก expose แล้ว
+
 ### บันทึกการทำงาน — 2026-08-08 (Lab triage — 93 ยืนยัน · ไม่ไล่ diagnostics)
 - **What:** Boss Lab `/` Mobile **93** (FCP 1.4 · LCP **3.0** ส้ม · TBT 70 · CLS 0 · SI 3.3 · A11y/BP/SEO 100) — triage ตาม plan: **ไม่แก้โค้ด** · **ไม่ดัน** 93→95 · **ไม่อัป** `6_PERF`
 - **Critical chain:** HTML ~**1677** ms → Prompt woff2 ~**1754** ms (font ต่อท้ายเพราะ `preload: false`) — ceiling = **TTFB/doc** ไม่ใช่ font/preconnect
