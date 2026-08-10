@@ -6,16 +6,20 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
+  ChevronDown,
+  ChevronRight,
   Loader2,
   PackageX,
   Plus,
   Search,
   Sparkles,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -39,6 +43,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import {
+  NEW_SEEDS_BREEDER_BANNER,
+  newSeedsBreederBannerSizeLabel,
+  type NewSeedsBreederSummary,
+} from "@/lib/new-seeds";
+import { cn } from "@/lib/utils";
 import type { ProductFull } from "@/types/supabase";
 
 type PickerRow = {
@@ -51,6 +61,8 @@ type PickerRow = {
   product_variants?: { stock: number | null; is_active?: boolean | null }[] | null;
 };
 
+const NO_BREEDER_KEY = -1;
+
 function pickerRowHasStock(row: PickerRow): boolean {
   if (row.product_variants?.length) {
     return row.product_variants.some(
@@ -60,9 +72,15 @@ function pickerRowHasStock(row: PickerRow): boolean {
   return Number(row.stock ?? 0) > 0;
 }
 
+function productBreederId(p: ProductFull): number {
+  const raw = p.breeder_id ?? p.breeders?.id;
+  return Number(raw ?? 0);
+}
+
 export function NewSeedsAdminClient() {
   const { toast } = useToast();
   const [products, setProducts] = useState<ProductFull[]>([]);
+  const [breederSummary, setBreederSummary] = useState<NewSeedsBreederSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQ, setPickerQ] = useState("");
@@ -74,14 +92,21 @@ export function NewSeedsAdminClient() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [listSelectedIds, setListSelectedIds] = useState<number[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [expandedBreederId, setExpandedBreederId] = useState<number | null>(null);
+  const [bannerBusyId, setBannerBusyId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/new-seeds", { cache: "no-store" });
-      const json = (await res.json()) as { products?: ProductFull[]; error?: string };
+      const json = (await res.json()) as {
+        products?: ProductFull[];
+        breederSummary?: NewSeedsBreederSummary[];
+        error?: string;
+      };
       if (!res.ok) throw new Error(json.error ?? "โหลดไม่สำเร็จ");
       setProducts(json.products ?? []);
+      setBreederSummary(json.breederSummary ?? []);
       setListSelectedIds([]);
     } catch (e) {
       toast({
@@ -162,8 +187,52 @@ export function NewSeedsAdminClient() {
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const listSelectedSet = useMemo(() => new Set(listSelectedIds), [listSelectedIds]);
-  const allListSelected =
-    products.length > 0 && listSelectedIds.length === products.length;
+
+  const productsByBreederId = useMemo(() => {
+    const map = new Map<number, ProductFull[]>();
+    for (const p of products) {
+      const bid = productBreederId(p);
+      const prev = map.get(bid);
+      if (prev) prev.push(p);
+      else map.set(bid, [p]);
+    }
+    return map;
+  }, [products]);
+
+  const boxRows = useMemo(() => {
+    const rows: {
+      breederId: number;
+      name: string;
+      logoUrl: string | null;
+      summary: NewSeedsBreederSummary | null;
+      products: ProductFull[];
+    }[] = [];
+
+    for (const b of breederSummary) {
+      const list = productsByBreederId.get(b.breederId) ?? [];
+      if (list.length === 0) continue;
+      rows.push({
+        breederId: b.breederId,
+        name: b.name,
+        logoUrl: b.logoUrl,
+        summary: b,
+        products: list,
+      });
+    }
+
+    const known = new Set(breederSummary.map((b) => b.breederId));
+    const orphans = products.filter((p) => !known.has(productBreederId(p)));
+    if (orphans.length > 0) {
+      rows.push({
+        breederId: NO_BREEDER_KEY,
+        name: "ไม่มีค่าย / ไม่ตรงสรุป",
+        logoUrl: null,
+        summary: null,
+        products: orphans,
+      });
+    }
+    return rows;
+  }, [breederSummary, products, productsByBreederId]);
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) =>
@@ -177,12 +246,12 @@ export function NewSeedsAdminClient() {
     );
   };
 
-  const toggleListSelectAll = () => {
-    if (allListSelected) {
+  const toggleExpand = (breederId: number) => {
+    setExpandedBreederId((prev) => {
+      if (prev === breederId) return null;
       setListSelectedIds([]);
-      return;
-    }
-    setListSelectedIds(products.map((p) => p.id as number));
+      return breederId;
+    });
   };
 
   const removeSelectedFromList = async () => {
@@ -279,6 +348,95 @@ export function NewSeedsAdminClient() {
     }
   };
 
+  const upsertBanner = async (
+    breederId: number,
+    patch: { imageUrl?: string | null; isActive?: boolean }
+  ) => {
+    setBannerBusyId(breederId);
+    try {
+      const res = await fetch("/api/admin/new-seeds/banners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ breederId, ...patch }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "บันทึกแบนเนอร์ไม่สำเร็จ");
+      await load();
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "บันทึกแบนเนอร์ไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setBannerBusyId(null);
+    }
+  };
+
+  const uploadBanner = async (breederId: number, file: File) => {
+    setBannerBusyId(breederId);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("key", `new-seeds-banner-${breederId}`);
+      const up = await fetch("/api/admin/settings/upload?preset=new_seeds_banner", {
+        method: "POST",
+        body: form,
+      });
+      const upJson = (await up.json()) as { url?: string; error?: string };
+      if (!up.ok || !upJson.url) throw new Error(upJson.error ?? "อัปโหลดไม่สำเร็จ");
+      await upsertBanner(breederId, { imageUrl: upJson.url });
+      toast({ title: "อัปโหลดแบนเนอร์แล้ว" });
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "อัปโหลดไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+      setBannerBusyId(null);
+    }
+  };
+
+  const moveBreeder = async (breederId: number, delta: -1 | 1) => {
+    const movable = breederSummary;
+    const idx = movable.findIndex((b) => b.breederId === breederId);
+    if (idx < 0) return;
+    const next = idx + delta;
+    if (next < 0 || next >= movable.length) return;
+    const ordered = movable.map((b) => b.breederId);
+    const [item] = ordered.splice(idx, 1);
+    ordered.splice(next, 0, item!);
+    setBannerBusyId(breederId);
+    try {
+      for (const id of ordered) {
+        const row = movable.find((b) => b.breederId === id);
+        if (!row?.banner) {
+          await fetch("/api/admin/new-seeds/banners", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ breederId: id }),
+          });
+        }
+      }
+      const res = await fetch("/api/admin/new-seeds/banners", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedBreederIds: ordered }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "จัดลำดับไม่สำเร็จ");
+      await load();
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "จัดลำดับค่ายไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setBannerBusyId(null);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -288,7 +446,7 @@ export function NewSeedsAdminClient() {
             กล่อง New Seeds
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            สินค้าที่หยิบใส่กล่องจะแสดงที่หน้า /new และโฮม (New Arrivals) — เรียงตามลำดับด้านล่าง
+            เพิ่มสินค้าเข้ากล่อง · จัดค่ายและแบนเนอร์สำหรับหน้า /new (เลือกค่ายก่อนดูสินค้า)
           </p>
         </div>
         <Button
@@ -300,132 +458,269 @@ export function NewSeedsAdminClient() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 py-3">
-          <CardTitle className="text-base">รายการในกล่อง ({products.length})</CardTitle>
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            disabled={bulkBusy || listSelectedIds.length === 0}
-            onClick={() => void removeSelectedFromList()}
-          >
-            {bulkBusy ? (
-              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="mr-1.5 h-4 w-4" />
-            )}
-            นำออกที่เลือก ({listSelectedIds.length})
-          </Button>
+        <CardHeader className="py-3">
+          <CardTitle className="text-base">
+            ค่ายในกล่อง ({boxRows.filter((r) => r.breederId !== NO_BREEDER_KEY).length})
+          </CardTitle>
+          <p className="text-xs text-zinc-500">
+            คลิกแถวค่ายเพื่อขยายรายการสินค้า · อัปโหลดแบนเนอร์สำหรับหน้า /new
+          </p>
+          <p className="mt-1 text-xs font-medium text-violet-800">
+            {newSeedsBreederBannerSizeLabel("th")}
+          </p>
+          <p className="text-[11px] text-zinc-400">{NEW_SEEDS_BREEDER_BANNER.safeZoneNoteTh}</p>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-16 text-sm text-zinc-500">
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-zinc-500">
               <Loader2 className="h-4 w-4 animate-spin" /> กำลังโหลด…
             </div>
-          ) : products.length === 0 ? (
-            <p className="px-6 py-12 text-center text-sm text-zinc-500">
+          ) : boxRows.length === 0 ? (
+            <p className="py-8 text-center text-sm text-zinc-500">
               ยังไม่มีสินค้าในกล่อง — กด «เพิ่มสินค้า» เพื่อเริ่ม
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-zinc-300"
-                      checked={allListSelected}
-                      onChange={toggleListSelectAll}
-                      aria-label="เลือกทั้งหมด"
-                    />
-                  </TableHead>
-                  <TableHead className="w-14" />
-                  <TableHead>สินค้า</TableHead>
-                  <TableHead>ค่าย</TableHead>
-                  <TableHead className="w-28">ลำดับ</TableHead>
-                  <TableHead className="w-28 text-right">จัดลำดับ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((p, index) => {
-                  const pid = p.id as number;
-                  const checked = listSelectedSet.has(pid);
-                  const priority = Number(p.new_arrival_priority ?? 0);
-                  return (
-                    <TableRow
-                      key={pid}
-                      className={checked ? "bg-violet-50/50" : undefined}
-                      data-state={checked ? "selected" : undefined}
+            boxRows.map((box) => {
+              const b = box.summary;
+              const busy = bannerBusyId === box.breederId;
+              const preview = b?.banner?.imageUrl || box.logoUrl;
+              const expanded = expandedBreederId === box.breederId;
+              const canReorder = box.breederId !== NO_BREEDER_KEY;
+              const summaryIndex = canReorder
+                ? breederSummary.findIndex((x) => x.breederId === box.breederId)
+                : -1;
+
+              return (
+                <div
+                  key={box.breederId}
+                  className={cn(
+                    "overflow-hidden rounded-xl border border-zinc-200 bg-white",
+                    expanded && "ring-1 ring-violet-700/20"
+                  )}
+                >
+                  <div className="grid gap-4 p-4 md:grid-cols-[11rem_minmax(0,1fr)_auto] md:items-center">
+                    <button
+                      type="button"
+                      className="flex min-w-0 items-start gap-3 text-left md:col-span-2 md:contents"
+                      onClick={() => toggleExpand(box.breederId)}
+                      aria-expanded={expanded}
                     >
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-zinc-300"
-                          checked={checked}
-                          onChange={() => toggleListSelect(pid)}
-                          aria-label={`เลือก ${p.name}`}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {p.image_url ? (
-                          <div className="relative h-11 w-11 overflow-hidden rounded-lg border border-zinc-200">
-                            <Image
-                              src={p.image_url}
-                              alt=""
-                              fill
-                              className="object-cover"
-                              sizes="44px"
-                            />
-                          </div>
+                      <span className="mt-1 hidden text-zinc-400 md:inline" aria-hidden>
+                        {expanded ? (
+                          <ChevronDown className="h-4 w-4" />
                         ) : (
-                          <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-400">
-                            <PackageX className="h-4 w-4" />
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </span>
+                      <div
+                        className={cn(
+                          "relative mx-auto w-full max-w-[11rem] overflow-hidden rounded-lg border border-violet-100 bg-zinc-950 md:mx-0",
+                          NEW_SEEDS_BREEDER_BANNER.aspectClass
+                        )}
+                      >
+                        {preview ? (
+                          <Image
+                            src={preview}
+                            alt=""
+                            fill
+                            className="object-cover object-center"
+                            sizes="176px"
+                          />
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] leading-snug text-violet-300/70">
+                            <Sparkles className="h-5 w-5" />
+                            <span>4:3</span>
                           </div>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium text-zinc-900">{p.name}</p>
-                        <p className="text-xs text-zinc-500">
-                          {(p.product_variants ?? []).length} แพ็ก
+                      </div>
+                      <div className="min-w-0 flex-1 text-center md:text-left">
+                        <p className="flex items-center justify-center gap-1.5 font-semibold text-zinc-900 md:justify-start">
+                          {box.name}
                         </p>
-                      </TableCell>
-                      <TableCell className="text-sm text-zinc-600">
-                        {p.breeders?.name ?? "—"}
-                      </TableCell>
-                      <TableCell className="tabular-nums text-sm text-zinc-700">
-                        {priority}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="inline-flex gap-1">
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-9 w-9"
-                            disabled={bulkBusy || index === 0}
-                            onClick={() => void moveProduct(pid, -1)}
-                            aria-label="Move up"
-                          >
-                            <ArrowUp className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-9 w-9"
-                            disabled={bulkBusy || index === products.length - 1}
-                            onClick={() => void moveProduct(pid, 1)}
-                            aria-label="Move down"
-                          >
-                            <ArrowDown className="h-4 w-4" />
-                          </Button>
+                        <p className="text-xs text-zinc-500">
+                          {box.products.length} สินค้า
+                          {b?.banner?.isActive === false ? " · ซ่อนแบนเนอร์" : ""}
+                          {" · "}
+                          {expanded ? "คลิกเพื่อยุบ" : "คลิกเพื่อดูสินค้า"}
+                        </p>
+                      </div>
+                    </button>
+
+                    {canReorder && b ? (
+                      <div
+                        className="flex flex-wrap items-center justify-center gap-2 md:justify-end"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      >
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-200 px-2.5 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50">
+                          <Upload className="h-3.5 w-3.5" />
+                          อัปรูป
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            disabled={busy}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) void uploadBanner(box.breederId, f);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        <div className="flex items-center gap-1.5 text-xs text-zinc-600">
+                          <span>แสดง</span>
+                          <Switch
+                            checked={b.banner?.isActive ?? true}
+                            disabled={busy}
+                            onCheckedChange={(on) =>
+                              void upsertBanner(box.breederId, { isActive: on })
+                            }
+                          />
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          className="h-9 w-9"
+                          disabled={busy || summaryIndex <= 0}
+                          onClick={() => void moveBreeder(box.breederId, -1)}
+                          aria-label="Move up"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          className="h-9 w-9"
+                          disabled={
+                            busy ||
+                            summaryIndex < 0 ||
+                            summaryIndex >= breederSummary.length - 1
+                          }
+                          onClick={() => void moveBreeder(box.breederId, 1)}
+                          aria-label="Move down"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {expanded ? (
+                    <div className="border-t border-zinc-100 px-4 pb-4">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 pt-3">
+                        <p className="text-xs text-zinc-500">
+                          เลือกแล้ว {listSelectedIds.length} รายการ
+                        </p>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          disabled={bulkBusy || listSelectedIds.length === 0}
+                          onClick={() => void removeSelectedFromList()}
+                        >
+                          {bulkBusy ? (
+                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="mr-1.5 h-4 w-4" />
+                          )}
+                          นำออกที่เลือก
+                        </Button>
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12" />
+                            <TableHead className="w-14" />
+                            <TableHead>สินค้า</TableHead>
+                            <TableHead className="w-28">ลำดับ</TableHead>
+                            <TableHead className="w-28 text-right">จัดลำดับ</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {box.products.map((p, index) => {
+                            const pid = p.id as number;
+                            const checked = listSelectedSet.has(pid);
+                            const priority = Number(p.new_arrival_priority ?? 0);
+                            const globalIndex = products.findIndex(
+                              (x) => Number(x.id) === pid
+                            );
+                            return (
+                              <TableRow
+                                key={pid}
+                                className={checked ? "bg-violet-50/50" : undefined}
+                              >
+                                <TableCell>
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-zinc-300"
+                                    checked={checked}
+                                    onChange={() => toggleListSelect(pid)}
+                                    aria-label={`เลือก ${p.name}`}
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  {p.image_url ? (
+                                    <div className="relative h-11 w-11 overflow-hidden rounded-lg border border-zinc-200">
+                                      <Image
+                                        src={p.image_url}
+                                        alt=""
+                                        fill
+                                        className="object-cover"
+                                        sizes="44px"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-400">
+                                      <PackageX className="h-4 w-4" />
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <p className="font-medium text-zinc-900">{p.name}</p>
+                                </TableCell>
+                                <TableCell className="tabular-nums text-sm text-zinc-700">
+                                  {priority}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="inline-flex gap-1">
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="outline"
+                                      className="h-9 w-9"
+                                      disabled={bulkBusy || globalIndex <= 0}
+                                      onClick={() => void moveProduct(pid, -1)}
+                                      aria-label="Move up"
+                                    >
+                                      <ArrowUp className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="outline"
+                                      className="h-9 w-9"
+                                      disabled={
+                                        bulkBusy || globalIndex >= products.length - 1
+                                      }
+                                      onClick={() => void moveProduct(pid, 1)}
+                                      aria-label="Move down"
+                                    >
+                                      <ArrowDown className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })
           )}
         </CardContent>
       </Card>

@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
     if (presetParam && !preset) {
       return NextResponse.json(
-        { error: "preset must be hero, clearance_banner, product, or logo" },
+        { error: "preset must be hero, clearance_banner, new_seeds_banner, product, or logo" },
         { status: 400 }
       );
     }

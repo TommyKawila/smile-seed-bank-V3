@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-10 (New Seeds — Breeder-first hub `/new`)
+- **What:** หน้า `/new` เปลี่ยนเป็นเลือกค่ายก่อน (bento violet/cyan) → drill `/new?breeder=` · Admin จัดค่าย + อัปแบนเนอร์แบบ Clearance vault
+- **Logic:** `new_seeds_breeder_banners` · aggregate `is_pinned_new_arrival` ต่อค่าย · ไม่มี % ลด
+- **ไฟล์:** `lib/new-seeds.ts` · `new-seeds-breeder-banner-service.ts` · `NewSeedsBreederBoxCard.tsx` · `NewSeedsLandingClient.tsx` · `new/page.tsx` · `NewSeedsAdminClient.tsx` · APIs admin/storefront · migration `20260810130000`
+- **Pending บอส:** apply migration Supabase · อัปแบนเนอร์ค่ายใน `/admin/new-seeds` · pin สินค้าแล้วทดสอบ flow หน้า `/new`
+
 ### บันทึกการทำงาน — 2026-08-08 (Lab triage — 93 ยืนยัน · ไม่ไล่ diagnostics)
 - **What:** Boss Lab `/` Mobile **93** (FCP 1.4 · LCP **3.0** ส้ม · TBT 70 · CLS 0 · SI 3.3 · A11y/BP/SEO 100) — triage ตาม plan: **ไม่แก้โค้ด** · **ไม่ดัน** 93→95 · **ไม่อัป** `6_PERF`
 - **Critical chain:** HTML ~**1677** ms → Prompt woff2 ~**1754** ms (font ต่อท้ายเพราะ `preload: false`) — ceiling = **TTFB/doc** ไม่ใช่ font/preconnect

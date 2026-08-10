@@ -6,6 +6,7 @@ import {
   addProductToNewSeeds,
   addProductsToNewSeeds,
   listAdminNewSeedsProducts,
+  listNewSeedsBreederSummary,
   removeProductsFromNewSeeds,
   reorderNewSeedsProducts,
   setNewSeedsPriority,
@@ -35,8 +36,11 @@ const BodySchema = z.union([
 
 export async function GET() {
   try {
-    const products = await listAdminNewSeedsProducts();
-    return NextResponse.json({ products });
+    const [products, breederSummary] = await Promise.all([
+      listAdminNewSeedsProducts(),
+      listNewSeedsBreederSummary(),
+    ]);
+    return NextResponse.json({ products, breederSummary });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

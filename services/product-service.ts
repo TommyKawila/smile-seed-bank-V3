@@ -396,6 +396,94 @@ export async function getPinnedNewSeedsStorefrontProducts(
   }
 }
 
+/** New Seeds breeder box counts — same listable rules as drill-down grid. */
+export async function getListableNewSeedsCountsByBreeder(): Promise<Map<number, number>> {
+  const rows = await prisma.products.findMany({
+    where: {
+      is_pinned_new_arrival: true,
+      is_active: true,
+      breeder_id: { not: null },
+      ...seedCatalogProductWhere,
+    },
+    select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+  });
+  const map = new Map<number, number>();
+  for (const row of rows) {
+    const p = bigintToJson(row) as unknown as ProductWithBreederAndVariants;
+    if (!isListableNewSeedsProduct(p)) continue;
+    const breederId = Number(p.breeder_id);
+    if (!Number.isFinite(breederId)) continue;
+    map.set(breederId, (map.get(breederId) ?? 0) + 1);
+  }
+  return map;
+}
+
+/** Pinned New Seeds for one breeder (landing drill-down). */
+export async function getPinnedNewSeedsStorefrontProductsByBreederSlug(
+  breederSlug: string,
+  limit = 60
+): Promise<
+  ServiceResult<{
+    products: ProductWithBreederAndVariants[];
+    breederName: string | null;
+    breederLogoUrl: string | null;
+  }>
+> {
+  try {
+    const want = breederSlug.trim().toLowerCase();
+    if (!want) {
+      return {
+        data: { products: [], breederName: null, breederLogoUrl: null },
+        error: null,
+      };
+    }
+
+    const match = await resolveBreederBySlugFromCache(want);
+    if (!match) {
+      return {
+        data: { products: [], breederName: null, breederLogoUrl: null },
+        error: null,
+      };
+    }
+
+    const take = Math.min(120, Math.max(1, Math.floor(limit)));
+    const rows = await prisma.products.findMany({
+      where: {
+        is_active: true,
+        is_pinned_new_arrival: true,
+        breeder_id: BigInt(match.id),
+        ...seedCatalogProductWhere,
+      },
+      orderBy: [
+        { new_arrival_priority: "desc" },
+        { created_at: "desc" },
+        { id: "desc" },
+      ],
+      take,
+      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+    });
+    const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
+    const listable = mapped.filter(isListableNewSeedsProduct);
+    for (const row of listable) sanitizeProductTextFields(row);
+    return {
+      data: {
+        products: await withBrandListingEnrichment(listable),
+        breederName: match.name,
+        breederLogoUrl: match.logo_url ?? null,
+      },
+      error: null,
+    };
+  } catch (err) {
+    logger.error("product-service.getPinnedNewSeedsStorefrontProductsByBreederSlug failed", {
+      cause: err,
+    });
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 function relatedGeneticsWhere(genetics?: string | null): Prisma.productsWhereInput | undefined {
   const value = genetics?.trim().toLowerCase();
   if (!value) return undefined;
