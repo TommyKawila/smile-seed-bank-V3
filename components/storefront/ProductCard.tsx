@@ -12,7 +12,7 @@ import type {
   ProductVariantRow,
   ProductWithBreeder,
 } from "@/lib/supabase/types";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { resolveListingUnitAfterBrand } from "@/lib/brand-promotion-checkout";
 import {
   computeStartingPrice,
