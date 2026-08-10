@@ -1,5 +1,27 @@
 /** Storefront category accent classes — New Seeds = violet/cyan, Clearance = orange/red, Vault = emerald/teal. */
 
+export type ProductStatusAccent = "vault" | "new" | "clearance";
+
+export function resolveProductAccent(product: {
+  is_clearance?: boolean | null;
+  is_pinned_new_arrival?: boolean | null;
+}): ProductStatusAccent {
+  if (product.is_clearance === true) return "clearance";
+  if (product.is_pinned_new_arrival === true) return "new";
+  return "vault";
+}
+
+export function productAccentTokens(accent: ProductStatusAccent) {
+  switch (accent) {
+    case "clearance":
+      return CLEARANCE_ACCENT;
+    case "new":
+      return NEW_SEEDS_ACCENT;
+    default:
+      return VAULT_ACCENT;
+  }
+}
+
 export const CLEARANCE_ACCENT = {
   heroRadial:
     "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(249,115,22,0.18),_transparent_55%)] motion-safe:animate-pulse motion-safe:duration-[3s]",
@@ -30,12 +52,30 @@ export const CLEARANCE_ACCENT = {
   cardBreederLogo: "border-orange-500/30 ring-orange-500/15",
   cardTitleHover: "hover:text-orange-300",
   cardPrice: "text-orange-100",
+  cardBreederLink: "hover:text-orange-300",
+  cardThcPill: "text-orange-300/90",
+  cardPackLabel: "text-orange-300/80",
+  addButton:
+    "border-orange-500/40 bg-orange-500/10 text-orange-200 hover:border-orange-400/50 hover:bg-orange-500/20",
   availabilityPill:
     "border-orange-500/15 bg-orange-500/5 text-orange-300/75",
   discountBadgeHigh: "bg-gradient-to-r from-red-500 to-red-600 text-white",
   discountBadgeMid: "bg-gradient-to-r from-orange-500 to-red-500 text-zinc-950",
   discountBadgeLow: "bg-gradient-to-r from-orange-400 to-orange-500 text-zinc-950",
   packChip: "border-orange-500/40 bg-orange-500/15 text-orange-300",
+  brandDiscountBadge: "bg-gradient-to-r from-orange-500 to-red-500 text-zinc-950",
+  pdpPrice: "text-orange-200",
+  pdpPackSelected:
+    "border-orange-500 bg-orange-500/15 text-foreground shadow-sm ring-1 ring-orange-500/30",
+  pdpPackIdle:
+    "border-orange-500/50 bg-orange-500/10 text-foreground/90 hover:border-orange-500 hover:bg-orange-500/15",
+  pdpPackSelectedPrice: "text-orange-300",
+  pdpPackBadge: "bg-gradient-to-r from-orange-500 to-red-500 text-zinc-950",
+  pdpStockPill: "border-orange-500/25 bg-orange-500/10 text-orange-300",
+  chipIdle:
+    "border-orange-500/35 bg-card text-orange-300/90 hover:border-orange-400/50 hover:bg-orange-500/10",
+  chipActive: "border-orange-500 bg-orange-500/20 text-orange-100 shadow-sm",
+  filterTitle: "text-orange-300",
 } as const;
 
 export function clearanceDiscountBadgeClass(percent: number): string {
@@ -49,6 +89,35 @@ export function clearanceTierPercentClass(percent: number): string {
   if (percent >= 30) return CLEARANCE_ACCENT.tierPercentMid;
   return CLEARANCE_ACCENT.tierPercentLow;
 }
+
+export const NEW_SEEDS_ACCENT = {
+  backLink: "text-violet-400 hover:text-violet-300",
+  cardBorder: "border-violet-500/20 hover:border-violet-400/35",
+  cardBreederLogo: "border-violet-500/30 ring-violet-500/15",
+  cardTitleHover: "hover:text-cyan-300",
+  cardPrice: "text-violet-200",
+  cardBreederLink: "hover:text-violet-300",
+  cardThcPill: "text-violet-300/90",
+  cardPackLabel: "text-cyan-400/80",
+  availabilityPill: "border-violet-500/15 bg-violet-500/5 text-violet-300/75",
+  packChip: "border-violet-500/40 bg-violet-500/15 text-violet-300",
+  newBadge: "bg-gradient-to-r from-violet-500 to-cyan-400 text-zinc-950",
+  brandDiscountBadge: "bg-gradient-to-r from-violet-500 to-cyan-400 text-zinc-950",
+  addButton:
+    "border-violet-500/40 bg-violet-500/10 text-violet-200 hover:border-violet-400/50 hover:bg-violet-500/20",
+  pdpPrice: "text-violet-300",
+  pdpPackSelected:
+    "border-violet-500 bg-violet-500/10 text-foreground shadow-sm ring-1 ring-violet-500/25",
+  pdpPackIdle:
+    "border-border bg-card/60 text-foreground/75 hover:border-violet-400/40 hover:bg-violet-500/5",
+  pdpPackSelectedPrice: "text-violet-300",
+  pdpPackBadge: "bg-gradient-to-r from-violet-500 to-cyan-400 text-zinc-950",
+  pdpStockPill: "border-violet-500/25 bg-violet-500/10 text-violet-300",
+  chipIdle:
+    "border-violet-500/35 bg-card text-violet-300/90 hover:border-violet-400/50 hover:bg-violet-500/10",
+  chipActive: "border-violet-500 bg-violet-500/20 text-violet-100 shadow-sm",
+  filterTitle: "text-violet-300",
+} as const;
 
 export const VAULT_ACCENT = {
   heroRadial:
@@ -67,6 +136,30 @@ export const VAULT_ACCENT = {
   boxSubtitle: "text-emerald-200/90",
   boxFocusRing: "focus-visible:ring-teal-400",
   facetRing: "ring-1 ring-emerald-500/10 hover:ring-emerald-500/20",
+  cardBorder: "border-emerald-500/20 hover:border-emerald-400/35",
+  cardBreederLogo: "border-emerald-500/30 ring-emerald-500/15",
+  cardTitleHover: "hover:text-emerald-300",
+  cardPrice: "text-emerald-200",
+  cardBreederLink: "hover:text-emerald-300",
+  cardThcPill: "text-emerald-300/90",
+  cardPackLabel: "text-teal-400/80",
+  availabilityPill: "border-emerald-500/15 bg-emerald-500/5 text-emerald-300/75",
+  packChip: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+  brandDiscountBadge: "bg-primary/90 text-primary-foreground",
+  addButton:
+    "border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:border-emerald-400/50 hover:bg-emerald-500/20",
+  pdpPrice: "text-primary",
+  pdpPackSelected:
+    "border-primary bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/25",
+  pdpPackIdle:
+    "border-border bg-card/60 text-foreground/75 hover:border-primary/40 hover:bg-primary/5",
+  pdpPackSelectedPrice: "text-primary",
+  pdpPackBadge: "bg-primary text-primary-foreground",
+  pdpStockPill: "border-primary/25 bg-primary/10 text-primary",
+  chipIdle:
+    "border-emerald-500/35 bg-card text-emerald-300/90 hover:border-emerald-400/50 hover:bg-emerald-500/10",
+  chipActive: "border-primary bg-primary text-white shadow-sm",
+  filterTitle: "text-emerald-300",
 } as const;
 
 export function vaultSkeletonClass(index: number): string {

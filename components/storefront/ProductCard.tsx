@@ -35,7 +35,14 @@ import {
   CatalogProductCardBreederLogo,
   CatalogProductCardImageArea,
   CatalogProductCardShell,
+  type ProductStatusAccent,
 } from "@/components/storefront/CatalogProductCardShell";
+import {
+  clearanceDiscountBadgeClass,
+  NEW_SEEDS_ACCENT,
+  productAccentTokens,
+  resolveProductAccent,
+} from "@/lib/storefront-category-accents";
 import {
   cardStrainTypeLabel,
   isNewArrivalProduct,
@@ -90,6 +97,8 @@ type ProductCardProps = {
   linkOnly?: boolean;
   /** Always show NEW badge (new seeds grid). */
   showNewBadge?: boolean;
+  /** Override status-driven accent (e.g. clearance drill-down). */
+  accent?: ProductStatusAccent;
 };
 
 function ProductCardBase({
@@ -98,10 +107,13 @@ function ProductCardBase({
   catalogSeedsFilter = null,
   linkOnly = false,
   showNewBadge = false,
+  accent: accentOverride,
 }: ProductCardProps) {
   const { addToCart, openCart, brandPromotionRules } = useCartContext();
   const { t, locale } = useLanguage();
   const loc = locale as "th" | "en";
+  const accent = accentOverride ?? resolveProductAccent(product);
+  const tokens = productAccentTokens(accent);
   const href = productDetailHref(product);
   const seedsSel = parseListParam(catalogSeedsFilter);
   const displayVariant =
@@ -270,11 +282,14 @@ function ProductCardBase({
     <>
       {topLeftSalePct ? (
         <span
-          className={`absolute left-2 top-2 z-20 rounded-md px-2 py-0.5 text-[10px] font-bold tabular-nums shadow-md ${
-            clearancePct && !hasBrandSale
-              ? "bg-emerald-500 text-white"
-              : "bg-gradient-to-r from-violet-500 to-cyan-400 text-zinc-950"
-          }`}
+          className={cn(
+            "absolute left-2 top-2 z-20 rounded-md px-2 py-0.5 text-[10px] font-bold tabular-nums shadow-md",
+            hasBrandSale
+              ? tokens.brandDiscountBadge
+              : accent === "clearance" && clearancePct
+                ? clearanceDiscountBadgeClass(topLeftSalePct)
+                : tokens.brandDiscountBadge
+          )}
         >
           {hasBrandSale
             ? t(`−${topLeftSalePct}%`, `−${topLeftSalePct}%`)
@@ -282,7 +297,12 @@ function ProductCardBase({
         </span>
       ) : null}
       {showNew ? (
-        <span className="absolute right-2 top-2 z-20 inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-violet-500 to-cyan-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950 shadow-md">
+        <span
+          className={cn(
+            "absolute right-2 top-2 z-20 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-md",
+            NEW_SEEDS_ACCENT.newBadge
+          )}
+        >
           <Sparkles className="h-3 w-3" aria-hidden />
           {t("ใหม่", "NEW")}
         </span>
@@ -294,6 +314,7 @@ function ProductCardBase({
       {product.breeders ? (
         <CatalogProductCardBreederLogo
           breeder={product.breeders}
+          accent={accent}
           className={breederOffset}
         />
       ) : null}
@@ -302,7 +323,7 @@ function ProductCardBase({
 
   return (
     <div className="h-full">
-      <CatalogProductCardShell>
+      <CatalogProductCardShell accent={accent}>
         <CatalogProductCardImageArea
           href={href}
           onNavigate={touchCatalogReturnFromWindow}
@@ -334,7 +355,7 @@ function ProductCardBase({
         <CatalogProductCardBody>
           {(thcPill || typePill) && (
             <p className="text-[10px] font-medium tabular-nums text-zinc-400">
-              {thcPill ? <span className="text-violet-300/90">THC {thcPill}</span> : null}
+              {thcPill ? <span className={tokens.cardThcPill}>THC {thcPill}</span> : null}
               {thcPill && typePill ? <span className="text-zinc-600"> · </span> : null}
               {typePill ? <span>{typePill}</span> : null}
             </p>
@@ -344,7 +365,10 @@ function ProductCardBase({
             <Link
               href={seedsBreederHref(product.breeders)}
               onClick={() => touchCatalogReturnFromWindow()}
-              className="line-clamp-1 text-[11px] font-medium text-zinc-500 transition-colors hover:text-violet-300"
+              className={cn(
+                "line-clamp-1 text-[11px] font-medium text-zinc-500 transition-colors",
+                tokens.cardBreederLink
+              )}
             >
               {product.breeders.name}
             </Link>
@@ -353,13 +377,16 @@ function ProductCardBase({
           <Link
             href={href}
             onClick={touchCatalogReturnFromWindow}
-            className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100 hover:text-violet-300"
+            className={cn(
+              "line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100",
+              tokens.cardTitleHover
+            )}
           >
             {product.name}
           </Link>
 
           {seedsPackLabel ? (
-            <p className="text-[10px] font-medium text-cyan-400/80">{seedsPackLabel}</p>
+            <p className={cn("text-[10px] font-medium", tokens.cardPackLabel)}>{seedsPackLabel}</p>
           ) : null}
 
           <div className="mt-auto space-y-1.5 border-t border-zinc-800 pt-2">
@@ -371,7 +398,10 @@ function ProductCardBase({
                   </p>
                 )}
                 <p
-                  className={`text-base font-bold tabular-nums ${outOfStock ? "text-muted-foreground" : "text-violet-200"}`}
+                  className={cn(
+                    "text-base font-bold tabular-nums",
+                    outOfStock ? "text-muted-foreground" : tokens.cardPrice
+                  )}
                 >
                   {priceLabel}
                 </p>
@@ -384,7 +414,10 @@ function ProductCardBase({
                   onClick={handleAdd}
                   onPointerDown={(e) => e.stopPropagation()}
                   aria-label={t("เพิ่มลงตะกร้า", "Add to cart")}
-                  className="relative z-20 h-10 w-10 shrink-0 rounded-full border border-violet-500/40 bg-violet-500/10 text-lg font-bold leading-none text-violet-200 shadow-sm transition hover:border-violet-400/50 hover:bg-violet-500/20 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+                  className={cn(
+                    "relative z-20 h-10 w-10 shrink-0 rounded-full border text-lg font-bold leading-none shadow-sm transition active:scale-95 disabled:pointer-events-none disabled:opacity-40",
+                    tokens.addButton
+                  )}
                 >
                   +
                 </Button>
@@ -396,7 +429,7 @@ function ProductCardBase({
               </p>
             ) : null}
             {!outOfStock && displayVariant ? (
-              <ProductAvailabilityNote stock={displayVariant.stock} locale={locale} />
+              <ProductAvailabilityNote stock={displayVariant.stock} locale={locale} accent={accent} />
             ) : null}
           </div>
         </CatalogProductCardBody>

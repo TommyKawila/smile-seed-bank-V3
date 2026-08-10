@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { resolveCatalogQuickFromFilter } from "@/lib/catalog-navigation";
-import { shopQuickChipClasses } from "@/components/storefront/shop-filter-chip-styles";
+import { shopCategoryQuickChipClasses } from "@/components/storefront/shop-filter-chip-styles";
 
 export function ShopQuickFilterBar({
   replaceCatalog,
@@ -32,14 +32,14 @@ export function ShopQuickFilterBar({
 
   return (
     <div className="contents">
-      <Link href="/new" className={shopQuickChipClasses(false, compact)}>
+      <Link href="/new" className={shopCategoryQuickChipClasses("new", compact)}>
         ✨ {t("สินค้ามาใหม่", "New arrivals")}
       </Link>
       {showClearance ? (
         <Link
           href="/clearance"
           prefetch={false}
-          className={shopQuickChipClasses(false, compact)}
+          className={shopCategoryQuickChipClasses("clearance", compact)}
         >
           🏷️ {t("ล้างสต็อก", "Clearance")}
         </Link>

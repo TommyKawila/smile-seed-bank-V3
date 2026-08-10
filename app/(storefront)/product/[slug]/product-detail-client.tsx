@@ -35,6 +35,12 @@ import { StickyBuyBar } from "@/components/storefront/StickyBuyBar";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
+import {
+  clearanceDiscountBadgeClass,
+  productAccentTokens,
+  resolveProductAccent,
+  type ProductStatusAccent,
+} from "@/lib/storefront-category-accents";
 import { Photo3nAdvantageBox } from "@/components/storefront/Photo3nAdvantageBox";
 import { StockAlert } from "@/components/storefront/StockAlert";
 import { FLOWERING_DB_PHOTO_3N } from "@/lib/constants";
@@ -383,6 +389,19 @@ export default function ProductDetailClient({
     return { href: "/seeds", text: fallback, title: fallback };
   })();
 
+  const productAccent = resolveProductAccent(product);
+  const accentTokens = productAccentTokens(productAccent);
+  const listReferrerIsClearance =
+    listReferrerPath === "/clearance" || listReferrerPath?.startsWith("/clearance?") === true;
+  const listReferrerIsNew =
+    listReferrerPath === "/new" || listReferrerPath?.startsWith("/new?") === true;
+  const backLinkAccent: ProductStatusAccent = listReferrerIsClearance
+    ? "clearance"
+    : listReferrerIsNew
+      ? "new"
+      : productAccent;
+  const backLinkClass = productAccentTokens(backLinkAccent).backLink;
+
   const activeVariants = sortVariantsByPriceThenPack(
     product.product_variants?.filter((v) => v.is_active !== false) ?? []
   );
@@ -446,7 +465,10 @@ export default function ProductDetailClient({
         {/* Breadcrumb / back — list referrer, else breeder page, else shop */}
         <Link
           href={backNav.href}
-          className="mb-2 inline-flex w-fit max-w-full min-w-0 items-center gap-1 text-sm text-foreground/60 transition-colors hover:text-primary sm:mb-4"
+          className={cn(
+            "mb-2 inline-flex w-fit max-w-full min-w-0 items-center gap-1 text-sm text-foreground/60 transition-colors sm:mb-4",
+            backLinkClass
+          )}
           title={backNav.title}
         >
           <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
@@ -476,7 +498,16 @@ export default function ProductDetailClient({
                 </h1>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                   {salePct != null && salePct > 0 && (
-                    <span className="rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary-foreground shadow-sm ring-1 ring-border/50">
+                    <span
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide shadow-sm ring-1 ring-border/50",
+                        hasBrandSale
+                          ? accentTokens.brandDiscountBadge
+                          : productAccent === "clearance"
+                            ? clearanceDiscountBadgeClass(salePct)
+                            : accentTokens.brandDiscountBadge
+                      )}
+                    >
                       {hasBrandSale
                         ? t(`แบรนด์ −${salePct}%`, `Brand −${salePct}%`)
                         : `−${salePct}%`}
@@ -496,13 +527,14 @@ export default function ProductDetailClient({
                     <span
                       className={cn(
                         fontSansTabular,
-                        "text-2xl font-bold text-primary sm:text-3xl"
+                        "text-2xl font-bold sm:text-3xl",
+                        accentTokens.pdpPrice
                       )}
                     >
                       {mainPriceLine}
                     </span>
                     <div className="mt-1 flex min-h-6 flex-wrap gap-1.5">
-                      <StockAlert quantity={selectedVariant?.stock} locale={locale} />
+                      <StockAlert quantity={selectedVariant?.stock} locale={locale} accent={productAccent} />
                     </div>
                   </div>
                 </div>
@@ -621,23 +653,28 @@ export default function ProductDetailClient({
                           !soldOut &&
                             isClearancePack &&
                             isSelected &&
-                            "border-amber-500 bg-amber-500/15 text-foreground shadow-sm ring-1 ring-amber-500/30",
+                            accentTokens.pdpPackSelected,
                           !soldOut &&
                             isClearancePack &&
                             !isSelected &&
-                            "border-amber-500/50 bg-amber-500/10 text-foreground/90 hover:border-amber-500 hover:bg-amber-500/15",
+                            accentTokens.pdpPackIdle,
                           !soldOut &&
                             !isClearancePack &&
                             isSelected &&
-                            "border-primary bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/25",
+                            accentTokens.pdpPackSelected,
                           !soldOut &&
                             !isClearancePack &&
                             !isSelected &&
-                            "border-border bg-card/60 text-foreground/75 hover:border-primary/40 hover:bg-primary/5"
+                            accentTokens.pdpPackIdle
                         )}
                       >
                         {isClearancePack && packPct != null && packPct > 0 ? (
-                          <span className="mb-1 inline-flex rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-zinc-950">
+                          <span
+                            className={cn(
+                              "mb-1 inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+                              accentTokens.pdpPackBadge
+                            )}
+                          >
                             −{packPct}%
                           </span>
                         ) : null}
@@ -650,8 +687,8 @@ export default function ProductDetailClient({
                             fontSansTabular,
                             isSelected
                               ? isClearancePack
-                                ? "text-amber-400"
-                                : "text-primary"
+                                ? accentTokens.pdpPackSelectedPrice
+                                : accentTokens.pdpPackSelectedPrice
                               : "text-foreground"
                           )}
                         >
@@ -668,6 +705,7 @@ export default function ProductDetailClient({
                           <StockAlert
                             quantity={v.stock}
                             locale={locale}
+                            accent={productAccent}
                             className="mt-1 h-5 text-[10px]"
                           />
                         )}

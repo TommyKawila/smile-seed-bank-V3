@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-11 (Status-driven product vibes — card + PDP + chrome)
+- **What:** Product card / PDP / shop chrome เปลี่ยน vibe ตามสถานะ SKU — Clearance แดง-ส้ม · New ม่วง-ฟ้า · Default เขียว vault
+- **Logic:** `resolveProductAccent(is_clearance → is_pinned_new_arrival → vault)` · `ProductStatusAccent` · mixed grid All Seeds แสดงหลายโทนใน grid เดียว
+- **ไฟล์:** `storefront-category-accents.ts` · `CatalogProductCardShell.tsx` · `ProductCard.tsx` · `ProductAvailabilityNote.tsx` · `StockAlert.tsx` · `product-detail-client.tsx` · `ShopQuickFilterBar.tsx` · `shop-filter-chip-styles.ts` · `ShopPageClient.tsx`
+
 ### บันทึกการทำงาน — 2026-08-10 (Seeds hub emerald-teal vault vibe + bento)
 - **What:** ยก vibe หน้า `/seeds` hub — โทน **emerald + teal** แยกจาก New Seeds / Clearance · bento grid ค่ายแรก 2×2 เหมือน `/new` และ `/clearance`
 - **Logic:** `VAULT_ACCENT` · `VaultBreederBoxCard` · `md:grid-cols-4` + stagger · facet `SeedsChooserBox` vault ring

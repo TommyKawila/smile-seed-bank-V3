@@ -15,6 +15,20 @@ export function shopQuickChipClasses(active: boolean, compact = false): string {
   );
 }
 
+export function shopCategoryQuickChipClasses(
+  category: "new" | "clearance",
+  compact = false
+): string {
+  const base = compact
+    ? "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+    : shopQuickChipBase;
+  const tokens =
+    category === "new"
+      ? { idle: "border-violet-500/35 bg-card text-violet-300/90 hover:border-violet-400/50 hover:bg-violet-500/10" }
+      : { idle: "border-orange-500/35 bg-card text-orange-300/90 hover:border-orange-400/50 hover:bg-orange-500/10" };
+  return cn(base, tokens.idle);
+}
+
 export function shopFilterChipLeadingGlyph(slug: string): string | null {
   switch (slug) {
     case "sativa-dom":

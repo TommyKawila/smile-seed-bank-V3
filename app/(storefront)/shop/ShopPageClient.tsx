@@ -75,6 +75,10 @@ import {
   inferCatalogHasMore,
 } from "@/lib/shop-catalog-pagination";
 import type { Breeder } from "@/types/supabase";
+import {
+  CLEARANCE_ACCENT,
+  NEW_SEEDS_ACCENT,
+} from "@/lib/storefront-category-accents";
 
 const LazyFilterSidebar = dynamic(
   () =>
@@ -1159,12 +1163,29 @@ export function ShopPageClient({
         <CatalogStickyFilterStrip
           catalogHeading={
             urlBreeder ? undefined : (
-              <h1 className="font-sans text-lg font-bold leading-tight tracking-tight text-foreground sm:text-xl">
+              <h1
+                className={cn(
+                  "font-sans text-lg font-bold leading-tight tracking-tight sm:text-xl",
+                  quickEffective === "clearance"
+                    ? CLEARANCE_ACCENT.filterTitle
+                    : quickEffective === "new" ||
+                        quickEffective === "new_arrivals" ||
+                        sortEffective === "new_arrivals" ||
+                        sortEffective === "newest"
+                      ? NEW_SEEDS_ACCENT.filterTitle
+                      : "text-foreground"
+                )}
+              >
                 {quickEffective === "clearance"
                   ? t("ล้างสต็อก — เมล็ดพันธุ์ลดราคา", "Clearance — discounted seeds")
-                  : quickEffective === "sale"
-                    ? t("โปรแบรนด์ — สินค้าลดราคา", "Brand deals — on sale")
-                    : t("คลังเมล็ดพันธุ์รวมทุกค่าย", "Seed vault — all breeders")}
+                  : quickEffective === "new" ||
+                      quickEffective === "new_arrivals" ||
+                      sortEffective === "new_arrivals" ||
+                      sortEffective === "newest"
+                    ? t("สินค้ามาใหม่", "New arrivals")
+                    : quickEffective === "sale"
+                      ? t("โปรแบรนด์ — สินค้าลดราคา", "Brand deals — on sale")
+                      : t("คลังเมล็ดพันธุ์รวมทุกค่าย", "Seed vault — all breeders")}
                 <span className="ml-2 inline-block min-w-[3ch] text-sm font-normal tabular-nums text-muted-foreground">
                   {isLoading ? "(—)" : `(${catalogDisplayTotal} ${t("รายการ", "items")})`}
                 </span>
