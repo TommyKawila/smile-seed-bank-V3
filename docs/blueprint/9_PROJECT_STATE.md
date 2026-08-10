@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-10 (Unified quiet catalog cards zinc/violet)
+- **What:** ขยายการ์ด zinc + violet/cyan ทุก grid เมล็ดพันธุ์ · ลบ hard-sale · scarcity เบา (`เหลือ 1 แพ็ก` / `จำนวนจำกัด`)
+- **Logic:** `CatalogProductCardShell` + `ProductAvailabilityNote` · `ProductCard` refactor · `ClearanceCard` align · `NewSeedsProductCard` → wrapper
+- **ไฟล์:** `CatalogProductCardShell.tsx` · `ProductAvailabilityNote.tsx` · `product-card-present.ts` · `ProductCard.tsx` · `ClearanceCard.tsx` · `ProductCardSkeleton.tsx`
+
 ### บันทึกการทำงาน — 2026-08-10 (New Seeds quiet product cards)
 - **What:** การ์ดสินค้า `/new?breeder=` ใหม่ — เงียบ exclusive ไม่ hard-sale
 - **Logic:** `NewSeedsProductCard` แยกจาก `ProductCard` · zinc shell + violet/cyan · ลิงก์ PDP ไม่มี CTA เร่งซื้อ · `จำนวนจำกัด` เมื่อ stock ≤5

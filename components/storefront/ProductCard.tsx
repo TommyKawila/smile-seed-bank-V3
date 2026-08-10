@@ -3,6 +3,7 @@
 import { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartContext } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -11,8 +12,6 @@ import type {
   ProductVariantRow,
   ProductWithBreeder,
 } from "@/lib/supabase/types";
-import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
-import { getGeneticPercents } from "@/lib/genetic-percents";
 import { formatPrice } from "@/lib/utils";
 import { resolveListingUnitAfterBrand } from "@/lib/brand-promotion-checkout";
 import {
@@ -30,16 +29,23 @@ import { touchCatalogReturnFromWindow } from "@/lib/catalog-return-path";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import { CatalogImagePlaceholder } from "@/components/storefront/CatalogImagePlaceholder";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
-import { StockAlert } from "@/components/storefront/StockAlert";
+import { ProductAvailabilityNote } from "@/components/storefront/ProductAvailabilityNote";
+import {
+  CatalogProductCardBody,
+  CatalogProductCardBreederLogo,
+  CatalogProductCardImageArea,
+  CatalogProductCardShell,
+} from "@/components/storefront/CatalogProductCardShell";
+import {
+  cardStrainTypeLabel,
+  isNewArrivalProduct,
+} from "@/lib/product-card-present";
 import { toast } from "sonner";
 import { pickVariantForSeedPackSlugs, parseListParam } from "@/lib/shop-attribute-filters";
 import { roundCheckoutBahtWhole } from "@/lib/money-thb";
 import { resolveStorefrontCartStoredUnitBaht } from "@/lib/storefront-cart-unit";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { getProductAggregateStock } from "@/lib/product-stock";
-
-const glassBadge =
-  "rounded-full border border-border bg-card/80 px-2 py-0.5 text-[10px] font-medium text-red-400 backdrop-blur-md";
 
 function getPrimaryImage(product: {
   image_urls?: unknown;
@@ -67,92 +73,36 @@ function getDefaultVariant(product: {
   return getStartingVariant(inStock);
 }
 
-const NEW_ARRIVAL_MS = 35 * 24 * 60 * 60 * 1000;
-
-function isNewArrivalProduct(createdAt: string | null | undefined): boolean {
-  if (!createdAt) return false;
-  const t = new Date(createdAt).getTime();
-  if (Number.isNaN(t)) return false;
-  return Date.now() - t < NEW_ARRIVAL_MS;
-}
-
 type ProductListItem = ProductWithBreeder & {
   product_variants?: ProductVariantRow[] | null;
   product_images?: ProductImageRow[] | null;
 };
 
-/** Urgency strip below image: same height for every card (empty = spacer). */
-const URGENCY_STRIP_H = "h-10";
-
-/** Indica / Sativa / Hybrid for card spec row */
-function cardStrainTypeLabel(p: ProductListItem): string | null {
-  const sd = (p.strain_dominance ?? "").trim();
-  if (sd) {
-    const lower = sd.toLowerCase();
-    if (lower.includes("hybrid") || lower.includes("50/50")) return "Hybrid";
-    if (lower.includes("mostly sativa") || /^sativa/i.test(sd)) return "Sativa";
-    if (lower.includes("mostly indica") || /^indica/i.test(sd)) return "Indica";
-  }
-  const g = getGeneticPercents(p);
-  if (g) {
-    if (g.sativa >= 58) return "Sativa";
-    if (g.indica >= 58) return "Indica";
-    return "Hybrid";
-  }
-  return null;
-}
-
-/** Single letter for compact genetics pill (I / S / H) */
-function cardGeneticsLetter(p: ProductListItem): string {
-  const label = cardStrainTypeLabel(p);
-  if (!label) return "—";
-  if (label === "Indica") return "I";
-  if (label === "Sativa") return "S";
-  if (label === "Hybrid") return "H";
-  return label.slice(0, 1).toUpperCase();
-}
-
 type ProductWithMeta = ProductListItem & { created_at?: string | null };
-
-function ProductImageBadges({ product, t }: { product: ProductWithMeta; t: (th: string, en: string) => string }) {
-  const showBest = Boolean(product.is_featured);
-  const showNew = isNewArrivalProduct(product.created_at);
-  if (!showBest && !showNew) return null;
-  return (
-    <div className="absolute right-2 top-2 z-20 flex max-w-[min(55%,calc(100%-3.5rem))] flex-col items-end gap-1">
-      {showBest && (
-        <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm ring-1 ring-border/50">
-          {t("ขายดี", "Best Seller")}
-        </span>
-      )}
-      {showNew && (
-        <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm ring-1 ring-border/50">
-          {t("ใหม่", "New Arrival")}
-        </span>
-      )}
-    </div>
-  );
-}
 
 type ProductCardProps = {
   product: ProductListItem;
   variant?: "shop" | "showcase";
   imagePriority?: boolean;
-  /** @deprecated Outer motion removed — kept for call-site compat. */
   disableOuterMotion?: boolean;
-  /** Raw `seeds` URL param: when set, card price/pack/badge follow the matching variant (catalog alignment). */
   catalogSeedsFilter?: string | null;
+  /** PDP link only — no add-to-cart (e.g. /new drill-down). */
+  linkOnly?: boolean;
+  /** Always show NEW badge (new seeds grid). */
+  showNewBadge?: boolean;
 };
 
 function ProductCardBase({
   product,
-  variant = "shop",
   imagePriority = false,
   catalogSeedsFilter = null,
+  linkOnly = false,
+  showNewBadge = false,
 }: ProductCardProps) {
   const { addToCart, openCart, brandPromotionRules } = useCartContext();
   const { t, locale } = useLanguage();
   const loc = locale as "th" | "en";
+  const href = productDetailHref(product);
   const seedsSel = parseListParam(catalogSeedsFilter);
   const displayVariant =
     seedsSel.length > 0
@@ -161,8 +111,6 @@ function ProductCardBase({
       : getDefaultVariant(product);
   const aggregateStock = getProductAggregateStock(product);
   const outOfStock = aggregateStock <= 0 || !displayVariant;
-  const lastOneLeft = !outOfStock && aggregateStock === 1;
-  const lowStock = !outOfStock && aggregateStock > 1 && aggregateStock <= 5;
   const cardImage = getPrimaryImage(product);
   const pm = product as ProductWithMeta;
   const cardImageAlt = product.name?.trim()
@@ -174,8 +122,6 @@ function ProductCardBase({
     e.stopPropagation();
   };
 
-  const successToast = (isTh: boolean) =>
-    isTh ? "เพิ่มลงตะกร้าเรียบร้อยแล้ว" : "Added to your cart";
   const localizedAddError = (msg: string) => {
     if (locale === "en" && (msg.startsWith("ขออภัย") || /สต็อก|ชิ้น/.test(msg))) {
       return "Sorry, only a limited number of this item is in stock.";
@@ -191,7 +137,7 @@ function ProductCardBase({
         product,
         variantListPrice,
         product.breeders?.name,
-        brandPromotionRules,
+        brandPromotionRules
       );
       if (typeof addToCart !== "function") {
         toast.error(locale === "th" ? "ตะกร้าไม่พร้อมใช้งาน" : "Cart is unavailable.");
@@ -239,7 +185,10 @@ function ProductCardBase({
       } catch {
         /* ignore animation failures */
       }
-      toast.success(successToast(locale === "th"), { duration: 2200 });
+      toast.success(
+        locale === "th" ? "เพิ่มลงตะกร้าเรียบร้อยแล้ว" : "Added to your cart",
+        { duration: 2200 }
+      );
     } else {
       toast.error(
         locale === "th" ? "ไม่พบแพ็กสำหรับสั่งซื้อ" : "No pack available to order"
@@ -251,9 +200,8 @@ function ProductCardBase({
   const thcPill =
     product.thc_percent != null && Number.isFinite(Number(product.thc_percent))
       ? `${Math.round(Number(product.thc_percent))}%`
-      : "—";
-  const genLetter = cardGeneticsLetter(product);
-  const typePill = cardStrainTypeLabel(product) ?? genLetter;
+      : null;
+  const typePill = cardStrainTypeLabel(product);
 
   type WithBrandListing = {
     brand_listing_base_baht?: number;
@@ -309,281 +257,152 @@ function ProductCardBase({
     ? brandResolved.brandDiscountPercent ??
       Math.round((1 - brandResolved.effectiveBaht / brandResolved.baseBaht) * 100)
     : clearancePct;
+
   const seedsPackLabel = displayVariant
     ? getPackSizeLabelFromUnitLabel(displayVariant.unit_label, locale)
     : getStartingVariantLabel(product.product_variants, locale);
-  const stockAlert = displayVariant && !outOfStock ? (
-    <StockAlert quantity={displayVariant.stock} locale={locale} className="h-5 text-[10px]" />
-  ) : null;
 
-  const cardInner = (
-    <div className="group flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card/60 surface-glass shadow-sm transition-shadow hover:border-primary/30 hover:shadow-md">
-        <div className="relative aspect-square shrink-0 overflow-hidden bg-muted/30">
-          <Link
-            href={productDetailHref(product)}
-            className="absolute inset-0 block"
-            onClick={touchCatalogReturnFromWindow}
-          >
-            {cardImage ? (
-              <Image
-                src={cardImage}
-                alt={cardImageAlt}
-                fill
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-                quality={60}
-                className={`object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] ${outOfStock ? "brightness-75 grayscale" : ""}`}
-                priority={imagePriority}
-                fetchPriority={imagePriority ? "high" : "low"}
-                loading={imagePriority ? "eager" : "lazy"}
-                unoptimized={shouldOffloadImageOptimization(cardImage)}
-              />
-            ) : (
-              <CatalogImagePlaceholder
-                seed={product.id}
-                className={`absolute inset-0 ${outOfStock ? "brightness-75 grayscale" : ""}`}
-              />
-            )}
-          </Link>
-          {topLeftSalePct ? (
-            <div className="absolute left-2 top-2 z-20">
-              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm ring-1 ring-border/50">
-                {hasBrandSale
-                  ? t(`แบรนด์ −${topLeftSalePct}%`, `Brand −${topLeftSalePct}%`)
-                  : t(`ลด ${topLeftSalePct}%`, `Sale ${topLeftSalePct}%`)}
-              </span>
-            </div>
-          ) : null}
+  const showBest = Boolean(product.is_featured);
+  const showNew = showNewBadge || isNewArrivalProduct(pm.created_at);
+  const breederOffset = topLeftSalePct ? "top-10" : undefined;
 
-          {outOfStock && (
-            <div
-              className="pointer-events-none absolute inset-0 z-[12] flex items-center justify-center bg-zinc-950/35 p-3"
-              aria-hidden
-            >
-              <div className="w-full max-w-[min(92%,15rem)] rounded-lg border border-border bg-background/95 px-3 py-2.5 text-center shadow-lg">
-                <p className="font-sans text-[11px] font-bold leading-tight text-foreground sm:text-xs">
-                  {t("สินค้าหมด / SOLD OUT", "Sold out / SOLD OUT")}
-                </p>
-              </div>
-            </div>
+  const imageOverlay = (
+    <>
+      {topLeftSalePct ? (
+        <span
+          className={`absolute left-2 top-2 z-20 rounded-md px-2 py-0.5 text-[10px] font-bold tabular-nums shadow-md ${
+            clearancePct && !hasBrandSale
+              ? "bg-emerald-500 text-white"
+              : "bg-gradient-to-r from-violet-500 to-cyan-400 text-zinc-950"
+          }`}
+        >
+          {hasBrandSale
+            ? t(`−${topLeftSalePct}%`, `−${topLeftSalePct}%`)
+            : `−${topLeftSalePct}%`}
+        </span>
+      ) : null}
+      {showNew ? (
+        <span className="absolute right-2 top-2 z-20 inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-violet-500 to-cyan-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950 shadow-md">
+          <Sparkles className="h-3 w-3" aria-hidden />
+          {t("ใหม่", "NEW")}
+        </span>
+      ) : showBest ? (
+        <span className="absolute right-2 top-2 z-20 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">
+          {t("ขายดี", "Best")}
+        </span>
+      ) : null}
+      {product.breeders ? (
+        <CatalogProductCardBreederLogo
+          breeder={product.breeders}
+          className={breederOffset}
+        />
+      ) : null}
+    </>
+  );
+
+  return (
+    <div className="h-full">
+      <CatalogProductCardShell>
+        <CatalogProductCardImageArea
+          href={href}
+          onNavigate={touchCatalogReturnFromWindow}
+          outOfStock={outOfStock}
+          soldOutLabel={t("สินค้าหมด / SOLD OUT", "Sold out / SOLD OUT")}
+          imageOverlay={imageOverlay}
+        >
+          {cardImage ? (
+            <Image
+              src={cardImage}
+              alt={cardImageAlt}
+              fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+              quality={60}
+              className={`object-cover transition duration-500 hover:scale-[1.02] ${outOfStock ? "brightness-75 grayscale" : ""}`}
+              priority={imagePriority}
+              fetchPriority={imagePriority ? "high" : "low"}
+              loading={imagePriority ? "eager" : "lazy"}
+              unoptimized={shouldOffloadImageOptimization(cardImage)}
+            />
+          ) : (
+            <CatalogImagePlaceholder
+              seed={product.id}
+              className={`absolute inset-0 ${outOfStock ? "brightness-75 grayscale" : ""}`}
+            />
           )}
+        </CatalogProductCardImageArea>
 
-          <ProductImageBadges product={pm} t={t} />
-          {clearancePct != null && clearancePct > 0 && (
-              <span className="absolute right-2 top-12 z-20 rounded-md bg-primary px-2 py-0.5 text-[10px] font-bold tabular-nums text-primary-foreground shadow-sm">
-              −{clearancePct}%
-            </span>
+        <CatalogProductCardBody>
+          {(thcPill || typePill) && (
+            <p className="text-[10px] font-medium tabular-nums text-zinc-400">
+              {thcPill ? <span className="text-violet-300/90">THC {thcPill}</span> : null}
+              {thcPill && typePill ? <span className="text-zinc-600"> · </span> : null}
+              {typePill ? <span>{typePill}</span> : null}
+            </p>
           )}
-
-          <div className="absolute bottom-2 left-2 z-10 flex max-w-[min(100%,11rem)] flex-wrap gap-1">
-            {lowStock && !outOfStock && !lastOneLeft && (
-              <span className={glassBadge}>{t("เหลือน้อย", "Low")}</span>
-            )}
-          </div>
-
-          {product.breeders && (
-            <Link
-              href={seedsBreederHref(product.breeders)}
-              onClick={(e) => e.stopPropagation()}
-              className={`absolute left-2 z-[15] flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-white shadow-md ring-2 ring-background transition-transform hover:scale-105 ${topLeftSalePct ? "top-10" : "top-2"}`}
-              aria-label={product.breeders.name}
-            >
-              <BreederLogoImage
-                src={product.breeders.logo_url}
-                breederName={product.breeders.name}
-                width={32}
-                height={32}
-                className="rounded-full"
-                imgClassName="object-cover"
-                sizes="32px"
-              />
-            </Link>
-          )}
-        </div>
-
-        <div className={`relative shrink-0 overflow-hidden ${URGENCY_STRIP_H}`}>
-          {lastOneLeft ? (
-            <div className="absolute inset-0 overflow-hidden border-b border-red-500/20 bg-gradient-to-r from-red-600 via-rose-600 to-red-700">
-              <div
-                className="pointer-events-none absolute inset-0 overflow-hidden"
-                aria-hidden
-              >
-                <div
-                  className="absolute -left-1/2 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-80 animate-shimmer-urgent"
-                  style={{ width: "55%" }}
-                />
-              </div>
-              <p
-                className="relative box-border flex h-10 min-h-0 items-center justify-center px-1.5 text-center font-sans text-[9px] font-extrabold leading-tight text-white sm:px-2 sm:text-[10px] sm:leading-none"
-                title={
-                  loc === "th"
-                    ? "โอกาสสุดท้าย! เหลือเพียง 1 ชิ้นเท่านั้น"
-                    : "LAST ONE! Only 1 left"
-                }
-              >
-                <span className="line-clamp-2 sm:line-clamp-1 [overflow-wrap:anywhere]">
-                  <span className="sm:hidden">
-                    {loc === "th" ? "🔥 เหลือ 1 ชิ้น!" : "🔥 Last one!"}
-                  </span>
-                  <span className="hidden sm:inline">
-                    {loc === "th"
-                      ? "🔥 โอกาสสุดท้าย! เหลือเพียง 1 ชิ้นเท่านั้น (ห้ามพลาด!)"
-                      : "🔥 LAST ONE! Only 1 left (Act Now!)"}
-                  </span>
-                </span>
-              </p>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col gap-1.5 px-2.5 pb-2.5 pt-2">
-          <div className="flex shrink-0 items-center justify-center">
-            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/20 px-2 py-1 text-[10px] font-semibold tabular-nums text-foreground">
-              <span className="text-primary">THC {thcPill}</span>
-              <span className="text-foreground/35">·</span>
-              <span className="truncate text-foreground/75">{typePill}</span>
-            </span>
-          </div>
 
           {product.breeders ? (
             <Link
               href={seedsBreederHref(product.breeders)}
-              onClick={(e) => e.stopPropagation()}
-              className="line-clamp-1 min-h-[1.25rem] shrink-0 text-center text-[11px] font-medium leading-tight text-foreground/60 transition-colors hover:text-primary"
+              onClick={() => touchCatalogReturnFromWindow()}
+              className="line-clamp-1 text-[11px] font-medium text-zinc-500 transition-colors hover:text-violet-300"
             >
               {product.breeders.name}
             </Link>
-          ) : (
-            <div className="min-h-[1.25rem] shrink-0" aria-hidden />
-          )}
+          ) : null}
 
           <Link
-            href={productDetailHref(product)}
-            className="flex min-h-[2.5rem] shrink-0 flex-col justify-center"
+            href={href}
             onClick={touchCatalogReturnFromWindow}
+            className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100 hover:text-violet-300"
           >
-            <h3 className="line-clamp-2 text-center font-sans text-sm font-semibold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary">
-              {product.name}
-            </h3>
+            {product.name}
           </Link>
 
-          {lastOneLeft ? (
-            <div className="mt-auto flex min-h-0 flex-col border-t border-border pt-2">
-              <div className="text-center">
-                {seedsPackLabel ? (
-                  <p className="mb-0.5 font-sans text-[10px] leading-tight text-primary sm:text-xs">
-                    {seedsPackLabel}
-                  </p>
-                ) : null}
+          {seedsPackLabel ? (
+            <p className="text-[10px] font-medium text-cyan-400/80">{seedsPackLabel}</p>
+          ) : null}
+
+          <div className="mt-auto space-y-1.5 border-t border-zinc-800 pt-2">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div className="min-w-0">
                 {showStrike && (
-                  <p className="text-xs tabular-nums text-foreground/45 line-through">
+                  <p className="text-xs tabular-nums text-zinc-500 line-through">
                     {formatPrice(strikeDisplay)}
                   </p>
                 )}
-                <p className="text-[15px] font-bold tabular-nums text-primary">
+                <p
+                  className={`text-base font-bold tabular-nums ${outOfStock ? "text-muted-foreground" : "text-violet-200"}`}
+                >
                   {priceLabel}
                 </p>
-                {stockAlert && (
-                  <div className="mt-1 flex min-h-5 flex-wrap justify-center gap-1">
-                    {stockAlert}
-                  </div>
-                )}
               </div>
-              <Button
-                type="button"
-                disabled={!displayVariant}
-                onClick={handleAdd}
-                onPointerDown={(e) => e.stopPropagation()}
-                className="relative z-20 mt-1.5 h-9 w-full shrink-0 border-0 bg-primary p-0 font-sans text-[10px] font-bold leading-tight text-primary-foreground shadow-md shadow-primary/25 transition hover:bg-primary/90 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40 sm:h-10 sm:text-sm sm:leading-normal"
-                aria-label={
-                  loc === "th" ? "สั่งซื้อก่อนหมด" : "Buy before it is gone"
-                }
-              >
-                <span className="inline-flex h-full w-full animate-urgent-cta-blink items-center justify-center gap-1 px-1.5 sm:gap-1.5 sm:px-2">
-                  <span className="sm:hidden">{loc === "th" ? "🚀 รีบสั่ง!" : "🚀 Grab it!"}</span>
-                  <span className="hidden sm:inline">
-                    {loc === "th" ? "🚀 สั่งซื้อก่อนหมด!" : "🚀 Buy now!"}
-                  </span>
-                </span>
-              </Button>
+              {!linkOnly && !outOfStock ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  disabled={!displayVariant}
+                  onClick={handleAdd}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  aria-label={t("เพิ่มลงตะกร้า", "Add to cart")}
+                  className="relative z-20 h-10 w-10 shrink-0 rounded-full border border-violet-500/40 bg-violet-500/10 text-lg font-bold leading-none text-violet-200 shadow-sm transition hover:border-violet-400/50 hover:bg-violet-500/20 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+                >
+                  +
+                </Button>
+              ) : null}
             </div>
-          ) : (
-            <div className="mt-auto border-t border-border pt-2">
-              {outOfStock ? (
-                <div className="flex min-h-0 flex-col">
-                  <div className="text-center">
-                    {seedsPackLabel ? (
-                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-muted-foreground sm:text-xs">
-                        {seedsPackLabel}
-                      </p>
-                    ) : null}
-                    {showStrike && (
-                      <p className="text-xs tabular-nums text-foreground/45 line-through">
-                        {formatPrice(strikeDisplay)}
-                      </p>
-                    )}
-                    <p className="text-[15px] font-bold tabular-nums text-muted-foreground">
-                      {priceLabel}
-                    </p>
-                    {stockAlert && (
-                      <div className="mt-1 flex min-h-5 flex-wrap justify-center gap-1">
-                        {stockAlert}
-                      </div>
-                    )}
-                  </div>
-                  <Button
-                    type="button"
-                    disabled
-                    onPointerDown={(e) => e.stopPropagation()}
-                    aria-label={t("สินค้าหมดชั่วคราว", "Sold Out")}
-                    className="relative z-20 mt-1.5 h-10 w-full shrink-0 border border-border bg-muted/25 p-0 font-sans text-sm font-medium text-muted-foreground shadow-none hover:bg-muted/25"
-                  >
-                    {t("สินค้าหมดชั่วคราว", "Sold Out")}
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex min-h-0 items-end justify-between gap-2">
-                  <div className="min-w-0">
-                    {seedsPackLabel ? (
-                      <p className="mb-0.5 font-sans text-[10px] leading-tight text-primary sm:text-xs">
-                        {seedsPackLabel}
-                      </p>
-                    ) : null}
-                    {showStrike && (
-                      <p className="text-xs tabular-nums text-foreground/45 line-through">
-                        {formatPrice(strikeDisplay)}
-                      </p>
-                    )}
-                    <p className="text-[15px] font-bold tabular-nums text-primary">
-                      {priceLabel}
-                    </p>
-                    {stockAlert && (
-                      <div className="mt-1 flex min-h-5 flex-wrap gap-1">
-                        {stockAlert}
-                      </div>
-                    )}
-                  </div>
-                  <Button
-                    type="button"
-                    size="icon"
-                    disabled={!displayVariant}
-                    onClick={handleAdd}
-                    onPointerDown={(e) => {
-                      e.stopPropagation();
-                    }}
-                    aria-label={t("เพิ่มลงตะกร้า", "Add to cart")}
-                    className="relative z-20 h-10 w-10 shrink-0 rounded-full border-0 bg-primary p-0 text-lg font-bold leading-none text-primary-foreground shadow-sm transition-transform hover:scale-110 hover:bg-primary/90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
-                  >
-                    +
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+            {!linkOnly && outOfStock ? (
+              <p className="text-[11px] font-medium text-zinc-500">
+                {t("สินค้าหมดชั่วคราว", "Sold out")}
+              </p>
+            ) : null}
+            {!outOfStock && displayVariant ? (
+              <ProductAvailabilityNote stock={displayVariant.stock} locale={locale} />
+            ) : null}
+          </div>
+        </CatalogProductCardBody>
+      </CatalogProductCardShell>
+    </div>
   );
-
-  return <div className="h-full">{cardInner}</div>;
 }
 
 export const ProductCard = memo(ProductCardBase);

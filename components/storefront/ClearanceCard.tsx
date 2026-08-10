@@ -7,10 +7,10 @@ import { useLanguage } from "@/context/LanguageContext";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import { getListingThumbnailUrl } from "@/lib/product-gallery-utils";
 import {
-  computeTotalStock,
   getClearancePercentOff,
   getEffectiveListingPrice,
   getPackSizeLabelFromUnitLabel,
+  getStartingVariant,
   listClearancePackSummaries,
   productDetailHref,
 } from "@/lib/product-utils";
@@ -19,7 +19,13 @@ import { formatPrice } from "@/lib/utils";
 import { touchCatalogReturnFromWindow } from "@/lib/catalog-return-path";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
-import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { ProductAvailabilityNote } from "@/components/storefront/ProductAvailabilityNote";
+import {
+  CatalogProductCardBody,
+  CatalogProductCardBreederLogo,
+  CatalogProductCardImageArea,
+  CatalogProductCardShell,
+} from "@/components/storefront/CatalogProductCardShell";
 
 export function ClearanceCard({ product }: { product: ProductWithBreederAndVariants }) {
   const { t, locale } = useLanguage();
@@ -47,17 +53,37 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
       bestPack.unitLabel
     : null;
 
-  const totalStock = computeTotalStock(product.product_variants ?? []);
   const outOfStock = isProductAggregateOutOfStock(product);
+  const inStockVariants =
+    product.product_variants?.filter(
+      (v) => v.is_active !== false && (v.stock ?? 0) > 0
+    ) ?? [];
+  const displayVariant = getStartingVariant(inStockVariants);
+
+  const imageOverlay = (
+    <>
+      {pct != null && pct > 0 && (
+        <span className="absolute left-2 top-2 z-20 rounded-md bg-emerald-500 px-2 py-1 text-[11px] font-bold tabular-nums text-white shadow-md">
+          −{pct}%
+        </span>
+      )}
+      {product.breeders ? (
+        <CatalogProductCardBreederLogo
+          breeder={product.breeders}
+          className={pct ? "top-10" : undefined}
+        />
+      ) : null}
+    </>
+  );
 
   return (
-    <article
-      className={`flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-lg ${JOURNAL_PRODUCT_FONT_VARS}`}
-    >
-      <Link
+    <CatalogProductCardShell>
+      <CatalogProductCardImageArea
         href={href}
-        onClick={() => touchCatalogReturnFromWindow()}
-        className="relative block aspect-[4/3] overflow-hidden bg-zinc-900"
+        onNavigate={touchCatalogReturnFromWindow}
+        outOfStock={outOfStock}
+        soldOutLabel={t("สินค้าหมด / SOLD OUT", "Sold out / SOLD OUT")}
+        imageOverlay={imageOverlay}
       >
         {img ? (
           <Image
@@ -65,7 +91,7 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
             alt={product.name}
             fill
             sizes="(max-width: 768px) 85vw, 280px"
-            className={`object-cover transition duration-500 hover:scale-[1.03] ${outOfStock ? "brightness-75 grayscale" : ""}`}
+            className={`object-cover transition duration-500 hover:scale-[1.02] ${outOfStock ? "brightness-75 grayscale" : ""}`}
             placeholder="blur"
             blurDataURL={SHIMMER_BLUR_DATA_URL}
             unoptimized={shouldOffloadImageOptimization(img)}
@@ -75,32 +101,17 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
             <Leaf className="h-10 w-10 text-muted-foreground" />
           </div>
         )}
-        {pct != null && pct > 0 && (
-          <span className="absolute left-2 top-2 z-20 rounded-md bg-emerald-500 px-2 py-1 text-[11px] font-bold tabular-nums text-white shadow-md">
-            −{pct}%
-          </span>
-        )}
-        {outOfStock && (
-          <div
-            className="pointer-events-none absolute inset-0 z-[12] flex items-center justify-center bg-zinc-950/35 p-3"
-            aria-hidden
-          >
-            <div className="w-full max-w-[min(92%,15rem)] rounded-lg border border-zinc-700 bg-zinc-950/95 px-3 py-2.5 text-center shadow-lg">
-              <p className="font-sans text-[11px] font-bold leading-tight text-zinc-100 sm:text-xs">
-                {t("สินค้าหมด / SOLD OUT", "Sold out / SOLD OUT")}
-              </p>
-            </div>
-          </div>
-        )}
-      </Link>
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      </CatalogProductCardImageArea>
+
+      <CatalogProductCardBody>
         <Link
           href={href}
-          onClick={() => touchCatalogReturnFromWindow()}
-          className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100 hover:text-emerald-400"
+          onClick={touchCatalogReturnFromWindow}
+          className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100 hover:text-violet-300"
         >
           {product.name}
         </Link>
+
         {clearancePacks.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {clearancePacks.map((pack) => {
@@ -119,15 +130,16 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
             })}
           </div>
         ) : null}
-        <div className="mt-auto space-y-1 border-t border-zinc-800 pt-2">
+
+        <div className="mt-auto space-y-1.5 border-t border-zinc-800 pt-2">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             {listPrice > sale && sale > 0 ? (
-              <span className="text-xs tabular-nums text-muted-foreground line-through">
+              <span className="text-xs tabular-nums text-zinc-500 line-through">
                 {formatPrice(listPrice)}
               </span>
             ) : null}
             <span
-              className={`text-base font-bold tabular-nums ${outOfStock ? "text-muted-foreground" : "text-emerald-400"}`}
+              className={`text-base font-bold tabular-nums ${outOfStock ? "text-muted-foreground" : "text-violet-200"}`}
             >
               {formatPrice(sale)}
             </span>
@@ -137,13 +149,11 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
               {t(`จาก ${bestLabel}`, `From ${bestLabel}`)}
             </p>
           ) : null}
+          {!outOfStock && displayVariant ? (
+            <ProductAvailabilityNote stock={displayVariant.stock} locale={locale} />
+          ) : null}
         </div>
-        {!outOfStock && totalStock > 0 && totalStock < 10 && (
-          <p className="text-[10px] font-medium uppercase tracking-wide text-amber-400/90">
-            {t("สต็อกจำกัด", "Limited stock")}
-          </p>
-        )}
-      </div>
-    </article>
+      </CatalogProductCardBody>
+    </CatalogProductCardShell>
   );
 }
