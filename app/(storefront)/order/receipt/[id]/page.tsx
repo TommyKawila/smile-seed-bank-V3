@@ -25,15 +25,12 @@ function statusLabel(status: string, lang: "th" | "en"): string {
   return m[status]?.[lang] ?? status;
 }
 
-export default async function OrderReceiptPage({
-  params,
-  searchParams,
-}: {
+export default async function OrderReceiptPage(props: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ lang?: string }>;
 }) {
-  const { id } = await params;
-  const { lang: langQ } = await searchParams;
+  const { id } = await props.params;
+  const { lang: langQ } = await props.searchParams;
   const lang: "th" | "en" = langQ === "en" ? "en" : "th";
   let token = typeof id === "string" ? id.trim() : "";
   try {

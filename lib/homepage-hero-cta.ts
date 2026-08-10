@@ -33,13 +33,13 @@ export function normalizeHeroCtaColor(raw: string | null | undefined): HeroCtaCo
 export function heroCtaButtonClassName(color: HeroCtaColor): string {
   switch (color) {
     case "green":
-      return "border border-primary bg-primary font-semibold text-primary-foreground shadow-[0_4px_14px_hsl(var(--primary)/0.35)] hover:border-emerald-400 hover:bg-emerald-400";
+      return "border border-primary bg-primary font-semibold text-primary-foreground hover:border-emerald-400 hover:bg-emerald-400";
     case "red":
-      return "border border-red-500 bg-red-600/90 font-semibold text-white shadow-[0_4px_14px_rgba(220,38,38,0.35)] hover:bg-red-500";
+      return "border border-red-500 bg-red-600/90 font-semibold text-white hover:bg-red-500";
     case "yellow":
       return "border border-amber-400/80 bg-amber-400/90 font-semibold text-slate-950 hover:bg-amber-300";
     case "outline":
-      return "surface-glass border border-primary/30 bg-card/50 font-medium text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary";
+      return "border border-zinc-700 bg-zinc-900/50 font-medium text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70 hover:text-zinc-100";
   }
 }
 

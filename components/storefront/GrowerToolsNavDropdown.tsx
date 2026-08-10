@@ -52,7 +52,7 @@ export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, menuOpen, too
   });
 
   const itemClass =
-    "flex min-h-12 items-start gap-3 rounded-sm px-2 py-2.5 text-left transition-colors hover:bg-primary/10";
+    "flex min-h-12 items-start gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-zinc-900/70";
 
   if (mode === "mobile") {
     return (
@@ -71,10 +71,10 @@ export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, menuOpen, too
                 className={itemClass}
                 aria-label={name}
               >
-                <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.75} aria-hidden />
+                <Icon className="mt-0.5 h-5 w-5 shrink-0 text-zinc-500" strokeWidth={1.75} aria-hidden />
                 <span className="min-w-0">
-                  <span className="block text-sm font-medium text-foreground">{name}</span>
-                  <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{blurb}</span>
+                  <span className="block text-sm font-medium text-zinc-200">{name}</span>
+                  <span className="mt-0.5 block text-xs leading-snug text-zinc-500">{blurb}</span>
                 </span>
               </Link>
             </li>
@@ -83,9 +83,9 @@ export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, menuOpen, too
             <Link
               href="/tools"
               onClick={close}
-              className="block rounded-sm py-2 text-[13px] font-semibold tracking-wide text-primary transition-colors hover:bg-primary/10"
+              className="block rounded-lg px-2 py-2 text-[13px] font-medium text-zinc-400 transition-colors hover:bg-zinc-900/70 hover:text-zinc-200"
             >
-              {allLabel} →
+              {allLabel}
             </Link>
           </li>
         </ul>
@@ -108,7 +108,7 @@ export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, menuOpen, too
       >
         {label}
         <ChevronDown
-          className={cn("h-3.5 w-3.5 text-primary/70 opacity-80 transition-transform", open && "rotate-180")}
+          className={cn("h-3.5 w-3.5 text-zinc-500 transition-transform", open && "rotate-180")}
           strokeWidth={1.75}
           aria-hidden
         />
@@ -116,8 +116,8 @@ export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, menuOpen, too
 
       {open ? (
         <div className="absolute left-1/2 top-full z-50 w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 pt-2 lg:left-0 lg:translate-x-0">
-          <div className="overflow-hidden rounded-sm border border-border bg-card shadow-md">
-            <ul className="divide-y divide-border px-2 py-1">
+          <div className="overflow-hidden rounded-xl border border-border/60 bg-zinc-950/95 shadow-lg backdrop-blur-md">
+            <ul className="divide-y divide-border/60 px-1 py-1">
               {toolLinks.map(({ tool, Icon, name, blurb }) => (
                 <li key={tool.slug}>
                   <Link
@@ -126,22 +126,22 @@ export function GrowerToolsNavDropdown({ navLinkClass, onNavigate, menuOpen, too
                     onClick={() => setOpen(false)}
                     aria-label={name}
                   >
-                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.75} aria-hidden />
+                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-zinc-500" strokeWidth={1.75} aria-hidden />
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium text-foreground">{name}</span>
-                      <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{blurb}</span>
+                      <span className="block text-sm font-medium text-zinc-200">{name}</span>
+                      <span className="mt-0.5 block text-xs leading-snug text-zinc-500">{blurb}</span>
                     </span>
                   </Link>
                 </li>
               ))}
             </ul>
-            <div className="border-t border-border px-4 py-3">
+            <div className="border-t border-border/60 px-4 py-3">
               <Link
                 href="/tools"
-                className="text-[13px] font-semibold tracking-wide text-primary transition-colors hover:text-primary/90"
+                className="text-[13px] font-medium text-zinc-400 transition-colors hover:text-zinc-200"
                 onClick={() => setOpen(false)}
               >
-                {allLabel} →
+                {allLabel}
               </Link>
             </div>
           </div>

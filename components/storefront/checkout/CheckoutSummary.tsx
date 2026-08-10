@@ -32,8 +32,8 @@ export function SavedCouponsCheckoutSection({
   const appliedUpper = appliedPromoCode?.trim().toUpperCase() ?? "";
 
   return (
-    <div className="space-y-2 rounded-xl border border-primary/30/70 bg-emerald-50/40 p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/75">
+    <div className="space-y-2 rounded-xl border border-border/60 bg-zinc-950/40 p-3">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
         {t("คูปองที่เก็บไว้", "Available coupons")}
       </p>
       <div className="flex flex-col gap-2">
@@ -55,11 +55,11 @@ export function SavedCouponsCheckoutSection({
               className={cn(
                 "flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
                 applied
-                  ? "border-border bg-muted/30/80 text-muted-foreground"
-                  : "border-emerald-300/50 bg-card hover:border-emerald-400/80",
+                  ? "border-zinc-800 bg-zinc-900/50 text-zinc-500"
+                  : "border-zinc-700 bg-zinc-900/50 hover:border-zinc-600 hover:bg-zinc-900/70",
               )}
             >
-              <span className={cn(mono, "min-w-0 font-semibold text-primary")}>{c.promo_code}</span>
+              <span className={cn(mono, "min-w-0 font-semibold text-zinc-200")}>{c.promo_code}</span>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {applied ? t("ใช้แล้ว", "Applied") : t("แตะเพื่อใช้", "Tap to apply")}
               </span>

@@ -16,6 +16,11 @@ import { safeNextPath } from "@/lib/safe-redirect-path";
 import { signIn as nextAuthSignIn } from "next-auth/react";
 import { LineInAppGoogleOverlay } from "@/components/storefront/LineInAppGoogleOverlay";
 import { isLineInAppUserAgent } from "@/lib/line-in-app-browser";
+import { cn } from "@/lib/utils";
+
+const fieldLabelClass = "text-xs font-medium text-zinc-500";
+const inputClass =
+  "border-zinc-800 bg-zinc-900/50 pl-9 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-zinc-500/40";
 
 function nextParamFromWindow(): string | null {
   if (typeof window === "undefined") return null;
@@ -185,21 +190,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 pt-20">
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 pt-20">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(16,185,129,0.12),_transparent_55%)]"
+        aria-hidden
+      />
       <LineInAppGoogleOverlay open={lineGoogleOverlayOpen} onOpenChange={setLineGoogleOverlayOpen} />
       <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-md"
+        className="relative w-full max-w-md"
       >
-        <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border/60 bg-zinc-950/40">
           <div className="px-6 pb-5 pt-8 text-center sm:px-7 sm:pt-9">
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">
               {t("เริ่มต้นการสั่งซื้อ", "Start your order")}
             </h1>
             {collectCouponHint ? (
-              <p className="mx-auto mt-3 max-w-sm rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+              <p className="mx-auto mt-3 max-w-sm rounded-lg border border-emerald-500/25 bg-transparent px-3 py-2 text-xs font-medium text-emerald-400/80">
                 {t(
                   "กรุณาเข้าสู่ระบบเพื่อบันทึกส่วนลดไปที่โปรไฟล์ของคุณ",
                   "Please log in to save this discount to your profile.",
@@ -208,118 +217,76 @@ export default function LoginPage() {
             ) : null}
           </div>
 
-          {/* Tab Toggle */}
-          <div className="grid grid-cols-2 border-b border-t border-border">
+          <div className="grid grid-cols-2 gap-2 border-y border-border/60 px-4 py-3">
             {(["login", "register"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => { setMode(m); setError(null); setSuccess(null); }}
-                className={`py-3.5 text-sm font-semibold transition-colors ${
-                  mode === m ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={cn(
+                  "rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors",
+                  mode === m
+                    ? "border-zinc-600 bg-zinc-800/80 text-zinc-100"
+                    : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300"
+                )}
               >
                 {m === "login" ? t("เข้าสู่ระบบ", "Sign In") : t("สมัครสมาชิก", "Register")}
               </button>
             ))}
           </div>
 
-          <div className="space-y-8 px-6 pb-8 pt-7 sm:px-7 sm:pb-9">
-            {/* Member benefits */}
-            <div className="rounded-xl border border-primary/30 bg-emerald-50/90 px-3.5 py-3.5 text-left shadow-sm">
-              <p className="text-[13px] font-medium leading-snug text-emerald-950">
-                {t(
-                  "💡 สมัครสมาชิก รับส่วนลด 10% สำหรับออเดอร์แรก และรับแจ้งเตือนผ่าน LINE อัตโนมัติ",
-                  "💡 Sign up for 10% off your first order and automatic updates on LINE.",
-                )}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("เข้าสู่ระบบด้วย", "Sign in with")}
-              </p>
-              <div className="flex flex-col gap-2.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 w-full gap-2.5 border-border font-semibold shadow-sm"
-                  onClick={handleGoogle}
-                  disabled={googleLoading || lineLoading}
-                >
-                  {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-                  {t("ดำเนินการต่อด้วย Google", "Continue with Google")}
-                </Button>
-
-                <Button
-                  type="button"
-                  className="h-11 w-full gap-2.5 bg-[#06C755] font-semibold text-white shadow-sm hover:bg-[#05b34c]"
-                  onClick={handleLine}
-                  disabled={googleLoading || lineLoading}
-                >
-                  {lineLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {t("ดำเนินการต่อด้วย LINE", "Continue with LINE")}
-                </Button>
-              </div>
-              <a
-                href={process.env.NEXT_PUBLIC_LINE_OA_URL ?? "https://page.line.me/smileseedsbank"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 flex items-center justify-center gap-1 text-[11px] font-medium text-[#06C755] hover:underline"
-              >
-                {t(
-                  "เพิ่มเพื่อนกับเราเพื่อรับแจ้งเตือนสถานะออเดอร์ทาง LINE",
-                  "Add us as a friend to receive order updates on LINE",
-                )}
-              </a>
-            </div>
-
-            <div className="flex items-center gap-3 pt-1">
-              <Separator className="flex-1 bg-muted/40" />
-              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("หรือ", "or")}
-              </span>
-              <Separator className="flex-1 bg-muted/40" />
-            </div>
-
-            {/* Guest checkout — equal prominence */}
-            <div className="space-y-3">
-              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("สั่งซื้อแบบไม่สมัครสมาชิก", "Checkout without an account")}
-              </p>
+          <div className="space-y-5 px-6 pb-8 pt-5 sm:px-7 sm:pb-9">
+            <div className="flex flex-col gap-2.5">
               <Button
-                asChild
+                type="button"
                 variant="outline"
-                className="h-auto min-h-[3rem] w-full flex-col gap-1 border-2 border-border bg-muted/30 py-3 text-foreground shadow-sm transition-colors hover:border-primary/40/80 hover:bg-primary/10"
+                className="h-11 w-full gap-2.5 border-zinc-700 bg-zinc-900/50 font-semibold text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70 hover:text-zinc-100"
+                onClick={handleGoogle}
+                disabled={googleLoading || lineLoading}
               >
-                <Link href="/checkout" className="flex w-full flex-col items-center gap-1 px-2">
-                  <span className="flex items-center gap-2 text-sm font-bold">
-                    <ShoppingBag className="h-4 w-4 shrink-0 text-emerald-700" />
-                    {t(
-                      "สั่งซื้อโดยไม่สมัครสมาชิก (ซื้อทันที)",
-                      "Checkout as a guest (buy now)",
-                    )}
-                  </span>
-                  <span className="text-center text-[11px] font-normal leading-snug text-muted-foreground">
-                    {t("รวดเร็ว ไม่ต้องใช้รหัสผ่าน", "Fast checkout — no password needed")}
-                  </span>
-                </Link>
+                {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                Google
+              </Button>
+
+              <Button
+                type="button"
+                className="h-11 w-full gap-2.5 bg-[#06C755] font-semibold text-white hover:bg-[#05b34c]"
+                onClick={handleLine}
+                disabled={googleLoading || lineLoading}
+              >
+                {lineLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                LINE
               </Button>
             </div>
 
-            <div className="flex items-center gap-3 pt-1">
-              <Separator className="flex-1 bg-muted/40" />
-              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1 bg-border/60" />
+              <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
                 {t("หรือ", "or")}
               </span>
-              <Separator className="flex-1 bg-muted/40" />
+              <Separator className="flex-1 bg-border/60" />
             </div>
 
-            <div className="space-y-3">
-              <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("หรือใช้อีเมลของคุณ", "Or use your email")}
-              </p>
-              <form onSubmit={handleSubmit} className="space-y-3.5">
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 w-full gap-2 border border-zinc-800 bg-zinc-900/50 font-semibold text-zinc-200 transition-colors hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-100"
+            >
+              <Link href="/checkout" className="flex items-center justify-center gap-2">
+                <ShoppingBag className="h-4 w-4 shrink-0 text-zinc-400" />
+                {t("สั่งซื้อทันที (Guest)", "Guest checkout")}
+              </Link>
+            </Button>
+
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1 bg-border/60" />
+              <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
+                {t("หรือ", "or")}
+              </span>
+              <Separator className="flex-1 bg-border/60" />
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3.5">
               <AnimatePresence>
                 {mode === "register" && (
                   <m.div
@@ -330,15 +297,15 @@ export default function LoginPage() {
                     className="overflow-hidden"
                   >
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-muted-foreground">{t("ชื่อ-นามสกุล", "Full Name")}</Label>
+                      <Label className={fieldLabelClass}>{t("ชื่อ-นามสกุล", "Full Name")}</Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                         <Input
                           type="text"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder={t("ชื่อ-นามสกุล", "Full name")}
-                          className="pl-9"
+                          className={inputClass}
                           required={mode === "register"}
                         />
                       </div>
@@ -348,15 +315,15 @@ export default function LoginPage() {
               </AnimatePresence>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground">{t("อีเมล", "Email")}</Label>
+                <Label className={fieldLabelClass}>{t("อีเมล", "Email")}</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                   <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
-                    className="pl-9"
+                    className={inputClass}
                     required
                   />
                 </div>
@@ -364,32 +331,32 @@ export default function LoginPage() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <Label className="text-xs font-semibold text-muted-foreground">{t("รหัสผ่าน", "Password")}</Label>
+                  <Label className={fieldLabelClass}>{t("รหัสผ่าน", "Password")}</Label>
                   {mode === "login" && (
                     <button
                       type="button"
                       onClick={() => void handleForgotPassword()}
                       disabled={resetSending}
-                      className="text-xs font-medium text-primary underline-offset-2 hover:underline disabled:opacity-50"
+                      className="text-xs font-medium text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline disabled:opacity-50"
                     >
                       {resetSending ? t("กำลังส่ง…", "Sending…") : t("ลืมรหัสผ่าน?", "Forgot password?")}
                     </button>
                   )}
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                   <Input
                     type={showPw ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="pl-9 pr-10"
+                    className={cn(inputClass, "pr-10")}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
                   >
                     {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -397,32 +364,35 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">⚠️ {error}</p>
+                <p className="rounded-lg border border-red-500/25 bg-transparent px-3 py-2 text-xs font-medium text-red-400">
+                  {error}
+                </p>
               )}
               {success && (
-                <p className="rounded-lg bg-accent px-3 py-2 text-xs font-medium text-primary">✅ {success}</p>
+                <p className="rounded-lg border border-emerald-500/25 bg-transparent px-3 py-2 text-xs font-medium text-emerald-400">
+                  {success}
+                </p>
               )}
 
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="h-11 w-full gap-2 bg-primary text-base font-semibold text-white shadow-sm hover:bg-primary/90"
+                className="h-11 w-full gap-2 bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {mode === "login"
-                  ? t("เข้าสู่ระบบด้วยอีเมล", "Sign in with email")
-                  : t("สร้างบัญชีด้วยอีเมล", "Create account with email")}
+                  ? t("เข้าสู่ระบบ", "Sign in")
+                  : t("สมัครสมาชิก", "Register")}
               </Button>
             </form>
-            </div>
 
-            <p className="pt-2 text-center text-xs leading-relaxed text-muted-foreground">
+            <p className="pt-1 text-center text-[11px] leading-relaxed text-zinc-600">
               {t("โดยการสมัครสมาชิก คุณยอมรับ", "By signing up you agree to our")}{" "}
               <Link
                 href="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary underline-offset-2 hover:underline"
+                className="text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
               >
                 {t("เงื่อนไขการใช้งาน", "Terms of Service")}
               </Link>

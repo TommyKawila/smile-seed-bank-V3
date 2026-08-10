@@ -31,8 +31,8 @@ function parsePct(raw: string | undefined): number | null {
   return isClearanceDiscountPercent(n) ? Math.trunc(n) : null;
 }
 
-export default async function ClearancePage({ searchParams }: Props) {
-  const sp = searchParams ? await searchParams : undefined;
+export default async function ClearancePage(props: Props) {
+  const sp = props.searchParams ? await props.searchParams : undefined;
   const breederSlug = firstParam(sp?.breeder)?.trim() || null;
   const discountPercent = parsePct(firstParam(sp?.pct));
 

@@ -26,9 +26,9 @@ export function AffiliateProductCard({
   const image = affiliate?.image_url ?? null;
 
   return (
-    <aside className="my-10 overflow-hidden rounded-2xl border border-border bg-card/60 shadow-sm surface-glass">
+    <aside className="my-10 overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40">
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-stretch sm:gap-6">
-        <div className="relative mx-auto h-36 w-full shrink-0 overflow-hidden rounded-xl bg-muted/30 sm:h-auto sm:w-40">
+        <div className="relative mx-auto h-36 w-full shrink-0 overflow-hidden rounded-lg bg-zinc-900/30 sm:h-auto sm:w-40">
           {image ? (
             <Image
               src={image}
@@ -45,13 +45,13 @@ export function AffiliateProductCard({
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
             Recommended
           </p>
-          <h3 className="font-sans text-lg font-semibold leading-snug text-foreground">
+          <h3 className="font-sans text-lg font-semibold leading-snug text-zinc-100">
             {title}
           </h3>
-          <p className="text-xs text-muted-foreground">{platform}</p>
+          <p className="text-xs text-zinc-500">{platform}</p>
           <Link
             href={url}
             target="_blank"

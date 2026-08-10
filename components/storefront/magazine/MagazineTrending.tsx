@@ -6,9 +6,9 @@ import { magazineCategoryDisplayTh } from "@/lib/blog-research-category";
 import { cn } from "@/lib/utils";
 
 const asideClass =
-  "rounded-2xl border border-border bg-card/60 p-5 shadow-sm surface-glass";
+  "rounded-xl border border-border/60 bg-zinc-950/40 p-5";
 const headingClass =
-  "font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary";
+  "font-sans text-[10px] font-medium uppercase tracking-wide text-zinc-500";
 
 export function MagazineTrending({
   posts,
@@ -23,7 +23,7 @@ export function MagazineTrending({
     return (
       <aside className={asideClass}>
         <h3 className={cn(headingClass, "mb-4")}>{heading}</h3>
-        <p className="text-sm text-muted-foreground">No trending posts yet.</p>
+        <p className="text-sm text-zinc-500">No trending posts yet.</p>
       </aside>
     );
   }
@@ -38,9 +38,9 @@ export function MagazineTrending({
           const pct = Math.max(6, Math.round((p.view_count / maxViews) * 100));
           return (
             <li key={p.id} className="group">
-              <div className="mb-2 h-px w-full overflow-hidden rounded-full bg-muted/20">
+              <div className="mb-2 h-px w-full overflow-hidden rounded-full bg-zinc-800">
                 <div
-                  className="h-full rounded-full bg-primary/70 transition-all group-hover:bg-primary"
+                  className="h-full rounded-full bg-emerald-500/50 transition-all group-hover:bg-emerald-400/70"
                   style={{ width: `${pct}%` }}
                   title={`${p.view_count.toLocaleString()} views`}
                 />
@@ -48,18 +48,18 @@ export function MagazineTrending({
               <div className="min-w-0">
                 <Link
                   href={`/blog/${p.slug}`}
-                  className="line-clamp-2 text-sm font-medium leading-snug text-foreground/85 transition group-hover:text-primary"
+                  className="line-clamp-2 text-sm font-medium leading-snug text-zinc-300 transition group-hover:text-zinc-100"
                 >
                   {magazineDisplayTitle(p, locale)}
                 </Link>
                 <div className="mt-1 flex items-center justify-between gap-2">
                   {p.category && (
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary/80">
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
                       {magazineCategoryDisplayTh(p.category)}
                     </span>
                   )}
                   <span
-                    className="ml-auto text-[10px] font-medium tabular-nums text-foreground/45"
+                    className="ml-auto text-[10px] font-medium tabular-nums text-zinc-600"
                     title="Views"
                   >
                     {p.view_count.toLocaleString()}

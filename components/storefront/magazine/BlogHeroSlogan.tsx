@@ -9,7 +9,7 @@ export function BlogHeroSlogan() {
     "Enter the green knowledge vault: nearly ten years of field-tested grow science and breeder-grade genetics for serious cultivators."
   );
   return (
-    <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-foreground/65">
+    <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-zinc-500">
       {text}
     </p>
   );

@@ -4,6 +4,21 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-11 (Quiet Zinc cart / checkout / payment UI)
+- **What:** ตะกร้า (CartSheet) · checkout · payment — zinc panels, ghost inputs, emerald discount hints, primary CTA คงปุ่มชำระ
+- **Logic:** UI classes only · cart/checkout/payment flow ไม่เปลี่ยน
+- **ไฟล์:** `CartSheet.tsx` · `DiscountProgressBar.tsx` · `CheckoutPageClient.tsx` · `checkout/ShippingSection.tsx` · `checkout/PaymentSection.tsx` · `checkout/CheckoutSlipUploadSection.tsx` · `checkout/CheckoutSummary.tsx` · `payment/PaymentPageClient.tsx`
+
+### บันทึกการทำงาน — 2026-08-11 (Quiet Zinc homepage UI)
+- **What:** หน้าแรก `/` เงียบลง — hero eyebrow zinc · CTA outline ghost · docks/cards zinc · newsletter panel แทน bg-primary slab
+- **Logic:** UI classes only · section order/CMS ไม่เปลี่ยน · primary CTA คง 1 ปุ่มต่อ block
+- **ไฟล์:** `Hero.tsx` · `homepage-hero-cta.ts` · `AiQuickToolsDock.tsx` · `QuickCategoryNav.tsx` · `BreederShowcase.tsx` · `FeaturedProductHero.tsx` · `VaultHeroSlide.tsx` · `HomeInsightSection.tsx` · `HomeNewsletterSection.tsx` · `HomePageBelowFold.tsx`
+
+### บันทึกการทำงาน — 2026-08-11 (Quiet login UI — vault auth zinc)
+- **What:** หน้า `/login` เงียบลง — zinc card · tab ghost · benefit outline emerald · Google/guest zinc · email CTA คง primary
+- **Logic:** UI classes only · auth/OAuth/LINE flow ไม่เปลี่ยน
+- **ไฟล์:** `app/(storefront)/login/page.tsx`
+
 ### บันทึกการทำงาน — 2026-08-11 (PDP genetic ratio bar — accent sativa/indica)
 - **What:** แถบ sativa/indica บน PDP เปลี่ยนสีตาม status accent — vault emerald/indica · new cyan/violet · clearance amber/orange
 - **Logic:** `geneticSativaLabel` / `geneticIndicaBar` ใน accent tokens · `GeneticRatioBar` รับ `accent` prop

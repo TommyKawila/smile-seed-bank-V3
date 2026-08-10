@@ -28,13 +28,13 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
   const readLabel = t(`อ่านบทความ: ${cardTitle}`, `Read article: ${cardTitle}`);
 
   return (
-    <article className="overflow-hidden rounded-2xl surface-glass transition hover:border-primary/30">
+    <article className="overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40 transition hover:border-zinc-700 hover:bg-zinc-900/50">
       <Link
         href={href}
         className="group flex flex-col focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         aria-label={readLabel}
       >
-        <div className="relative aspect-video min-h-[11rem] w-full overflow-hidden bg-muted/30">
+        <div className="relative aspect-video min-h-[11rem] w-full overflow-hidden bg-zinc-900/30">
           {img ? (
             <Image
               src={img}
@@ -57,17 +57,17 @@ function InsightGridCard({ post }: { post: MagazinePostPublic }) {
         <div className="flex flex-1 flex-col p-5">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             {post.category && (
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+              <span className="inline-flex items-center rounded-full border border-emerald-500/25 bg-transparent px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-400/80">
                 {magazineCategoryLabel(post.category, locale)}
               </span>
             )}
             {research && <VerifiedResearchBadge />}
           </div>
-          <h3 className="font-sans line-clamp-2 text-lg font-semibold leading-snug text-foreground group-hover:text-primary">
+          <h3 className="font-sans line-clamp-2 text-lg font-semibold leading-snug text-zinc-100 group-hover:text-zinc-50">
             {cardTitle}
           </h3>
           {cardExcerpt && (
-            <p className="mt-2 line-clamp-3 flex-1 text-sm text-muted-foreground">{cardExcerpt}</p>
+            <p className="mt-2 line-clamp-3 flex-1 text-sm text-zinc-500">{cardExcerpt}</p>
           )}
           <span className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground group-hover:bg-primary/90 sm:w-auto sm:self-start">
             {t("อ่านเพิ่มเติม", "Read article")}
@@ -104,28 +104,28 @@ export function HomeInsightSection({
     <section className="border-b border-border bg-background py-10 sm:py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="mb-6 space-y-2 text-center sm:mb-8 sm:space-y-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
             {t("ข้อมูลเชิงลึก", "Insights")}
           </p>
-          <h2 className="font-sans text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          <h2 className="font-sans text-2xl font-semibold tracking-tight text-zinc-100 sm:text-3xl">
             {mainHeading}
           </h2>
-          <p className="mx-auto max-w-md text-sm text-muted-foreground">
+          <p className="mx-auto max-w-md text-sm text-zinc-500">
             {t("เทคนิคปลูกและพันธุกรรมที่คัดมาแล้ว", "Curated grow tips & genetics")}
           </p>
         </div>
 
         {loading ? (
           <div className="space-y-8">
-            <div className="grid min-h-[320px] animate-pulse gap-0 overflow-hidden rounded-sm border border-border bg-muted/30 lg:grid-cols-2">
-              <div className="hidden bg-muted/40 lg:block" />
-              <div className="min-h-[220px] bg-muted/30 lg:min-h-0" />
+            <div className="grid min-h-[320px] animate-pulse gap-0 overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40 lg:grid-cols-2">
+              <div className="hidden bg-zinc-900/50 lg:block" />
+              <div className="min-h-[220px] bg-zinc-900/30 lg:min-h-0" />
             </div>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-[280px] animate-pulse rounded-sm border border-border bg-muted/30"
+                  className="h-[280px] animate-pulse rounded-xl border border-border/60 bg-zinc-950/40"
                 />
               ))}
             </div>
@@ -135,7 +135,7 @@ export function HomeInsightSection({
             {t("ยังไม่มีบทความ", "No articles yet.")}{" "}
             <Link
               href="/blog"
-              className="inline-flex min-h-11 min-w-[44px] items-center justify-center font-medium text-primary hover:underline"
+              className="inline-flex min-h-11 min-w-[44px] items-center justify-center font-medium text-zinc-400 hover:text-zinc-200"
             >
               {t("ไปที่คลังความรู้สายเขียว", "Visit the knowledge vault")}
             </Link>
@@ -143,16 +143,16 @@ export function HomeInsightSection({
         ) : (
           <div className="space-y-10">
             {featured && (
-              <article className="group overflow-hidden rounded-2xl surface-glass lg:grid lg:min-h-[min(28rem,70vh)] lg:grid-cols-2 lg:items-stretch lg:gap-0">
+              <article className="group overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40 lg:grid lg:min-h-[min(28rem,70vh)] lg:grid-cols-2 lg:items-stretch lg:gap-0">
                 <div className="order-1 flex flex-col justify-center px-6 py-8 sm:px-10 lg:order-1 lg:py-12 lg:pl-10 xl:pl-14">
-                  <span className="mb-3 inline-flex w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+                  <span className="mb-3 inline-flex w-fit rounded-full border border-emerald-500/25 bg-transparent px-3 py-1 font-sans text-[10px] font-medium uppercase tracking-wide text-emerald-400/80">
                     {t("เกร็ดความรู้", "Knowledge")}
                   </span>
-                  <h3 className="font-sans text-2xl font-bold leading-[1.25] tracking-tight text-foreground sm:text-3xl md:text-[1.65rem] md:leading-snug">
+                  <h3 className="font-sans text-2xl font-bold leading-[1.25] tracking-tight text-zinc-100 sm:text-3xl md:text-[1.65rem] md:leading-snug">
                     {featuredTitle}
                   </h3>
                   {featuredExcerpt && (
-                    <p className="mt-5 line-clamp-5 text-sm font-light leading-relaxed text-muted-foreground sm:text-base">
+                    <p className="mt-5 line-clamp-5 text-sm font-light leading-relaxed text-zinc-500 sm:text-base">
                       {featuredExcerpt}
                     </p>
                   )}
@@ -167,7 +167,7 @@ export function HomeInsightSection({
                   </div>
                 </div>
                 <div
-                  className="relative order-2 block min-h-[260px] w-full overflow-hidden bg-muted/40 lg:min-h-full"
+                  className="relative order-2 block min-h-[260px] w-full overflow-hidden bg-zinc-900/30 lg:min-h-full"
                   aria-hidden
                 >
                   {featuredImg ? (

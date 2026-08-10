@@ -26,12 +26,12 @@ export function MagazineProductStoryCard({
   return (
     <Link
       href={href}
-      className={`group flex overflow-hidden rounded-2xl border border-border bg-muted/30 shadow-sm transition hover:border-primary/30 hover:shadow-md ${
+      className={`group flex overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40 transition hover:border-zinc-700 hover:bg-zinc-900/50 ${
         isGrid ? "flex-col" : "gap-5 p-5 sm:flex-row sm:items-stretch"
       }`}
     >
       <div
-        className={`relative shrink-0 overflow-hidden bg-muted/30 ${
+        className={`relative shrink-0 overflow-hidden bg-zinc-900/30 ${
           isGrid ? "aspect-[4/3] w-full" : "h-40 w-full sm:h-auto sm:w-44"
         }`}
       >
@@ -59,25 +59,25 @@ export function MagazineProductStoryCard({
           isGrid ? "gap-2 p-4" : "gap-3 py-0.5"
         }`}
       >
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
           Smile Seed Bank
         </p>
         <h3
-          className={`font-sans font-semibold leading-snug text-foreground group-hover:text-primary ${
+          className={`font-sans font-semibold leading-snug text-zinc-100 group-hover:text-zinc-50 ${
             isGrid ? "line-clamp-2 text-base" : "text-lg"
           }`}
         >
           {product.name}
         </h3>
         {product.breeder_name && (
-          <p className="text-xs text-muted-foreground">{product.breeder_name}</p>
+          <p className="text-xs text-zinc-500">{product.breeder_name}</p>
         )}
         {product.price != null && (
-          <p className="text-sm font-medium tabular-nums text-primary">
+          <p className="text-sm font-medium tabular-nums text-zinc-300">
             {formatThb(product.price)}
           </p>
         )}
-        <span className="mt-1 inline-flex w-fit items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition group-hover:border-primary/40 group-hover:bg-primary/15">
+        <span className="mt-1 inline-flex w-fit items-center rounded-full border border-zinc-700 bg-zinc-900/50 px-3 py-1.5 text-xs font-medium text-zinc-300 transition group-hover:border-zinc-600 group-hover:bg-zinc-900/70">
           View product
         </span>
       </div>

@@ -11,12 +11,11 @@ function cleanProductPath(slug: string): string {
   return `/product/${encodeURIComponent(slug.trim())}`;
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const { data } = await getProductBySlug(params.slug);
+type ProductPageProps = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata(props: ProductPageProps): Promise<Metadata> {
+  const { slug } = await props.params;
+  const { data } = await getProductBySlug(slug);
   if (!data) return { title: "Product" };
   const title = data.name;
   const raw = (data.description_th || data.description_en || "")
@@ -24,7 +23,7 @@ export async function generateMetadata({
     .replace(/\s+/g, " ")
     .trim();
   const description = raw ? raw.slice(0, 160) : `${title} — Smile Seed Bank`;
-  const canonical = cleanProductPath(data.slug?.trim() || params.slug);
+  const canonical = cleanProductPath(data.slug?.trim() || slug);
   return {
     title,
     description,
@@ -45,12 +44,8 @@ export async function generateMetadata({
   };
 }
 
-export default async function ProductPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const { data } = await getProductBySlug(params.slug);
+async function ProductPageContent({ slug }: { slug: string }) {
+  const { data } = await getProductBySlug(slug);
 
   if (data && isMerchProduct(data)) {
     const breederName = data.breeders?.name;
@@ -64,7 +59,12 @@ export default async function ProductPage({
   return (
     <>
       {data ? <ProductJsonLd product={data} /> : null}
-      <ProductDetailClient key={params.slug} initialProduct={data} />
+      <ProductDetailClient key={slug} initialProduct={data} />
     </>
   );
+}
+
+export default async function ProductPage(props: ProductPageProps) {
+  const { slug } = await props.params;
+  return <ProductPageContent slug={slug} />;
 }

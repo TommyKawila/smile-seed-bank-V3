@@ -5,15 +5,12 @@ import { getOrderByNumber } from "@/lib/services/order-service";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaymentPage({
-  params,
-  searchParams,
-}: {
+export default async function PaymentPage(props: {
   params: Promise<{ orderNumber: string }>;
   searchParams: Promise<{ t?: string; e?: string }>;
 }) {
-  const { orderNumber: raw } = await params;
-  const sp = await searchParams;
+  const { orderNumber: raw } = await props.params;
+  const sp = await props.searchParams;
   let orderNumber = typeof raw === "string" ? raw.trim() : "";
   try {
     orderNumber = decodeURIComponent(orderNumber);

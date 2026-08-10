@@ -9,11 +9,11 @@ export function VerifiedResearchBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-sm border border-primary/30 bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-primary",
+        "inline-flex items-center gap-1 rounded-sm border border-emerald-500/25 bg-transparent px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-emerald-400/80",
         className
       )}
     >
-      <BadgeCheck className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+      <BadgeCheck className="h-3 w-3 shrink-0 text-emerald-400/80" aria-hidden />
       {t("งานวิจัยรับรอง", "Verified Research")}
     </span>
   );

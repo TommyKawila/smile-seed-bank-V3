@@ -24,8 +24,8 @@ function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function MerchPage({ searchParams }: Props) {
-  const sp = searchParams ? await searchParams : undefined;
+export default async function MerchPage(props: Props) {
+  const sp = props.searchParams ? await props.searchParams : undefined;
   const breederSlug = firstParam(sp?.breeder)?.trim() || null;
   const categoryId = firstParam(sp?.cat)?.trim() || null;
 

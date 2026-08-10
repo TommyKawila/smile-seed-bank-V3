@@ -44,7 +44,7 @@ export function VaultHeroSlide({
   const yieldInfo = product.yield_info?.trim();
 
   const statValClass =
-    "mt-1 font-sans text-sm font-semibold tabular-nums leading-snug text-emerald-700 sm:text-base md:text-lg";
+    "mt-1 font-sans text-sm font-semibold tabular-nums leading-snug text-zinc-200 sm:text-base md:text-lg";
 
   return (
     <div className="min-w-0 px-0">
@@ -52,7 +52,7 @@ export function VaultHeroSlide({
         <Link
           href={productDetailHref(product)}
           aria-label={`${product.name} — ${t("ดูรูปสายพันธุ์", "Strain image")}`}
-          className="group relative order-1 block aspect-[4/3] min-h-[200px] overflow-hidden rounded-sm border border-border bg-muted/30 shadow-sm sm:min-h-[240px] md:min-h-[320px]"
+          className="group relative order-1 block aspect-[4/3] min-h-[200px] overflow-hidden rounded-xl border border-border/60 bg-zinc-900/30 sm:min-h-[240px] md:min-h-[320px]"
         >
           {img ? (
             <Image
@@ -74,22 +74,22 @@ export function VaultHeroSlide({
         </Link>
 
         <div className="order-2 flex min-w-0 flex-col justify-center font-sans">
-          <p className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground sm:text-[11px]">
+          <p className="font-sans text-[10px] font-medium uppercase tracking-wide text-zinc-500 sm:text-[11px]">
             {t("สายพันธุ์เด่น", "FEATURED_STRAIN")}
           </p>
-          <h2 className="mt-2 font-sans text-2xl font-bold leading-tight tracking-tight text-foreground sm:mt-3 sm:text-3xl md:text-[2.35rem]">
-            <Link href={productDetailHref(product)} className="hover:text-primary" aria-label={product.name}>
+          <h2 className="mt-2 font-sans text-2xl font-bold leading-tight tracking-tight text-zinc-100 sm:mt-3 sm:text-3xl md:text-[2.35rem]">
+            <Link href={productDetailHref(product)} className="hover:text-zinc-50" aria-label={product.name}>
               {product.name}
             </Link>
           </h2>
 
           {product.breeders && (
-            <p className="mt-2 font-sans text-[11px] font-normal tabular-nums text-muted-foreground sm:text-xs">
+            <p className="mt-2 font-sans text-[11px] font-normal tabular-nums text-zinc-500 sm:text-xs">
               {product.breeders.name}
             </p>
           )}
 
-          <dl className="mt-4 grid grid-cols-3 divide-x divide-zinc-200 border-y border-border sm:mt-5">
+          <dl className="mt-4 grid grid-cols-3 divide-x divide-zinc-800 border-y border-border/60 sm:mt-5">
             <div className="min-w-0 py-3 pr-2 sm:py-4 sm:pr-3">
               <dt className="font-sans text-[8px] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-[9px] sm:tracking-[0.2em]">
                 THC
@@ -124,7 +124,7 @@ export function VaultHeroSlide({
           <Link
             href={productDetailHref(product)}
             aria-label={t("เปิดรายงานสายพันธุ์ — รายละเอียดสินค้า", "Open strain dossier — product details")}
-            className="mt-5 inline-flex w-fit items-center font-sans text-xs font-semibold tabular-nums text-primary underline-offset-4 hover:underline sm:mt-6"
+            className="mt-5 inline-flex w-fit items-center font-sans text-xs font-semibold tabular-nums text-zinc-400 underline-offset-4 hover:text-zinc-200 hover:underline sm:mt-6"
           >
             {t("เปิดรายงานสายพันธุ์", "Open strain dossier")} →
           </Link>

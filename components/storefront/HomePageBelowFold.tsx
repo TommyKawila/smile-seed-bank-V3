@@ -158,13 +158,13 @@ export function HomePageBelowFold({
                 )}
               >
                 <div className="max-w-2xl space-y-2">
-                  <p className={cn(JOURNAL_PRODUCT_MONO_CLASS, "text-[11px] font-medium uppercase tracking-widest text-primary")}>
+                  <p className={cn(JOURNAL_PRODUCT_MONO_CLASS, "text-[11px] font-medium uppercase tracking-widest text-zinc-500")}>
                     NEW ARRIVALS
                   </p>
-                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-foreground sm:text-3xl md:text-4xl">
+                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-100 sm:text-3xl md:text-4xl">
                     {arrivalsHeading}
                   </h2>
-                  <p className="text-sm font-light leading-relaxed text-muted-foreground">
+                  <p className="text-sm font-light leading-relaxed text-zinc-500">
                     {t(
                       "สายพันธุ์ใหม่ล่าสุดในคลัง — อัปเดตตามการคัดเลือกอย่างต่อเนื่อง",
                       "Latest genetic entries in the Smile Seed Bank archive—refreshed as new strains land."
@@ -175,7 +175,7 @@ export function HomePageBelowFold({
                   asChild
                   variant="ghost"
                   size="sm"
-                  className="min-h-11 shrink-0 self-start px-3 text-primary hover:bg-muted hover:text-primary sm:self-end"
+                  className="min-h-11 shrink-0 self-start px-3 text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200 sm:self-end"
                 >
                   <Link href="/new">
                     {t("ดูเมล็ดพันธุ์มาใหม่ทั้งหมด", "See all new seeds")}{" "}
@@ -189,7 +189,7 @@ export function HomePageBelowFold({
                   {[...Array(8)].map((_, i) => (
                     <div
                       key={i}
-                      className="overflow-hidden rounded-xl border border-border surface-glass shadow-sm"
+                      className="overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40"
                     >
                       <div className="aspect-square animate-pulse bg-slate-800/50" />
                       <div className="space-y-2 px-2.5 pb-2.5 pt-2">
@@ -213,7 +213,7 @@ export function HomePageBelowFold({
                   ))}
                 </div>
               ) : (
-                <p className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
+                <p className="rounded-xl border border-dashed border-border/60 bg-zinc-950/40 px-4 py-8 text-center text-sm text-zinc-500">
                   {t("ยังไม่มีสินค้าใหม่ในช่วงนี้", "No new arrivals yet.")}
                 </p>
               )}
@@ -271,17 +271,17 @@ export function HomePageBelowFold({
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
               <div className="mb-8 flex items-end justify-between gap-4">
                 <div className="max-w-2xl">
-                  <span className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mb-2 inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-muted-foreground")}>
+                  <span className={cn(JOURNAL_PRODUCT_MONO_CLASS, "mb-2 inline-flex items-center rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500")}>
                     {t("ครบทุกแบรนด์", "Full catalog")}
                   </span>
-                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-foreground sm:text-3xl">
+                  <h2 className="font-sans text-2xl font-medium leading-tight tracking-tight text-zinc-100 sm:text-3xl">
                     {breederMain}
                   </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{breederSub}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-500">{breederSub}</p>
                 </div>
                 <Link
                   href="/breeders"
-                  className="hidden min-h-[44px] items-center gap-1 px-2 text-sm font-semibold text-primary hover:underline sm:flex"
+                  className="hidden min-h-[44px] items-center gap-1 px-2 text-sm font-semibold text-zinc-400 hover:text-zinc-200 sm:flex"
                 >
                   {t("ดูทั้งหมด", "View All")}
                   <ChevronRight className="h-4 w-4" />
@@ -289,7 +289,7 @@ export function HomePageBelowFold({
               </div>
               <div className="mt-6 flex justify-center sm:hidden">
                 <Link href="/breeders" className="inline-flex min-h-11 min-w-[44px] items-center justify-center">
-                  <Button variant="outline" size="sm" className="min-h-11 gap-1.5 border-border text-primary hover:bg-muted">
+                  <Button variant="outline" size="sm" className="min-h-11 gap-1.5 border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70">
                     {t("ดู Breeder ทั้งหมด", "View All Breeders")}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -303,14 +303,14 @@ export function HomePageBelowFold({
         return (
           <section
             key={sk}
-            className={cn("border-t border-b border-border bg-muted/20 py-12 sm:py-16", BELOW_FOLD_CV)}
+            className={cn("border-t border-b border-border/60 bg-zinc-950/40 py-12 sm:py-16", BELOW_FOLD_CV)}
           >
             <div className="mx-auto max-w-5xl px-4 sm:px-6">
-              <div className="grid grid-cols-1 divide-y divide-border text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              <div className="grid grid-cols-1 divide-y divide-border/60 text-center sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                 {features.map((f) => (
                   <div key={f.label} className="px-6 py-7 sm:py-9">
-                    <p className="font-sans text-base font-semibold text-foreground">{f.label}</p>
-                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    <p className="font-sans text-base font-semibold text-zinc-100">{f.label}</p>
+                    <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
                       {f.sub}
                     </p>
                   </div>

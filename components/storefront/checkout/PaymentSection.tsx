@@ -40,9 +40,9 @@ export function PaymentSection({
     deferPromptPayFetch && promptPayResolution.mode === "checkout";
 
   return (
-    <Card className="rounded-3xl border-border shadow-[0_10px_40px_-18px_rgba(15,23,42,0.25)]">
+    <Card className="rounded-xl border-border/60 bg-zinc-950/40 shadow-none">
       <CardContent className="space-y-4 p-5 sm:p-6">
-        <h2 className={cn(serif, "text-base font-semibold tracking-tight text-foreground")}>
+        <h2 className={cn(serif, "text-base font-semibold tracking-tight text-zinc-100")}>
           {t("ชำระเงิน", "Payment")}
         </h2>
         <p className="text-xs leading-relaxed text-muted-foreground">
@@ -78,7 +78,7 @@ export function PaymentSection({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-11 min-h-[44px] w-full gap-2 rounded-xl border-border text-muted-foreground shadow-sm"
+                  className="h-11 min-h-[44px] w-full gap-2 rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-300 shadow-none hover:border-zinc-600 hover:bg-zinc-900/70"
                   onClick={() => setPromptPayReloadNonce((n) => n + 1)}
                 >
                   <RefreshCw className="h-4 w-4 shrink-0" aria-hidden />
@@ -89,8 +89,8 @@ export function PaymentSection({
           </div>
         ) : null}
 
-        <div className="space-y-3 border-t border-border pt-4">
-          <p className="text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        <div className="space-y-3 border-t border-border/60 pt-4">
+          <p className="text-center text-[10px] font-medium uppercase tracking-wide text-zinc-500">
             {t("รายละเอียดการโอน (สาธารณะ)", "Transfer details")}
           </p>
 
@@ -111,7 +111,7 @@ export function PaymentSection({
             />
 
             {!bankAccountsError && bankAccounts.length === 0 && (
-              <p className="rounded-xl border border-border bg-muted/30 px-3 py-3 text-center text-sm text-muted-foreground">
+              <p className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-3 text-center text-sm text-zinc-500">
                 {t(
                   "ยังไม่มีบัญชีสำหรับแสดง — กรุณาติดต่อร้านเพื่อขอข้อมูลโอนเงิน",
                   "No active bank accounts are listed. Please contact the shop for transfer details.",

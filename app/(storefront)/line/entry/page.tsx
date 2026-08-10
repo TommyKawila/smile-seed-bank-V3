@@ -16,8 +16,8 @@ function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function LineLiffEntryPage({ searchParams }: Props) {
-  const sp = searchParams ? await searchParams : undefined;
+export default async function LineLiffEntryPage(props: Props) {
+  const sp = props.searchParams ? await props.searchParams : undefined;
   const nextPath = safeNextPath(firstParam(sp?.next) ?? null) ?? LIFF_DEFAULT_REDIRECT;
 
   return <LineLiffEntryClient liffId={getLiffId()} nextPath={nextPath} />;

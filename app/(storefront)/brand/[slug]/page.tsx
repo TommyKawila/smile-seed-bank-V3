@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import ShopPage from "../../shop/page";
+import { renderShopCatalog } from "@/app/(storefront)/shop/render-shop-catalog";
 
 function firstSegment(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export async function generateMetadata({
-  params,
-}: {
+type BrandBreederPageProps = {
   params: Promise<{ slug: string | string[] }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export async function generateMetadata(props: BrandBreederPageProps): Promise<Metadata> {
+  const { slug } = await props.params;
   const encoded = encodeURIComponent((firstSegment(slug) ?? "").trim());
   return {
     alternates: {
@@ -19,18 +20,11 @@ export async function generateMetadata({
   };
 }
 
-export default async function BrandBreederCatalogPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ slug: string | string[] }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const resolvedParams = await params;
-  const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const breederSlug = firstSegment(resolvedParams.slug);
-  return ShopPage({
-    params: Promise.resolve({ breederSlug }),
-    searchParams: Promise.resolve(resolvedSearchParams ?? {}),
+export default async function BrandBreederCatalogPage(props: BrandBreederPageProps) {
+  const resolvedParams = await props.params;
+  const sp = props.searchParams ? await props.searchParams : undefined;
+  return renderShopCatalog({
+    breederSlugFromRoute: firstSegment(resolvedParams.slug),
+    sp,
   });
 }

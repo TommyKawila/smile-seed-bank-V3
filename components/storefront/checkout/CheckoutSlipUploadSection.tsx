@@ -65,18 +65,17 @@ export function CheckoutSlipUploadSection({
     <div className="space-y-3">
       <div
         className={cn(
-          "rounded-2xl border bg-card p-5 shadow-md space-y-4",
-          "border-primary/35 ring-2 ring-primary/15",
+          "rounded-xl border border-border/60 bg-zinc-950/40 p-5 space-y-4",
         )}
       >
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
             {t("ขั้นตอนถัดไป", "Next step")}
           </p>
-          <p className={cn(serif, "mt-1 text-lg font-semibold text-foreground")}>
+          <p className={cn(serif, "mt-1 text-lg font-semibold text-zinc-100")}>
             {t("ส่งหลักฐานการโอนเงิน", "Upload payment proof")}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-zinc-500">
             {t("อัปโหลดสลิปหรือ PDF เพื่อยืนยันการชำระเงิน", "Upload a slip or PDF to confirm payment")}
           </p>
         </div>
@@ -90,7 +89,7 @@ export function CheckoutSlipUploadSection({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/[0.04] py-4 font-semibold text-primary transition-colors hover:bg-primary/[0.08]"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-900/50 py-4 font-semibold text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-900/70"
         >
           <Upload className="h-5 w-5 shrink-0" aria-hidden />
           {selectedFile ? selectedFile.name : t("เลือกไฟล์สลิป", "Choose slip file")}
@@ -123,7 +122,7 @@ export function CheckoutSlipUploadSection({
         </p>
         <LineParcelTrackingCta
           href={lineOaPrefillUrlForOrderSuccess(orderNumber, lineId)}
-          className="border-border bg-muted/30 py-2 text-xs font-normal text-muted-foreground hover:bg-muted/30/90"
+          className="border-zinc-800 bg-zinc-900/50 py-2 text-xs font-normal text-zinc-500 hover:bg-zinc-900/70"
         />
       </div>
     </div>

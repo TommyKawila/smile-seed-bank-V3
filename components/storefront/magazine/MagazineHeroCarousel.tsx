@@ -56,7 +56,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
 
   if (slides.length === 0) {
     return (
-      <div className="relative aspect-video min-h-[240px] w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="relative aspect-video min-h-[240px] w-full overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40">
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
           <p className="font-sans text-2xl text-muted-foreground">
             No highlights yet
@@ -74,7 +74,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
   const heroTitle = magazineDisplayTitle(current, locale);
 
   return (
-    <div className="relative aspect-video min-h-[260px] w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+    <div className="relative aspect-video min-h-[260px] w-full overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40 transition-shadow hover:shadow-lg">
       <AnimatePresence mode="wait">
         <m.div
           key={current.id}
@@ -92,17 +92,17 @@ export function MagazineHeroCarousel({ posts }: Props) {
                 priority={i === 0}
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/55 to-background/10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-zinc-950/55 to-zinc-950/10" />
             <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10 md:p-12">
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 {current.category && (
-                  <span className="inline-flex w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary backdrop-blur-sm">
+                  <span className="inline-flex w-fit rounded-full border border-emerald-500/25 bg-transparent px-3 py-1 font-sans text-[10px] font-medium uppercase tracking-wide text-emerald-400/80 backdrop-blur-sm">
                     {magazineCategoryDisplayTh(current.category)}
                   </span>
                 )}
                 {research && <VerifiedResearchBadge />}
               </div>
-              <h2 className="font-sans text-2xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-3xl md:text-4xl lg:max-w-3xl">
+              <h2 className="font-sans text-2xl font-semibold leading-[1.15] tracking-tight text-zinc-100 sm:text-3xl md:text-4xl lg:max-w-3xl">
                 {heroTitle}
               </h2>
               <Link
@@ -124,7 +124,7 @@ export function MagazineHeroCarousel({ posts }: Props) {
               aria-label={`Slide ${idx + 1}`}
               onClick={() => setI(idx)}
               className={`h-2 rounded-full transition-all duration-300 ${
-                idx === i ? "w-8 bg-primary" : "w-2 bg-muted-foreground/40 hover:bg-primary/60"
+                idx === i ? "w-8 bg-primary" : "w-2 bg-zinc-600 hover:bg-zinc-400"
               }`}
             />
           ))}

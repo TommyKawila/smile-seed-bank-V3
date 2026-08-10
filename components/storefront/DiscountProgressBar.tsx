@@ -24,7 +24,7 @@ export function DiscountProgressBar({
 
   if (net >= threshold) {
     return (
-      <div className="rounded-xl bg-accent px-3 py-2 font-sans text-xs font-medium text-primary">
+      <div className="rounded-xl border border-emerald-500/25 bg-zinc-950/40 px-3 py-2 font-sans text-xs font-medium text-emerald-400/80">
         ✓ {t("คุณได้รับจัดส่งฟรีแล้ว!", "You qualify for free shipping!")}
       </div>
     );
@@ -42,13 +42,13 @@ export function DiscountProgressBar({
       <div className="flex justify-end font-sans text-xs text-muted-foreground">
         <span className="tabular-nums">{formatPrice(threshold)}</span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted/40">
+      <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
         <div
-          className="h-full rounded-full bg-primary transition-all duration-300"
+          className="h-full rounded-full bg-emerald-500/60 transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <div className="rounded-xl bg-primary/5 px-3 py-2 font-sans text-xs text-primary">
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 px-3 py-2 font-sans text-xs text-zinc-400">
         💡 {hint}
       </div>
     </div>

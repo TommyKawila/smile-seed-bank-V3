@@ -9,12 +9,12 @@ export function ShopTheStorySection({
   if (products.length === 0) return null;
 
   return (
-    <section className="mx-auto mt-16 max-w-[720px] border-t border-border pt-14">
+    <section className="mx-auto mt-16 max-w-[720px] border-t border-border/60 pt-14">
       <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <h2 className="font-sans text-2xl font-semibold tracking-tight text-foreground">
+        <h2 className="font-sans text-2xl font-semibold tracking-tight text-zinc-100">
           Shop the Story
         </h2>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
           Related products
         </p>
       </div>

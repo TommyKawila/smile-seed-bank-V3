@@ -50,10 +50,13 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-type PageProps = { searchParams: Record<string, string | string[] | undefined> };
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default async function BlogMagazinePage({ searchParams }: PageProps) {
-  const raw = searchParams.category;
+export default async function BlogMagazinePage(props: PageProps) {
+  const sp = await props.searchParams;
+  const raw = sp.category;
   const categorySlug = typeof raw === "string" ? raw : undefined;
   const locale = magazineLocaleFromCookie(cookies().get("locale")?.value);
 
@@ -72,7 +75,7 @@ export default async function BlogMagazinePage({ searchParams }: PageProps) {
     >
       <div className="mx-auto max-w-7xl px-4 pb-28 pt-24 sm:px-6 lg:px-8">
         <header className="mb-16 space-y-4 text-center lg:mb-24 lg:space-y-5">
-          <h1 className="font-sans text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+          <h1 className="font-sans text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl lg:text-5xl">
             {locale === "en" ? "Smile Seed Blog" : "คลังความรู้สายเขียว"}
           </h1>
           <BlogHeroSlogan />

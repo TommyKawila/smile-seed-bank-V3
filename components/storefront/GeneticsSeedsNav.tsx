@@ -59,11 +59,11 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
   ] as const;
   const breederSectionLabel = t("เลือกเมล็ดตามค่าย", "Shop by breeder");
   const sectionHeadingClass =
-    "font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary";
+    "text-[10px] font-medium uppercase tracking-wide text-zinc-500";
   const entryLinkClass =
-    "block rounded-sm py-2 text-[13px] font-semibold tracking-wide text-primary transition-colors hover:bg-primary/10 hover:text-primary/90";
+    "block rounded-lg px-2 py-2 text-[13px] font-medium text-zinc-300 transition-colors hover:bg-zinc-900/70 hover:text-zinc-100";
   const breederLinkClass =
-    "flex items-center gap-3 rounded-lg py-0.5 text-sm font-medium text-muted-foreground transition-colors hover:text-primary";
+    "flex items-center gap-3 rounded-lg px-1 py-0.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-900/50 hover:text-zinc-200";
 
   const rows = [
     ...GENETICS_LINKS.map((row) => ({
@@ -98,7 +98,7 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
                 mode === "desktop" && "items-start leading-snug"
               )}
             >
-              <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-border bg-muted/20 sm:h-10 sm:w-10">
+              <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/50 sm:h-10 sm:w-10">
                 <BreederLogoImage
                   src={b.logo_url}
                   breederName={b.name}
@@ -135,7 +135,7 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
                 className={entryLinkClass}
                 prefetch={item.href === "/clearance" ? false : undefined}
               >
-                {item.label} →
+                {item.label}
               </Link>
             </li>
           ))}
@@ -152,7 +152,7 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
                 onClick={onNavigate}
                 className={cn(
                   serif,
-                  "flex min-h-11 items-center gap-2.5 rounded-sm py-1 text-sm font-medium text-foreground hover:text-primary"
+                  "flex min-h-11 items-center gap-2.5 rounded-lg px-2 py-1 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-900/70 hover:text-zinc-100"
                 )}
               >
                 <SeedsFilterIconBadge slug={row.slug} />
@@ -180,7 +180,7 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
       >
         {label}
         <ChevronDown
-          className={cn("h-3.5 w-3.5 text-primary/70 opacity-80 transition-transform", open && "rotate-180")}
+          className={cn("h-3.5 w-3.5 text-zinc-500 transition-transform", open && "rotate-180")}
           strokeWidth={1.75}
           aria-hidden
         />
@@ -188,8 +188,8 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
 
       {open ? (
         <div className="absolute left-1/2 top-full z-50 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 pt-2 lg:left-0 lg:translate-x-0">
-          <div className="overflow-hidden rounded-sm border border-border bg-card shadow-md">
-            <div className="border-b border-border px-5 py-3">
+          <div className="overflow-hidden rounded-xl border border-border/60 bg-zinc-950/95 shadow-lg backdrop-blur-md">
+            <div className="border-b border-border/60 px-4 py-3">
               <ul className="space-y-0.5">
                 {entryLinks.map((item) => (
                   <li key={item.href}>
@@ -199,24 +199,24 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
                       onClick={() => setOpen(false)}
                       prefetch={item.href === "/clearance" ? false : undefined}
                     >
-                      {item.label} →
+                      {item.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-              <p className={cn(sectionHeadingClass, "mb-2 mt-4")}>
+              <p className={cn(sectionHeadingClass, "mb-2 mt-4 px-2")}>
                 {breederSectionLabel}
               </p>
-              {breederLinks}
+              <div className="px-1">{breederLinks}</div>
             </div>
-            <ul className="space-y-1 px-3 py-3">
+            <ul className="space-y-0.5 px-2 py-2">
               {rows.map((row) => (
                 <li key={row.href}>
                   <Link
                     href={row.href}
                     className={cn(
                       serif,
-                      "flex items-center gap-2.5 rounded-sm px-2 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                      "flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-900/70 hover:text-zinc-100"
                     )}
                     onClick={() => setOpen(false)}
                   >

@@ -9,8 +9,8 @@ import { PlantDoctorClient } from "@/components/storefront/tools/PlantDoctorClie
 
 type Props = { params: Promise<{ slug: string }> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { slug } = await props.params;
   const tool = getGrowerTool(slug);
   if (!tool) return { title: "Grow Tool" };
   return {
@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function GrowerToolPage({ params }: Props) {
-  const { slug } = await params;
+export default async function GrowerToolPage(props: Props) {
+  const { slug } = await props.params;
   const tool = getGrowerTool(slug);
   if (!tool) notFound();
 

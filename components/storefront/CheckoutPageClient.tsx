@@ -591,10 +591,10 @@ export function CheckoutPageClient({
     <div className={`min-h-[70vh] bg-background ${JOURNAL_PRODUCT_FONT_VARS}`}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <div className="mb-5 flex items-center gap-3">
-          <Link href="/shop" className="text-muted-foreground hover:text-primary">
+          <Link href="/shop" className="text-zinc-500 hover:text-zinc-200">
             <ChevronLeft className="h-5 w-5" strokeWidth={1.25} />
           </Link>
-          <h1 className={cn(serif, "text-2xl font-medium tracking-tight text-foreground")}>
+          <h1 className={cn(serif, "text-2xl font-medium tracking-tight text-zinc-100")}>
             {t("ดำเนินการชำระเงิน", "Checkout")}
           </h1>
         </div>
@@ -603,7 +603,7 @@ export function CheckoutPageClient({
         <form onSubmit={handleSubmit}>
           <div className="mx-auto max-w-3xl space-y-4">
               {user && (
-                <div className="flex items-center gap-2 rounded-sm border border-border bg-muted/30 px-4 py-2.5 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5 text-sm text-zinc-500">
                   <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.25} />
                   {t("Auto-fill จากบัญชีของคุณ", "Auto-filled from your account")}
                 </div>
@@ -619,16 +619,16 @@ export function CheckoutPageClient({
               />
 
               <OrderSummary>
-              <Card className="rounded-sm border-border shadow-sm">
+              <Card className="rounded-xl border-border/60 bg-zinc-950/40 shadow-none">
                 <CardContent className="space-y-4 p-5">
-                  <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
-                    <h2 className={cn(serif, "text-xs font-medium text-muted-foreground")}>
+                  <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+                    <h2 className={cn(serif, "text-xs font-medium text-zinc-500")}>
                       {t("สรุปรายการ", "Order summary")}
                     </h2>
                     <span
                       className={cn(
                         mono,
-                        "shrink-0 rounded-sm border border-border bg-muted/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+                        "shrink-0 rounded-sm border border-zinc-800 bg-zinc-900/50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500"
                       )}
                     >
                       {t("รอชำระเงิน", "Pending")}
@@ -687,7 +687,7 @@ export function CheckoutPageClient({
                   />
 
                   {!user && (
-                    <p className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-[11px] leading-relaxed text-zinc-500">
                       {t(
                         "โค้ดส่วนลดใช้ได้เมื่อเข้าสู่ระบบเท่านั้น — Google, อีเมล หรือ LINE",
                         "Promo codes require an account — Google, Email, or LINE.",
@@ -700,11 +700,11 @@ export function CheckoutPageClient({
                       type="button"
                       onClick={handleApplyWelcome10}
                       disabled={isValidatingPromo}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-left transition-colors hover:border-primary/60 hover:bg-primary/10"
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-emerald-500/25 bg-zinc-950/40 px-4 py-3 text-left transition-colors hover:border-emerald-500/40 hover:bg-zinc-900/50"
                     >
                       <span className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-primary" />
-                        <span className="font-mono text-sm font-bold text-primary">WELCOME10</span>
+                        <Tag className="h-4 w-4 text-emerald-400/80" />
+                        <span className="font-mono text-sm font-bold text-emerald-400/80">WELCOME10</span>
                       </span>
                       <span className="text-xs font-medium text-muted-foreground">
                         {t("ส่วนลด 10% ลูกค้าใหม่", "Apply 10% New Customer Discount")}
@@ -723,7 +723,7 @@ export function CheckoutPageClient({
                           if (!v.trim()) clearPromoCode();
                         }}
                         placeholder={t("รหัสส่วนลด", "Promo code")}
-                        className={cn(mono, "rounded-sm border-border bg-card text-sm")}
+                        className={cn(mono, "rounded-lg border-zinc-800 bg-zinc-900/50 text-sm text-zinc-100 placeholder:text-zinc-600")}
                       />
                       <Button
                         type="button"
@@ -731,7 +731,7 @@ export function CheckoutPageClient({
                         size="sm"
                         onClick={() => void handleApplyPromo()}
                         disabled={isValidatingPromo || !promoInput.trim()}
-                        className="rounded-sm border-border"
+                        className="rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70"
                       >
                         {isValidatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : t("ใช้", "Apply")}
                       </Button>
@@ -748,7 +748,7 @@ export function CheckoutPageClient({
 
                   {user && promo.code && (
                     <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-2 text-sm text-primary">
+                      <div className="flex items-center justify-between gap-2 text-sm text-emerald-400/80">
                         <span>
                           โค้ด: {promo.code.code} —{" "}
                           {String(promo.code.discount_type || "").toUpperCase() === "PERCENTAGE"
@@ -787,15 +787,15 @@ export function CheckoutPageClient({
 
                   </CouponSection>
 
-                  <div className="space-y-2 rounded-sm border border-border bg-muted/20 p-3 text-sm">
-                    <div className="flex justify-between gap-3 text-muted-foreground">
+                  <div className="space-y-2 rounded-lg border border-border/60 bg-zinc-950/40 p-3 text-sm">
+                    <div className="flex justify-between gap-3 text-zinc-500">
                       <span className={cn(serif, "text-xs font-medium text-muted-foreground")}>
                         {t("ยอดสินค้า", "Subtotal")}
                       </span>
                       <span className={cn(checkoutAmount, "font-medium text-foreground")}>{formatPrice(summary.subtotal)}</span>
                     </div>
                     {summary.tierDiscount > 0 && (
-                      <div className="flex justify-between gap-3 text-primary">
+                      <div className="flex justify-between gap-3 text-emerald-400/80">
                         <span className={cn(serif, "text-xs font-medium")}>
                           {t(
                             `ส่วนลดอัตโนมัติ (${summary.discountPercent}%)`,
@@ -806,7 +806,7 @@ export function CheckoutPageClient({
                       </div>
                     )}
                     {summary.promoDiscount > 0 && (
-                      <div className="flex justify-between gap-3 text-primary">
+                      <div className="flex justify-between gap-3 text-emerald-400/80">
                         <span className={cn(serif, "text-xs font-medium")}>
                           {t(`ส่วนลดโค้ด (${promo.code?.code ?? ""})`, `Coupon (${promo.code?.code ?? ""})`)}
                         </span>
@@ -822,7 +822,7 @@ export function CheckoutPageClient({
                       </span>
                     </div>
                     {summary.tierDiscount + summary.promoDiscount > 0 && (
-                      <div className="flex items-center justify-center gap-2 rounded-sm border border-border bg-card px-3 py-2.5 text-xs text-muted-foreground">
+                      <div className="flex items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-xs text-zinc-500">
                         <Sparkles className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1} />
                         <span>
                           {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
@@ -833,7 +833,7 @@ export function CheckoutPageClient({
                       </div>
                     )}
                     <Separator className="my-1 bg-muted/30" />
-                    <div className="rounded-sm border border-border bg-card px-4 py-3">
+                    <div className="rounded-lg border border-border/60 bg-zinc-900/50 px-4 py-3">
                       <div className="flex items-center justify-between gap-3 text-foreground">
                         <span className={cn(serif, "text-xs font-medium text-muted-foreground")}>
                           {t("ยอดสุทธิ", "Net total")}
@@ -924,7 +924,7 @@ export function CheckoutPageClient({
         </form>
         ) : placed ? (
           <div className="mx-auto max-w-3xl space-y-4">
-            <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border bg-muted/30 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-3">
               <p className={cn(mono, "text-sm font-semibold text-foreground")}>#{placed.orderNumber}</p>
               <span className="text-muted-foreground">·</span>
               <p className="text-xs text-muted-foreground">
@@ -932,7 +932,7 @@ export function CheckoutPageClient({
               </p>
             </div>
 
-            <Accordion type="single" collapsible className="rounded-sm border border-border bg-card px-2 shadow-sm">
+            <Accordion type="single" collapsible className="rounded-xl border border-border/60 bg-zinc-950/40 px-2 shadow-none">
               <AccordionItem value="shipping" className="border-0">
                 <AccordionTrigger className="px-2 hover:no-underline [&>svg]:shrink-0">
                   <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left">
@@ -971,16 +971,16 @@ export function CheckoutPageClient({
             </Accordion>
 
             <OrderSummary>
-              <Card className="rounded-sm border-border shadow-sm">
+              <Card className="rounded-xl border-border/60 bg-zinc-950/40 shadow-none">
                 <CardContent className="space-y-4 p-5">
-                  <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
-                    <h2 className={cn(serif, "text-xs font-medium text-muted-foreground")}>
+                  <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+                    <h2 className={cn(serif, "text-xs font-medium text-zinc-500")}>
                       {t("สรุปรายการ", "Order summary")}
                     </h2>
                     <span
                       className={cn(
                         mono,
-                        "shrink-0 rounded-sm border border-border bg-muted/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+                        "shrink-0 rounded-sm border border-zinc-800 bg-zinc-900/50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500"
                       )}
                     >
                       {t("รอชำระเงิน", "Pending")}
@@ -999,8 +999,8 @@ export function CheckoutPageClient({
 
                   <Separator />
 
-                  <div className="space-y-2 rounded-sm border border-border bg-muted/20 p-3 text-sm">
-                    <div className="flex justify-between gap-3 text-muted-foreground">
+                  <div className="space-y-2 rounded-lg border border-border/60 bg-zinc-950/40 p-3 text-sm">
+                    <div className="flex justify-between gap-3 text-zinc-500">
                       <span className={cn(serif, "text-xs font-medium text-muted-foreground")}>
                         {t("ยอดสินค้า", "Subtotal")}
                       </span>
@@ -1009,7 +1009,7 @@ export function CheckoutPageClient({
                       </span>
                     </div>
                     {placed.summarySource === "restore" && (placed.restoreFlatDiscountBaht ?? 0) > 0 ? (
-                      <div className="flex justify-between gap-3 text-primary">
+                      <div className="flex justify-between gap-3 text-emerald-400/80">
                         <span className={cn(serif, "text-xs font-medium")}>
                           {placed.appliedPromo?.code
                             ? t(
@@ -1025,7 +1025,7 @@ export function CheckoutPageClient({
                     ) : (
                       <>
                         {placed.summarySnapshot.tierDiscount > 0 && (
-                          <div className="flex justify-between gap-3 text-primary">
+                          <div className="flex justify-between gap-3 text-emerald-400/80">
                             <span className={cn(serif, "text-xs font-medium")}>
                               {placed.summarySnapshot.discountPercent > 0
                                 ? t(
@@ -1040,7 +1040,7 @@ export function CheckoutPageClient({
                           </div>
                         )}
                         {placed.summarySnapshot.promoDiscount > 0 && (
-                          <div className="flex justify-between gap-3 text-primary">
+                          <div className="flex justify-between gap-3 text-emerald-400/80">
                             <span className={cn(serif, "text-xs font-medium")}>
                               {t(
                                 `ส่วนลดโค้ด (${placed.appliedPromo?.code ?? ""})`,
@@ -1067,7 +1067,7 @@ export function CheckoutPageClient({
                     {(placed.summarySource === "restore"
                       ? (placed.restoreFlatDiscountBaht ?? 0)
                       : placed.summarySnapshot.tierDiscount + placed.summarySnapshot.promoDiscount) > 0 && (
-                      <div className="flex items-center justify-center gap-2 rounded-sm border border-border bg-card px-3 py-2.5 text-xs text-muted-foreground">
+                      <div className="flex items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-xs text-zinc-500">
                         <Sparkles className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1} aria-hidden />
                         <span>
                           {t("คุณประหยัดเงินไปได้ทั้งหมด", "You've saved a total of")}{" "}
@@ -1083,7 +1083,7 @@ export function CheckoutPageClient({
                       </div>
                     )}
                     <Separator className="my-1 bg-muted/30" />
-                    <div className="rounded-sm border border-border bg-card px-4 py-3">
+                    <div className="rounded-lg border border-border/60 bg-zinc-900/50 px-4 py-3">
                       <div className="flex items-center justify-between gap-3 text-foreground">
                         <span className={cn(serif, "text-xs font-medium text-muted-foreground")}>
                           {t("ยอดสุทธิ", "Net total")}

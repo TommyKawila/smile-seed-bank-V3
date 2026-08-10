@@ -30,11 +30,11 @@ export function NewsletterBox() {
   }
 
   return (
-    <aside className="rounded-2xl border border-border bg-card/60 px-5 py-6 shadow-sm surface-glass">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+    <aside className="rounded-xl border border-border/60 bg-zinc-950/40 px-5 py-6">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
         {t("จดหมายข่าว", "Newsletter")}
       </p>
-      <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
         {t(
           "สรุปสั้นๆ จากโต๊ะบรรณาธิการ — คัดเฉพาะประเด็นสำคัญ",
           "Short updates from the editorial desk — no clutter."
@@ -61,7 +61,7 @@ export function NewsletterBox() {
             }}
             placeholder={t("ใส่อีเมลของคุณ...", "you@email.com")}
             disabled={pending}
-            className="min-h-10 flex-1 rounded-lg border border-border bg-background px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/25"
+            className="min-h-10 flex-1 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-500/35"
           />
           <button
             type="submit"

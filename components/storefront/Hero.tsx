@@ -136,7 +136,7 @@ export default function Hero({
               "animate-in fade-in slide-in-from-left-5 duration-500 fill-mode-both"
             )}
           >
-            <p className={cn(HERO_MONO, "text-[9px] font-bold leading-relaxed tracking-[0.2em] text-primary break-words sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px]")}>
+            <p className={cn(HERO_MONO, "text-[9px] font-bold leading-relaxed tracking-[0.2em] text-zinc-500 break-words sm:text-[10px] sm:tracking-[0.26em] lg:text-[10px]")}>
               {t(
                 "ก่อตั้ง ค.ศ. 2018 // ร้านเมล็ดพันธุ์แห่งรอยยิ้มยุคแรกของไทย",
                 "EST. 2018 // THAILAND'S FIRST SMILE-ERA SEED SHOP"

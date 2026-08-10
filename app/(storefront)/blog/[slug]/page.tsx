@@ -65,12 +65,11 @@ function collectAffiliateIds(segments: ReturnType<typeof parseArticleSegments>):
   return segments.filter((s) => s.kind === "affiliateId").map((s) => s.id);
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const post = await getPublishedPostBySlug(params.slug);
+type BlogArticlePageProps = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata(props: BlogArticlePageProps): Promise<Metadata> {
+  const { slug } = await props.params;
+  const post = await getPublishedPostBySlug(slug);
   if (!post) return { title: "ไม่พบบทความ" };
 
   const locale = magazineLocaleFromCookie(cookies().get("locale")?.value);
@@ -131,8 +130,9 @@ export async function generateMetadata({
   };
 }
 
-export default async function BlogArticlePage({ params }: { params: { slug: string } }) {
-  const post = await getPublishedPostBySlug(params.slug);
+export default async function BlogArticlePage(props: BlogArticlePageProps) {
+  const { slug } = await props.params;
+  const post = await getPublishedPostBySlug(slug);
   if (!post) notFound();
 
   const locale = magazineLocaleFromCookie(cookies().get("locale")?.value);
@@ -181,7 +181,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
     : defaultOgImageUrl(siteUrl);
 
   const refLine = formatResearchRefId(post.id, post.published_at);
-  const metaClass = "font-sans text-xs tabular-nums text-foreground/50";
+  const metaClass = "font-sans text-xs tabular-nums text-zinc-500";
 
   return (
     <div
@@ -201,10 +201,10 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
       <BlogViewTracker postId={post.id} />
       <article className="mx-auto max-w-3xl px-4 pb-28 pt-24 sm:px-6 lg:px-8">
         <nav
-          className="mb-10 flex flex-wrap items-center gap-1 font-sans text-xs text-foreground/55"
+          className="mb-10 flex flex-wrap items-center gap-1 font-sans text-xs text-zinc-500"
           aria-label="Breadcrumb"
         >
-          <Link href="/blog" className="transition hover:text-primary">
+          <Link href="/blog" className="transition hover:text-zinc-200">
             {locale === "en" ? "Knowledge vault" : "คลังความรู้สายเขียว"}
           </Link>
           {post.category && (
@@ -212,20 +212,20 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
               <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-50" aria-hidden />
               <Link
                 href={`/blog?category=${encodeURIComponent(post.category.slug)}`}
-                className="transition hover:text-primary"
+                className="transition hover:text-zinc-200"
               >
                 {magazineCategoryLabel(post.category, locale)}
               </Link>
             </>
           )}
           <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-50" aria-hidden />
-          <span className="line-clamp-1 text-foreground/45">{displayTitle}</span>
+          <span className="line-clamp-1 text-zinc-600">{displayTitle}</span>
         </nav>
 
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="flex flex-wrap items-center gap-2">
             {post.category && (
-              <span className="inline-flex w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+              <span className="inline-flex w-fit rounded-full border border-emerald-500/25 bg-transparent px-3 py-1 font-sans text-[10px] font-medium uppercase tracking-wide text-emerald-400/80">
                 {magazineCategoryLabel(post.category, locale)}
               </span>
             )}
@@ -236,38 +236,38 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           </span>
         </div>
 
-        <h1 className="font-sans text-3xl font-semibold leading-[1.25] tracking-tight text-foreground sm:text-4xl md:text-[2.65rem]">
+        <h1 className="font-sans text-3xl font-semibold leading-[1.25] tracking-tight text-zinc-100 sm:text-4xl md:text-[2.65rem]">
           {displayTitle}
         </h1>
 
         {displayTagline && (
-          <p className="mt-4 max-w-3xl text-lg leading-relaxed text-foreground/65">
+          <p className="mt-4 max-w-3xl text-lg leading-relaxed text-zinc-400">
             {displayTagline}
           </p>
         )}
 
         <div
           className={cn(
-            "mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border pb-8",
+            "mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border/60 pb-8",
             metaClass
           )}
         >
-          <span className="text-foreground/70">Smile Seed Bank Editorial</span>
+          <span className="text-zinc-400">Smile Seed Bank Editorial</span>
           {post.published_at && (
             <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
           )}
           <span className="inline-flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-foreground/40" aria-hidden />
+            <Clock className="h-3.5 w-3.5 text-zinc-600" aria-hidden />
             อ่าน {readMin} นาที
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <Eye className="h-3.5 w-3.5 text-foreground/40" aria-hidden />
+            <Eye className="h-3.5 w-3.5 text-zinc-600" aria-hidden />
             {post.view_count.toLocaleString("th-TH")} ครั้ง
           </span>
         </div>
 
         {post.featured_image && (
-          <div className="relative -mx-4 mb-12 mt-10 aspect-video min-h-[220px] overflow-hidden rounded-2xl border border-border shadow-sm sm:mx-0 md:min-h-[360px] lg:min-h-[420px]">
+          <div className="relative -mx-4 mb-12 mt-10 aspect-video min-h-[220px] overflow-hidden rounded-xl border border-border/60 sm:mx-0 md:min-h-[360px] lg:min-h-[420px]">
             <Image
               src={post.featured_image}
               alt=""
@@ -279,14 +279,14 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
               blurDataURL={SHIMMER_BLUR_DATA_URL}
               unoptimized={shouldOffloadImageOptimization(post.featured_image)}
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-950/40 via-transparent to-transparent" />
           </div>
         )}
 
         {displayExcerpt && (
           <aside
             className={cn(
-              "mb-10 rounded-xl border border-primary/25 bg-primary/5 py-5 pl-5 pr-5 text-base leading-relaxed text-foreground/70 sm:pl-6 sm:pr-6 sm:text-[1.05rem]",
+              "mb-10 rounded-xl border border-border/60 bg-zinc-950/40 py-5 pl-5 pr-5 text-base leading-relaxed text-zinc-400 sm:pl-6 sm:pr-6 sm:text-[1.05rem]",
               !post.featured_image && "mt-10"
             )}
             aria-label="Abstract"
@@ -319,8 +319,8 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         <ShopTheStorySection products={shopStoryProducts} />
 
         {related.length > 0 && (
-          <section className="mx-auto mt-20 max-w-[720px] border-t border-border pt-16">
-            <h2 className="font-sans text-2xl font-semibold text-foreground">
+          <section className="mx-auto mt-20 max-w-[720px] border-t border-border/60 pt-16">
+            <h2 className="font-sans text-2xl font-semibold text-zinc-100">
               {locale === "en" ? "Recommended reads" : "บทความแนะนำ"}
             </h2>
             <ul className="mt-8 grid gap-8 sm:grid-cols-2">
@@ -328,7 +328,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                 <li key={r.id}>
                   <Link
                     href={`/blog/${r.slug}`}
-                    className="group block overflow-hidden rounded-2xl border border-border bg-card/60 shadow-sm surface-glass transition hover:border-primary/30 hover:shadow-md"
+                    className="group block overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40 transition hover:border-zinc-700 hover:bg-zinc-900/50"
                   >
                     {r.featured_image && (
                       <div className="relative aspect-video w-full overflow-hidden">
@@ -348,13 +348,13 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
                     <div className="p-4">
                       <div className="flex flex-wrap items-center gap-2">
                         {r.category && (
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-emerald-400/80">
                             {magazineCategoryLabel(r.category, locale)}
                           </span>
                         )}
                         {isResearchCategory(r.category) && <VerifiedResearchBadge />}
                       </div>
-                      <p className="mt-2 line-clamp-2 font-sans text-base font-semibold text-foreground group-hover:text-primary">
+                      <p className="mt-2 line-clamp-2 font-sans text-base font-semibold text-zinc-200 group-hover:text-zinc-100">
                         {magazineDisplayTitle(r, locale)}
                       </p>
                     </div>
@@ -370,7 +370,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           <MagazineArticleShare url={pageUrl} title={displayTitle} />
           <Link
             href="/blog"
-            className="inline-flex text-sm font-medium text-primary transition hover:text-primary/80"
+            className="inline-flex text-sm font-medium text-zinc-400 transition hover:text-zinc-200"
           >
             ← {locale === "en" ? "Back to knowledge vault" : "กลับสู่คลังความรู้"}
           </Link>

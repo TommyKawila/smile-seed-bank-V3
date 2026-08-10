@@ -6,7 +6,7 @@ import {
   getSeedsHubBreedersOnly,
   getSeedsHubPayload,
 } from "@/services/seeds-hub-service";
-import ShopPage from "../shop/page";
+import { renderShopCatalog } from "@/app/(storefront)/shop/render-shop-catalog";
 
 export const metadata: Metadata = {
   title: "All Seeds | Smile Seed Bank",
@@ -14,12 +14,16 @@ export const metadata: Metadata = {
   alternates: { canonical: "/seeds" },
 };
 
-type Props = {
+type SeedsIndexPageProps = {
   params?: Promise<{ breederSlug?: string | string[] }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function SeedsIndexPage(props: Props) {
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function SeedsIndexPage(props: SeedsIndexPageProps) {
   const sp = props.searchParams ? await props.searchParams : undefined;
 
   if (shouldShowSeedsHub(sp)) {
@@ -36,7 +40,6 @@ export default async function SeedsIndexPage(props: Props) {
       emptyFallback
     );
 
-    // If full payload timed out empty, still try a light breeder-only fetch.
     if (payload.breeders.length === 0) {
       const breeders = await withTimeout(getSeedsHubBreedersOnly(), 2000, []);
       payload = { ...payload, breeders };
@@ -45,5 +48,9 @@ export default async function SeedsIndexPage(props: Props) {
     return <SeedsHubClient payload={payload} />;
   }
 
-  return ShopPage(props);
+  const resolvedParams = props.params ? await props.params : undefined;
+  return renderShopCatalog({
+    breederSlugFromRoute: firstParam(resolvedParams?.breederSlug),
+    sp,
+  });
 }

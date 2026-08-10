@@ -108,7 +108,7 @@ export function PaymentPageClient({
 
   if (orderUnavailable || !order) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-muted/30 px-4">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4">
         <p className="text-muted-foreground">ไม่พบออเดอร์</p>
         <Button asChild>
           <Link href="/">กลับหน้าแรก</Link>
@@ -119,7 +119,7 @@ export function PaymentPageClient({
 
   if (order.payment_method !== "TRANSFER") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-muted/30 px-4">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4">
         <p className="text-muted-foreground">วิธีการชำระเงินไม่ใช่โอนเงิน</p>
         <Button asChild>
           <Link href="/">กลับหน้าแรก</Link>
@@ -131,13 +131,13 @@ export function PaymentPageClient({
   const promptPayOn = PAYMENT_CONFIG.isPromptPayEnabled;
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-20 pb-12">
+    <div className="min-h-screen bg-background pt-20 pb-12">
       <div className="mx-auto max-w-md px-4">
         <div className="mb-5 flex items-center gap-3">
-          <Link href="/checkout" className="text-muted-foreground hover:text-primary">
+          <Link href="/checkout" className="text-zinc-500 hover:text-zinc-200">
             <ChevronLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-xl font-bold text-foreground">ชำระเงิน</h1>
+          <h1 className="text-xl font-bold text-zinc-100">ชำระเงิน</h1>
         </div>
 
         <m.div
@@ -145,26 +145,26 @@ export function PaymentPageClient({
           animate={{ opacity: 1, y: 0 }}
           className="space-y-5"
         >
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border border-border/60 bg-zinc-950/40 p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">เลขออเดอร์</p>
-                <p className="mt-0.5 font-mono text-sm font-semibold text-foreground">#{orderNumber}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">เลขออเดอร์</p>
+                <p className="mt-0.5 font-mono text-sm font-semibold text-zinc-100">#{orderNumber}</p>
               </div>
-              <span className="shrink-0 rounded-md border border-border bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <span className="shrink-0 rounded-md border border-zinc-800 bg-zinc-900/50 px-2 py-0.5 text-[10px] font-medium text-zinc-500">
                 รอชำระเงิน
               </span>
             </div>
-            <Separator className="my-4 bg-muted/30" />
+            <Separator className="my-4 bg-border/60" />
             <div className="flex items-end justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">ยอดสุทธิ</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">ยอดสุทธิ</p>
               <p className="text-2xl font-bold tabular-nums text-primary">{formatPrice(totalAmount)}</p>
             </div>
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-primary/25 bg-accent/50 p-5">
-            <div className="flex items-center gap-2 font-semibold text-primary">
-              <CreditCard className="h-5 w-5" />
+          <div className="space-y-4 rounded-xl border border-border/60 bg-zinc-950/40 p-5">
+            <div className="flex items-center gap-2 font-semibold text-zinc-200">
+              <CreditCard className="h-5 w-5 text-zinc-500" />
               ข้อมูลการโอนเงิน
             </div>
 
@@ -191,7 +191,7 @@ export function PaymentPageClient({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="mt-2 h-11 w-full gap-2 rounded-xl"
+                    className="mt-2 h-11 w-full gap-2 rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-900/70"
                     onClick={() => setPpReloadNonce((n) => n + 1)}
                   >
                     <RefreshCw className="h-4 w-4" aria-hidden />
@@ -208,7 +208,7 @@ export function PaymentPageClient({
                 t={tTh}
               />
               {!bankAccountsError && bankAccounts.length === 0 && (
-                <p className="rounded-lg border border-border bg-muted/30 px-3 py-3 text-center text-sm text-muted-foreground">
+                <p className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-3 text-center text-sm text-zinc-500">
                   ยังไม่มีบัญชีสำหรับแสดง — กรุณาติดต่อร้านเพื่อขอข้อมูลโอนเงิน
                 </p>
               )}
@@ -216,18 +216,16 @@ export function PaymentPageClient({
           </div>
 
           <div
-            className={`rounded-2xl border bg-card p-5 shadow-md space-y-4 ${
-              uploadSuccess
-                ? "border-primary/30 ring-1 ring-emerald-100"
-                : "border-primary/35 ring-2 ring-primary/15"
+            className={`rounded-xl border border-border/60 bg-zinc-950/40 p-5 space-y-4 ${
+              uploadSuccess ? "ring-1 ring-emerald-500/25" : ""
             }`}
           >
             {!uploadSuccess ? (
               <>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">ขั้นตอนถัดไป</p>
-                  <p className="mt-1 text-lg font-bold text-foreground">ส่งหลักฐานการโอนเงิน</p>
-                  <p className="mt-1 text-xs text-muted-foreground">อัปโหลดสลิปหรือ PDF เพื่อยืนยันการชำระเงิน</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">ขั้นตอนถัดไป</p>
+                  <p className="mt-1 text-lg font-bold text-zinc-100">ส่งหลักฐานการโอนเงิน</p>
+                  <p className="mt-1 text-xs text-zinc-500">อัปโหลดสลิปหรือ PDF เพื่อยืนยันการชำระเงิน</p>
                 </div>
                 {!access?.t || !access?.e ? (
                   <div
@@ -263,7 +261,7 @@ export function PaymentPageClient({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={!access?.t || !access?.e}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/[0.04] py-4 font-semibold text-primary transition-colors hover:bg-primary/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-900/50 py-4 font-semibold text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-900/70 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Upload className="h-5 w-5" />
                   {selectedFile ? selectedFile.name : "เลือกไฟล์สลิป"}
@@ -306,7 +304,7 @@ export function PaymentPageClient({
               className={
                 uploadSuccess
                   ? "border-[#06C755] bg-[#06C755]/10 py-3 text-base font-semibold shadow-md ring-2 ring-[#06C755]/30"
-                  : "border-border bg-muted/30 py-2 text-xs font-normal text-muted-foreground hover:bg-muted/30/90"
+                  : "border-zinc-800 bg-zinc-900/50 py-2 text-xs font-normal text-zinc-500 hover:bg-zinc-900/70"
               }
             />
           </div>

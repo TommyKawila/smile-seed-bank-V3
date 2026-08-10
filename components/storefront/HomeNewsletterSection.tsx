@@ -73,16 +73,19 @@ export function HomeNewsletterSection() {
   }
 
   return (
-    <section className="mx-4 mb-14 overflow-hidden rounded-3xl border border-emerald-800/20 bg-primary sm:mx-6">
+    <section className="mx-4 mb-14 overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40 sm:mx-6">
       <div className="mx-auto flex max-w-4xl flex-col items-stretch justify-between gap-8 px-6 py-10 sm:flex-row sm:items-center sm:gap-10">
         <div className="min-w-0 flex-1 text-center sm:text-left">
-          <h3 className="font-sans text-xl font-medium leading-snug text-white sm:text-2xl">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+            {t("จดหมายข่าว", "Newsletter")}
+          </p>
+          <h3 className="mt-2 font-sans text-xl font-medium leading-snug text-zinc-100 sm:text-2xl">
             {t(
               "รับส่วนลด 10% สำหรับออเดอร์แรกของคุณ",
               "Get 10% off your first order"
             )}
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-white/90">
+          <p className="mt-2 text-sm leading-relaxed text-zinc-500">
             {t(
               "สมัครรับข่าวสารเพื่อรับโค้ดส่วนลด และเทคนิคการปลูกจากผู้เชี่ยวชาญส่งตรงถึงอีเมลคุณ",
               "Join our newsletter for exclusive growing tips and get your discount code instantly."
@@ -91,13 +94,13 @@ export function HomeNewsletterSection() {
         </div>
 
         {msg ? (
-          <p className="text-center text-sm font-medium text-emerald-100 sm:text-right" role="status">
+          <p className="text-center text-sm font-medium text-emerald-400/80 sm:text-right" role="status">
             {msg}
           </p>
         ) : (
           <form
             onSubmit={(e) => void onSubmit(e)}
-            className="flex w-full flex-col gap-5 sm:max-w-md sm:flex-shrink-0 sm:flex-row sm:items-stretch sm:gap-4"
+            className="flex w-full flex-col gap-3 sm:max-w-md sm:flex-shrink-0 sm:flex-row sm:items-stretch"
           >
             <label htmlFor="home-newsletter-email" className="sr-only">
               {t("อีเมล", "Email")}
@@ -115,12 +118,12 @@ export function HomeNewsletterSection() {
               }}
               placeholder={t("ใส่อีเมลของคุณ...", "you@email.com")}
               disabled={pending}
-              className="min-h-12 h-12 min-w-0 flex-1 touch-manipulation border-white/25 bg-white/95 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus-visible:ring-emerald-300"
+              className="min-h-12 h-12 min-w-0 flex-1 touch-manipulation border-zinc-800 bg-zinc-900/50 px-4 py-3 text-base text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-500/35"
             />
             <Button
               type="submit"
               disabled={pending}
-              className="min-h-12 h-12 w-full min-w-[3rem] shrink-0 touch-manipulation rounded-sm border-2 border-white bg-card px-6 text-sm font-semibold tracking-wide text-primary hover:bg-primary/10 disabled:opacity-60 sm:w-auto"
+              className="min-h-12 h-12 w-full shrink-0 touch-manipulation bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 sm:w-auto"
             >
               {pending ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -132,7 +135,7 @@ export function HomeNewsletterSection() {
         )}
       </div>
       {err ? (
-        <p className="border-t border-white/10 px-6 py-3 text-center text-sm text-red-200 sm:text-left" role="alert">
+        <p className="border-t border-border/60 px-6 py-3 text-center text-sm text-red-400 sm:text-left" role="alert">
           {err}
         </p>
       ) : null}

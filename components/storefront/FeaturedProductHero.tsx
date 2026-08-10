@@ -26,7 +26,7 @@ export function FeaturedProductHero({
 
   if (isLoading) {
     return (
-      <section className="border-b border-border bg-muted/30 py-10 font-sans sm:py-14">
+      <section className="border-b border-border/60 bg-background py-10 font-sans sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mb-8 space-y-3 sm:mb-10">
             <div className="h-3 w-28 animate-pulse rounded bg-muted/40/80" />
@@ -57,7 +57,7 @@ export function FeaturedProductHero({
   if (products.length === 0) return null;
 
   return (
-    <section className="border-b border-border bg-muted/30 py-10 font-sans sm:py-14">
+    <section className="border-b border-border/60 bg-background py-10 font-sans sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <header
           className={cn(
@@ -65,13 +65,13 @@ export function FeaturedProductHero({
             "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-500 motion-safe:fill-mode-both"
           )}
         >
-          <p className="font-sans text-xs font-semibold tracking-wide text-primary">
+          <p className="font-sans text-[10px] font-medium uppercase tracking-wide text-zinc-500">
             {t("สายพันธุ์คัดพิเศษ", "Curated selections")}
           </p>
-          <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl md:text-[1.85rem]">
+          <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight text-zinc-100 sm:text-3xl md:text-[1.85rem]">
             {mainHeading}
           </h2>
-          <p className="font-sans text-sm leading-relaxed text-muted-foreground">
+          <p className="font-sans text-sm leading-relaxed text-zinc-500">
             {t(
               "คัดเลือกอย่างมีหลักการ — เน้นความชัดเจนของโปรไฟล์และความโปร่งใสทางวิทยาศาสตร์",
               "Editorial picks with clear lab-style labeling—depth lives on each strain profile."
