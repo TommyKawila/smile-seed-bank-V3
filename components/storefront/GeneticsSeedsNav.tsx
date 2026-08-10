@@ -189,7 +189,7 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
       {open ? (
         <div className="absolute left-1/2 top-full z-50 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 pt-2 lg:left-0 lg:translate-x-0">
           <div className="overflow-hidden rounded-xl border border-border/60 bg-zinc-950/95 shadow-lg backdrop-blur-md">
-            <div className="border-b border-border/60 px-4 py-3">
+            <div className="px-4 py-3">
               <ul className="space-y-0.5">
                 {entryLinks.map((item) => (
                   <li key={item.href}>
@@ -209,23 +209,6 @@ export function GeneticsSeedsNav({ navLinkClass, onNavigate, menuOpen, seedsActi
               </p>
               <div className="px-1">{breederLinks}</div>
             </div>
-            <ul className="space-y-0.5 px-2 py-2">
-              {rows.map((row) => (
-                <li key={row.href}>
-                  <Link
-                    href={row.href}
-                    className={cn(
-                      serif,
-                      "flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-900/70 hover:text-zinc-100"
-                    )}
-                    onClick={() => setOpen(false)}
-                  >
-                    <SeedsFilterIconBadge slug={row.slug} />
-                    {row.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       ) : null}

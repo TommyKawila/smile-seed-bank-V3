@@ -115,73 +115,73 @@ export function GenomeCirclePanel({
 
   return (
     <div className="space-y-8">
-      <header className="space-y-4 border-b border-border pb-8">
+      <header className="space-y-4 border-b border-border/60 pb-8">
         <div className="space-y-1">
-          <p className={cn(mono, "text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground")}>
+          <p className={cn(mono, "text-[10px] font-medium uppercase tracking-[0.2em] text-zinc-500")}>
             {t("โครงการสมาชิก", "Membership program")}
           </p>
-          <h1 className={cn(serif, "text-2xl font-medium tracking-tight text-foreground sm:text-3xl")}>
+          <h1 className={cn(serif, "text-2xl font-medium tracking-tight text-zinc-100 sm:text-3xl")}>
             The Genome Circle
           </h1>
         </div>
 
         <div className="space-y-2">
-          <p className={cn(mono, "text-[11px] font-medium uppercase tracking-[0.12em] text-foreground")}>
+          <p className={cn(mono, "text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-100")}>
             {t(`ระดับสมาชิก: ${tierLabel}`, `Member level: ${tierLabel}`)}
           </p>
-          <p className={cn(mono, "text-[10px] uppercase tracking-wider text-muted-foreground")}>{refId}</p>
+          <p className={cn(mono, "text-[10px] uppercase tracking-wider text-zinc-500")}>{refId}</p>
         </div>
 
         {nextTierLabel ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <span className={cn(mono, "text-[10px] uppercase tracking-widest text-muted-foreground")}>
+              <span className={cn(mono, "text-[10px] uppercase tracking-widest text-zinc-500")}>
                 {t("ความคืบหน้าสู่ระดับถัดไป", "Progress to next tier")}
               </span>
-              <span className={cn(mono, "text-[10px] text-muted-foreground")}>{nextTierLabel}</span>
+              <span className={cn(mono, "text-[10px] text-zinc-500")}>{nextTierLabel}</span>
             </div>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-emerald-600/20">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-800">
               <div
-                className="h-full rounded-full bg-emerald-700 transition-[width] duration-500 ease-out"
+                className="h-full rounded-full bg-emerald-500/70 transition-[width] duration-500 ease-out"
                 style={{ width: `${Math.round(progress * 100)}%` }}
               />
             </div>
           </div>
         ) : (
-          <div className="h-1 w-full overflow-hidden rounded-full bg-emerald-600/20">
-            <div className="h-full w-full rounded-full bg-emerald-700" />
+          <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-800">
+            <div className="h-full w-full rounded-full bg-emerald-500/70" />
           </div>
         )}
       </header>
 
       <section className="space-y-3">
-        <h2 className={cn(serif, "text-sm font-medium text-foreground")}>
+        <h2 className={cn(serif, "text-sm font-medium text-zinc-100")}>
           {t("สิทธิประโยชน์", "Benefits")}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {benefits.map((b) => (
             <div
               key={b.title}
-              className="rounded-sm border border-border bg-muted/30 p-4 transition-colors hover:border-border hover:bg-card"
+              className="rounded-xl border border-border/60 bg-zinc-950/40 p-4 transition-colors hover:border-zinc-700 hover:bg-zinc-900/50"
             >
-              <b.icon className="mb-3 h-5 w-5 text-primary/80" strokeWidth={1} aria-hidden />
-              <p className={cn(mono, "text-[11px] font-medium uppercase tracking-wide text-foreground")}>
+              <b.icon className="mb-3 h-5 w-5 text-emerald-400/80" strokeWidth={1} aria-hidden />
+              <p className={cn(mono, "text-[11px] font-medium uppercase tracking-wide text-zinc-100")}>
                 {b.title}
               </p>
-              <p className="mt-1.5 text-xs font-light leading-relaxed text-muted-foreground">{b.sub}</p>
+              <p className="mt-1.5 text-xs font-light leading-relaxed text-zinc-500">{b.sub}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="rounded-sm border border-border bg-card px-4 py-5 shadow-sm">
-        <p className={cn(mono, "text-[10px] font-medium uppercase tracking-widest text-muted-foreground")}>
+      <section className="rounded-xl border border-border/60 bg-zinc-950/40 px-4 py-5">
+        <p className={cn(mono, "text-[10px] font-medium uppercase tracking-widest text-zinc-500")}>
           {t("Seed Points", "Seed Points")}
         </p>
-        <p className={cn(mono, "mt-2 text-3xl font-medium tracking-tight text-foreground")}>
+        <p className={cn(mono, "mt-2 text-3xl font-medium tracking-tight text-zinc-100")}>
           {seedPoints.toLocaleString("en-US")}
         </p>
-        <p className="mt-1 text-[11px] font-light leading-relaxed text-muted-foreground">
+        <p className="mt-1 text-[11px] font-light leading-relaxed text-zinc-500">
           {t(
             "สะสมจากยอดสั่งซื้อที่ยืนยันแล้ว (หน่วย: บาทเทียบเท่า)",
             "Accrued from confirmed order value (THB-equivalent units)."

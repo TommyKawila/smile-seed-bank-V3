@@ -91,14 +91,14 @@ export type ProfilePageClientProps = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; labelEn: string; cls: string }> = {
-  PENDING: { label: "รอดำเนินการ", labelEn: "Pending", cls: "bg-muted/30 text-muted-foreground" },
-  AWAITING_VERIFICATION: { label: "รอตรวจสอบสลิป", labelEn: "Verifying", cls: "bg-muted/30 text-muted-foreground" },
-  PAID: { label: "ชำระแล้ว", labelEn: "Paid", cls: "bg-emerald-50 text-primary" },
-  COMPLETED: { label: "เสร็จสมบูรณ์", labelEn: "Completed", cls: "bg-emerald-50 text-primary" },
-  SHIPPED: { label: "จัดส่งแล้ว", labelEn: "Shipped", cls: "bg-muted/30 text-muted-foreground" },
-  DELIVERED: { label: "ส่งถึงแล้ว", labelEn: "Delivered", cls: "bg-emerald-50 text-primary" },
-  CANCELLED: { label: "ยกเลิกแล้ว", labelEn: "Cancelled", cls: "bg-muted/30 text-muted-foreground" },
-  VOIDED: { label: "ยกเลิก·คืนสต็อก", labelEn: "Voided", cls: "bg-muted/30 text-muted-foreground" },
+  PENDING: { label: "รอดำเนินการ", labelEn: "Pending", cls: "border-zinc-800 bg-zinc-900/50 text-zinc-500" },
+  AWAITING_VERIFICATION: { label: "รอตรวจสอบสลิป", labelEn: "Verifying", cls: "border-zinc-800 bg-zinc-900/50 text-zinc-500" },
+  PAID: { label: "ชำระแล้ว", labelEn: "Paid", cls: "border-zinc-800 bg-zinc-900/50 text-emerald-400/80" },
+  COMPLETED: { label: "เสร็จสมบูรณ์", labelEn: "Completed", cls: "border-zinc-800 bg-zinc-900/50 text-emerald-400/80" },
+  SHIPPED: { label: "จัดส่งแล้ว", labelEn: "Shipped", cls: "border-zinc-800 bg-zinc-900/50 text-zinc-400" },
+  DELIVERED: { label: "ส่งถึงแล้ว", labelEn: "Delivered", cls: "border-zinc-800 bg-zinc-900/50 text-emerald-400/80" },
+  CANCELLED: { label: "ยกเลิกแล้ว", labelEn: "Cancelled", cls: "border-zinc-800 bg-zinc-900/50 text-zinc-500" },
+  VOIDED: { label: "ยกเลิก·คืนสต็อก", labelEn: "Voided", cls: "border-zinc-800 bg-zinc-900/50 text-zinc-500" },
 };
 
 function StatusBadge({
@@ -117,7 +117,7 @@ function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-sm px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+        "inline-flex items-center rounded-sm border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
         cfg.cls
       )}
     >
@@ -154,18 +154,18 @@ function LoyaltyScorecard({
   const remaining = Math.max(0, NEXT_REWARD_POINTS - currentPoints);
 
   return (
-    <div className="mb-5 overflow-hidden rounded-sm border border-primary/15 bg-primary text-primary-foreground shadow-sm">
+    <div className="mb-5 overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40">
       <div className="relative p-5 sm:p-6">
-        <div className="absolute right-4 top-4 rounded-full bg-white/10 p-3" aria-hidden>
-          <Leaf className="h-5 w-5" />
+        <div className="absolute right-4 top-4 rounded-full border border-zinc-800 bg-zinc-900/50 p-3" aria-hidden>
+          <Leaf className="h-5 w-5 text-emerald-400/80" />
         </div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
           {t("บัตรคะแนนสะสม", "Loyalty Scorecard")}
         </p>
-        <h2 className="mt-2 max-w-xl text-xl font-semibold tracking-tight sm:text-2xl">
+        <h2 className="mt-2 max-w-xl text-xl font-semibold tracking-tight text-zinc-100 sm:text-2xl">
           {customer?.full_name ?? t("สมาชิก Smile", "Smile Member")}
         </h2>
-        <p className="mt-2 max-w-2xl text-xs leading-relaxed text-white/70 sm:text-sm">
+        <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-500 sm:text-sm">
           {t(
             "ทุก 100 บาท = 1 คะแนน ใช้แลกเป็นส่วนลดเมื่อสั่งซื้อสินค้าที่ร่วมรายการ",
             "100 THB = 1 point. Redeem points as discount on eligible orders."
@@ -174,24 +174,24 @@ function LoyaltyScorecard({
 
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <div>
-            <p className="text-xs text-white/60">{t("คะแนนปัจจุบัน", "Current points")}</p>
-            <p className={cn(mono, "mt-1 text-3xl font-bold")}>{currentPoints}</p>
+            <p className="text-xs text-zinc-500">{t("คะแนนปัจจุบัน", "Current points")}</p>
+            <p className={cn(mono, "mt-1 text-3xl font-bold text-zinc-100")}>{currentPoints}</p>
           </div>
           <div>
-            <p className="text-xs text-white/60">{t("ยอดใช้จ่ายสะสม", "Lifetime spend")}</p>
-            <p className={cn(mono, "mt-1 text-xl font-semibold")}>{formatPrice(lifetimeSpend)}</p>
+            <p className="text-xs text-zinc-500">{t("ยอดใช้จ่ายสะสม", "Lifetime spend")}</p>
+            <p className={cn(mono, "mt-1 text-xl font-semibold text-zinc-100")}>{formatPrice(lifetimeSpend)}</p>
           </div>
           <div>
-            <p className="text-xs text-white/60">{t("สถานะ", "Status")}</p>
-            <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm font-medium">
-              <BadgeCheck className="h-4 w-4" />
+            <p className="text-xs text-zinc-500">{t("สถานะ", "Status")}</p>
+            <p className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1 text-sm font-medium text-zinc-300">
+              <BadgeCheck className="h-4 w-4 text-emerald-400/80" />
               {customer?.is_wholesale ? t("ขายส่ง", "Wholesale") : t("ปลีก", "Retail")}
             </p>
           </div>
         </div>
 
         <div className="mt-5">
-          <div className="mb-2 flex items-center justify-between text-xs text-white/70">
+          <div className="mb-2 flex items-center justify-between text-xs text-zinc-500">
             <span>{t("รางวัลถัดไป", "Next reward")}</span>
             <span>
               {remaining === 0
@@ -201,8 +201,8 @@ function LoyaltyScorecard({
                   : `อีก ${remaining} คะแนน`}
             </span>
           </div>
-          <div className="h-3 overflow-hidden rounded-full bg-white/15">
-            <div className="h-full rounded-full bg-secondary" style={{ width: `${progress}%` }} />
+          <div className="h-3 overflow-hidden rounded-full bg-zinc-800">
+            <div className="h-full rounded-full bg-emerald-500/70" style={{ width: `${progress}%` }} />
           </div>
         </div>
       </div>
@@ -390,24 +390,24 @@ function ProfileContent({
   const displayCustomer = (customer ?? initialCustomer) as Customer | null;
 
   return (
-    <div className={`min-h-screen bg-background ${JOURNAL_PRODUCT_FONT_VARS}`}>
+    <div className={`min-h-screen bg-background pt-20 pb-12 ${JOURNAL_PRODUCT_FONT_VARS}`}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-xl font-bold text-white">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/50 text-xl font-bold text-zinc-100">
               {(displayCustomer?.full_name ?? activeEmail ?? "U").charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="font-bold text-foreground">{displayCustomer?.full_name ?? t("ลูกค้า", "Customer")}</p>
-              <p className="text-sm text-muted-foreground">{activeEmail}</p>
+              <p className="font-bold text-zinc-100">{displayCustomer?.full_name ?? t("ลูกค้า", "Customer")}</p>
+              <p className="text-sm text-zinc-500">{activeEmail}</p>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => { void signOut().then(() => router.push("/")); }}
-            className="gap-1.5 rounded-sm border-border text-muted-foreground"
+            className="gap-1.5 rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-900/70 hover:text-zinc-200"
           >
             <LogOut className="h-3.5 w-3.5" />
             {t("ออกจากระบบ", "Sign Out")}
@@ -424,7 +424,7 @@ function ProfileContent({
         {/* Tabs */}
         <div
           className={cn(
-            "mb-4 grid gap-px overflow-hidden rounded-sm border border-border bg-muted/40",
+            "mb-4 grid gap-px overflow-hidden rounded-lg border border-border/60 bg-zinc-900/50",
             showMembershipProgram ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"
           )}
         >
@@ -446,8 +446,8 @@ function ProfileContent({
                 navMono,
                 "flex min-h-[2.75rem] items-center justify-center px-1 py-2.5 text-center transition-colors sm:min-h-0 sm:py-3.5",
                 tab === tb
-                  ? "bg-zinc-900 text-white"
-                  : "bg-card text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                  ? "bg-zinc-800 text-zinc-100"
+                  : "bg-zinc-950/40 text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-300"
               )}
             >
               {label}
@@ -475,12 +475,12 @@ function ProfileContent({
                 <Loader2 className="h-7 w-7 animate-spin text-primary" />
               </div>
             ) : orders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-4 rounded-sm border border-dashed border-border py-16 text-center">
-                <ShoppingBag className="h-10 w-10 text-zinc-200" strokeWidth={1} />
-                <p className={cn(serif, "text-lg font-medium text-foreground")}>
+              <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-16 text-center">
+                <ShoppingBag className="h-10 w-10 text-zinc-400" strokeWidth={1} />
+                <p className={cn(serif, "text-lg font-medium text-zinc-100")}>
                   {t("ยังไม่มีออเดอร์", "No orders yet")}
                 </p>
-                <Button asChild variant="outline" className="rounded-sm border-border tracking-wide">
+                <Button asChild variant="outline" className="rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70">
                   <Link href="/shop">{t("สำรวจสายพันธุ์", "Explore genetics")}</Link>
                 </Button>
               </div>
@@ -502,11 +502,11 @@ function ProfileContent({
                       onClick={() => setSelectedOrder(order as OrderDetailRow)}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="w-full overflow-hidden rounded-sm border border-border bg-card text-left shadow-sm transition-transform active:scale-[.99]"
+                      className="w-full overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40 text-left transition-transform active:scale-[.99]"
                     >
                       <div className="flex items-start gap-4 p-4">
                         {/* Item image */}
-                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-muted/30">
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/50">
                           {img ? (
                             <Image
                               src={img}
@@ -525,13 +525,13 @@ function ProfileContent({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className={cn(mono, "text-sm font-medium text-foreground")}>
+                              <p className={cn(mono, "text-sm font-medium text-zinc-100")}>
                                 #{order.order_number}
                               </p>
-                              <p className={cn(serif, "mt-0.5 text-xs font-medium text-muted-foreground")}>
+                              <p className={cn(serif, "mt-0.5 text-xs font-medium text-zinc-400")}>
                                 {itemName}{itemCount > 1 ? ` +${itemCount - 1} ${t("รายการ", "more")}` : ""}
                               </p>
-                              <p className={cn(mono, "mt-0.5 text-[11px] text-muted-foreground")}>
+                              <p className={cn(mono, "mt-0.5 text-[11px] text-zinc-500")}>
                                 {new Date(order.created_at).toLocaleDateString(
                                   locale === "th" ? "th-TH" : "en-US",
                                   { year: "numeric", month: "short", day: "numeric" }
@@ -551,7 +551,7 @@ function ProfileContent({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-border bg-muted/30 px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-card"
+                                    className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-zinc-800 bg-zinc-900/50 px-2 py-1 text-[10px] font-medium text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
                                   >
                                     <FileText className="h-3.5 w-3.5" />
                                     {locale === "en" ? "Receipt" : "ใบเสร็จ"}
@@ -566,18 +566,18 @@ function ProfileContent({
 
                           {/* Tracking */}
                           {order.tracking_number && (
-                            <div className="mt-2.5 flex items-center gap-2 rounded-sm border border-border bg-muted/30 px-3 py-2">
-                              <Truck className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.25} />
+                            <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
+                              <Truck className="h-4 w-4 shrink-0 text-zinc-500" strokeWidth={1.25} />
                               <div className="min-w-0 flex-1">
-                                <p className={cn(navMono, "text-[9px] text-muted-foreground")}>{t("เลขพัสดุ", "Tracking")}</p>
-                                <p className={cn(mono, "text-sm font-medium text-foreground")}>{order.tracking_number}</p>
+                                <p className={cn(navMono, "text-[9px] text-zinc-500")}>{t("เลขพัสดุ", "Tracking")}</p>
+                                <p className={cn(mono, "text-sm font-medium text-zinc-100")}>{order.tracking_number}</p>
                               </div>
                               <span
                                 role="button"
                                 tabIndex={0}
                                 onClick={(e) => { e.stopPropagation(); copyTracking(order.tracking_number!); }}
                                 onKeyDown={(e) => e.key === "Enter" && copyTracking(order.tracking_number!)}
-                                className="text-primary hover:text-primary cursor-pointer"
+                                className="cursor-pointer text-zinc-400 hover:text-emerald-400/80"
                               >
                                 {copied === order.tracking_number ? (
                                   <Check className="h-4 w-4" />
@@ -590,9 +590,9 @@ function ProfileContent({
                         </div>
                       </div>
                       {/* Tap hint */}
-                      <div className="flex items-center justify-end gap-1 border-t border-border px-4 py-2">
-                        <span className="text-[11px] text-muted-foreground">{t("แตะเพื่อดูรายละเอียด", "Tap for details")}</span>
-                        <ChevronRight className="h-3.5 w-3.5 text-zinc-300" />
+                      <div className="flex items-center justify-end gap-1 border-t border-border/60 px-4 py-2">
+                        <span className="text-[11px] text-zinc-500">{t("แตะเพื่อดูรายละเอียด", "Tap for details")}</span>
+                        <ChevronRight className="h-3.5 w-3.5 text-zinc-500" />
                       </div>
                     </m.button>
                   );
@@ -609,18 +609,18 @@ function ProfileContent({
               <MemberCoupons locale={locale} t={t} mono={mono} serif={serif} />
 
               <div className="space-y-4">
-                <div className="border-b border-border pb-2">
-                  <h3 className={cn(serif, "text-sm font-medium text-foreground")}>
+                <div className="border-b border-border/60 pb-2">
+                  <h3 className={cn(serif, "text-sm font-medium text-zinc-100")}>
                     {t("โค้ดจากปุ่มส่วนลด", "Collected from offer button")}
                   </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">{t("เลือกจากคูปองลอยมุมขวาล่างของร้าน", "From the floating coupon on the storefront")}</p>
+                  <p className="mt-1 text-xs text-zinc-500">{t("เลือกจากคูปองลอยมุมขวาล่างของร้าน", "From the floating coupon on the storefront")}</p>
                 </div>
                 {couponsLoading ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-7 w-7 animate-spin text-primary" />
                   </div>
                 ) : collectedCoupons.length === 0 ? (
-                  <p className="text-center text-xs text-muted-foreground">
+                  <p className="text-center text-xs text-zinc-500">
                     {t(
                       "ยังไม่มีโค้ดในส่วนนี้ — กด «เก็บโค้ด» จากปุ่มส่วนลดมุมขวาล่างเมื่อมีโค้ด",
                       "Nothing here yet — tap “Collect code” on the bottom-right discount button when offers appear.",
@@ -634,7 +634,7 @@ function ProfileContent({
                       <div className="space-y-6">
                         {available.length > 0 && (
                           <div className="space-y-2">
-                            <p className={cn(serif, "mb-1 text-xs text-muted-foreground")}>
+                            <p className={cn(serif, "mb-1 text-xs text-zinc-500")}>
                               {t("ใช้ได้", "Available")}
                             </p>
                             {available.map((c) => (
@@ -650,7 +650,7 @@ function ProfileContent({
                         )}
                         {used.length > 0 && (
                           <div className="space-y-2">
-                            <p className={cn(serif, "mb-1 text-xs text-muted-foreground")}>
+                            <p className={cn(serif, "mb-1 text-xs text-zinc-500")}>
                               {t("ใช้แล้ว / หมดอายุ", "Used / Expired")}
                             </p>
                             {used.map((c) => (
@@ -677,12 +677,12 @@ function ProfileContent({
         {/* ── PROFILE TAB ─────────────────────────────────────────────────────── */}
         {tab === "profile" && (
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            <div className="overflow-hidden rounded-sm border border-border bg-card shadow-sm">
-              <div className="border-b border-border px-5 py-4">
-                <h2 className={cn(serif, "text-lg font-medium text-foreground")}>
+            <div className="overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40">
+              <div className="border-b border-border/60 px-5 py-4">
+                <h2 className={cn(serif, "text-lg font-medium text-zinc-100")}>
                   {t("ข้อมูลส่วนตัว", "Personal Information")}
                 </h2>
-                <p className="mt-0.5 text-xs font-light text-muted-foreground">
+                <p className="mt-0.5 text-xs font-light text-zinc-500">
                   {t("แก้ไขข้อมูลแล้วกดบันทึก", "Edit your info then tap Save")}
                 </p>
               </div>
@@ -690,11 +690,11 @@ function ProfileContent({
               <div className="space-y-5 p-5">
                 {/* Email (read-only) */}
                 <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5 text-xs font-light text-muted-foreground">
+                  <Label className="flex items-center gap-1.5 text-xs font-light text-zinc-500">
                     <Mail className="h-3.5 w-3.5" strokeWidth={1.25} />
                     {t("อีเมล", "Email")}
                   </Label>
-                  <div className="flex min-h-[48px] items-center rounded-sm border border-border bg-card px-4 text-sm font-normal text-muted-foreground">
+                  <div className="flex min-h-[48px] items-center rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 text-sm font-normal text-zinc-400">
                     {activeEmail}
                   </div>
                 </div>
@@ -703,7 +703,7 @@ function ProfileContent({
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="full_name"
-                    className="flex items-center gap-1.5 text-xs font-light text-muted-foreground"
+                    className="flex items-center gap-1.5 text-xs font-light text-zinc-500"
                   >
                     <User className="h-3.5 w-3.5" strokeWidth={1.25} />
                     {t("ชื่อ-นามสกุล", "Full Name")}
@@ -715,7 +715,7 @@ function ProfileContent({
                     value={editForm.full_name}
                     onChange={(e) => setEditForm((p) => ({ ...p, full_name: e.target.value }))}
                     placeholder={t("ชื่อ-นามสกุล", "Full name")}
-                    className="min-h-[48px] rounded-sm border-border bg-card text-sm"
+                    className="min-h-[48px] rounded-lg border-zinc-800 bg-zinc-900/50 text-sm text-zinc-100 placeholder:text-zinc-600"
                   />
                 </div>
 
@@ -723,7 +723,7 @@ function ProfileContent({
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="phone"
-                    className="flex items-center gap-1.5 text-xs font-light text-muted-foreground"
+                    className="flex items-center gap-1.5 text-xs font-light text-zinc-500"
                   >
                     <Phone className="h-3.5 w-3.5" strokeWidth={1.25} />
                     {t("เบอร์โทรศัพท์", "Phone")}
@@ -736,7 +736,7 @@ function ProfileContent({
                     value={editForm.phone}
                     onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
                     placeholder="08x-xxx-xxxx"
-                    className="min-h-[48px] rounded-sm border-border bg-card text-sm"
+                    className="min-h-[48px] rounded-lg border-zinc-800 bg-zinc-900/50 text-sm text-zinc-100 placeholder:text-zinc-600"
                   />
                 </div>
 
@@ -744,7 +744,7 @@ function ProfileContent({
                 <div id="address" className="scroll-mt-24 space-y-1.5">
                   <Label
                     htmlFor="address"
-                    className="flex items-center gap-1.5 text-xs font-light text-muted-foreground"
+                    className="flex items-center gap-1.5 text-xs font-light text-zinc-500"
                   >
                     <MapPin className="h-3.5 w-3.5" strokeWidth={1.25} />
                     {t("ที่อยู่จัดส่ง", "Shipping Address")}
@@ -756,7 +756,7 @@ function ProfileContent({
                     onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))}
                     placeholder={t("บ้านเลขที่ ซอย ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์", "House no., Street, District, Province, Zip")}
                     rows={4}
-                    className="resize-none rounded-sm border-border bg-card text-sm leading-relaxed"
+                    className="resize-none rounded-lg border-zinc-800 bg-zinc-900/50 text-sm leading-relaxed text-zinc-100 placeholder:text-zinc-600"
                   />
                 </div>
 
@@ -764,7 +764,7 @@ function ProfileContent({
                 <Button
                   onClick={() => void handleSaveProfile()}
                   disabled={saving}
-                  className="h-12 w-full gap-2 rounded-sm bg-primary text-base font-semibold tracking-wide text-white shadow-none hover:bg-primary/90 active:scale-[.98]"
+                  className="h-12 w-full gap-2 rounded-lg bg-primary text-base font-semibold tracking-wide text-white shadow-none hover:bg-primary/90 active:scale-[.98]"
                 >
                   {saving ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -776,7 +776,7 @@ function ProfileContent({
             </div>
 
             {/* Quick Links */}
-            <div className="overflow-hidden rounded-sm border border-border bg-card shadow-sm">
+            <div className="mt-4 overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40">
               {[
                 { href: "/shop", label: t("เลือกซื้อสินค้า", "Browse Products"), icon: ShoppingBag },
                 { href: "/breeders", label: t("ดูข้อมูล Breeder", "Explore Breeders"), icon: Leaf },
@@ -784,13 +784,13 @@ function ProfileContent({
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center justify-between px-5 py-3.5 text-sm font-light text-muted-foreground hover:bg-muted/30 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-border"
+                  className="flex items-center justify-between px-5 py-3.5 text-sm font-light text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-border/60"
                 >
                   <span className="flex items-center gap-3">
-                    <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.25} />
+                    <Icon className="h-4 w-4 text-zinc-500" strokeWidth={1.25} />
                     {label}
                   </span>
-                  <ChevronRight className="h-4 w-4 text-zinc-300" strokeWidth={1.25} />
+                  <ChevronRight className="h-4 w-4 text-zinc-500" strokeWidth={1.25} />
                 </Link>
               ))}
             </div>

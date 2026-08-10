@@ -104,26 +104,26 @@ function OrderPriceBreakdown({ order, t }: { order: OrderSuccessView; t: TFn }) 
       ? t(`ส่วนลด ${pct}%`, `${pct}% off`)
       : t("ส่วนลด", "Discount");
   return (
-    <div className="space-y-2.5 rounded-lg border border-border bg-card px-3.5 py-4 sm:px-4">
+    <div className="space-y-2.5 rounded-lg border border-border/60 bg-zinc-950/40 px-3.5 py-4 sm:px-4">
       <div className="flex justify-between gap-3 text-sm">
-        <span className="text-muted-foreground">{t("ยอดรวมสินค้า", "Subtotal")}</span>
-        <span className="tabular-nums text-muted-foreground">{formatPrice(itemsSubtotal)}</span>
+        <span className="text-zinc-500">{t("ยอดรวมสินค้า", "Subtotal")}</span>
+        <span className="tabular-nums text-zinc-200">{formatPrice(itemsSubtotal)}</span>
       </div>
       {showDisc ? (
         <div className="flex justify-between gap-3 text-sm">
-          <span className="font-medium text-orange-600">{discLabel}</span>
-          <span className="tabular-nums font-semibold text-orange-600">−{formatPrice(discountTotal)}</span>
+          <span className="font-medium text-emerald-400/80">{discLabel}</span>
+          <span className="tabular-nums font-semibold text-emerald-400/80">−{formatPrice(discountTotal)}</span>
         </div>
       ) : null}
       {shipping > 0.005 ? (
         <div className="flex justify-between gap-3 text-sm">
-          <span className="text-muted-foreground">{t("ค่าจัดส่ง", "Shipping")}</span>
-          <span className="tabular-nums text-muted-foreground">{formatPrice(shipping)}</span>
+          <span className="text-zinc-500">{t("ค่าจัดส่ง", "Shipping")}</span>
+          <span className="tabular-nums text-zinc-200">{formatPrice(shipping)}</span>
         </div>
       ) : null}
-      <Separator className="bg-muted/30" />
+      <Separator className="bg-border/60" />
       <div className="flex items-end justify-between gap-3 pt-0.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
           {t("ยอดสุทธิ", "Total")}
         </span>
         <span className="text-xl font-extrabold tabular-nums text-primary sm:text-2xl">
@@ -139,18 +139,18 @@ function ShippingRecipientBlock({ order, t }: { order: OrderSuccessView; t: TFn 
     return null;
   }
   return (
-    <div className="rounded-lg border border-border bg-muted/30 px-3 py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="rounded-lg border border-border/60 bg-zinc-950/40 px-3 py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
         {t("ที่อยู่จัดส่ง", "Shipping address")}
       </p>
       {order.customer_name?.trim() ? (
-        <p className="mt-2 text-sm font-bold text-foreground">{order.customer_name.trim()}</p>
+        <p className="mt-2 text-sm font-bold text-zinc-100">{order.customer_name.trim()}</p>
       ) : null}
       {order.customer_phone?.trim() ? (
-        <p className="mt-1 font-mono text-sm tabular-nums text-muted-foreground">{order.customer_phone.trim()}</p>
+        <p className="mt-1 font-mono text-sm tabular-nums text-zinc-400">{order.customer_phone.trim()}</p>
       ) : null}
       {order.shipping_address ? (
-        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{order.shipping_address}</p>
+        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-400">{order.shipping_address}</p>
       ) : null}
     </div>
   );
@@ -304,7 +304,7 @@ function OrderSuccessDynamicInner() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 pt-20">
+      <div className="flex min-h-screen items-center justify-center bg-background pt-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -312,11 +312,11 @@ function OrderSuccessDynamicInner() {
 
   if (loadError === "not_found" || !orderNumber) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-muted/30 px-4 pt-20 pb-12 text-center">
-        <p className="text-muted-foreground">
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-background px-4 pt-20 pb-12 text-center">
+        <p className="text-zinc-400">
           {t("ไม่พบออเดอร์", "Order not found.")}
         </p>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70">
           <Link href="/shop">{t("กลับไปเลือกสินค้า", "Continue shopping")}</Link>
         </Button>
       </div>
@@ -329,14 +329,14 @@ function OrderSuccessDynamicInner() {
         ? `/order-success/${encodeURIComponent(orderNumber)}?${new URLSearchParams({ t: accessT, e: accessE }).toString()}`
         : `/order-success/${encodeURIComponent(orderNumber)}`;
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-muted/30 px-4 pt-20 pb-12 text-center">
-        <p className="text-muted-foreground">
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-background px-4 pt-20 pb-12 text-center">
+        <p className="text-zinc-400">
           {t(
             "กรุณาเข้าสู่ระบบ หรือเปิดลิงก์ออเดอร์จากอีเมล/LINE",
             "Please sign in, or open your order link from email/LINE."
           )}
         </p>
-        <Button asChild className="bg-primary">
+        <Button asChild className="bg-primary hover:bg-primary/90">
           <Link href={`/login?next=${encodeURIComponent(next)}`}>
             {t("เข้าสู่ระบบ", "Sign in")}
           </Link>
@@ -347,11 +347,11 @@ function OrderSuccessDynamicInner() {
 
   if (loadError === "forbidden") {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-muted/30 px-4 pt-20 pb-12 text-center">
-        <p className="text-muted-foreground">
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-background px-4 pt-20 pb-12 text-center">
+        <p className="text-zinc-400">
           {t("คุณไม่มีสิทธิ์ดูออเดอร์นี้", "You do not have access to this order.")}
         </p>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" className="rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70">
           <Link href="/profile">{t("ออเดอร์ของฉัน", "My orders")}</Link>
         </Button>
       </div>
@@ -360,9 +360,9 @@ function OrderSuccessDynamicInner() {
 
   if (loadError === "server" || !order) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-muted/30 px-4 pt-20 pb-12 text-center">
-        <p className="text-muted-foreground">{t("โหลดข้อมูลไม่สำเร็จ", "Could not load order.")}</p>
-        <Button type="button" variant="outline" onClick={() => void loadOrder()}>
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 bg-background px-4 pt-20 pb-12 text-center">
+        <p className="text-zinc-400">{t("โหลดข้อมูลไม่สำเร็จ", "Could not load order.")}</p>
+        <Button type="button" variant="outline" className="rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70" onClick={() => void loadOrder()}>
           {t("ลองอีกครั้ง", "Try again")}
         </Button>
       </div>
@@ -527,63 +527,63 @@ function OrderSuccessDynamicInner() {
 
   if (showTransferPayFlow) {
     return (
-      <div className="min-h-screen bg-muted/30 pt-20 pb-14">
+      <div className="min-h-screen bg-background pt-20 pb-14">
         <div className="mx-auto max-w-lg space-y-5 px-4 sm:px-6">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border border-border/60 bg-zinc-950/40 p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
                   {t("เลขออเดอร์", "Order no.")}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
-                  <p className="min-w-0 truncate font-mono text-lg font-bold tabular-nums text-foreground sm:text-xl">
+                  <p className="min-w-0 truncate font-mono text-lg font-bold tabular-nums text-zinc-100 sm:text-xl">
                     #{displayNo}
                   </p>
                   <button
                     type="button"
                     onClick={() => copyOrderNumber()}
-                    className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted/30 hover:text-primary"
+                    className="shrink-0 rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-900/50 hover:text-primary"
                     aria-label={t("คัดลอกเลขออเดอร์", "Copy order number")}
                   >
                     {copiedOrderNo ? (
-                      <Check className="h-4 w-4 text-emerald-600" />
+                      <Check className="h-4 w-4 text-emerald-400/80" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
                   </button>
                 </div>
               </div>
-              <span className="shrink-0 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+              <span className="shrink-0 rounded-md border border-zinc-800 bg-zinc-900/50 px-2 py-0.5 text-[10px] font-medium text-zinc-500">
                 {t("รอชำระเงิน", "Awaiting payment")}
               </span>
             </div>
-            <Separator className="my-4 bg-muted/30" />
+            <Separator className="my-4 bg-border/60" />
             <OrderPriceBreakdown order={order} t={t} />
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-primary/25 bg-accent/50 p-5">
-            <div className="flex items-center gap-2 font-semibold text-primary">
-              <CreditCard className="h-5 w-5" />
+          <div className="space-y-4 rounded-xl border border-border/60 bg-zinc-950/40 p-5">
+            <div className="flex items-center gap-2 font-semibold text-zinc-200">
+              <CreditCard className="h-5 w-5 text-zinc-500" />
               {t("ข้อมูลการโอนเงิน", "Transfer details")}
             </div>
 
-            <div className="space-y-4 rounded-xl border border-border bg-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+            <div className="space-y-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
                 {t("โอนผ่าน Thai QR / K-Bank", "Thai QR payment (K-Bank)")}
               </p>
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("ธนาคาร", "Bank")}</span>
-                  <span className="font-medium text-foreground">
+                  <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
+                  <span className="font-medium text-zinc-100">
                     {locale === "en" ? STOREFRONT_KBANK_TRANSFER_NAME_EN : STOREFRONT_KBANK_TRANSFER_NAME_TH}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("เลขบัญชี", "Account no.")}</span>
-                  <span className="font-mono font-semibold text-foreground">{STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO}</span>
+                  <span className="text-zinc-500">{t("เลขบัญชี", "Account no.")}</span>
+                  <span className="font-mono font-semibold text-zinc-100">{STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO}</span>
                 </div>
               </div>
-              <p className="text-center text-xs text-muted-foreground">
+              <p className="text-center text-xs text-zinc-500">
                 {t("สแกน QR แล้วโอนตามยอดด้านบน", "Scan the QR and transfer the amount shown above.")}
               </p>
               <DynamicPromptPayQr
@@ -597,28 +597,28 @@ function OrderSuccessDynamicInner() {
 
             {apiBankExtras && (
               <div className="grid gap-2 text-sm">
-                <Separator className="bg-muted/30" />
-                <p className="text-xs font-medium text-muted-foreground">
+                <Separator className="bg-border/60" />
+                <p className="text-xs font-medium text-zinc-500">
                   {t("บัญชีสำรอง", "Alternative account")}
                 </p>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("ธนาคาร", "Bank")}</span>
-                  <span className="font-medium text-foreground">{apiBankExtras.name}</span>
+                  <span className="text-zinc-500">{t("ธนาคาร", "Bank")}</span>
+                  <span className="font-medium text-zinc-100">{apiBankExtras.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("เลขบัญชี", "Account no.")}</span>
-                  <span className="font-mono font-semibold text-foreground">{apiBankExtras.accountNo}</span>
+                  <span className="text-zinc-500">{t("เลขบัญชี", "Account no.")}</span>
+                  <span className="font-mono font-semibold text-zinc-100">{apiBankExtras.accountNo}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("ชื่อบัญชี", "Account name")}</span>
-                  <span className="font-medium text-foreground">{apiBankExtras.accountName}</span>
+                  <span className="text-zinc-500">{t("ชื่อบัญชี", "Account name")}</span>
+                  <span className="font-medium text-zinc-100">{apiBankExtras.accountName}</span>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <p className="font-semibold text-foreground">
+          <div className="space-y-4 rounded-xl border border-border/60 bg-zinc-950/40 p-5">
+            <p className="font-semibold text-zinc-100">
               {t("ส่งหลักฐานการโอนเงิน", "Upload payment slip")}
             </p>
             <input
@@ -631,7 +631,7 @@ function OrderSuccessDynamicInner() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 py-4 font-medium text-primary transition-colors hover:bg-accent"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-900/50 py-4 font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-900/70"
             >
               <Upload className="h-5 w-5" />
               {selectedFile ? selectedFile.name : t("เลือกไฟล์สลิป", "Choose slip file")}
@@ -642,7 +642,7 @@ function OrderSuccessDynamicInner() {
               type="button"
               onClick={() => void handleSlipConfirm()}
               disabled={!selectedFile || uploading}
-              className="h-12 w-full bg-primary text-base font-semibold text-white hover:bg-primary/90"
+              className="h-12 w-full bg-primary text-base font-semibold text-white shadow-none hover:bg-primary/90"
             >
               {uploading ? (
                 <>
@@ -656,7 +656,7 @@ function OrderSuccessDynamicInner() {
 
           {isGuestOrder && !lineLinked ? (
             <div className="space-y-2">
-              <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+              <p className="text-center text-[11px] leading-relaxed text-zinc-500">
                 {t(
                   `แอด LINE แล้วส่งเลขออเดอร์ #${displayNo} ในแชท — ระบบจะเชื่อมเพื่อแจ้งเตือนสถานะ`,
                   `Add LINE and send order #${displayNo} in chat to enable status alerts.`,
@@ -676,13 +676,13 @@ function OrderSuccessDynamicInner() {
           ) : null}
 
           <div className="grid grid-cols-2 gap-2 pb-4">
-            <Button asChild variant="outline" className="h-10">
+            <Button asChild variant="outline" className="h-10 rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70">
               <Link href="/">
                 <Home className="mr-1.5 h-4 w-4" />
                 {t("หน้าแรก", "Home")}
               </Link>
             </Button>
-            <Button asChild variant="outline" className="h-10">
+            <Button asChild variant="outline" className="h-10 rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70">
               <Link href="/shop">
                 <ShoppingBag className="mr-1.5 h-4 w-4" />
                 {t("ช้อปต่อ", "Shop")}
@@ -695,21 +695,21 @@ function OrderSuccessDynamicInner() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-20 pb-14">
+    <div className="min-h-screen bg-background pt-20 pb-14">
       <div className="mx-auto max-w-lg px-4 sm:px-6">
-        <Card className="overflow-hidden border-border shadow-sm">
+        <Card className="overflow-hidden border-border/60 bg-zinc-950/40 shadow-none">
           {isCancelled ? (
-            <div className="bg-red-900 px-5 py-7 text-center sm:px-6">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/15">
-                <CircleX className="h-7 w-7 text-white" />
+            <div className="border-b border-red-900/40 bg-red-950/30 px-5 py-6 text-center sm:px-6">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-red-900/40 bg-red-950/50">
+                <CircleX className="h-7 w-7 text-red-400" />
               </div>
-              <h1 className="text-lg font-bold leading-snug tracking-tight text-white sm:text-xl">
+              <h1 className="text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
                 {t("ยกเลิกแล้ว", "Cancelled")}
               </h1>
-              <p className="mt-2 text-sm leading-relaxed text-white/90">
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
                 {t("ออเดอร์นี้ถูกยกเลิกแล้ว", "This order has been cancelled.")}
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-white/85">
+              <p className="mt-2 text-sm leading-relaxed text-zinc-500">
                 {t(
                   "ออเดอร์นี้ไม่สามารถดำเนินการต่อได้ หากมีข้อสงสัยหรือต้องการสั่งซื้อใหม่ กรุณาติดต่อแอดมินผ่าน LINE",
                   "This order cannot proceed. For questions or to place a new order, please contact us on LINE."
@@ -717,26 +717,26 @@ function OrderSuccessDynamicInner() {
               </p>
             </div>
           ) : isVoided ? (
-            <div className="bg-zinc-700 px-5 py-7 text-center sm:px-6">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
-                <RotateCcw className="h-7 w-7 text-white" />
+            <div className="border-b border-border/60 bg-zinc-950/40 px-5 py-6 text-center sm:px-6">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/50">
+                <RotateCcw className="h-7 w-7 text-zinc-400" />
               </div>
-              <h1 className="text-lg font-bold leading-snug tracking-tight text-white sm:text-xl">
+              <h1 className="text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
                 {t("ยกเลิกและคืนสินค้า", "Cancelled — stock restored")}
               </h1>
-              <p className="mt-2 text-sm leading-relaxed text-white/90">
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
                 {t("ออเดอร์นี้ถูกยกเลิกแล้ว", "This order has been cancelled.")}
               </p>
             </div>
           ) : isShipped ? (
-            <div className="bg-primary px-5 py-7 text-center sm:px-6">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/15">
-                <Truck className="h-7 w-7 text-white" />
+            <div className="border-b border-border/60 bg-zinc-950/40 px-5 py-6 text-center sm:px-6">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/50">
+                <Truck className="h-7 w-7 text-emerald-400/80" />
               </div>
-              <h1 className="text-lg font-bold leading-snug tracking-tight text-white sm:text-xl">
+              <h1 className="text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
                 {t("จัดส่งแล้ว", "Shipped")}
               </h1>
-              <p className="mt-2 text-sm leading-relaxed text-white/90">
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
                 {t(
                   "พัสดุของคุณอยู่ระหว่างจัดส่ง — ใช้เลขพัสดุด้านล่างเพื่อติดตาม",
                   "Your parcel is on the way — use the tracking number below."
@@ -744,36 +744,36 @@ function OrderSuccessDynamicInner() {
               </p>
             </div>
           ) : (
-            <div className="bg-primary px-5 py-7 text-center sm:px-6">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/15">
-                <CheckCircle2 className="h-7 w-7 text-white" />
+            <div className="border-b border-border/60 bg-zinc-950/40 px-5 py-6 text-center sm:px-6">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/50">
+                <CheckCircle2 className="h-7 w-7 text-emerald-400/80" />
               </div>
-              <h1 className="text-lg font-bold leading-snug tracking-tight text-white sm:text-xl">
+              <h1 className="text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl">
                 {t(defaultHeroTitle, defaultHeroTitleEn)}
               </h1>
-              <p className="mt-2 text-sm leading-relaxed text-white/90">
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
                 {t(defaultHeroDesc, defaultHeroDescEn)}
               </p>
             </div>
           )}
 
           <CardContent className="space-y-5 p-5 sm:p-6">
-            <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
-              <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            <div className="rounded-lg border border-border/60 bg-zinc-950/40 px-3 py-2.5">
+              <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
                 {t("เลขออเดอร์", "Order no.")}
               </p>
               <div className="mt-1 flex items-center justify-center gap-2">
-                <p className="font-mono text-xl font-semibold tabular-nums tracking-wide text-foreground sm:text-2xl">
+                <p className="font-mono text-xl font-semibold tabular-nums tracking-wide text-zinc-100 sm:text-2xl">
                   #{displayNo}
                 </p>
                 <button
                   type="button"
                   onClick={() => copyOrderNumber()}
-                  className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-white/80 hover:text-primary"
+                  className="shrink-0 rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-900/50 hover:text-primary"
                   aria-label={t("คัดลอกเลขออเดอร์", "Copy order number")}
                 >
                   {copiedOrderNo ? (
-                    <Check className="h-4 w-4 text-emerald-600" />
+                    <Check className="h-4 w-4 text-emerald-400/80" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
@@ -782,7 +782,7 @@ function OrderSuccessDynamicInner() {
             </div>
 
             <div className="space-y-3">
-              <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <h2 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
                 {t("สรุปรายการ", "Order summary")}
               </h2>
               <OrderPriceBreakdown order={order} t={t} />
@@ -790,7 +790,7 @@ function OrderSuccessDynamicInner() {
                 {order.items.map((line, idx) => (
                   <li
                     key={`${line.product_name}-${idx}`}
-                    className="flex justify-between gap-3 border-b border-border pb-2.5 last:border-0 last:pb-0 text-foreground"
+                    className="flex justify-between gap-3 border-b border-border/60 pb-2.5 last:border-0 last:pb-0 text-zinc-100"
                   >
                     <span className="min-w-0 flex-1 break-words font-sans leading-snug">
                       {orderSuccessItemSummaryLine(
@@ -798,9 +798,9 @@ function OrderSuccessDynamicInner() {
                         locale === "en" ? "en" : "th",
                         t
                       )}{" "}
-                      <span className="tabular-nums text-muted-foreground">×{line.quantity}</span>
+                      <span className="tabular-nums text-zinc-500">×{line.quantity}</span>
                     </span>
-                    <span className="shrink-0 tabular-nums font-medium text-foreground">
+                    <span className="shrink-0 tabular-nums font-medium text-zinc-100">
                       {formatPrice(line.line_total)}
                     </span>
                   </li>
@@ -813,12 +813,12 @@ function OrderSuccessDynamicInner() {
                   variant="outline"
                   disabled={receiptLoading}
                   onClick={() => void handleDownloadReceipt()}
-                  className="h-11 w-full border-primary/25 bg-card text-foreground hover:bg-primary/10"
+                  className="h-11 w-full rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70"
                 >
                   {receiptLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <FileText className="mr-2 h-4 w-4 text-primary" />
+                    <FileText className="mr-2 h-4 w-4 text-zinc-400" />
                   )}
                   {t("ดาวน์โหลดใบเสร็จ PDF / Download Receipt", "Download receipt (PDF)")}
                 </Button>
@@ -827,30 +827,30 @@ function OrderSuccessDynamicInner() {
 
             {isShipped ? (
               <>
-                <Separator className="bg-muted/30" />
-                <div className="rounded-xl border border-primary/25 bg-accent/40 p-4">
-                  <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
-                    <Truck className="h-4 w-4" />
+                <Separator className="bg-border/60" />
+                <div className="rounded-xl border border-border/60 bg-zinc-950/40 p-4">
+                  <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-zinc-400">
+                    <Truck className="h-4 w-4 text-zinc-500" />
                     {t("ข้อมูลการจัดส่ง", "Tracking")}
                   </div>
                   {order.shipping_provider ? (
-                    <p className="text-sm text-muted-foreground">
-                      <span className="text-muted-foreground">{t("ขนส่ง", "Carrier")}: </span>
-                      <span className="font-medium text-foreground">
+                    <p className="text-sm text-zinc-500">
+                      <span>{t("ขนส่ง", "Carrier")}: </span>
+                      <span className="font-medium text-zinc-100">
                         {CARRIER_LABELS[order.shipping_provider] ?? order.shipping_provider}
                       </span>
                     </p>
                   ) : null}
                   {order.tracking_number ? (
                     <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="break-all font-mono text-lg font-bold tabular-nums tracking-wide text-foreground sm:text-xl">
+                      <p className="break-all font-mono text-lg font-bold tabular-nums tracking-wide text-zinc-100 sm:text-xl">
                         {order.tracking_number}
                       </p>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="shrink-0 border-primary/30"
+                        className="shrink-0 rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70"
                         onClick={() => copyTracking()}
                       >
                         {copiedTracking ? (
@@ -867,7 +867,7 @@ function OrderSuccessDynamicInner() {
                       </Button>
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <p className="mt-2 text-sm text-zinc-500">
                       {t("กำลังอัปเดตเลขพัสดุ", "Tracking number will appear here when available.")}
                     </p>
                   )}
@@ -875,7 +875,7 @@ function OrderSuccessDynamicInner() {
               </>
             ) : null}
 
-            <Separator className="bg-muted/30" />
+            <Separator className="bg-border/60" />
 
             {isCancelled ? (
               <div className="space-y-3">
@@ -906,7 +906,7 @@ function OrderSuccessDynamicInner() {
                     ? t("สอบถามสถานะผ่าน LINE", "Get updates via LINE (Active ✓)")
                     : t("สอบถามสถานะพัสดุผ่าน LINE", "Ask about parcel status on LINE")}
                 </LineOaResponsiveCta>
-                <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+                <p className="text-center text-[11px] leading-relaxed text-zinc-500">
                   {t(
                     `เลขออเดอร์ #${displayNo} — พิมพ์ในแชท LINE ของร้านเมื่อมีเลขพัสดุ`,
                     `Order #${displayNo} — message us on LINE; include tracking if you contact us.`,
@@ -939,7 +939,7 @@ function OrderSuccessDynamicInner() {
                           "Track Order on LINE"
                         )}
                 </LineOaResponsiveCta>
-                <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+                <p className="text-center text-[11px] leading-relaxed text-zinc-500">
                   {lineLinked
                     ? t(
                         "บัญชี LINE เชื่อมแล้ว — แจ้งเตือนสถานะอัตโนมัติ",
@@ -951,7 +951,7 @@ function OrderSuccessDynamicInner() {
                       )}
                 </p>
                 {showSlipLineHelp ? (
-                  <ul className="list-disc space-y-1.5 pl-4 text-xs leading-relaxed text-muted-foreground marker:text-primary">
+                  <ul className="list-disc space-y-1.5 pl-4 text-xs leading-relaxed text-zinc-500 marker:text-emerald-400/80">
                     <li>
                       {t(
                         "แจ้งเตือนสถานะการจัดส่งและเลขพัสดุแบบเรียลไทม์เมื่อพัสดุออกจากร้าน",
@@ -972,7 +972,7 @@ function OrderSuccessDynamicInner() {
                     </li>
                   </ul>
                 ) : (
-                  <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                  <p className="text-center text-xs leading-relaxed text-zinc-500">
                     {t(
                       "เพิ่ม LINE เพื่อรับอัปเดตการจัดส่งและเลขพัสดุทันทีที่มีการอัปเดต",
                       "Use LINE to get shipping updates and tracking as soon as they are available."
@@ -983,13 +983,13 @@ function OrderSuccessDynamicInner() {
             )}
 
             <div className="grid grid-cols-2 gap-2 pt-1">
-              <Button asChild variant="outline" className="h-10">
+              <Button asChild variant="outline" className="h-10 rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70">
                 <Link href="/">
                   <Home className="mr-1.5 h-4 w-4" />
                   {t("หน้าแรก", "Home")}
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="h-10">
+              <Button asChild variant="outline" className="h-10 rounded-lg border-zinc-700 bg-zinc-900/50 text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70">
                 <Link href="/shop">
                   <ShoppingBag className="mr-1.5 h-4 w-4" />
                   {t("ช้อปต่อ", "Shop")}
@@ -998,7 +998,7 @@ function OrderSuccessDynamicInner() {
             </div>
           </CardContent>
         </Card>
-        <p className="mt-5 text-center text-[11px] tabular-nums text-muted-foreground">
+        <p className="mt-5 text-center text-[11px] tabular-nums text-zinc-500">
           {locale === "en"
             ? "Keep your order number for your records."
             : "เก็บเลขออเดอร์ไว้เพื่ออ้างอิง"}
@@ -1012,7 +1012,7 @@ export default function OrderSuccessDynamicPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-muted/30 pt-20">
+        <div className="flex min-h-screen items-center justify-center bg-background pt-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       }

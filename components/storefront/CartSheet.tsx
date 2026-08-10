@@ -66,7 +66,7 @@ function CartLineQuantityInput({
       disabled={outOfStock}
       aria-label={ariaQuantity}
       className={cn(
-        "h-7 w-11 border-0 bg-transparent p-0 text-center text-sm font-medium shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+        "h-7 w-11 border-0 bg-transparent p-0 text-center text-sm font-medium text-zinc-100 shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
         sansTab,
         outOfStock && "cursor-not-allowed opacity-50"
       )}
@@ -257,7 +257,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col border-l border-border/60 bg-zinc-950/95 p-0 font-sans backdrop-blur-md sm:max-w-md"
+        className="storefront-v4 flex w-full flex-col border-l border-border/60 bg-zinc-950/95 p-0 font-sans text-foreground backdrop-blur-md sm:max-w-md"
       >
         {/* Header */}
         <SheetHeader className="border-b border-border/60 px-5 py-4">
@@ -286,7 +286,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
               <ShoppingBag className="h-10 w-10 text-zinc-200" strokeWidth={1} />
-              <p className={cn(sans, "text-lg font-medium text-foreground")}>
+              <p className={cn(sans, "text-lg font-medium text-zinc-100")}>
                 {t("ยังไม่มีสินค้าในตะกร้า", "Your cart is empty")}
               </p>
               <Button variant="outline" size="sm" onClick={onClose} asChild className="mt-1 rounded-lg border-zinc-700 bg-zinc-900/50 font-sans text-zinc-200 hover:border-zinc-600 hover:bg-zinc-900/70">
@@ -326,7 +326,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                         <p
                           className={cn(
                             sans,
-                            "min-w-0 text-sm font-medium leading-tight text-foreground break-words"
+                            "min-w-0 text-sm font-medium leading-tight text-zinc-100 break-words"
                           )}
                         >
                           {item.productName}
@@ -344,7 +344,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                           </span>
                         ) : null}
                       </div>
-                      <p className={cn(sans, "mt-0.5 text-[11px] font-normal text-muted-foreground")}>
+                      <p className={cn(sans, "mt-0.5 text-[11px] font-normal text-zinc-500")}>
                         {cartItemPackDescription(item, locale)}
                       </p>
                       {item.stock_quantity === 0 && (
@@ -425,7 +425,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                               <span
                                 className={cn(
                                   sansTab,
-                                  "flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0 text-sm font-medium text-foreground",
+                                  "flex flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0 text-sm font-medium text-zinc-100",
                                 )}
                               >
                                 <span>{formatPrice(effLine)}</span>
@@ -433,7 +433,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                                   <span
                                     className={cn(
                                       sansTab,
-                                      "text-xs font-normal text-muted-foreground line-through",
+                                      "text-xs font-normal text-zinc-500 line-through",
                                     )}
                                   >
                                     {formatPrice(listLine)}
@@ -563,7 +563,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
             />
 
             <Dialog open={couponsOpen} onOpenChange={setCouponsOpen}>
-              <DialogContent className="font-sans sm:max-w-sm">
+              <DialogContent className="storefront-v4 border-zinc-800 bg-zinc-950/95 font-sans sm:max-w-sm">
                 <DialogHeader>
                   <DialogTitle className="font-sans">
                     {t("โค้ดส่วนลดที่ใช้ได้", "Available Coupons")}

@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-11 (Quiet Zinc profile UI)
+- **What:** `/profile` ทุกแท็บ (ออเดอร์ · วงจีโนม · คูปอง · โปรไฟล์) + OrderDetailDrawer portal + MemberCoupons + ProfileSkeleton — zinc panels, explicit text contrast
+- **Logic:** UI classes only · profile/order/coupon flow ไม่เปลี่ยน
+- **ไฟล์:** `ProfilePageClient.tsx` · `MemberCoupons.tsx` · `OrderDetailDrawer.tsx` · `GenomeCirclePanel.tsx` · `ProfileSkeleton.tsx`
+
+### บันทึกการทำงาน — 2026-08-11 (Cart portal text fix + order-success Quiet Zinc)
+- **What:** Cart modal — `storefront-v4` บน Sheet/Dialog portal + zinc text ชื่อสินค้า/ราคา/qty อ่านชัด · `/order-success/[orderId]` — zinc panels, quiet hero, transfer flow ตาม payment page
+- **Logic:** UI classes only · cart/order flow ไม่เปลี่ยน
+- **ไฟล์:** `CartSheet.tsx` · `app/(storefront)/order-success/[orderId]/page.tsx`
+
 ### บันทึกการทำงาน — 2026-08-11 (Quiet Zinc cart / checkout / payment UI)
 - **What:** ตะกร้า (CartSheet) · checkout · payment — zinc panels, ghost inputs, emerald discount hints, primary CTA คงปุ่มชำระ
 - **Logic:** UI classes only · cart/checkout/payment flow ไม่เปลี่ยน

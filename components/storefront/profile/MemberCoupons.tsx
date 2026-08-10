@@ -51,24 +51,24 @@ function CouponRow({
       className={cn(
         "rounded-xl border p-4 transition-colors",
         expired
-          ? "border-border bg-muted/30 opacity-[0.72]"
-          : "border-primary/30/80 bg-emerald-50/40 shadow-sm ring-1 ring-emerald-900/5",
+          ? "border-zinc-800 bg-zinc-900/50 opacity-70"
+          : "border-zinc-700 bg-zinc-900/50 ring-1 ring-emerald-500/10",
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 space-y-1">
-          <p className={cn(mono, "text-base font-semibold tracking-tight", expired ? "text-muted-foreground" : "text-primary")}>
+          <p className={cn(mono, "text-base font-semibold tracking-tight", expired ? "text-zinc-500" : "text-zinc-100")}>
             {c.promo_code}
           </p>
           {c.name ? (
-            <p className={cn(serif, "text-xs", expired ? "text-muted-foreground" : "text-primary/85")}>{c.name}</p>
+            <p className={cn(serif, "text-xs", expired ? "text-zinc-500" : "text-zinc-400")}>{c.name}</p>
           ) : null}
-          <p className={cn(serif, "text-sm font-medium", expired ? "text-muted-foreground" : "text-primary")}>
+          <p className={cn(serif, "text-sm font-medium", expired ? "text-zinc-500" : "text-emerald-400/80")}>
             {discountDetail(c, t)}
           </p>
         </div>
         {expired ? (
-          <Badge variant="outline" className="shrink-0 border-zinc-300 bg-white/70 text-[10px] uppercase text-muted-foreground">
+          <Badge variant="outline" className="shrink-0 border-zinc-700 bg-zinc-900/50 text-[10px] uppercase text-zinc-500">
             {t("หมดอายุ", "Expired")}
           </Badge>
         ) : null}
@@ -77,7 +77,7 @@ function CouponRow({
         className={cn(
           "mt-3 border-t pt-3 text-[11px] uppercase tracking-wide",
           serif,
-          expired ? "border-border text-muted-foreground" : "border-primary/30/70 text-primary/80",
+          expired ? "border-zinc-800 text-zinc-500" : "border-zinc-700 text-zinc-400",
         )}
       >
         <span className="font-medium">{t("ใช้ได้ถึง", "Valid until")}</span>
@@ -128,15 +128,15 @@ export function MemberCoupons({
   const loading = items === null;
 
   return (
-    <div className="overflow-hidden rounded-sm border border-border bg-card shadow-sm">
-      <div className="border-b border-border px-4 py-3 sm:px-5 sm:py-4">
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40">
+      <div className="border-b border-border/60 px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex items-center gap-2">
-          <Ticket className={cn("h-4 w-4 shrink-0 text-primary")} strokeWidth={1.5} />
-          <h2 className={cn(serif, "text-base font-medium text-foreground")}>
+          <Ticket className="h-4 w-4 shrink-0 text-zinc-500" strokeWidth={1.5} />
+          <h2 className={cn(serif, "text-base font-medium text-zinc-100")}>
             {t("คูปองสมาชิก", "Member coupons")}
           </h2>
         </div>
-        <p className={cn("mt-1 text-xs text-muted-foreground", serif)}>
+        <p className={cn("mt-1 text-xs text-zinc-500", serif)}>
           {t("จากแคมเปญที่คุณกดเก็บไว้ในร้าน", "Saved from storefront campaigns")}
         </p>
       </div>
@@ -147,11 +147,11 @@ export function MemberCoupons({
             <Loader2 className="h-7 w-7 animate-spin text-primary" aria-hidden />
           </div>
         ) : err ? (
-          <p className="text-center text-sm text-red-600">
+          <p className="text-center text-sm text-red-400">
             {t("โหลดคูปองไม่สำเร็จ", "Could not load coupons")}
           </p>
         ) : items!.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-zinc-500">
             {t(
               "ยังไม่มีคูปองที่เก็บจากแคมเปญ — เก็บได้จากป๊อปอัพหรือแบนเนอร์ส่วนลด",
               "No campaign coupons saved yet — save offers from promotions on the shop.",
@@ -159,25 +159,25 @@ export function MemberCoupons({
           </p>
         ) : (
           <Tabs defaultValue="available" className="w-full">
-            <TabsList className="grid h-auto w-full grid-cols-2 rounded-sm bg-muted/30 p-1">
+            <TabsList className="grid h-auto w-full grid-cols-2 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
               <TabsTrigger
                 value="available"
-                className="rounded-sm text-xs font-medium data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm sm:text-sm"
+                className="rounded-md text-xs font-medium text-zinc-500 data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 sm:text-sm"
               >
                 {t("ใช้ได้", "Available")}
                 {available.length > 0 ? (
-                  <span className="ml-1.5 rounded-full bg-emerald-100 px-2 py-0 text-[10px] font-semibold text-primary">
+                  <span className="ml-1.5 rounded-full border border-zinc-700 bg-zinc-900/50 px-2 py-0 text-[10px] font-semibold text-emerald-400/80">
                     {available.length}
                   </span>
                 ) : null}
               </TabsTrigger>
               <TabsTrigger
                 value="expired"
-                className="rounded-sm text-xs font-medium text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:text-sm"
+                className="rounded-md text-xs font-medium text-zinc-500 data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 sm:text-sm"
               >
                 {t("หมดอายุแล้ว", "Expired")}
                 {expired.length > 0 ? (
-                  <span className="ml-1.5 rounded-full bg-muted/40/90 px-2 py-0 text-[10px] font-semibold text-muted-foreground">
+                  <span className="ml-1.5 rounded-full border border-zinc-700 bg-zinc-900/50 px-2 py-0 text-[10px] font-semibold text-zinc-500">
                     {expired.length}
                   </span>
                 ) : null}
@@ -186,7 +186,7 @@ export function MemberCoupons({
 
             <TabsContent value="available" className="mt-4 space-y-3 focus-visible:outline-none">
               {available.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-primary/30 bg-emerald-50/20 px-3 py-6 text-center text-sm text-primary/80">
+                <p className="rounded-lg border border-dashed border-zinc-800 px-3 py-6 text-center text-sm text-zinc-500">
                   {t("ไม่มีคูปองที่ใช้ได้ในขณะนี้", "No available coupons right now")}
                 </p>
               ) : (
@@ -198,7 +198,7 @@ export function MemberCoupons({
 
             <TabsContent value="expired" className="mt-4 space-y-3 focus-visible:outline-none">
               {expired.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+                <p className="rounded-lg border border-dashed border-zinc-800 px-3 py-6 text-center text-sm text-zinc-500">
                   {t("ไม่มีคูปองที่หมดอายุในบัญชีนี้", "No expired coupons")}
                 </p>
               ) : (
