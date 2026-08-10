@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-10 (Seeds hub emerald-teal vault vibe + bento)
+- **What:** ยก vibe หน้า `/seeds` hub — โทน **emerald + teal** แยกจาก New Seeds / Clearance · bento grid ค่ายแรก 2×2 เหมือน `/new` และ `/clearance`
+- **Logic:** `VAULT_ACCENT` · `VaultBreederBoxCard` · `md:grid-cols-4` + stagger · facet `SeedsChooserBox` vault ring
+- **ไฟล์:** `storefront-category-accents.ts` · `VaultBreederBoxCard.tsx` · `SeedsHubClient.tsx` · `SeedsChooserBox.tsx`
+
+### บันทึกการทำงาน — 2026-08-10 (Clearance orange-red category vibe)
+- **What:** ยก vibe หน้า `/clearance` + home section ให้เทียบ New Seeds แต่โทน **ส้ม–แดง** แยกหมวดจาก violet/cyan
+- **Logic:** `storefront-category-accents` · glow bento box · gradient hero · `ClearanceCard` accent clearance
+- **ไฟล์:** `ClearanceBreederBoxCard.tsx` · `ClearanceLandingClient.tsx` · `ClearanceCard.tsx` · `ClearanceSection.tsx` · `CatalogProductCardShell.tsx` · `ProductAvailabilityNote.tsx`
+
 ### บันทึกการทำงาน — 2026-08-10 (Unified quiet catalog cards zinc/violet)
 - **What:** ขยายการ์ด zinc + violet/cyan ทุก grid เมล็ดพันธุ์ · ลบ hard-sale · scarcity เบา (`เหลือ 1 แพ็ก` / `จำนวนจำกัด`)
 - **Logic:** `CatalogProductCardShell` + `ProductAvailabilityNote` · `ProductCard` refactor · `ClearanceCard` align · `NewSeedsProductCard` → wrapper

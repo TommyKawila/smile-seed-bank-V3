@@ -6,18 +6,39 @@ import { cn } from "@/lib/utils";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { seedsBreederHref } from "@/lib/breeder-slug";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
+import { CLEARANCE_ACCENT } from "@/lib/storefront-category-accents";
+
+export type CatalogCardAccent = "catalog" | "clearance";
+
+const SHELL_ACCENT: Record<
+  CatalogCardAccent,
+  { border: string; breeder: string }
+> = {
+  catalog: {
+    border: "border-violet-500/20 hover:border-violet-400/35",
+    breeder: "border-violet-500/30 ring-violet-500/15",
+  },
+  clearance: {
+    border: CLEARANCE_ACCENT.cardBorder,
+    breeder: CLEARANCE_ACCENT.cardBreederLogo,
+  },
+};
 
 export function CatalogProductCardShell({
   children,
   className,
+  accent = "catalog",
 }: {
   children: ReactNode;
   className?: string;
+  accent?: CatalogCardAccent;
 }) {
+  const a = SHELL_ACCENT[accent];
   return (
     <article
       className={cn(
-        "group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-violet-500/20 bg-zinc-950 shadow-lg transition duration-300 hover:border-violet-400/35",
+        "group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border bg-zinc-950 shadow-lg transition duration-300",
+        a.border,
         JOURNAL_PRODUCT_FONT_VARS,
         className
       )}
@@ -67,16 +88,20 @@ export function CatalogProductCardImageArea({
 export function CatalogProductCardBreederLogo({
   breeder,
   className,
+  accent = "catalog",
 }: {
   breeder: { name: string; logo_url?: string | null; slug?: string | null };
   className?: string;
+  accent?: CatalogCardAccent;
 }) {
+  const a = SHELL_ACCENT[accent];
   return (
     <Link
       href={seedsBreederHref(breeder)}
       onClick={(e) => e.stopPropagation()}
       className={cn(
-        "absolute left-2 top-2 z-20 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-violet-500/30 bg-white shadow-md ring-1 ring-violet-500/15 transition-transform hover:scale-105",
+        "absolute left-2 top-2 z-20 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border bg-white shadow-md ring-1 transition-transform hover:scale-105",
+        a.breeder,
         className
       )}
       aria-label={breeder.name}

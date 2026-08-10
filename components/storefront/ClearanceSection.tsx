@@ -10,6 +10,8 @@ import { useNearViewport } from "@/hooks/use-near-viewport";
 import { ClearanceCard } from "@/components/storefront/ClearanceCard";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { resolveSectionHeading, type SectionTitle } from "@/lib/homepage-section-title";
+import { CLEARANCE_ACCENT } from "@/lib/storefront-category-accents";
+import { cn } from "@/lib/utils";
 
 const ClearanceMobileCarousel = dynamic(
   () =>
@@ -77,7 +79,7 @@ export function ClearanceSection({
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl space-y-2">
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-emerald-500/90">
+            <p className={CLEARANCE_ACCENT.eyebrow}>
               {t("ล้างสต็อก", "CLEARANCE")}
             </p>
             <h2 className="font-sans text-2xl font-semibold tracking-tight text-white sm:text-3xl">{heading}</h2>
@@ -87,7 +89,10 @@ export function ClearanceSection({
             asChild
             variant="outline"
             size="sm"
-            className="shrink-0 self-start border-emerald-500/40 bg-zinc-900 text-emerald-300 hover:bg-zinc-800 hover:text-emerald-200 sm:self-end"
+            className={cn(
+              "shrink-0 self-start sm:self-end",
+              CLEARANCE_ACCENT.ctaOutlineGhost
+            )}
           >
             <Link href="/clearance">
               {t("ดูล้างสต็อกทั้งหมด", "View all clearance")}

@@ -12,6 +12,11 @@ import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { StorefrontClearanceBreederBox } from "@/lib/clearance";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
+import {
+  CLEARANCE_ACCENT,
+  clearanceTierPercentClass,
+} from "@/lib/storefront-category-accents";
+import { cn } from "@/lib/utils";
 
 function groupBoxesByPercent(
   boxes: StorefrontClearanceBreederBox[]
@@ -25,6 +30,13 @@ function groupBoxesByPercent(
   return [...map.entries()]
     .sort((a, b) => b[0] - a[0])
     .map(([percent, group]) => ({ percent, boxes: group }));
+}
+
+function clearanceSkeletonClass(index: number, featured: boolean): string {
+  const base = CLEARANCE_ACCENT.skeleton;
+  if (featured) return `${base} md:col-span-2 md:row-span-2 md:aspect-auto md:min-h-[22rem]`;
+  if (index === 0) return base;
+  return base;
 }
 
 export function ClearanceLandingClient({
@@ -60,7 +72,6 @@ export function ClearanceLandingClient({
     if (boxes.length > 0) setLoadingBoxes(false);
   }, [boxes]);
 
-  /** Recover when SSR timed out / prefetch cached empty first paint. */
   useEffect(() => {
     if (drillDown || boxes.length > 0) return;
     let cancelled = false;
@@ -97,17 +108,17 @@ export function ClearanceLandingClient({
   }, [breederSlug, discountPercent]);
 
   return (
-    <div className={`min-h-0 bg-zinc-950 text-zinc-100 sm:min-h-[60vh] ${JOURNAL_PRODUCT_FONT_VARS}`}>
-      <div className="relative overflow-hidden border-b border-zinc-800">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(16,185,129,0.18),_transparent_55%)]"
-        />
-        <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-14">
+    <div className={`min-h-[60vh] bg-background text-foreground ${JOURNAL_PRODUCT_FONT_VARS}`}>
+      <div className="relative overflow-hidden border-b border-border">
+        <div aria-hidden className={CLEARANCE_ACCENT.heroRadial} />
+        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
           {drillDown ? (
             <Link
               href="/clearance"
-              className="mb-3 inline-flex min-h-12 items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 sm:mb-4"
+              className={cn(
+                "mb-3 inline-flex min-h-12 items-center gap-2 text-sm sm:mb-4",
+                CLEARANCE_ACCENT.backLink
+              )}
             >
               <ArrowLeft className="h-4 w-4" />
               {t("กลับไปกล่องค่าย", "Back to breeders")}
@@ -115,18 +126,22 @@ export function ClearanceLandingClient({
           ) : null}
           <div className="flex items-start gap-4 sm:gap-6">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-emerald-500/90">
+              <p className={CLEARANCE_ACCENT.eyebrow}>
                 {t("ล้างสต็อก", "CLEARANCE")}
               </p>
-              <h1 className="mt-1.5 max-w-2xl font-sans text-2xl font-semibold tracking-tight text-white sm:mt-2 sm:text-4xl">
-                {title}
-                {drillDown && discountPercent != null ? (
-                  <span className="ml-2 inline-flex align-middle rounded-md bg-emerald-500 px-2 py-0.5 text-sm font-bold text-white sm:text-base">
-                    −{discountPercent}%
-                  </span>
-                ) : null}
-              </h1>
-              <p className="mt-1.5 max-w-xl text-xs font-light text-muted-foreground sm:mt-2 sm:text-sm">
+              {drillDown ? (
+                <h1 className={CLEARANCE_ACCENT.titlePlain}>
+                  {title}
+                  {discountPercent != null ? (
+                    <span className={CLEARANCE_ACCENT.drillBadge}>
+                      −{discountPercent}%
+                    </span>
+                  ) : null}
+                </h1>
+              ) : (
+                <h1 className={CLEARANCE_ACCENT.titleGradient}>{title}</h1>
+              )}
+              <p className="mt-2 max-w-xl text-sm font-light text-muted-foreground">
                 {drillDown
                   ? discountPercent != null
                     ? t(
@@ -145,7 +160,10 @@ export function ClearanceLandingClient({
             </div>
             {drillDown ? (
               <div
-                className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-zinc-700 bg-white shadow-md ring-1 ring-zinc-800 sm:h-20 sm:w-20"
+                className={cn(
+                  "relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-white shadow-md sm:h-20 sm:w-20",
+                  CLEARANCE_ACCENT.logoRing
+                )}
                 aria-hidden={!breederName}
               >
                 <BreederLogoImage
@@ -163,7 +181,7 @@ export function ClearanceLandingClient({
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-12">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
         {drillDown ? (
           products.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
@@ -177,12 +195,9 @@ export function ClearanceLandingClient({
             </div>
           )
         ) : loadingBoxes ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-[4/3] animate-pulse rounded-xl bg-zinc-900 sm:aspect-[16/10] sm:rounded-2xl"
-              />
+          <div className="grid auto-rows-[minmax(10rem,auto)] grid-cols-2 gap-3 md:grid-cols-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className={clearanceSkeletonClass(i, i === 0)} />
             ))}
           </div>
         ) : liveBoxes.length === 0 ? (
@@ -203,7 +218,9 @@ export function ClearanceLandingClient({
                       className="text-xl font-semibold tracking-tight text-white sm:text-2xl"
                     >
                       {t("ลด ", "")}
-                      <span className="text-emerald-400">{section.percent}%</span>
+                      <span className={clearanceTierPercentClass(section.percent)}>
+                        {section.percent}%
+                      </span>
                       {t("", " off")}
                     </h2>
                     <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
@@ -220,11 +237,13 @@ export function ClearanceLandingClient({
                     )}
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {section.boxes.map((box) => (
+                <div className="grid auto-rows-[minmax(10rem,auto)] grid-cols-2 gap-3 md:grid-cols-4">
+                  {section.boxes.map((box, index) => (
                     <ClearanceBreederBoxCard
                       key={`${box.breederId}-${box.discountPercent}`}
                       box={box}
+                      featured={index === 0}
+                      style={{ animationDelay: `${Math.min(index, 8) * 80}ms` }}
                     />
                   ))}
                 </div>

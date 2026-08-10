@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Leaf } from "lucide-react";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
+import { VAULT_ACCENT } from "@/lib/storefront-category-accents";
 import { cn } from "@/lib/utils";
 
 const ACCENT: Record<string, string> = {
@@ -35,7 +36,8 @@ export function SeedsChooserBox({
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-lg sm:rounded-2xl",
+        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-lg transition sm:rounded-2xl",
+        VAULT_ACCENT.facetRing,
         className
       )}
     >

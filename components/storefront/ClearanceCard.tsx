@@ -26,6 +26,11 @@ import {
   CatalogProductCardImageArea,
   CatalogProductCardShell,
 } from "@/components/storefront/CatalogProductCardShell";
+import {
+  CLEARANCE_ACCENT,
+  clearanceDiscountBadgeClass,
+} from "@/lib/storefront-category-accents";
+import { cn } from "@/lib/utils";
 
 export function ClearanceCard({ product }: { product: ProductWithBreederAndVariants }) {
   const { t, locale } = useLanguage();
@@ -63,13 +68,19 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
   const imageOverlay = (
     <>
       {pct != null && pct > 0 && (
-        <span className="absolute left-2 top-2 z-20 rounded-md bg-emerald-500 px-2 py-1 text-[11px] font-bold tabular-nums text-white shadow-md">
+        <span
+          className={cn(
+            "absolute left-2 top-2 z-20 rounded-md px-2 py-1 text-[11px] font-bold tabular-nums shadow-md",
+            clearanceDiscountBadgeClass(pct)
+          )}
+        >
           −{pct}%
         </span>
       )}
       {product.breeders ? (
         <CatalogProductCardBreederLogo
           breeder={product.breeders}
+          accent="clearance"
           className={pct ? "top-10" : undefined}
         />
       ) : null}
@@ -77,7 +88,7 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
   );
 
   return (
-    <CatalogProductCardShell>
+    <CatalogProductCardShell accent="clearance">
       <CatalogProductCardImageArea
         href={href}
         onNavigate={touchCatalogReturnFromWindow}
@@ -107,7 +118,10 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
         <Link
           href={href}
           onClick={touchCatalogReturnFromWindow}
-          className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100 hover:text-violet-300"
+          className={cn(
+            "line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100",
+            CLEARANCE_ACCENT.cardTitleHover
+          )}
         >
           {product.name}
         </Link>
@@ -121,7 +135,10 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
               return (
                 <span
                   key={`${pack.variantId ?? pack.unitLabel}-${pack.percentOff}`}
-                  className="inline-flex max-w-full items-center rounded-md border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold leading-tight text-amber-300"
+                  className={cn(
+                    "inline-flex max-w-full items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold leading-tight",
+                    CLEARANCE_ACCENT.packChip
+                  )}
                 >
                   <span className="truncate">{label}</span>
                   <span className="ml-1 shrink-0 tabular-nums">−{pack.percentOff}%</span>
@@ -139,7 +156,10 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
               </span>
             ) : null}
             <span
-              className={`text-base font-bold tabular-nums ${outOfStock ? "text-muted-foreground" : "text-violet-200"}`}
+              className={cn(
+                "text-base font-bold tabular-nums",
+                outOfStock ? "text-muted-foreground" : CLEARANCE_ACCENT.cardPrice
+              )}
             >
               {formatPrice(sale)}
             </span>
@@ -150,7 +170,11 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
             </p>
           ) : null}
           {!outOfStock && displayVariant ? (
-            <ProductAvailabilityNote stock={displayVariant.stock} locale={locale} />
+            <ProductAvailabilityNote
+              stock={displayVariant.stock}
+              locale={locale}
+              accent="clearance"
+            />
           ) : null}
         </div>
       </CatalogProductCardBody>
