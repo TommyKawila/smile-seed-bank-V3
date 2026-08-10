@@ -28,7 +28,7 @@ export function VaultBreederBoxCard({
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-2xl border bg-zinc-950 transition duration-500 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-700",
+        "group relative overflow-hidden rounded-2xl border bg-white transition duration-500 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-700",
         VAULT_ACCENT.boxBorder,
         featured && "md:col-span-2 md:row-span-2"
       )}
@@ -37,7 +37,7 @@ export function VaultBreederBoxCard({
       <Link
         href={href}
         className={cn(
-          "relative block min-h-[48px] overflow-hidden bg-zinc-950 focus-visible:outline-none focus-visible:ring-2",
+          "relative block min-h-[48px] overflow-hidden bg-white focus-visible:outline-none focus-visible:ring-2",
           VAULT_ACCENT.boxFocusRing,
           featured ? "aspect-[4/3] md:aspect-auto md:min-h-[22rem]" : "aspect-[4/3]"
         )}
@@ -55,13 +55,11 @@ export function VaultBreederBoxCard({
             unoptimized={shouldOffloadImageOptimization(img)}
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-emerald-950 to-zinc-950">
-            <Leaf className="h-10 w-10 text-emerald-400/70" />
+          <div className="flex h-full items-center justify-center bg-white">
+            <Leaf className="h-10 w-10 text-emerald-500/70" />
           </div>
         )}
-        <div aria-hidden className={VAULT_ACCENT.boxRadial} />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-zinc-950/25 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+        <div className="absolute inset-x-0 bottom-0 bg-zinc-900/90 p-3 sm:p-4">
           <p
             className={cn(
               "font-semibold tracking-tight text-white",
