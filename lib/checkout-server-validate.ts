@@ -261,8 +261,16 @@ export async function validateStorefrontCheckoutTotals(input: {
   summary: CheckoutSummary;
   promo_code_id: number | null;
   purpose?: "order_create" | "prompt_pay_preview";
-  /** Required for WELCOME10 first-order guard when that promo is applied. */
-  firstOrderGuard?: { customerId: string | null; customerEmail: string | null };
+  /**
+   * WELCOME10 / first_order_only guard.
+   * `customerEmail` MUST be session-proven (never shipping/body email) — used for QA bypass only.
+   * `skipCustomerGates` is set only after `resolveSkipCouponPerUserReuseForAdminSession`.
+   */
+  firstOrderGuard?: {
+    customerId: string | null;
+    customerEmail: string | null;
+    skipCustomerGates?: boolean;
+  };
 }): Promise<
   | { ok: true; resolvedItems: CheckoutItem[]; resolvedSummary: CheckoutSummary }
   | { ok: false; error: string; details?: CheckoutValidationFailureDetails }
@@ -329,13 +337,16 @@ export async function validateStorefrontCheckoutTotals(input: {
   }
 
   const guardEmail = firstOrderGuard?.customerEmail?.trim() ?? null;
+  const skipFirstOrderGates = firstOrderGuard?.skipCustomerGates === true;
   const firstOrderBlocked =
     promoRow &&
+    !skipFirstOrderGates &&
     !isPromoQaBypassEmail(guardEmail) &&
     (normalizePromoCode(promoRow.code) === WELCOME10_CODE || promoRow.first_order_only === true) &&
     (await customerHasCompletedOrderForFirstOrderPromo(
       firstOrderGuard?.customerId?.trim() ?? null,
-      guardEmail,
+      // Prefer customer_id history; do not let a spoofed email clear "has prior order".
+      null,
     ));
   if (firstOrderBlocked) {
     return {

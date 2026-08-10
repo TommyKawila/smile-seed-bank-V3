@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-10 (Critical: first-order promo QA email spoof)
+- **What:** ปิดช่องทาง spoof `customer.email` เป็น QA bypass เพื่อใช้ WELCOME10 / first_order_only ทั้งที่เป็นลูกค้าเก่า
+- **Logic:** first-order guard ใช้เฉพาะ session email · admin skip ผ่าน `resolveSkipCouponPerUserReuseForAdminSession` · `createOrder` บังคับ first_order ด้วย `customer_id` · `/coupons/eligible` ใช้ session อย่างเดียว
+- **ไฟล์:** `app/api/storefront/orders/route.ts` · `lib/checkout-server-validate.ts` · `lib/services/order-service.ts` · `app/api/storefront/coupons/eligible/route.ts`
+
 ### บันทึกการทำงาน — 2026-08-10 (Unified quiet catalog cards zinc/violet)
 - **What:** ขยายการ์ด zinc + violet/cyan ทุก grid เมล็ดพันธุ์ · ลบ hard-sale · scarcity เบา (`เหลือ 1 แพ็ก` / `จำนวนจำกัด`)
 - **Logic:** `CatalogProductCardShell` + `ProductAvailabilityNote` · `ProductCard` refactor · `ClearanceCard` align · `NewSeedsProductCard` → wrapper
