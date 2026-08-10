@@ -10,6 +10,11 @@ import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import { seedsBreederHref } from "@/lib/breeder-slug";
 import type { SeedsHubBreederBox } from "@/lib/seeds-hub";
 import { VAULT_ACCENT } from "@/lib/storefront-category-accents";
+import {
+  BREEDER_BOX_BANNER_IMAGE_CLASS,
+  BREEDER_BOX_LOGO_IMAGE_CLASS,
+  breederBoxUsesBannerCover,
+} from "@/lib/storefront-breeder-box-image";
 import { cn } from "@/lib/utils";
 
 export function VaultBreederBoxCard({
@@ -24,6 +29,7 @@ export function VaultBreederBoxCard({
   const { t } = useLanguage();
   const href = seedsBreederHref(box);
   const img = box.logoUrl;
+  const usesBannerCover = breederBoxUsesBannerCover(box.logoUrl, box.logoUrl);
 
   return (
     <article
@@ -49,7 +55,7 @@ export function VaultBreederBoxCard({
             alt=""
             fill
             sizes={featured ? "(max-width: 768px) 100vw, 50vw" : "(max-width: 640px) 50vw, 33vw"}
-            className="object-contain p-3 transition duration-700 group-hover:scale-[1.05] sm:p-6 lg:p-8"
+            className={usesBannerCover ? BREEDER_BOX_BANNER_IMAGE_CLASS : BREEDER_BOX_LOGO_IMAGE_CLASS}
             placeholder="blur"
             blurDataURL={SHIMMER_BLUR_DATA_URL}
             unoptimized={shouldOffloadImageOptimization(img)}

@@ -8,6 +8,11 @@ import { useLanguage } from "@/context/LanguageContext";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/shimmer-blur";
 import type { StorefrontNewSeedsBreederBox } from "@/lib/new-seeds";
+import {
+  BREEDER_BOX_BANNER_IMAGE_CLASS,
+  BREEDER_BOX_LOGO_IMAGE_CLASS,
+  breederBoxUsesBannerCover,
+} from "@/lib/storefront-breeder-box-image";
 import { cn } from "@/lib/utils";
 
 export function NewSeedsBreederBoxCard({
@@ -26,6 +31,7 @@ export function NewSeedsBreederBoxCard({
       : box.titleTh || box.name;
   const href = `/new?breeder=${encodeURIComponent(box.slug)}`;
   const img = box.imageUrl || box.logoUrl;
+  const usesBannerCover = breederBoxUsesBannerCover(box.imageUrl, box.logoUrl);
 
   return (
     <article
@@ -49,7 +55,7 @@ export function NewSeedsBreederBoxCard({
             alt=""
             fill
             sizes={featured ? "(max-width: 768px) 100vw, 50vw" : "(max-width: 640px) 50vw, 33vw"}
-            className="object-cover transition duration-700 group-hover:scale-[1.05]"
+            className={usesBannerCover ? BREEDER_BOX_BANNER_IMAGE_CLASS : BREEDER_BOX_LOGO_IMAGE_CLASS}
             placeholder="blur"
             blurDataURL={SHIMMER_BLUR_DATA_URL}
             unoptimized={shouldOffloadImageOptimization(img)}

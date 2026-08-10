@@ -12,6 +12,11 @@ import {
   CLEARANCE_ACCENT,
   clearanceDiscountBadgeClass,
 } from "@/lib/storefront-category-accents";
+import {
+  BREEDER_BOX_BANNER_IMAGE_CLASS,
+  BREEDER_BOX_LOGO_IMAGE_CLASS,
+  breederBoxUsesBannerCover,
+} from "@/lib/storefront-breeder-box-image";
 import { cn } from "@/lib/utils";
 
 export function ClearanceBreederBoxCard({
@@ -31,6 +36,7 @@ export function ClearanceBreederBoxCard({
   const href = `/clearance?breeder=${encodeURIComponent(box.slug)}&pct=${box.discountPercent}`;
   const img = box.imageUrl || box.logoUrl;
   const pctLabel = `−${box.discountPercent}%`;
+  const usesBannerCover = breederBoxUsesBannerCover(box.imageUrl, box.logoUrl);
 
   return (
     <article
@@ -56,7 +62,7 @@ export function ClearanceBreederBoxCard({
             alt=""
             fill
             sizes={featured ? "(max-width: 768px) 100vw, 50vw" : "(max-width: 640px) 50vw, 33vw"}
-            className="object-cover transition duration-700 group-hover:scale-[1.05]"
+            className={usesBannerCover ? BREEDER_BOX_BANNER_IMAGE_CLASS : BREEDER_BOX_LOGO_IMAGE_CLASS}
             placeholder="blur"
             blurDataURL={SHIMMER_BLUR_DATA_URL}
             unoptimized={shouldOffloadImageOptimization(img)}
