@@ -6,6 +6,7 @@ import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import X from "lucide-react/dist/esm/icons/x";
 import ZoomIn from "lucide-react/dist/esm/icons/zoom-in";
+import Video from "lucide-react/dist/esm/icons/video";
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
@@ -14,6 +15,7 @@ import {
   buildDetailGalleryUrls,
   resolveDetailHeroUrl,
 } from "@/lib/product-gallery-utils"
+import { resolvePublicAssetUrl } from "@/lib/public-storage-url"
 import {
   productGalleryLightboxUrl,
   productGalleryMainUrl,
@@ -21,7 +23,7 @@ import {
 } from "@/lib/storefront-image-urls"
 import { productGalleryImageUnoptimized } from "@/lib/vercel-image-offload"
 
-type GalleryItem = { src: string; alt: string; badge?: string }
+type GalleryItem = { src: string; alt: string; badge?: string; kind?: "image" | "video" }
 
 type ProductGalleryProduct = {
   image_urls?: unknown
@@ -31,6 +33,7 @@ type ProductGalleryProduct = {
   image_url_4?: string | null
   image_url_5?: string | null
   product_images?: unknown
+  video_url?: string | null
   name: string
 }
 
@@ -193,24 +196,38 @@ function Lightbox({
                 transformOrigin: "center center",
               }}
             >
-              {images.map((img, i) => (
-                <Image
-                  key={`${i}-${img.src}`}
-                  src={productGalleryLightboxUrl(img.src)}
-                  alt={img.alt}
-                  fill
-                  className={cn(
-                    "absolute inset-0 object-contain",
-                    index === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none"
-                  )}
-                  sizes="100vw"
-                  quality={75}
-                  priority={i === 0}
-                  loading={i === 0 ? "eager" : "lazy"}
-                  fetchPriority={index === i ? (i === 0 ? "high" : "auto") : "low"}
-                  unoptimized={productGalleryImageUnoptimized(productGalleryLightboxUrl(img.src))}
-                />
-              ))}
+              {images.map((img, i) =>
+                img.kind === "video" ? (
+                  <video
+                    key={`${i}-${img.src}`}
+                    src={img.src}
+                    className={cn(
+                      "absolute inset-0 h-full w-full object-contain",
+                      index === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none"
+                    )}
+                    controls
+                    playsInline
+                    preload="metadata"
+                  />
+                ) : (
+                  <Image
+                    key={`${i}-${img.src}`}
+                    src={productGalleryLightboxUrl(img.src)}
+                    alt={img.alt}
+                    fill
+                    className={cn(
+                      "absolute inset-0 object-contain",
+                      index === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none"
+                    )}
+                    sizes="100vw"
+                    quality={75}
+                    priority={i === 0}
+                    loading={i === 0 ? "eager" : "lazy"}
+                    fetchPriority={index === i ? (i === 0 ? "high" : "auto") : "low"}
+                    unoptimized={productGalleryImageUnoptimized(productGalleryLightboxUrl(img.src))}
+                  />
+                )
+              )}
             </div>
           </div>
           {images.length > 1 && (
@@ -241,16 +258,22 @@ function Lightbox({
                     i === index ? "border-amber-400" : "border-transparent opacity-60"
                   )}
                 >
-                  <Image
-                    src={productGalleryThumbUrl(g.src)}
-                    alt={g.alt || name || "Product"}
-                    width={64}
-                    height={64}
-                    className="h-full w-full object-cover"
-                    sizes="64px"
-                    quality={75}
-                    unoptimized={productGalleryImageUnoptimized(productGalleryThumbUrl(g.src))}
-                  />
+                  {g.kind === "video" ? (
+                    <span className="flex h-full w-full items-center justify-center bg-zinc-900">
+                      <Video className="h-5 w-5 text-amber-400" aria-hidden />
+                    </span>
+                  ) : (
+                    <Image
+                      src={productGalleryThumbUrl(g.src)}
+                      alt={g.alt || name || "Product"}
+                      width={64}
+                      height={64}
+                      className="h-full w-full object-cover"
+                      sizes="64px"
+                      quality={75}
+                      unoptimized={productGalleryImageUnoptimized(productGalleryThumbUrl(g.src))}
+                    />
+                  )}
                 </button>
               ))}
             </div>
@@ -277,6 +300,11 @@ export function ProductGallery({
   soldOutLabel?: string
 }) {
   const productTitle = product.name?.trim() || "Product"
+  const videoSrc = React.useMemo(() => {
+    const raw = product.video_url?.trim()
+    return raw ? resolvePublicAssetUrl(raw) : null
+  }, [product.video_url])
+
   const images = React.useMemo(
     () => buildDetailGalleryUrls(product, selectedVariantId),
     [product, selectedVariantId]
@@ -286,14 +314,21 @@ export function ProductGallery({
     [product, selectedVariantId]
   )
 
-  const gallery: GalleryItem[] = React.useMemo(
-    () =>
-      images.map((src, i) => ({
-        src,
-        alt: `${productTitle} — ${i + 1}`,
-      })),
-    [images, productTitle]
-  )
+  const gallery: GalleryItem[] = React.useMemo(() => {
+    const imgs: GalleryItem[] = images.map((src, i) => ({
+      src,
+      alt: `${productTitle} — ${i + 1}`,
+      kind: "image" as const,
+    }))
+    if (!videoSrc) return imgs
+    const clip: GalleryItem = {
+      src: videoSrc,
+      alt: `${productTitle} — video`,
+      kind: "video",
+    }
+    if (imgs.length === 0) return [clip]
+    return [imgs[0]!, clip, ...imgs.slice(1)]
+  }, [images, videoSrc, productTitle])
 
   const [selected, setSelected] = React.useState(0)
   const [lightbox, setLightbox] = React.useState(false)
@@ -313,20 +348,29 @@ export function ProductGallery({
 
   const hasMultiple = gallery.length > 1
 
+  const current = gallery[selected]
+  const isVideoSlide = current?.kind === "video"
+
   return (
     <div>
       <div
-        className="relative w-full max-h-[min(60vw,250px)] aspect-square cursor-zoom-in overflow-hidden rounded-2xl bg-muted/30 md:max-h-none"
-        role="button"
-        tabIndex={0}
-        onClick={() => setLightbox(true)}
+        className={cn(
+          "relative w-full max-h-[min(60vw,250px)] aspect-square overflow-hidden rounded-2xl bg-muted/30 md:max-h-none",
+          !isVideoSlide && "cursor-zoom-in"
+        )}
+        role={isVideoSlide ? undefined : "button"}
+        tabIndex={isVideoSlide ? undefined : 0}
+        onClick={() => {
+          if (!isVideoSlide) setLightbox(true)
+        }}
         onKeyDown={(e) => {
+          if (isVideoSlide) return
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault()
             setLightbox(true)
           }
         }}
-        aria-label="เปิดดูรูปเต็มหน้าจอ"
+        aria-label={isVideoSlide ? undefined : "เปิดดูรูปเต็มหน้าจอ"}
       >
         {hasMultiple && (
           <span className="absolute left-2 top-2 z-10 rounded-full bg-black/40 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
@@ -334,25 +378,39 @@ export function ProductGallery({
           </span>
         )}
         <div className="absolute inset-0 z-[1]">
-          {gallery.map((item, i) => (
-            <Image
-              key={`${i}-${item.src}`}
-              src={productGalleryMainUrl(item.src)}
-              alt={item.alt}
-              fill
-              sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 42vw"
-              quality={75}
-              priority={i === 0}
-              loading={i === 0 ? "eager" : "lazy"}
-              fetchPriority={selected === i ? (i === 0 ? "high" : "auto") : "low"}
-              className={cn(
-                "absolute inset-0 object-contain p-1 sm:p-2",
-                selected === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none",
-                showAggregateSoldOut && "brightness-75 grayscale"
-              )}
-              unoptimized={productGalleryImageUnoptimized(productGalleryMainUrl(item.src))}
-            />
-          ))}
+          {gallery.map((item, i) =>
+            item.kind === "video" ? (
+              <video
+                key={`${i}-video-${item.src}`}
+                src={item.src}
+                className={cn(
+                  "absolute inset-0 h-full w-full object-contain p-1 sm:p-2",
+                  selected === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none"
+                )}
+                controls={selected === i}
+                playsInline
+                preload="metadata"
+              />
+            ) : (
+              <Image
+                key={`${i}-${item.src}`}
+                src={productGalleryMainUrl(item.src)}
+                alt={item.alt}
+                fill
+                sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 42vw"
+                quality={75}
+                priority={i === 0}
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={selected === i ? (i === 0 ? "high" : "auto") : "low"}
+                className={cn(
+                  "absolute inset-0 object-contain p-1 sm:p-2",
+                  selected === i ? "z-10 opacity-100" : "z-0 opacity-0 pointer-events-none",
+                  showAggregateSoldOut && "brightness-75 grayscale"
+                )}
+                unoptimized={productGalleryImageUnoptimized(productGalleryMainUrl(item.src))}
+              />
+            )
+          )}
         </div>
         {showAggregateSoldOut && soldOutLabel ? (
           <div
@@ -385,13 +443,15 @@ export function ProductGallery({
             ))}
           </div>
         )}
-        <div
-          className="pointer-events-none absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-white/90 md:text-xs"
-          aria-hidden
-        >
-          <ZoomIn className="h-3 w-3" />
-          แตะเพื่อขยาย
-        </div>
+        {!isVideoSlide ? (
+          <div
+            className="pointer-events-none absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-white/90 md:text-xs"
+            aria-hidden
+          >
+            <ZoomIn className="h-3 w-3" />
+            แตะเพื่อขยาย
+          </div>
+        ) : null}
       </div>
 
       {hasMultiple && (
@@ -408,16 +468,22 @@ export function ProductGallery({
                   : "border-amber-500/20 opacity-30 hover:opacity-60"
               )}
             >
-              <Image
-                src={productGalleryThumbUrl(img.src)}
-                alt={img.alt}
-                fill
-                className="object-contain p-0.5"
-                sizes="100px"
-                loading="lazy"
-                quality={75}
-                unoptimized={productGalleryImageUnoptimized(productGalleryThumbUrl(img.src))}
-              />
+              {img.kind === "video" ? (
+                <span className="flex h-full w-full items-center justify-center bg-zinc-900">
+                  <Video className="h-5 w-5 text-amber-400" aria-hidden />
+                </span>
+              ) : (
+                <Image
+                  src={productGalleryThumbUrl(img.src)}
+                  alt={img.alt}
+                  fill
+                  className="object-contain p-0.5"
+                  sizes="100px"
+                  loading="lazy"
+                  quality={75}
+                  unoptimized={productGalleryImageUnoptimized(productGalleryThumbUrl(img.src))}
+                />
+              )}
             </button>
           ))}
         </div>

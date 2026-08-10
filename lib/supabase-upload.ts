@@ -37,6 +37,33 @@ export function buildProductStoragePath(originalName: string): string {
   return `products/optimized/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${safe}`;
 }
 
+/** Short product clip — H.264 MP4 after client transcode. */
+export function buildProductVideoStoragePath(originalName: string): string {
+  const stem = sanitizeOriginalFilename(originalName.replace(/\.[^/.]+$/, "") || "clip");
+  return `products/videos/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${stem}.mp4`;
+}
+
+export const PRODUCT_VIDEO_UPLOAD_MAX_BYTES = 12 * 1024 * 1024;
+
+export const PRODUCT_VIDEO_UPLOAD_TYPES = [
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+] as const;
+
+const videoAllowedSet = new Set<string>(PRODUCT_VIDEO_UPLOAD_TYPES);
+
+export function validateProductVideoUpload(file: File): string | null {
+  if (file.size > PRODUCT_VIDEO_UPLOAD_MAX_BYTES) {
+    return "Compressed video must be 12MB or smaller.";
+  }
+  const type = (file.type || "").toLowerCase();
+  if (!videoAllowedSet.has(type) && !type.startsWith("video/")) {
+    return "Use MP4 video.";
+  }
+  return null;
+}
+
 const allowedSet = new Set<string>(MAGAZINE_IMAGE_ALLOWED_TYPES);
 
 /** Before optimization — type + upper size for raw file. */
@@ -111,6 +138,31 @@ export async function uploadProductImage(
   form.append("file", file);
 
   const res = await fetch("/api/admin/products/upload", {
+    method: "POST",
+    body: form,
+  });
+
+  const data = (await res.json().catch(() => ({}))) as { error?: string; url?: string };
+  if (!res.ok) {
+    return { error: typeof data.error === "string" ? data.error : "Upload failed" };
+  }
+  if (!data.url || typeof data.url !== "string") {
+    return { error: "Invalid upload response" };
+  }
+  return { url: data.url };
+}
+
+/** Upload compressed product clip to `product-images` (admin session via cookie). */
+export async function uploadProductVideo(
+  file: File
+): Promise<{ url: string } | { error: string }> {
+  const v = validateProductVideoUpload(file);
+  if (v) return { error: v };
+
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch("/api/admin/products/upload?kind=video", {
     method: "POST",
     body: form,
   });

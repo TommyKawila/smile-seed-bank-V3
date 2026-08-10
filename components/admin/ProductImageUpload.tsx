@@ -176,7 +176,7 @@ export function ProductImageUpload({
   onChange,
   variantLabels,
   disabled,
-  maxImages = 5,
+  maxImages = 10,
 }: ProductImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>("idle");

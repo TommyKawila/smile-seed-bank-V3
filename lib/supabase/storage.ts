@@ -3,7 +3,7 @@ import { createClient } from "./client";
 const BUCKET = "product-images";
 
 /**
- * Uploads up to 5 product image files to Supabase Storage.
+ * Uploads up to 10 product image files to Supabase Storage.
  * Files are renamed with a timestamp + UUID to avoid collisions.
  * Returns the public URL for each uploaded file.
  *

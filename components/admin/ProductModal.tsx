@@ -24,10 +24,11 @@ import { parsePackFromUnitLabel, toMasterSku, toVariantSku } from "@/lib/sku-uti
 import { dedupeVariantsByPack } from "@/lib/product-variants-dedupe";
 import { useToast } from "@/hooks/use-toast";
 import { ProductImageUpload, type ProductGalleryEntry } from "@/components/admin/ProductImageUpload";
+import { ProductVideoUpload } from "@/components/admin/ProductVideoUpload";
 import { normalizeFloweringFromDb, normalizeSexFromDb } from "@/lib/cannabis-attributes";
 import type { FloweringType, ProductSexType, SeedType } from "@/types/supabase";
 
-const MAX_IMAGES = 5;
+const MAX_IMAGES = 10;
 const AI_SCAN_STAGING_MAX = 5;
 
 type AiStagingItem = { key: string; preview: string; file: File };
@@ -1198,8 +1199,13 @@ export function ProductModal({ open, onClose, initialData }: ProductModalProps) 
               disabled={isSubmitting}
             />
             <p className="text-[11px] text-zinc-400">
-              เลือก “Main thumbnail” = รูปการ์ดร้าน · เลือก Pack image = สลับรูปตามแพ็กในหน้ารายละเอียด · ลากจัดลำดับได้
+              เลือก “Main thumbnail” = รูปการ์ดร้าน · เลือก Pack image = สลับรูปตามแพ็กในหน้ารายละเอียด · ลากจัดลำดับได้ · สูงสุด {MAX_IMAGES} รูป
             </p>
+            <ProductVideoUpload
+              videoUrl={form.video_url}
+              onChange={(url) => setField("video_url", url)}
+              disabled={isSubmitting}
+            />
           </div>
 
           {/* AI Specs Row */}

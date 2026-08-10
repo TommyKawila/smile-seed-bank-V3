@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import {
   buildProductStoragePath,
+  buildProductVideoStoragePath,
   validateMagazineImageFile,
+  validateProductVideoUpload,
 } from "@/lib/supabase-upload";
 import { applyWatermark, storagePathAsWebp } from "@/lib/watermark";
 
@@ -21,11 +23,14 @@ function safeLegacyProductsPath(raw: string | null): string | null {
 /**
  * POST /api/admin/products/upload
  * form: file (required), objectPath (optional legacy `products/...` under product-images)
+ * query: kind=video for short product clip (no watermark)
  */
 export async function POST(req: Request) {
   const __adminGate = await requireAdminUser();
   if (!__adminGate.ok) return __adminGate.response;
   try {
+    const { searchParams } = new URL(req.url);
+    const kind = searchParams.get("kind");
     const form = await req.formData();
     const file = form.get("file") as File | null;
     const objectPathRaw = form.get("objectPath") as string | null;
@@ -34,12 +39,42 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "file is required" }, { status: 400 });
     }
 
+    const supabase = createServiceRoleClient();
+
+    if (kind === "video") {
+      const err = validateProductVideoUpload(file);
+      if (err) {
+        return NextResponse.json({ error: err }, { status: 400 });
+      }
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const key = buildProductVideoStoragePath(file.name);
+      const contentType =
+        file.type === "video/webm"
+          ? "video/webm"
+          : file.type?.startsWith("video/")
+            ? file.type
+            : "video/mp4";
+
+      const { error } = await supabase.storage.from(BUCKET).upload(key, buffer, {
+        cacheControl: "31536000",
+        upsert: true,
+        contentType,
+      });
+
+      if (error) {
+        console.error("[products/upload] video storage error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(key);
+      return NextResponse.json({ url: data.publicUrl, sizeBytes: buffer.length });
+    }
+
     const err = validateMagazineImageFile(file);
     if (err) {
       return NextResponse.json({ error: err }, { status: 400 });
     }
 
-    const supabase = createServiceRoleClient();
     const raw = Buffer.from(await file.arrayBuffer());
     const { buffer, watermarked } = await applyWatermark(raw);
     const sizeBytes = buffer.length;

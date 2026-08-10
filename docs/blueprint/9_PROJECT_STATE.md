@@ -4,6 +4,12 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-10 (Product gallery 10 รูป + คลิปสั้น 1)
+- **What:** แกลเลอรีสินค้า 5→**10** รูป · อัปโหลดคลิปสั้น 1 (MP4/MOV iPhone) บีบ client ffmpeg → `video_url` · แสดงใน PDP gallery
+- **Logic:** `product_images` + `image_urls` รองรับ 10 · legacy `image_url_1…5` sync 5 ใบแรก · วิดีโอ ≤720p/30s/12MB · slot ที่ 2 หลังรูปหลัก
+- **ไฟล์:** `ProductModal.tsx` · `ProductImageUpload.tsx` · `ProductVideoUpload.tsx` · `product-video-compress.ts` · `supabase-upload.ts` · `products/upload/route.ts` · `ProductGallery.tsx` · `validations/product.ts`
+- **Deps:** `@ffmpeg/ffmpeg` · `@ffmpeg/util`
+
 ### บันทึกการทำงาน — 2026-08-10 (New Seeds — Breeder-first hub `/new`)
 - **What:** หน้า `/new` เปลี่ยนเป็นเลือกค่ายก่อน (bento violet/cyan) → drill `/new?breeder=` · Admin จัดค่าย + อัปแบนเนอร์แบบ Clearance vault
 - **Logic:** `new_seeds_breeder_banners` · aggregate `is_pinned_new_arrival` ต่อค่าย · ไม่มี % ลด

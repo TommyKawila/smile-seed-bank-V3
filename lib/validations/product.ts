@@ -53,9 +53,9 @@ export const ProductSchema = z.object({
   image_url_3: z.string().url().nullable().optional(),
   image_url_4: z.string().url().nullable().optional(),
   image_url_5: z.string().url().nullable().optional(),
-  image_urls: z.array(z.string().url()).max(5).nullable().optional(),
+  image_urls: z.array(z.string().url()).max(10).nullable().optional(),
   /** Admin: per-image main + variant binding; persisted to `product_images` */
-  gallery_entries: z.array(GalleryEntrySchema).max(5).optional(),
+  gallery_entries: z.array(GalleryEntrySchema).max(10).optional(),
   video_url: z.string().url().nullable().optional(),
   is_active: z.boolean().default(true),
   // AI Specs — optional
