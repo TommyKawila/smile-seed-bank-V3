@@ -4,6 +4,17 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-10 (Product video — mute + เสียงประกอบ)
+- **What:** Admin ปิดเสียงต้นฉบับในคลิปได้ · อัปโหลดเสียงประกอบ MP3/M4A แล้วผสมตอนบีบ client ffmpeg
+- **Logic:** `muteOriginal` default เปิด · มี bg audio → map เสียงประกอบ · ไม่ mute + มี bg → amix กับเสียงต้นฉบับ · ออก MP4 เดียวใน `video_url`
+- **ไฟล์:** `ProductVideoUpload.tsx` · `product-video-compress.ts`
+
+### บันทึกการทำงาน — 2026-08-10 (Product video upload — bucket MIME fix)
+- **What:** แก้ error `mime type video/mp4 is not supported` ตอนอัปโหลดคลิปสินค้า
+- **Logic:** ขยาย `storage.buckets.allowed_mime_types` บน `product-images` ให้รับ `video/mp4` · `video/webm` · `video/quicktime` · `file_size_limit` ≥12MB
+- **ไฟล์:** `supabase/migrations/20260810160000_product_images_allow_video_mime.sql`
+- **Pending บอส:** apply migration บน Supabase แล้วทดสอบอัปโหลดวิดีโอใน Admin อีกครั้ง
+
 ### บันทึกการทำงาน — 2026-08-10 (Product gallery 10 รูป + คลิปสั้น 1)
 - **What:** แกลเลอรีสินค้า 5→**10** รูป · อัปโหลดคลิปสั้น 1 (MP4/MOV iPhone) บีบ client ffmpeg → `video_url` · แสดงใน PDP gallery
 - **Logic:** `product_images` + `image_urls` รองรับ 10 · legacy `image_url_1…5` sync 5 ใบแรก · วิดีโอ ≤720p/30s/12MB · slot ที่ 2 หลังรูปหลัก
