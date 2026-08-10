@@ -70,11 +70,11 @@ export function SeedsFilterIconBadge({
       className={cn(
         "flex shrink-0 items-center justify-center border shadow-sm backdrop-blur-sm",
         box,
-        active ? "border-white/30 bg-white/20" : iconBg
+        active ? "border-zinc-500 bg-zinc-700/60 shadow-none" : iconBg
       )}
     >
       <Icon
-        className={cn(icon, active ? "text-primary-foreground" : iconFg)}
+        className={cn(icon, active ? "text-zinc-200" : iconFg)}
         strokeWidth={1.75}
         aria-hidden
       />

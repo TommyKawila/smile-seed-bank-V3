@@ -74,17 +74,17 @@ const SEEDS_PACK_ROWS: { slug: string; labelTh: string; labelEn: string; i18n?: 
 type FilterPresentation = "sidebar" | "mobile";
 
 const sectionHeadingClass =
-  "font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary";
+  "font-sans text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500";
 const subSectionHeadingClass =
-  "font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-primary/70";
+  "font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500/80";
 
 /** V4 filter panel tokens. */
 const filterCardClass =
-  "rounded-2xl border border-border bg-card/50 p-4 shadow-sm surface-glass";
+  "rounded-2xl border border-border/60 bg-zinc-950/40 p-4";
 const filterCardTintClass =
-  "rounded-2xl border border-border bg-card/50 p-4 shadow-sm surface-glass";
+  "rounded-2xl border border-border/60 bg-zinc-950/40 p-4";
 const filterLabDividerClass =
-  "flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3";
+  "flex items-center gap-3 rounded-xl border border-border/60 bg-zinc-950/30 px-4 py-3";
 
 function FilterSectionHeading({
   icon,
@@ -96,14 +96,12 @@ function FilterSectionHeading({
   subtitle?: string;
 }) {
   return (
-    <div className="mb-3 flex items-center gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
-        {icon}
-      </div>
+    <div className="mb-3 flex items-center gap-2.5">
+      <span className="shrink-0 text-zinc-500 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
       <div className="min-w-0">
-        <p className="text-sm font-bold leading-tight text-primary">{title}</p>
+        <p className="text-sm font-semibold leading-tight text-zinc-200">{title}</p>
         {subtitle ? (
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{subtitle}</p>
+          <p className="mt-0.5 text-xs leading-snug text-zinc-500">{subtitle}</p>
         ) : null}
       </div>
     </div>
@@ -159,10 +157,10 @@ export function FilterSidebarContent({
     [router, pathname, searchParams]
   );
   const checkboxClass =
-    "peer h-3 w-3 shrink-0 rounded-sm border border-primary/55 text-primary accent-primary focus:ring-1 focus:ring-primary/35 focus:ring-offset-0";
+    "peer h-3 w-3 shrink-0 rounded-sm border border-zinc-600 text-zinc-400 accent-zinc-400 focus:ring-1 focus:ring-zinc-500/35 focus:ring-offset-0";
 
   const seedsCheckboxClass =
-    "peer h-3 w-3 shrink-0 rounded-sm border border-primary/55 text-primary accent-primary focus:ring-1 focus:ring-primary/35 focus:ring-offset-0";
+    "peer h-3 w-3 shrink-0 rounded-sm border border-zinc-600 text-zinc-400 accent-zinc-400 focus:ring-1 focus:ring-zinc-500/35 focus:ring-offset-0";
 
   const rowClass = (on: boolean, isZero: boolean) =>
     isMobile
@@ -171,8 +169,8 @@ export function FilterSidebarContent({
           "flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-sm font-sans transition-colors",
           isZero && "opacity-55",
           on
-            ? "border-primary/40 bg-primary/10 text-foreground"
-            : "border-border bg-card/60 text-foreground/75 hover:border-primary/25 hover:bg-primary/5"
+            ? "border-zinc-600 bg-zinc-900 text-zinc-100"
+            : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300"
         );
 
   const seedsRowClass = (on: boolean, isZero: boolean) =>
@@ -182,8 +180,8 @@ export function FilterSidebarContent({
           "flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-sm font-sans transition-colors",
           isZero && "opacity-55",
           on
-            ? "border-primary/40 bg-primary/10 text-primary"
-            : "border-border bg-card/60 text-foreground/75 hover:border-primary/25 hover:bg-primary/5"
+            ? "border-zinc-600 bg-zinc-900 text-zinc-100"
+            : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300"
         );
 
   const mobileRowClass = (
@@ -192,56 +190,48 @@ export function FilterSidebarContent({
     tone: "default" | "fem" | "reg" | "seeds"
   ) => {
     const base =
-      "flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl border-2 px-3.5 py-2.5 font-sans transition-all active:scale-[0.98]";
+      "flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5 font-sans transition-colors active:scale-[0.98]";
     if (isZero) return cn(base, "opacity-50");
     if (!on) {
       return cn(
         base,
-        "border-primary/15 bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.04]"
+        "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300"
       );
     }
     if (tone === "fem")
-      return cn(
-        base,
-        "border-secondary/80 bg-secondary text-primary shadow-md shadow-secondary/50"
-      );
-    return cn(base, "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25");
+      return cn(base, "border-zinc-600 bg-zinc-800/80 text-zinc-100");
+    return cn(base, "border-zinc-600 bg-zinc-800/80 text-zinc-100");
   };
 
   const countBadgeClass = (on: boolean, isZero: boolean, tone: "default" | "fem" | "seeds" = "default") => {
     if (isMobile) {
-      if (on) return "rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-bold tabular-nums text-inherit";
-      if (tone === "fem")
-        return cn(
-          "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
-          isZero ? "bg-primary/5 text-muted-foreground" : "bg-primary/10 text-primary"
-        );
+      if (on) return "rounded-full bg-zinc-700/60 px-2.5 py-0.5 text-xs font-medium tabular-nums text-zinc-300";
       return cn(
-        "rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
-        isZero ? "bg-primary/5 text-muted-foreground" : "bg-primary/10 text-primary"
+        "rounded-full px-2.5 py-0.5 text-xs font-medium tabular-nums",
+        isZero ? "text-zinc-600" : "text-zinc-500"
       );
     }
     return cn(
       "shrink-0 font-sans text-[10px] font-medium tabular-nums",
-      isZero ? "text-muted-foreground/70" : on ? "text-primary/80" : "text-foreground/45"
+      isZero ? "text-zinc-600" : on ? "text-zinc-400" : "text-zinc-500"
     );
   };
 
   const labelTextClass = (on: boolean) =>
     isMobile
-      ? cn("text-sm font-semibold leading-tight", on ? "text-inherit" : "text-foreground")
+      ? cn("text-sm font-semibold leading-tight", on ? "text-zinc-100" : "text-zinc-400")
       : cn(
           "font-sans text-[11px] font-medium tracking-wide",
-          on ? "font-semibold text-primary" : "text-foreground/75"
+          on ? "font-semibold text-zinc-100" : "text-zinc-400"
         );
 
   const mobileCheck = (on: boolean) =>
     on ? (
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/25">
-        <Check className="h-4 w-4 stroke-[2.5]" aria-hidden />
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-500 bg-zinc-700/60">
+        <Check className="h-4 w-4 stroke-[2.5] text-zinc-200" aria-hidden />
       </span>
     ) : (
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-primary/15 bg-card" />
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/50" />
     );
 
   return (
@@ -303,8 +293,8 @@ export function FilterSidebarContent({
       </div>
       {isMobile ? (
         <div className={filterLabDividerClass}>
-          <FlaskConical className="h-5 w-5 shrink-0 text-primary" aria-hidden />
-          <p className="text-sm font-semibold text-primary">
+          <FlaskConical className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
+          <p className="text-sm font-medium text-zinc-400">
             {t("กรองแบบละเอียด", "Refine your search")}
           </p>
         </div>
@@ -329,7 +319,7 @@ export function FilterSidebarContent({
         <p
           className={cn(
             isMobile
-              ? "mb-2 text-xs font-bold uppercase tracking-wide text-primary/80"
+              ? "mb-2 text-[10px] font-medium uppercase tracking-wide text-zinc-500"
               : cn(subSectionHeadingClass, "mb-1.5")
           )}
         >
@@ -361,7 +351,7 @@ export function FilterSidebarContent({
         <p
           className={cn(
             isMobile
-              ? "mb-2 text-xs font-bold uppercase tracking-wide text-primary/70"
+              ? "mb-2 text-[10px] font-medium uppercase tracking-wide text-zinc-500/80"
               : cn(subSectionHeadingClass, "mb-1.5")
           )}
         >
@@ -452,7 +442,7 @@ export function FilterSidebar({
   return (
     <div
       id="shop-filters-desktop"
-      className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-2xl border border-border surface-glass shadow-sm lg:top-[11.5rem] lg:max-h-[calc(100vh-11.5rem)]"
+      className="sticky z-10 flex min-h-0 w-full max-w-[280px] flex-1 flex-col self-stretch rounded-2xl border border-border/60 bg-zinc-950/40 lg:top-[11.5rem] lg:max-h-[calc(100vh-11.5rem)]"
     >
       <div className="shrink-0 px-4 pb-3 pt-4">
         <CatalogSidebarQuickFilters {...quickFilters} presentation="sidebar" />

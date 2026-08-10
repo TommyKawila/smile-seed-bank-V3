@@ -45,7 +45,6 @@ import {
 } from "@/lib/storefront-category-accents";
 import {
   cardStrainTypeLabel,
-  isNewArrivalProduct,
 } from "@/lib/product-card-present";
 import { toast } from "sonner";
 import { pickVariantForSeedPackSlugs, parseListParam } from "@/lib/shop-attribute-filters";
@@ -85,8 +84,6 @@ type ProductListItem = ProductWithBreeder & {
   product_images?: ProductImageRow[] | null;
 };
 
-type ProductWithMeta = ProductListItem & { created_at?: string | null };
-
 type ProductCardProps = {
   product: ProductListItem;
   variant?: "shop" | "showcase";
@@ -95,8 +92,6 @@ type ProductCardProps = {
   catalogSeedsFilter?: string | null;
   /** PDP link only — no add-to-cart (e.g. /new drill-down). */
   linkOnly?: boolean;
-  /** Always show NEW badge (new seeds grid). */
-  showNewBadge?: boolean;
   /** Override status-driven accent (e.g. clearance drill-down). */
   accent?: ProductStatusAccent;
 };
@@ -106,7 +101,6 @@ function ProductCardBase({
   imagePriority = false,
   catalogSeedsFilter = null,
   linkOnly = false,
-  showNewBadge = false,
   accent: accentOverride,
 }: ProductCardProps) {
   const { addToCart, openCart, brandPromotionRules } = useCartContext();
@@ -124,7 +118,6 @@ function ProductCardBase({
   const aggregateStock = getProductAggregateStock(product);
   const outOfStock = aggregateStock <= 0 || !displayVariant;
   const cardImage = getPrimaryImage(product);
-  const pm = product as ProductWithMeta;
   const cardImageAlt = product.name?.trim()
     ? product.name.trim()
     : t("สินค้า", "Product");
@@ -275,7 +268,8 @@ function ProductCardBase({
     : getStartingVariantLabel(product.product_variants, locale);
 
   const showBest = Boolean(product.is_featured);
-  const showNew = showNewBadge || isNewArrivalProduct(pm.created_at);
+  const showNew =
+    product.is_pinned_new_arrival === true && product.is_clearance !== true;
   const breederOffset = topLeftSalePct ? "top-10" : undefined;
 
   const imageOverlay = (

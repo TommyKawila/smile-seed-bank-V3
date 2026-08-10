@@ -4,6 +4,10 @@ import { m } from "framer-motion";
 import { Mars, Venus } from "lucide-react";
 import type { Product } from "@/types/supabase";
 import { getGeneticPercents } from "@/lib/genetic-percents";
+import {
+  productAccentTokens,
+  type ProductStatusAccent,
+} from "@/lib/storefront-category-accents";
 import { cn } from "@/lib/utils";
 
 const CHIP = "inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1.5";
@@ -54,32 +58,39 @@ export function GeneticRatioBar({
   variant = "card",
   t,
   className,
+  accent = "vault",
 }: {
   product: Pick<Product, "sativa_percent" | "indica_percent" | "sativa_ratio" | "indica_ratio">;
   variant?: "compact" | "card";
   t: TFn;
   className?: string;
+  accent?: ProductStatusAccent;
 }) {
   const p = getGeneticPercents(product);
   if (!p) return null;
 
   const { sativa, indica } = p;
+  const tokens = productAccentTokens(accent);
 
   const bar = (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold sm:text-sm">
-        <span className="font-bold text-primary">{t(`ซาติวา: ${sativa}%`, `Sativa: ${sativa}%`)}</span>
-        <span className="font-bold text-indica">{t(`อินดิกา: ${indica}%`, `Indica: ${indica}%`)}</span>
+        <span className={cn("font-semibold", tokens.geneticSativaLabel)}>
+          {t(`ซาติวา: ${sativa}%`, `Sativa: ${sativa}%`)}
+        </span>
+        <span className={cn("font-semibold", tokens.geneticIndicaLabel)}>
+          {t(`อินดิกา: ${indica}%`, `Indica: ${indica}%`)}
+        </span>
       </div>
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted sm:h-3.5">
+      <div className={cn("flex h-3 w-full overflow-hidden rounded-full sm:h-3.5", tokens.geneticTrack)}>
         <m.div
-          className="relative z-10 h-full shrink-0 rounded-l-full bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.55)]"
+          className={cn("relative z-10 h-full shrink-0 rounded-l-full", tokens.geneticSativaBar)}
           initial={{ width: "0%" }}
           animate={{ width: `${sativa}%` }}
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
         />
         <m.div
-          className="relative z-0 h-full shrink-0 rounded-r-full bg-indica shadow-[0_0_10px_hsl(var(--indica)/0.45)]"
+          className={cn("relative z-0 h-full shrink-0 rounded-r-full", tokens.geneticIndicaBar)}
           initial={{ width: "0%" }}
           animate={{ width: `${indica}%` }}
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
@@ -93,8 +104,8 @@ export function GeneticRatioBar({
   }
 
   return (
-    <div className={cn("surface-glass rounded-2xl p-4", className)}>
-      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+    <div className={cn("rounded-2xl border border-border/60 bg-zinc-950/40 p-4", className)}>
+      <p className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-500">
         {t("สัดส่วนพันธุกรรม", "Genetic ratio")}
       </p>
       {bar}

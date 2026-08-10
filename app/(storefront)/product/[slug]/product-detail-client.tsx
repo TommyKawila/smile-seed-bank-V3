@@ -36,10 +36,9 @@ import { ProductCard } from "@/components/storefront/ProductCard";
 import { requestCartFlyAnimation } from "@/components/storefront/CartAnimation";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import {
-  clearanceDiscountBadgeClass,
+  pdpClearanceSaleBadgeClass,
   productAccentTokens,
   resolveProductAccent,
-  type ProductStatusAccent,
 } from "@/lib/storefront-category-accents";
 import { Photo3nAdvantageBox } from "@/components/storefront/Photo3nAdvantageBox";
 import { StockAlert } from "@/components/storefront/StockAlert";
@@ -124,7 +123,12 @@ function formatDescriptionJournal(text: string, productName: string): React.Reac
 }
 
 const statCardShell =
-  "flex flex-col items-center justify-center rounded-2xl border border-border bg-card/50 p-4 text-center";
+  "flex flex-col items-center justify-center rounded-2xl border border-border/60 bg-zinc-950/40 p-4 text-center";
+
+const pdpPanelClass = "rounded-2xl border border-border/60 bg-zinc-950/40 p-5";
+const pdpPanelClassLg = "rounded-2xl border border-border/60 bg-zinc-950/40 p-6";
+const pdpTabTriggerClass =
+  "flex-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-500 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-zinc-100 sm:flex-none";
 
 // Stat card — unified light surface + emerald icon accent
 function StatCard({
@@ -138,7 +142,7 @@ function StatCard({
 }) {
   return (
     <div className={statCardShell}>
-      <Icon className="mb-1.5 h-6 w-6 text-primary" aria-hidden />
+      <Icon className="mb-1.5 h-6 w-6 text-zinc-500" aria-hidden />
       <span className={cn("text-xl font-semibold tracking-tight text-foreground", fontSansTabular)}>
         {value}
       </span>
@@ -163,7 +167,7 @@ function ChipRow({
   if (items.length === 0) return null;
   return (
     <div className="space-y-2">
-      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
         <span>{emoji}</span> {label}
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -198,7 +202,7 @@ function SpecRow({
   return (
     <div className="flex items-start justify-between gap-4 border-b border-border py-2.5 text-sm last:border-0">
       <span className="flex shrink-0 items-center gap-2 text-foreground/60">
-        {Icon && <Icon className="h-4 w-4 text-primary" />}
+        {Icon && <Icon className="h-4 w-4 text-zinc-500" />}
         {label}
       </span>
       <span
@@ -395,12 +399,12 @@ export default function ProductDetailClient({
     listReferrerPath === "/clearance" || listReferrerPath?.startsWith("/clearance?") === true;
   const listReferrerIsNew =
     listReferrerPath === "/new" || listReferrerPath?.startsWith("/new?") === true;
-  const backLinkAccent: ProductStatusAccent = listReferrerIsClearance
+  const backLinkAccent = listReferrerIsClearance
     ? "clearance"
     : listReferrerIsNew
       ? "new"
       : productAccent;
-  const backLinkClass = productAccentTokens(backLinkAccent).backLink;
+  const backLinkClass = productAccentTokens(backLinkAccent).pdpBackLink;
 
   const activeVariants = sortVariantsByPriceThenPack(
     product.product_variants?.filter((v) => v.is_active !== false) ?? []
@@ -500,12 +504,12 @@ export default function ProductDetailClient({
                   {salePct != null && salePct > 0 && (
                     <span
                       className={cn(
-                        "rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide shadow-sm ring-1 ring-border/50",
+                        "rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide",
                         hasBrandSale
-                          ? accentTokens.brandDiscountBadge
+                          ? accentTokens.pdpSaleBadge
                           : productAccent === "clearance"
-                            ? clearanceDiscountBadgeClass(salePct)
-                            : accentTokens.brandDiscountBadge
+                            ? pdpClearanceSaleBadgeClass(salePct)
+                            : accentTokens.pdpSaleBadge
                       )}
                     >
                       {hasBrandSale
@@ -562,6 +566,7 @@ export default function ProductDetailClient({
               product={product}
               variant="compact"
               t={t}
+              accent={productAccent}
               className={cn(fontSansTabular, "text-[11px] sm:text-xs -mt-0.5 max-lg:mb-0.5")}
             />
 
@@ -578,7 +583,7 @@ export default function ProductDetailClient({
                 <button
                   type="button"
                   onClick={goToFullDescription}
-                  className="font-sans text-sm font-medium text-primary hover:underline"
+                  className="font-sans text-sm font-medium text-zinc-400 hover:text-zinc-200 hover:underline"
                 >
                   {t("อ่านเพิ่มเติม", "Read more")}
                 </button>
@@ -603,7 +608,7 @@ export default function ProductDetailClient({
                 <span
                   className={cn(
                     fontSansTabular,
-                    "inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary"
+                    "inline-flex items-center rounded-full border border-zinc-700 bg-transparent px-2.5 py-1 text-[11px] font-medium text-zinc-300"
                   )}
                 >
                   THC {product.thc_percent}%
@@ -647,7 +652,7 @@ export default function ProductDetailClient({
                         onClick={() => !soldOut && setSelectedVariant(v)}
                         disabled={soldOut}
                         className={cn(
-                          "relative rounded-lg border-2 px-4 py-2.5 text-left transition-all",
+                          "relative rounded-lg border px-4 py-2.5 text-left transition-colors",
                           soldOut &&
                             "cursor-not-allowed border-border bg-muted/20 text-foreground/45 line-through",
                           !soldOut &&
@@ -671,7 +676,7 @@ export default function ProductDetailClient({
                         {isClearancePack && packPct != null && packPct > 0 ? (
                           <span
                             className={cn(
-                              "mb-1 inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+                              "mb-1 inline-flex rounded border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
                               accentTokens.pdpPackBadge
                             )}
                           >
@@ -735,32 +740,14 @@ export default function ProductDetailClient({
         {/* ── Premium Specs Section ─────────────────────────────────────── */}
         <div id="product-full-description" className="mt-8 scroll-mt-24 sm:mt-10">
           <Tabs value={infoTab} onValueChange={setInfoTab}>
-            <TabsList className="h-auto w-full flex-wrap gap-1 rounded-xl border border-border bg-muted/20 p-1.5 sm:w-auto">
-              <TabsTrigger
-                value="specs"
-                className={cn(
-                  "font-sans",
-                  "flex-1 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm sm:flex-none"
-                )}
-              >
+            <TabsList className="h-auto w-full flex-wrap gap-1 rounded-xl border border-border/60 bg-zinc-950/30 p-1.5 sm:w-auto">
+              <TabsTrigger value="specs" className={cn("font-sans", pdpTabTriggerClass)}>
                 🧬 {t("พันธุกรรม & สเปก", "Genetics & Specs")}
               </TabsTrigger>
-              <TabsTrigger
-                value="effects"
-                className={cn(
-                  "font-sans",
-                  "flex-1 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm sm:flex-none"
-                )}
-              >
+              <TabsTrigger value="effects" className={cn("font-sans", pdpTabTriggerClass)}>
                 ⚡ {t("เอฟเฟค & เทอร์พีนส์", "Effects & Terpenes")}
               </TabsTrigger>
-              <TabsTrigger
-                value="description"
-                className={cn(
-                  "font-sans",
-                  "flex-1 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm sm:flex-none"
-                )}
-              >
+              <TabsTrigger value="description" className={cn("font-sans", pdpTabTriggerClass)}>
                 📋 {t("คำบรรยาย", "Description")}
               </TabsTrigger>
             </TabsList>
@@ -829,6 +816,7 @@ export default function ProductDetailClient({
                   product={product}
                   variant="card"
                   t={t}
+                  accent={productAccent}
                   className={cn(fontSansTabular, "text-[11px] sm:text-xs")}
                 />
 
@@ -838,9 +826,9 @@ export default function ProductDetailClient({
                   product.seed_type ||
                   product.flowering_type ||
                   product.yield_info) && (
-                  <div className="rounded-2xl border border-border bg-card/50 p-5 shadow-sm surface-glass">
+                  <div className={pdpPanelClass}>
                     <p className="mb-3 flex items-center gap-2 font-sans text-sm font-semibold text-foreground">
-                      <Dna className="h-4 w-4 text-primary" /> {t("โปรไฟล์พันธุกรรม", "Genetic Profile")}
+                      <Dna className="h-4 w-4 text-zinc-500" /> {t("โปรไฟล์พันธุกรรม", "Genetic Profile")}
                     </p>
                     {shouldShowGeneticsRow(product.genetic_ratio, product.lineage) && (
                       <SpecRow label={t("พันธุกรรม", "Genetics")} value={product.genetic_ratio} icon={Dna} />
@@ -862,12 +850,12 @@ export default function ProductDetailClient({
 
                 {/* Terpene Profile */}
                 {toArray(product.terpenes).length > 0 && (
-                  <div className="rounded-2xl border border-border bg-card/50 p-5 surface-glass">
+                  <div className={pdpPanelClass}>
                     <ChipRow
                       emoji="🫙"
                       label={t("เทอร์พีน", "Terpene Profile")}
                       data={product.terpenes}
-                      chipClass="border border-primary/20 bg-primary/10 text-primary"
+                      chipClass="border border-zinc-700 bg-transparent text-zinc-300"
                     />
                   </div>
                 )}
@@ -889,7 +877,7 @@ export default function ProductDetailClient({
               <div className="grid gap-4 sm:grid-cols-2">
 
                 {toArray(product.effects).length > 0 && (
-                  <div className="rounded-2xl border border-border bg-card/50 p-5 surface-glass">
+                  <div className={pdpPanelClass}>
                     <ChipRow
                       emoji="⚡"
                       label={t("อาการ / ความรู้สึก", "Effects")}
@@ -900,7 +888,7 @@ export default function ProductDetailClient({
                 )}
 
                 {toArray(product.flavors).length > 0 && (
-                  <div className="rounded-2xl border border-border bg-card/50 p-5 surface-glass">
+                  <div className={pdpPanelClass}>
                     <ChipRow
                       emoji="🍋"
                       label={t("รสชาติ & กลิ่น", "Flavors & Aroma")}
@@ -911,7 +899,7 @@ export default function ProductDetailClient({
                 )}
 
                 {toArray(product.medical_benefits).length > 0 && (
-                  <div className="rounded-2xl border border-border bg-card/50 p-5 sm:col-span-2 surface-glass">
+                  <div className={cn(pdpPanelClass, "sm:col-span-2")}>
                     <ChipRow
                       emoji="💊"
                       label={t("สรรพคุณทางยา", "Medical Benefits")}
@@ -950,7 +938,7 @@ export default function ProductDetailClient({
 
                   if (!text && !hasStructured) {
                     return (
-                      <div className="rounded-2xl border border-border bg-card/50 p-6 surface-glass">
+                      <div className={pdpPanelClassLg}>
                         <p className="text-sm text-foreground/65">{t("ยังไม่มีคำบรรยาย", "No description available")}</p>
                       </div>
                     );
@@ -959,7 +947,7 @@ export default function ProductDetailClient({
                   return (
                     <>
                       {text && (
-                        <div className="rounded-2xl border border-border bg-card/50 p-6 surface-glass">
+                        <div className={pdpPanelClassLg}>
                           {(text.match(/\n\n/) ? text.split(/\n\n+/) : [text]).map((para, i) => (
                             <p
                               key={i}
@@ -971,10 +959,10 @@ export default function ProductDetailClient({
                         </div>
                       )}
                       {hasStructured && (
-                        <div className="rounded-2xl border border-border bg-card/50 p-6 space-y-3 surface-glass">
+                        <div className={cn(pdpPanelClassLg, "space-y-3")}>
                           {hasGeneticsDistinct && (
                             <p className="flex items-start gap-2 text-sm text-foreground/70">
-                              <Dna className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                              <Dna className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
                               <span>
                                 <span className="font-semibold text-foreground">{t("พันธุกรรม", "Genetics")}:</span>{" "}
                                 {product.genetic_ratio}
@@ -983,7 +971,7 @@ export default function ProductDetailClient({
                           )}
                           {hasLineage && (
                             <p className="flex items-start gap-2 text-sm text-foreground/70">
-                              <GitFork className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                              <GitFork className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
                               <span>
                                 <span className="font-semibold text-foreground">{t("สายเลือด", "Lineage")}:</span>{" "}
                                 {product.lineage}
@@ -1037,7 +1025,7 @@ export default function ProductDetailClient({
           <section className="mt-14 border-t border-border pt-10 sm:mt-16 sm:pt-12">
             <div className="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+                <p className="font-sans text-[11px] font-medium uppercase tracking-[0.2em] text-zinc-500">
                   RELATED PRODUCTS
                 </p>
                 <h2 className="mt-2 font-sans text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">

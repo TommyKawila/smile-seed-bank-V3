@@ -36,8 +36,8 @@ function SidebarFilterRow({
     <div className={presentation === "mobile" ? "space-y-2" : "space-y-2.5"}>
       <p
         className={cn(
-          "font-bold uppercase tracking-wide text-primary",
-          presentation === "mobile" ? "text-[11px]" : "text-xs"
+          "text-[10px] font-medium uppercase tracking-wide text-zinc-500",
+          presentation === "mobile" && "text-[11px]"
         )}
       >
         {label}
@@ -70,11 +70,11 @@ function QuickPill({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl border-2 px-1.5 py-2 text-center font-sans transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
+        "flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2 text-center font-sans transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40",
         presentation === "mobile" ? "min-h-12" : "min-h-11",
         active
-          ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25"
-          : "border-border bg-card/70 text-foreground/85 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+          ? "border-zinc-600 bg-zinc-800/80 text-zinc-100"
+          : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300"
       )}
     >
       {iconSlug ? (
@@ -84,14 +84,14 @@ function QuickPill({
           {glyph}
         </span>
       ) : null}
-      <span className={cn("text-[11px] font-semibold leading-tight", active && "text-primary-foreground")}>
+      <span className={cn("text-[11px] font-semibold leading-tight", active ? "text-zinc-100" : "text-zinc-400")}>
         {label}
       </span>
       {count != null ? (
         <span
           className={cn(
-            "text-[10px] font-bold tabular-nums",
-            active ? "text-primary-foreground/85" : "text-primary/45"
+            "text-[10px] font-medium tabular-nums",
+            active ? "text-zinc-400" : "text-zinc-500"
           )}
         >
           {count}
@@ -176,13 +176,8 @@ export function CatalogSidebarQuickFilters({
         });
 
   return (
-    <div
-      className={cn(
-        "space-y-4",
-        "rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/[0.06] via-card/80 to-secondary/30 p-4 shadow-sm surface-glass"
-      )}
-    >
-      <div className="flex flex-wrap gap-2 border-b border-primary/10 pb-3">
+    <div className="space-y-4 rounded-2xl border border-border/60 bg-zinc-950/40 p-4">
+      <div className="flex flex-wrap gap-2 border-b border-border/60 pb-3">
         <ShopQuickFilterBar
           replaceCatalog={replaceCatalog}
           t={t}

@@ -75,6 +75,7 @@ import {
   inferCatalogHasMore,
 } from "@/lib/shop-catalog-pagination";
 import type { Breeder } from "@/types/supabase";
+import { cn } from "@/lib/utils";
 import {
   CLEARANCE_ACCENT,
   NEW_SEEDS_ACCENT,

@@ -4,6 +4,21 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-11 (PDP genetic ratio bar — accent sativa/indica)
+- **What:** แถบ sativa/indica บน PDP เปลี่ยนสีตาม status accent — vault emerald/indica · new cyan/violet · clearance amber/orange
+- **Logic:** `geneticSativaLabel` / `geneticIndicaBar` ใน accent tokens · `GeneticRatioBar` รับ `accent` prop
+- **ไฟล์:** `storefront-category-accents.ts` · `ProductSpecs.tsx` · `product-detail-client.tsx`
+
+### บันทึกการทำงาน — 2026-08-11 (Quiet PDP chrome — zinc muted)
+- **What:** หน้า PDP เงียบลง — pack/price/stock/back link ใช้ zinc contrast · sale badge outline เบา · tabs/spec panels flat
+- **Logic:** `pdpBackLink` / `pdpPackSelected` / `pdpSaleBadge` ใน accent tokens · ATC คง `bg-primary`
+- **ไฟล์:** `storefront-category-accents.ts` · `product-detail-client.tsx`
+
+### บันทึกการทำงาน — 2026-08-11 (Quiet filter sidebar — zinc muted chrome)
+- **What:** แถบกรอง All Seeds/Shop เงียบลง — ลบ glass/primary fill · pill/chip/row active = zinc contrast ไม่แย่ง product cards
+- **Logic:** QuickPill + FilterSidebar rows `border-zinc-600 bg-zinc-800/80` · New/Clearance chip outline อ่อน · section labels `text-zinc-500`
+- **ไฟล์:** `CatalogSidebarQuickFilters.tsx` · `shop-filter-chip-styles.ts` · `FilterSidebar.tsx` · `seeds-filter-icon-badge.tsx`
+
 ### บันทึกการทำงาน — 2026-08-11 (Status-driven product vibes — card + PDP + chrome)
 - **What:** Product card / PDP / shop chrome เปลี่ยน vibe ตามสถานะ SKU — Clearance แดง-ส้ม · New ม่วง-ฟ้า · Default เขียว vault
 - **Logic:** `resolveProductAccent(is_clearance → is_pinned_new_arrival → vault)` · `ProductStatusAccent` · mixed grid All Seeds แสดงหลายโทนใน grid เดียว

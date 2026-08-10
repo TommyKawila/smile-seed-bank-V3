@@ -64,19 +64,31 @@ export const CLEARANCE_ACCENT = {
   discountBadgeLow: "bg-gradient-to-r from-orange-400 to-orange-500 text-zinc-950",
   packChip: "border-orange-500/40 bg-orange-500/15 text-orange-300",
   brandDiscountBadge: "bg-gradient-to-r from-orange-500 to-red-500 text-zinc-950",
-  pdpPrice: "text-orange-200",
-  pdpPackSelected:
-    "border-orange-500 bg-orange-500/15 text-foreground shadow-sm ring-1 ring-orange-500/30",
+  pdpBackLink: "text-zinc-500 hover:text-zinc-300",
+  pdpPrice: "text-zinc-100",
+  pdpPackSelected: "border-zinc-600 bg-zinc-800/80 text-zinc-100",
   pdpPackIdle:
-    "border-orange-500/50 bg-orange-500/10 text-foreground/90 hover:border-orange-500 hover:bg-orange-500/15",
-  pdpPackSelectedPrice: "text-orange-300",
-  pdpPackBadge: "bg-gradient-to-r from-orange-500 to-red-500 text-zinc-950",
-  pdpStockPill: "border-orange-500/25 bg-orange-500/10 text-orange-300",
+    "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300",
+  pdpPackSelectedPrice: "text-zinc-100",
+  pdpPackBadge: "border border-orange-500/25 bg-transparent text-orange-400/80",
+  pdpStockPill: "border-orange-500/25 bg-transparent text-orange-400/80",
+  pdpSaleBadge: "border border-orange-500/25 bg-transparent text-orange-400/80",
+  geneticTrack: "bg-zinc-800/80",
+  geneticSativaLabel: "text-amber-400",
+  geneticIndicaLabel: "text-orange-400",
+  geneticSativaBar: "bg-amber-500",
+  geneticIndicaBar: "bg-orange-600",
   chipIdle:
     "border-orange-500/35 bg-card text-orange-300/90 hover:border-orange-400/50 hover:bg-orange-500/10",
   chipActive: "border-orange-500 bg-orange-500/20 text-orange-100 shadow-sm",
   filterTitle: "text-orange-300",
 } as const;
+
+export function pdpClearanceSaleBadgeClass(percent: number): string {
+  if (percent >= 50) return "border border-red-500/25 bg-transparent text-red-400/80";
+  if (percent >= 30) return "border border-orange-500/25 bg-transparent text-orange-400/80";
+  return "border border-orange-500/20 bg-transparent text-orange-300/80";
+}
 
 export function clearanceDiscountBadgeClass(percent: number): string {
   if (percent >= 50) return CLEARANCE_ACCENT.discountBadgeHigh;
@@ -103,16 +115,22 @@ export const NEW_SEEDS_ACCENT = {
   packChip: "border-violet-500/40 bg-violet-500/15 text-violet-300",
   newBadge: "bg-gradient-to-r from-violet-500 to-cyan-400 text-zinc-950",
   brandDiscountBadge: "bg-gradient-to-r from-violet-500 to-cyan-400 text-zinc-950",
+  pdpBackLink: "text-zinc-500 hover:text-zinc-300",
+  pdpPrice: "text-zinc-100",
+  pdpPackSelected: "border-zinc-600 bg-zinc-800/80 text-zinc-100",
+  pdpPackIdle:
+    "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300",
+  pdpPackSelectedPrice: "text-zinc-100",
+  pdpPackBadge: "border border-violet-500/25 bg-transparent text-violet-400/80",
+  pdpStockPill: "border-violet-500/25 bg-transparent text-violet-400/80",
+  pdpSaleBadge: "border border-violet-500/25 bg-transparent text-violet-400/80",
+  geneticTrack: "bg-zinc-800/80",
+  geneticSativaLabel: "text-cyan-400",
+  geneticIndicaLabel: "text-violet-400",
+  geneticSativaBar: "bg-cyan-500",
+  geneticIndicaBar: "bg-violet-500",
   addButton:
     "border-violet-500/40 bg-violet-500/10 text-violet-200 hover:border-violet-400/50 hover:bg-violet-500/20",
-  pdpPrice: "text-violet-300",
-  pdpPackSelected:
-    "border-violet-500 bg-violet-500/10 text-foreground shadow-sm ring-1 ring-violet-500/25",
-  pdpPackIdle:
-    "border-border bg-card/60 text-foreground/75 hover:border-violet-400/40 hover:bg-violet-500/5",
-  pdpPackSelectedPrice: "text-violet-300",
-  pdpPackBadge: "bg-gradient-to-r from-violet-500 to-cyan-400 text-zinc-950",
-  pdpStockPill: "border-violet-500/25 bg-violet-500/10 text-violet-300",
   chipIdle:
     "border-violet-500/35 bg-card text-violet-300/90 hover:border-violet-400/50 hover:bg-violet-500/10",
   chipActive: "border-violet-500 bg-violet-500/20 text-violet-100 shadow-sm",
@@ -146,16 +164,22 @@ export const VAULT_ACCENT = {
   availabilityPill: "border-emerald-500/15 bg-emerald-500/5 text-emerald-300/75",
   packChip: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
   brandDiscountBadge: "bg-primary/90 text-primary-foreground",
+  pdpBackLink: "text-zinc-500 hover:text-zinc-300",
+  pdpPrice: "text-zinc-100",
+  pdpPackSelected: "border-zinc-600 bg-zinc-800/80 text-zinc-100",
+  pdpPackIdle:
+    "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300",
+  pdpPackSelectedPrice: "text-zinc-100",
+  pdpPackBadge: "border border-zinc-600 bg-transparent text-zinc-400",
+  pdpStockPill: "border-zinc-700 bg-transparent text-zinc-400",
+  pdpSaleBadge: "border border-zinc-600 bg-transparent text-zinc-300",
+  geneticTrack: "bg-zinc-800/80",
+  geneticSativaLabel: "text-emerald-400",
+  geneticIndicaLabel: "text-indica",
+  geneticSativaBar: "bg-emerald-500",
+  geneticIndicaBar: "bg-indica",
   addButton:
     "border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:border-emerald-400/50 hover:bg-emerald-500/20",
-  pdpPrice: "text-primary",
-  pdpPackSelected:
-    "border-primary bg-primary/10 text-foreground shadow-sm ring-1 ring-primary/25",
-  pdpPackIdle:
-    "border-border bg-card/60 text-foreground/75 hover:border-primary/40 hover:bg-primary/5",
-  pdpPackSelectedPrice: "text-primary",
-  pdpPackBadge: "bg-primary text-primary-foreground",
-  pdpStockPill: "border-primary/25 bg-primary/10 text-primary",
   chipIdle:
     "border-emerald-500/35 bg-card text-emerald-300/90 hover:border-emerald-400/50 hover:bg-emerald-500/10",
   chipActive: "border-primary bg-primary text-white shadow-sm",

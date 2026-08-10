@@ -8,5 +8,5 @@ export function NewSeedsProductCard({
 }: {
   product: ProductWithBreederAndVariants;
 }) {
-  return <ProductCard product={product} linkOnly showNewBadge accent="new" />;
+  return <ProductCard product={product} linkOnly accent="new" />;
 }
