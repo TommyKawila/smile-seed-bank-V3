@@ -24,7 +24,10 @@ import {
   carrierLabelFromCode,
   carrierTrackingUrl,
 } from "@/lib/shipping-carriers";
+import { customerHasCompletedOrderForFirstOrderPromo } from "@/lib/services/coupon-service";
 import { randomUUID } from "crypto";
+
+const WELCOME10_CODE = "WELCOME10";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
@@ -150,6 +153,22 @@ export async function createOrder(
         return { data: null, error: "PROMO_REQUIRES_PHONE" };
       }
       if (!skipPromoPerUserReuseChecks) {
+        const promoMeta = await prisma.promo_codes.findUnique({
+          where: { id: BigInt(promo_code_id) },
+          select: { code: true, first_order_only: true },
+        });
+        const codeUpper = String(promoMeta?.code ?? "")
+          .trim()
+          .toUpperCase();
+        const firstOrderOnly =
+          promoMeta?.first_order_only === true || codeUpper === WELCOME10_CODE;
+        if (
+          firstOrderOnly &&
+          (await customerHasCompletedOrderForFirstOrderPromo(resolvedCustomerId, null))
+        ) {
+          return { data: null, error: "PROMO_FIRST_ORDER_ONLY" };
+        }
+
         const dup = await prisma.$queryRaw<Array<{ exists: boolean }>>`
           SELECT EXISTS (
             SELECT 1

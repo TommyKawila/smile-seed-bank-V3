@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { validateStorefrontCheckoutTotals } from "@/lib/checkout-server-validate";
+import { resolveSkipCouponPerUserReuseForAdminSession } from "@/lib/coupon-usage-admin-bypass";
 import { quantizeBaht2, roundCheckoutBahtWhole } from "@/lib/money-thb";
 import { createOrderAccessQuery } from "@/lib/order-access-token";
 import { rateLimitIp } from "@/lib/rate-limit-ip";
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
       resolvedCustomerId == null ? null : (promo_code_id ?? null);
 
     let sessionUserEmail: string | null = null;
+    let skipPromoCustomerGates = false;
     if (resolvedCustomerId) {
       const supabase = await createClient();
       const {
@@ -109,6 +111,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
       sessionUserEmail = user.email?.trim() ?? null;
+      // Session-proven only — never trust body `customer.email` for QA / first-order gates.
+      skipPromoCustomerGates = resolveSkipCouponPerUserReuseForAdminSession({
+        sessionUser: user,
+        requestUserId: resolvedCustomerId,
+      });
     }
 
     const effectivePromoId =
@@ -125,8 +132,6 @@ export async function POST(req: NextRequest) {
             .then((row) => (row ? resolvedPromoId : null))
         : null;
 
-    const firstOrderEmail = customer.email?.trim() || sessionUserEmail;
-
     const priced = await validateStorefrontCheckoutTotals({
       items: items.map((i) => ({
         variantId: i.variantId,
@@ -139,7 +144,9 @@ export async function POST(req: NextRequest) {
       promo_code_id: effectivePromoId,
       firstOrderGuard: {
         customerId: resolvedCustomerId,
-        customerEmail: firstOrderEmail,
+        // Auth session email only (shipping email is attacker-controlled).
+        customerEmail: sessionUserEmail,
+        skipCustomerGates: skipPromoCustomerGates,
       },
     });
     if (!priced.ok) {
@@ -178,6 +185,7 @@ export async function POST(req: NextRequest) {
       customer_id: resolvedCustomerId,
       promo_code_id: effectivePromoId,
       order_note: order_note?.trim() || null,
+      skipPromoPerUserReuseChecks: skipPromoCustomerGates,
     });
 
     if (error || !data) {
@@ -214,6 +222,12 @@ export async function POST(req: NextRequest) {
       if (error === "PROMO_PHONE_ALREADY_USED") {
         return NextResponse.json(
           { error: "This promo has already been used for this phone number" },
+          { status: 400 }
+        );
+      }
+      if (error === "PROMO_FIRST_ORDER_ONLY") {
+        return NextResponse.json(
+          { error: "โค้ดนี้สำหรับลูกค้าใหม่ที่สั่งซื้อครั้งแรกเท่านั้น" },
           { status: 400 }
         );
       }
