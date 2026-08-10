@@ -7,7 +7,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
 import { fetchWithTimeout } from "@/lib/timeout";
 import { NewSeedsBreederBoxCard } from "@/components/storefront/NewSeedsBreederBoxCard";
-import { ProductCard } from "@/components/storefront/ProductCard";
+import { NewSeedsProductCard } from "@/components/storefront/NewSeedsProductCard";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { StorefrontNewSeedsBreederBox } from "@/lib/new-seeds";
@@ -145,7 +145,7 @@ export function NewSeedsLandingClient({
               }}
             >
               {products.map((p) => (
-                <ProductCard key={p.id} product={p} />
+                <NewSeedsProductCard key={p.id} product={p} />
               ))}
             </div>
           )

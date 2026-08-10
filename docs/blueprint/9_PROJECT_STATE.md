@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-10 (New Seeds quiet product cards)
+- **What:** การ์ดสินค้า `/new?breeder=` ใหม่ — เงียบ exclusive ไม่ hard-sale
+- **Logic:** `NewSeedsProductCard` แยกจาก `ProductCard` · zinc shell + violet/cyan · ลิงก์ PDP ไม่มี CTA เร่งซื้อ · `จำนวนจำกัด` เมื่อ stock ≤5
+- **ไฟล์:** `NewSeedsProductCard.tsx` · `NewSeedsLandingClient.tsx`
+
 ### บันทึกการทำงาน — 2026-08-10 (Product video — mute + เสียงประกอบ)
 - **What:** Admin ปิดเสียงต้นฉบับในคลิปได้ · อัปโหลดเสียงประกอบ MP3/M4A แล้วผสมตอนบีบ client ffmpeg
 - **Logic:** `muteOriginal` default เปิด · มี bg audio → map เสียงประกอบ · ไม่ mute + มี bg → amix กับเสียงต้นฉบับ · ออก MP4 เดียวใน `video_url`
