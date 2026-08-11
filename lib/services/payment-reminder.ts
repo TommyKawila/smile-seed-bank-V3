@@ -12,6 +12,7 @@ import { isOrderOnPaymentGrace, shouldAutoCancelUnpaidOrder } from "@/lib/paymen
 import { sendPaymentReminderEmail } from "@/services/email-service";
 import { autoCancelUnpaidOrder24hStale } from "@/services/orders-service";
 import { pushTextToLineUser } from "@/services/line-messaging";
+import { lineUserIdForAutomatedOrderNotify } from "@/lib/order-line-auto-recipient";
 
 const MS_HOUR = 60 * 60 * 1000;
 const L1_AGE_MS = 2 * MS_HOUR;
@@ -121,10 +122,9 @@ function computeNextTier(
 function resolveContact(order: {
   line_user_id: string | null;
   shipping_email: string | null;
-  customers: { email: string | null; line_user_id: string | null } | null;
+  customers: { email: string | null } | null;
 }) {
-  const line =
-    order.line_user_id?.trim() || order.customers?.line_user_id?.trim() || null;
+  const line = lineUserIdForAutomatedOrderNotify(order.line_user_id);
   const email = order.shipping_email?.trim() || order.customers?.email?.trim() || null;
   return { line, email };
 }
@@ -171,7 +171,7 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
       OR: [{ slip_url: null }, { slip_url: "" }],
     },
     include: {
-      customers: { select: { email: true, line_user_id: true } },
+      customers: { select: { email: true } },
     },
   });
 
@@ -239,7 +239,7 @@ export async function runPaymentReminders(now: Date = new Date()): Promise<Payme
       OR: [{ slip_url: null }, { slip_url: "" }],
     },
     include: {
-      customers: { select: { email: true, line_user_id: true } },
+      customers: { select: { email: true } },
     },
   });
 

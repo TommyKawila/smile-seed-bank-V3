@@ -9,6 +9,7 @@ import {
   type OrderFlexMessageInput,
 } from "@/lib/line-flex";
 import { buildOrderPaymentUrl, buildOrderSuccessUrl } from "@/lib/order-access-token";
+import { lineUserIdForAutomatedOrderNotify } from "@/lib/order-line-auto-recipient";
 import { createReceiptDownloadQuery } from "@/lib/receipt-download-token";
 import { getTrackingUrl } from "@/lib/shipping-tracking-url";
 import { pushFlexMessageToLineUser } from "@/services/line-messaging";
@@ -55,7 +56,7 @@ async function getOrderLineUserId(orderId: number): Promise<string | null> {
     where: { id: BigInt(orderId) },
     select: { line_user_id: true },
   });
-  return row?.line_user_id?.trim() || null;
+  return lineUserIdForAutomatedOrderNotify(row?.line_user_id);
 }
 
 /**

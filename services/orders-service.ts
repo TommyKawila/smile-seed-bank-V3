@@ -20,6 +20,7 @@ import {
   type PaymentGraceHours,
 } from "@/lib/payment-grace";
 import { pushTextToLineUser } from "@/services/line-messaging";
+import { lineUserIdForAutomatedOrderNotify } from "@/lib/order-line-auto-recipient";
 import type { AdminOrderLineItem } from "@/types/admin-order";
 
 export type { AdminOrderLineItem };
@@ -417,7 +418,7 @@ export async function approvePayment(
           line_user_id: true,
           total_amount: true,
           source_quotation_number: true,
-          customers: { select: { email: true, full_name: true, line_user_id: true } },
+          customers: { select: { email: true, full_name: true } },
         },
       });
       if (!before) {
@@ -460,9 +461,8 @@ export async function approvePayment(
     }
 
     const lineUid =
-      order.line_user_id?.trim() ||
-      before.line_user_id?.trim() ||
-      before.customers?.line_user_id?.trim() ||
+      lineUserIdForAutomatedOrderNotify(order.line_user_id) ||
+      lineUserIdForAutomatedOrderNotify(before.line_user_id) ||
       "";
     const amountForMsg = order.total_amount ?? before.total_amount;
     const totalStr = Number(amountForMsg).toLocaleString("th-TH", {
@@ -490,7 +490,7 @@ export async function approvePayment(
       }
     } else {
       console.log(
-        "[approvePayment] skip LINE payment text: no line_user_id on order or web customer profile"
+        "[approvePayment] skip LINE payment text: no line_user_id on order"
       );
     }
 

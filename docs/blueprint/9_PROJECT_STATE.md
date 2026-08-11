@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-11 (Complete LINE auto-notify order-only recipient)
+- **What:** ปิด incomplete fix ของ wrong-chat — `approvePayment` text + payment reminders ไม่ fallback `customers.line_user_id` · guest checkout ไม่ inherit LINE จาก email
+- **Logic:** SSOT `lineUserIdForAutomatedOrderNotify` · auto push ใช้เฉพาะ `orders.line_user_id`
+- **ไฟล์:** `order-line-auto-recipient.ts` · `orders-service.ts` · `payment-reminder.ts` · `order-service.ts` · `order-line-notifications.ts`
+
 ### บันทึกการทำงาน — 2026-08-11 (B2B quote Note/Terms + remove Quick fill)
 - **What:** ลบ Quick fill (Malikha) · เพิ่มช่อง Note/Terms (`paymentNotes`) สำหรับของแถม/freebies · แสดงบน preview/PDF/email
 - **Logic:** reuse `payment_notes` column · custom lines append หลัง hardcoded Notes & Validity

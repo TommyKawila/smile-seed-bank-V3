@@ -5,7 +5,6 @@
 import { getSql } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { getLineUserIdByEmailForCheckout } from "@/lib/line-customer-line-resolve";
 import { Prisma } from "@prisma/client";
 import {
   assertSufficientStockForCheckoutLines,
@@ -195,11 +194,6 @@ export async function createOrder(
       productName: i.productName || "Unknown",
     }));
 
-    const guestEmailLineUserId =
-      !resolvedCustomerId && customer.email?.trim()
-        ? await getLineUserIdByEmailForCheckout(customer.email)
-        : null;
-
     for (let attempt = 0; attempt < 5; attempt++) {
       const orderNumber = generateOrderNumber();
       try {
@@ -210,6 +204,8 @@ export async function createOrder(
             stockLines.map((l) => ({ variantId: l.variantId, quantity: l.quantity }))
           );
 
+          // Only explicit checkout/input LINE ids — never inherit from profile or email lookup
+          // (stale OA links on admin/shared profiles caused wrong-chat invoices).
           let orderLineUserId: string | null = null;
           if (resolvedCustomerId) {
             const fromInput = customer.line_user_id?.trim() || null;
@@ -235,8 +231,6 @@ export async function createOrder(
                   : {}),
               },
             });
-          } else if (guestEmailLineUserId) {
-            orderLineUserId = guestEmailLineUserId;
           }
 
           const order = await tx.orders.create({
