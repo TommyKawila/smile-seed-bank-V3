@@ -4,7 +4,16 @@
 
 ---
 
-### บันทึกการทำงาน — 2026-08-11 (Quiet Zinc profile UI)
+### บันทึกการทำงาน — 2026-08-11 (Footer legal disclaimer — SSOT TH/EN)
+- **What:** Disclaimer กฎหมาย Smile Seed Bank ใน Footer ทุกหน้า storefront · sync Terms §2 + Privacy section
+- **Logic:** SSOT `storefront-legal-disclaimer.ts` · souvenir/collectibles · อย. · liability หลังรับสินค้า
+- **ไฟล์:** `lib/storefront-legal-disclaimer.ts` · `LegalDisclaimerBlock.tsx` · `Footer.tsx` · `terms/page.tsx` · `privacy/page.tsx`
+
+### บันทึกการทำงาน — 2026-08-11 (Catalog Show/Hide filters — desktop)
+- **What:** หน้า catalog ร่วม (`/shop`, `/seeds`, `/brand`) — ปุ่ม Show filters / Hide filters บน desktop · sidebar ซ่อนค่าเริ่มต้น · สินค้าเต็มความกว้าง
+- **Logic:** `showDesktopFilters` แยกจาก mobile sheet · filter URL/state ไม่เปลี่ยน
+- **ไฟล์:** `ShopPageClient.tsx`
+
 - **What:** `/profile` ทุกแท็บ (ออเดอร์ · วงจีโนม · คูปอง · โปรไฟล์) + OrderDetailDrawer portal + MemberCoupons + ProfileSkeleton — zinc panels, explicit text contrast
 - **Logic:** UI classes only · profile/order/coupon flow ไม่เปลี่ยน
 - **ไฟล์:** `ProfilePageClient.tsx` · `MemberCoupons.tsx` · `OrderDetailDrawer.tsx` · `GenomeCirclePanel.tsx` · `ProfileSkeleton.tsx`

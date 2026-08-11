@@ -507,6 +507,7 @@ export function ShopPageClient({
   const isEn = locale === "en";
   const { t: tMsg } = useTranslations();
   const [showFilter, setShowFilter] = useState(false);
+  const [showDesktopFilters, setShowDesktopFilters] = useState(false);
   const [showPriceSheet, setShowPriceSheet] = useState(false);
   const [visibleCount, setVisibleCount] = useState(() =>
     Math.max(initialProducts.length, initialPageSize)
@@ -1195,8 +1196,16 @@ export function ShopPageClient({
           }
         />
 
-        <div className="flex min-h-0 flex-col lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-stretch lg:gap-8">
-          <aside className="hidden min-h-0 min-w-0 flex-col items-stretch self-stretch lg:flex">
+        <div
+          className={cn(
+            "flex min-h-0 flex-col lg:items-stretch lg:gap-8 lg:transition-[grid-template-columns] lg:duration-300",
+            showDesktopFilters
+              ? "lg:grid lg:grid-cols-[280px_minmax(0,1fr)]"
+              : "lg:block"
+          )}
+        >
+          {showDesktopFilters ? (
+            <aside className="hidden min-h-0 min-w-0 flex-col items-stretch self-stretch lg:flex">
               <LazyFilterSidebar
                 t={t}
                 counts={filterOptionCounts}
@@ -1208,9 +1217,28 @@ export function ShopPageClient({
                   onRangeChange: setPriceRange,
                 }}
               />
-          </aside>
+            </aside>
+          ) : null}
 
           <div ref={gridTopRef} className="min-w-0 scroll-mt-36">
+            <div className="mb-4 hidden items-center lg:flex">
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-9 rounded-full border-border bg-card px-3 text-foreground shadow-sm",
+                  showDesktopFilters && "border-primary bg-primary/10 text-primary"
+                )}
+                onClick={() => setShowDesktopFilters((v) => !v)}
+                aria-expanded={showDesktopFilters}
+                aria-controls="shop-filters-desktop"
+              >
+                <SlidersHorizontal className="mr-1.5 h-4 w-4" />
+                {showDesktopFilters
+                  ? t("ซ่อนตัวกรอง", "Hide filters")
+                  : t("แสดงตัวกรอง", "Show filters")}
+              </Button>
+            </div>
             <div className="lg:hidden">
                 <LazyShopPriceFilterBottomSheet
                   t={t}

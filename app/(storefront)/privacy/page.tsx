@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/context/LanguageContext";
+import { LegalDisclaimerBlock } from "@/components/storefront/LegalDisclaimerBlock";
 
 export default function PrivacyPolicyPage() {
   const { t } = useLanguage();
@@ -88,6 +89,10 @@ export default function PrivacyPolicyPage() {
               "You may have the right to access, correct, or delete your personal data where applicable law allows, and to withdraw consent for marketing communications at any time. To exercise these rights, contact us via the channels on our website—we will respond within a reasonable period."
             )}
           </p>
+        </section>
+
+        <section className="space-y-3">
+          <LegalDisclaimerBlock headingId="privacy-legal-disclaimer-heading" />
         </section>
 
         <section className="space-y-3 border-t border-border pt-8">

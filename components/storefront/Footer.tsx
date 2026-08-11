@@ -7,6 +7,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
+import { LegalDisclaimerBlock } from "@/components/storefront/LegalDisclaimerBlock";
 
 const BRAND_CREDIT =
   "ทำรูปประกอบและค้นหาข้อมูลโดย: ผู้ช่วย Gemini, เรียบเรียงโดย: ทอมมี่ สไมล์ซี้ด";
@@ -115,6 +116,8 @@ export function Footer() {
             </ul>
           </div>
         </div>
+
+        <LegalDisclaimerBlock className="mt-8" />
 
         <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
           <div className="space-y-1 text-center sm:text-left">

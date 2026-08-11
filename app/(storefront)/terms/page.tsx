@@ -1,9 +1,11 @@
 "use client";
 
 import { useLanguage } from "@/context/LanguageContext";
+import { getStorefrontLegalDisclaimer } from "@/lib/storefront-legal-disclaimer";
 
 export default function TermsOfUsePage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const disclaimer = getStorefrontLegalDisclaimer(locale);
 
   return (
     <article className="mx-auto max-w-3xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-32">
@@ -34,12 +36,7 @@ export default function TermsOfUsePage() {
           <h2 className="text-base font-semibold text-foreground sm:text-lg">
             {t("2. ข้อจำกัดทางกฎหมายและวัตถุประสงค์การจำหน่าย", "2. Legal disclaimer & intended use")}
           </h2>
-          <p>
-            {t(
-              "เมล็ดพันธุ์ที่จำหน่ายมีวัตถุประสงค์เพื่อเป็นของที่ระลึก (souvenir) การศึกษา หรือการวิจัยที่ชอบด้วยกฎหมายเท่านั้น เราไม่สนับสนุนการปลูกหรือการใช้งานที่ขัดต่อกฎหมายท้องถิ่น ผู้ซื้อมีหน้าที่ศึกษาและปฏิบัติตามกฎหมายที่ใช้บังคับในพื้นที่ของตนเองทุกประการ Smile Seed Bank ไม่รับผิดชอบต่อการใช้สินค้าหลังการจำหน่าย",
-              "Seeds are sold as souvenirs, for lawful study, or for research purposes only. We do not encourage cultivation or any use that violates local laws. You are solely responsible for complying with all applicable laws in your region. Smile Seed Bank is not liable for how products are used after purchase."
-            )}
-          </p>
+          <p>{disclaimer.body}</p>
         </section>
 
         <section className="space-y-3">
