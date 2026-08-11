@@ -6,7 +6,7 @@ import {
   formatB2BMoney,
   formatB2BUnitPrice,
 } from "@/lib/b2b-quote-calc";
-import { buildB2BPaymentTerms } from "@/lib/b2b-quote-payment-terms";
+import { buildB2BPaymentTerms, b2bQuoteAllNoteLines } from "@/lib/b2b-quote-payment-terms";
 import type { B2BQuoteDraft } from "@/types/b2b-quote";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +43,7 @@ export function ProFormaInvoiceTemplate({
     companyPhone,
     companyAddress,
   });
+  const noteLines = b2bQuoteAllNoteLines(terms, draft.paymentNotes);
   const lines = draft.items.filter((it) => it.strainName.trim());
 
   return (
@@ -176,7 +177,7 @@ export function ProFormaInvoiceTemplate({
           Notes &amp; Validity
         </h3>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-600">
-          {terms.notes.map((l) => (
+          {noteLines.map((l) => (
             <li key={l}>{l}</li>
           ))}
         </ul>

@@ -4,6 +4,7 @@ import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   calculateB2BQuoteTotals,
@@ -23,11 +24,9 @@ import {
 type Props = {
   draft: B2BQuoteDraft;
   onChange: (next: B2BQuoteDraft) => void;
-  onApplyOptionA: () => void;
-  onApplyOptionB: () => void;
 };
 
-export function B2BQuoteForm({ draft, onChange, onApplyOptionA, onApplyOptionB }: Props) {
+export function B2BQuoteForm({ draft, onChange }: Props) {
   const totals = calculateB2BQuoteTotals(
     draft.items,
     draft.discountAmount,
@@ -59,22 +58,6 @@ export function B2BQuoteForm({ draft, onChange, onApplyOptionA, onApplyOptionB }
       <Card className="border-slate-200/80 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-slate-800">
-            Quick fill (Malikha)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" onClick={onApplyOptionA}>
-            Option A · 2×500 @ €1.35
-          </Button>
-          <Button type="button" variant="secondary" onClick={onApplyOptionB}>
-            Option B · 5×500 @ €1.35
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="border-slate-200/80 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold text-slate-800">
             Customer
           </CardTitle>
         </CardHeader>
@@ -84,7 +67,7 @@ export function B2BQuoteForm({ draft, onChange, onApplyOptionA, onApplyOptionB }
             <Input
               value={draft.clientName}
               onChange={(e) => patch({ clientName: e.target.value })}
-              placeholder="Malikha / Cultivation Project"
+              placeholder="Client / Company name"
               className="h-9"
             />
           </div>
@@ -290,6 +273,26 @@ export function B2BQuoteForm({ draft, onChange, onApplyOptionA, onApplyOptionB }
               <span>Total</span>
               <span>{formatB2BMoney(totals.totalAmount, draft.currency)}</span>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200/80 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-slate-800">
+            Note / Terms
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-slate-600">Freebies, terms, or extra notes</Label>
+            <Textarea
+              value={draft.paymentNotes ?? ""}
+              onChange={(e) => patch({ paymentNotes: e.target.value })}
+              placeholder="Freebies: 50 White Widow seeds"
+              rows={4}
+              className="resize-y text-sm"
+            />
           </div>
         </CardContent>
       </Card>

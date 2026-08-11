@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-11 (B2B quote Note/Terms + remove Quick fill)
+- **What:** ลบ Quick fill (Malikha) · เพิ่มช่อง Note/Terms (`paymentNotes`) สำหรับของแถม/freebies · แสดงบน preview/PDF/email
+- **Logic:** reuse `payment_notes` column · custom lines append หลัง hardcoded Notes & Validity
+- **ไฟล์:** `B2BQuoteForm.tsx` · `B2BQuoteWorkspace.tsx` · `types/b2b-quote.ts` · `b2b-quote-payment-terms.ts` · `ProFormaInvoiceTemplate.tsx` · `b2b-quote-print-html.ts` · `email-b2b-quote-html.ts`
+
 ### บันทึกการทำงาน — 2026-08-11 (Fix LINE invoice wrong recipient)
 - **What:** แก้ auto Flex ส่งไปแชทลูกค้าคนล่าสุดเมื่อ admin ทดสอบสั่งซื้อ
 - **Logic:** เลิก inherit `customers.line_user_id` → order · auto-send ใช้เฉพาะ `orders.line_user_id` · OA claim ไม่ทับ profile ADMIN/ที่ผูกแล้ว

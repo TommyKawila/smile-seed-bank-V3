@@ -35,3 +35,18 @@ export function buildB2BPaymentTerms(opts?: {
     ],
   };
 }
+
+export function b2bQuoteCustomNoteLines(paymentNotes?: string | null): string[] {
+  if (!paymentNotes?.trim()) return [];
+  return paymentNotes
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+export function b2bQuoteAllNoteLines(
+  terms: B2BPaymentTermsCopy,
+  paymentNotes?: string | null
+): string[] {
+  return [...terms.notes, ...b2bQuoteCustomNoteLines(paymentNotes)];
+}

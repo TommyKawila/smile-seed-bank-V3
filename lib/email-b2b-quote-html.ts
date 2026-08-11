@@ -1,5 +1,5 @@
 import { calculateB2BQuoteTotals, formatB2BMoney, formatB2BUnitPrice } from "@/lib/b2b-quote-calc";
-import { buildB2BPaymentTerms } from "@/lib/b2b-quote-payment-terms";
+import { buildB2BPaymentTerms, b2bQuoteAllNoteLines } from "@/lib/b2b-quote-payment-terms";
 import type { B2BQuoteDraft } from "@/types/b2b-quote";
 
 function escapeHtml(s: string): string {
@@ -28,6 +28,7 @@ export function buildB2BQuoteEmailHtml(
     draft.currency
   );
   const terms = buildB2BPaymentTerms(company);
+  const noteLines = b2bQuoteAllNoteLines(terms, draft.paymentNotes);
   const logo = logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="Smile Seed Bank" width="160" style="max-width:160px;height:auto;display:block;margin-bottom:16px;" />`
     : `<p style="margin:0 0 16px;font-size:18px;font-weight:600;color:#12463e;">Smile Seed Bank</p>`;
@@ -78,7 +79,7 @@ export function buildB2BQuoteEmailHtml(
     </ul>
     <h2 style="margin:0 0 8px;font-size:14px;color:#12463e;">Notes</h2>
     <ul style="margin:0;padding-left:18px;font-size:13px;color:#475569;">
-      ${terms.notes.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}
+      ${noteLines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}
     </ul>
   </div>
 </body>
@@ -92,6 +93,8 @@ export function buildB2BQuotePlainText(draft: B2BQuoteDraft, quoteNumber: string
     draft.shippingFee,
     draft.currency
   );
+  const terms = buildB2BPaymentTerms();
+  const noteLines = b2bQuoteAllNoteLines(terms, draft.paymentNotes);
   const lines = draft.items
     .filter((it) => it.strainName.trim())
     .map(
@@ -112,5 +115,8 @@ export function buildB2BQuotePlainText(draft: B2BQuoteDraft, quoteNumber: string
     `Discount: ${formatB2BMoney(totals.discountAmount, draft.currency)}`,
     `Shipping: ${formatB2BMoney(totals.shippingFee, draft.currency)}`,
     `Total: ${formatB2BMoney(totals.totalAmount, draft.currency)}`,
+    ``,
+    `Notes:`,
+    ...noteLines.map((l) => `- ${l}`),
   ].join("\n");
 }

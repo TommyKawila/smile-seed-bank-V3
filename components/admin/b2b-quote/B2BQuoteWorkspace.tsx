@@ -10,8 +10,6 @@ import { exportB2BQuotePdf } from "@/lib/b2b-quote-pdf.client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  createMalikhaOptionA,
-  createMalikhaOptionB,
   defaultValidUntil,
   emptyB2BLineItem,
   type B2BQuoteDraft,
@@ -31,6 +29,7 @@ function initialDraft(): B2BQuoteDraft {
     currency: "EUR",
     discountAmount: 0,
     shippingFee: 0,
+    paymentNotes: "",
     items: [emptyB2BLineItem()],
   };
 }
@@ -167,22 +166,7 @@ export function B2BQuoteWorkspace() {
   return (
     <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
       <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
-        <B2BQuoteForm
-          draft={draft}
-          onChange={setDraft}
-          onApplyOptionA={() => {
-            const d = createMalikhaOptionA();
-            setDraft(d);
-            setActiveId(null);
-            setQuoteNumber("SSB-B2B-DRAFT");
-          }}
-          onApplyOptionB={() => {
-            const d = createMalikhaOptionB();
-            setDraft(d);
-            setActiveId(null);
-            setQuoteNumber("SSB-B2B-DRAFT");
-          }}
-        />
+        <B2BQuoteForm draft={draft} onChange={setDraft} />
 
         <Card className="border-slate-200/80 shadow-sm">
           <CardHeader className="pb-3">
