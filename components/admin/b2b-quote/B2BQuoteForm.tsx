@@ -1,6 +1,8 @@
 "use client";
 
-import { AlertTriangle, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { AlertTriangle, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +29,27 @@ type Props = {
 };
 
 export function B2BQuoteForm({ draft, onChange }: Props) {
+  const [partnerRefs, setPartnerRefs] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/partners/green-future/refs", {
+          cache: "no-store",
+        });
+        if (!res.ok || cancelled) return;
+        const json = (await res.json()) as { refs?: string[] };
+        if (!cancelled) setPartnerRefs(json.refs ?? []);
+      } catch {
+        /* optional enrichment */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const totals = calculateB2BQuoteTotals(
     draft.items,
     draft.discountAmount,
@@ -145,15 +168,23 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
           <CardTitle className="text-base font-semibold text-slate-800">
             Line items
           </CardTitle>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => patch({ items: [...draft.items, emptyB2BLineItem()] })}
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            Add
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild type="button" size="sm" variant="ghost" className="h-8 text-xs">
+              <Link href="/admin/partners/green-future" target="_blank">
+                <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                Green Future
+              </Link>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => patch({ items: [...draft.items, emptyB2BLineItem()] })}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Add
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {draft.items.map((it) => {
@@ -169,7 +200,7 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
                     list="b2b-strain-presets"
                     value={it.strainName}
                     onChange={(e) => updateItem(it.id, { strainName: e.target.value })}
-                    placeholder="White Widow"
+                    placeholder="AF99 (BUBBA KUSH AUTO)"
                     className="h-9 bg-white"
                   />
                 </div>
@@ -228,6 +259,9 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
             );
           })}
           <datalist id="b2b-strain-presets">
+            {partnerRefs.map((s) => (
+              <option key={s} value={s} />
+            ))}
             {B2B_PRESET_STRAINS.map((s) => (
               <option key={s} value={s} />
             ))}

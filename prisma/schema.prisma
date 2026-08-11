@@ -932,6 +932,82 @@ model wholesale_catalog_strains {
   @@schema("public")
 }
 
+/// B2B partner seed producers (e.g. Green Future Thailand).
+model partner_suppliers {
+  id         BigInt              @id @default(autoincrement())
+  slug       String              @unique @db.VarChar(64)
+  name       String              @db.VarChar(200)
+  legal_name String?             @db.VarChar(300)
+  address    String?             @db.VarChar(500)
+  tax_id     String?             @db.VarChar(64)
+  email      String?             @db.VarChar(320)
+  notes      String?
+  created_at DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at DateTime            @default(now()) @updatedAt @db.Timestamptz(6)
+  documents  partner_documents[]
+  strains    partner_strains[]
+
+  @@map("partner_suppliers")
+  @@schema("public")
+}
+
+/// Partner reference PDFs / letters (catalogs, ISTA letters).
+model partner_documents {
+  id          BigInt            @id @default(autoincrement())
+  supplier_id BigInt
+  title       String            @db.VarChar(300)
+  doc_type    String            @db.VarChar(32)
+  file_url    String            @db.VarChar(1000)
+  file_name   String            @db.VarChar(300)
+  mime        String            @default("application/pdf") @db.VarChar(128)
+  issued_at   String?           @db.VarChar(10)
+  ref_code    String?           @db.VarChar(64)
+  notes       String?
+  created_at  DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
+  supplier    partner_suppliers @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  strains     partner_strains[]
+
+  @@index([supplier_id, doc_type], map: "idx_partner_documents_supplier_type")
+  @@map("partner_documents")
+  @@schema("public")
+}
+
+/// Searchable partner strain catalog — variety code is primary business key.
+model partner_strains {
+  id                 BigInt             @id @default(autoincrement())
+  supplier_id        BigInt
+  variety_code       String             @db.VarChar(16)
+  strain_name        String             @db.VarChar(200)
+  seed_format        String             @db.VarChar(16)
+  thc_range          String?            @db.VarChar(32)
+  cbd_note           String?            @db.VarChar(32)
+  cycle_days         String?            @db.VarChar(32)
+  height_cm          String?            @db.VarChar(32)
+  yield_gm2          String?            @db.VarChar(64)
+  type_label         String?            @db.VarChar(64)
+  stock_status       String             @default("UNKNOWN") @db.VarChar(16)
+  dominant_terpene   String?            @db.VarChar(128)
+  secondary_terpene  String?            @db.VarChar(128)
+  flavor_1           String?            @db.VarChar(256)
+  flavor_2           String?            @db.VarChar(256)
+  ista_status        String             @default("NONE") @db.VarChar(16)
+  ista_notes         String?
+  source_document_id BigInt?
+  is_active          Boolean            @default(true)
+  sort_order         Int                @default(0)
+  created_at         DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  supplier           partner_suppliers  @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  source_document    partner_documents? @relation(fields: [source_document_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@unique([supplier_id, variety_code], map: "uq_partner_strains_supplier_code")
+  @@index([supplier_id, seed_format, stock_status], map: "idx_partner_strains_supplier_format_stock")
+  @@index([supplier_id, ista_status], map: "idx_partner_strains_supplier_ista")
+  @@map("partner_strains")
+  @@schema("public")
+}
+
 enum CustomerTier {
   Retail
   Wholesale

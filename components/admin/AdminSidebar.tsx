@@ -49,6 +49,7 @@ const navItems = [
   { href: "/admin/new-seeds", label: "เมล็ดพันธุ์มาใหม่", icon: Sparkles },
   { href: "/admin/merch", label: "Merchandise", icon: Shirt },
   { href: "/admin/wholesale", label: "Wholesale", icon: Table2 },
+  { href: "/admin/partners/green-future", label: "Green Future", icon: Leaf },
   { href: "/admin/inventory", label: "สต็อก / Inventory", icon: Boxes },
   { href: "/admin/inventory/dashboard", label: "Inventory Dashboard", icon: BarChart2 },
   { href: "/admin/inventory/manual", label: "Manual Grid", icon: LayoutGrid },

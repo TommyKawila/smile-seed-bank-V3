@@ -4,6 +4,13 @@
 
 ---
 
+---
+
+### บันทึกการทำงาน — 2026-08-11 (Green Future Partner Catalog admin)
+- **What:** Admin `/admin/partners/green-future` — เอกสาร PDF 3 ฉบับ + แคตตาล็อกสายพันธุ์ค้นหา (AF*/PF*) · ISTA badge · copy ref · B2B quote datalist
+- **Logic:** `partner_suppliers` / `partner_documents` / `partner_strains` · import จาก `data/partners/green-future/catalog.json` · PDF ใน `/public/partner-docs/green-future/`
+- **ไฟล์:** `prisma/schema.prisma` · `partner-catalog-service.ts` · `GreenFutureCatalogClient.tsx` · `import-green-future-catalog.ts` · `B2BQuoteForm.tsx`
+
 ### บันทึกการทำงาน — 2026-08-11 (B2B quote Note/Terms + remove Quick fill)
 - **What:** ลบ Quick fill (Malikha) · เพิ่มช่อง Note/Terms (`paymentNotes`) สำหรับของแถม/freebies · แสดงบน preview/PDF/email
 - **Logic:** reuse `payment_notes` column · custom lines append หลัง hardcoded Notes & Validity
