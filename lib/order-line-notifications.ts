@@ -1,6 +1,7 @@
 import { loadAdminOrderDetail } from "@/lib/load-admin-order-detail";
 import { createOrderLog } from "@/lib/order-logs";
 import { getSiteOrigin } from "@/lib/get-url";
+import { prisma } from "@/lib/prisma";
 import {
   generateOrderPlacedFlexMessage,
   generateOrderShippedFlexMessage,
@@ -49,6 +50,14 @@ function detailToFlexInput(detail: NonNullable<Awaited<ReturnType<typeof loadAdm
   };
 }
 
+async function getOrderLineUserId(orderId: number): Promise<string | null> {
+  const row = await prisma.orders.findUnique({
+    where: { id: BigInt(orderId) },
+    select: { line_user_id: true },
+  });
+  return row?.line_user_id?.trim() || null;
+}
+
 /**
  * Automated OA Flex: payment confirmed or shipped. Only sends when `orders.line_user_id` is set.
  */
@@ -65,12 +74,12 @@ export async function sendLineFlexNotification(
       return;
     }
 
-    console.log("LINE_DEBUG: Order Line ID:", detail.lineUserId ?? null);
+    const lineUid = await getOrderLineUserId(orderId);
+    console.log("LINE_DEBUG: Order Line ID (orders.line_user_id):", lineUid);
     console.log("LINE_DEBUG: Token Length:", process.env.LINE_CHANNEL_ACCESS_TOKEN?.length || 0);
 
-    const lineUid = detail.lineUserId?.trim();
     if (!lineUid) {
-      console.warn(`[LINE flex notify] orderId=${orderId} kind=${kind} skipped: no line_user_id`);
+      console.warn(`[LINE flex notify] orderId=${orderId} kind=${kind} skipped: no line_user_id on order`);
       await createOrderLog({
         orderId,
         action: "STATUS_UPDATED",

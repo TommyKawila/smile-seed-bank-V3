@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-11 (Fix LINE invoice wrong recipient)
+- **What:** แก้ auto Flex ส่งไปแชทลูกค้าคนล่าสุดเมื่อ admin ทดสอบสั่งซื้อ
+- **Logic:** เลิก inherit `customers.line_user_id` → order · auto-send ใช้เฉพาะ `orders.line_user_id` · OA claim ไม่ทับ profile ADMIN/ที่ผูกแล้ว
+- **ไฟล์:** `order-service.ts` · `order-line-notifications.ts` · `line-order-message-link.ts`
+
 ### บันทึกการทำงาน — 2026-08-11 (Footer legal disclaimer — SSOT TH/EN)
 - **What:** Disclaimer กฎหมาย Smile Seed Bank ใน Footer ทุกหน้า storefront · sync Terms §2 + Privacy section
 - **Logic:** SSOT `storefront-legal-disclaimer.ts` · souvenir/collectibles · อย. · liability หลังรับสินค้า

@@ -212,13 +212,8 @@ export async function createOrder(
 
           let orderLineUserId: string | null = null;
           if (resolvedCustomerId) {
-            const existing = await tx.customers.findUnique({
-              where: { id: resolvedCustomerId },
-              select: { line_user_id: true },
-            });
             const fromInput = customer.line_user_id?.trim() || null;
-            const fromProfile = existing?.line_user_id?.trim() || null;
-            orderLineUserId = fromInput || fromProfile;
+            orderLineUserId = fromInput;
 
             await tx.customers.upsert({
               where: { id: resolvedCustomerId },
@@ -228,7 +223,7 @@ export async function createOrder(
                 phone: customer.phone ?? null,
                 address: customer.address,
                 email: customer.email ?? undefined,
-                line_user_id: orderLineUserId ?? undefined,
+                ...(fromInput ? { line_user_id: fromInput } : {}),
               },
               update: {
                 full_name: customer.full_name,

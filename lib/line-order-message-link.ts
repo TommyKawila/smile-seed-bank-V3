@@ -105,14 +105,31 @@ export async function linkLineUserFromOrderChatMessage(
 
   await prisma.$transaction(async (tx) => {
     if (order.customer_id) {
-      await tx.customers.update({
+      const cust = await tx.customers.findUnique({
         where: { id: order.customer_id },
-        data: {
-          line_user_id: uid,
-          is_linked: true,
-          last_interaction_at: new Date(),
-        },
+        select: { line_user_id: true, role: true },
       });
+      const existingCustLine = cust?.line_user_id?.trim() || null;
+      const canSetCustomerLine =
+        cust &&
+        cust.role !== "ADMIN" &&
+        (!existingCustLine || existingCustLine === uid);
+
+      if (canSetCustomerLine) {
+        await tx.customers.update({
+          where: { id: order.customer_id },
+          data: {
+            line_user_id: uid,
+            is_linked: true,
+            last_interaction_at: new Date(),
+          },
+        });
+      } else if (cust) {
+        await tx.customers.update({
+          where: { id: order.customer_id },
+          data: { last_interaction_at: new Date() },
+        });
+      }
     }
     await tx.orders.update({
       where: { id: order.id },
