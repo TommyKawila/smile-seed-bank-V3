@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FileText, Loader2, Paperclip, Send, X } from "lucide-react";
+import { Copy, FileText, Loader2, Paperclip, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +11,7 @@ import {
   readStoredAdminAiModel,
   type AdminAiModel,
 } from "@/components/admin/assistant/AiModelSwitcher";
+import { extractDraftBlocks } from "@/lib/assistant-draft";
 
 type ChatMsg = {
   id: string;
@@ -366,7 +367,10 @@ export function AdminAssistantChat() {
           <p className="text-xs text-muted-foreground">
             Shared with Telegram Founder · session{" "}
             <code className="text-[10px]">tommy</code>
-            {" · "}แนบรูป/PDF หรือลากวางได้ (Gemini)
+            {" · "}แนบรูป/PDF ได้ · ออเดอร์/ลูกค้าผ่าน tools ·{" "}
+            <span className="font-medium text-amber-700">
+              Draft only — คุณส่งเอง
+            </span>
           </p>
         </div>
         <AiModelSwitcher value={activeAIModel} onChange={setActiveAIModel} />
@@ -388,6 +392,8 @@ export function AdminAssistantChat() {
               m.role === "assistant"
                 ? modelBadgeLabel(m.model_used, m.modelLabel)
                 : null;
+            const draft =
+              m.role === "assistant" ? extractDraftBlocks(m.content) : null;
             return (
               <div
                 key={m.id}
@@ -396,7 +402,7 @@ export function AdminAssistantChat() {
                   m.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
-                <div className="max-w-[85%]">
+                <div className="max-w-[85%] space-y-1.5">
                   <div
                     className={cn(
                       "whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
@@ -407,11 +413,67 @@ export function AdminAssistantChat() {
                   >
                     {m.content}
                   </div>
-                  {badge ? (
-                    <p className="mt-1 px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      {badge}
-                    </p>
-                  ) : null}
+                  <div className="flex flex-wrap items-center gap-2 px-1">
+                    {badge ? (
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        {badge}
+                      </p>
+                    ) : null}
+                    {draft?.hasDraft ? (
+                      <>
+                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                          Draft only
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 gap-1 px-2 text-[11px]"
+                          onClick={async () => {
+                            const text = draft.primary ?? "";
+                            try {
+                              await navigator.clipboard.writeText(text);
+                              toast({
+                                title: "Copied draft",
+                                description: "ส่งให้ลูกค้าเองได้เลย",
+                              });
+                            } catch {
+                              toast({
+                                title: "Copy failed",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                          Copy draft
+                        </Button>
+                        {draft.th && draft.en ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-[11px]"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(
+                                  `TH:\n${draft.th}\n\nEN:\n${draft.en}`
+                                );
+                                toast({ title: "Copied TH+EN draft" });
+                              } catch {
+                                toast({
+                                  title: "Copy failed",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            Copy both
+                          </Button>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             );

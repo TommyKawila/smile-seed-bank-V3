@@ -5,7 +5,10 @@ export type PartnerDocType =
   | "CATALOG_AUTO_FEM"
   | "CATALOG_FEM"
   | "ISTA_LETTER"
+  | "PRICE_LIST"
   | "OTHER";
+
+export type PartnerPriceListStatus = "ACTIVE" | "SUPERSEDED";
 
 export type PartnerSupplierRecord = {
   id: string;
@@ -58,6 +61,47 @@ export type PartnerStrainRecord = {
 export type PartnerStrainListResult = {
   strains: PartnerStrainRecord[];
   total: number;
+};
+
+export type PartnerPriceTierRecord = {
+  id: string;
+  priceListId: string;
+  code: string;
+  label: string;
+  qtyDescription: string | null;
+  eurPerSeed: string;
+  thbPerSeed: string;
+  coaIncludedCount: number;
+  coaNotes: string | null;
+  sortOrder: number;
+};
+
+export type PartnerCoaServiceRecord = {
+  id: string;
+  priceListId: string;
+  code: string;
+  label: string;
+  usdPerStrain: string;
+  thbPerStrain: string;
+  sortOrder: number;
+};
+
+export type PartnerPriceListRecord = {
+  id: string;
+  supplierId: string;
+  title: string;
+  refCode: string | null;
+  issuedAt: string | null;
+  status: PartnerPriceListStatus;
+  currencyPrimary: string;
+  advancePaymentPct: number;
+  leadWithoutCoaDays: string | null;
+  coaLabDays: number | null;
+  shipAfterCoaDays: string | null;
+  notes: string | null;
+  sourceDocumentId: string | null;
+  tiers: PartnerPriceTierRecord[];
+  coaServices: PartnerCoaServiceRecord[];
 };
 
 export const GREEN_FUTURE_SLUG = "green-future";

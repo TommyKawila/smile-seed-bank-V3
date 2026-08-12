@@ -10,6 +10,27 @@
 
 ---
 
+---
+
+---
+
+---
+
+### บันทึกการทำงาน — 2026-08-12 (RLS lockdown — partner/B2B/wholesale Advisor)
+- **What:** เปิด RLS บนตารางที่ Supabase Advisor เตือน (partner/B2B/business/wholesale/grower logs) · ไม่มี anon policy · กระชับ grants `assistant_drafts`
+- **Logic:** PostgREST anon อ่านไม่ได้ · Prisma/service_role ใช้ต่อได้
+- **ไฟล์:** `supabase/migrations/20260812160000_rls_lockdown_partner_b2b_wholesale.sql` · prisma twin
+
+### บันทึกการทำงาน — 2026-08-12 (AI Secretary Phase 1 — Admin+TG · Draft-only)
+- **What:** เลขา AI ร่วม Admin/Telegram — RAG Knowledge inject · tools ออเดอร์/ลูกค้า/partner cost · ร่างตอบลูกค้าอย่างเดียว (ไม่ส่งแทน) · rolling session summary · `assistant_drafts`
+- **Logic:** `runAssistantTurn` orchestrator · session `tommy` · read-only tools · draft markers `---DRAFT_TH---` / `---DRAFT_EN---` · Copy draft ใน Admin UI
+- **ไฟล์:** `assistant-orchestrator-service.ts` · `assistant-tools-service.ts` · `assistant-knowledge-service.ts` · `ai-tools.ts` · `AdminAssistantChat.tsx` · `admin/chat` · `telegram/webhook` · `supabase/migrations/20260812150000_ssb_assistant_drafts.sql`
+
+### บันทึกการทำงาน — 2026-08-12 (Green Future cost & terms DB)
+- **What:** นำ Proposal GF/SSB/2026-0803 ลงระบบ — ต้นทุน tier 7 แถว + COA fees + เงื่อนไขมัดจำ/lead time · แผง Admin ภายใน
+- **Logic:** `partner_price_lists` / `partner_price_tiers` / `partner_coa_services` · doc type `PRICE_LIST` · 1 ACTIVE ต่อ supplier · ไม่ sync wholesale/B2B quote อัตโนมัติ
+- **ไฟล์:** `price-list-gf-ssb-2026-0803.json` · `seed-supply-coa-proposal.pdf` · `import-green-future-catalog.ts` · `GreenFutureCatalogClient.tsx` · migration `20260812140000_partner_price_lists`
+
 ### บันทึกการทำงาน — 2026-08-12 (Shipping Pause Notice — admin-configurable)
 - **What:** แจ้งหยุดจัดส่งชั่วคราวแบบ A — แถบทั้งร้าน + ตะกร้า + Checkout · ตั้งวัน/ข้อความ TH/EN จาก Admin Shipping · ไม่บล็อก checkout
 - **Logic:** `site_settings` keys `shipping_pause_*` · auto-off เมื่อวันนี้ (Asia/Bangkok) ≥ `shipping_pause_until` · ข้อความว่างใช้เทมเพลตจากวันที่

@@ -2,6 +2,7 @@ import { requireAdminUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import {
   GREEN_FUTURE_SLUG,
+  getActivePartnerPriceList,
   getPartnerSupplierBySlug,
   listPartnerDocuments,
   listPartnerStrains,
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
     if (!supplier) {
       return NextResponse.json({ error: "Supplier not found" }, { status: 404 });
     }
-    const [documents, strainResult] = await Promise.all([
+    const [documents, strainResult, priceList] = await Promise.all([
       listPartnerDocuments(GREEN_FUTURE_SLUG),
       listPartnerStrains(GREEN_FUTURE_SLUG, {
         q: searchParams.get("q") ?? undefined,
@@ -30,12 +31,14 @@ export async function GET(req: NextRequest) {
         limit: Number(searchParams.get("limit") ?? 200),
         offset: Number(searchParams.get("offset") ?? 0),
       }),
+      getActivePartnerPriceList(GREEN_FUTURE_SLUG),
     ]);
     return NextResponse.json({
       supplier,
       documents,
       strains: strainResult.strains,
       total: strainResult.total,
+      priceList,
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

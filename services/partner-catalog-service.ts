@@ -5,12 +5,14 @@
 import { prisma } from "@/lib/prisma";
 import {
   toDocumentRecord,
+  toPriceListRecord,
   toStrainRecord,
   toSupplierRecord,
 } from "@/lib/partner-catalog-map";
 import type {
   PartnerDocumentRecord,
   PartnerIstaStatus,
+  PartnerPriceListRecord,
   PartnerSeedFormat,
   PartnerStockStatus,
   PartnerStrainListResult,
@@ -118,6 +120,26 @@ export async function listPartnerStrainRefs(
 ): Promise<string[]> {
   const { strains } = await listPartnerStrains(supplierSlug, { limit });
   return strains.map((s) => `${s.varietyCode} (${s.strainName.toUpperCase()})`);
+}
+
+export async function getActivePartnerPriceList(
+  supplierSlug: string
+): Promise<PartnerPriceListRecord | null> {
+  const supplier = await prisma.partner_suppliers.findUnique({
+    where: { slug: supplierSlug },
+  });
+  if (!supplier) return null;
+
+  const row = await prisma.partner_price_lists.findFirst({
+    where: { supplier_id: supplier.id, status: "ACTIVE" },
+    include: {
+      tiers: { orderBy: [{ sort_order: "asc" }, { id: "asc" }] },
+      coa_services: { orderBy: [{ sort_order: "asc" }, { id: "asc" }] },
+    },
+    orderBy: { id: "desc" },
+  });
+
+  return row ? toPriceListRecord(row) : null;
 }
 
 export { GREEN_FUTURE_SLUG };

@@ -115,6 +115,93 @@ export const ASSISTANT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
       properties: {},
     },
   },
+  {
+    name: "lookup_order",
+    description:
+      "Look up one order by order number (e.g. SSB-OR-…) or numeric orderId. Returns status, payment, customer, items, tracking.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        orderNumber: {
+          type: Type.STRING,
+          description: "Order number string",
+        },
+        orderId: {
+          type: Type.NUMBER,
+          description: "Numeric order id",
+        },
+      },
+    },
+  },
+  {
+    name: "search_customers",
+    description:
+      "Search customers by phone, email, or name. Returns profile hits for follow-up.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        query: {
+          type: Type.STRING,
+          description: "Phone, email, or customer name",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "get_customer_orders",
+    description:
+      "List recent orders for a customer id from search_customers (UUID or profile numeric id).",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        customerId: {
+          type: Type.STRING,
+          description: "Customer id string",
+        },
+      },
+      required: ["customerId"],
+    },
+  },
+  {
+    name: "list_recent_orders",
+    description:
+      "List recent orders, optionally filtered by status (PENDING, PAID, SHIPPED, etc).",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        status: {
+          type: Type.STRING,
+          description: "Optional order status filter",
+        },
+        limit: {
+          type: Type.NUMBER,
+          description: "Max rows (default 15, max 30)",
+        },
+      },
+    },
+  },
+  {
+    name: "get_order_message_log",
+    description:
+      "List message/status logs for an order (LINE messages, reminders, etc).",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        orderNumber: { type: Type.STRING },
+        orderId: { type: Type.NUMBER },
+      },
+    },
+  },
+  {
+    name: "get_partner_cost_terms",
+    description:
+      "INTERNAL ONLY: Green Future supplier cost tiers and COA fees. Never quote raw supplier cost to end customers.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {},
+    },
+  },
 ];
 
 export const EMPTY_AI_REPLY_TH =
@@ -272,6 +359,47 @@ function formatOneToolTh(name: string, result: unknown): string | null {
       return `• ${String(v.productName)} ${String(v.unitLabel)} · stock ${String(v.stock)}`;
     });
     return `ใกล้หมด ${String(r.count ?? items.length)} รายการ:\n${lines.join("\n")}`;
+  }
+
+  if (name === "lookup_order") {
+    return [
+      `ออเดอร์ ${String(r.orderNumber)} (#${String(r.id)})`,
+      `สถานะ ${String(r.status)} · ชำระ ${String(r.paymentStatus)}`,
+      `ลูกค้า ${String(r.customerName ?? "—")} · ${String(r.customerPhone ?? "—")}`,
+      `ยอด ${String(r.totalAmount)} · tracking ${String(r.trackingNumber ?? "—")}`,
+    ].join(" · ");
+  }
+
+  if (name === "search_customers") {
+    const customers = Array.isArray(r.customers) ? r.customers : [];
+    if (!customers.length) return "ไม่พบลูกค้า";
+    const lines = customers.slice(0, 8).map((raw) => {
+      const c = asRecord(raw);
+      if (!c) return "—";
+      return `• ${String(c.name)} · ${String(c.phone)} · id ${String(c.id)}`;
+    });
+    return `พบลูกค้า ${customers.length} ราย:\n${lines.join("\n")}`;
+  }
+
+  if (name === "list_recent_orders" || name === "get_customer_orders") {
+    const orders = Array.isArray(r.orders) ? r.orders : [];
+    if (!orders.length) return "ไม่มีออเดอร์";
+    const lines = orders.slice(0, 10).map((raw) => {
+      const o = asRecord(raw);
+      if (!o) return "—";
+      return `• ${String(o.orderNumber)} · ${String(o.status)} · ฿${String(o.totalAmount)}`;
+    });
+    return `ออเดอร์ ${orders.length} รายการ:\n${lines.join("\n")}`;
+  }
+
+  if (name === "get_order_message_log") {
+    const logs = Array.isArray(r.logs) ? r.logs : [];
+    if (!logs.length) return "ยังไม่มี message log";
+    return `message log ${logs.length} รายการ (ล่าสุด ${String((asRecord(logs[0])?.action) ?? "—")})`;
+  }
+
+  if (name === "get_partner_cost_terms") {
+    return `Partner cost ${String(r.refCode ?? "—")} · confidential · ${Array.isArray(r.tiers) ? r.tiers.length : 0} tiers`;
   }
 
   return null;

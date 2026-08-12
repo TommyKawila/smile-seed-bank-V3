@@ -54,7 +54,53 @@ const DOCS = [
     refCode: "GF/SSB/2026-0810",
     notes: "ISTA confirmed: AF99, AF143, AF02, AF22",
   },
+  {
+    title: "Seed Supply & COA Certification Proposal",
+    docType: "PRICE_LIST",
+    fileUrl: "/partner-docs/green-future/seed-supply-coa-proposal.pdf",
+    fileName: "seed-supply-coa-proposal.pdf",
+    issuedAt: "2026-08-03",
+    refCode: "GF/SSB/2026-0803",
+    notes: "Supplier cost tiers + COA fees — preliminary & confidential",
+  },
 ] as const;
+
+type PriceListSeed = {
+  title: string;
+  refCode: string;
+  issuedAt: string;
+  document: {
+    title: string;
+    fileUrl: string;
+    fileName: string;
+    notes?: string;
+  };
+  terms: {
+    currencyPrimary: string;
+    advancePaymentPct: number;
+    leadWithoutCoaDays: string;
+    coaLabDays: number;
+    shipAfterCoaDays: string;
+    notes?: string;
+  };
+  tiers: Array<{
+    code: string;
+    label: string;
+    qtyDescription: string;
+    eurPerSeed: string;
+    thbPerSeed: string;
+    coaIncludedCount: number;
+    coaNotes?: string;
+    sortOrder: number;
+  }>;
+  coaServices: Array<{
+    code: string;
+    label: string;
+    usdPerStrain: string;
+    thbPerStrain: string;
+    sortOrder: number;
+  }>;
+};
 
 const FIELD_LIMITS: Record<string, number> = {
   strainName: 200,
@@ -215,7 +261,94 @@ async function main() {
       upserted += 1;
     }
 
-    console.log(`Green Future import complete: ${upserted} strains, ${DOCS.length} documents`);
+    const priceListPath = path.join(
+      process.cwd(),
+      "data/partners/green-future/price-list-gf-ssb-2026-0803.json"
+    );
+    const priceSeed = JSON.parse(readFileSync(priceListPath, "utf8")) as PriceListSeed;
+    const priceDocId = docIds.get("PRICE_LIST");
+
+    await prisma.partner_price_lists.updateMany({
+      where: { supplier_id: supplier.id, status: "ACTIVE" },
+      data: { status: "SUPERSEDED" },
+    });
+
+    const priceList = await prisma.partner_price_lists.create({
+      data: {
+        supplier_id: supplier.id,
+        title: priceSeed.title,
+        ref_code: priceSeed.refCode,
+        issued_at: priceSeed.issuedAt,
+        status: "ACTIVE",
+        currency_primary: priceSeed.terms.currencyPrimary,
+        advance_payment_pct: priceSeed.terms.advancePaymentPct,
+        lead_without_coa_days: priceSeed.terms.leadWithoutCoaDays,
+        coa_lab_days: priceSeed.terms.coaLabDays,
+        ship_after_coa_days: priceSeed.terms.shipAfterCoaDays,
+        notes: priceSeed.terms.notes ?? null,
+        source_document_id: priceDocId,
+      },
+    });
+
+    for (const tier of priceSeed.tiers) {
+      await prisma.partner_price_tiers.upsert({
+        where: {
+          price_list_id_code: {
+            price_list_id: priceList.id,
+            code: tier.code,
+          },
+        },
+        create: {
+          price_list_id: priceList.id,
+          code: tier.code,
+          label: tier.label,
+          qty_description: tier.qtyDescription,
+          eur_per_seed: tier.eurPerSeed,
+          thb_per_seed: tier.thbPerSeed,
+          coa_included_count: tier.coaIncludedCount,
+          coa_notes: tier.coaNotes ?? null,
+          sort_order: tier.sortOrder,
+        },
+        update: {
+          label: tier.label,
+          qty_description: tier.qtyDescription,
+          eur_per_seed: tier.eurPerSeed,
+          thb_per_seed: tier.thbPerSeed,
+          coa_included_count: tier.coaIncludedCount,
+          coa_notes: tier.coaNotes ?? null,
+          sort_order: tier.sortOrder,
+        },
+      });
+    }
+
+    for (const coa of priceSeed.coaServices) {
+      await prisma.partner_coa_services.upsert({
+        where: {
+          price_list_id_code: {
+            price_list_id: priceList.id,
+            code: coa.code,
+          },
+        },
+        create: {
+          price_list_id: priceList.id,
+          code: coa.code,
+          label: coa.label,
+          usd_per_strain: coa.usdPerStrain,
+          thb_per_strain: coa.thbPerStrain,
+          sort_order: coa.sortOrder,
+        },
+        update: {
+          label: coa.label,
+          usd_per_strain: coa.usdPerStrain,
+          thb_per_strain: coa.thbPerStrain,
+          sort_order: coa.sortOrder,
+        },
+      });
+    }
+
+    console.log(
+      `Green Future import complete: ${upserted} strains, ${DOCS.length} documents, price list ${priceSeed.refCode} (${priceSeed.tiers.length} tiers)`
+    );
   } finally {
     await prisma.$disconnect();
   }

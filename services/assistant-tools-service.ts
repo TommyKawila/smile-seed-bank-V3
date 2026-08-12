@@ -1,20 +1,33 @@
 /**
- * Thin DB tools for SSB Telegram Assistant — live catalog / sales / stock.
- * Uses Prisma (service DB) — no RAG.
+ * Thin DB tools for SSB Assistant — live catalog / sales / stock / orders.
+ * Read-only. Uses Prisma (service DB).
  */
 
 import { prisma } from "@/lib/prisma";
 import { getFinancialSummary } from "@/services/dashboard-service";
+import { searchCustomersOmni } from "@/lib/customer-omni-search";
+import { loadAdminOrderDetail } from "@/lib/load-admin-order-detail";
+import { listOrderLogs } from "@/lib/order-logs";
+import { getActivePartnerPriceList } from "@/services/partner-catalog-service";
+import { GREEN_FUTURE_SLUG } from "@/types/partner-catalog";
 
 const SEARCH_LIMIT = 15;
 const LOW_STOCK_LIMIT = 20;
+const ORDER_LIST_LIMIT = 15;
+const CUSTOMER_ORDER_LIMIT = 10;
 
 export type AssistantToolName =
   | "search_products"
   | "get_product_detail"
   | "get_sales_summary"
   | "get_low_stock"
-  | "get_catalog_stats";
+  | "get_catalog_stats"
+  | "lookup_order"
+  | "search_customers"
+  | "get_customer_orders"
+  | "list_recent_orders"
+  | "get_order_message_log"
+  | "get_partner_cost_terms";
 
 export async function searchProducts(query: string): Promise<unknown> {
   const q = query.trim();
@@ -323,6 +336,250 @@ export async function getLowStock(): Promise<unknown> {
   return { count: low.length, items: low };
 }
 
+function mapOrderSummary(detail: NonNullable<Awaited<ReturnType<typeof loadAdminOrderDetail>>>) {
+  return {
+    id: detail.id,
+    orderNumber: detail.orderNumber,
+    status: detail.status,
+    paymentStatus: detail.paymentStatus,
+    customerName: detail.customerName,
+    customerPhone: detail.customerPhone,
+    customerEmail: detail.customerEmail,
+    shippingAddress: detail.shippingAddress,
+    customerNote: detail.customerNote,
+    totalAmount: detail.totalAmount,
+    shippingFee: detail.shippingFee,
+    discountAmount: detail.discountAmount,
+    trackingNumber: detail.trackingNumber,
+    shippingProvider: detail.shippingProvider,
+    paymentMethod: detail.paymentMethod,
+    createdAt: detail.createdAt,
+    paymentGraceUntil: detail.paymentGraceUntil,
+    hasLineUser: Boolean(detail.lineUserId),
+    items: detail.items.map((i) => ({
+      productName: i.productName,
+      unitLabel: i.unitLabel,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      totalPrice: i.totalPrice,
+    })),
+  };
+}
+
+export async function lookupOrder(args: {
+  orderNumber?: string;
+  orderId?: number;
+}): Promise<unknown> {
+  const orderId = args.orderId;
+  const orderNumber = args.orderNumber?.trim();
+
+  if (orderId != null && Number.isFinite(orderId) && orderId > 0) {
+    const detail = await loadAdminOrderDetail(orderId);
+    if (!detail) return { error: "Order not found", orderId };
+    return mapOrderSummary(detail);
+  }
+
+  if (orderNumber) {
+    const row = await prisma.orders.findFirst({
+      where: {
+        order_number: { equals: orderNumber, mode: "insensitive" },
+      },
+      select: { id: true },
+    });
+    if (!row) {
+      const fuzzy = await prisma.orders.findFirst({
+        where: { order_number: { contains: orderNumber, mode: "insensitive" } },
+        select: { id: true, order_number: true },
+        orderBy: { created_at: "desc" },
+      });
+      if (!fuzzy) return { error: "Order not found", orderNumber };
+      const detail = await loadAdminOrderDetail(Number(fuzzy.id));
+      if (!detail) return { error: "Order not found", orderNumber };
+      return mapOrderSummary(detail);
+    }
+    const detail = await loadAdminOrderDetail(Number(row.id));
+    if (!detail) return { error: "Order not found", orderNumber };
+    return mapOrderSummary(detail);
+  }
+
+  return { error: "Provide orderNumber or orderId" };
+}
+
+export async function searchCustomersTool(query: string): Promise<unknown> {
+  const q = query.trim();
+  if (!q) return { customers: [], note: "Empty query" };
+  const hits = await searchCustomersOmni(q, 12);
+  return {
+    count: hits.length,
+    customers: hits.map((h) => ({
+      id: h.id,
+      name: h.name,
+      phone: h.phone,
+      email: h.email,
+      address: h.address,
+      tier: h.tier,
+      points: h.points,
+      wholesaleDiscountPercent: h.wholesale_discount_percent,
+    })),
+  };
+}
+
+export async function getCustomerOrders(customerId: string): Promise<unknown> {
+  const id = customerId.trim();
+  if (!id) return { error: "customerId required" };
+
+  const asBigInt = /^\d+$/.test(id) ? BigInt(id) : null;
+
+  const orders = await prisma.orders.findMany({
+    where: {
+      OR: [
+        { customer_id: id },
+        ...(asBigInt != null ? [{ customer_profile_id: asBigInt }] : []),
+      ],
+    },
+    orderBy: { created_at: "desc" },
+    take: CUSTOMER_ORDER_LIMIT,
+    select: {
+      id: true,
+      order_number: true,
+      status: true,
+      payment_status: true,
+      total_amount: true,
+      customer_name: true,
+      customer_phone: true,
+      created_at: true,
+      tracking_number: true,
+    },
+  });
+
+  return {
+    customerId: id,
+    count: orders.length,
+    orders: orders.map((o) => ({
+      id: Number(o.id),
+      orderNumber: o.order_number,
+      status: o.status,
+      paymentStatus: o.payment_status,
+      totalAmount: o.total_amount,
+      customerName: o.customer_name,
+      customerPhone: o.customer_phone,
+      createdAt: o.created_at,
+      trackingNumber: o.tracking_number,
+    })),
+  };
+}
+
+export async function listRecentOrders(args: {
+  status?: string;
+  limit?: number;
+}): Promise<unknown> {
+  const limit = Math.min(
+    Math.max(Number(args.limit) || ORDER_LIST_LIMIT, 1),
+    30
+  );
+  const status = args.status?.trim();
+
+  const orders = await prisma.orders.findMany({
+    where: status
+      ? { status: { equals: status, mode: "insensitive" } }
+      : undefined,
+    orderBy: { created_at: "desc" },
+    take: limit,
+    select: {
+      id: true,
+      order_number: true,
+      status: true,
+      payment_status: true,
+      total_amount: true,
+      customer_name: true,
+      customer_phone: true,
+      created_at: true,
+      tracking_number: true,
+    },
+  });
+
+  return {
+    filterStatus: status || null,
+    count: orders.length,
+    orders: orders.map((o) => ({
+      id: Number(o.id),
+      orderNumber: o.order_number,
+      status: o.status,
+      paymentStatus: o.payment_status,
+      totalAmount: o.total_amount,
+      customerName: o.customer_name,
+      customerPhone: o.customer_phone,
+      createdAt: o.created_at,
+      trackingNumber: o.tracking_number,
+    })),
+  };
+}
+
+export async function getOrderMessageLog(args: {
+  orderNumber?: string;
+  orderId?: number;
+}): Promise<unknown> {
+  let id = args.orderId;
+  if ((id == null || !Number.isFinite(id)) && args.orderNumber?.trim()) {
+    const row = await prisma.orders.findFirst({
+      where: {
+        order_number: {
+          equals: args.orderNumber.trim(),
+          mode: "insensitive",
+        },
+      },
+      select: { id: true, order_number: true },
+    });
+    if (!row) return { error: "Order not found", orderNumber: args.orderNumber };
+    id = Number(row.id);
+  }
+  if (id == null || !Number.isFinite(id) || id <= 0) {
+    return { error: "Provide orderNumber or orderId" };
+  }
+
+  const logs = await listOrderLogs(id);
+  return {
+    orderId: id,
+    count: logs.length,
+    logs: logs.slice(0, 40).map((l) => ({
+      action: l.action,
+      messageContent: l.messageContent,
+      createdAt: l.createdAt,
+    })),
+  };
+}
+
+export async function getPartnerCostTerms(): Promise<unknown> {
+  const list = await getActivePartnerPriceList(GREEN_FUTURE_SLUG);
+  if (!list) return { error: "No active partner price list", confidential: true };
+  return {
+    confidential: true,
+    note: "Supplier cost — internal only. Do not share raw cost with customers.",
+    refCode: list.refCode,
+    issuedAt: list.issuedAt,
+    title: list.title,
+    advancePaymentPct: list.advancePaymentPct,
+    leadWithoutCoaDays: list.leadWithoutCoaDays,
+    coaLabDays: list.coaLabDays,
+    shipAfterCoaDays: list.shipAfterCoaDays,
+    termsNotes: list.notes,
+    tiers: list.tiers.map((t) => ({
+      code: t.code,
+      label: t.label,
+      qtyDescription: t.qtyDescription,
+      eurPerSeed: t.eurPerSeed,
+      thbPerSeed: t.thbPerSeed,
+      coaIncludedCount: t.coaIncludedCount,
+    })),
+    coaServices: list.coaServices.map((c) => ({
+      code: c.code,
+      label: c.label,
+      usdPerStrain: c.usdPerStrain,
+      thbPerStrain: c.thbPerStrain,
+    })),
+  };
+}
+
 export async function executeAssistantTool(
   name: string,
   args: Record<string, unknown>
@@ -357,6 +614,49 @@ export async function executeAssistantTool(
       return getLowStock();
     case "get_catalog_stats":
       return getCatalogStats();
+    case "lookup_order": {
+      const rawId = args.orderId ?? args.order_id;
+      const orderId =
+        rawId != null && String(rawId).trim() !== "" ? Number(rawId) : undefined;
+      return lookupOrder({
+        orderId:
+          orderId != null && Number.isFinite(orderId) ? orderId : undefined,
+        orderNumber:
+          args.orderNumber != null
+            ? String(args.orderNumber)
+            : args.order_number != null
+              ? String(args.order_number)
+              : undefined,
+      });
+    }
+    case "search_customers":
+      return searchCustomersTool(String(args.query ?? args.q ?? ""));
+    case "get_customer_orders":
+      return getCustomerOrders(
+        String(args.customerId ?? args.customer_id ?? "")
+      );
+    case "list_recent_orders":
+      return listRecentOrders({
+        status: args.status != null ? String(args.status) : undefined,
+        limit: args.limit != null ? Number(args.limit) : undefined,
+      });
+    case "get_order_message_log": {
+      const rawId = args.orderId ?? args.order_id;
+      const orderId =
+        rawId != null && String(rawId).trim() !== "" ? Number(rawId) : undefined;
+      return getOrderMessageLog({
+        orderId:
+          orderId != null && Number.isFinite(orderId) ? orderId : undefined,
+        orderNumber:
+          args.orderNumber != null
+            ? String(args.orderNumber)
+            : args.order_number != null
+              ? String(args.order_number)
+              : undefined,
+      });
+    }
+    case "get_partner_cost_terms":
+      return getPartnerCostTerms();
     default:
       return { error: `Unknown tool: ${name}` };
   }

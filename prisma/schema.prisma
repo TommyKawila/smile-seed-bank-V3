@@ -944,8 +944,9 @@ model partner_suppliers {
   notes      String?
   created_at DateTime            @default(now()) @db.Timestamptz(6)
   updated_at DateTime            @default(now()) @updatedAt @db.Timestamptz(6)
-  documents  partner_documents[]
-  strains    partner_strains[]
+  documents   partner_documents[]
+  strains     partner_strains[]
+  price_lists partner_price_lists[]
 
   @@map("partner_suppliers")
   @@schema("public")
@@ -965,8 +966,9 @@ model partner_documents {
   notes       String?
   created_at  DateTime          @default(now()) @db.Timestamptz(6)
   updated_at  DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
-  supplier    partner_suppliers @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  supplier    partner_suppliers     @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   strains     partner_strains[]
+  price_lists partner_price_lists[]
 
   @@index([supplier_id, doc_type], map: "idx_partner_documents_supplier_type")
   @@map("partner_documents")
@@ -1005,6 +1007,68 @@ model partner_strains {
   @@index([supplier_id, seed_format, stock_status], map: "idx_partner_strains_supplier_format_stock")
   @@index([supplier_id, ista_status], map: "idx_partner_strains_supplier_ista")
   @@map("partner_strains")
+  @@schema("public")
+}
+
+/// Supplier cost / commercial terms (admin-only — e.g. Green Future proposal tiers).
+model partner_price_lists {
+  id                    BigInt                 @id @default(autoincrement())
+  supplier_id           BigInt
+  title                 String                 @db.VarChar(300)
+  ref_code              String?                @db.VarChar(64)
+  issued_at             String?                @db.VarChar(10)
+  status                String                 @default("ACTIVE") @db.VarChar(16)
+  currency_primary      String                 @default("EUR") @db.VarChar(8)
+  advance_payment_pct   Int                    @default(50)
+  lead_without_coa_days String?                @db.VarChar(32)
+  coa_lab_days          Int?
+  ship_after_coa_days   String?                @db.VarChar(32)
+  notes                 String?
+  source_document_id    BigInt?
+  created_at            DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime               @default(now()) @updatedAt @db.Timestamptz(6)
+  supplier              partner_suppliers      @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  source_document       partner_documents?     @relation(fields: [source_document_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  tiers                 partner_price_tiers[]
+  coa_services          partner_coa_services[]
+
+  @@index([supplier_id, status], map: "idx_partner_price_lists_supplier_status")
+  @@map("partner_price_lists")
+  @@schema("public")
+}
+
+model partner_price_tiers {
+  id                 BigInt              @id @default(autoincrement())
+  price_list_id      BigInt
+  code               String              @db.VarChar(64)
+  label              String              @db.VarChar(200)
+  qty_description    String?             @db.VarChar(500)
+  eur_per_seed       Decimal             @db.Decimal(12, 4)
+  thb_per_seed       Decimal             @db.Decimal(12, 4)
+  coa_included_count Int                 @default(0)
+  coa_notes          String?
+  sort_order         Int                 @default(0)
+  price_list         partner_price_lists @relation(fields: [price_list_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([price_list_id, code], map: "uq_partner_price_tiers_list_code")
+  @@index([price_list_id, sort_order], map: "idx_partner_price_tiers_list_sort")
+  @@map("partner_price_tiers")
+  @@schema("public")
+}
+
+model partner_coa_services {
+  id             BigInt              @id @default(autoincrement())
+  price_list_id  BigInt
+  code           String              @db.VarChar(64)
+  label          String              @db.VarChar(300)
+  usd_per_strain Decimal             @db.Decimal(12, 2)
+  thb_per_strain Decimal             @db.Decimal(12, 2)
+  sort_order     Int                 @default(0)
+  price_list     partner_price_lists @relation(fields: [price_list_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([price_list_id, code], map: "uq_partner_coa_services_list_code")
+  @@index([price_list_id, sort_order], map: "idx_partner_coa_services_list_sort")
+  @@map("partner_coa_services")
   @@schema("public")
 }
 

@@ -172,3 +172,101 @@ export async function saveMessage(opts: {
     throw new Error(`saveMessage failed: ${error.message}`);
   }
 }
+
+export function sessionSummaryKey(sessionId: string): string {
+  return `session_summary_${sessionId}`;
+}
+
+export async function getSessionSummary(sessionId: string): Promise<string | null> {
+  try {
+    const { data, error } = await assistantDb()
+      .from("user_profile")
+      .select("value")
+      .eq("key", sessionSummaryKey(sessionId))
+      .maybeSingle();
+    if (error) {
+      console.error("[ssb-assistant] getSessionSummary:", error.message);
+      return null;
+    }
+    const value = (data as { value?: string } | null)?.value?.trim();
+    return value || null;
+  } catch (err) {
+    console.error("[ssb-assistant] getSessionSummary:", err);
+    return null;
+  }
+}
+
+export async function upsertSessionSummary(
+  sessionId: string,
+  summary: string
+): Promise<void> {
+  const value = summary.trim();
+  if (!value) return;
+  const key = sessionSummaryKey(sessionId);
+  const { data: existing } = await assistantDb()
+    .from("user_profile")
+    .select("key")
+    .eq("key", key)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await assistantDb()
+      .from("user_profile")
+      .update({ value })
+      .eq("key", key);
+    if (error) throw new Error(`upsertSessionSummary update: ${error.message}`);
+  } else {
+    const { error } = await assistantDb()
+      .from("user_profile")
+      .insert({ key, value });
+    if (error) throw new Error(`upsertSessionSummary insert: ${error.message}`);
+  }
+}
+
+export async function countChatHistory(sessionId: string): Promise<number> {
+  try {
+    const { count, error } = await assistantDb()
+      .from("chat_history")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", sessionId);
+    if (error) {
+      console.error("[ssb-assistant] countChatHistory:", error.message);
+      return 0;
+    }
+    return count ?? 0;
+  } catch (err) {
+    console.error("[ssb-assistant] countChatHistory:", err);
+    return 0;
+  }
+}
+
+export type AssistantDraftInput = {
+  sessionId: string;
+  source: AssistantSource;
+  channelHint?: "line" | "email" | "generic";
+  orderId?: string | null;
+  bodyTh?: string | null;
+  bodyEn?: string | null;
+  rawAssistantContent: string;
+};
+
+export async function saveAssistantDraft(
+  input: AssistantDraftInput
+): Promise<void> {
+  try {
+    const { error } = await assistantDb().from("assistant_drafts").insert({
+      session_id: input.sessionId,
+      source: input.source,
+      channel_hint: input.channelHint ?? "generic",
+      order_id: input.orderId ?? null,
+      body_th: input.bodyTh ?? null,
+      body_en: input.bodyEn ?? null,
+      raw_content: input.rawAssistantContent,
+    });
+    if (error) {
+      console.error("[ssb-assistant] saveAssistantDraft:", error.message);
+    }
+  } catch (err) {
+    console.error("[ssb-assistant] saveAssistantDraft:", err);
+  }
+}

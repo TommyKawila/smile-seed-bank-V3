@@ -126,3 +126,92 @@ export async function deleteKnowledgeEntry(id: string): Promise<void> {
     throw new Error(error.message || "Failed to delete knowledge");
   }
 }
+
+function parseEmbedding(raw: unknown): number[] | null {
+  if (Array.isArray(raw) && raw.every((n) => typeof n === "number")) {
+    return raw as number[];
+  }
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.every((n) => typeof n === "number")) {
+        return parsed as number[];
+      }
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length === 0 || a.length !== b.length) return -1;
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  if (na === 0 || nb === 0) return -1;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+export type KnowledgeSearchHit = {
+  id: string;
+  content: string;
+  score: number;
+  title: string;
+};
+
+/** Top-k semantic search over long_term_memories (client-side cosine on recent rows). */
+export async function searchKnowledge(
+  query: string,
+  topK = 5
+): Promise<KnowledgeSearchHit[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  let queryEmbedding: number[];
+  try {
+    const [emb] = await embedTexts([q]);
+    queryEmbedding = emb;
+  } catch (err) {
+    console.error("[knowledge] embed query failed:", err);
+    return [];
+  }
+
+  const { data, error } = await assistantDb()
+    .from(TABLE)
+    .select("id, content, metadata, embedding")
+    .order("created_at", { ascending: false })
+    .limit(250);
+
+  if (error) {
+    console.error("[knowledge] search fetch failed:", error.message);
+    return [];
+  }
+
+  const scored: KnowledgeSearchHit[] = [];
+  for (const row of (data ?? []) as Array<{
+    id: string;
+    content: string;
+    metadata?: Record<string, unknown> | null;
+    embedding?: unknown;
+  }>) {
+    const emb = parseEmbedding(row.embedding);
+    if (!emb) continue;
+    const score = cosineSimilarity(queryEmbedding, emb);
+    if (score < 0.2) continue;
+    scored.push({
+      id: String(row.id),
+      content: row.content ?? "",
+      score,
+      title: titleFromMeta(row.metadata, row.content ?? ""),
+    });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, Math.min(Math.max(topK, 1), 8));
+}

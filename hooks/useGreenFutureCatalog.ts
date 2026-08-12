@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type {
   PartnerDocumentRecord,
+  PartnerPriceListRecord,
   PartnerSeedFormat,
   PartnerStockStatus,
   PartnerStrainRecord,
@@ -21,6 +22,7 @@ export function useGreenFutureCatalog(filters: Filters) {
   const [supplier, setSupplier] = useState<PartnerSupplierRecord | null>(null);
   const [documents, setDocuments] = useState<PartnerDocumentRecord[]>([]);
   const [strains, setStrains] = useState<PartnerStrainRecord[]>([]);
+  const [priceList, setPriceList] = useState<PartnerPriceListRecord | null>(null);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +43,7 @@ export function useGreenFutureCatalog(filters: Filters) {
         supplier?: PartnerSupplierRecord;
         documents?: PartnerDocumentRecord[];
         strains?: PartnerStrainRecord[];
+        priceList?: PartnerPriceListRecord | null;
         total?: number;
         error?: string;
       };
@@ -48,6 +51,7 @@ export function useGreenFutureCatalog(filters: Filters) {
       setSupplier(json.supplier ?? null);
       setDocuments(json.documents ?? []);
       setStrains(json.strains ?? []);
+      setPriceList(json.priceList ?? null);
       setTotal(json.total ?? 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -60,5 +64,5 @@ export function useGreenFutureCatalog(filters: Filters) {
     void refresh();
   }, [refresh]);
 
-  return { loading, supplier, documents, strains, total, error, refresh };
+  return { loading, supplier, documents, strains, priceList, total, error, refresh };
 }

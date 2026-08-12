@@ -1,8 +1,6 @@
-import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import type { AIFilePart, ChatMessage } from "@/lib/ai-provider";
-import { callAIWithTools, EMPTY_AI_REPLY_TH } from "@/lib/ai-tools";
-import { env } from "@/lib/env";
+import type { AIFilePart } from "@/lib/ai-provider";
+import { EMPTY_AI_REPLY_TH } from "@/lib/ai-tools";
 import {
   FOUNDER_CHAT_ID,
   FOUNDER_SESSION_ID,
@@ -12,22 +10,14 @@ import {
   parseCommand,
   UNKNOWN_COMMAND_REPLY_TH,
 } from "@/lib/telegram-commands";
+import { runAssistantTurn } from "@/services/assistant-orchestrator-service";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const SCHEMA = "ssb_assistant";
-const HISTORY_LIMIT = 15;
 const TELEGRAM_MAX_CHARS = 4000;
-/** Telegram bots can download files up to 20MB; keep a safer cap for Gemini. */
 const MAX_PDF_BYTES = 15 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-
-const DEFAULT_PERSONA =
-  "You are the private AI secretary of Tommy Kawila, Founder of Smile Seed Bank. Be precise, professional, and helpful.";
-
-const TOOLS_RULE =
-  "DATA RULES: For catalog size / how many products in the shop, call get_catalog_stats. For product name, SKU, price, stock, inventory, sales revenue, profit, order counts, or low-stock questions you MUST call the provided tools (get_catalog_stats, search_products, get_product_detail, get_sales_summary, get_low_stock). Never invent or guess those numbers. If a tool fails or returns empty, say so clearly.";
 
 const ERROR_REPLY_TH =
   "ขออภัยครับ ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้งในอีกสักครู่";
@@ -35,8 +25,7 @@ const ERROR_REPLY_TH =
 const DENIED_REPLY_TH =
   "ขออภัยครับ ระบบนี้สำหรับผู้ได้รับอนุญาตเท่านั้น";
 
-// Simple allow-list authentication – only authorized Telegram users can use the bot
-const ALLOWED_CHAT_IDS = ["988973577"]; // Tommy - Founder
+const ALLOWED_CHAT_IDS = ["988973577"];
 
 const DEFAULT_PDF_PROMPT =
   "Please read this PDF carefully and summarize the key points in Thai. Extract important facts, numbers, names, and action items.";
@@ -72,96 +61,6 @@ type TelegramUpdate = {
     photo?: TelegramPhotoSize[];
   };
 };
-
-type HistoryRow = {
-  role: string;
-  content: string;
-};
-
-/** Untyped client — `ssb_assistant` is outside generated Database types. */
-function assistantDb() {
-  const key =
-    env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key?.trim()) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing");
-  }
-  return createSupabaseJsClient(env.NEXT_PUBLIC_SUPABASE_URL, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    db: { schema: SCHEMA },
-  });
-}
-
-function isAllowedChat(chatId: string): boolean {
-  return ALLOWED_CHAT_IDS.includes(chatId);
-}
-
-async function getSystemPersona(): Promise<string> {
-  try {
-    const { data, error } = await assistantDb()
-      .from("user_profile")
-      .select("value")
-      .eq("key", "system_persona")
-      .maybeSingle();
-    if (error) {
-      console.error("[telegram webhook] getSystemPersona:", error.message);
-      return DEFAULT_PERSONA;
-    }
-    const value = (data as { value?: string } | null)?.value?.trim();
-    return value || DEFAULT_PERSONA;
-  } catch (err) {
-    console.error("[telegram webhook] getSystemPersona:", err);
-    return DEFAULT_PERSONA;
-  }
-}
-
-async function getRecentHistory(sessionId: string): Promise<ChatMessage[]> {
-  try {
-    const { data, error } = await assistantDb()
-      .from("chat_history")
-      .select("role, content")
-      .eq("session_id", sessionId)
-      .order("created_at", { ascending: false })
-      .limit(HISTORY_LIMIT);
-
-    if (error) {
-      console.error("[telegram webhook] getRecentHistory:", error.message);
-      return [];
-    }
-
-    const rows = ((data ?? []) as HistoryRow[]).reverse();
-    return rows
-      .filter((r) => r.role === "user" || r.role === "assistant")
-      .map((r) => ({
-        role: r.role as "user" | "assistant",
-        content: r.content,
-      }));
-  } catch (err) {
-    console.error("[telegram webhook] getRecentHistory:", err);
-    return [];
-  }
-}
-
-async function saveMessage(
-  sessionId: string,
-  role: "user" | "assistant",
-  content: string,
-  model?: string
-): Promise<void> {
-  const row: Record<string, string> = {
-    session_id: sessionId,
-    source: "telegram",
-    role,
-    content,
-  };
-  if (role === "assistant" && model) {
-    row.model_used = model;
-  }
-
-  const { error } = await assistantDb().from("chat_history").insert(row);
-  if (error) {
-    throw new Error(`saveMessage failed: ${error.message}`);
-  }
-}
 
 async function sendTelegramMessage(chatId: string, text: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
@@ -260,10 +159,9 @@ async function downloadTelegramFile(
     throw new Error(`FILE_TOO_LARGE:${buf.byteLength}:${maxBytes}`);
   }
 
-  const resolvedMime =
-    mimeType.startsWith("image/")
-      ? mimeFromImagePath(metaJson.result.file_path, mimeType)
-      : mimeType;
+  const resolvedMime = mimeType.startsWith("image/")
+    ? mimeFromImagePath(metaJson.result.file_path, mimeType)
+    : mimeType;
 
   return {
     mimeType: resolvedMime,
@@ -300,8 +198,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // chatId = Telegram API target / allowlist. historySessionId = DB thread.
-  // Founder (988973577) shares session "tommy" with Admin chat for continuity.
   const chatId = String(chatIdRaw);
   const historySessionId =
     chatId === FOUNDER_CHAT_ID ? FOUNDER_SESSION_ID : chatId;
@@ -314,7 +210,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  if (!isAllowedChat(chatId)) {
+  if (!ALLOWED_CHAT_IDS.includes(chatId)) {
     console.warn("[telegram webhook] chat denied", { chatId });
     try {
       await sendTelegramMessage(chatId, DENIED_REPLY_TH);
@@ -324,7 +220,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Slash commands → direct reply (no AI). Skip when message has attachments.
   if (text.startsWith("/") && !document && !photos?.length) {
     const cmd = parseCommand(text);
     const reply =
@@ -361,12 +256,6 @@ export async function POST(req: NextRequest) {
       files = [pdf];
       const prompt = caption || text || DEFAULT_PDF_PROMPT;
       userContent = `[PDF attached: ${fileName}]\n${prompt}`;
-      console.log("[telegram webhook] pdf downloaded", {
-        chatId,
-        historySessionId,
-        fileName,
-        bytesApprox: Math.round((pdf.dataBase64.length * 3) / 4),
-      });
     } else if (document && isImageDocument(document)) {
       const fileName = document.file_name || "image";
       const mime = (document.mime_type ?? "image/jpeg").toLowerCase();
@@ -380,12 +269,6 @@ export async function POST(req: NextRequest) {
       files = [img];
       const prompt = caption || text || DEFAULT_IMAGE_PROMPT;
       userContent = `[Image attached: ${fileName}]\n${prompt}`;
-      console.log("[telegram webhook] image doc downloaded", {
-        chatId,
-        historySessionId,
-        fileName,
-        mime: img.mimeType,
-      });
     } else if (photos?.length) {
       const best = pickLargestPhoto(photos);
       if (best) {
@@ -398,12 +281,6 @@ export async function POST(req: NextRequest) {
         files = [img];
         const prompt = caption || text || DEFAULT_IMAGE_PROMPT;
         userContent = `[Image attached: photo]\n${prompt}`;
-        console.log("[telegram webhook] photo downloaded", {
-          chatId,
-          historySessionId,
-          w: best.width,
-          h: best.height,
-        });
       }
     }
 
@@ -411,43 +288,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const [persona, history] = await Promise.all([
-      getSystemPersona(),
-      getRecentHistory(historySessionId),
-    ]);
-
-    const messages: ChatMessage[] = [
-      { role: "system", content: `${persona}\n\n${TOOLS_RULE}` },
-      ...history,
-      {
-        role: "user",
-        content:
-          userContent ||
-          (files?.[0]?.mimeType === "application/pdf"
-            ? DEFAULT_PDF_PROMPT
-            : DEFAULT_IMAGE_PROMPT),
-      },
-    ];
-
-    const ai = await callAIWithTools(messages, { files, maxRounds: 3 });
-    console.log("[telegram webhook] callAIWithTools ok", {
-      model: ai.model,
-      chatId,
-      historySessionId,
-      hadFiles: Boolean(files?.length),
+    const result = await runAssistantTurn({
+      sessionId: historySessionId,
+      source: "telegram",
+      userContent:
+        userContent ||
+        (files?.[0]?.mimeType === "application/pdf"
+          ? DEFAULT_PDF_PROMPT
+          : DEFAULT_IMAGE_PROMPT),
+      model: "gemini",
+      files,
     });
 
-    await sendTelegramMessage(chatId, ai.content || EMPTY_AI_REPLY_TH);
-    console.log("[telegram webhook] send ok", { chatId, historySessionId });
+    const replyText = result.draft.hasDraft
+      ? `${result.reply}\n\n(ร่างเท่านั้น — บอสส่งเอง)`
+      : result.reply || EMPTY_AI_REPLY_TH;
 
-    try {
-      // Always source=telegram; founder rows land on session "tommy" with Admin.
-      await saveMessage(historySessionId, "user", userContent);
-      await saveMessage(historySessionId, "assistant", ai.content, ai.model);
-      console.log("[telegram webhook] save ok", { chatId, historySessionId });
-    } catch (saveErr) {
-      console.error("[telegram webhook] save failed:", saveErr);
-    }
+    await sendTelegramMessage(chatId, replyText);
+    console.log("[telegram webhook] orchestrator ok", {
+      chatId,
+      historySessionId,
+      model: result.model,
+      hadDraft: result.draft.hasDraft,
+    });
   } catch (err) {
     console.error("[telegram webhook] process error:", err);
     try {
