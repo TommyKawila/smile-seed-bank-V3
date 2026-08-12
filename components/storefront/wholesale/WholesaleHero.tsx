@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Building2, FileDown, MapPin, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -53,7 +54,18 @@ export function WholesaleHero({ onRequestCatalog }: Props) {
             {t("ดาวน์โหลดตัวอย่าง COA", "Download COA Samples")}
           </a>
         </div>
-        <ul className="mt-10 flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:gap-6">
+        <p className="mt-4 text-sm text-slate-600">
+          <Link
+            href="/wholesale/gacp"
+            className="font-medium text-emerald-700 underline-offset-4 hover:underline"
+          >
+            {t(
+              "เอกสาร GACP สำหรับฟาร์มใบอนุญาต →",
+              "GACP documentation for licensed farms →"
+            )}
+          </Link>
+        </p>
+        <ul className="mt-8 flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:gap-6">
           <li className="inline-flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden />
             {t("ถูกกฎหมาย · ตรวจสอบย้อนกลับได้", "Legal · Traceable")}

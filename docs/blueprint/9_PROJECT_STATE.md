@@ -6,6 +6,13 @@
 
 ---
 
+---
+
+### บันทึกการทำงาน — 2026-08-11 (GACP B2B landing `/wholesale/gacp`)
+- **What:** หน้า landing แยกจาก wholesale calculator — Hero · Trust grid · 4 featured strains · inquiry form + API
+- **Logic:** light emerald B2B chrome · `captureGacpInquiry` → contact + Resend · ไม่เปิด partner_strains สาธารณะ
+- **ไฟล์:** `app/(storefront)/wholesale/gacp/*` · `components/storefront/wholesale/gacp/*` · `gacp-featured-strains.ts` · `wholesale-rfq-service.ts` · `Footer.tsx` · `WholesaleHero.tsx`
+
 ### บันทึกการทำงาน — 2026-08-11 (Green Future Partner Catalog admin)
 - **What:** Admin `/admin/partners/green-future` — เอกสาร PDF 3 ฉบับ + แคตตาล็อกสายพันธุ์ค้นหา (AF*/PF*) · ISTA badge · copy ref · B2B quote datalist
 - **Logic:** `partner_suppliers` / `partner_documents` / `partner_strains` · import จาก `data/partners/green-future/catalog.json` · PDF ใน `/public/partner-docs/green-future/`

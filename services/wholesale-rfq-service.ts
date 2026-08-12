@@ -236,3 +236,67 @@ export async function captureCoaLead(email: string, name?: string): Promise<void
     subject: "Wholesale COA sample unlock",
   });
 }
+
+export type GacpInquiryInput = {
+  companyName: string;
+  contactName: string;
+  email: string;
+  phone?: string;
+  licenseNumber?: string;
+  estimatedQty?: string;
+  message?: string;
+};
+
+export async function captureGacpInquiry(input: GacpInquiryInput): Promise<void> {
+  const companyName = input.companyName.trim();
+  const contactName = input.contactName.trim();
+  const email = input.email.trim();
+  if (!companyName || !contactName || !email) {
+    throw new Error("Company, contact, and email are required");
+  }
+
+  await upsertBusinessContact({
+    name: contactName || companyName,
+    email,
+    subject: `GACP inquiry — ${companyName}${
+      input.licenseNumber?.trim() ? ` · Lic ${input.licenseNumber.trim()}` : ""
+    }`.slice(0, 300),
+  });
+
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    console.warn("[gacp-inquiry] RESEND_API_KEY missing — skip team notify");
+    return;
+  }
+  const to =
+    process.env.WHOLESALE_RFQ_NOTIFY_EMAIL?.trim() ||
+    process.env.B2B_GMAIL_USER?.trim() ||
+    "contact@smileseedbank.com";
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "Smile Seed Bank <orders@smileseedbank.com>",
+      to: [to],
+      subject: `[GACP Inquiry] ${companyName}`,
+      text: [
+        `New GACP document / consult inquiry`,
+        `Company / Farm: ${companyName}`,
+        `Contact: ${contactName}`,
+        `Email: ${email}`,
+        `Phone: ${input.phone?.trim() || "—"}`,
+        `License: ${input.licenseNumber?.trim() || "—"}`,
+        `Estimated qty: ${input.estimatedQty?.trim() || "—"}`,
+        ``,
+        `Message:`,
+        input.message?.trim() || "—",
+        ``,
+        `Admin: /admin/partners/green-future`,
+      ].join("\n"),
+    }),
+  });
+}
