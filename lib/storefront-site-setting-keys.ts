@@ -21,4 +21,9 @@ export const STOREFRONT_SITE_SETTING_KEYS = [
   "legal_company_seed_license_number",
   "legal_business_registration_url",
   "legal_business_registration_number",
+  "shipping_pause_enabled",
+  "shipping_pause_from",
+  "shipping_pause_until",
+  "shipping_pause_message_th",
+  "shipping_pause_message_en",
 ] as const;

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { ShippingPauseNotice } from "@/components/storefront/ShippingPauseNotice";
 
 type CheckoutForm = {
   full_name: string;
@@ -35,6 +36,8 @@ export function ShippingSection({
         <h2 className={cn(serif, "text-sm font-medium text-zinc-100")}>
           {t("ข้อมูลจัดส่ง", "Shipping details")}
         </h2>
+
+        <ShippingPauseNotice variant="box" />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">

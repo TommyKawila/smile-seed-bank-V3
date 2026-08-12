@@ -38,6 +38,7 @@ import { CheckoutSlipUploadSection } from "@/components/storefront/checkout/Chec
 import { quantizeBaht2, roundCheckoutBahtWhole } from "@/lib/money-thb";
 import type { CartItem, CartSummary } from "@/types/supabase";
 import { ShippingSection } from "@/components/storefront/checkout/ShippingSection";
+import { ShippingPauseNotice } from "@/components/storefront/ShippingPauseNotice";
 import type { CheckoutPendingRestorePayload } from "@/lib/services/order-service";
 import {
   readPersistedCheckout,
@@ -813,6 +814,7 @@ export function CheckoutPageClient({
                         <span className={cn(checkoutAmount, "font-medium")}>-{formatPrice(summary.promoDiscount)}</span>
                       </div>
                     )}
+                    <ShippingPauseNotice variant="box" />
                     <div className="flex justify-between gap-3 text-muted-foreground">
                       <span className={cn(serif, "text-xs font-medium text-muted-foreground")}>
                         {t("ค่าจัดส่ง", "Shipping")}

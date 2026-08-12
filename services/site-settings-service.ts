@@ -26,6 +26,11 @@ export interface SiteSettings {
   grower_tools_ai_soil_mixer_enabled?: string;
   grower_tools_ai_fertilizer_enabled?: string;
   grower_tools_ai_plant_doctor_enabled?: string;
+  shipping_pause_enabled?: string;
+  shipping_pause_from?: string;
+  shipping_pause_until?: string;
+  shipping_pause_message_th?: string;
+  shipping_pause_message_en?: string;
 }
 
 export async function fetchSiteSettings(useAdmin: boolean): Promise<SiteSettings> {

@@ -23,6 +23,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/use-auth";
 import { getURL } from "@/lib/get-url";
 import { DiscountProgressBar } from "./DiscountProgressBar";
+import { ShippingPauseNotice } from "./ShippingPauseNotice";
 import { LoginForPromoDialog } from "./LoginForPromoDialog";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
@@ -619,6 +620,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                   <span className={cn(sansTab, "font-medium")}>-{formatPrice(summary.promoDiscount)}</span>
                 </div>
               )}
+              <ShippingPauseNotice variant="box" />
               <div className="flex justify-between gap-3 text-zinc-500">
                 <span className={cn(sans, "text-xs font-medium")}>{t("ค่าส่ง", "Shipping")}</span>
                 <span className={cn(sansTab, "font-medium text-zinc-200")}>

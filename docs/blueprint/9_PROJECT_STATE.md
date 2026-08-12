@@ -8,6 +8,13 @@
 
 ---
 
+---
+
+### บันทึกการทำงาน — 2026-08-12 (Shipping Pause Notice — admin-configurable)
+- **What:** แจ้งหยุดจัดส่งชั่วคราวแบบ A — แถบทั้งร้าน + ตะกร้า + Checkout · ตั้งวัน/ข้อความ TH/EN จาก Admin Shipping · ไม่บล็อก checkout
+- **Logic:** `site_settings` keys `shipping_pause_*` · auto-off เมื่อวันนี้ (Asia/Bangkok) ≥ `shipping_pause_until` · ข้อความว่างใช้เทมเพลตจากวันที่
+- **ไฟล์:** `lib/shipping-pause.ts` · `ShippingPauseNotice.tsx` · `StorefrontLayoutClient.tsx` · `CartSheet.tsx` · `ShippingSection.tsx` · `CheckoutPageClient.tsx` · `app/admin/settings/shipping/page.tsx` · `app/api/admin/settings/shipping/route.ts` · `supabase/migrations/20260812120000_site_settings_shipping_pause_rls.sql`
+
 ### บันทึกการทำงาน — 2026-08-11 (GACP B2B landing `/wholesale/gacp`)
 - **What:** หน้า landing แยกจาก wholesale calculator — Hero · Trust grid · 4 featured strains · inquiry form + API
 - **Logic:** light emerald B2B chrome · `captureGacpInquiry` → contact + Resend · ไม่เปิด partner_strains สาธารณะ

@@ -9,6 +9,7 @@ import { scheduleIdleWork } from "@/lib/schedule-idle-work";
 import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
 import { CART_FLY_EVENT, type CartFlyEventDetail } from "@/lib/cart-fly-events";
 import { clearCatalogReturnPath } from "@/lib/catalog-return-path";
+import { ShippingPauseNotice } from "@/components/storefront/ShippingPauseNotice";
 
 const CART_ANIMATION_IDLE_MS = 8_000;
 const AGE_GATE_FALLBACK_MS = 12_000;
@@ -126,7 +127,10 @@ export function StorefrontLayoutClient({
       ) : null}
       <div className="flex min-h-screen flex-col">
         <Navbar />
-        <main className="flex-1 bg-background pt-20 sm:pt-28">{children}</main>
+        <main className="flex-1 bg-background pt-20 sm:pt-28">
+          <ShippingPauseNotice variant="strip" />
+          {children}
+        </main>
         <Footer />
         {mountOffers ? <OfferManager /> : null}
       </div>
