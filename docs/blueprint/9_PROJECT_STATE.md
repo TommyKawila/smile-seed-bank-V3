@@ -16,6 +16,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-13 (Green Future Collaboration Plan — shareable)
+- **What:** แผนงานความร่วมมือ GF × SSB (พ.พ.3 / พ.พ.4 · GACP) ใน Admin Green Future + ลิงก์แชร์สาธารณะ
+- **Logic:** เอกสารคงที่ ไม่เก็บ DB · Admin copy `/share/green-future/plan`
+- **ไฟล์:** `CollaborationPlanDocument.tsx` · `green-future/plan/page.tsx` · `share/green-future/plan/page.tsx` · `GreenFutureSubNav.tsx`
+
 ### บันทึกการทำงาน — 2026-08-12 (RLS lockdown — partner/B2B/wholesale Advisor)
 - **What:** เปิด RLS บนตารางที่ Supabase Advisor เตือน (partner/B2B/business/wholesale/grower logs) · ไม่มี anon policy · กระชับ grants `assistant_drafts`
 - **Logic:** PostgREST anon อ่านไม่ได้ · Prisma/service_role ใช้ต่อได้

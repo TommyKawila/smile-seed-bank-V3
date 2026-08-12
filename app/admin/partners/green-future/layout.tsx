@@ -13,7 +13,7 @@ export default function GreenFutureLayout({
             Green Future
           </h1>
           <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-            Partner catalog and seed label mockup tools.
+            Partner catalog, collaboration plan, and seed label mockup tools.
           </p>
         </div>
         <GreenFutureSubNav />

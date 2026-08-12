@@ -7,6 +7,11 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/admin/partners/green-future", label: "Catalog", exact: true },
   {
+    href: "/admin/partners/green-future/plan",
+    label: "Collaboration Plan",
+    exact: false,
+  },
+  {
     href: "/admin/partners/green-future/mockup",
     label: "Label Mockup",
     exact: false,
