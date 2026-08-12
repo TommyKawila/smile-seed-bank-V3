@@ -9,6 +9,7 @@ type Props = {
   onBodyChange: (value: string) => void;
   logoUrl: string | null;
   signatureImageUrl?: string | null;
+  attachmentImageUrls?: string[];
   companyEmail?: string | null;
   companyPhone?: string | null;
   className?: string;
@@ -19,6 +20,7 @@ export function BusinessDocumentPreview({
   onBodyChange,
   logoUrl,
   signatureImageUrl,
+  attachmentImageUrls = [],
   companyEmail,
   companyPhone,
   className,
@@ -76,6 +78,20 @@ export function BusinessDocumentPreview({
         )}
         placeholder="Type your letter here…"
       />
+
+      {attachmentImageUrls.length > 0 ? (
+        <div className="mt-4 space-y-3 shrink-0">
+          {attachmentImageUrls.map((url) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={url}
+              src={url}
+              alt="Attachment"
+              className="max-h-[320px] w-auto max-w-full rounded border border-slate-200 object-contain object-left"
+            />
+          ))}
+        </div>
+      ) : null}
 
       {signatureImageUrl ? (
         <div className="mt-2 shrink-0">

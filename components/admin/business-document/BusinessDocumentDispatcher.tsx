@@ -51,6 +51,7 @@ export function BusinessDocumentDispatcher() {
   const [rawPaste, setRawPaste] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [signatureImageUrl, setSignatureImageUrl] = useState<string | null>(null);
+  const [attachmentImageUrls, setAttachmentImageUrls] = useState<string[]>([]);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [sigHydrated, setSigHydrated] = useState(false);
@@ -88,6 +89,7 @@ export function BusinessDocumentDispatcher() {
       bodyText,
       subject,
       signatureImageUrl,
+      attachmentImageUrls,
       recipientEmail,
     });
     if (result.success) {
@@ -108,6 +110,7 @@ export function BusinessDocumentDispatcher() {
     bodyText,
     subject,
     signatureImageUrl,
+    attachmentImageUrls,
     recipientEmail,
     toast,
     refreshContacts,
@@ -126,6 +129,7 @@ export function BusinessDocumentDispatcher() {
       setSubject(doc.subject);
       setRecipientEmail(doc.recipientEmail);
       setSignatureImageUrl(doc.signatureImageUrl);
+      setAttachmentImageUrls(doc.attachmentImageUrls ?? []);
       toast({
         title: "Loaded",
         description: doc.status === "SENT" ? "Sent letter loaded." : "Draft loaded.",
@@ -162,6 +166,7 @@ export function BusinessDocumentDispatcher() {
       bodyText,
       subject,
       signatureImageUrl,
+      attachmentImageUrls,
       recipientEmail,
       documentId: activeDocumentId,
     });
@@ -185,6 +190,7 @@ export function BusinessDocumentDispatcher() {
     bodyText,
     subject,
     signatureImageUrl,
+    attachmentImageUrls,
     recipientEmail,
     activeDocumentId,
     sendEmail,
@@ -196,10 +202,17 @@ export function BusinessDocumentDispatcher() {
   const handleExportPdf = useCallback(() => {
     setExporting(true);
     try {
-      exportBusinessDocumentPdf(bodyText, logoUrl, subject, signatureImageUrl, {
-        companyEmail,
-        companyPhone,
-      });
+      exportBusinessDocumentPdf(
+        bodyText,
+        logoUrl,
+        subject,
+        signatureImageUrl,
+        {
+          companyEmail,
+          companyPhone,
+        },
+        attachmentImageUrls
+      );
       toast({
         title: "Print dialog opened",
         description: 'Select "Save as PDF" in the print dialog.',
@@ -213,7 +226,16 @@ export function BusinessDocumentDispatcher() {
     } finally {
       setTimeout(() => setExporting(false), 400);
     }
-  }, [bodyText, logoUrl, subject, signatureImageUrl, companyEmail, companyPhone, toast]);
+  }, [
+    bodyText,
+    logoUrl,
+    subject,
+    signatureImageUrl,
+    attachmentImageUrls,
+    companyEmail,
+    companyPhone,
+    toast,
+  ]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -226,6 +248,7 @@ export function BusinessDocumentDispatcher() {
           onBodyChange={setBodyText}
           logoUrl={logoUrl}
           signatureImageUrl={signatureImageUrl}
+          attachmentImageUrls={attachmentImageUrls}
           companyEmail={companyEmail}
           companyPhone={companyPhone}
         />
@@ -239,6 +262,7 @@ export function BusinessDocumentDispatcher() {
           recipientEmail={recipientEmail}
           rawPaste={rawPaste}
           signatureImageUrl={signatureImageUrl}
+          attachmentImageUrls={attachmentImageUrls}
           documents={documents}
           contacts={contacts}
           historyLoading={historyLoading}
@@ -252,6 +276,7 @@ export function BusinessDocumentDispatcher() {
           onRawPasteChange={setRawPaste}
           onFormatRaw={handleFormatRaw}
           onSignatureUrlChange={setSignatureImageUrl}
+          onAttachmentUrlsChange={setAttachmentImageUrls}
           onPersistSignatureDefault={(url) => updateSetting(FOUNDER_SIGNATURE_SETTING_KEY, url)}
           onClearSignatureDefault={() => updateSetting(FOUNDER_SIGNATURE_SETTING_KEY, "")}
           onSelectContact={handleSelectContact}

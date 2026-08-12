@@ -17,6 +17,11 @@ const BodySchema = z.object({
     .union([z.string().url().max(2000), z.literal(""), z.null()])
     .optional()
     .transform((v) => (v ? v : null)),
+  attachmentImageUrls: z
+    .array(z.string().url().max(2000))
+    .max(8)
+    .optional()
+    .default([]),
   documentId: z.string().optional().nullable(),
 });
 
@@ -35,6 +40,7 @@ export async function POST(req: NextRequest) {
     const result = await sendBusinessDocumentEmail({
       ...parsed.data,
       signatureImageUrl: parsed.data.signatureImageUrl ?? null,
+      attachmentImageUrls: parsed.data.attachmentImageUrls ?? [],
     });
     if (!result.success) {
       return NextResponse.json({ error: result.error ?? "Send failed" }, { status: 500 });

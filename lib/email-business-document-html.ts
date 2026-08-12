@@ -19,13 +19,25 @@ function signatureImageBlock(signatureImageUrl: string | null): string {
   return `<p style="margin:8px 0 0;"><img src="${escapeHtml(signatureImageUrl.trim())}" alt="Signature" width="160" style="max-height:72px;width:auto;height:auto;display:block;" /></p>`;
 }
 
+function attachmentImagesBlock(urls: string[] | undefined): string {
+  const list = (urls ?? []).map((u) => u?.trim()).filter(Boolean);
+  if (list.length === 0) return "";
+  return `<div style="margin:16px 0 8px;">${list
+    .map(
+      (url) =>
+        `<p style="margin:0 0 12px;"><img src="${escapeHtml(url)}" alt="Attachment" style="max-width:100%;max-height:420px;height:auto;display:block;border:1px solid #e2e8f0;border-radius:4px;" /></p>`
+    )
+    .join("")}</div>`;
+}
+
 /** Transactional email wrapper — muted Eco-Clinical palette + formal letterhead. */
 export function buildBusinessDocumentEmailHtml(
   bodyText: string,
   logoUrl: string | null,
   subject: string = BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
   signatureImageUrl: string | null = null,
-  letterheadOpts?: Omit<BusinessDocumentLetterheadOpts, "logoUrl">
+  letterheadOpts?: Omit<BusinessDocumentLetterheadOpts, "logoUrl">,
+  attachmentImageUrls: string[] = []
 ): string {
   const bodyHtml = plainLetterBodyToHtml(bodyText);
   const header = buildBusinessDocumentEmailLetterheadHtml({
@@ -44,6 +56,7 @@ export function buildBusinessDocumentEmailHtml(
     ${header}
     <div style="font-size:15px;line-height:1.45;color:#334155;">
       ${bodyHtml}
+      ${attachmentImagesBlock(attachmentImageUrls)}
       ${signatureImageBlock(signatureImageUrl)}
     </div>
     ${footer}

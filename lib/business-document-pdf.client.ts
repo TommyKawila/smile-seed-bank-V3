@@ -8,14 +8,16 @@ export function exportBusinessDocumentPdf(
   logoUrl: string | null,
   subject?: string,
   signatureImageUrl?: string | null,
-  letterheadOpts?: { companyEmail?: string | null; companyPhone?: string | null }
+  letterheadOpts?: { companyEmail?: string | null; companyPhone?: string | null },
+  attachmentImageUrls: string[] = []
 ): void {
   const html = buildBusinessDocumentPrintHtmlFromBody(
     bodyText,
     logoUrl,
     subject,
     signatureImageUrl ?? null,
-    letterheadOpts
+    letterheadOpts,
+    attachmentImageUrls
   );
   const iframe = document.createElement("iframe");
   iframe.setAttribute("title", "Business document print");

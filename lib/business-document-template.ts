@@ -132,7 +132,8 @@ export function buildBusinessDocumentPrintHtmlFromBody(
   logoUrl: string | null,
   subject: string = BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
   signatureImageUrl: string | null = null,
-  letterheadOpts?: Omit<BusinessDocumentLetterheadOpts, "logoUrl">
+  letterheadOpts?: Omit<BusinessDocumentLetterheadOpts, "logoUrl">,
+  attachmentImageUrls: string[] = []
 ): string {
   const body = buildBusinessDocumentBodyBlockHtml(bodyText);
   const title = subject.trim() || BUSINESS_DOCUMENT_FALLBACK_SUBJECT;
@@ -143,6 +144,17 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     locale: letterheadOpts?.locale ?? "en",
   });
   const footer = buildBusinessDocumentFooterHtml(letterheadOpts?.locale ?? "en");
+  const attachments = (attachmentImageUrls ?? [])
+    .map((u) => u?.trim())
+    .filter(Boolean)
+    .map(
+      (url) =>
+        `<p class="doc-attach"><img src="${escapeHtml(url)}" alt="Attachment" /></p>`
+    )
+    .join("\n");
+  const attachmentsBlock = attachments
+    ? `<div class="doc-attachments">${attachments}</div>`
+    : "";
   const sigImg = signatureImageUrl?.trim()
     ? `<p class="doc-sig-img"><img src="${escapeHtml(signatureImageUrl.trim())}" alt="Signature" /></p>`
     : "";
@@ -174,6 +186,9 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     .doc-date { font-size: 10pt; color: #64748b; margin-bottom: 8mm; }
     .doc-signoff { margin-top: 6mm; margin-bottom: 2mm; }
     .doc-signature { font-weight: 500; color: #0f172a; line-height: 1.35; }
+    .doc-attachments { margin-top: 6mm; }
+    .doc-attach { margin: 0 0 4mm; page-break-inside: avoid; }
+    .doc-attach img { max-width: 100%; max-height: 120mm; width: auto; height: auto; display: block; }
     .doc-sig-img { margin-top: 2mm; }
     .doc-sig-img img { max-height: 18mm; width: auto; display: block; }
   </style>
@@ -181,6 +196,7 @@ export function buildBusinessDocumentPrintHtmlFromBody(
 <body>
   ${header}
   ${body}
+  ${attachmentsBlock}
   ${sigImg}
   ${footer}
 </body>

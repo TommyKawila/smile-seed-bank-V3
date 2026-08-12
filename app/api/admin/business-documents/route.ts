@@ -21,6 +21,11 @@ const SaveSchema = z.object({
     .union([z.string().url().max(2000), z.literal(""), z.null()])
     .optional()
     .transform((v) => (v ? v : null)),
+  attachmentImageUrls: z
+    .array(z.string().url().max(2000))
+    .max(8)
+    .optional()
+    .default([]),
   status: z.enum(["DRAFT", "SENT"]).optional(),
 });
 
@@ -50,6 +55,7 @@ export async function POST(req: NextRequest) {
     const doc = await saveBusinessDocument({
       ...parsed.data,
       signatureImageUrl: parsed.data.signatureImageUrl ?? null,
+      attachmentImageUrls: parsed.data.attachmentImageUrls ?? [],
       status: parsed.data.status ?? "DRAFT",
     });
     return NextResponse.json({ document: doc });

@@ -27,6 +27,7 @@ type Props = {
   recipientEmail: string;
   rawPaste: string;
   signatureImageUrl: string | null;
+  attachmentImageUrls: string[];
   documents: BusinessDocumentRecord[];
   contacts: BusinessContactRecord[];
   historyLoading: boolean;
@@ -40,6 +41,7 @@ type Props = {
   onRawPasteChange: (value: string) => void;
   onFormatRaw: () => void;
   onSignatureUrlChange: (url: string | null) => void;
+  onAttachmentUrlsChange: (urls: string[]) => void;
   onPersistSignatureDefault: (url: string) => Promise<void>;
   onClearSignatureDefault: () => Promise<void>;
   onSelectContact: (contact: BusinessContactRecord) => void;
@@ -52,6 +54,8 @@ type Props = {
   exporting: boolean;
 };
 
+const MAX_ATTACHMENTS = 8;
+
 export function BusinessDocumentControls({
   subject,
   bodyText,
@@ -60,6 +64,7 @@ export function BusinessDocumentControls({
   recipientEmail,
   rawPaste,
   signatureImageUrl,
+  attachmentImageUrls,
   documents,
   contacts,
   historyLoading,
@@ -73,6 +78,7 @@ export function BusinessDocumentControls({
   onRawPasteChange,
   onFormatRaw,
   onSignatureUrlChange,
+  onAttachmentUrlsChange,
   onPersistSignatureDefault,
   onClearSignatureDefault,
   onSelectContact,
@@ -85,7 +91,9 @@ export function BusinessDocumentControls({
   exporting,
 }: Props) {
   const sigInputRef = useRef<HTMLInputElement>(null);
+  const attachInputRef = useRef<HTMLInputElement>(null);
   const [uploadingSig, setUploadingSig] = useState(false);
+  const [uploadingAttach, setUploadingAttach] = useState(false);
   const [historyTab, setHistoryTab] = useState<"DRAFT" | "SENT">("SENT");
 
   const drafts = useMemo(
@@ -114,6 +122,33 @@ export function BusinessDocumentControls({
       await onPersistSignatureDefault(json.url);
     } finally {
       setUploadingSig(false);
+    }
+  };
+
+  const handleAttachmentUpload = async (files: FileList | File[]) => {
+    const remaining = MAX_ATTACHMENTS - attachmentImageUrls.length;
+    if (remaining <= 0) return;
+    const list = Array.from(files).slice(0, remaining);
+    if (list.length === 0) return;
+    setUploadingAttach(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of list) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("key", `biz-doc-attach-${Date.now()}`);
+        const res = await fetch("/api/admin/settings/upload?preset=product", {
+          method: "POST",
+          body: formData,
+        });
+        const json = (await res.json()) as { url?: string; error?: string };
+        if (!res.ok || !json.url) throw new Error(json.error ?? "Upload failed");
+        uploaded.push(json.url);
+      }
+      onAttachmentUrlsChange([...attachmentImageUrls, ...uploaded]);
+    } finally {
+      setUploadingAttach(false);
+      if (attachInputRef.current) attachInputRef.current.value = "";
     }
   };
 
@@ -224,6 +259,81 @@ export function BusinessDocumentControls({
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200/80 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-slate-800">
+            Attach images
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-[11px] text-slate-500">
+            Images appear in the letter preview, Save as PDF, and email (max{" "}
+            {MAX_ATTACHMENTS}).
+          </p>
+          {attachmentImageUrls.length > 0 ? (
+            <ul className="space-y-2">
+              {attachmentImageUrls.map((url) => (
+                <li
+                  key={url}
+                  className="flex items-center gap-2 rounded-md border border-slate-100 bg-slate-50 p-1.5"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt=""
+                    className="h-12 w-12 shrink-0 rounded object-cover"
+                  />
+                  <p className="min-w-0 flex-1 truncate text-[10px] text-slate-500">
+                    {url}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 text-slate-400 hover:text-red-600"
+                    onClick={() =>
+                      onAttachmentUrlsChange(
+                        attachmentImageUrls.filter((u) => u !== url)
+                      )
+                    }
+                    aria-label="Remove attachment"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <input
+            ref={attachInputRef}
+            type="file"
+            accept="image/png,image/webp,image/jpeg"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = e.target.files;
+              if (files?.length) void handleAttachmentUpload(files);
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={
+              uploadingAttach || attachmentImageUrls.length >= MAX_ATTACHMENTS
+            }
+            onClick={() => attachInputRef.current?.click()}
+          >
+            {uploadingAttach ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            Upload images
+          </Button>
         </CardContent>
       </Card>
 

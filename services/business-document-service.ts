@@ -27,6 +27,14 @@ export type BusinessDocumentSendResult = {
   via?: "gmail" | "resend";
 };
 
+function parseAttachmentUrls(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((u): u is string => typeof u === "string" && u.trim().length > 0)
+    .map((u) => u.trim())
+    .slice(0, 8);
+}
+
 function toRecord(row: {
   id: bigint;
   subject: string;
@@ -37,6 +45,7 @@ function toRecord(row: {
   sender_name: string;
   document_date: string;
   signature_image_url: string | null;
+  attachment_image_urls?: unknown;
   status: string;
   sent_at: Date | null;
   created_at: Date;
@@ -52,6 +61,7 @@ function toRecord(row: {
     senderName: row.sender_name,
     documentDate: row.document_date,
     signatureImageUrl: row.signature_image_url,
+    attachmentImageUrls: parseAttachmentUrls(row.attachment_image_urls),
     status: (row.status === "SENT" ? "SENT" : "DRAFT") as BusinessDocumentStatus,
     sentAt: row.sent_at ? row.sent_at.toISOString() : null,
     createdAt: row.created_at.toISOString(),
@@ -138,6 +148,7 @@ export async function saveBusinessDocument(
     sender_name: input.senderName.trim(),
     document_date: input.documentDate,
     signature_image_url: input.signatureImageUrl?.trim() || null,
+    attachment_image_urls: parseAttachmentUrls(input.attachmentImageUrls),
     status,
     ...(status === "SENT" ? { sent_at: new Date() } : {}),
   };
@@ -267,6 +278,7 @@ export async function sendBusinessDocumentEmail(
     bodyText,
     subject: subjectIn,
     signatureImageUrl,
+    attachmentImageUrls,
     documentId,
     ...fields
   } = input;
@@ -276,15 +288,23 @@ export async function sendBusinessDocumentEmail(
   const logoUrl = await fetchLogoUrl();
   const sigUrl =
     signatureImageUrl?.trim() || (await fetchDefaultSignatureUrl()) || null;
+  const attachments = parseAttachmentUrls(attachmentImageUrls);
   const [companyEmail, companyPhone] = await Promise.all([
     fetchSiteSettingRow("company_email"),
     fetchSiteSettingRow("company_phone"),
   ]);
-  const html = buildBusinessDocumentEmailHtml(plain, logoUrl, subject, sigUrl, {
-    companyEmail,
-    companyPhone,
-    locale: "en",
-  });
+  const html = buildBusinessDocumentEmailHtml(
+    plain,
+    logoUrl,
+    subject,
+    sigUrl,
+    {
+      companyEmail,
+      companyPhone,
+      locale: "en",
+    },
+    attachments
+  );
 
   const gmail = gmailSmtpConfigured();
   const replyTo = (process.env.B2B_GMAIL_USER ?? DEFAULT_GMAIL_USER).trim();
@@ -326,6 +346,7 @@ export async function sendBusinessDocumentEmail(
       bodyText: plain,
       subject,
       signatureImageUrl: sigUrl,
+      attachmentImageUrls: attachments,
       recipientEmail: to,
       status: "SENT",
     });

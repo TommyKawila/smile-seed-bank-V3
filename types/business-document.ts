@@ -13,6 +13,8 @@ export type BusinessDocumentDraft = BusinessDocumentFields & {
   subject: string;
   /** Optional handwritten / scanned signature image URL */
   signatureImageUrl: string | null;
+  /** Optional images embedded in letter / PDF / email (after body, before signature) */
+  attachmentImageUrls: string[];
 };
 
 export type BusinessDocumentDispatchInput = BusinessDocumentDraft & {

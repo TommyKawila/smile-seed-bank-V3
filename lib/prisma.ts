@@ -2,7 +2,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 /** Bump when Prisma schema requires client regen (dev hot-reload bust). */
-const PRISMA_SCHEMA_REV = 202608121900;
+const PRISMA_SCHEMA_REV = 202608122000;
 
 type GlobalPrisma = {
   prisma?: PrismaClient;
