@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { resolvePartnerDocumentHref } from "@/lib/partner-doc-files";
 import {
   formatPartnerVarietyRef,
   type PartnerSeedFormat,
@@ -246,7 +247,11 @@ export function GreenFutureCatalogClient() {
                 {doc.refCode ? <p>Ref: {doc.refCode}</p> : null}
                 {doc.issuedAt ? <p>Date: {doc.issuedAt}</p> : null}
                 <Button asChild size="sm" variant="outline" className="h-8">
-                  <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={resolvePartnerDocumentHref(doc.fileUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
                     Open PDF
                   </a>

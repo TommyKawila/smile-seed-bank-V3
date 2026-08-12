@@ -30,7 +30,7 @@ const DOCS = [
   {
     title: "AUTO FEM — B2B Stock Catalog",
     docType: "CATALOG_AUTO_FEM",
-    fileUrl: "/partner-docs/green-future/auto-fem.pdf",
+    fileUrl: "/api/admin/partners/green-future/files/auto-fem.pdf",
     fileName: "auto-fem.pdf",
     issuedAt: null as string | null,
     refCode: null as string | null,
@@ -39,7 +39,7 @@ const DOCS = [
   {
     title: "FEM — B2B Stock Catalog",
     docType: "CATALOG_FEM",
-    fileUrl: "/partner-docs/green-future/fem.pdf",
+    fileUrl: "/api/admin/partners/green-future/files/fem.pdf",
     fileName: "fem.pdf",
     issuedAt: null,
     refCode: null,
@@ -48,7 +48,7 @@ const DOCS = [
   {
     title: "ISTA Analysis — Confirmed Varieties",
     docType: "ISTA_LETTER",
-    fileUrl: "/partner-docs/green-future/ista-letter.pdf",
+    fileUrl: "/api/admin/partners/green-future/files/ista-letter.pdf",
     fileName: "ista-letter.pdf",
     issuedAt: "2026-08-10",
     refCode: "GF/SSB/2026-0810",
@@ -57,7 +57,8 @@ const DOCS = [
   {
     title: "Seed Supply & COA Certification Proposal",
     docType: "PRICE_LIST",
-    fileUrl: "/partner-docs/green-future/seed-supply-coa-proposal.pdf",
+    fileUrl:
+      "/api/admin/partners/green-future/files/seed-supply-coa-proposal.pdf",
     fileName: "seed-supply-coa-proposal.pdf",
     issuedAt: "2026-08-03",
     refCode: "GF/SSB/2026-0803",
