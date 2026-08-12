@@ -1,9 +1,10 @@
-import { CollaborationPlanDocument } from "@/components/partners/CollaborationPlanDocument";
+import { Suspense } from "react";
+import { CollaborationPlanView } from "@/components/partners/CollaborationPlanDocument";
 
 export const metadata = {
   title: "Collaboration Plan · Green Future × Smile Seed Bank",
   description:
-    "แผนงานความร่วมมือผลิตและจัดจำหน่ายเมล็ดพันธุ์กัญชามาตรฐาน GACP ระหว่าง Green Future และ Smile Seed Bank",
+    "GACP seed collaboration plan between Green Future and Smile Seed Bank / แผนงานความร่วมมือผลิตและจัดจำหน่ายเมล็ดพันธุ์กัญชามาตรฐาน GACP",
 };
 
 export default function ShareGreenFuturePlanPage() {
@@ -13,9 +14,9 @@ export default function ShareGreenFuturePlanPage() {
         <p className="text-center text-xs uppercase tracking-wide text-slate-400">
           Shared document
         </p>
-        <div className="rounded-lg border border-slate-200 bg-white p-5 sm:p-10">
-          <CollaborationPlanDocument />
-        </div>
+        <Suspense fallback={<p className="text-center text-sm text-slate-500">Loading…</p>}>
+          <CollaborationPlanView />
+        </Suspense>
       </div>
     </main>
   );
