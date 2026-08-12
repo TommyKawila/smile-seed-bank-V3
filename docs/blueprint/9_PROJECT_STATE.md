@@ -16,6 +16,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-12 (Fix: partner PDFs must not be anonymously public)
+- **What:** ย้าย Green Future partner PDFs ออกจาก `public/` · เสิร์ฟผ่าน admin-gated API เท่านั้น (รวม proposal ต้นทุนที่ระบุว่า confidential)
+- **Logic:** anonymous `GET /partner-docs/...` ใช้ไม่ได้แล้ว · admin เปิด PDF ผ่าน `/api/admin/partners/green-future/files/*` + rewrite legacy DB URLs ใน UI
+- **ไฟล์:** `private/partner-docs/green-future/*` · `lib/partner-doc-files.ts` · `app/api/admin/partners/green-future/files/[file]/route.ts` · `GreenFutureCatalogClient.tsx` · `import-green-future-catalog.ts`
+
 ### บันทึกการทำงาน — 2026-08-12 (RLS lockdown — partner/B2B/wholesale Advisor)
 - **What:** เปิด RLS บนตารางที่ Supabase Advisor เตือน (partner/B2B/business/wholesale/grower logs) · ไม่มี anon policy · กระชับ grants `assistant_drafts`
 - **Logic:** PostgREST anon อ่านไม่ได้ · Prisma/service_role ใช้ต่อได้
