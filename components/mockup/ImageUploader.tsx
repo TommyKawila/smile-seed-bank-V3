@@ -6,6 +6,47 @@ import { Button } from "@/components/ui/button";
 import { useMockup } from "@/components/mockup/MockupContext";
 import { useToast } from "@/hooks/use-toast";
 
+/** Compress large photos so they fit Vercel ~4.5MB body limit. */
+async function prepareUploadFile(file: File): Promise<File> {
+  const maxBytes = 3.5 * 1024 * 1024;
+  if (file.size <= maxBytes && /^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) {
+    return file;
+  }
+
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) {
+    if (file.size > maxBytes) {
+      throw new Error(
+        "Image is too large (>4MB). Use JPEG/PNG under 4MB (not HEIC)."
+      );
+    }
+    return file;
+  }
+
+  const maxEdge = 2000;
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+  const w = Math.max(1, Math.round(bitmap.width * scale));
+  const h = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    bitmap.close();
+    return file;
+  }
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  bitmap.close();
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((b) => resolve(b), "image/jpeg", 0.85)
+  );
+  if (!blob) return file;
+
+  const base = file.name.replace(/\.[^.]+$/, "") || "package";
+  return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+}
+
 export function ImageUploader() {
   const { data, setField, uploading, setUploading } = useMockup();
   const { toast } = useToast();
@@ -15,18 +56,30 @@ export function ImageUploader() {
     if (!file) return;
     setUploading(true);
     try {
+      const prepared = await prepareUploadFile(file);
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", prepared);
       const res = await fetch("/api/admin/mockups/upload", {
         method: "POST",
         body: form,
       });
-      const body = (await res.json().catch(() => ({}))) as {
-        url?: string;
-        error?: string;
-      };
+      const raw = await res.text();
+      let body: { url?: string; error?: string } = {};
+      try {
+        body = raw ? (JSON.parse(raw) as typeof body) : {};
+      } catch {
+        throw new Error(
+          res.status === 413
+            ? "Image too large for server (max ~4MB). Compress and retry."
+            : `Upload failed (HTTP ${res.status})`
+        );
+      }
       if (!res.ok || !body.url) {
-        throw new Error(body.error || "Upload failed");
+        throw new Error(
+          typeof body.error === "string" && body.error
+            ? body.error
+            : `Upload failed (HTTP ${res.status})`
+        );
       }
       setField("bgImageUrl", body.url);
       toast({ title: "Package image uploaded" });
@@ -49,7 +102,7 @@ export function ImageUploader() {
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
           className="hidden"
           onChange={(e) => onFile(e.target.files?.[0])}
         />
@@ -81,7 +134,9 @@ export function ImageUploader() {
       {data.bgImageUrl ? (
         <p className="truncate text-[11px] text-slate-400">{data.bgImageUrl}</p>
       ) : (
-        <p className="text-[11px] text-slate-400">No background yet</p>
+        <p className="text-[11px] text-slate-400">
+          JPEG / PNG / WebP under ~4MB (not HEIC)
+        </p>
       )}
     </div>
   );

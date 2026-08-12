@@ -13,8 +13,57 @@ import {
 import type { Prisma } from "@prisma/client";
 
 export const MOCKUP_BUCKET = "brand-assets";
-const MAX_BYTES = 8 * 1024 * 1024;
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+/** Stay under Vercel serverless body limit (~4.5MB). */
+const MAX_BYTES = 4 * 1024 * 1024;
+
+function resolveImageContentType(
+  contentType: string,
+  filename: string
+): "image/jpeg" | "image/png" | "image/webp" | null {
+  const lower = (contentType || "").toLowerCase().trim();
+  if (lower === "image/jpg" || lower === "image/jpeg") return "image/jpeg";
+  if (lower === "image/png") return "image/png";
+  if (lower === "image/webp") return "image/webp";
+
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  if (ext === "png") return "image/png";
+  if (ext === "webp") return "image/webp";
+  return null;
+}
+
+export async function uploadPackageImage(
+  buffer: Buffer,
+  filename: string,
+  contentType: string
+): Promise<string> {
+  const resolved = resolveImageContentType(contentType, filename);
+  if (!resolved) {
+    throw new Error(
+      "Only JPEG, PNG, or WebP images are allowed (HEIC/other formats not supported — convert first)"
+    );
+  }
+  if (buffer.byteLength > MAX_BYTES) {
+    throw new Error(
+      "Image must be under 4MB (compress or resize the photo, then try again)"
+    );
+  }
+
+  const ext =
+    resolved === "image/png" ? "png" : resolved === "image/webp" ? "webp" : "jpg";
+  const path = `mockups/${randomUUID()}.${ext}`;
+  const supabase = createServiceRoleClient();
+
+  const { error } = await supabase.storage.from(MOCKUP_BUCKET).upload(path, buffer, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: resolved,
+  });
+  if (error) throw new Error(error.message || "Storage upload failed");
+
+  const { data } = supabase.storage.from(MOCKUP_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
 
 function parsePosition(raw: unknown): LabelPosition {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_LABEL_POSITION };
@@ -66,38 +115,6 @@ function rowToSeedLabel(row: {
     bgImageUrl: row.bg_image_url ?? undefined,
     labelPosition: parsePosition(row.label_position),
   };
-}
-
-export async function uploadPackageImage(
-  buffer: Buffer,
-  filename: string,
-  contentType: string
-): Promise<string> {
-  if (!ALLOWED_TYPES.has(contentType)) {
-    throw new Error("Only JPEG, PNG, or WebP images are allowed");
-  }
-  if (buffer.byteLength > MAX_BYTES) {
-    throw new Error("Image must be 8MB or smaller");
-  }
-
-  const ext =
-    contentType === "image/png"
-      ? "png"
-      : contentType === "image/webp"
-        ? "webp"
-        : "jpg";
-  const path = `mockups/${randomUUID()}.${ext}`;
-  const supabase = createServiceRoleClient();
-
-  const { error } = await supabase.storage.from(MOCKUP_BUCKET).upload(path, buffer, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType,
-  });
-  if (error) throw new Error(error.message);
-
-  const { data } = supabase.storage.from(MOCKUP_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
 }
 
 export async function saveMockup(data: SeedLabelData): Promise<SeedLabelData> {
