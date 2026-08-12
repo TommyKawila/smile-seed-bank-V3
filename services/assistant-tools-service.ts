@@ -425,16 +425,41 @@ export async function searchCustomersTool(query: string): Promise<unknown> {
 }
 
 export async function getCustomerOrders(customerId: string): Promise<unknown> {
-  const id = customerId.trim();
-  if (!id) return { error: "customerId required" };
+  const raw = customerId.trim();
+  if (!raw) return { error: "customerId required" };
 
-  const asBigInt = /^\d+$/.test(id) ? BigInt(id) : null;
+  /** Omni-search prefixes: `web-<uuid>`, `pos-<bigint>`, plain uuid/digits. */
+  let uuid: string | null = null;
+  let profileId: bigint | null = null;
+
+  if (raw.startsWith("web-")) {
+    const rest = raw.slice(4).trim();
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rest)) {
+      uuid = rest;
+    }
+  } else if (raw.startsWith("pos-")) {
+    const rest = raw.slice(4).trim();
+    if (/^\d+$/.test(rest)) profileId = BigInt(rest);
+  } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)) {
+    uuid = raw;
+  } else if (/^\d+$/.test(raw)) {
+    profileId = BigInt(raw);
+  }
+
+  if (!uuid && profileId == null) {
+    return {
+      error:
+        "Invalid customerId — use an id from search_customers (web-… / pos-…), not order-only hits",
+      customerId: raw,
+      orders: [],
+    };
+  }
 
   const orders = await prisma.orders.findMany({
     where: {
       OR: [
-        { customer_id: id },
-        ...(asBigInt != null ? [{ customer_profile_id: asBigInt }] : []),
+        ...(uuid ? [{ customer_id: uuid }] : []),
+        ...(profileId != null ? [{ customer_profile_id: profileId }] : []),
       ],
     },
     orderBy: { created_at: "desc" },
@@ -453,7 +478,8 @@ export async function getCustomerOrders(customerId: string): Promise<unknown> {
   });
 
   return {
-    customerId: id,
+    customerId: raw,
+    resolved: { customer_id: uuid, customer_profile_id: profileId?.toString() ?? null },
     count: orders.length,
     orders: orders.map((o) => ({
       id: Number(o.id),
