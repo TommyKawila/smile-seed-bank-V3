@@ -16,6 +16,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-13 (RLS — label_mockups PostgREST dump)
+- **What:** เปิด RLS บน `label_mockups` (ตารางใหม่หลัง lockdown 12 ส.ค. ไม่มี policy)
+- **Logic:** anon/authenticated ผ่าน PostgREST อ่าน/เขียนไม่ได้ · Prisma ยังเสิร์ฟ `/share/mockup/[id]` ตาม UUID
+- **ไฟล์:** `prisma/migrations/20260813110000_label_mockups_rls` · `supabase/migrations/20260813110000_label_mockups_rls.sql`
+
 ### บันทึกการทำงาน — 2026-08-13 (Green Future Collaboration Plan — shareable)
 - **What:** แผนงานความร่วมมือ GF × SSB (พ.พ.3 / พ.พ.4 · GACP) ใน Admin Green Future + ลิงก์แชร์สาธารณะ
 - **Logic:** เอกสารคงที่ ไม่เก็บ DB · Admin copy `/share/green-future/plan` · สลับ TH/EN (`?lang=en`)
