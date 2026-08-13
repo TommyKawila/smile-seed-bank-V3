@@ -16,6 +16,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-13 (Green Future resale pricing calculator)
+- **What:** ตารางคิดราคาขายจากต้นทุน GF — landed + target gross margin · **อัปเดตราคา B2B สาธารณะ** ตาม GM ที่แนะนำ
+- **Logic:** `sell = landed / (1 − GM)` · 500=66 · 1k/2.5k=52 · 5k=37 · 10k=30 · 25k=24 · micro 100=75 · COA A/B 10410/20819
+- **ไฟล์:** `lib/green-future-resale-pricing.ts` · `wholesale-bulk-pricing.ts` · `wholesale-public-pricing.ts` · `wholesale_settings.tiers`
+
 ### บันทึกการทำงาน — 2026-08-13 (Green Future Collaboration Plan — shareable)
 - **What:** แผนงานความร่วมมือ GF × SSB (พ.พ.3 / พ.พ.4 · GACP) ใน Admin Green Future + ลิงก์แชร์สาธารณะ
 - **Logic:** เอกสารคงที่ ไม่เก็บ DB · Admin copy `/share/green-future/plan` · สลับ TH/EN (`?lang=en`)

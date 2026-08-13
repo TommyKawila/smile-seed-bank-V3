@@ -74,39 +74,40 @@ export const DEFAULT_BULK_PRICING: BulkPricingConfig = {
   version: 2,
   eurThb: 38.44,
   microPackQty: 100,
-  microPackThb: 50,
+  /** Test-order GM 35% on GF 44.21 THB landed. */
+  microPackThb: 75,
   strainTiers: [
-    { minQty: 500, maxQty: 999, thbPerSeed: 39 },
-    { minQty: 1000, maxQty: 2499, thbPerSeed: 33 },
+    { minQty: 500, maxQty: 999, thbPerSeed: 66 },
+    { minQty: 1000, maxQty: 2499, thbPerSeed: 52 },
   ],
   bulkPerks: [
     {
       minTotalQty: 2500,
-      thbPerSeed: 33,
+      thbPerSeed: 52,
       freeCoaCount: 1,
-      freeCoaValueEachThb: 8350,
+      freeCoaValueEachThb: 10410,
     },
     {
       minTotalQty: 5000,
-      thbPerSeed: 25,
+      thbPerSeed: 37,
       freeCoaCount: 2,
-      freeCoaValueEachThb: 8350,
+      freeCoaValueEachThb: 10410,
     },
     {
       minTotalQty: 10000,
-      thbPerSeed: 22,
+      thbPerSeed: 30,
       freeCoaCount: 4,
-      freeCoaValueEachThb: 8350,
+      freeCoaValueEachThb: 10410,
     },
     {
       minTotalQty: 25000,
-      thbPerSeed: 18,
+      thbPerSeed: 24,
       freeCoaCount: 5,
-      freeCoaValueEachThb: 8350,
+      freeCoaValueEachThb: 10410,
     },
   ],
-  coaPackageAThb: 8350,
-  coaPackageBThb: 16700,
+  coaPackageAThb: 10410,
+  coaPackageBThb: 20819,
 };
 
 export function ceilThb(n: number): number {
@@ -323,7 +324,7 @@ export function resolveQuote(
 
   const freeCoaCount = perk ? perk.freeCoaCount : 0;
   const freeCoaValueThb = freeCoaCount
-    ? ceilThb(freeCoaCount * (perk?.freeCoaValueEachThb ?? 8350))
+    ? ceilThb(freeCoaCount * (perk?.freeCoaValueEachThb ?? config.coaPackageAThb))
     : 0;
 
   let extraCoaThb = 0;

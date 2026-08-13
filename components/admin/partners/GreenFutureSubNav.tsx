@@ -12,6 +12,11 @@ const items = [
     exact: false,
   },
   {
+    href: "/admin/partners/green-future/resale",
+    label: "Resale pricing",
+    exact: false,
+  },
+  {
     href: "/admin/partners/green-future/mockup",
     label: "Label Mockup",
     exact: false,
