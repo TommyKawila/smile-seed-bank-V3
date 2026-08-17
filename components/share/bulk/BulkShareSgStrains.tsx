@@ -7,7 +7,12 @@ import {
   sgHasSupremeCategories,
 } from "@/lib/seeds-genetics-supreme-copy";
 import { SgSupremeInfoButton } from "@/components/share/bulk/SgSupremeInfoButton";
-import type { BulkShareStrainPick } from "@/lib/bulk-share-order";
+import { strainMatchesQuery } from "@/components/share/bulk/BulkShareStrainSearch";
+import {
+  BULK_SHARE_PHOTO_FF_QTY,
+  cartLineKey,
+  type BulkShareStrainPick,
+} from "@/lib/bulk-share-order";
 import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
 
 type Group = {
@@ -21,11 +26,28 @@ type Props = {
   onAddStrain: (pick: BulkShareStrainPick) => void;
   focusedKey?: string | null;
   lang?: BulkShareLang;
+  query?: string;
+  cartQtyByKey?: Map<string, number>;
 };
 
-export function BulkShareSgStrains({ groups, onAddStrain, focusedKey, lang = "th" }: Props) {
-  const showSupremeOverview = sgHasSupremeCategories(groups.map((g) => g.slug));
+export function BulkShareSgStrains({
+  groups,
+  onAddStrain,
+  focusedKey,
+  lang = "th",
+  query = "",
+  cartQtyByKey,
+}: Props) {
+  const filtered = groups
+    .map((g) => ({
+      ...g,
+      strains: g.strains.filter((s) => strainMatchesQuery(s.name, query)),
+    }))
+    .filter((g) => g.strains.length > 0);
+  const showSupremeOverview = sgHasSupremeCategories(filtered.map((g) => g.slug));
   const t = BULK_SHARE_COPY[lang];
+
+  if (filtered.length === 0) return null;
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -42,7 +64,7 @@ export function BulkShareSgStrains({ groups, onAddStrain, focusedKey, lang = "th
       </div>
       <p className="mt-1 text-xs text-slate-500">{t.tapHint}</p>
       <div className="mt-3 space-y-4">
-        {groups.map((group) => {
+        {filtered.map((group) => {
           const supremeInfo = SG_SUPREME_CATEGORY_INFO[group.slug];
           return (
             <div key={group.slug}>
@@ -65,9 +87,10 @@ export function BulkShareSgStrains({ groups, onAddStrain, focusedKey, lang = "th
               <ul className="mt-2 columns-1 gap-x-6 text-sm sm:columns-2">
                 {group.strains.map((s) => {
                   const category = s.primaryCategory;
-                  const lockedQty = category === "photo-ff" ? 1000 : undefined;
-                  const key = `seeds-genetics|${s.name.trim().toLowerCase()}`;
+                  const lockedQty = category === "photo-ff" ? BULK_SHARE_PHOTO_FF_QTY : undefined;
+                  const key = cartLineKey("seeds-genetics", s.name);
                   const active = focusedKey === key;
+                  const qty = cartQtyByKey?.get(key);
                   return (
                     <li key={s.id} className="mb-1 break-inside-avoid">
                       <button
@@ -87,7 +110,10 @@ export function BulkShareSgStrains({ groups, onAddStrain, focusedKey, lang = "th
                       >
                         {s.name}
                         {lockedQty ? (
-                          <span className="text-slate-400"> · FAST · 1,000</span>
+                          <span className="text-slate-400"> · FAST</span>
+                        ) : null}
+                        {qty ? (
+                          <span className="text-emerald-700"> · {qty.toLocaleString()}</span>
                         ) : null}
                       </button>
                     </li>

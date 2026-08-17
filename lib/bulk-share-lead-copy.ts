@@ -6,6 +6,7 @@ export function formatBulkShareLeadCopyText(lead: BulkShareLeadRecord): string {
     `Offer: ${lead.shareTitle}`,
     `Contact: ${lead.contactName}`,
   ];
+  if (lead.email) lines.push(`Email: ${lead.email}`);
   if (lead.lineId) lines.push(`LINE: ${lead.lineId}`);
   if (lead.phone) lines.push(`Phone: ${lead.phone}`);
   if (lead.note) lines.push(`Note: ${lead.note}`);

@@ -14,6 +14,7 @@ type LeadWithItems = {
   id: bigint;
   ref_number: string;
   contact_name: string;
+  email: string;
   line_id: string;
   phone: string;
   note: string | null;
@@ -53,6 +54,7 @@ function toRecord(row: LeadWithItems): BulkShareLeadRecord {
     id: String(row.id),
     refNumber: row.ref_number,
     contactName: row.contact_name,
+    email: row.email,
     lineId: row.line_id,
     phone: row.phone,
     note: row.note,
@@ -102,6 +104,7 @@ export async function createBulkShareLead(input: CreateBulkShareLeadInput): Prom
     data: {
       ref_number: refNumber,
       contact_name: input.contactName.trim().slice(0, 200),
+      email: (input.email ?? "").trim().slice(0, 320),
       line_id: (input.lineId ?? "").trim().slice(0, 120),
       phone: (input.phone ?? "").trim().slice(0, 32),
       note: input.note?.trim() || null,

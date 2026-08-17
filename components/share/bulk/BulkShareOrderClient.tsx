@@ -17,23 +17,21 @@ import {
 import { BulkShareSgStrains } from "@/components/share/bulk/BulkShareSgStrains";
 import { BulkShareSgfStrains } from "@/components/share/bulk/BulkShareSgfStrains";
 import {
+  BulkShareStrainSearch,
+  type StrainSearchEntry,
+} from "@/components/share/bulk/BulkShareStrainSearch";
+import {
   BULK_SHARE_MIN_QTY,
   BULK_SHARE_PHOTO_FF_QTY,
   cartLineKey,
-  defaultQtyForCategory,
   priceLineFromBook,
   type BulkShareCartLine,
   type BulkShareStrainPick,
   type SerializedPricedBook,
 } from "@/lib/bulk-share-order";
 import { SEED_FORMAT_LABEL, SEEDS_GENETICS_SLUG } from "@/lib/bulk-seeds-book";
-import { SGF_SEEDS_SHARE_TAGLINE } from "@/lib/sgf-seeds-share";
-import {
-  BULK_SHARE_COPY,
-  BULK_SHARE_LANG_KEY,
-  localizeQtyDescription,
-  type BulkShareLang,
-} from "@/lib/bulk-share-i18n";
+import { SGF_SEEDS_SHARE_TAGLINE, sgfStrainsGrouped } from "@/lib/sgf-seeds-share";
+import { BULK_SHARE_COPY, BULK_SHARE_LANG_KEY, localizeQtyDescription, type BulkShareLang } from "@/lib/bulk-share-i18n";
 import type { SgCategorySlug, SgCatalogStrain } from "@/lib/seeds-genetics-catalog";
 import type { PartnerStrainRecord } from "@/types/partner-catalog";
 
@@ -106,12 +104,14 @@ export function BulkShareOrderClient({
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [contactName, setContactName] = useState("");
+  const [email, setEmail] = useState("");
   const [lineId, setLineId] = useState("");
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refNumber, setRefNumber] = useState<string | null>(null);
+  const [strainQuery, setStrainQuery] = useState("");
 
   const t = BULK_SHARE_COPY[lang];
 
@@ -144,17 +144,62 @@ export function BulkShareOrderClient({
     setFocusedKey(key);
     setCart((prev) => {
       const hit = prev.find((l) => l.key === key);
-      if (hit) return prev;
+      if (hit) {
+        if (hit.lockedQty) return prev;
+        return prev.map((l) =>
+          l.key === key ? { ...l, qty: l.qty + BULK_SHARE_MIN_QTY } : l
+        );
+      }
       return [
         ...prev,
         {
           ...pick,
           key,
-          qty: pick.lockedQty ?? defaultQtyForCategory(pick.category),
+          qty: pick.lockedQty ?? BULK_SHARE_MIN_QTY,
         },
       ];
     });
   }, []);
+
+  const strainEntries = useMemo(() => {
+    const entries: StrainSearchEntry[] = [];
+    if (sgfStrains.length > 0) {
+      for (const g of sgfStrainsGrouped(sgfStrains)) {
+        for (const s of g.strains) {
+          const category = g.bucket;
+          entries.push({
+            id: `gf-${s.id}`,
+            supplierSlug: "green-future",
+            supplierLabel: "SGF Seeds",
+            strainName: s.strainName,
+            category,
+            lockedQty: category === "photo-ff" ? BULK_SHARE_PHOTO_FF_QTY : undefined,
+          });
+        }
+      }
+    }
+    for (const g of sgGroups) {
+      for (const s of g.strains) {
+        const category = s.primaryCategory;
+        entries.push({
+          id: `sg-${s.id}`,
+          supplierSlug: "seeds-genetics",
+          supplierLabel: "Seeds Genetics",
+          strainName: s.name,
+          category,
+          lockedQty: category === "photo-ff" ? BULK_SHARE_PHOTO_FF_QTY : undefined,
+        });
+      }
+    }
+    return entries.sort((a, b) => a.strainName.localeCompare(b.strainName));
+  }, [sgfStrains, sgGroups]);
+
+  const cartQtyByKey = useMemo(
+    () => new Map(cart.map((l) => [l.key, l.qty])),
+    [cart]
+  );
+
+  const hasStrains = strainEntries.length > 0;
 
   const updateQty = useCallback((key: string, raw: number) => {
     setCart((prev) =>
@@ -193,8 +238,13 @@ export function BulkShareOrderClient({
       setError(t.errName);
       return;
     }
-    if (!lineId.trim() && !phone.trim()) {
+    if (!lineId.trim() && !phone.trim() && !email.trim()) {
       setError(t.errContact);
+      return;
+    }
+    const emailNorm = email.trim().toLowerCase();
+    if (emailNorm && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNorm)) {
+      setError(t.errEmail);
       return;
     }
     if (cart.length === 0) {
@@ -209,6 +259,7 @@ export function BulkShareOrderClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contactName: contactName.trim(),
+          email: emailNorm,
           lineId: lineId.trim(),
           phone: phone.trim(),
           note: note.trim() || undefined,
@@ -283,7 +334,9 @@ export function BulkShareOrderClient({
                   </>
                 ) : null}
                 {book.supplierSlug === SEEDS_GENETICS_SLUG ? (
-                  <p className="mt-1 text-xs text-slate-500">{t.sgImportNote}</p>
+                  <p className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium leading-snug text-sky-950">
+                    {t.sgImportNote}
+                  </p>
                 ) : null}
               </div>
               <table className="w-full text-sm">
@@ -317,12 +370,26 @@ export function BulkShareOrderClient({
             </section>
           ))}
 
+          {hasStrains ? (
+            <BulkShareStrainSearch
+              entries={strainEntries}
+              query={strainQuery}
+              onQueryChange={setStrainQuery}
+              onAddStrain={addStrain}
+              cartQtyByKey={cartQtyByKey}
+              focusedKey={focusedKey}
+              lang={lang}
+            />
+          ) : null}
+
           {sgfStrains.length > 0 ? (
             <BulkShareSgfStrains
               strains={sgfStrains}
               onAddStrain={addStrain}
               focusedKey={focusedKey}
               lang={lang}
+              query={strainQuery}
+              cartQtyByKey={cartQtyByKey}
             />
           ) : null}
 
@@ -332,6 +399,8 @@ export function BulkShareOrderClient({
               onAddStrain={addStrain}
               focusedKey={focusedKey}
               lang={lang}
+              query={strainQuery}
+              cartQtyByKey={cartQtyByKey}
             />
           ) : null}
 
@@ -459,6 +528,17 @@ export function BulkShareOrderClient({
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
                 placeholder={t.namePh}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="email">{t.email}</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t.emailPh}
               />
             </div>
             <div className="space-y-1">

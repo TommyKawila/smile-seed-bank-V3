@@ -1,0 +1,2 @@
+ALTER TABLE public.bulk_share_leads
+  ADD COLUMN IF NOT EXISTS email VARCHAR(320) NOT NULL DEFAULT '';

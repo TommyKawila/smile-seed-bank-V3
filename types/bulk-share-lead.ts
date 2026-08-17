@@ -16,6 +16,7 @@ export type BulkShareLeadRecord = {
   id: string;
   refNumber: string;
   contactName: string;
+  email: string;
   lineId: string;
   phone: string;
   note: string | null;
@@ -32,6 +33,7 @@ export type BulkShareLeadRecord = {
 
 export type CreateBulkShareLeadInput = {
   contactName: string;
+  email?: string;
   lineId?: string;
   phone?: string;
   note?: string;

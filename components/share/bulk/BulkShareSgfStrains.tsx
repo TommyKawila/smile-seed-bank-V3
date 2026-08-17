@@ -2,19 +2,36 @@
 
 import type { PartnerStrainRecord } from "@/types/partner-catalog";
 import { sgfStrainsGrouped } from "@/lib/sgf-seeds-share";
-import type { BulkShareStrainPick } from "@/lib/bulk-share-order";
+import { BULK_SHARE_PHOTO_FF_QTY, cartLineKey, type BulkShareStrainPick } from "@/lib/bulk-share-order";
 import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
+import { strainMatchesQuery } from "@/components/share/bulk/BulkShareStrainSearch";
 
 type Props = {
   strains: PartnerStrainRecord[];
   onAddStrain: (pick: BulkShareStrainPick) => void;
   focusedKey?: string | null;
   lang?: BulkShareLang;
+  query?: string;
+  cartQtyByKey?: Map<string, number>;
 };
 
-export function BulkShareSgfStrains({ strains, onAddStrain, focusedKey, lang = "th" }: Props) {
-  const groups = sgfStrainsGrouped(strains);
+export function BulkShareSgfStrains({
+  strains,
+  onAddStrain,
+  focusedKey,
+  lang = "th",
+  query = "",
+  cartQtyByKey,
+}: Props) {
+  const groups = sgfStrainsGrouped(strains)
+    .map((g) => ({
+      ...g,
+      strains: g.strains.filter((s) => strainMatchesQuery(s.strainName, query)),
+    }))
+    .filter((g) => g.strains.length > 0);
   const t = BULK_SHARE_COPY[lang];
+
+  if (groups.length === 0) return null;
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -34,9 +51,10 @@ export function BulkShareSgfStrains({ strains, onAddStrain, focusedKey, lang = "
             <ul className="mt-2 columns-1 gap-x-6 text-sm sm:columns-2">
               {group.strains.map((s) => {
                 const category = group.bucket;
-                const lockedQty = category === "photo-ff" ? 1000 : undefined;
-                const key = `green-future|${s.strainName.trim().toLowerCase()}`;
+                const lockedQty = category === "photo-ff" ? BULK_SHARE_PHOTO_FF_QTY : undefined;
+                const key = cartLineKey("green-future", s.strainName);
                 const active = focusedKey === key;
+                const qty = cartQtyByKey?.get(key);
                 return (
                   <li key={s.id} className="mb-1 break-inside-avoid">
                     <button
@@ -55,7 +73,9 @@ export function BulkShareSgfStrains({ strains, onAddStrain, focusedKey, lang = "
                       }`}
                     >
                       {s.strainName}
-                      {lockedQty ? <span className="text-slate-400"> · 1,000</span> : null}
+                      {qty ? (
+                        <span className="text-emerald-700"> · {qty.toLocaleString()}</span>
+                      ) : null}
                     </button>
                   </li>
                 );

@@ -89,6 +89,11 @@ export function BulkShareLeadsPanel() {
                   </button>
                   {open ? (
                     <div className="mt-3 space-y-2 border-t border-slate-200 pt-3 text-sm">
+                      {lead.email ? (
+                        <p>
+                          <span className="text-slate-500">Email:</span> {lead.email}
+                        </p>
+                      ) : null}
                       {lead.lineId ? (
                         <p>
                           <span className="text-slate-500">LINE:</span> {lead.lineId}

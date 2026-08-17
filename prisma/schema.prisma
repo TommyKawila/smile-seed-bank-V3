@@ -919,6 +919,7 @@ model bulk_share_leads {
   id           BigInt                    @id @default(autoincrement())
   ref_number   String                    @unique @db.VarChar(48)
   contact_name String                    @db.VarChar(200)
+  email        String                    @default("") @db.VarChar(320)
   line_id      String                    @default("") @db.VarChar(120)
   phone        String                    @default("") @db.VarChar(32)
   note         String?

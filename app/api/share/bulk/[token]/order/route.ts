@@ -17,6 +17,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   let body: {
     contactName?: string;
+    email?: string;
     lineId?: string;
     phone?: string;
     note?: string;
@@ -35,8 +36,12 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   const lineId = (body.lineId ?? "").trim();
   const phone = (body.phone ?? "").trim();
-  if (!lineId && !phone) {
-    return NextResponse.json({ error: "LINE ID or phone required" }, { status: 400 });
+  const email = (body.email ?? "").trim().toLowerCase();
+  if (!lineId && !phone && !email) {
+    return NextResponse.json({ error: "LINE ID, phone, or email required" }, { status: 400 });
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
   const items = Array.isArray(body.items) ? body.items : [];
@@ -48,6 +53,7 @@ export async function POST(req: NextRequest, { params }: Props) {
   try {
     const lead = await createBulkShareLead({
       contactName,
+      email,
       lineId,
       phone,
       note: body.note,
