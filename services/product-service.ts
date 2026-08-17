@@ -47,7 +47,6 @@ import {
   parseListParam,
   productMatchesSeedsPackFilter,
   productMatchesShopAttributeFilters,
-  seedsSlugsFullyDbMappable,
   sexOrFilterExpression,
   sexSlugsFullyDbMappable,
   thcOrFilterExpression,
@@ -756,7 +755,6 @@ export async function getActiveProducts(opts?: {
     const ftOriginal = opts?.catalog_ft?.trim() ?? "";
     const catalogFtKey = normalizeCatalogFtUrlParam(ftOriginal);
     const memoryFtPassNeeded = ftOriginal ? catalogFtRequiresMemoryPass(ftOriginal) : false;
-    const seedsSqlOk = seedsSel.length === 0 || seedsSlugsFullyDbMappable(seedsSel);
     const yieldSqlHigh = yieldQuickIsSqlHighFilter(yieldQuickParam);
     const cursorId =
       opts?.cursor_id != null && Number.isFinite(Number(opts.cursor_id))
@@ -844,7 +842,7 @@ export async function getActiveProducts(opts?: {
       if (yieldSqlHigh) {
         qb = qb.or(yieldHighOrFilterExpression());
       }
-      /** Pack size: filter via `product_variants` in memory (`pack_buckets` may be un-backfilled). */
+      /** Pack size: scanned in memory (`catalogFiltersRequireMemoryScan`) — do not SQL-paginate first. */
 
       /** DB-level ft; plain `photo` still needs memory pass for FF category split. */
       switch (catalogFtKey) {
@@ -956,8 +954,9 @@ export async function getActiveProducts(opts?: {
         return qb.order("id", { ascending: false });
       }
       if (sortKey === "smart_deal") {
+        // Pack filter must see OOS rows too — sidebar counts every product with that pack.
+        if (seedsSel.length === 0) qb = qb.gt("stock", 0);
         return qb
-          .gt("stock", 0)
           .order("price", { ascending: true, nullsFirst: false })
           .order("stock", { ascending: true, nullsFirst: false })
           .order("id", { ascending: false });

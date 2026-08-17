@@ -124,7 +124,8 @@ export function catalogFiltersRequireMemoryScan(p: CatalogAttributeFilterParams)
     (p.cbd.length > 0 && !cbdSlugsFullyDbMappable(p.cbd)) ||
     (p.sex.length > 0 && !sexSlugsFullyDbMappable(p.sex)) ||
     yieldNeedsMemory ||
-    (p.seeds.length > 0 && !seedsSlugsFullyDbMappable(p.seeds))
+    // Pack size lives on variants. `pack_buckets` is not kept in sync — never paginate then filter.
+    p.seeds.length > 0
   );
 }
 

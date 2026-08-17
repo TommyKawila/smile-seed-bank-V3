@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Shop seeds= pack filter — scan before paginate)
+- **What:** `/seeds/copycat-genetix?seeds=10` นับ 24 แต่กริดโชว์แค่หน้าแรกที่กรองแล้ว
+- **Logic:** `seeds` บังคับ memory scan ทั้งสโคปก่อนตัดหน้า · ไม่ paginate แล้วค่อยกรองแพ็ก
+- **ไฟล์:** `lib/shop-attribute-filters.ts` · `services/product-service.ts`
+
+### บันทึกการทำงาน — 2026-08-17 (Seeds Genetics — กวาดลิสต์สายพันธุ์จากเว็บ)
+- **What:** กวาด 96 สายจาก seedsgenetics.com (7 หมวดเมล็ด) → JSON snapshot · แสดงแยกหมวดใน `/admin/bulk-seeds` + ลิงก์ exclusive
+- **Logic:** WooCommerce Store API · primary category CBD→Supreme→Cali→Fem/Auto · `npm run fetch:seeds-genetics` อัปเดต snapshot
+- **ไฟล์:** `scripts/fetch-seeds-genetics-catalog.ts` · `data/partners/seeds-genetics/catalog.json` · `lib/seeds-genetics-catalog.ts` · `SgStrainCatalogPanel.tsx`
+
 ### บันทึกการทำงาน — 2026-08-17 (Bulk seeds — แสดงราคา THB คู่ EUR)
 - **What:** ตาราง admin + ลิงก์ลูกค้าโชว์บาทเป็นหลัก มียูโรรอง · เรทเว็บสาธารณะแปลงตาม FX
 - **ไฟล์:** `lib/bulk-seeds-book.ts` · `BulkSeedsBookClient.tsx` · `app/share/bulk/[token]`
