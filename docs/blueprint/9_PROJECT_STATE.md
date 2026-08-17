@@ -4,6 +4,27 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Bulk seeds — แสดงราคา THB คู่ EUR)
+- **What:** ตาราง admin + ลิงก์ลูกค้าโชว์บาทเป็นหลัก มียูโรรอง · เรทเว็บสาธารณะแปลงตาม FX
+- **ไฟล์:** `lib/bulk-seeds-book.ts` · `BulkSeedsBookClient.tsx` · `app/share/bulk/[token]`
+
+### บันทึกการทำงาน — 2026-08-17 (Seeds Genetics — public stairs vs owner €1)
+- **What:** บันทึกเรทเว็บสาธารณะ €2.50 / €2.25 / €2.00 · ดีล SSB €1 จาก 250 เมล็ด · ขั้นใหญ่กว่ายังอิง €1 จนกว่าจะได้เรทใหม่
+- **Logic:** ตัดขั้น 100 · MOQ 250 · คอลัมน์เทียบเว็บใน admin เท่านั้น
+- **ไฟล์:** `lib/bulk-seeds-book.ts` · `lib/bulk-seeds-trade.ts` · `BulkSeedsBookClient.tsx`
+
+### บันทึกการทำงาน — 2026-08-17 (Seeds Genetics NL — live €1 + lot freight + seizure buffer)
+- **What:** Seeds Genetics เมล็ดละ €1 · ค่าส่ง ~1,000 บาท/ล็อต หารตามขั้น · Photo / Auto / Photo FF · ลิสต์สายพันธุ์รอไฟล์
+- **Logic:** เลน `hand_carry` — landed = (€1×FX + 1,000/qty) × (1 + 21.5%) รวมกันยึด 15% · ไม่โชว์ต้นทุน/ความเสี่ยงบนลิงก์ลูกค้า
+- **ไฟล์:** `lib/bulk-seeds-trade.ts` · `lib/bulk-seeds-book.ts` · `BulkSeedsBookClient.tsx` · `app/share/bulk/[token]`
+
+### บันทึกการทำงาน — 2026-08-17 (Bulk seeds cost book + exclusive share)
+- **What:** หน้า Admin เก็บต้นทุน 2 เจ้า (Green Future TH · Seeds Genetics NL) คำนวณ landed + ขาย B2B ตาม GM ขั้นบันได · ลิงก์ exclusive ถึงลูกค้า (ไม่โชว์ต้นทุน)
+- **Logic:** Incoterms 2020 landed adders · `sell = landed / (1 − GM)` · HMAC share token · SG ราคา EUR ยัง draft
+- **ไฟล์:** `lib/bulk-seeds-trade.ts` · `lib/bulk-seeds-book.ts` · `lib/bulk-share-token.ts` · `app/admin/bulk-seeds` · `app/share/bulk/[token]`
+
+---
+
 ### บันทึกการทำงาน — 2026-08-17 (Catalog filters — minimal emerald-on-select)
 - **What:** ตัวกรองทุกหน้า/ทุกแพลตฟอร์ม มินิมอล — เทาตอนว่าง · เขียว primary เฉพาะตอนเลือก
 - **Logic:** `shop-filter-chip-styles` เป็น token ร่วม · ตัดสีม่วง/ส้ม/อีโมจิ idle · sheet header ไม่ไล่สี
