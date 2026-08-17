@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Loader2, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Copy, FileText, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { formatBulkShareLeadCopyText } from "@/lib/bulk-share-lead-copy";
+import { stashBulkShareLeadForB2B } from "@/lib/bulk-share-lead-to-b2b";
 import type { BulkShareLeadRecord } from "@/types/bulk-share-lead";
 
 function fmtThb(n: number): string {
@@ -13,6 +15,7 @@ function fmtThb(n: number): string {
 }
 
 export function BulkShareLeadsPanel() {
+  const router = useRouter();
   const { toast } = useToast();
   const [leads, setLeads] = useState<BulkShareLeadRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +50,11 @@ export function BulkShareLeadsPanel() {
     setCopiedId(lead.id);
     toast({ title: "คัดลอกแล้ว", description: lead.refNumber });
     setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  function openB2BQuote(lead: BulkShareLeadRecord) {
+    stashBulkShareLeadForB2B(lead);
+    router.push("/admin/documents/b2b-quote?fromBulkLead=1");
   }
 
   return (
@@ -118,14 +126,25 @@ export function BulkShareLeadsPanel() {
                           </li>
                         ))}
                       </ul>
-                      <Button type="button" size="sm" variant="secondary" onClick={() => void copyLead(lead)}>
-                        {copiedId === lead.id ? (
-                          <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-700" />
-                        ) : (
-                          <Copy className="mr-1.5 h-3.5 w-3.5" />
-                        )}
-                        คัดลอกเป็นข้อความใบเสนอราคา
-                      </Button>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Button type="button" size="sm" variant="secondary" onClick={() => void copyLead(lead)}>
+                          {copiedId === lead.id ? (
+                            <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-700" />
+                          ) : (
+                            <Copy className="mr-1.5 h-3.5 w-3.5" />
+                          )}
+                          คัดลอกเป็นข้อความใบเสนอราคา
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-[#12463e] hover:bg-[#0f3a34]"
+                          onClick={() => openB2BQuote(lead)}
+                        >
+                          <FileText className="mr-1.5 h-3.5 w-3.5" />
+                          สร้างใบเสนอราคา B2B
+                        </Button>
+                      </div>
                     </div>
                   ) : null}
                 </li>

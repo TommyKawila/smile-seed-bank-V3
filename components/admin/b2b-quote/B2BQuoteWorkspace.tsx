@@ -1,12 +1,16 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FileDown, Loader2, Mail, Save, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useB2BQuoteDrafts } from "@/hooks/useB2BQuoteDrafts";
 import { useB2BQuoteDispatch } from "@/hooks/useB2BQuoteDispatch";
 import { exportB2BQuotePdf } from "@/lib/b2b-quote-pdf.client";
+import {
+  bulkShareLeadToB2BDraft,
+  consumeBulkShareLeadForB2B,
+} from "@/lib/bulk-share-lead-to-b2b";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,6 +20,7 @@ import {
   type B2BQuoteRecord,
 } from "@/types/b2b-quote";
 import { B2BQuoteForm } from "./B2BQuoteForm";
+import { B2BQuotePastePanel } from "./B2BQuotePastePanel";
 import { ProFormaInvoiceTemplate } from "./ProFormaInvoiceTemplate";
 
 function initialDraft(): B2BQuoteDraft {
@@ -44,6 +49,23 @@ export function B2BQuoteWorkspace() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [quoteNumber, setQuoteNumber] = useState("SSB-B2B-DRAFT");
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get("fromBulkLead")) return;
+    const lead = consumeBulkShareLeadForB2B();
+    if (!lead) return;
+    const prefill = bulkShareLeadToB2BDraft(lead);
+    setActiveId(null);
+    setQuoteNumber("SSB-B2B-DRAFT");
+    setDraft(prefill.items.length ? prefill : { ...prefill, items: [emptyB2BLineItem()] });
+    toast({
+      title: "โหลดจากคำสั่งลิงก์",
+      description: lead.refNumber,
+    });
+    window.history.replaceState({}, "", "/admin/documents/b2b-quote");
+  }, [toast]);
 
   const logoUrl = settings.logo_main_url ?? settings.logo_secondary_png_url ?? null;
   const company = useMemo(
@@ -144,6 +166,19 @@ export function B2BQuoteWorkspace() {
     }
   }, [draft, activeId, quoteNumber, sendEmail, refresh, toast]);
 
+  const handlePasteApply = useCallback(
+    (prefill: B2BQuoteDraft) => {
+      setActiveId(null);
+      setQuoteNumber("SSB-B2B-DRAFT");
+      setDraft(prefill.items.length ? prefill : { ...prefill, items: [emptyB2BLineItem()] });
+      toast({
+        title: "นำข้อความเข้าใบเสนอราคาแล้ว",
+        description: `${prefill.items.length} บรรทัด · ${prefill.clientName || "—"}`,
+      });
+    },
+    [toast]
+  );
+
   const handlePdf = useCallback(() => {
     setExporting(true);
     try {
@@ -166,6 +201,7 @@ export function B2BQuoteWorkspace() {
   return (
     <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
       <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+        <B2BQuotePastePanel onApply={handlePasteApply} />
         <B2BQuoteForm draft={draft} onChange={setDraft} />
 
         <Card className="border-slate-200/80 shadow-sm">

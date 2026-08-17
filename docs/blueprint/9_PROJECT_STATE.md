@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (B2B quote — paste จาก lead)
+- **What:** `/admin/documents/b2b-quote` วางข้อความ SSB-BL จาก bulk-seeds → ใส่ลูกค้า + บรรทัด + ราคา EUR อัตโนมัติ
+- **Logic:** `parseBulkLeadPaste()` · `B2BQuotePastePanel` · admin ตรวจแล้ว Save/PDF/email
+- **ไฟล์:** `lib/b2b-quote-paste.ts` · `B2BQuotePastePanel.tsx` · `B2BQuoteWorkspace.tsx`
+
 ### บันทึกการทำงาน — 2026-08-17 (Bulk share — สลับภาษา TH/EN)
 - **What:** ลิงก์ exclusive มีปุ่ม ไทย / EN · ข้อความ UI + Supreme dialog ตามภาษา · จำใน localStorage
 - **ไฟล์:** `lib/bulk-share-i18n.ts` · `BulkShareOrderClient.tsx` · strain/Supreme components
