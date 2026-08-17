@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Clearance drill-down Show/Hide filters)
+- **What:** `/clearance?breeder=&pct=` มีปุ่มแสดง/ซ่อนตัวกรองเหมือน Shop (เดสก์ท็อป sidebar + มือถือ sheet ราคา/ตัวกรอง)
+- **Logic:** กรองในหน่วยความจำจากสินค้าที่โหลดแล้ว · คง `breeder`/`pct` · แพ็กนับจากแพ็ก clearance
+- **ไฟล์:** `ClearanceDrillDownCatalog.tsx` · `ClearanceLandingClient.tsx` · `product-service.ts`
+
+---
+
 ---
 
 ---

@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
 import { fetchWithTimeout } from "@/lib/timeout";
 import { ClearanceBreederBoxCard } from "@/components/storefront/ClearanceBreederBoxCard";
-import { ClearanceCard } from "@/components/storefront/ClearanceCard";
+import { ClearanceDrillDownCatalog } from "@/components/storefront/ClearanceDrillDownCatalog";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { StorefrontClearanceBreederBox } from "@/lib/clearance";
@@ -98,14 +98,9 @@ export function ClearanceLandingClient({
   }, [drillDown, boxes.length]);
 
   useEffect(() => {
-    if (!breederSlug) {
-      saveCatalogReturnPath("/clearance");
-      return;
-    }
-    const qs = new URLSearchParams({ breeder: breederSlug });
-    if (discountPercent != null) qs.set("pct", String(discountPercent));
-    saveCatalogReturnPath(`/clearance?${qs.toString()}`);
-  }, [breederSlug, discountPercent]);
+    if (drillDown) return;
+    saveCatalogReturnPath("/clearance");
+  }, [drillDown]);
 
   return (
     <div className={`min-h-[60vh] bg-background text-foreground ${JOURNAL_PRODUCT_FONT_VARS}`}>
@@ -188,11 +183,20 @@ export function ClearanceLandingClient({
               {t("ไม่พบสินค้า Clearance ของค่ายนี้", "No clearance products for this breeder")}
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {products.map((p) => (
-                <ClearanceCard key={p.id} product={p} />
-              ))}
-            </div>
+            <Suspense
+              fallback={
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {products.map((p) => (
+                    <div
+                      key={p.id}
+                      className="aspect-[3/4] animate-pulse rounded-2xl bg-zinc-900"
+                    />
+                  ))}
+                </div>
+              }
+            >
+              <ClearanceDrillDownCatalog products={products} />
+            </Suspense>
           )
         ) : loadingBoxes ? (
           <div className="grid auto-rows-[minmax(10rem,auto)] grid-cols-2 gap-3 md:grid-cols-4">

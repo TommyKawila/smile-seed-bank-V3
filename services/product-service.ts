@@ -148,6 +148,18 @@ const STOREFRONT_HOME_FEATURED_PRODUCT_SELECT = {
   yield_info: true,
 } satisfies Prisma.productsSelect;
 
+const STOREFRONT_CLEARANCE_DRILL_PRODUCT_SELECT = {
+  ...STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+  cbd_percent: true,
+  yield_info: true,
+  genetics: true,
+  flowering_type: true,
+  category: true,
+  seed_type: true,
+  growing_difficulty: true,
+  product_categories: { select: { id: true, name: true } },
+} satisfies Prisma.productsSelect;
+
 /** Non–price sale: scan DB until exhausted or cap; do not narrow by `breeder_id` — promo matching is JS-only. */
 const SALE_SCAN_CHUNK = 800;
 const SALE_SCAN_MAX_ROUNDS = 600;
@@ -1677,7 +1689,7 @@ export async function getClearanceStorefrontProductsByBreederSlug(
       },
       orderBy: [{ id: "desc" }],
       take: fetchTake,
-      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+      select: STOREFRONT_CLEARANCE_DRILL_PRODUCT_SELECT,
     });
     let mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
     if (pctFilter != null) {
