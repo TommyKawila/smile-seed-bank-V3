@@ -160,6 +160,7 @@ export function recommendedLandedPct(lane: TradeLane, incoterm: string): number 
 
 /** Volume GM: keep margin at high qty — pass some, not all, of supplier discount. */
 export const GM_BY_QTY: { minQty: number; gmPct: number; labelTh: string; labelEn: string }[] = [
+  { minQty: 50, gmPct: 40, labelTh: "Starter", labelEn: "Starter" },
   { minQty: 250, gmPct: 35, labelTh: "MOQ (ดีลตรง)", labelEn: "MOQ (direct deal)" },
   { minQty: 500, gmPct: 35, labelTh: "MOQ+", labelEn: "MOQ+" },
   { minQty: 1000, gmPct: 30, labelTh: "ออเดอร์มาตรฐาน", labelEn: "Standard order" },

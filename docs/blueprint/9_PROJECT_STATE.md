@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Bulk share — SGF tagline + Starter 50)
+- **What:** SGF Seeds = Smile Seed Bank × Green Future Thailand · ขั้น Starter 50–249 ราคาสูงกว่า MOQ 250 · ไม่โชว์ Test Order
+- **Logic:** Starter ต้นทุน €1.15 (ssb_test_order) · GM 40% · MOQ 250+ ยังอิงเรท GF 500+
+- **ไฟล์:** `lib/sgf-seeds-share.ts` · `lib/bulk-seeds-trade.ts` · `app/share/bulk/[token]/page.tsx`
+
+### บันทึกการทำงาน — 2026-08-17 (Bulk share — SGF Seeds ฝั่งลูกค้า)
+- **What:** ลิงก์ exclusive แสดง Green Future เป็น **SGF Seeds** · ราคาขั้น MOQ 250 เหมือน SG · สายแยก Auto / Photo / Photo FF
+- **Logic:** `priceSgfShareTiers()` อิงต้นทุน GF · MOQ 250 ใช้เรท 500 · จัดกลุ่มจากรหัส AF/PF
+- **ไฟล์:** `lib/sgf-seeds-share.ts` · `BulkShareSgfStrains.tsx` · `app/share/bulk/[token]/page.tsx`
+
 ### บันทึกการทำงาน — 2026-08-17 (Bulk share — ปุ่มอธิบาย Supreme SG)
 - **What:** ลิงก์ exclusive มีปุ่มอธิบาย Supreme (overview + feminized + autoflower) กำกับหมวด SG
 - **Logic:** copy จากเว็บ Seeds Genetics · Dialog EN + สรุป TH · ไม่โชว์ต้นทุน
