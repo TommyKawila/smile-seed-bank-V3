@@ -28,6 +28,7 @@ import {
 import { ADDERS_BY_LANE, GM_BY_QTY } from "@/lib/bulk-seeds-trade";
 import { GfStrainCatalogPanel } from "@/components/admin/bulk-seeds/GfStrainCatalogPanel";
 import { SgStrainCatalogPanel } from "@/components/admin/bulk-seeds/SgStrainCatalogPanel";
+import { BulkShareLeadsPanel } from "@/components/admin/bulk-seeds/BulkShareLeadsPanel";
 
 function fmt(n: number, digits = 2): string {
   if (!Number.isFinite(n) || n <= 0) return "—";
@@ -337,6 +338,8 @@ export function BulkSeedsBookClient() {
           <SgStrainCatalogPanel />
         </CardContent>
       </Card>
+
+      <BulkShareLeadsPanel />
 
       <Card className="border-slate-200 shadow-sm">
         <CardHeader className="pb-3">

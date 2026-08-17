@@ -138,19 +138,59 @@ const SG_STARTER_TIER: BulkCostTier = {
   code: "sg_share_50",
   minQty: 50,
   label: "Starter",
-  qtyDescription: "50–249 seeds / strain",
+  qtyDescription: "50–100 seeds / strain",
   costEur: 1,
   costThb: 0,
   draft: false,
 };
 
-/** Customer share stairs — includes Starter before MOQ 250. */
-export const SG_SHARE_TIER_STEPS: BulkCostTier[] = [SG_STARTER_TIER, ...SEEDS_GENETICS_TIERS];
+const SG_SHARE_MID_TIER: BulkCostTier = {
+  code: "sg_share_101",
+  minQty: 101,
+  label: "101–250",
+  qtyDescription: "101–250 seeds / strain",
+  costEur: 1,
+  costThb: 0,
+  draft: false,
+};
 
-/** Starter uses 51–100 public stair (+ premium) — higher than MOQ 250 floor. */
+const SG_SHARE_VOLUME_TIER: BulkCostTier = {
+  code: "sg_share_251",
+  minQty: 251,
+  label: "251–500",
+  qtyDescription: "251–500 seeds / strain",
+  costEur: 1,
+  costThb: 0,
+  draft: false,
+};
+
+/** Customer share stairs — short ladder aligned with public SG bulk (max 251–500). */
+export const SG_SHARE_TIER_STEPS: BulkCostTier[] = [
+  SG_STARTER_TIER,
+  SG_SHARE_MID_TIER,
+  SG_SHARE_VOLUME_TIER,
+];
+
+/** Floor by share tier minQty — mirrors seedsgenetics.co stairs + €0.25. */
 export function sgShareFloorEur(minQty: number): number | null {
-  if (minQty < 250) return customerSellEurFloor(100);
-  return customerSellEurFloor(minQty);
+  if (minQty <= 100) return customerSellEurFloor(100);
+  if (minQty <= 250) return customerSellEurFloor(101);
+  return customerSellEurFloor(251);
+}
+
+/**
+ * Customer share list (EUR/seed) — Starter ฿119 (@ ~38.44) then steps down to 251–500.
+ * Applied as max(GM sell, floor, list). Qty above 500 uses the 251–500 rate.
+ */
+export const SG_SHARE_LIST_EUR: { minQty: number; sellEur: number }[] = [
+  { minQty: 50, sellEur: 3.1 },
+  { minQty: 101, sellEur: 2.5 },
+  { minQty: 251, sellEur: 2.25 },
+];
+
+export function sgShareListEur(minQty: number): number | null {
+  const hit = SG_SHARE_LIST_EUR.find((r) => r.minQty === minQty);
+  return hit?.sellEur ?? null;
 }
 
 export const SEEDS_GENETICS_LOT_FREIGHT_THB = 1000;
@@ -212,7 +252,9 @@ function priceSgTier(opts: {
     opts.gmOverride != null && Number.isFinite(opts.gmOverride)
       ? opts.gmOverride
       : gmForMinQty(opts.tier.minQty);
-  const publicEur = publicEurAtQty(opts.tier.minQty < 250 ? 100 : opts.tier.minQty);
+  const publicEur = publicEurAtQty(
+    opts.tier.minQty <= 100 ? 100 : opts.tier.minQty <= 250 ? 101 : 251
+  );
   let sell = sellFromGrossMargin(landed, gm);
   let sellEur = opts.fx > 0 ? sell / opts.fx : 0;
   const floorEur = sgShareFloorEur(opts.tier.minQty);
@@ -243,9 +285,26 @@ export function priceSgShareTiers(opts: {
   gmOverride?: number | null;
 }): BulkPricedTier[] {
   const fx = opts.eurThb > 0 ? opts.eurThb : DEFAULT_EUR_THB;
-  return SG_SHARE_TIER_STEPS.map((tier) =>
-    priceSgTier({ book: opts.book, tier, fx, landedPct: opts.landedPct, gmOverride: opts.gmOverride })
-  );
+  return SG_SHARE_TIER_STEPS.map((tier) => {
+    const row = priceSgTier({
+      book: opts.book,
+      tier,
+      fx,
+      landedPct: opts.landedPct,
+      gmOverride: opts.gmOverride,
+    });
+    const listEur = sgShareListEur(tier.minQty);
+    if (listEur == null || row.sellEur >= listEur) return row;
+    const sellEur = listEur;
+    const sell = Math.ceil(sellEur * fx);
+    return {
+      ...row,
+      sellThb: sell,
+      sellEur,
+      gmPct: grossMarginPct(sell, row.landedThb),
+      markupPct: markupOnCostPct(sell, row.landedThb),
+    };
+  });
 }
 
 export function priceSupplierBook(opts: {

@@ -4,6 +4,21 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Bulk share — SG ขั้นสั้น 50–500)
+- **What:** Seeds Genetics บนลิงก์เหลือ 3 ขั้น · Starter 50–100 = ฿119 · สูงสุดที่ 251–500
+- **Logic:** €3.10 / €2.50 / €2.25 · อิงเว็บ SG · qty >500 ใช้เรท 251–500 · admin book ยังมีขั้นยาว
+- **ไฟล์:** `lib/bulk-seeds-book.ts`
+
+### บันทึกการทำงาน — 2026-08-17 (Bulk share — SG ขั้นบันไดเหนือ floor)
+- **What:** Seeds Genetics บนลิงก์ exclusive ไม่แบนแบน €2.25 หลายขั้น — มีลิสต์ลดตามวอลุ่ม
+- **Logic:** `SG_SHARE_LIST_EUR` · ขาย = max(GM, เว็บ+€0.25, list) · ไม่ต่ำกว่า floor เดิม
+- **ไฟล์:** `lib/bulk-seeds-book.ts`
+
+### บันทึกการทำงาน — 2026-08-17 (Bulk share — สั่งจากลิงก์ lead)
+- **What:** ลิงก์ exclusive กดเลือกสาย + จำนวน → ส่งเป็น lead (SSB-BL-YYYY-NNN) · admin ดูใน `/admin/bulk-seeds`
+- **Logic:** ราคาคำนวณฝั่งเซิร์ฟเวอร์จาก token · Photo FF ล็อก 1,000 · ขั้นต่ำ 50/สาย · ไม่สร้าง b2b_quotes
+- **ไฟล์:** `bulk_share_leads` schema · `BulkShareOrderClient.tsx` · `POST /api/share/bulk/[token]/order` · `BulkShareLeadsPanel.tsx`
+
 ### บันทึกการทำงาน — 2026-08-17 (Bulk share — SG Starter 50–249)
 - **What:** Seeds Genetics บนลิงก์ลูกค้ามีขั้น Starter 50–249 เหมือน SGF · ราคาสูงกว่า MOQ 250
 - **Logic:** ค่าส่งหาร 50 · GM 40% · floor เว็บ 51–100 + €0.25 (€2.75) · `priceSgShareTiers()`
