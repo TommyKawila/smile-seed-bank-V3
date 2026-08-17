@@ -4,9 +4,9 @@ import { GacpLandingClient } from "@/components/storefront/wholesale/gacp/GacpLa
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "GACP Seeds for Licensed Farms | Smile Seed Bank",
+  title: "Controlled seeds & lot documents for licensed farms | Smile Seed Bank",
   description:
-    "GACP-compliant cannabis seeds for licensed cultivators and export-grade farms in Thailand. Traceable genetics, COA, and phytosanitary documentation.",
+    "Controlled cannabis seeds for licensed Thai farms, with lot traceability documents that support the customer’s GACP file. Not a GACP certificate or DTAM document. External lab tests billed separately.",
   alternates: { canonical: "/wholesale/gacp" },
 };
 

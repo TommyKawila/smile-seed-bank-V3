@@ -19,7 +19,7 @@ export const GACP_FEATURED_STRAINS: GacpFeaturedStrain[] = [
     typeLabel: "Balanced Hybrid",
     thcRange: "24–28%",
     cbdNote: "Low",
-    documents: ["COA", "Terpene Profile", "Heavy Metals", "Phytosanitary"],
+    documents: ["Variety code", "Lot / test data", "Lab extras on request"],
   },
   {
     varietyCode: "PF024",
@@ -29,7 +29,7 @@ export const GACP_FEATURED_STRAINS: GacpFeaturedStrain[] = [
     typeLabel: "Hybrid",
     thcRange: "26–30%",
     cbdNote: "Low",
-    documents: ["COA", "Terpene Profile", "Pesticides", "Phytosanitary"],
+    documents: ["Variety code", "Lot / test data", "Lab extras on request"],
   },
   {
     varietyCode: "AF121",
@@ -39,7 +39,7 @@ export const GACP_FEATURED_STRAINS: GacpFeaturedStrain[] = [
     typeLabel: "Balanced Hybrid",
     thcRange: "23–26%",
     cbdNote: "<1%",
-    documents: ["COA", "Terpene Profile", "Mycotoxins", "Phytosanitary"],
+    documents: ["Variety code", "Lot / test data", "Lab extras on request"],
   },
   {
     varietyCode: "AF138",
@@ -49,7 +49,7 @@ export const GACP_FEATURED_STRAINS: GacpFeaturedStrain[] = [
     typeLabel: "Indica-dominant",
     thcRange: "24–25%",
     cbdNote: "Low",
-    documents: ["COA", "Terpene Profile", "Heavy Metals", "Phytosanitary"],
+    documents: ["Variety code", "Lot / test data", "Lab extras on request"],
   },
 ];
 

@@ -60,8 +60,8 @@ export function WholesaleHero({ onRequestCatalog }: Props) {
             className="font-medium text-emerald-700 underline-offset-4 hover:underline"
           >
             {t(
-              "เอกสาร GACP สำหรับฟาร์มใบอนุญาต →",
-              "GACP documentation for licensed farms →"
+              "เอกสารล็อตสำหรับฟาร์มใบอนุญาต →",
+              "Lot documents for licensed farms →"
             )}
           </Link>
         </p>

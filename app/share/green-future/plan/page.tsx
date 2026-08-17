@@ -2,9 +2,9 @@ import { Suspense } from "react";
 import { CollaborationPlanView } from "@/components/partners/CollaborationPlanDocument";
 
 export const metadata = {
-  title: "Collaboration Plan · Green Future × Smile Seed Bank",
+  title: "Collaboration Plan · Green Future × T.M.Y Agro Trade (Smile Seed Bank)",
   description:
-    "GACP seed collaboration plan between Green Future and Smile Seed Bank / แผนงานความร่วมมือผลิตและจัดจำหน่ายเมล็ดพันธุ์กัญชามาตรฐาน GACP",
+    "Draft cooperation plan for controlled cannabis seed production and distribution under DOA rules, with supporting lot documents for licensed farms. Not a GACP certificate.",
 };
 
 export default function ShareGreenFuturePlanPage() {

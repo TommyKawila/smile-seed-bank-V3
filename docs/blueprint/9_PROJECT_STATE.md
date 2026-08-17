@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (GF 2026-0815 — จัด copy GACP / แผนร่วม)
+- **What:** ตัดข้อความว่าเมล็ดเป็น GACP · PDF เป็นเอกสารสนับสนุน · คู่สัญญาฝั่งเรา = หจก. TMY trading as Smile Seed Bank · lineage เหลือ lot identity · ISTA/COA นอกคิดแยก · Traceability Pack = planned
+- **Logic:** ถ้อยคำตาม GF/SSB/2026-0815 · ไม่สร้าง generator
+- **ไฟล์:** `GacpHero.tsx` · `GacpTrustGrid.tsx` · `GacpFeaturedStrains.tsx` · `/wholesale/gacp` metadata · `green-future-collaboration-plan.ts` · `CollaborationPlanDocument.tsx` · `green-future-gacp-strategy.ts`
+
 ### บันทึกการทำงาน — 2026-08-17 (B2B quote — qty×50 + bulk book price)
 - **What:** Manual line items ล็อก qty ทีละ 50 · unit อ่านอย่างเดียวจาก Bulk seeds book (SGF/SG share ladder)
 - **Logic:** `lib/b2b-quote-bulk-price.ts` · `applyBulkBookPrice` · breeder ปุ่ม SGF / Seeds Genetics

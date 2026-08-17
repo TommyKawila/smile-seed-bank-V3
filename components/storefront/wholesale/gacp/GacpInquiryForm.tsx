@@ -62,8 +62,8 @@ export function GacpInquiryForm() {
       toast({
         title: t("ส่งคำขอแล้ว", "Inquiry sent"),
         description: t(
-          "ทีม GACP จะติดต่อกลับพร้อมแพ็กเกจเอกสาร",
-          "Our GACP team will follow up with a document package."
+          "ทีมจะติดต่อกลับเรื่องแคตตาล็อกและเอกสารล็อต",
+          "Our team will follow up on catalog and lot documents."
         ),
       });
     } catch (err) {
@@ -82,7 +82,7 @@ export function GacpInquiryForm() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            {t("ขอแคตตาล็อกและปรึกษา GACP", "Request Catalog & GACP Consult")}
+            {t("ขอแคตตาล็อกและชุดเอกสารล็อต", "Request catalog & lot documents")}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
             {t(

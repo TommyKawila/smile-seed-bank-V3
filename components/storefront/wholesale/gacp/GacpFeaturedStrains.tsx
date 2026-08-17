@@ -14,12 +14,12 @@ export function GacpFeaturedStrains() {
     <section className="border-b border-slate-200 bg-slate-50/50 py-14 sm:py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-          {t("สายพันธุ์พร้อมเอกสารตัวอย่าง", "Featured Document-Ready Strains")}
+          {t("สายพันธุ์ตัวอย่าง — เอกสารตามล็อตที่ยืนยัน", "Sample strains — documents follow the confirmed lot")}
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
           {t(
-            "ตัวอย่างสายพันธุ์สำหรับการจัดชุดเอกสาร GACP — อ้างอิงด้วยรหัสพันธุ์เป็นหลักตามแนวทางพาร์ทเนอร์",
-            "Sample genetics for GACP document packages — use variety code as the primary reference per partner guidelines."
+            "ตัวอย่างสายพันธุ์ อ้างอิงด้วยรหัสพันธุ์เป็นหลัก ชุดเอกสารจริงขึ้นกับล็อตที่ผู้ผลิตยืนยัน ไม่การันตีว่าทุกรายการด้านล่างมีพร้อมขาย",
+            "Sample genetics referenced by variety code. The actual document pack depends on the producer-confirmed lot and is not guaranteed for every listed item."
           )}
         </p>
         <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -29,7 +29,7 @@ export function GacpFeaturedStrains() {
               <li key={strain.varietyCode}>
                 <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-md">
                   <span className="inline-flex w-fit items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                    {t("พร้อมชุดเอกสาร GACP", "GACP Document Ready")}
+                    {t("เอกสารตามล็อต", "Per-lot documents")}
                   </span>
                   <h3 className="mt-3 text-base font-semibold text-slate-900">
                     {strain.displayName}
@@ -57,7 +57,7 @@ export function GacpFeaturedStrains() {
                   </dl>
                   <div className="mt-4 border-t border-slate-100 pt-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      {t("เอกสารที่มี", "Available Documents")}
+                      {t("เอกสารที่ขอได้ (ไม่แถมทุกชุด)", "Available on request (not bundled)")}
                     </p>
                     <ul className="mt-2 space-y-1.5">
                       {strain.documents.map((doc) => (

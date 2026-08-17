@@ -25,10 +25,10 @@ export type GacpDocumentRow = {
 export const GACP_DOCUMENT_MATRIX: GacpDocumentRow[] = [
   {
     id: "coa_a",
-    labelTh: "COA Purity + Germination (Package A)",
-    labelEn: "COA Purity + Germination (Package A)",
-    domestic: true,
-    export: true,
+    labelTh: "COA Purity + Germination Package A (แล็บนอก คิดแยก ถ้าสั่ง)",
+    labelEn: "COA Purity + Germination Package A (external lab, charged if ordered)",
+    domestic: "recommended",
+    export: "recommended",
     party: "GF",
   },
   {
@@ -49,24 +49,24 @@ export const GACP_DOCUMENT_MATRIX: GacpDocumentRow[] = [
   },
   {
     id: "lineage",
-    labelTh: "Lineage / Genetic traceability",
-    labelEn: "Lineage / genetic traceability",
+    labelTh: "Lot identity (รหัสพันธุ์ · ชื่อการค้า · เลขล็อต) — ไม่เปิด pedigree",
+    labelEn: "Lot identity (variety code · commercial name · lot) — no full pedigree",
     domestic: true,
     export: true,
     party: "GF",
   },
   {
     id: "label",
-    labelTh: "ฉลากกฎหมาย (Lot, พ.พ.3 + พ.พ.4) บนซองซีล",
-    labelEn: "Legal label (lot, PP.3 + PP.4) on sealed pouch",
+    labelTh: "ฉลากกฎหมาย (lot + ชื่อผู้จำหน่ายตามใบ พ.พ.4) บนซองซีล — ฟิลด์บังคับรอกรมฯ",
+    labelEn: "Legal label (lot + licensed seller name/PP.4) on sealed pouch — mandatory fields pending DOA check",
     domestic: true,
     export: true,
     party: "GF",
   },
   {
     id: "traceability",
-    labelTh: "Traceability Pack PDF",
-    labelEn: "Traceability Pack PDF",
+    labelTh: "Traceability Pack PDF (ยังไม่เปิดใช้ · เอกสารสนับสนุน ไม่ใช่ใบ GACP)",
+    labelEn: "Traceability Pack PDF (not launched · supporting doc, not a GACP certificate)",
     domestic: true,
     export: true,
     party: "SSB",
@@ -121,8 +121,8 @@ export const GACP_DOCUMENT_MATRIX: GacpDocumentRow[] = [
   },
   {
     id: "ista",
-    labelTh: "ISTA Certificate",
-    labelEn: "ISTA certificate",
+    labelTh: "ISTA Certificate (คิดแยก ถ้าสั่ง)",
+    labelEn: "ISTA certificate (charged separately if ordered)",
     domestic: false,
     export: "optional",
     party: "GF",
@@ -239,8 +239,8 @@ export const GACP_RETAIL_PACKAGES: GacpRetailPackage[] = [
     labelEn: "GACP Domestic Starter",
     retailThb: RETAIL_GACP_DOMESTIC_THB,
     exportTier: "domestic",
-    includesTh: "50 เมล็ด + COA A + Batch/Lineage + Traceability Pack",
-    includesEn: "50 seeds + COA A + batch/lineage + Traceability Pack",
+    includesTh: "50 เมล็ด + ข้อมูลล็อต (รหัสพันธุ์/lot/ผลทดสอบ) + Traceability Pack (planned)",
+    includesEn: "50 seeds + lot identity (code/lot/tests) + Traceability Pack (planned)",
   },
   {
     code: "export_lite",
@@ -280,8 +280,8 @@ export type GfExtraWorkRow = {
 
 export const GF_EXTRA_WORK: GfExtraWorkRow[] = [
   {
-    taskTh: "บรรจุ 50 เมล็ด/ซอง + ฉลาก Lot / พ.พ.3+4",
-    taskEn: "Pack 50 seeds/pouch + lot / PP.3+4 labels",
+    taskTh: "บรรจุ 50 เมล็ด/ซอง + ฉลาก lot / ชื่อผู้จำหน่ายตามใบ พ.พ.4",
+    taskEn: "Pack 50 seeds/pouch + lot / licensed-seller PP.4 label",
     domestic: true,
     export: true,
   },

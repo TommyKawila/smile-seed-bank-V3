@@ -6,31 +6,31 @@ import { useLanguage } from "@/context/LanguageContext";
 const ITEMS = [
   {
     icon: Dna,
-    titleTh: "ตรวจสอบย้อนกลับพันธุกรรม",
-    titleEn: "Genetic Traceability",
-    bodyTh: "สายพันธุ์ยืนยันต้นทาง ฟีโนไทป์เสถียร อ้างอิงด้วยรหัสพันธุ์เป็นหลัก",
-    bodyEn: "Verified lineage and stable phenotypes — variety code as the primary reference.",
+    titleTh: "ระบุพันธุ์ด้วยรหัสล็อต",
+    titleEn: "Variety code and lot identity",
+    bodyTh: "อ้างอิงรหัสพันธุ์ ชื่อการค้า และเลขล็อตตามที่ผู้ผลิตยืนยัน — ไม่เปิดสายพ่อแม่พันธุ์เต็ม",
+    bodyEn: "Commercial name, variety code, and lot number as confirmed by the producer — full pedigree is not disclosed.",
   },
   {
     icon: FileStack,
-    titleTh: "เอกสารครบชุด",
-    titleEn: "Full Documentation",
-    bodyTh: "COA, รายงานแล็บ (โลหะหนัก / สารเคมี / ไมโคทอกซิน) และใบรับรองพืชกักกัน",
-    bodyEn: "COA, lab reports (heavy metals, pesticides, mycotoxins), and phytosanitary certificates.",
+    titleTh: "เอกสารสนับสนุนตามล็อต",
+    titleEn: "Lot supporting documents",
+    bodyTh: "ข้อมูลทดสอบต่อล็อตตามที่สั่ง แล็บภายนอกหรือ ISTA คิดแยก ไม่แถมทุกล็อต",
+    bodyEn: "Per-lot test data as ordered. Independent lab or ISTA tests are billed separately and are not included on every lot.",
   },
   {
     icon: Layers,
     titleTh: "ราคาขายส่ง B2B",
-    titleEn: "B2B Bulk Pricing",
-    bodyTh: "ราคาแบบขั้นบันไดสำหรับปริมาณเชิงพาณิชย์ พร้อมแพ็กเกจเอกสาร COA",
-    bodyEn: "Competitive tiered pricing for commercial scales with optional COA document packages.",
+    titleEn: "B2B bulk pricing",
+    bodyTh: "ราคาแบบขั้นบันไดสำหรับปริมาณเชิงพาณิชย์ ชุดเอกสารตามล็อตที่ยืนยัน",
+    bodyEn: "Tiered pricing for commercial volumes. Document packs follow the confirmed lot — not a blanket certificate.",
   },
   {
     icon: Handshake,
-    titleTh: "ที่ปรึกษาการปลูก",
-    titleEn: "Cultivation Support",
-    bodyTh: "คำปรึกษาเชิงเกษตรสำหรับฟาร์มที่ตั้งระบบ GACP",
-    bodyEn: "Expert agronomic consulting for GACP farm setup and documentation readiness.",
+    titleTh: "ช่วยเรื่องการใช้เอกสาร",
+    titleEn: "Document-use support",
+    bodyTh: "แนะนำการใส่เอกสารเมล็ดในแฟ้มของฟาร์ม ไม่เสนอตัวเป็น DTAM หรือผู้รับรอง และไม่การันตีผลการตรวจ GACP",
+    bodyEn: "Help using seed documents in the farm’s own file. We are not DTAM or a certification body and do not guarantee a GACP audit result.",
   },
 ] as const;
 
@@ -42,14 +42,14 @@ export function GacpTrustGrid() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           {t(
-            "ทำไมเลือก Smile Seed Bank สำหรับ GACP",
-            "Why Choose Smile Seed Bank for GACP?"
+            "ทำไมเลือก Smile Seed Bank สำหรับฟาร์มใบอนุญาต",
+            "Why licensed farms work with Smile Seed Bank"
           )}
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
           {t(
-            "ออกแบบมาสำหรับฟาร์มใบอนุญาตที่ต้องการเมล็ดพร้อมเอกสาร ไม่ใช่แค่ราคาขายส่ง",
-            "Built for licensed farms that need document-ready genetics — not wholesale price alone."
+            "ออกแบบมาสำหรับฟาร์มใบอนุญาตที่ต้องการเอกสารล็อตประกอบแฟ้มของตนเอง ไม่ใช่แค่ราคาขายส่ง",
+            "Built for licensed farms that need lot documents for their own file — not wholesale price alone."
           )}
         </p>
         <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

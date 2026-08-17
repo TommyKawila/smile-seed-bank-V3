@@ -27,6 +27,7 @@ export function CollaborationPlanDocument({ locale }: { locale: PlanLocale }) {
           {t.title}
         </h1>
         <p className="text-sm leading-relaxed text-slate-600">{t.project}</p>
+        <p className="text-xs text-slate-400">{t.statusNote}</p>
       </header>
 
       <section className="space-y-2">
@@ -76,6 +77,16 @@ export function CollaborationPlanDocument({ locale }: { locale: PlanLocale }) {
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-slate-900">{t.summaryTitle}</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-700">{t.summary}</p>
+      </section>
+
+      <section className="rounded-lg border border-amber-200 bg-amber-50/50 p-4">
+        <h2 className="text-sm font-semibold text-slate-900">{t.openTitle}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{t.openIntro}</p>
+        <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-slate-700">
+          {t.openItems.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
       </section>
     </article>
   );

@@ -24,14 +24,14 @@ export function GacpHero() {
         </p>
         <h1 className="max-w-4xl font-sans text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
           {t(
-            "เมล็ดพันธุ์กัญชาพร้อมเอกสาร GACP สำหรับผู้ปลูกถูกกฎหมายและฟาร์มส่งออก",
-            "GACP-Compliant Cannabis Seeds for Licensed Cultivators & Export-Grade Farms"
+            "เมล็ดพันธุ์ควบคุมพร้อมเอกสารตรวจสอบย้อนกลับ สำหรับฟาร์มใบอนุญาต",
+            "Controlled cannabis seeds with traceability documents for licensed farms"
           )}
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
           {t(
-            "พันธุกรรมตรวจสอบย้อนกลับได้ 100% พร้อม COA และเอกสารพืชกักกัน ที่จำเป็นต่อการตรวจ GACP และการส่งออก",
-            "100% traceable genetics with Certificate of Analysis (COA) and phytosanitary documentation required for GACP audits and international export."
+            "ผลิตและจำหน่ายตามข้อกำหนดกรมวิชาการเกษตร เอกสารล็อตใช้ประกอบระบบตรวจสอบย้อนกลับและเอกสาร GACP ของลูกค้า — ไม่ใช่ใบรับรอง GACP หรือเอกสาร DTAM และไม่การันตีผลการตรวจ",
+            "Produced and sold under Department of Agriculture rules. Lot documents support the customer’s own traceability system and GACP file — they are not a GACP certificate or DTAM document, and they do not guarantee an audit outcome."
           )}
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -40,7 +40,7 @@ export function GacpHero() {
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
           >
             <FileCheck2 className="h-4 w-4" aria-hidden />
-            {t("ขอแคตตาล็อก B2B และ COA", "Request B2B Catalog & COA")}
+            {t("ขอแคตตาล็อก B2B และชุดเอกสารล็อต", "Request B2B catalog & lot documents")}
           </a>
           <Link
             href="/wholesale"
@@ -50,6 +50,12 @@ export function GacpHero() {
             {t("คำนวณราคาขายส่ง", "Bulk pricing calculator")}
           </Link>
         </div>
+        <p className="mt-6 max-w-2xl text-xs leading-relaxed text-slate-500">
+          {t(
+            "ใบรับรอง GACP ของพาร์ทเนอร์ผู้ผลิตเป็นของสถานที่ผลิต ไม่ใช่ของล็อตเมล็ด แล็บภายนอกคิดแยกตามที่สั่ง",
+            "The producer’s GACP certificate covers the production site, not a seed lot. External laboratory tests are charged separately when ordered."
+          )}
+        </p>
       </div>
     </section>
   );
