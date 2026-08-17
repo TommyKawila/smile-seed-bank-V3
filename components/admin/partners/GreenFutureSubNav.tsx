@@ -17,6 +17,11 @@ const items = [
     exact: false,
   },
   {
+    href: "/admin/partners/green-future/strategy",
+    label: "GACP strategy",
+    exact: false,
+  },
+  {
     href: "/admin/partners/green-future/mockup",
     label: "Label Mockup",
     exact: false,

@@ -16,6 +16,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-14 (Green Future GACP strategy — Admin)
+- **What:** หน้าวางกลยุทธ์ GACP ปลีก 50 เมล็ด — Domestic vs Export tiers · matrix เอกสาร · break-even · RFQ/PO checklist
+- **Logic:** `lib/green-future-gacp-strategy.ts` · COA จาก price list · export mid estimates (RFQ) · investment scenarios · copy RFQ blocks
+- **ไฟล์:** `green-future/strategy/page.tsx` · `GreenFutureGacpStrategyClient.tsx` · `GreenFutureSubNav.tsx`
+
 ### บันทึกการทำงาน — 2026-08-13 (Green Future resale pricing calculator)
 - **What:** ตารางคิดราคาขายจากต้นทุน GF — landed + target gross margin · **อัปเดตราคา B2B สาธารณะ** ตาม GM ที่แนะนำ
 - **Logic:** `sell = landed / (1 − GM)` · 500=66 · 1k/2.5k=52 · 5k=37 · 10k=30 · 25k=24 · micro 100=75 · COA A/B 10410/20819
