@@ -10,14 +10,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { SgSupremeInfoBlock } from "@/lib/seeds-genetics-supreme-copy";
+import type { BulkShareLang } from "@/lib/bulk-share-i18n";
 
 type Props = {
   info: SgSupremeInfoBlock;
   label?: string;
   compact?: boolean;
+  lang?: BulkShareLang;
 };
 
-export function SgSupremeInfoButton({ info, label = "อธิบาย Supreme", compact = false }: Props) {
+export function SgSupremeInfoButton({
+  info,
+  label = "อธิบาย Supreme",
+  compact = false,
+  lang = "th",
+}: Props) {
+  const title = lang === "en" ? info.titleEn : info.titleTh;
+  const body = lang === "en" ? info.bodyEn : info.bodyTh;
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -33,20 +43,12 @@ export function SgSupremeInfoButton({ info, label = "อธิบาย Supreme"
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base leading-snug">{info.titleEn}</DialogTitle>
-          <p className="text-sm font-medium text-slate-600">{info.titleTh}</p>
+          <DialogTitle className="text-base leading-snug">{title}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 text-sm leading-relaxed text-slate-700">
-          {info.bodyEn.map((p) => (
+        <div className="space-y-3 text-sm leading-relaxed text-slate-700">
+          {body.map((p) => (
             <p key={p.slice(0, 24)}>{p}</p>
           ))}
-          <div className="border-t border-slate-100 pt-3 text-slate-600">
-            {info.bodyTh.map((p) => (
-              <p key={p.slice(0, 24)} className="mt-2 first:mt-0">
-                {p}
-              </p>
-            ))}
-          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -3,20 +3,25 @@
 import type { PartnerStrainRecord } from "@/types/partner-catalog";
 import { sgfStrainsGrouped } from "@/lib/sgf-seeds-share";
 import type { BulkShareStrainPick } from "@/lib/bulk-share-order";
+import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
 
 type Props = {
   strains: PartnerStrainRecord[];
   onAddStrain: (pick: BulkShareStrainPick) => void;
   focusedKey?: string | null;
+  lang?: BulkShareLang;
 };
 
-export function BulkShareSgfStrains({ strains, onAddStrain, focusedKey }: Props) {
+export function BulkShareSgfStrains({ strains, onAddStrain, focusedKey, lang = "th" }: Props) {
   const groups = sgfStrainsGrouped(strains);
+  const t = BULK_SHARE_COPY[lang];
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900">สายพันธุ์ (SGF Seeds)</h2>
-      <p className="mt-1 text-xs text-slate-500">กดชื่อสายเพื่อเพิ่มในตะกร้า · Photo · Auto · Photo FF</p>
+      <h2 className="text-sm font-semibold text-slate-900">{t.sgfStrainsTitle}</h2>
+      <p className="mt-1 text-xs text-slate-500">
+        {t.tapHint} · {t.sgfFormats}
+      </p>
       <div className="mt-3 space-y-4">
         {groups.map((group) => (
           <div key={group.bucket}>
@@ -50,9 +55,7 @@ export function BulkShareSgfStrains({ strains, onAddStrain, focusedKey }: Props)
                       }`}
                     >
                       {s.strainName}
-                      {lockedQty ? (
-                        <span className="text-slate-400"> · 1,000</span>
-                      ) : null}
+                      {lockedQty ? <span className="text-slate-400"> · 1,000</span> : null}
                     </button>
                   </li>
                 );

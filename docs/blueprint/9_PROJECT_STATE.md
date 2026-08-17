@@ -4,6 +4,10 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Bulk share — สลับภาษา TH/EN)
+- **What:** ลิงก์ exclusive มีปุ่ม ไทย / EN · ข้อความ UI + Supreme dialog ตามภาษา · จำใน localStorage
+- **ไฟล์:** `lib/bulk-share-i18n.ts` · `BulkShareOrderClient.tsx` · strain/Supreme components
+
 ### บันทึกการทำงาน — 2026-08-17 (Bulk share — SG ขั้นสั้น 50–500)
 - **What:** Seeds Genetics บนลิงก์เหลือ 3 ขั้น · Starter 50–100 = ฿119 · สูงสุดที่ 251–500
 - **Logic:** €3.10 / €2.50 / €2.25 · อิงเว็บ SG · qty >500 ใช้เรท 251–500 · admin book ยังมีขั้นยาว

@@ -8,6 +8,7 @@ import {
 } from "@/lib/seeds-genetics-supreme-copy";
 import { SgSupremeInfoButton } from "@/components/share/bulk/SgSupremeInfoButton";
 import type { BulkShareStrainPick } from "@/lib/bulk-share-order";
+import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
 
 type Group = {
   slug: SgCategorySlug;
@@ -19,20 +20,27 @@ type Props = {
   groups: Group[];
   onAddStrain: (pick: BulkShareStrainPick) => void;
   focusedKey?: string | null;
+  lang?: BulkShareLang;
 };
 
-export function BulkShareSgStrains({ groups, onAddStrain, focusedKey }: Props) {
+export function BulkShareSgStrains({ groups, onAddStrain, focusedKey, lang = "th" }: Props) {
   const showSupremeOverview = sgHasSupremeCategories(groups.map((g) => g.slug));
+  const t = BULK_SHARE_COPY[lang];
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <h2 className="text-sm font-semibold text-slate-900">สายพันธุ์ (Seeds Genetics)</h2>
+        <h2 className="text-sm font-semibold text-slate-900">{t.sgStrainsTitle}</h2>
         {showSupremeOverview ? (
-          <SgSupremeInfoButton info={SG_SUPREME_OVERVIEW} label="Supreme คืออะไร?" compact />
+          <SgSupremeInfoButton
+            info={SG_SUPREME_OVERVIEW}
+            label={t.supremeWhat}
+            compact
+            lang={lang}
+          />
         ) : null}
       </div>
-      <p className="mt-1 text-xs text-slate-500">กดชื่อสายเพื่อเพิ่มในตะกร้า</p>
+      <p className="mt-1 text-xs text-slate-500">{t.tapHint}</p>
       <div className="mt-3 space-y-4">
         {groups.map((group) => {
           const supremeInfo = SG_SUPREME_CATEGORY_INFO[group.slug];
@@ -46,7 +54,12 @@ export function BulkShareSgStrains({ groups, onAddStrain, focusedKey }: Props) {
                   </span>
                 </h3>
                 {supremeInfo ? (
-                  <SgSupremeInfoButton info={supremeInfo} label="อธิบาย" compact />
+                  <SgSupremeInfoButton
+                    info={supremeInfo}
+                    label={t.explain}
+                    compact
+                    lang={lang}
+                  />
                 ) : null}
               </div>
               <ul className="mt-2 columns-1 gap-x-6 text-sm sm:columns-2">
