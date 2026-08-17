@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { calculateB2BQuoteTotals, lineTotal } from "@/lib/b2b-quote-calc";
+import { formatB2BStrainLabel, parseB2BStrainLabel } from "@/lib/b2b-quote-line";
 import { currentB2BQuoteYear, formatB2BQuoteNumber } from "@/lib/b2b-quote-number";
 import {
   buildB2BQuoteEmailHtml,
@@ -72,13 +73,17 @@ function toRecord(row: QuoteWithItems): B2BQuoteRecord {
     items: row.items
       .slice()
       .sort((a, b) => a.sort_order - b.sort_order)
-      .map((it) => ({
-        id: String(it.id),
-        strainName: it.strain_name,
-        quantity: it.quantity,
-        unitPrice: toNum(it.unit_price),
-        lineTotal: toNum(it.line_total),
-      })),
+      .map((it) => {
+        const parsed = parseB2BStrainLabel(it.strain_name);
+        return {
+          id: String(it.id),
+          strainName: parsed.strainName,
+          breederName: parsed.breederName,
+          quantity: it.quantity,
+          unitPrice: toNum(it.unit_price),
+          lineTotal: toNum(it.line_total),
+        };
+      }),
   };
 }
 
@@ -107,7 +112,7 @@ function normalizeItems(items: B2BQuoteLineItem[], currency: B2BCurrency) {
   return items
     .filter((it) => it.strainName.trim())
     .map((it, i) => ({
-      strain_name: it.strainName.trim(),
+      strain_name: formatB2BStrainLabel(it.strainName, it.breederName).slice(0, 200),
       quantity: Math.max(0, Math.floor(it.quantity)),
       unit_price: new Prisma.Decimal(it.unitPrice),
       line_total: new Prisma.Decimal(lineTotal(it.quantity, it.unitPrice, currency)),

@@ -15,10 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   defaultValidUntil,
-  emptyB2BLineItem,
   type B2BQuoteDraft,
   type B2BQuoteRecord,
 } from "@/types/b2b-quote";
+import { applyBulkBookPrice, emptyBulkPricedLineItem } from "@/lib/b2b-quote-bulk-price";
 import { B2BQuoteForm } from "./B2BQuoteForm";
 import { B2BQuotePastePanel } from "./B2BQuotePastePanel";
 import { ProFormaInvoiceTemplate } from "./ProFormaInvoiceTemplate";
@@ -35,7 +35,7 @@ function initialDraft(): B2BQuoteDraft {
     discountAmount: 0,
     shippingFee: 0,
     paymentNotes: "",
-    items: [emptyB2BLineItem()],
+    items: [emptyBulkPricedLineItem()],
   };
 }
 
@@ -59,7 +59,7 @@ export function B2BQuoteWorkspace() {
     const prefill = bulkShareLeadToB2BDraft(lead);
     setActiveId(null);
     setQuoteNumber("SSB-B2B-DRAFT");
-    setDraft(prefill.items.length ? prefill : { ...prefill, items: [emptyB2BLineItem()] });
+    setDraft(prefill.items.length ? prefill : { ...prefill, items: [emptyBulkPricedLineItem()] });
     toast({
       title: "โหลดจากคำสั่งลิงก์",
       description: lead.refNumber,
@@ -119,7 +119,9 @@ export function B2BQuoteWorkspace() {
         discountAmount: q.discountAmount,
         shippingFee: q.shippingFee,
         paymentNotes: q.paymentNotes,
-        items: q.items.length ? q.items : [emptyB2BLineItem()],
+        items: q.items.length
+          ? q.items.map((it) => applyBulkBookPrice(it, q.currency))
+          : [emptyBulkPricedLineItem("SGF Seeds", q.currency)],
       });
       toast({ title: "Loaded", description: q.quoteNumber });
     },
@@ -170,7 +172,7 @@ export function B2BQuoteWorkspace() {
     (prefill: B2BQuoteDraft) => {
       setActiveId(null);
       setQuoteNumber("SSB-B2B-DRAFT");
-      setDraft(prefill.items.length ? prefill : { ...prefill, items: [emptyB2BLineItem()] });
+      setDraft(prefill.items.length ? prefill : { ...prefill, items: [emptyBulkPricedLineItem()] });
       toast({
         title: "นำข้อความเข้าใบเสนอราคาแล้ว",
         description: `${prefill.items.length} บรรทัด · ${prefill.clientName || "—"}`,

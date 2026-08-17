@@ -1381,8 +1381,8 @@
     },
     {
       "id": 900003,
-      "name": "Forbidden Ale",
-      "slug": "photo-ff-forbidden-ale",
+      "name": "Forbidden Fruit",
+      "slug": "photo-ff-forbidden-fruit",
       "sourceUrl": "",
       "categories": [
         {
@@ -1397,8 +1397,8 @@
     },
     {
       "id": 900005,
-      "name": "GHO",
-      "slug": "photo-ff-gho",
+      "name": "GMO",
+      "slug": "photo-ff-gmo",
       "sourceUrl": "",
       "categories": [
         {
@@ -2902,8 +2902,8 @@
       },
       {
         "id": 900003,
-        "name": "Forbidden Ale",
-        "slug": "photo-ff-forbidden-ale",
+        "name": "Forbidden Fruit",
+        "slug": "photo-ff-forbidden-fruit",
         "sourceUrl": "",
         "categories": [
           {
@@ -2918,8 +2918,8 @@
       },
       {
         "id": 900005,
-        "name": "GHO",
-        "slug": "photo-ff-gho",
+        "name": "GMO",
+        "slug": "photo-ff-gmo",
         "sourceUrl": "",
         "categories": [
           {

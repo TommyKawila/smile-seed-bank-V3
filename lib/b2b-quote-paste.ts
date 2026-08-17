@@ -1,4 +1,6 @@
-import { lineTotal, recalculateItem } from "@/lib/b2b-quote-calc";
+import { lineTotal } from "@/lib/b2b-quote-calc";
+import { applyBulkBookPrice } from "@/lib/b2b-quote-bulk-price";
+import { normalizeBreederLabel } from "@/lib/b2b-quote-line";
 import { defaultValidUntil, type B2BQuoteDraft } from "@/types/b2b-quote";
 
 const REF_RE = /^SSB-BL-\d{4}-\d{3}$/i;
@@ -18,14 +20,17 @@ function fieldValue(line: string, prefix: string): string | null {
   return line.slice(prefix.length).trim();
 }
 
-function parseLineItem(line: string): { strainName: string; qty: number; unitEur: number } | null {
+function parseLineItem(
+  line: string
+): { breederName: string; strainName: string; qty: number; unitEur: number } | null {
   const m = line.trim().match(ITEM_RE);
   if (!m) return null;
+  const breederName = normalizeBreederLabel(m[1]!.trim());
   const strainName = m[2]!.trim();
   const qty = parseQty(m[3]!);
   const unitEur = Number(m[4]);
   if (!strainName || qty <= 0 || !Number.isFinite(unitEur) || unitEur <= 0) return null;
-  return { strainName, qty, unitEur };
+  return { breederName, strainName, qty, unitEur };
 }
 
 export function parseBulkLeadPaste(text: string): BulkLeadPasteResult {
@@ -98,10 +103,11 @@ export function parseBulkLeadPaste(text: string): BulkLeadPasteResult {
     .map((line) => {
       const parsed = parseLineItem(line);
       if (!parsed) return null;
-      return recalculateItem(
+      return applyBulkBookPrice(
         {
           id: `paste-${Math.random().toString(36).slice(2, 10)}`,
           strainName: parsed.strainName,
+          breederName: parsed.breederName,
           quantity: parsed.qty,
           unitPrice: parsed.unitEur,
           lineTotal: lineTotal(parsed.qty, parsed.unitEur, currency),

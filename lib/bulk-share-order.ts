@@ -9,7 +9,6 @@ import type { BulkSharePayload } from "@/lib/bulk-share-token";
 import { priceSgfShareTiers, SGF_SEEDS_SHARE_NAME } from "@/lib/sgf-seeds-share";
 
 export const BULK_SHARE_MIN_QTY = 50;
-export const BULK_SHARE_PHOTO_FF_QTY = 1000;
 
 export type BulkSharePricedBook = {
   supplierSlug: BulkSupplierSlug;
@@ -22,7 +21,6 @@ export type BulkShareStrainPick = {
   supplierLabel: string;
   strainName: string;
   category: string;
-  lockedQty?: number;
 };
 
 export type BulkShareCartLine = BulkShareStrainPick & {
@@ -57,14 +55,6 @@ export type BulkShareOrderTotals = {
 
 export function cartLineKey(supplierSlug: BulkSupplierSlug, strainName: string): string {
   return `${supplierSlug}|${strainName.trim().toLowerCase()}`;
-}
-
-export function isPhotoFfCategory(category: string): boolean {
-  return category.toLowerCase() === "photo-ff";
-}
-
-export function defaultQtyForCategory(category: string): number {
-  return isPhotoFfCategory(category) ? BULK_SHARE_PHOTO_FF_QTY : BULK_SHARE_MIN_QTY;
 }
 
 export function pickTierForQty(rows: BulkPricedTier[], qty: number): BulkPricedTier {
@@ -108,15 +98,9 @@ export function buildPricedBooks(payload: BulkSharePayload): BulkSharePricedBook
     .filter((b): b is BulkSharePricedBook => Boolean(b));
 }
 
-function validateQty(qty: number, category: string): string | null {
+function validateQty(qty: number): string | null {
   const n = Math.floor(qty);
   if (!Number.isFinite(n) || n <= 0) return "Invalid quantity";
-  if (isPhotoFfCategory(category)) {
-    if (n !== BULK_SHARE_PHOTO_FF_QTY) {
-      return `Photo FF must be exactly ${BULK_SHARE_PHOTO_FF_QTY} seeds`;
-    }
-    return null;
-  }
   if (n < BULK_SHARE_MIN_QTY) return `Minimum ${BULK_SHARE_MIN_QTY} seeds per strain`;
   return null;
 }
@@ -141,10 +125,10 @@ export function priceBulkShareOrder(
     if (!book?.rows.length) return { ok: false, error: "Pricing unavailable" };
 
     const category = (raw.category ?? "").trim();
-    const qtyErr = validateQty(raw.qty, category);
+    const qtyErr = validateQty(raw.qty);
     if (qtyErr) return { ok: false, error: qtyErr };
 
-    const qty = isPhotoFfCategory(category) ? BULK_SHARE_PHOTO_FF_QTY : Math.floor(raw.qty);
+    const qty = Math.floor(raw.qty);
     const tier = pickTierForQty(book.rows, qty);
     const unitThb = tier.sellThb;
     const unitEur = tier.sellEur;
@@ -194,9 +178,9 @@ export function priceLineFromBook(
   qty: number,
   category: string
 ): { unitThb: number; unitEur: number; lineThb: number } | null {
-  const qtyErr = validateQty(qty, category);
+  const qtyErr = validateQty(qty);
   if (qtyErr) return null;
-  const n = isPhotoFfCategory(category) ? BULK_SHARE_PHOTO_FF_QTY : Math.floor(qty);
+  const n = Math.floor(qty);
   const tier = pickTierForQty(book.rows as BulkPricedTier[], n);
   return { unitThb: tier.sellThb, unitEur: tier.sellEur, lineThb: tier.sellThb * n };
 }

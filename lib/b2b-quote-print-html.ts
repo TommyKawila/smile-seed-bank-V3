@@ -1,4 +1,5 @@
 import { calculateB2BQuoteTotals, formatB2BMoney, formatB2BUnitPrice } from "@/lib/b2b-quote-calc";
+import { lineItemDisplayName } from "@/lib/b2b-quote-line";
 import { buildB2BPaymentTerms, b2bQuoteAllNoteLines } from "@/lib/b2b-quote-payment-terms";
 import type { B2BQuoteDraft } from "@/types/b2b-quote";
 
@@ -37,7 +38,7 @@ export function buildB2BQuotePrintHtml(
     .filter((it) => it.strainName.trim())
     .map(
       (it) => `<tr>
-        <td>${escapeHtml(it.strainName)}</td>
+        <td>${escapeHtml(lineItemDisplayName(it))}</td>
         <td class="num">${it.quantity.toLocaleString()}</td>
         <td class="num">${escapeHtml(formatB2BUnitPrice(it.unitPrice, draft.currency))}</td>
         <td class="num">${escapeHtml(formatB2BMoney(it.lineTotal, draft.currency))}</td>

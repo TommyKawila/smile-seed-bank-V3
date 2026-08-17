@@ -1,9 +1,9 @@
-import {
-  B2B_MOQ_SEEDS,
-  B2B_MOQ_WARNING,
-  type B2BCurrency,
-  type B2BQuoteLineItem,
-  type B2BQuoteTotals,
+import { DEFAULT_EUR_THB } from "@/lib/bulk-seeds-book";
+import type {
+  B2BCurrency,
+  B2BQuoteDraft,
+  B2BQuoteLineItem,
+  B2BQuoteTotals,
 } from "@/types/b2b-quote";
 
 export function roundMoney(n: number, currency: B2BCurrency = "EUR"): number {
@@ -47,11 +47,6 @@ export function calculateB2BQuoteTotals(
   };
 }
 
-export function moqWarningForQty(quantity: number): string | null {
-  if (quantity > 0 && quantity < B2B_MOQ_SEEDS) return B2B_MOQ_WARNING;
-  return null;
-}
-
 export function formatB2BMoney(amount: number, currency: B2BCurrency): string {
   if (currency === "THB") {
     return `฿${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -64,4 +59,31 @@ export function formatB2BUnitPrice(amount: number, currency: B2BCurrency): strin
     return `฿${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
   }
   return `€${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
+}
+
+/** Convert draft money fields when toggling EUR ↔ THB (unit + discount + shipping). */
+export function convertB2BDraftCurrency(
+  draft: B2BQuoteDraft,
+  nextCurrency: B2BCurrency,
+  eurThb: number = DEFAULT_EUR_THB
+): B2BQuoteDraft {
+  if (draft.currency === nextCurrency) return draft;
+  const fx = eurThb > 0 ? eurThb : DEFAULT_EUR_THB;
+  const factor = draft.currency === "EUR" && nextCurrency === "THB" ? fx : 1 / fx;
+  const convert = (n: number) => roundMoney(Math.max(0, n) * factor, nextCurrency);
+  return {
+    ...draft,
+    currency: nextCurrency,
+    discountAmount: convert(draft.discountAmount),
+    shippingFee: convert(draft.shippingFee),
+    items: draft.items.map((it) =>
+      recalculateItem(
+        {
+          ...it,
+          unitPrice: convert(it.unitPrice),
+        },
+        nextCurrency
+      )
+    ),
+  };
 }

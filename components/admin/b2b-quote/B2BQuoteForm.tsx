@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,18 +10,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   calculateB2BQuoteTotals,
+  convertB2BDraftCurrency,
   formatB2BMoney,
-  moqWarningForQty,
-  recalculateItem,
+  formatB2BUnitPrice,
 } from "@/lib/b2b-quote-calc";
 import {
-  B2B_PRESET_STRAINS,
+  applyBulkBookPrice,
+  B2B_BULK_QTY_STEP,
+  emptyBulkPricedLineItem,
+  snapB2BBulkQty,
+} from "@/lib/b2b-quote-bulk-price";
+import { SEEDS_GENETICS_CATALOG } from "@/lib/seeds-genetics-catalog";
+import {
+  B2B_BREEDER_SG,
+  B2B_BREEDER_SGF,
   defaultValidUntil,
-  emptyB2BLineItem,
   type B2BCurrency,
   type B2BQuoteDraft,
   type B2BQuoteLineItem,
 } from "@/types/b2b-quote";
+
+type StrainPreset = {
+  id: string;
+  strainName: string;
+  breederName: string;
+  /** Value shown in datalist (strain · breeder). */
+  value: string;
+};
 
 type Props = {
   draft: B2BQuoteDraft;
@@ -29,18 +44,42 @@ type Props = {
 };
 
 export function B2BQuoteForm({ draft, onChange }: Props) {
-  const [partnerRefs, setPartnerRefs] = useState<string[]>([]);
+  const [sgfPresets, setSgfPresets] = useState<StrainPreset[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch("/api/admin/partners/green-future/refs", {
+        const res = await fetch("/api/admin/partners/green-future?limit=500", {
           cache: "no-store",
         });
         if (!res.ok || cancelled) return;
-        const json = (await res.json()) as { refs?: string[] };
-        if (!cancelled) setPartnerRefs(json.refs ?? []);
+        const json = (await res.json()) as {
+          strains?: { id: string | number; strainName?: string; varietyCode?: string }[];
+        };
+        if (cancelled) return;
+        const next: StrainPreset[] = [];
+        for (const s of json.strains ?? []) {
+          const name = (s.strainName ?? "").trim();
+          if (!name) continue;
+          next.push({
+            id: `sgf-${s.id}`,
+            strainName: name,
+            breederName: B2B_BREEDER_SGF,
+            value: `${name} · ${B2B_BREEDER_SGF}`,
+          });
+          const code = (s.varietyCode ?? "").trim();
+          if (code) {
+            const coded = `${code} (${name.toUpperCase()})`;
+            next.push({
+              id: `sgf-code-${s.id}`,
+              strainName: coded,
+              breederName: B2B_BREEDER_SGF,
+              value: `${coded} · ${B2B_BREEDER_SGF}`,
+            });
+          }
+        }
+        setSgfPresets(next);
       } catch {
         /* optional enrichment */
       }
@@ -49,6 +88,27 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
       cancelled = true;
     };
   }, []);
+
+  const sgPresets = useMemo<StrainPreset[]>(
+    () =>
+      SEEDS_GENETICS_CATALOG.strains.map((s) => ({
+        id: `sg-${s.id}`,
+        strainName: s.name,
+        breederName: B2B_BREEDER_SG,
+        value: `${s.name} · ${B2B_BREEDER_SG}`,
+      })),
+    []
+  );
+
+  const allPresets = useMemo(() => [...sgfPresets, ...sgPresets], [sgfPresets, sgPresets]);
+  const presetByValue = useMemo(() => {
+    const map = new Map<string, StrainPreset>();
+    for (const p of allPresets) map.set(p.value.toLowerCase(), p);
+    for (const p of allPresets) {
+      if (!map.has(p.strainName.toLowerCase())) map.set(p.strainName.toLowerCase(), p);
+    }
+    return map;
+  }, [allPresets]);
 
   const totals = calculateB2BQuoteTotals(
     draft.items,
@@ -60,20 +120,39 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
   const patch = (partial: Partial<B2BQuoteDraft>) => onChange({ ...draft, ...partial });
 
   const setCurrency = (currency: B2BCurrency) => {
-    const items = draft.items.map((it) => recalculateItem(it, currency));
-    patch({ currency, items });
+    const converted = convertB2BDraftCurrency(draft, currency);
+    onChange({
+      ...converted,
+      items: converted.items.map((it) => applyBulkBookPrice(it, currency)),
+    });
   };
 
   const updateItem = (id: string, patchItem: Partial<B2BQuoteLineItem>) => {
-    const items = draft.items.map((it) =>
-      it.id === id ? recalculateItem({ ...it, ...patchItem }, draft.currency) : it
-    );
+    const items = draft.items.map((it) => {
+      if (it.id !== id) return it;
+      return applyBulkBookPrice({ ...it, ...patchItem }, draft.currency);
+    });
     patch({ items });
+  };
+
+  const bumpQty = (id: string, delta: number) => {
+    const hit = draft.items.find((it) => it.id === id);
+    if (!hit) return;
+    updateItem(id, { quantity: snapB2BBulkQty(hit.quantity + delta) });
+  };
+
+  const onStrainInput = (id: string, raw: string) => {
+    const hit = presetByValue.get(raw.trim().toLowerCase());
+    if (hit) {
+      updateItem(id, { strainName: hit.strainName, breederName: hit.breederName });
+      return;
+    }
+    updateItem(id, { strainName: raw });
   };
 
   const removeItem = (id: string) => {
     const items = draft.items.filter((it) => it.id !== id);
-    patch({ items: items.length ? items : [emptyB2BLineItem()] });
+    patch({ items: items.length ? items : [emptyBulkPricedLineItem(B2B_BREEDER_SGF, draft.currency)] });
   };
 
   return (
@@ -159,6 +238,9 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
                 </Button>
               ))}
             </div>
+            <p className="text-[11px] text-slate-500">
+              สลับสกุลเงินจะแปลงราคาตามเรท €→฿ (ค่าเริ่มต้นจาก bulk book)
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -168,18 +250,26 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
           <CardTitle className="text-base font-semibold text-slate-800">
             Line items
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1">
             <Button asChild type="button" size="sm" variant="ghost" className="h-8 text-xs">
               <Link href="/admin/partners/green-future" target="_blank">
                 <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                Green Future
+                SGF Seeds
+              </Link>
+            </Button>
+            <Button asChild type="button" size="sm" variant="ghost" className="h-8 text-xs">
+              <Link href="/admin/bulk-seeds" target="_blank">
+                <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                Seeds Genetics
               </Link>
             </Button>
             <Button
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => patch({ items: [...draft.items, emptyB2BLineItem()] })}
+              onClick={() =>
+                patch({ items: [...draft.items, emptyBulkPricedLineItem(B2B_BREEDER_SGF, draft.currency)] })
+              }
             >
               <Plus className="mr-1 h-4 w-4" />
               Add
@@ -187,83 +277,103 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {draft.items.map((it) => {
-            const warn = moqWarningForQty(it.quantity);
-            return (
-              <div
-                key={it.id}
-                className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/60 p-3"
-              >
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-600">Strain</Label>
-                  <Input
-                    list="b2b-strain-presets"
-                    value={it.strainName}
-                    onChange={(e) => updateItem(it.id, { strainName: e.target.value })}
-                    placeholder="AF99 (BUBBA KUSH AUTO)"
-                    className="h-9 bg-white"
-                  />
+          {draft.items.map((it) => (
+            <div
+              key={it.id}
+              className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/60 p-3"
+            >
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-600">Strain</Label>
+                <Input
+                  list="b2b-strain-presets"
+                  value={it.strainName}
+                  onChange={(e) => onStrainInput(it.id, e.target.value)}
+                  placeholder="Critical 2.0 Autoflower"
+                  className="h-9 bg-white"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-600">Breeder</Label>
+                <div className="flex gap-2">
+                  {([B2B_BREEDER_SGF, B2B_BREEDER_SG] as const).map((b) => (
+                    <Button
+                      key={b}
+                      type="button"
+                      size="sm"
+                      variant={it.breederName === b ? "default" : "outline"}
+                      className={
+                        it.breederName === b ? "bg-[#12463e] hover:bg-[#0f3a34]" : ""
+                      }
+                      onClick={() => updateItem(it.id, { breederName: b })}
+                    >
+                      {b}
+                    </Button>
+                  ))}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-600">Qty</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={it.quantity}
-                      onChange={(e) =>
-                        updateItem(it.id, { quantity: Number(e.target.value) || 0 })
-                      }
-                      className="h-9 bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-600">Unit</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={it.unitPrice}
-                      onChange={(e) =>
-                        updateItem(it.id, { unitPrice: Number(e.target.value) || 0 })
-                      }
-                      className="h-9 bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-600">Line</Label>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-600">Qty (+{B2B_BULK_QTY_STEP})</Label>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="h-9 w-9 shrink-0"
+                      onClick={() => bumpQty(it.id, -B2B_BULK_QTY_STEP)}
+                      aria-label="Decrease qty"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </Button>
                     <Input
                       readOnly
-                      value={formatB2BMoney(it.lineTotal, draft.currency)}
-                      className="h-9 bg-slate-100"
+                      value={it.quantity}
+                      className="h-9 bg-slate-100 text-center font-mono"
                     />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="h-9 w-9 shrink-0"
+                      onClick={() => bumpQty(it.id, B2B_BULK_QTY_STEP)}
+                      aria-label="Increase qty"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
-                {warn ? (
-                  <p className="flex items-start gap-1.5 text-[11px] text-amber-700">
-                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    {warn}
-                  </p>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-slate-500"
-                  onClick={() => removeItem(it.id)}
-                >
-                  <Trash2 className="mr-1 h-3.5 w-3.5" />
-                  Remove
-                </Button>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-600">Unit (Bulk seeds)</Label>
+                  <Input
+                    readOnly
+                    value={formatB2BUnitPrice(it.unitPrice, draft.currency)}
+                    className="h-9 bg-slate-100 font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-600">Line</Label>
+                  <Input
+                    readOnly
+                    value={formatB2BMoney(it.lineTotal, draft.currency)}
+                    className="h-9 bg-slate-100"
+                  />
+                </div>
               </div>
-            );
-          })}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 text-slate-500"
+                onClick={() => removeItem(it.id)}
+              >
+                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                Remove
+              </Button>
+            </div>
+          ))}
           <datalist id="b2b-strain-presets">
-            {partnerRefs.map((s) => (
-              <option key={s} value={s} />
-            ))}
-            {B2B_PRESET_STRAINS.map((s) => (
-              <option key={s} value={s} />
+            {allPresets.map((p) => (
+              <option key={p.id} value={p.value} />
             ))}
           </datalist>
         </CardContent>

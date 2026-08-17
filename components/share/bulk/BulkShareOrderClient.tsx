@@ -22,7 +22,6 @@ import {
 } from "@/components/share/bulk/BulkShareStrainSearch";
 import {
   BULK_SHARE_MIN_QTY,
-  BULK_SHARE_PHOTO_FF_QTY,
   cartLineKey,
   priceLineFromBook,
   type BulkShareCartLine,
@@ -145,7 +144,6 @@ export function BulkShareOrderClient({
     setCart((prev) => {
       const hit = prev.find((l) => l.key === key);
       if (hit) {
-        if (hit.lockedQty) return prev;
         return prev.map((l) =>
           l.key === key ? { ...l, qty: l.qty + BULK_SHARE_MIN_QTY } : l
         );
@@ -155,7 +153,7 @@ export function BulkShareOrderClient({
         {
           ...pick,
           key,
-          qty: pick.lockedQty ?? BULK_SHARE_MIN_QTY,
+          qty: BULK_SHARE_MIN_QTY,
         },
       ];
     });
@@ -173,7 +171,6 @@ export function BulkShareOrderClient({
             supplierLabel: "SGF Seeds",
             strainName: s.strainName,
             category,
-            lockedQty: category === "photo-ff" ? BULK_SHARE_PHOTO_FF_QTY : undefined,
           });
         }
       }
@@ -187,7 +184,6 @@ export function BulkShareOrderClient({
           supplierLabel: "Seeds Genetics",
           strainName: s.name,
           category,
-          lockedQty: category === "photo-ff" ? BULK_SHARE_PHOTO_FF_QTY : undefined,
         });
       }
     }
@@ -204,7 +200,7 @@ export function BulkShareOrderClient({
   const updateQty = useCallback((key: string, raw: number) => {
     setCart((prev) =>
       prev.map((l) => {
-        if (l.key !== key || l.lockedQty) return l;
+        if (l.key !== key) return l;
         const qty = Math.max(BULK_SHARE_MIN_QTY, Math.floor(raw));
         return { ...l, qty };
       })
@@ -435,39 +431,33 @@ export function BulkShareOrderClient({
                       </button>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                      {line.lockedQty ? (
-                        <span className="text-xs text-slate-500">
-                          {t.seedsPhotoFf(BULK_SHARE_PHOTO_FF_QTY.toLocaleString())}
-                        </span>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            className="rounded border border-slate-200 p-1 hover:bg-slate-50"
-                            onClick={() => updateQty(line.key, line.qty - 50)}
-                            aria-label={t.decrease}
-                          >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <Input
-                            type="number"
-                            min={BULK_SHARE_MIN_QTY}
-                            step={50}
-                            value={line.qty}
-                            onChange={(e) => updateQty(line.key, Number(e.target.value))}
-                            className="h-8 w-24 text-center font-mono text-sm"
-                          />
-                          <button
-                            type="button"
-                            className="rounded border border-slate-200 p-1 hover:bg-slate-50"
-                            onClick={() => updateQty(line.key, line.qty + 50)}
-                            aria-label={t.increase}
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="text-xs text-slate-400">{t.minQty(BULK_SHARE_MIN_QTY)}</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          className="rounded border border-slate-200 p-1 hover:bg-slate-50"
+                          onClick={() => updateQty(line.key, line.qty - 50)}
+                          aria-label={t.decrease}
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <Input
+                          type="number"
+                          min={BULK_SHARE_MIN_QTY}
+                          step={50}
+                          value={line.qty}
+                          onChange={(e) => updateQty(line.key, Number(e.target.value))}
+                          className="h-8 w-24 text-center font-mono text-sm"
+                        />
+                        <button
+                          type="button"
+                          className="rounded border border-slate-200 p-1 hover:bg-slate-50"
+                          onClick={() => updateQty(line.key, line.qty + 50)}
+                          aria-label={t.increase}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-xs text-slate-400">{t.minQty(BULK_SHARE_MIN_QTY)}</span>
+                      </div>
                       <div className="text-right">
                         {priced ? (
                           <>

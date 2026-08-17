@@ -1,4 +1,5 @@
 import { calculateB2BQuoteTotals, formatB2BMoney, formatB2BUnitPrice } from "@/lib/b2b-quote-calc";
+import { lineItemDisplayName } from "@/lib/b2b-quote-line";
 import { buildB2BPaymentTerms, b2bQuoteAllNoteLines } from "@/lib/b2b-quote-payment-terms";
 import type { B2BQuoteDraft } from "@/types/b2b-quote";
 
@@ -37,7 +38,7 @@ export function buildB2BQuoteEmailHtml(
     .filter((it) => it.strainName.trim())
     .map(
       (it) => `<tr>
-        <td style="padding:8px;border-bottom:1px solid #e2e8f0;">${escapeHtml(it.strainName)}</td>
+        <td style="padding:8px;border-bottom:1px solid #e2e8f0;">${escapeHtml(lineItemDisplayName(it))}</td>
         <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;">${it.quantity.toLocaleString()}</td>
         <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;">${escapeHtml(formatB2BUnitPrice(it.unitPrice, draft.currency))}</td>
         <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;">${escapeHtml(formatB2BMoney(it.lineTotal, draft.currency))}</td>
@@ -99,7 +100,7 @@ export function buildB2BQuotePlainText(draft: B2BQuoteDraft, quoteNumber: string
     .filter((it) => it.strainName.trim())
     .map(
       (it) =>
-        `- ${it.strainName}: ${it.quantity} × ${formatB2BUnitPrice(it.unitPrice, draft.currency)} = ${formatB2BMoney(it.lineTotal, draft.currency)}`
+        `- ${lineItemDisplayName(it)}: ${it.quantity} × ${formatB2BUnitPrice(it.unitPrice, draft.currency)} = ${formatB2BMoney(it.lineTotal, draft.currency)}`
     );
   return [
     `PRO-FORMA INVOICE / B2B QUOTATION`,

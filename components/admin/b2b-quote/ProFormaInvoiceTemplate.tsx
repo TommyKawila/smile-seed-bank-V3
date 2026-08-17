@@ -6,6 +6,7 @@ import {
   formatB2BMoney,
   formatB2BUnitPrice,
 } from "@/lib/b2b-quote-calc";
+import { lineItemDisplayName } from "@/lib/b2b-quote-line";
 import { buildB2BPaymentTerms, b2bQuoteAllNoteLines } from "@/lib/b2b-quote-payment-terms";
 import type { B2BQuoteDraft } from "@/types/b2b-quote";
 import { cn } from "@/lib/utils";
@@ -119,7 +120,7 @@ export function ProFormaInvoiceTemplate({
             ) : (
               lines.map((it) => (
                 <tr key={it.id} className="border-b border-slate-100">
-                  <td className="px-2 py-2">{it.strainName}</td>
+                  <td className="px-2 py-2">{lineItemDisplayName(it)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">
                     {it.quantity.toLocaleString()}
                   </td>

@@ -171,9 +171,9 @@ const B2B: { category: keyof typeof CATEGORY_META; names: string[] }[] = [
 
 const PHOTO_FF_BAGS = [
   "Apple Fritter",
-  "Forbidden Ale",
+  "Forbidden Fruit",
   "Cherry Pie",
-  "GHO",
+  "GMO",
   "Poison",
   "Mimosa Evo",
   "Gorilla",

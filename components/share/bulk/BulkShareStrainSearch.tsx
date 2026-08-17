@@ -2,7 +2,7 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { BULK_SHARE_MIN_QTY, BULK_SHARE_PHOTO_FF_QTY, cartLineKey } from "@/lib/bulk-share-order";
+import { BULK_SHARE_MIN_QTY, cartLineKey } from "@/lib/bulk-share-order";
 import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
 import type { BulkShareStrainPick } from "@/lib/bulk-share-order";
 
@@ -36,7 +36,6 @@ export function BulkShareStrainSearch({
   return (
     <section className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm">
       <p className="text-sm font-medium leading-relaxed text-emerald-950">{t.tapCallout}</p>
-      <p className="mt-1 text-xs text-emerald-800/80">{t.photoFfNote}</p>
       <div className="relative mt-3">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <Input
@@ -55,7 +54,7 @@ export function BulkShareStrainSearch({
               const key = cartLineKey(entry.supplierSlug, entry.strainName);
               const inCart = cartQtyByKey.get(key);
               const active = focusedKey === key;
-              const step = entry.lockedQty ? BULK_SHARE_PHOTO_FF_QTY : BULK_SHARE_MIN_QTY;
+              const step = BULK_SHARE_MIN_QTY;
               return (
                 <li key={entry.id}>
                   <button

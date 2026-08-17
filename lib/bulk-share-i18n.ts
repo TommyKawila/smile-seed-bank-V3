@@ -16,7 +16,6 @@ type Dict = {
   decrease: string;
   increase: string;
   minQty: (n: number) => string;
-  seedsPhotoFf: (n: string) => string;
   perSeed: string;
   invalidQty: string;
   confidential: string;
@@ -48,7 +47,6 @@ type Dict = {
   sgStrainsTitle: string;
   tapHint: string;
   tapCallout: string;
-  photoFfNote: string;
   searchLabel: string;
   searchPlaceholder: string;
   searchNoResults: string;
@@ -73,7 +71,6 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     decrease: "ลด",
     increase: "เพิ่ม",
     minQty: (n) => `ขั้นต่ำ ${n}`,
-    seedsPhotoFf: (n) => `${n} เมล็ด (Photo FF)`,
     perSeed: "/เมล็ด",
     invalidQty: "จำนวนไม่ถูกต้อง",
     confidential: "ลับ · ไม่เผยแพร่สาธารณะ · Smile Seed Bank",
@@ -106,7 +103,6 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     tapHint: "กดชื่อสาย — แต่ละครั้ง +50 เมล็ด (กดซ้ำเพิ่มจำนวน)",
     tapCallout:
       "กดที่ชื่อสายพันธุ์เพื่อเพิ่มเข้าตะกร้า — ทีละ 50 เมล็ดต่อการกด (กดซ้ำสายเดิม = เพิ่มอีก 50)",
-    photoFfNote: "Photo FF: 1,000 เมล็ดต่อสาย (กดครั้งเดียว)",
     searchLabel: "ค้นหาสายพันธุ์",
     searchPlaceholder: "พิมพ์ชื่อสายพันธุ์…",
     searchNoResults: "ไม่พบสายพันธุ์ที่ค้นหา",
@@ -130,7 +126,6 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     decrease: "Decrease",
     increase: "Increase",
     minQty: (n) => `Min ${n}`,
-    seedsPhotoFf: (n) => `${n} seeds (Photo FF)`,
     perSeed: "/seed",
     invalidQty: "Invalid quantity",
     confidential: "Confidential · not for public listing · Smile Seed Bank",
@@ -163,7 +158,6 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     tapHint: "Tap strain name — +50 seeds each tap (tap again to add more)",
     tapCallout:
       "Tap a strain name to add to cart — 50 seeds per tap (tap the same strain again for +50 more)",
-    photoFfNote: "Photo FF: 1,000 seeds per strain (one tap)",
     searchLabel: "Search strains",
     searchPlaceholder: "Type strain name…",
     searchNoResults: "No strains match your search",

@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 const LineSchema = z.object({
   id: z.string().optional(),
   strainName: z.string().min(1).max(200),
+  breederName: z.string().max(80).optional().default(""),
   quantity: z.number().int().min(0).max(10_000_000),
   unitPrice: z.number().min(0).max(1_000_000),
   lineTotal: z.number().min(0).optional(),
@@ -61,6 +62,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     const items = parsed.data.items.map((it, i) => ({
       id: it.id ?? `tmp-${i}`,
       strainName: it.strainName,
+      breederName: it.breederName ?? "",
       quantity: it.quantity,
       unitPrice: it.unitPrice,
       lineTotal: it.lineTotal ?? it.quantity * it.unitPrice,

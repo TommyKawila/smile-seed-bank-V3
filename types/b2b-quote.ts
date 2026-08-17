@@ -4,6 +4,8 @@ export type B2BQuoteStatus = "DRAFT" | "SENT";
 export type B2BQuoteLineItem = {
   id: string;
   strainName: string;
+  /** Partner / brand — kept separate from strain name (e.g. SGF Seeds, Seeds Genetics). */
+  breederName: string;
   quantity: number;
   unitPrice: number;
   lineTotal: number;
@@ -44,18 +46,13 @@ export type B2BQuoteDispatchInput = B2BQuoteDraft & {
   quoteNumber?: string | null;
 };
 
-export const B2B_MOQ_SEEDS = 500;
-export const B2B_MOQ_WARNING = "Standard B2B MOQ is 500 seeds/strain";
-
-export const B2B_PRESET_STRAINS = [
-  "White Widow",
-  "Northern Lights",
-  "Pineapple Express Auto",
-  "Do-Si-Dos Auto",
-  "Bubba Kush",
-] as const;
-
+export const B2B_DEFAULT_QTY = 50;
 export const B2B_DEFAULT_UNIT_PRICE_EUR = 1.35;
+
+/** Canonical breeder labels on bulk / B2B quotes. */
+export const B2B_BREEDER_SGF = "SGF Seeds";
+export const B2B_BREEDER_SG = "Seeds Genetics";
+export const B2B_KNOWN_BREEDERS = [B2B_BREEDER_SGF, B2B_BREEDER_SG, "Green Future"] as const;
 
 export function defaultValidUntil(invoiceDateIso: string, days = 30): string {
   const d = new Date(`${invoiceDateIso}T12:00:00`);
@@ -68,9 +65,10 @@ export function emptyB2BLineItem(): B2BQuoteLineItem {
   return {
     id: `tmp-${Math.random().toString(36).slice(2, 10)}`,
     strainName: "",
-    quantity: B2B_MOQ_SEEDS,
+    breederName: "",
+    quantity: B2B_DEFAULT_QTY,
     unitPrice: B2B_DEFAULT_UNIT_PRICE_EUR,
-    lineTotal: B2B_MOQ_SEEDS * B2B_DEFAULT_UNIT_PRICE_EUR,
+    lineTotal: B2B_DEFAULT_QTY * B2B_DEFAULT_UNIT_PRICE_EUR,
   };
 }
 

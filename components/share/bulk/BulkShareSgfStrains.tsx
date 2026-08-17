@@ -2,7 +2,7 @@
 
 import type { PartnerStrainRecord } from "@/types/partner-catalog";
 import { sgfStrainsGrouped } from "@/lib/sgf-seeds-share";
-import { BULK_SHARE_PHOTO_FF_QTY, cartLineKey, type BulkShareStrainPick } from "@/lib/bulk-share-order";
+import { cartLineKey, type BulkShareStrainPick } from "@/lib/bulk-share-order";
 import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
 import { strainMatchesQuery } from "@/components/share/bulk/BulkShareStrainSearch";
 
@@ -51,7 +51,6 @@ export function BulkShareSgfStrains({
             <ul className="mt-2 columns-1 gap-x-6 text-sm sm:columns-2">
               {group.strains.map((s) => {
                 const category = group.bucket;
-                const lockedQty = category === "photo-ff" ? BULK_SHARE_PHOTO_FF_QTY : undefined;
                 const key = cartLineKey("green-future", s.strainName);
                 const active = focusedKey === key;
                 const qty = cartQtyByKey?.get(key);
@@ -65,7 +64,6 @@ export function BulkShareSgfStrains({
                           supplierLabel: "SGF Seeds",
                           strainName: s.strainName,
                           category,
-                          lockedQty,
                         })
                       }
                       className={`rounded px-1 py-0.5 text-left transition-colors hover:bg-emerald-50 hover:text-emerald-800 ${

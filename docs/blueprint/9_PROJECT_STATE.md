@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (B2B quote — qty×50 + bulk book price)
+- **What:** Manual line items ล็อก qty ทีละ 50 · unit อ่านอย่างเดียวจาก Bulk seeds book (SGF/SG share ladder)
+- **Logic:** `lib/b2b-quote-bulk-price.ts` · `applyBulkBookPrice` · breeder ปุ่ม SGF / Seeds Genetics
+- **ไฟล์:** `B2BQuoteForm.tsx` · paste / lead-to-b2b / workspace
+
+### บันทึกการทำงาน — 2026-08-17 (B2B quote — FX / breeder / presets)
+- **What:** ตัดข้อความ MOQ 500 · สลับ EUR↔THB แปลงราคาจริง · แยก `breederName` · ใบเสนอราคาแสดง `สาย · Breeder` · datalist SGF Seeds + Seeds Genetics
+- **Logic:** `convertB2BDraftCurrency` (DEFAULT_EUR_THB) · `lib/b2b-quote-line.ts` · paste/prefill เก็บ supplier เป็น breeder · save รวมลง `strain_name`
+- **ไฟล์:** `B2BQuoteForm.tsx` · `b2b-quote-calc.ts` · `types/b2b-quote.ts` · paste/lead-to-b2b · ProForma/email/print · `b2b-quote-service.ts`
+
 ### บันทึกการทำงาน — 2026-08-17 (B2B quote — paste จาก lead)
 - **What:** `/admin/documents/b2b-quote` วางข้อความ SSB-BL จาก bulk-seeds → ใส่ลูกค้า + บรรทัด + ราคา EUR อัตโนมัติ
 - **Logic:** `parseBulkLeadPaste()` · `B2BQuotePastePanel` · admin ตรวจแล้ว Save/PDF/email

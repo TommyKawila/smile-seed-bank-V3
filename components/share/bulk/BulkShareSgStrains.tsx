@@ -8,11 +8,7 @@ import {
 } from "@/lib/seeds-genetics-supreme-copy";
 import { SgSupremeInfoButton } from "@/components/share/bulk/SgSupremeInfoButton";
 import { strainMatchesQuery } from "@/components/share/bulk/BulkShareStrainSearch";
-import {
-  BULK_SHARE_PHOTO_FF_QTY,
-  cartLineKey,
-  type BulkShareStrainPick,
-} from "@/lib/bulk-share-order";
+import { cartLineKey, type BulkShareStrainPick } from "@/lib/bulk-share-order";
 import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
 
 type Group = {
@@ -87,7 +83,6 @@ export function BulkShareSgStrains({
               <ul className="mt-2 columns-1 gap-x-6 text-sm sm:columns-2">
                 {group.strains.map((s) => {
                   const category = s.primaryCategory;
-                  const lockedQty = category === "photo-ff" ? BULK_SHARE_PHOTO_FF_QTY : undefined;
                   const key = cartLineKey("seeds-genetics", s.name);
                   const active = focusedKey === key;
                   const qty = cartQtyByKey?.get(key);
@@ -101,7 +96,6 @@ export function BulkShareSgStrains({
                             supplierLabel: "Seeds Genetics",
                             strainName: s.name,
                             category,
-                            lockedQty,
                           })
                         }
                         className={`rounded px-1 py-0.5 text-left transition-colors hover:bg-emerald-50 hover:text-emerald-800 ${
@@ -109,7 +103,7 @@ export function BulkShareSgStrains({
                         }`}
                       >
                         {s.name}
-                        {lockedQty ? (
+                        {category === "photo-ff" ? (
                           <span className="text-slate-400"> · FAST</span>
                         ) : null}
                         {qty ? (
