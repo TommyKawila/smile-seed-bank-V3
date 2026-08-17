@@ -24,6 +24,7 @@ import {
   type BulkSupplierSlug,
 } from "@/lib/bulk-seeds-book";
 import { ADDERS_BY_LANE, GM_BY_QTY } from "@/lib/bulk-seeds-trade";
+import { SgStrainCatalogPanel } from "@/components/admin/bulk-seeds/SgStrainCatalogPanel";
 
 function fmt(n: number, digits = 2): string {
   if (!Number.isFinite(n) || n <= 0) return "—";
@@ -315,6 +316,12 @@ export function BulkSeedsBookClient() {
       ))}
 
       <Card className="border-slate-200 shadow-sm">
+        <CardContent className="pt-6">
+          <SgStrainCatalogPanel />
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">ลิงก์ exclusive ถึงลูกค้า</CardTitle>
         </CardHeader>
@@ -355,7 +362,7 @@ export function BulkSeedsBookClient() {
                 checked={showStrains}
                 onChange={(e) => setShowStrains(e.target.checked)}
               />
-              โชว์รายการสายพันธุ์ GF
+              โชว์รายการสายพันธุ์ (GF + SG)
             </label>
           </div>
           <Button type="button" onClick={() => void mintLink()} disabled={busy}>

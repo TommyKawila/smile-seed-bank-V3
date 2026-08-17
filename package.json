@@ -21,6 +21,7 @@
     "backfill:strain-dominance": "npx tsx scripts/backfill-strain-dominance.ts",
     "backfill:cbd-percent-num": "npx tsx scripts/backfill-cbd-percent-num.ts",
     "import:green-future": "npx tsx scripts/import-green-future-catalog.ts",
+    "fetch:seeds-genetics": "npx tsx scripts/fetch-seeds-genetics-catalog.ts",
     "db:migrate:deploy": "PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=120000 prisma migrate deploy",
     "db:merch:schema": "npx tsx scripts/apply-merch-schema.ts",
     "db:merch:resolve": "prisma migrate resolve --applied 20260726160000_products_merch_kind"
