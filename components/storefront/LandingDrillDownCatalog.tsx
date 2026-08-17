@@ -26,6 +26,7 @@ import {
   priceFilterActive,
   productMatchesPriceRange,
 } from "@/lib/shop-price-filter";
+import { catalogFilterToggleClass, catalogMobileDockBtnClass } from "@/components/storefront/shop-filter-chip-styles";
 import type { CatalogSidebarQuickFiltersProps } from "@/components/storefront/CatalogSidebarQuickFilters";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import type { ProductListItem } from "@/services/storefront-product-service";
@@ -296,10 +297,7 @@ export function LandingDrillDownCatalog({
           <Button
             variant="outline"
             size="sm"
-            className={cn(
-              "h-9 rounded-full border-border bg-card px-3 text-foreground shadow-sm",
-              showDesktopFilters && "border-primary bg-primary/10 text-primary"
-            )}
+            className={cn("h-9 rounded-full px-3 shadow-sm", catalogFilterToggleClass(showDesktopFilters))}
             onClick={() => setShowDesktopFilters((v) => !v)}
             aria-expanded={showDesktopFilters}
             aria-controls="shop-filters-desktop"
@@ -377,7 +375,7 @@ export function LandingDrillDownCatalog({
           <div className="mx-auto flex w-full max-w-md gap-3">
             <Button
               type="button"
-              className="h-14 min-h-12 flex-1 gap-2 rounded-2xl border border-primary/40 bg-card/80 text-base font-bold text-primary shadow-sm surface-glass transition-transform active:scale-[0.98] hover:border-primary/60 hover:bg-primary/10"
+              className={catalogMobileDockBtnClass(priceFilterActive(priceMin, priceMax))}
               onClick={() => setShowPriceSheet(true)}
             >
               <Tag className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
@@ -385,7 +383,7 @@ export function LandingDrillDownCatalog({
             </Button>
             <Button
               type="button"
-              className="h-14 min-h-12 flex-1 gap-2 rounded-2xl border border-primary/50 bg-primary px-4 text-base font-bold text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-[0.98] hover:bg-primary/90"
+              className={catalogMobileDockBtnClass(hasFilters)}
               onClick={() => setShowFilter(true)}
             >
               <SlidersHorizontal className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />

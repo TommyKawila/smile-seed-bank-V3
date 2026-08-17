@@ -1,51 +1,65 @@
 import { cn } from "@/lib/utils";
 
+/** Idle = zinc only. Active = emerald (site primary). Shared by shop / seeds / new / clearance. */
+export const FILTER_IDLE =
+  "border-border bg-transparent text-muted-foreground hover:border-zinc-600 hover:bg-zinc-900/40 hover:text-zinc-200";
+export const FILTER_ACTIVE =
+  "border-primary/50 bg-primary/10 text-primary";
+
+const chipFocus =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35";
+
 /** Shared pill styles for shop sticky filter rows (quick bar + ft / genetics). */
-export const shopQuickChipBase =
-  "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/35";
+export const shopQuickChipBase = cn(
+  "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors",
+  chipFocus
+);
 
 export function shopQuickChipClasses(active: boolean, compact = false): string {
   return cn(
     compact
-      ? "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/35"
+      ? cn(
+          "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors",
+          chipFocus
+        )
       : shopQuickChipBase,
-    active
-      ? "border-zinc-600 bg-zinc-800/80 text-zinc-100"
-      : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300"
+    active ? FILTER_ACTIVE : FILTER_IDLE
   );
 }
 
 export function shopCategoryQuickChipClasses(
-  category: "new" | "clearance",
-  compact = false
+  _category: "new" | "clearance",
+  compact = false,
+  active = false
 ): string {
-  const base = compact
-    ? "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/35"
-    : shopQuickChipBase;
-  const tokens =
-    category === "new"
-      ? { idle: "border-violet-500/25 bg-transparent text-violet-400/80 hover:border-violet-500/40 hover:bg-violet-500/5" }
-      : { idle: "border-orange-500/25 bg-transparent text-orange-400/80 hover:border-orange-500/40 hover:bg-orange-500/5" };
-  return cn(base, tokens.idle);
+  return shopQuickChipClasses(active, compact);
 }
 
-export function shopFilterChipLeadingGlyph(slug: string): string | null {
-  switch (slug) {
-    case "sativa-dom":
-      return "🌿";
-    case "indica-dom":
-      return "💜";
-    case "hybrid":
-      return "⚖️";
-    case "auto":
-      return "🚀";
-    case "photo":
-      return "🌱";
-    case "photo-ff":
-      return "⚡";
-    case "photo-3n":
-      return "🧬";
-    default:
-      return null;
-  }
+export function catalogFilterRowClass(on: boolean, opts?: { mobile?: boolean; isZero?: boolean }): string {
+  const mobile = opts?.mobile === true;
+  return cn(
+    mobile
+      ? "flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5 font-sans transition-colors active:scale-[0.98]"
+      : "flex w-full cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-sm font-sans transition-colors",
+    opts?.isZero && "opacity-55",
+    on ? FILTER_ACTIVE : FILTER_IDLE
+  );
+}
+
+export function catalogFilterToggleClass(on: boolean): string {
+  return cn(
+    "h-9 rounded-full border bg-card px-3 text-foreground shadow-sm",
+    on ? FILTER_ACTIVE : "border-border"
+  );
+}
+
+export function catalogMobileDockBtnClass(on: boolean): string {
+  return cn(
+    "h-14 min-h-12 flex-1 gap-2 rounded-xl border text-base font-semibold shadow-none transition-colors active:scale-[0.98]",
+    on ? FILTER_ACTIVE : "border-border bg-card text-foreground hover:border-zinc-600 hover:bg-zinc-900/40"
+  );
+}
+
+export function shopFilterChipLeadingGlyph(_slug: string): string | null {
+  return null;
 }

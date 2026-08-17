@@ -5,7 +5,7 @@ import { Tag, X } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { shopQuickChipClasses } from "@/components/storefront/shop-filter-chip-styles";
+import { shopQuickChipClasses, FILTER_ACTIVE, FILTER_IDLE } from "@/components/storefront/shop-filter-chip-styles";
 import { cn, formatPrice } from "@/lib/utils";
 import {
   activeBudgetPresetId,
@@ -20,7 +20,7 @@ const pricePanelClass =
   "space-y-4 rounded-2xl border border-border bg-card/50 p-4 font-sans text-foreground shadow-sm surface-glass";
 
 const sectionHeadingClass =
-  "font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-primary";
+  "font-sans text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500";
 
 function PricePresetChip({
   label,
@@ -42,10 +42,8 @@ function PricePresetChip({
         compact
           ? shopQuickChipClasses(active, true)
           : cn(
-              "min-h-11 rounded-xl border-2 px-3 py-2.5 text-center font-sans text-[11px] font-semibold transition-all active:scale-[0.98]",
-              active
-                ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                : "border-border bg-card/70 text-foreground/85 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+              "min-h-11 rounded-xl border px-3 py-2.5 text-center font-sans text-[11px] font-medium transition-colors active:scale-[0.98]",
+              active ? FILTER_ACTIVE : FILTER_IDLE
             )
       )}
     >
@@ -86,7 +84,7 @@ export function ShopPriceChipsRow({
       <div className={cn("contents font-sans", className)}>
         {showBahtGlyph && (
           <span
-            className="inline-flex shrink-0 items-center self-center pr-0.5 font-sans text-sm font-semibold tabular-nums text-primary/50"
+            className="inline-flex shrink-0 items-center self-center pr-0.5 font-sans text-sm font-medium tabular-nums text-muted-foreground"
             aria-hidden
           >
             ฿
@@ -102,7 +100,7 @@ export function ShopPriceChipsRow({
           />
         ))}
         {priceFilterActive(min, max) && activeId == null && (
-          <span className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 font-sans text-[10px] font-semibold text-primary">
+          <span className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 font-sans text-[10px] font-medium text-primary">
             {t("กำหนดเอง", "Custom")}
           </span>
         )}
@@ -114,11 +112,11 @@ export function ShopPriceChipsRow({
     <div className={cn("font-sans", className)}>
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-stretch sm:gap-3">
         <div className="flex shrink-0 items-center sm:py-0.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-primary/70">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
             {t("งบประมาณ", "Budget")}
           </span>
         </div>
-        <div className="hidden w-px shrink-0 self-stretch bg-primary/15 sm:block" aria-hidden />
+        <div className="hidden w-px shrink-0 self-stretch bg-border sm:block" aria-hidden />
         <div className="relative min-w-0 flex-1">
           <div
             className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-7 bg-gradient-to-r from-white to-transparent sm:w-6"
@@ -139,7 +137,7 @@ export function ShopPriceChipsRow({
               />
             ))}
             {priceFilterActive(min, max) && activeId == null && (
-              <span className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1.5 font-sans text-[10px] font-semibold text-primary">
+              <span className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1.5 font-sans text-[10px] font-medium text-primary">
                 {t("กำหนดเอง", "Custom")}
               </span>
             )}
@@ -221,11 +219,11 @@ export function ShopPriceFilterPanel({
         </div>
       ) : (
         <div className="mb-1 flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground">
             <Tag className="h-5 w-5" strokeWidth={2} aria-hidden />
           </div>
           <div>
-            <p className="text-sm font-bold text-primary">{t("ช่วงราคา", "Price range")}</p>
+            <p className="text-sm font-semibold text-foreground">{t("ช่วงราคา", "Price range")}</p>
             <p className="text-xs text-foreground/65">
               {t("เลือกงบหรือลากสไลเดอร์", "Pick a budget or drag the slider")}
             </p>
@@ -251,7 +249,7 @@ export function ShopPriceFilterPanel({
           {priceFilterActive(min, max) && activeId == null && (
             <span
               className={cn(
-                "inline-flex items-center justify-center rounded-xl border border-primary/25 bg-secondary/50 font-sans text-[11px] font-semibold text-primary",
+                "inline-flex items-center justify-center rounded-xl border border-primary/40 bg-primary/10 font-sans text-[11px] font-medium text-primary",
                 isSheet ? "min-h-11 px-3" : "px-2.5 py-1.5 text-[10px]"
               )}
             >
@@ -271,7 +269,7 @@ export function ShopPriceFilterPanel({
           <div
             className={cn(
               "flex justify-between font-sans text-sm font-semibold tabular-nums",
-              isSidebar ? "text-foreground" : "text-primary"
+              isSidebar ? "text-foreground" : "text-foreground"
             )}
           >
             <span>{formatPrice(pair[0])}</span>
@@ -289,7 +287,7 @@ export function ShopPriceFilterPanel({
             <button
               type="button"
               onClick={() => onRangeChange(null, null)}
-              className="font-sans text-xs font-medium text-primary/80 underline-offset-2 hover:text-primary hover:underline"
+              className="font-sans text-xs font-medium text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
             >
               {t("ล้างช่วงราคา", "Clear price range")}
             </button>
@@ -325,28 +323,27 @@ export function ShopPriceFilterBottomSheet({
         side="bottom"
         className="storefront-v4 flex max-h-[min(88dvh,640px)] flex-col gap-0 rounded-t-2xl border-t border-border bg-card p-0 font-sans text-foreground shadow-2xl shadow-black/50 [&>button]:hidden"
       >
-        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-primary/40" aria-hidden />
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-zinc-700" aria-hidden />
 
-        <div className="relative shrink-0 overflow-hidden border-b border-border bg-gradient-to-br from-primary/90 via-primary to-primary/70 px-4 pb-4 pt-3 text-primary-foreground">
-          <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-emerald-300/20 blur-2xl" />
-          <div className="relative flex items-start justify-between gap-3">
+        <div className="shrink-0 border-b border-border px-4 pb-3 pt-2">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="mb-1 flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-black/20 backdrop-blur-sm">
-                  <Tag className="h-5 w-5" strokeWidth={2} aria-hidden />
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border">
+                  <Tag className="h-5 w-5 text-muted-foreground" strokeWidth={2} aria-hidden />
                 </span>
-                <SheetTitle className="text-left text-lg font-bold tracking-tight text-primary-foreground">
+                <SheetTitle className="text-left text-lg font-semibold tracking-tight text-foreground">
                   {t("กรองตามราคา", "Filter by price")}
                 </SheetTitle>
               </div>
-              <p className="pl-11 text-xs leading-snug text-primary-foreground/85">
+              <p className="pl-11 text-xs leading-snug text-muted-foreground">
                 {t("เลือกช่วงงบหรือปรับสไลเดอร์", "Pick a budget or adjust the slider")}
               </p>
             </div>
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="shrink-0 rounded-full border border-white/20 bg-black/20 p-2.5 text-primary-foreground transition-colors hover:bg-black/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              className="shrink-0 rounded-full border border-border p-2.5 text-muted-foreground transition-colors hover:bg-zinc-900/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
               aria-label={t("ปิด", "Close")}
             >
               <X className="h-5 w-5" strokeWidth={2.5} />
@@ -371,7 +368,7 @@ export function ShopPriceFilterBottomSheet({
         <div className="shrink-0 border-t border-border bg-card/95 px-4 py-4 shadow-[0_-8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
-            className="h-14 w-full rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
+            className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90"
             onClick={() => onOpenChange(false)}
           >
             {t(`ดูสินค้า ${resultCount} รายการ`, `View ${resultCount} products`)}

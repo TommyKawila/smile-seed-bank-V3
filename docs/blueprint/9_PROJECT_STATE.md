@@ -4,6 +4,13 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Catalog filters — minimal emerald-on-select)
+- **What:** ตัวกรองทุกหน้า/ทุกแพลตฟอร์ม มินิมอล — เทาตอนว่าง · เขียว primary เฉพาะตอนเลือก
+- **Logic:** `shop-filter-chip-styles` เป็น token ร่วม · ตัดสีม่วง/ส้ม/อีโมจิ idle · sheet header ไม่ไล่สี
+- **ไฟล์:** `shop-filter-chip-styles.ts` · `FilterSidebar.tsx` · `CatalogSidebarQuickFilters.tsx` · `ShopPriceFilter.tsx` · `ShopQuickFilterBar.tsx` · `LandingDrillDownCatalog.tsx` · `ShopPageClient.tsx`
+
+---
+
 ### บันทึกการทำงาน — 2026-08-17 (New Seeds drill-down Show/Hide filters)
 - **What:** `/new?breeder=` มีปุ่มแสดง/ซ่อนตัวกรองเหมือน Shop/Clearance
 - **Logic:** ใช้ `LandingDrillDownCatalog` ร่วมกับ Clearance · คง `breeder`

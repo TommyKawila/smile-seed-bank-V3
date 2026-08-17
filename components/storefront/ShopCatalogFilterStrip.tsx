@@ -14,6 +14,7 @@ import { ShopSexFilterBar } from "@/components/storefront/ShopSexFilterBar";
 import type { CatalogSexStripSlug } from "@/lib/catalog-filter-strip-labels";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { catalogFilterToggleClass } from "@/components/storefront/shop-filter-chip-styles";
 import { cn } from "@/lib/utils";
 
 export type ShopCatalogFilterStripProps = {
@@ -134,7 +135,7 @@ export function ShopCatalogFilterStrip({
         <Button
           variant="outline"
           size="sm"
-          className={`hidden h-9 shrink-0 rounded-full border-border bg-card px-3 text-foreground shadow-sm lg:inline-flex ${showFilter ? "border-primary bg-primary/10 text-primary" : ""}`}
+          className={cn("hidden h-9 shrink-0 rounded-full px-3 shadow-sm lg:inline-flex", catalogFilterToggleClass(showFilter))}
           onClick={onToggleFilter}
           aria-expanded={showFilter}
           aria-controls="shop-filters"

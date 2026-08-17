@@ -17,6 +17,7 @@ import {
 } from "@/lib/catalog-filter-strip-labels";
 import { parseListParam } from "@/lib/shop-attribute-filters";
 import { floweringTypeToSlug } from "@/lib/seed-type-filter";
+import { FILTER_ACTIVE, FILTER_IDLE } from "@/components/storefront/shop-filter-chip-styles";
 import { cn } from "@/lib/utils";
 
 const FLOWERING_QUICK_SLUGS = ["auto", "photo", "photo-ff"] as const;
@@ -70,11 +71,9 @@ function QuickPill({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2 text-center font-sans transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40",
+        "flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl border px-1.5 py-2 text-center font-sans transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
         presentation === "mobile" ? "min-h-12" : "min-h-11",
-        active
-          ? "border-zinc-600 bg-zinc-800/80 text-zinc-100"
-          : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-300"
+        active ? FILTER_ACTIVE : FILTER_IDLE
       )}
     >
       {iconSlug ? (
@@ -84,16 +83,11 @@ function QuickPill({
           {glyph}
         </span>
       ) : null}
-      <span className={cn("text-[11px] font-semibold leading-tight", active ? "text-zinc-100" : "text-zinc-400")}>
+      <span className={cn("text-[11px] font-medium leading-tight")}>
         {label}
       </span>
       {count != null ? (
-        <span
-          className={cn(
-            "text-[10px] font-medium tabular-nums",
-            active ? "text-zinc-400" : "text-zinc-500"
-          )}
-        >
+        <span className="text-[10px] font-medium tabular-nums opacity-70">
           {count}
         </span>
       ) : null}
@@ -176,7 +170,7 @@ export function CatalogSidebarQuickFilters({
         });
 
   return (
-    <div className="space-y-4 rounded-2xl border border-border/60 bg-zinc-950/40 p-4">
+    <div className="space-y-4">
       <div className="flex flex-wrap gap-2 border-b border-border/60 pb-3">
         <ShopQuickFilterBar
           replaceCatalog={replaceCatalog}

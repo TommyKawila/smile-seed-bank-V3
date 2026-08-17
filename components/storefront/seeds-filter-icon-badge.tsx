@@ -16,38 +16,14 @@ export type SeedsFilterIconSlug =
 
 export const SEEDS_FILTER_ICON_CONFIG: Record<
   SeedsFilterIconSlug,
-  { Icon: LucideIcon; iconBg: string; iconFg: string }
+  { Icon: LucideIcon }
 > = {
-  "sativa-dom": {
-    Icon: Sun,
-    iconBg: "bg-emerald-500/15 border-emerald-500/25",
-    iconFg: "text-emerald-400",
-  },
-  "indica-dom": {
-    Icon: Moon,
-    iconBg: "bg-indica/15 border-indica/25",
-    iconFg: "text-indica",
-  },
-  hybrid: {
-    Icon: Blend,
-    iconBg: "bg-teal-500/15 border-teal-500/25",
-    iconFg: "text-teal-400",
-  },
-  auto: {
-    Icon: Zap,
-    iconBg: "bg-amber-500/15 border-amber-500/25",
-    iconFg: "text-amber-400",
-  },
-  photo: {
-    Icon: Sprout,
-    iconBg: "bg-primary/15 border-primary/25",
-    iconFg: "text-primary",
-  },
-  "photo-ff": {
-    Icon: Zap,
-    iconBg: "bg-orange-500/15 border-orange-500/25",
-    iconFg: "text-orange-400",
-  },
+  "sativa-dom": { Icon: Sun },
+  "indica-dom": { Icon: Moon },
+  hybrid: { Icon: Blend },
+  auto: { Icon: Zap },
+  photo: { Icon: Sprout },
+  "photo-ff": { Icon: Zap },
 };
 
 export function SeedsFilterIconBadge({
@@ -61,20 +37,22 @@ export function SeedsFilterIconBadge({
 }) {
   const cfg = SEEDS_FILTER_ICON_CONFIG[slug as SeedsFilterIconSlug];
   if (!cfg) return null;
-  const { Icon, iconBg, iconFg } = cfg;
+  const { Icon } = cfg;
   const box = size === "sm" ? "h-7 w-7 rounded-lg" : "h-8 w-8 rounded-xl";
   const icon = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
 
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center border shadow-sm backdrop-blur-sm",
+        "flex shrink-0 items-center justify-center border",
         box,
-        active ? "border-zinc-500 bg-zinc-700/60 shadow-none" : iconBg
+        active
+          ? "border-primary/50 bg-primary/10"
+          : "border-border bg-transparent"
       )}
     >
       <Icon
-        className={cn(icon, active ? "text-zinc-200" : iconFg)}
+        className={cn(icon, active ? "text-primary" : "text-zinc-500")}
         strokeWidth={1.75}
         aria-hidden
       />
