@@ -4,6 +4,21 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Bulk share — ปุ่มอธิบาย Supreme SG)
+- **What:** ลิงก์ exclusive มีปุ่มอธิบาย Supreme (overview + feminized + autoflower) กำกับหมวด SG
+- **Logic:** copy จากเว็บ Seeds Genetics · Dialog EN + สรุป TH · ไม่โชว์ต้นทุน
+- **ไฟล์:** `lib/seeds-genetics-supreme-copy.ts` · `BulkShareSgStrains.tsx` · `SgSupremeInfoButton.tsx`
+
+### บันทึกการทำงาน — 2026-08-17 (Bulk seeds — ลิสต์สายพันธุ์ Green Future)
+- **What:** แสดงลิสต์ GF ใน `/admin/bulk-seeds` แยกหมวด Auto FEM / FEM · ค้นหารหัส/ชื่อ · เหมือน panel SG
+- **Logic:** `GfStrainCatalogPanel` ดึงจาก `/api/admin/partners/green-future` · จัดกลุ่มตาม `seedFormat`
+- **ไฟล์:** `GfStrainCatalogPanel.tsx` · `BulkSeedsBookClient.tsx`
+
+### บันทึกการทำงาน — 2026-08-17 (Seeds Genetics — floor ราคาขาย vs เว็บสาธารณะ)
+- **What:** ราคาขายลูกค้า SG ไม่ต่ำกว่าเว็บ bulk + €0.25 (€2.50 / €2.25 / €2.25) · ต้นทุน admin ยัง €1
+- **Logic:** `customerSellEurFloor()` ใน `priceSupplierBook` · GM คำนวณใหม่จากราคาจริงหลัง floor
+- **ไฟล์:** `lib/bulk-seeds-book.ts` · `BulkSeedsBookClient.tsx` · `app/share/bulk/[token]/page.tsx`
+
 ### บันทึกการทำงาน — 2026-08-17 (Seeds Genetics — ลิสต์ B2B EN 2026 + Photo FF)
 - **What:** rebuild `catalog.json` 106 สายจากไฟล์ B2B (96 retail) + Photo FF 10 ถุง · เพิ่ม Do Si Dos x Zkittlez · ตัด Moonbow · หมวด Photo FF ใหม่
 - **Logic:** `scripts/build-seeds-genetics-b2b-catalog.ts` · เก็บ Woo id/url ถ้าจับชื่อได้ · Photo FF = FAST · 1,000 เมล็ด/ถุงตามฉลาก

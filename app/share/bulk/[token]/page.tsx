@@ -9,6 +9,7 @@ import {
   priceSupplierBook,
   type BulkSupplierSlug,
 } from "@/lib/bulk-seeds-book";
+import { BulkShareSgStrains } from "@/components/share/bulk/BulkShareSgStrains";
 import { sgStrainsGrouped } from "@/lib/seeds-genetics-catalog";
 import { listPartnerStrains } from "@/services/partner-catalog-service";
 import { GREEN_FUTURE_SLUG } from "@/types/partner-catalog";
@@ -93,6 +94,11 @@ export default async function BulkSharePage({ params }: Props) {
             <div className="border-b border-slate-100 px-4 py-3">
               <h2 className="text-sm font-semibold text-slate-900">{book.name}</h2>
               <p className="text-xs text-slate-500">{book.origin}</p>
+              {book.slug === SEEDS_GENETICS_SLUG ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  ราคารวมบริการนำเข้า — สูงกว่า bulk สาธารณะของ Seeds Genetics เล็กน้อย
+                </p>
+              ) : null}
               {book.formats.length > 0 ? (
                 <p className="mt-1 text-xs text-slate-500">
                   {book.formats.map((f) => SEED_FORMAT_LABEL[f]).join(" · ")}
@@ -144,27 +150,7 @@ export default async function BulkSharePage({ params }: Props) {
           </section>
         ) : null}
 
-        {sgGroups.length > 0 ? (
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">สายพันธุ์ (Seeds Genetics)</h2>
-            <div className="mt-3 space-y-4">
-              {sgGroups.map((group) => (
-                <div key={group.slug}>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    {group.label} ({group.strains.length})
-                  </h3>
-                  <ul className="mt-2 columns-1 gap-x-6 text-sm text-slate-700 sm:columns-2">
-                    {group.strains.map((s) => (
-                      <li key={s.id} className="mb-1 break-inside-avoid">
-                        {s.name}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
+        {sgGroups.length > 0 ? <BulkShareSgStrains groups={sgGroups} /> : null}
 
         <p className="text-center text-[11px] text-slate-400">
           Confidential · not for public listing · Smile Seed Bank

@@ -20,10 +20,13 @@ import {
   DEFAULT_EUR_THB,
   SEED_FORMAT_LABEL,
   SEEDS_GENETICS_PUBLIC_TIERS,
+  SEEDS_GENETICS_PUBLIC_PREMIUM_EUR,
+  customerSellEurFloor,
   priceSupplierBook,
   type BulkSupplierSlug,
 } from "@/lib/bulk-seeds-book";
 import { ADDERS_BY_LANE, GM_BY_QTY } from "@/lib/bulk-seeds-trade";
+import { GfStrainCatalogPanel } from "@/components/admin/bulk-seeds/GfStrainCatalogPanel";
 import { SgStrainCatalogPanel } from "@/components/admin/bulk-seeds/SgStrainCatalogPanel";
 
 function fmt(n: number, digits = 2): string {
@@ -251,7 +254,15 @@ export function BulkSeedsBookClient() {
               {SEEDS_GENETICS_PUBLIC_TIERS.map(
                 (t) => `${t.label} ${thb(t.publicEur * eurThb, 0)} (€${t.publicEur.toFixed(2)})`
               ).join(" · ")}
-              {" "}· ดีล SSB {thb(1 * eurThb, 0)} (€1) จาก 250 เมล็ด · ขั้นเกิน 500 เว็บไม่มีเรท — ยังอิง €1
+              {" "}· ขายลูกค้า = เว็บ + €{SEEDS_GENETICS_PUBLIC_PREMIUM_EUR.toFixed(2)} (
+              {book.tiers
+                .map((t) => {
+                  const floor = customerSellEurFloor(t.minQty);
+                  return floor != null ? `€${floor.toFixed(2)} @${t.minQty}` : null;
+                })
+                .filter(Boolean)
+                .join(" · ")}
+              ) · ต้นทุน SSB €1 จาก 250
             </p>
           ) : null}
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
@@ -314,6 +325,12 @@ export function BulkSeedsBookClient() {
           </div>
         </div>
       ))}
+
+      <Card className="border-slate-200 shadow-sm">
+        <CardContent className="pt-6">
+          <GfStrainCatalogPanel />
+        </CardContent>
+      </Card>
 
       <Card className="border-slate-200 shadow-sm">
         <CardContent className="pt-6">
