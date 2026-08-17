@@ -48,7 +48,7 @@ export const PRODUCT_SELECT_WITH_BREEDER_AND_VARIANTS =
 
 /** Filter sidebar counts — attribute fields + pack labels only. */
 export const PRODUCT_SELECT_FILTER_COUNT =
-  "id, strain_dominance, sativa_ratio, indica_ratio, genetic_ratio, genetics, growing_difficulty, thc_percent, cbd_percent, seed_type, flowering_type, category, product_categories(id, name), product_variants(unit_label, is_active)";
+  "id, strain_dominance, sativa_ratio, indica_ratio, genetic_ratio, genetics, growing_difficulty, thc_percent, cbd_percent, seed_type, flowering_type, category, product_categories(id, name), product_variants(unit_label, is_active, stock)";
 
 /** Shop grid: slim variants (no full `*`) — faster catalog / filter scans. */
 export const PRODUCT_SELECT_CATALOG_LIST =

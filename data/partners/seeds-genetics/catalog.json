@@ -1,37 +1,8 @@
 {
-  "fetchedAt": "2026-08-17T05:21:42.527Z",
-  "source": "https://seedsgenetics.com/",
+  "fetchedAt": "2026-08-17T10:22:49.631Z",
+  "source": "B2B EN 2026 (Seeds Genetics) + Photo FF hand stock",
+  "sourceDocument": "B2B EN 2026.pdf",
   "strains": [
-    {
-      "id": 3263,
-      "name": "24K Gold feminized",
-      "slug": "24k-gold-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/24k-gold-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1299,
-      "name": "AK 420 Autoflower",
-      "slug": "ak-420-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/ak-420-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
-    },
     {
       "id": 1263,
       "name": "AK 420 feminized",
@@ -43,20 +14,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 1281,
-      "name": "Amnesia Haze Autoflower",
-      "slug": "amnesia-haze-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/amnesia-haze-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1305,
@@ -69,71 +28,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 7668,
-      "name": "Apple Fritter Autoflower",
-      "slug": "apple-fritter-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/apple-fritter-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 3872,
-      "name": "Apple Fritter feminized",
-      "slug": "apple-fritter-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/apple-fritter-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1369,
-      "name": "Banana Sherbet feminized",
-      "slug": "banana-sherbet-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/banana-sherbet-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1311,
-      "name": "Big Bud Autoflower",
-      "slug": "big-bud-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/big-bud-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1341,
@@ -146,84 +42,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 5797,
-      "name": "Biscotti feminized",
-      "slug": "biscotti-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/biscotti-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 9689,
-      "name": "Black Maple feminized",
-      "slug": "black-maple-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/black-maple-feminized/",
-      "categories": [
-        {
-          "slug": "supreme-feminized",
-          "label": "Supreme feminized"
-        }
-      ],
-      "primaryCategory": "supreme-feminized"
-    },
-    {
-      "id": 6865,
-      "name": "Blue Dream Cake Autoflower",
-      "slug": "blue-dream-cake-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/blue-dream-cake-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 6867,
-      "name": "Blue Dream Cake feminized",
-      "slug": "blue-dream-cake-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/blue-dream-cake-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1301,
-      "name": "Blueberry Autoflower",
-      "slug": "blueberry-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/blueberry-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1309,
@@ -236,54 +56,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 3345,
-      "name": "Bruce Banner Autoflower",
-      "slug": "bruce-banner-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/bruce-banner-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 1992,
-      "name": "Bruce Banner feminized",
-      "slug": "bruce-banner-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/bruce-banner-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1381,
-      "name": "Bubbles Autoflower",
-      "slug": "bubbles-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/bubbles-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1327,
@@ -296,59 +70,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 2706,
-      "name": "CBD Critical Autoflower",
-      "slug": "cbd-critical-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/cbd-critical-autoflower/",
-      "categories": [
-        {
-          "slug": "cbd-seeds",
-          "label": "CBD seeds"
-        }
-      ],
-      "primaryCategory": "cbd-seeds"
-    },
-    {
-      "id": 2319,
-      "name": "CBD Critical feminized",
-      "slug": "cbd-critical-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/cbd-critical-feminized/",
-      "categories": [
-        {
-          "slug": "cbd-seeds",
-          "label": "CBD seeds"
-        }
-      ],
-      "primaryCategory": "cbd-seeds"
-    },
-    {
-      "id": 2323,
-      "name": "CBD Northern Light feminized",
-      "slug": "cbd-northern-lights-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/cbd-northern-lights-feminized/",
-      "categories": [
-        {
-          "slug": "cbd-seeds",
-          "label": "CBD seeds"
-        }
-      ],
-      "primaryCategory": "cbd-seeds"
-    },
-    {
-      "id": 1285,
-      "name": "Cheese Autoflower",
-      "slug": "cheese-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/cheese-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1303,
@@ -361,71 +84,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 6392,
-      "name": "Cherry Punch feminized",
-      "slug": "cherry-punch-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/cherry-punch-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 2708,
-      "name": "Cookies Autoflower",
-      "slug": "cookies-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/cookies-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 1349,
-      "name": "Cookies feminized",
-      "slug": "cookies-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/cookies-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1283,
-      "name": "Critical 2.0 Autoflower",
-      "slug": "critical-2-0-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/critical-2-0-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1297,
@@ -438,251 +98,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 9694,
-      "name": "Dank Schrader feminized",
-      "slug": "dank-schrader-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/dank-schrader-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 6391,
-      "name": "Forbidden Fruit Cake feminized",
-      "slug": "forbidden-fruit-cake-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/forbidden-fruit-cake-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 9675,
-      "name": "Fritter Glitter Autoflower",
-      "slug": "fritter-glitter-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/fritter-glitter-autoflower/",
-      "categories": [
-        {
-          "slug": "supreme-autoflower",
-          "label": "Supreme autoflower"
-        }
-      ],
-      "primaryCategory": "supreme-autoflower"
-    },
-    {
-      "id": 8721,
-      "name": "Fritter Licker feminized",
-      "slug": "fritter-licker-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/fritter-licker-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 9695,
-      "name": "Frosted MAC feminized",
-      "slug": "frosted-mac-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/frosted-mac-feminized/",
-      "categories": [
-        {
-          "slug": "supreme-feminized",
-          "label": "Supreme feminized"
-        }
-      ],
-      "primaryCategory": "supreme-feminized"
-    },
-    {
-      "id": 3806,
-      "name": "Gelato 41 Autoflower",
-      "slug": "gelato-41-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/gelato-41-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 1347,
-      "name": "Gelato 41 feminized",
-      "slug": "gelato-41-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/gelato-41-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 6056,
-      "name": "GMO Feminized",
-      "slug": "gmo-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/gmo-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1379,
-      "name": "Gorilla Glue Autoflower",
-      "slug": "gorilla-glue-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/gorilla-glue-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 1345,
-      "name": "Gorilla Glue feminized",
-      "slug": "gorilla-glue-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/gorilla-glue-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 3317,
-      "name": "Granddaddy Purple feminized",
-      "slug": "granddaddy-purple-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/granddaddy-purple-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 9679,
-      "name": "Grape Cream Cake Autoflower",
-      "slug": "grape-cream-cake-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/grape-cream-cake-autoflower/",
-      "categories": [
-        {
-          "slug": "supreme-autoflower",
-          "label": "Supreme autoflower"
-        }
-      ],
-      "primaryCategory": "supreme-autoflower"
-    },
-    {
-      "id": 9685,
-      "name": "Grape Smoothie Autoflower",
-      "slug": "grape-smoothie-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/grape-smoothie-autoflower/",
-      "categories": [
-        {
-          "slug": "supreme-autoflower",
-          "label": "Supreme autoflower"
-        }
-      ],
-      "primaryCategory": "supreme-autoflower"
-    },
-    {
-      "id": 9693,
-      "name": "Guavaz feminized",
-      "slug": "guavaz-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/guavaz-feminized/",
-      "categories": [
-        {
-          "slug": "supreme-feminized",
-          "label": "Supreme feminized"
-        }
-      ],
-      "primaryCategory": "supreme-feminized"
-    },
-    {
-      "id": 9687,
-      "name": "Honey Banana feminized",
-      "slug": "honey-banana-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/honey-banana-feminized/",
-      "categories": [
-        {
-          "slug": "supreme-feminized",
-          "label": "Supreme feminized"
-        }
-      ],
-      "primaryCategory": "supreme-feminized"
-    },
-    {
-      "id": 1331,
-      "name": "Jack Herer Autoflower",
-      "slug": "jack-herer-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/jack-herer-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1315,
@@ -695,122 +112,12 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 8724,
-      "name": "Jealouz feminized",
-      "slug": "jealouz-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/jealouz-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 8722,
-      "name": "Kreamz feminized",
-      "slug": "kreamz-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/kreamz-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1289,
-      "name": "Mango Kush feminized",
-      "slug": "mango-kush-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/mango-kush-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 3935,
-      "name": "Mimosa Evo Autoflower",
-      "slug": "mimosa-evo-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/mimosa-evo-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 3063,
-      "name": "Mimosa Evo feminized",
-      "slug": "mimosa-evo-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/mimosa-evo-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1371,
-      "name": "Moonbow feminized",
-      "slug": "moonbow-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/moonbow-feminized/",
-      "categories": [
-        {
-          "slug": "supreme-feminized",
-          "label": "Supreme feminized"
-        }
-      ],
-      "primaryCategory": "supreme-feminized"
-    },
-    {
-      "id": 1357,
-      "name": "Northern Lights Autoflower",
-      "slug": "northern-lights-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/northern-lights-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1359,
-      "name": "Northern Lights feminized",
+      "name": "Northern Light feminized",
       "slug": "northern-lights-feminized",
       "sourceUrl": "https://seedsgenetics.com/product/northern-lights-feminized/",
       "categories": [
@@ -819,20 +126,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 1339,
-      "name": "O.G. Kush Autoflower",
-      "slug": "o-g-kush-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/o-g-kush-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1319,
@@ -845,58 +140,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 6868,
-      "name": "Oreoz feminized",
-      "slug": "oreoz-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/oreoz-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 7664,
-      "name": "Permanent Marker feminized",
-      "slug": "permanent-marker-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/permanent-marker-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1375,
-      "name": "Pineapple Chunk feminized",
-      "slug": "pineapple-chunk-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/pineapple-chunk-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1343,
@@ -909,7 +154,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 3753,
@@ -922,20 +168,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 1323,
-      "name": "Purple Kush Autoflower",
-      "slug": "purple-kush-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/purple-kush-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1329,
@@ -948,71 +182,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 4065,
-      "name": "Purple Punch Autoflower",
-      "slug": "purple-punch-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/purple-punch-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 1373,
-      "name": "Purple Punch feminized",
-      "slug": "purple-punch-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/purple-punch-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 9681,
-      "name": "Rainbow Jelly Autoflower",
-      "slug": "rainbow-jelly-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/rainbow-jelly-autoflower/",
-      "categories": [
-        {
-          "slug": "supreme-autoflower",
-          "label": "Supreme autoflower"
-        }
-      ],
-      "primaryCategory": "supreme-autoflower"
-    },
-    {
-      "id": 5578,
-      "name": "Red Wine Feminized",
-      "slug": "red-wine-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/red-wine-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1273,
@@ -1025,88 +196,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 9656,
-      "name": "RS11 feminized",
-      "slug": "rs11-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/rs11-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 5794,
-      "name": "Runtz Autoflower",
-      "slug": "runtz-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/runtz-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 2088,
-      "name": "Runtz feminized",
-      "slug": "runtz-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/runtz-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 4137,
-      "name": "Skywalker Kush feminized",
-      "slug": "skywalker-kush-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/skywalker-kush-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 9691,
-      "name": "Slurricane feminized",
-      "slug": "slurricane-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/slurricane-feminized/",
-      "categories": [
-        {
-          "slug": "supreme-feminized",
-          "label": "Supreme feminized"
-        }
-      ],
-      "primaryCategory": "supreme-feminized"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1361,
@@ -1119,97 +210,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 1313,
-      "name": "Sour Diesel Haze Autoflower",
-      "slug": "sour-diesel-haze-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/sour-diesel-haze-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
-    },
-    {
-      "id": 9673,
-      "name": "Strawberry Gelato Autoflower",
-      "slug": "strawberry-gelato-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/strawberry-gelato-autoflower/",
-      "categories": [
-        {
-          "slug": "supreme-autoflower",
-          "label": "Supreme autoflower"
-        }
-      ],
-      "primaryCategory": "supreme-autoflower"
-    },
-    {
-      "id": 5816,
-      "name": "Sunset Sherbet Autoflower",
-      "slug": "sunset-sherbet-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/sunset-sherbet-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 8719,
-      "name": "Super Boof Autoflower",
-      "slug": "super-boof-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/super-boof-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 7666,
-      "name": "Super Boof feminized",
-      "slug": "super-boof-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/super-boof-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 3837,
-      "name": "Super Lemon Haze Autoflower",
-      "slug": "super-lemon-haze-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/super-lemon-haze-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1351,
@@ -1222,7 +224,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1317,
@@ -1235,101 +238,8 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
-    },
-    {
-      "id": 4945,
-      "name": "Tangie feminized",
-      "slug": "tangie-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/tangie-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 2090,
-      "name": "Watermelon Punch feminized",
-      "slug": "watermelon-punch-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/watermelon-punch-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 9683,
-      "name": "Watermelon Z Autoflower",
-      "slug": "watermelon-z-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/watermelon-z-autoflower/",
-      "categories": [
-        {
-          "slug": "supreme-autoflower",
-          "label": "Supreme autoflower"
-        }
-      ],
-      "primaryCategory": "supreme-autoflower"
-    },
-    {
-      "id": 3365,
-      "name": "Wedding Cake Autoflower",
-      "slug": "wedding-cake-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/wedding-cake-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
-          "slug": "cali-autoflower",
-          "label": "Cali autoflower"
-        }
-      ],
-      "primaryCategory": "cali-autoflower"
-    },
-    {
-      "id": 1367,
-      "name": "Wedding Cake feminized",
-      "slug": "wedding-cake-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/wedding-cake-feminized/",
-      "categories": [
-        {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
-        }
-      ],
-      "primaryCategory": "cali-feminized"
-    },
-    {
-      "id": 1325,
-      "name": "White Widow Autoflower",
-      "slug": "white-widow-autoflower",
-      "sourceUrl": "https://seedsgenetics.com/product/white-widow-autoflower/",
-      "categories": [
-        {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        }
-      ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1287,
@@ -1342,7 +252,778 @@
           "label": "Feminized seeds"
         }
       ],
-      "primaryCategory": "feminized-seeds"
+      "primaryCategory": "feminized-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 3263,
+      "name": "24K Gold feminized",
+      "slug": "24k-gold-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/24k-gold-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 3872,
+      "name": "Apple Fritter feminized",
+      "slug": "apple-fritter-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/apple-fritter-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1369,
+      "name": "Banana Sherbet feminized",
+      "slug": "banana-sherbet-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/banana-sherbet-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 5797,
+      "name": "Biscotti feminized",
+      "slug": "biscotti-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/biscotti-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 6867,
+      "name": "Blue Dream Cake feminized",
+      "slug": "blue-dream-cake-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/blue-dream-cake-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1992,
+      "name": "Bruce Banner feminized",
+      "slug": "bruce-banner-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/bruce-banner-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 6392,
+      "name": "Cherry Punch feminized",
+      "slug": "cherry-punch-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/cherry-punch-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1349,
+      "name": "Cookies feminized",
+      "slug": "cookies-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/cookies-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 900001,
+      "name": "Do Si Dos x Zkittlez feminized",
+      "slug": "do-si-dos-x-zkittlez-feminized",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 6391,
+      "name": "Forbidden Fruit Cake feminized",
+      "slug": "forbidden-fruit-cake-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/forbidden-fruit-cake-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 8721,
+      "name": "Fritter Licker feminized",
+      "slug": "fritter-licker-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/fritter-licker-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1347,
+      "name": "Gelato 41 feminized",
+      "slug": "gelato-41-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/gelato-41-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 6056,
+      "name": "GMO feminized",
+      "slug": "gmo-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/gmo-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1345,
+      "name": "Gorilla Glue feminized",
+      "slug": "gorilla-glue-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/gorilla-glue-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 3317,
+      "name": "Granddaddy Purple feminized",
+      "slug": "granddaddy-purple-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/granddaddy-purple-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 8724,
+      "name": "Jealouz feminized",
+      "slug": "jealouz-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/jealouz-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 8722,
+      "name": "Kreamz feminized",
+      "slug": "kreamz-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/kreamz-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1289,
+      "name": "Mango Kush feminized",
+      "slug": "mango-kush-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/mango-kush-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 3063,
+      "name": "Mimosa Evo feminized",
+      "slug": "mimosa-evo-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/mimosa-evo-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 6868,
+      "name": "Oreoz feminized",
+      "slug": "oreoz-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/oreoz-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 7664,
+      "name": "Permanent Marker feminized",
+      "slug": "permanent-marker-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/permanent-marker-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1375,
+      "name": "Pineapple Chunk feminized",
+      "slug": "pineapple-chunk-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/pineapple-chunk-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1373,
+      "name": "Purple Punch feminized",
+      "slug": "purple-punch-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/purple-punch-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 5578,
+      "name": "Red Wine feminized",
+      "slug": "red-wine-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/red-wine-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9656,
+      "name": "RS11 feminized",
+      "slug": "rs11-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/rs11-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 2088,
+      "name": "Runtz feminized",
+      "slug": "runtz-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/runtz-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 4137,
+      "name": "Skywalker Kush feminized",
+      "slug": "skywalker-kush-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/skywalker-kush-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 7666,
+      "name": "Super Boof feminized",
+      "slug": "super-boof-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/super-boof-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 4945,
+      "name": "Tangie feminized",
+      "slug": "tangie-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/tangie-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 2090,
+      "name": "Watermelon Punch feminized",
+      "slug": "watermelon-punch-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/watermelon-punch-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1367,
+      "name": "Wedding Cake feminized",
+      "slug": "wedding-cake-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/wedding-cake-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1353,
+      "name": "Zkittlez feminized",
+      "slug": "zkittlez-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/zkittlez-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9663,
+      "name": "Zoap feminized",
+      "slug": "zoap-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/zoap-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 6870,
+      "name": "Zupa Zips feminized",
+      "slug": "zupa-zips-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/zupa-zips-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 6962,
+      "name": "Zushi feminized",
+      "slug": "blue-zushi-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/blue-zushi-feminized/",
+      "categories": [
+        {
+          "slug": "cali-feminized",
+          "label": "Cali feminized"
+        }
+      ],
+      "primaryCategory": "cali-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9689,
+      "name": "Black Maple feminized",
+      "slug": "black-maple-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/black-maple-feminized/",
+      "categories": [
+        {
+          "slug": "supreme-feminized",
+          "label": "Supreme feminized"
+        }
+      ],
+      "primaryCategory": "supreme-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9694,
+      "name": "Dank Schrader feminized",
+      "slug": "dank-schrader-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/dank-schrader-feminized/",
+      "categories": [
+        {
+          "slug": "supreme-feminized",
+          "label": "Supreme feminized"
+        }
+      ],
+      "primaryCategory": "supreme-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9695,
+      "name": "Frosted MAC feminized",
+      "slug": "frosted-mac-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/frosted-mac-feminized/",
+      "categories": [
+        {
+          "slug": "supreme-feminized",
+          "label": "Supreme feminized"
+        }
+      ],
+      "primaryCategory": "supreme-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9693,
+      "name": "Guavaz feminized",
+      "slug": "guavaz-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/guavaz-feminized/",
+      "categories": [
+        {
+          "slug": "supreme-feminized",
+          "label": "Supreme feminized"
+        }
+      ],
+      "primaryCategory": "supreme-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9687,
+      "name": "Honey Banana feminized",
+      "slug": "honey-banana-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/honey-banana-feminized/",
+      "categories": [
+        {
+          "slug": "supreme-feminized",
+          "label": "Supreme feminized"
+        }
+      ],
+      "primaryCategory": "supreme-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9691,
+      "name": "Slurricane feminized",
+      "slug": "slurricane-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/slurricane-feminized/",
+      "categories": [
+        {
+          "slug": "supreme-feminized",
+          "label": "Supreme feminized"
+        }
+      ],
+      "primaryCategory": "supreme-feminized",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1299,
+      "name": "AK 420 Autoflower",
+      "slug": "ak-420-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/ak-420-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1281,
+      "name": "Amnesia Haze Autoflower",
+      "slug": "amnesia-haze-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/amnesia-haze-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1311,
+      "name": "Big Bud Autoflower",
+      "slug": "big-bud-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/big-bud-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1301,
+      "name": "Blueberry Autoflower",
+      "slug": "blueberry-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/blueberry-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1381,
+      "name": "Bubbles Autoflower",
+      "slug": "bubbles-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/bubbles-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1285,
+      "name": "Cheese Autoflower",
+      "slug": "cheese-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/cheese-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1283,
+      "name": "Critical 2.0 Autoflower",
+      "slug": "critical-2-0-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/critical-2-0-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1331,
+      "name": "Jack Herer Autoflower",
+      "slug": "jack-herer-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/jack-herer-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1357,
+      "name": "Northern Light Autoflower",
+      "slug": "northern-lights-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/northern-lights-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1339,
+      "name": "O.G. Kush Autoflower",
+      "slug": "o-g-kush-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/o-g-kush-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1323,
+      "name": "Purple Kush Autoflower",
+      "slug": "purple-kush-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/purple-kush-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1313,
+      "name": "Sour Diesel Haze Autoflower",
+      "slug": "sour-diesel-haze-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/sour-diesel-haze-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 3837,
+      "name": "Super Lemon Haze Autoflower",
+      "slug": "super-lemon-haze-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/super-lemon-haze-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1325,
+      "name": "White Widow Autoflower",
+      "slug": "white-widow-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/white-widow-autoflower/",
+      "categories": [
+        {
+          "slug": "autoflower-seeds",
+          "label": "Autoflower seeds"
+        }
+      ],
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
     },
     {
       "id": 1365,
@@ -1355,7 +1036,176 @@
           "label": "Autoflower seeds"
         }
       ],
-      "primaryCategory": "autoflower-seeds"
+      "primaryCategory": "autoflower-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 7668,
+      "name": "Apple Fritter Autoflower",
+      "slug": "apple-fritter-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/apple-fritter-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 6865,
+      "name": "Blue Dream Cake Autoflower",
+      "slug": "blue-dream-cake-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/blue-dream-cake-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 3345,
+      "name": "Bruce Banner Autoflower",
+      "slug": "bruce-banner-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/bruce-banner-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 2708,
+      "name": "Cookies Autoflower",
+      "slug": "cookies-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/cookies-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 3806,
+      "name": "Gelato 41 Autoflower",
+      "slug": "gelato-41-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/gelato-41-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 1379,
+      "name": "Gorilla Glue Autoflower",
+      "slug": "gorilla-glue-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/gorilla-glue-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 3935,
+      "name": "Mimosa Evo Autoflower",
+      "slug": "mimosa-evo-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/mimosa-evo-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 4065,
+      "name": "Purple Punch Autoflower",
+      "slug": "purple-punch-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/purple-punch-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 5794,
+      "name": "Runtz Autoflower",
+      "slug": "runtz-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/runtz-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 5816,
+      "name": "Sunset Sherbet Autoflower",
+      "slug": "sunset-sherbet-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/sunset-sherbet-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 8719,
+      "name": "Super Boof Autoflower",
+      "slug": "super-boof-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/super-boof-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 3365,
+      "name": "Wedding Cake Autoflower",
+      "slug": "wedding-cake-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/wedding-cake-autoflower/",
+      "categories": [
+        {
+          "slug": "cali-autoflower",
+          "label": "Cali autoflower"
+        }
+      ],
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
     },
     {
       "id": 4954,
@@ -1364,125 +1214,1045 @@
       "sourceUrl": "https://seedsgenetics.com/product/zkittlez-autoflower/",
       "categories": [
         {
-          "slug": "autoflower-seeds",
-          "label": "Autoflower seeds"
-        },
-        {
           "slug": "cali-autoflower",
           "label": "Cali autoflower"
         }
       ],
-      "primaryCategory": "cali-autoflower"
+      "primaryCategory": "cali-autoflower",
+      "listSource": "b2b-2026"
     },
     {
-      "id": 1353,
-      "name": "Zkittlez feminized",
-      "slug": "zkittlez-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/zkittlez-feminized/",
+      "id": 9675,
+      "name": "Fritter Glitter Autoflower",
+      "slug": "fritter-glitter-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/fritter-glitter-autoflower/",
       "categories": [
         {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
+          "slug": "supreme-autoflower",
+          "label": "Supreme autoflower"
         }
       ],
-      "primaryCategory": "cali-feminized"
+      "primaryCategory": "supreme-autoflower",
+      "listSource": "b2b-2026"
     },
     {
-      "id": 9663,
-      "name": "Zoap feminized",
-      "slug": "zoap-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/zoap-feminized/",
+      "id": 9679,
+      "name": "Grape Cream Cake Autoflower",
+      "slug": "grape-cream-cake-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/grape-cream-cake-autoflower/",
       "categories": [
         {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
+          "slug": "supreme-autoflower",
+          "label": "Supreme autoflower"
         }
       ],
-      "primaryCategory": "cali-feminized"
+      "primaryCategory": "supreme-autoflower",
+      "listSource": "b2b-2026"
     },
     {
-      "id": 6870,
-      "name": "Zupa Zips feminized",
-      "slug": "zupa-zips-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/zupa-zips-feminized/",
+      "id": 9685,
+      "name": "Grape Smoothie Autoflower",
+      "slug": "grape-smoothie-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/grape-smoothie-autoflower/",
       "categories": [
         {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
+          "slug": "supreme-autoflower",
+          "label": "Supreme autoflower"
         }
       ],
-      "primaryCategory": "cali-feminized"
+      "primaryCategory": "supreme-autoflower",
+      "listSource": "b2b-2026"
     },
     {
-      "id": 6962,
-      "name": "Zushi feminized",
-      "slug": "blue-zushi-feminized",
-      "sourceUrl": "https://seedsgenetics.com/product/blue-zushi-feminized/",
+      "id": 9681,
+      "name": "Rainbow Jelly Autoflower",
+      "slug": "rainbow-jelly-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/rainbow-jelly-autoflower/",
       "categories": [
         {
-          "slug": "cali-feminized",
-          "label": "Cali feminized"
-        },
-        {
-          "slug": "feminized-seeds",
-          "label": "Feminized seeds"
+          "slug": "supreme-autoflower",
+          "label": "Supreme autoflower"
         }
       ],
-      "primaryCategory": "cali-feminized"
+      "primaryCategory": "supreme-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9673,
+      "name": "Strawberry Gelato Autoflower",
+      "slug": "strawberry-gelato-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/strawberry-gelato-autoflower/",
+      "categories": [
+        {
+          "slug": "supreme-autoflower",
+          "label": "Supreme autoflower"
+        }
+      ],
+      "primaryCategory": "supreme-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 9683,
+      "name": "Watermelon Z Autoflower",
+      "slug": "watermelon-z-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/watermelon-z-autoflower/",
+      "categories": [
+        {
+          "slug": "supreme-autoflower",
+          "label": "Supreme autoflower"
+        }
+      ],
+      "primaryCategory": "supreme-autoflower",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 2706,
+      "name": "CBD Critical Autoflower",
+      "slug": "cbd-critical-autoflower",
+      "sourceUrl": "https://seedsgenetics.com/product/cbd-critical-autoflower/",
+      "categories": [
+        {
+          "slug": "cbd-seeds",
+          "label": "CBD seeds"
+        }
+      ],
+      "primaryCategory": "cbd-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 2319,
+      "name": "CBD Critical feminized",
+      "slug": "cbd-critical-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/cbd-critical-feminized/",
+      "categories": [
+        {
+          "slug": "cbd-seeds",
+          "label": "CBD seeds"
+        }
+      ],
+      "primaryCategory": "cbd-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 2323,
+      "name": "CBD Northern Light feminized",
+      "slug": "cbd-northern-lights-feminized",
+      "sourceUrl": "https://seedsgenetics.com/product/cbd-northern-lights-feminized/",
+      "categories": [
+        {
+          "slug": "cbd-seeds",
+          "label": "CBD seeds"
+        }
+      ],
+      "primaryCategory": "cbd-seeds",
+      "listSource": "b2b-2026"
+    },
+    {
+      "id": 900002,
+      "name": "Apple Fritter",
+      "slug": "photo-ff-apple-fritter",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
+    },
+    {
+      "id": 900004,
+      "name": "Cherry Pie",
+      "slug": "photo-ff-cherry-pie",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
+    },
+    {
+      "id": 900003,
+      "name": "Forbidden Ale",
+      "slug": "photo-ff-forbidden-ale",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
+    },
+    {
+      "id": 900005,
+      "name": "GHO",
+      "slug": "photo-ff-gho",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
+    },
+    {
+      "id": 900008,
+      "name": "Gorilla",
+      "slug": "photo-ff-gorilla",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
+    },
+    {
+      "id": 900010,
+      "name": "Green Crack",
+      "slug": "photo-ff-green-crack",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
+    },
+    {
+      "id": 900007,
+      "name": "Mimosa Evo",
+      "slug": "photo-ff-mimosa-evo",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
+    },
+    {
+      "id": 900006,
+      "name": "Poison",
+      "slug": "photo-ff-poison",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
+    },
+    {
+      "id": 900009,
+      "name": "Runtz",
+      "slug": "photo-ff-runtz",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
+    },
+    {
+      "id": 900011,
+      "name": "Velvet Moon",
+      "slug": "photo-ff-velvet-moon",
+      "sourceUrl": "",
+      "categories": [
+        {
+          "slug": "photo-ff",
+          "label": "Photo FF"
+        }
+      ],
+      "primaryCategory": "photo-ff",
+      "bulkPackQty": 1000,
+      "fastFlowering": true,
+      "listSource": "photo-ff-hand"
     }
   ],
   "byCategory": {
-    "cbd-seeds": [
+    "feminized-seeds": [
       {
-        "id": 2706,
-        "name": "CBD Critical Autoflower",
-        "slug": "cbd-critical-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/cbd-critical-autoflower/",
+        "id": 1263,
+        "name": "AK 420 feminized",
+        "slug": "ak-420-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/ak-420-feminized/",
         "categories": [
           {
-            "slug": "cbd-seeds",
-            "label": "CBD seeds"
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
           }
         ],
-        "primaryCategory": "cbd-seeds"
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
       },
       {
-        "id": 2319,
-        "name": "CBD Critical feminized",
-        "slug": "cbd-critical-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/cbd-critical-feminized/",
+        "id": 1305,
+        "name": "Amnesia Haze feminized",
+        "slug": "amnesia-haze-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/amnesia-haze-feminized/",
         "categories": [
           {
-            "slug": "cbd-seeds",
-            "label": "CBD seeds"
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
           }
         ],
-        "primaryCategory": "cbd-seeds"
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
       },
       {
-        "id": 2323,
-        "name": "CBD Northern Light feminized",
-        "slug": "cbd-northern-lights-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/cbd-northern-lights-feminized/",
+        "id": 1341,
+        "name": "Big Bud feminized",
+        "slug": "big-bud-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/big-bud-feminized/",
         "categories": [
           {
-            "slug": "cbd-seeds",
-            "label": "CBD seeds"
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
           }
         ],
-        "primaryCategory": "cbd-seeds"
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1309,
+        "name": "Blueberry feminized",
+        "slug": "blueberry-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/blueberry-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1327,
+        "name": "Bubbles feminized",
+        "slug": "bubbles-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/bubbles-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1303,
+        "name": "Cheese feminized",
+        "slug": "cheese-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/cheese-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1297,
+        "name": "Critical 2.0 feminized",
+        "slug": "critical-2-0-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/critical-2-0-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1315,
+        "name": "Jack Herer feminized",
+        "slug": "jack-herer-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/jack-herer-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1359,
+        "name": "Northern Light feminized",
+        "slug": "northern-lights-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/northern-lights-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1319,
+        "name": "O.G. Kush feminized",
+        "slug": "o-g-kush-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/o-g-kush-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1343,
+        "name": "Power Plant feminized",
+        "slug": "power-plant-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/power-plant-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 3753,
+        "name": "Purple Haze feminized",
+        "slug": "purple-haze-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/purple-haze-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1329,
+        "name": "Purple Kush feminized",
+        "slug": "purple-kush-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/purple-kush-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1273,
+        "name": "Royal Moby feminized",
+        "slug": "royal-moby-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/royal-moby-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1361,
+        "name": "Sour Diesel feminized",
+        "slug": "sour-diesel-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/sour-diesel-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1351,
+        "name": "Super Lemon Haze feminized",
+        "slug": "super-lemon-haze-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/super-lemon-haze-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1317,
+        "name": "Super Silver Haze feminized",
+        "slug": "super-silver-haze-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/super-silver-haze-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1287,
+        "name": "White Widow feminized",
+        "slug": "white-widow-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/white-widow-feminized/",
+        "categories": [
+          {
+            "slug": "feminized-seeds",
+            "label": "Feminized seeds"
+          }
+        ],
+        "primaryCategory": "feminized-seeds",
+        "listSource": "b2b-2026"
+      }
+    ],
+    "cali-feminized": [
+      {
+        "id": 3263,
+        "name": "24K Gold feminized",
+        "slug": "24k-gold-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/24k-gold-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 3872,
+        "name": "Apple Fritter feminized",
+        "slug": "apple-fritter-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/apple-fritter-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1369,
+        "name": "Banana Sherbet feminized",
+        "slug": "banana-sherbet-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/banana-sherbet-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 5797,
+        "name": "Biscotti feminized",
+        "slug": "biscotti-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/biscotti-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 6867,
+        "name": "Blue Dream Cake feminized",
+        "slug": "blue-dream-cake-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/blue-dream-cake-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1992,
+        "name": "Bruce Banner feminized",
+        "slug": "bruce-banner-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/bruce-banner-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 6392,
+        "name": "Cherry Punch feminized",
+        "slug": "cherry-punch-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/cherry-punch-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1349,
+        "name": "Cookies feminized",
+        "slug": "cookies-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/cookies-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 900001,
+        "name": "Do Si Dos x Zkittlez feminized",
+        "slug": "do-si-dos-x-zkittlez-feminized",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 6391,
+        "name": "Forbidden Fruit Cake feminized",
+        "slug": "forbidden-fruit-cake-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/forbidden-fruit-cake-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 8721,
+        "name": "Fritter Licker feminized",
+        "slug": "fritter-licker-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/fritter-licker-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1347,
+        "name": "Gelato 41 feminized",
+        "slug": "gelato-41-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/gelato-41-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 6056,
+        "name": "GMO feminized",
+        "slug": "gmo-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/gmo-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1345,
+        "name": "Gorilla Glue feminized",
+        "slug": "gorilla-glue-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/gorilla-glue-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 3317,
+        "name": "Granddaddy Purple feminized",
+        "slug": "granddaddy-purple-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/granddaddy-purple-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 8724,
+        "name": "Jealouz feminized",
+        "slug": "jealouz-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/jealouz-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 8722,
+        "name": "Kreamz feminized",
+        "slug": "kreamz-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/kreamz-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1289,
+        "name": "Mango Kush feminized",
+        "slug": "mango-kush-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/mango-kush-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 3063,
+        "name": "Mimosa Evo feminized",
+        "slug": "mimosa-evo-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/mimosa-evo-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 6868,
+        "name": "Oreoz feminized",
+        "slug": "oreoz-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/oreoz-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 7664,
+        "name": "Permanent Marker feminized",
+        "slug": "permanent-marker-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/permanent-marker-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1375,
+        "name": "Pineapple Chunk feminized",
+        "slug": "pineapple-chunk-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/pineapple-chunk-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1373,
+        "name": "Purple Punch feminized",
+        "slug": "purple-punch-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/purple-punch-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 5578,
+        "name": "Red Wine feminized",
+        "slug": "red-wine-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/red-wine-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 9656,
+        "name": "RS11 feminized",
+        "slug": "rs11-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/rs11-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 2088,
+        "name": "Runtz feminized",
+        "slug": "runtz-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/runtz-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 4137,
+        "name": "Skywalker Kush feminized",
+        "slug": "skywalker-kush-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/skywalker-kush-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 7666,
+        "name": "Super Boof feminized",
+        "slug": "super-boof-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/super-boof-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 4945,
+        "name": "Tangie feminized",
+        "slug": "tangie-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/tangie-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 2090,
+        "name": "Watermelon Punch feminized",
+        "slug": "watermelon-punch-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/watermelon-punch-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1367,
+        "name": "Wedding Cake feminized",
+        "slug": "wedding-cake-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/wedding-cake-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1353,
+        "name": "Zkittlez feminized",
+        "slug": "zkittlez-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/zkittlez-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 9663,
+        "name": "Zoap feminized",
+        "slug": "zoap-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/zoap-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 6870,
+        "name": "Zupa Zips feminized",
+        "slug": "zupa-zips-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/zupa-zips-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 6962,
+        "name": "Zushi feminized",
+        "slug": "blue-zushi-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/blue-zushi-feminized/",
+        "categories": [
+          {
+            "slug": "cali-feminized",
+            "label": "Cali feminized"
+          }
+        ],
+        "primaryCategory": "cali-feminized",
+        "listSource": "b2b-2026"
       }
     ],
     "supreme-feminized": [
@@ -1497,7 +2267,22 @@
             "label": "Supreme feminized"
           }
         ],
-        "primaryCategory": "supreme-feminized"
+        "primaryCategory": "supreme-feminized",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 9694,
+        "name": "Dank Schrader feminized",
+        "slug": "dank-schrader-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/dank-schrader-feminized/",
+        "categories": [
+          {
+            "slug": "supreme-feminized",
+            "label": "Supreme feminized"
+          }
+        ],
+        "primaryCategory": "supreme-feminized",
+        "listSource": "b2b-2026"
       },
       {
         "id": 9695,
@@ -1510,7 +2295,8 @@
             "label": "Supreme feminized"
           }
         ],
-        "primaryCategory": "supreme-feminized"
+        "primaryCategory": "supreme-feminized",
+        "listSource": "b2b-2026"
       },
       {
         "id": 9693,
@@ -1523,7 +2309,8 @@
             "label": "Supreme feminized"
           }
         ],
-        "primaryCategory": "supreme-feminized"
+        "primaryCategory": "supreme-feminized",
+        "listSource": "b2b-2026"
       },
       {
         "id": 9687,
@@ -1536,20 +2323,8 @@
             "label": "Supreme feminized"
           }
         ],
-        "primaryCategory": "supreme-feminized"
-      },
-      {
-        "id": 1371,
-        "name": "Moonbow feminized",
-        "slug": "moonbow-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/moonbow-feminized/",
-        "categories": [
-          {
-            "slug": "supreme-feminized",
-            "label": "Supreme feminized"
-          }
-        ],
-        "primaryCategory": "supreme-feminized"
+        "primaryCategory": "supreme-feminized",
+        "listSource": "b2b-2026"
       },
       {
         "id": 9691,
@@ -1562,1143 +2337,8 @@
             "label": "Supreme feminized"
           }
         ],
-        "primaryCategory": "supreme-feminized"
-      }
-    ],
-    "supreme-autoflower": [
-      {
-        "id": 9675,
-        "name": "Fritter Glitter Autoflower",
-        "slug": "fritter-glitter-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/fritter-glitter-autoflower/",
-        "categories": [
-          {
-            "slug": "supreme-autoflower",
-            "label": "Supreme autoflower"
-          }
-        ],
-        "primaryCategory": "supreme-autoflower"
-      },
-      {
-        "id": 9679,
-        "name": "Grape Cream Cake Autoflower",
-        "slug": "grape-cream-cake-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/grape-cream-cake-autoflower/",
-        "categories": [
-          {
-            "slug": "supreme-autoflower",
-            "label": "Supreme autoflower"
-          }
-        ],
-        "primaryCategory": "supreme-autoflower"
-      },
-      {
-        "id": 9685,
-        "name": "Grape Smoothie Autoflower",
-        "slug": "grape-smoothie-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/grape-smoothie-autoflower/",
-        "categories": [
-          {
-            "slug": "supreme-autoflower",
-            "label": "Supreme autoflower"
-          }
-        ],
-        "primaryCategory": "supreme-autoflower"
-      },
-      {
-        "id": 9681,
-        "name": "Rainbow Jelly Autoflower",
-        "slug": "rainbow-jelly-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/rainbow-jelly-autoflower/",
-        "categories": [
-          {
-            "slug": "supreme-autoflower",
-            "label": "Supreme autoflower"
-          }
-        ],
-        "primaryCategory": "supreme-autoflower"
-      },
-      {
-        "id": 9673,
-        "name": "Strawberry Gelato Autoflower",
-        "slug": "strawberry-gelato-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/strawberry-gelato-autoflower/",
-        "categories": [
-          {
-            "slug": "supreme-autoflower",
-            "label": "Supreme autoflower"
-          }
-        ],
-        "primaryCategory": "supreme-autoflower"
-      },
-      {
-        "id": 9683,
-        "name": "Watermelon Z Autoflower",
-        "slug": "watermelon-z-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/watermelon-z-autoflower/",
-        "categories": [
-          {
-            "slug": "supreme-autoflower",
-            "label": "Supreme autoflower"
-          }
-        ],
-        "primaryCategory": "supreme-autoflower"
-      }
-    ],
-    "cali-feminized": [
-      {
-        "id": 3263,
-        "name": "24K Gold feminized",
-        "slug": "24k-gold-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/24k-gold-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 3872,
-        "name": "Apple Fritter feminized",
-        "slug": "apple-fritter-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/apple-fritter-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1369,
-        "name": "Banana Sherbet feminized",
-        "slug": "banana-sherbet-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/banana-sherbet-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 5797,
-        "name": "Biscotti feminized",
-        "slug": "biscotti-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/biscotti-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 6867,
-        "name": "Blue Dream Cake feminized",
-        "slug": "blue-dream-cake-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/blue-dream-cake-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1992,
-        "name": "Bruce Banner feminized",
-        "slug": "bruce-banner-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/bruce-banner-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 6392,
-        "name": "Cherry Punch feminized",
-        "slug": "cherry-punch-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/cherry-punch-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1349,
-        "name": "Cookies feminized",
-        "slug": "cookies-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/cookies-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 9694,
-        "name": "Dank Schrader feminized",
-        "slug": "dank-schrader-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/dank-schrader-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 6391,
-        "name": "Forbidden Fruit Cake feminized",
-        "slug": "forbidden-fruit-cake-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/forbidden-fruit-cake-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 8721,
-        "name": "Fritter Licker feminized",
-        "slug": "fritter-licker-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/fritter-licker-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1347,
-        "name": "Gelato 41 feminized",
-        "slug": "gelato-41-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/gelato-41-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 6056,
-        "name": "GMO Feminized",
-        "slug": "gmo-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/gmo-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1345,
-        "name": "Gorilla Glue feminized",
-        "slug": "gorilla-glue-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/gorilla-glue-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 3317,
-        "name": "Granddaddy Purple feminized",
-        "slug": "granddaddy-purple-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/granddaddy-purple-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 8724,
-        "name": "Jealouz feminized",
-        "slug": "jealouz-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/jealouz-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 8722,
-        "name": "Kreamz feminized",
-        "slug": "kreamz-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/kreamz-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1289,
-        "name": "Mango Kush feminized",
-        "slug": "mango-kush-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/mango-kush-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 3063,
-        "name": "Mimosa Evo feminized",
-        "slug": "mimosa-evo-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/mimosa-evo-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 6868,
-        "name": "Oreoz feminized",
-        "slug": "oreoz-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/oreoz-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 7664,
-        "name": "Permanent Marker feminized",
-        "slug": "permanent-marker-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/permanent-marker-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1375,
-        "name": "Pineapple Chunk feminized",
-        "slug": "pineapple-chunk-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/pineapple-chunk-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1373,
-        "name": "Purple Punch feminized",
-        "slug": "purple-punch-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/purple-punch-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 5578,
-        "name": "Red Wine Feminized",
-        "slug": "red-wine-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/red-wine-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 9656,
-        "name": "RS11 feminized",
-        "slug": "rs11-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/rs11-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 2088,
-        "name": "Runtz feminized",
-        "slug": "runtz-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/runtz-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 4137,
-        "name": "Skywalker Kush feminized",
-        "slug": "skywalker-kush-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/skywalker-kush-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 7666,
-        "name": "Super Boof feminized",
-        "slug": "super-boof-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/super-boof-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 4945,
-        "name": "Tangie feminized",
-        "slug": "tangie-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/tangie-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 2090,
-        "name": "Watermelon Punch feminized",
-        "slug": "watermelon-punch-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/watermelon-punch-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1367,
-        "name": "Wedding Cake feminized",
-        "slug": "wedding-cake-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/wedding-cake-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 1353,
-        "name": "Zkittlez feminized",
-        "slug": "zkittlez-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/zkittlez-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 9663,
-        "name": "Zoap feminized",
-        "slug": "zoap-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/zoap-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 6870,
-        "name": "Zupa Zips feminized",
-        "slug": "zupa-zips-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/zupa-zips-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      },
-      {
-        "id": 6962,
-        "name": "Zushi feminized",
-        "slug": "blue-zushi-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/blue-zushi-feminized/",
-        "categories": [
-          {
-            "slug": "cali-feminized",
-            "label": "Cali feminized"
-          },
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "cali-feminized"
-      }
-    ],
-    "cali-autoflower": [
-      {
-        "id": 7668,
-        "name": "Apple Fritter Autoflower",
-        "slug": "apple-fritter-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/apple-fritter-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 6865,
-        "name": "Blue Dream Cake Autoflower",
-        "slug": "blue-dream-cake-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/blue-dream-cake-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 3345,
-        "name": "Bruce Banner Autoflower",
-        "slug": "bruce-banner-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/bruce-banner-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 2708,
-        "name": "Cookies Autoflower",
-        "slug": "cookies-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/cookies-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 3806,
-        "name": "Gelato 41 Autoflower",
-        "slug": "gelato-41-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/gelato-41-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 1379,
-        "name": "Gorilla Glue Autoflower",
-        "slug": "gorilla-glue-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/gorilla-glue-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 3935,
-        "name": "Mimosa Evo Autoflower",
-        "slug": "mimosa-evo-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/mimosa-evo-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 4065,
-        "name": "Purple Punch Autoflower",
-        "slug": "purple-punch-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/purple-punch-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 5794,
-        "name": "Runtz Autoflower",
-        "slug": "runtz-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/runtz-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 5816,
-        "name": "Sunset Sherbet Autoflower",
-        "slug": "sunset-sherbet-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/sunset-sherbet-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 8719,
-        "name": "Super Boof Autoflower",
-        "slug": "super-boof-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/super-boof-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 3365,
-        "name": "Wedding Cake Autoflower",
-        "slug": "wedding-cake-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/wedding-cake-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      },
-      {
-        "id": 4954,
-        "name": "Zkittlez Autoflower",
-        "slug": "zkittlez-autoflower",
-        "sourceUrl": "https://seedsgenetics.com/product/zkittlez-autoflower/",
-        "categories": [
-          {
-            "slug": "autoflower-seeds",
-            "label": "Autoflower seeds"
-          },
-          {
-            "slug": "cali-autoflower",
-            "label": "Cali autoflower"
-          }
-        ],
-        "primaryCategory": "cali-autoflower"
-      }
-    ],
-    "feminized-seeds": [
-      {
-        "id": 1263,
-        "name": "AK 420 feminized",
-        "slug": "ak-420-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/ak-420-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1305,
-        "name": "Amnesia Haze feminized",
-        "slug": "amnesia-haze-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/amnesia-haze-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1341,
-        "name": "Big Bud feminized",
-        "slug": "big-bud-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/big-bud-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1309,
-        "name": "Blueberry feminized",
-        "slug": "blueberry-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/blueberry-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1327,
-        "name": "Bubbles feminized",
-        "slug": "bubbles-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/bubbles-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1303,
-        "name": "Cheese feminized",
-        "slug": "cheese-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/cheese-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1297,
-        "name": "Critical 2.0 feminized",
-        "slug": "critical-2-0-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/critical-2-0-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1315,
-        "name": "Jack Herer feminized",
-        "slug": "jack-herer-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/jack-herer-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1359,
-        "name": "Northern Lights feminized",
-        "slug": "northern-lights-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/northern-lights-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1319,
-        "name": "O.G. Kush feminized",
-        "slug": "o-g-kush-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/o-g-kush-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1343,
-        "name": "Power Plant feminized",
-        "slug": "power-plant-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/power-plant-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 3753,
-        "name": "Purple Haze feminized",
-        "slug": "purple-haze-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/purple-haze-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1329,
-        "name": "Purple Kush feminized",
-        "slug": "purple-kush-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/purple-kush-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1273,
-        "name": "Royal Moby feminized",
-        "slug": "royal-moby-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/royal-moby-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1361,
-        "name": "Sour Diesel feminized",
-        "slug": "sour-diesel-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/sour-diesel-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1351,
-        "name": "Super Lemon Haze feminized",
-        "slug": "super-lemon-haze-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/super-lemon-haze-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1317,
-        "name": "Super Silver Haze feminized",
-        "slug": "super-silver-haze-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/super-silver-haze-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
-      },
-      {
-        "id": 1287,
-        "name": "White Widow feminized",
-        "slug": "white-widow-feminized",
-        "sourceUrl": "https://seedsgenetics.com/product/white-widow-feminized/",
-        "categories": [
-          {
-            "slug": "feminized-seeds",
-            "label": "Feminized seeds"
-          }
-        ],
-        "primaryCategory": "feminized-seeds"
+        "primaryCategory": "supreme-feminized",
+        "listSource": "b2b-2026"
       }
     ],
     "autoflower-seeds": [
@@ -2713,7 +2353,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1281,
@@ -2726,7 +2367,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1311,
@@ -2739,7 +2381,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1301,
@@ -2752,7 +2395,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1381,
@@ -2765,7 +2409,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1285,
@@ -2778,7 +2423,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1283,
@@ -2791,7 +2437,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1331,
@@ -2804,11 +2451,12 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1357,
-        "name": "Northern Lights Autoflower",
+        "name": "Northern Light Autoflower",
         "slug": "northern-lights-autoflower",
         "sourceUrl": "https://seedsgenetics.com/product/northern-lights-autoflower/",
         "categories": [
@@ -2817,7 +2465,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1339,
@@ -2830,7 +2479,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1323,
@@ -2843,7 +2493,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1313,
@@ -2856,7 +2507,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 3837,
@@ -2869,7 +2521,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1325,
@@ -2882,7 +2535,8 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
       },
       {
         "id": 1365,
@@ -2895,7 +2549,484 @@
             "label": "Autoflower seeds"
           }
         ],
-        "primaryCategory": "autoflower-seeds"
+        "primaryCategory": "autoflower-seeds",
+        "listSource": "b2b-2026"
+      }
+    ],
+    "cali-autoflower": [
+      {
+        "id": 7668,
+        "name": "Apple Fritter Autoflower",
+        "slug": "apple-fritter-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/apple-fritter-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 6865,
+        "name": "Blue Dream Cake Autoflower",
+        "slug": "blue-dream-cake-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/blue-dream-cake-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 3345,
+        "name": "Bruce Banner Autoflower",
+        "slug": "bruce-banner-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/bruce-banner-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 2708,
+        "name": "Cookies Autoflower",
+        "slug": "cookies-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/cookies-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 3806,
+        "name": "Gelato 41 Autoflower",
+        "slug": "gelato-41-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/gelato-41-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 1379,
+        "name": "Gorilla Glue Autoflower",
+        "slug": "gorilla-glue-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/gorilla-glue-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 3935,
+        "name": "Mimosa Evo Autoflower",
+        "slug": "mimosa-evo-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/mimosa-evo-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 4065,
+        "name": "Purple Punch Autoflower",
+        "slug": "purple-punch-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/purple-punch-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 5794,
+        "name": "Runtz Autoflower",
+        "slug": "runtz-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/runtz-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 5816,
+        "name": "Sunset Sherbet Autoflower",
+        "slug": "sunset-sherbet-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/sunset-sherbet-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 8719,
+        "name": "Super Boof Autoflower",
+        "slug": "super-boof-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/super-boof-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 3365,
+        "name": "Wedding Cake Autoflower",
+        "slug": "wedding-cake-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/wedding-cake-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 4954,
+        "name": "Zkittlez Autoflower",
+        "slug": "zkittlez-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/zkittlez-autoflower/",
+        "categories": [
+          {
+            "slug": "cali-autoflower",
+            "label": "Cali autoflower"
+          }
+        ],
+        "primaryCategory": "cali-autoflower",
+        "listSource": "b2b-2026"
+      }
+    ],
+    "supreme-autoflower": [
+      {
+        "id": 9675,
+        "name": "Fritter Glitter Autoflower",
+        "slug": "fritter-glitter-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/fritter-glitter-autoflower/",
+        "categories": [
+          {
+            "slug": "supreme-autoflower",
+            "label": "Supreme autoflower"
+          }
+        ],
+        "primaryCategory": "supreme-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 9679,
+        "name": "Grape Cream Cake Autoflower",
+        "slug": "grape-cream-cake-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/grape-cream-cake-autoflower/",
+        "categories": [
+          {
+            "slug": "supreme-autoflower",
+            "label": "Supreme autoflower"
+          }
+        ],
+        "primaryCategory": "supreme-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 9685,
+        "name": "Grape Smoothie Autoflower",
+        "slug": "grape-smoothie-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/grape-smoothie-autoflower/",
+        "categories": [
+          {
+            "slug": "supreme-autoflower",
+            "label": "Supreme autoflower"
+          }
+        ],
+        "primaryCategory": "supreme-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 9681,
+        "name": "Rainbow Jelly Autoflower",
+        "slug": "rainbow-jelly-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/rainbow-jelly-autoflower/",
+        "categories": [
+          {
+            "slug": "supreme-autoflower",
+            "label": "Supreme autoflower"
+          }
+        ],
+        "primaryCategory": "supreme-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 9673,
+        "name": "Strawberry Gelato Autoflower",
+        "slug": "strawberry-gelato-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/strawberry-gelato-autoflower/",
+        "categories": [
+          {
+            "slug": "supreme-autoflower",
+            "label": "Supreme autoflower"
+          }
+        ],
+        "primaryCategory": "supreme-autoflower",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 9683,
+        "name": "Watermelon Z Autoflower",
+        "slug": "watermelon-z-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/watermelon-z-autoflower/",
+        "categories": [
+          {
+            "slug": "supreme-autoflower",
+            "label": "Supreme autoflower"
+          }
+        ],
+        "primaryCategory": "supreme-autoflower",
+        "listSource": "b2b-2026"
+      }
+    ],
+    "cbd-seeds": [
+      {
+        "id": 2706,
+        "name": "CBD Critical Autoflower",
+        "slug": "cbd-critical-autoflower",
+        "sourceUrl": "https://seedsgenetics.com/product/cbd-critical-autoflower/",
+        "categories": [
+          {
+            "slug": "cbd-seeds",
+            "label": "CBD seeds"
+          }
+        ],
+        "primaryCategory": "cbd-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 2319,
+        "name": "CBD Critical feminized",
+        "slug": "cbd-critical-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/cbd-critical-feminized/",
+        "categories": [
+          {
+            "slug": "cbd-seeds",
+            "label": "CBD seeds"
+          }
+        ],
+        "primaryCategory": "cbd-seeds",
+        "listSource": "b2b-2026"
+      },
+      {
+        "id": 2323,
+        "name": "CBD Northern Light feminized",
+        "slug": "cbd-northern-lights-feminized",
+        "sourceUrl": "https://seedsgenetics.com/product/cbd-northern-lights-feminized/",
+        "categories": [
+          {
+            "slug": "cbd-seeds",
+            "label": "CBD seeds"
+          }
+        ],
+        "primaryCategory": "cbd-seeds",
+        "listSource": "b2b-2026"
+      }
+    ],
+    "photo-ff": [
+      {
+        "id": 900002,
+        "name": "Apple Fritter",
+        "slug": "photo-ff-apple-fritter",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
+      },
+      {
+        "id": 900004,
+        "name": "Cherry Pie",
+        "slug": "photo-ff-cherry-pie",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
+      },
+      {
+        "id": 900003,
+        "name": "Forbidden Ale",
+        "slug": "photo-ff-forbidden-ale",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
+      },
+      {
+        "id": 900005,
+        "name": "GHO",
+        "slug": "photo-ff-gho",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
+      },
+      {
+        "id": 900008,
+        "name": "Gorilla",
+        "slug": "photo-ff-gorilla",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
+      },
+      {
+        "id": 900010,
+        "name": "Green Crack",
+        "slug": "photo-ff-green-crack",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
+      },
+      {
+        "id": 900007,
+        "name": "Mimosa Evo",
+        "slug": "photo-ff-mimosa-evo",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
+      },
+      {
+        "id": 900006,
+        "name": "Poison",
+        "slug": "photo-ff-poison",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
+      },
+      {
+        "id": 900009,
+        "name": "Runtz",
+        "slug": "photo-ff-runtz",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
+      },
+      {
+        "id": 900011,
+        "name": "Velvet Moon",
+        "slug": "photo-ff-velvet-moon",
+        "sourceUrl": "",
+        "categories": [
+          {
+            "slug": "photo-ff",
+            "label": "Photo FF"
+          }
+        ],
+        "primaryCategory": "photo-ff",
+        "bulkPackQty": 1000,
+        "fastFlowering": true,
+        "listSource": "photo-ff-hand"
       }
     ]
   }

@@ -7,11 +7,15 @@ export type SgCatalogStrain = {
   sourceUrl: string;
   categories: { slug: string; label: string }[];
   primaryCategory: string;
+  bulkPackQty?: number;
+  fastFlowering?: boolean;
+  listSource?: "b2b-2026" | "photo-ff-hand";
 };
 
 export type SgCatalogFile = {
   fetchedAt: string;
   source: string;
+  sourceDocument?: string;
   strains: SgCatalogStrain[];
   byCategory: Record<string, SgCatalogStrain[]>;
 };
@@ -27,6 +31,7 @@ export const SG_CATEGORY_ORDER = [
   "cali-autoflower",
   "feminized-seeds",
   "autoflower-seeds",
+  "photo-ff",
 ] as const;
 
 export type SgCategorySlug = (typeof SG_CATEGORY_ORDER)[number];
@@ -39,6 +44,7 @@ export const SG_CATEGORY_LABEL: Record<SgCategorySlug, string> = {
   "cali-autoflower": "Cali autoflower",
   "feminized-seeds": "Feminized seeds",
   "autoflower-seeds": "Autoflower seeds",
+  "photo-ff": "Photo FF",
 };
 
 export function sgStrainsGrouped(): { slug: SgCategorySlug; label: string; strains: SgCatalogStrain[] }[] {

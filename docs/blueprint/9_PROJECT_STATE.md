@@ -4,6 +4,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Seeds Genetics — ลิสต์ B2B EN 2026 + Photo FF)
+- **What:** rebuild `catalog.json` 106 สายจากไฟล์ B2B (96 retail) + Photo FF 10 ถุง · เพิ่ม Do Si Dos x Zkittlez · ตัด Moonbow · หมวด Photo FF ใหม่
+- **Logic:** `scripts/build-seeds-genetics-b2b-catalog.ts` · เก็บ Woo id/url ถ้าจับชื่อได้ · Photo FF = FAST · 1,000 เมล็ด/ถุงตามฉลาก
+- **ไฟล์:** `data/partners/seeds-genetics/catalog.json` · `lib/seeds-genetics-catalog.ts` · `SgStrainCatalogPanel.tsx` · `lib/bulk-seeds-book.ts`
+
+### บันทึกการทำงาน — 2026-08-17 (Pack filter — เฉพาะแพ็กที่ยังมีสต็อก)
+- **What:** `?seeds=10` ไม่โชว์สินค้าที่แพ็ก 10 หมดแล้ว · ตัวเลขวงเล็บตัวกรองตรงกริด
+- **Logic:** `productMatchesSeedsPackFilter` + sidebar counts ใช้ `is_active && stock > 0` · การ์ดไม่ fallback แพ็ก OOS
+- **ไฟล์:** `lib/shop-attribute-filters.ts` · `lib/supabase/types.ts`
+
 ### บันทึกการทำงาน — 2026-08-17 (Shop seeds= pack filter — scan before paginate)
 - **What:** `/seeds/copycat-genetix?seeds=10` นับ 24 แต่กริดโชว์แค่หน้าแรกที่กรองแล้ว
 - **Logic:** `seeds` บังคับ memory scan ทั้งสโคปก่อนตัดหน้า · ไม่ paginate แล้วค่อยกรองแพ็ก

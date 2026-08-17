@@ -150,9 +150,9 @@ export const BULK_SUPPLIER_BOOKS: BulkSupplierBook[] = [
     lane: "hand_carry",
     currency: "EUR",
     notesTh:
-      "ดีลตรงเจ้าของ: €1/เมล็ด จาก 250 เมล็ดขึ้นไป (เว็บสาธารณะ €2.50 / €2.25 / €2.00) · ขั้นใหญ่กว่าอาจถูกกว่าภายหลัง — ตอนนี้อิง €1 ทุกขั้น · ค่าส่ง ~1,000 บาท/ล็อต · หิ้วไม่ผ่านด่าน จึงบวกกันยึด · Photo / Auto / Photo FF · ลิสต์สายพันธุ์จากเว็บ SG",
+      "ดีลตรงเจ้าของ: €1/เมล็ด จาก 250 เมล็ดขึ้นไป (เว็บสาธารณะ €2.50 / €2.25 / €2.00) · ขั้นใหญ่กว่าอาจถูกกว่าภายหลัง — ตอนนี้อิง €1 ทุกขั้น · ค่าส่ง ~1,000 บาท/ล็อต · หิ้วไม่ผ่านด่าน จึงบวกกันยึด · Photo / Auto / Photo FF · ลิสต์จาก B2B EN 2026 + Photo FF 10 สาย (FAST · 1,000/ถุง)",
     notesEn:
-      "Owner deal: €1/seed from 250 (public list €2.50 / €2.25 / €2.00). Larger qty may go lower later — hold €1 for now. Freight ~1,000 THB/lot. Hand-carry seizure buffer. Photo / Auto / Photo FF. Strain list from SG public site.",
+      "Owner deal: €1/seed from 250 (public list €2.50 / €2.25 / €2.00). Larger qty may go lower later — hold €1 for now. Freight ~1,000 THB/lot. Hand-carry seizure buffer. Photo / Auto / Photo FF. Strain list from B2B EN 2026 + 10 Photo FF bag lines (FAST · 1,000/bag).",
     recommendedLandedPct: recommendedLandedPct("hand_carry", ""),
     lotFreightThb: SEEDS_GENETICS_LOT_FREIGHT_THB,
     formats: ["photo", "auto", "photo-ff"],

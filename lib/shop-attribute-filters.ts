@@ -327,6 +327,17 @@ export type SeedPackFilterSlug = (typeof SEED_PACK_FILTER_SLUGS)[number];
 
 const EXPLICIT_SINGLE_DIGIT_PACKS = new Set([1, 2, 3, 5, 10]);
 
+type PackVariantRow = {
+  unit_label: string;
+  is_active?: boolean | null;
+  stock?: number | null;
+};
+
+/** Catalog pack filter: active variant with stock (same rule as PDP sold-out). */
+function variantEligibleForPackFilter(v: PackVariantRow): boolean {
+  return v.is_active !== false && (v.stock ?? 0) > 0;
+}
+
 /** Packs like 4, 6, 7, 8, 9 (anything 1–10 except the explicit size filters). */
 export function seedPackMatchesOtherBucket(n: number): boolean {
   return Number.isInteger(n) && n >= 1 && n <= 10 && !EXPLICIT_SINGLE_DIGIT_PACKS.has(n);
@@ -359,15 +370,12 @@ export function seedsSlugsFullyDbMappable(slugs: string[]): boolean {
 }
 
 export function productMatchesSeedsPackFilter(
-  variants:
-    | { unit_label: string; is_active?: boolean | null }[]
-    | null
-    | undefined,
+  variants: PackVariantRow[] | null | undefined,
   selectedSlugs: string[]
 ): boolean {
   if (selectedSlugs.length === 0) return true;
-  const active = (variants ?? []).filter((v) => v.is_active !== false);
-  for (const v of active) {
+  const eligible = (variants ?? []).filter(variantEligibleForPackFilter);
+  for (const v of eligible) {
     const n = parsePackFromUnitLabel(v.unit_label);
     for (const s of selectedSlugs) {
       if (s === "1" && n === 1) return true;
@@ -393,45 +401,36 @@ export function productMatchesPackBucketsColumn(
 }
 
 /**
- * Catalog / card: one variant to display when URL `seeds=` slugs are active.
- * Same bucket rules as {@link productMatchesSeedsPackFilter}; prefers in-stock,
- * then lowest list price, then smallest pack.
+ * Catalog / card: one in-stock variant when URL `seeds=` slugs are active.
+ * Lowest list price, then smallest pack.
  */
 export function pickVariantForSeedPackSlugs<
-  T extends {
-    unit_label: string;
-    price?: number | null;
-    stock?: number | null;
-    is_active?: boolean | null;
-  },
+  T extends PackVariantRow & { price?: number | null },
 >(variants: T[] | null | undefined, selectedSlugs: string[]): T | null {
   if (!selectedSlugs.length) return null;
-  const active = (variants ?? []).filter((v) => v.is_active !== false);
-  const matched = active.filter((v) => productMatchesSeedsPackFilter([v], selectedSlugs));
+  const matched = (variants ?? [])
+    .filter(variantEligibleForPackFilter)
+    .filter((v) => productMatchesSeedsPackFilter([v], selectedSlugs));
   if (matched.length === 0) return null;
-  type Row = { v: T; price: number; stock: number; pack: number };
+  type Row = { v: T; price: number; pack: number };
   const rows: Row[] = matched.map((v) => ({
     v,
     price: Number(v.price ?? 0),
-    stock: Number(v.stock ?? 0),
     pack: parsePackFromUnitLabel(v.unit_label),
   }));
   const priced = rows.filter((r) => r.price > 0);
   if (priced.length === 0) return null;
-  const inStock = priced.filter((r) => r.stock > 0);
-  const pool = inStock.length > 0 ? inStock : priced;
-  const minPrice = Math.min(...pool.map((r) => r.price));
-  const tied = pool.filter((r) => r.price === minPrice);
+  const minPrice = Math.min(...priced.map((r) => r.price));
+  const tied = priced.filter((r) => r.price === minPrice);
   tied.sort((a, b) => a.pack - b.pack);
   return tied[0]?.v ?? null;
 }
 
 function seedPackBucketsForVariants(
-  variants: { unit_label: string; is_active?: boolean | null }[] | null | undefined
+  variants: PackVariantRow[] | null | undefined
 ): Set<string> {
   const out = new Set<string>();
-  const active = (variants ?? []).filter((v) => v.is_active !== false);
-  for (const v of active) {
+  for (const v of (variants ?? []).filter(variantEligibleForPackFilter)) {
     const n = parsePackFromUnitLabel(v.unit_label);
     if (n === 1) out.add("1");
     if (n === 2) out.add("2");
@@ -456,7 +455,7 @@ export function productMatchesShopAttributeFilters(
     cbd_percent?: string | null;
     seed_type?: string | null;
     yield_info?: string | null;
-    product_variants?: { unit_label: string; is_active?: boolean | null }[] | null;
+    product_variants?: PackVariantRow[] | null;
   },
   genetics: string[],
   difficulty: string[],
@@ -490,7 +489,7 @@ export type ShopFilterCountProduct = {
   flowering_type?: string | null;
   category?: string | null;
   product_categories?: { name?: string | null } | null;
-  product_variants?: { unit_label: string; is_active?: boolean | null }[] | null;
+  product_variants?: PackVariantRow[] | null;
 };
 
 export type CatalogFloweringPillSlug = "auto" | "photo" | "photo-ff" | "photo-3n";

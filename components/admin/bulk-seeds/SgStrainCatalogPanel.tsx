@@ -26,7 +26,7 @@ export function SgStrainCatalogPanel({ compact = false }: Props) {
             Seeds Genetics — ลิสต์สายพันธุ์ ({total})
           </h3>
           <p className="text-xs text-slate-500">
-            กวาดจากเว็บสาธารณะ · อัปเดต {sgCatalogFetchedLabel()} · แยกหมวดรอคัด
+            จากไฟล์ B2B EN 2026 + Photo FF ถุง FAST 1,000 · อัปเดต {sgCatalogFetchedLabel()}
           </p>
         </div>
         {!compact ? (
@@ -61,6 +61,9 @@ export function SgStrainCatalogPanel({ compact = false }: Props) {
               {group.strains.map((s) => (
                 <li key={s.id} className="mb-1 break-inside-avoid">
                   {s.name}
+                  {s.primaryCategory === "photo-ff" ? (
+                    <span className="text-slate-400"> · FAST · 1,000</span>
+                  ) : null}
                 </li>
               ))}
             </ul>
