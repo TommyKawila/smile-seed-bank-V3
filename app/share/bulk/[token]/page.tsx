@@ -8,6 +8,7 @@ import {
   BULK_SUPPLIER_BOOKS,
   SEED_FORMAT_LABEL,
   SEEDS_GENETICS_SLUG,
+  priceSgShareTiers,
   priceSupplierBook,
   type BulkPricedTier,
   type BulkSupplierSlug,
@@ -62,7 +63,9 @@ export default async function BulkSharePage({ params }: Props) {
     const rows: BulkPricedTier[] =
       book.slug === "green-future"
         ? priceSgfShareTiers(priceOpts)
-        : priceSupplierBook(priceOpts);
+        : book.slug === SEEDS_GENETICS_SLUG
+          ? priceSgShareTiers(priceOpts)
+          : priceSupplierBook(priceOpts);
     return { book, rows };
   });
 

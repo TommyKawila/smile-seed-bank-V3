@@ -4,6 +4,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (Bulk share — SG Starter 50–249)
+- **What:** Seeds Genetics บนลิงก์ลูกค้ามีขั้น Starter 50–249 เหมือน SGF · ราคาสูงกว่า MOQ 250
+- **Logic:** ค่าส่งหาร 50 · GM 40% · floor เว็บ 51–100 + €0.25 (€2.75) · `priceSgShareTiers()`
+- **ไฟล์:** `lib/bulk-seeds-book.ts` · `app/share/bulk/[token]/page.tsx`
+
 ### บันทึกการทำงาน — 2026-08-17 (Bulk share — SGF tagline + Starter 50)
 - **What:** SGF Seeds = Smile Seed Bank × Green Future Thailand · ขั้น Starter 50–249 ราคาสูงกว่า MOQ 250 · ไม่โชว์ Test Order
 - **Logic:** Starter ต้นทุน €1.15 (ssb_test_order) · GM 40% · MOQ 250+ ยังอิงเรท GF 500+

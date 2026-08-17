@@ -134,6 +134,25 @@ const SEEDS_GENETICS_TIERS: BulkCostTier[] = [
   { code: "sg_25000", minQty: 25000, label: "Contract", qtyDescription: "25,000 seeds / strain", costEur: 1, costThb: 0, draft: false },
 ];
 
+const SG_STARTER_TIER: BulkCostTier = {
+  code: "sg_share_50",
+  minQty: 50,
+  label: "Starter",
+  qtyDescription: "50–249 seeds / strain",
+  costEur: 1,
+  costThb: 0,
+  draft: false,
+};
+
+/** Customer share stairs — includes Starter before MOQ 250. */
+export const SG_SHARE_TIER_STEPS: BulkCostTier[] = [SG_STARTER_TIER, ...SEEDS_GENETICS_TIERS];
+
+/** Starter uses 51–100 public stair (+ premium) — higher than MOQ 250 floor. */
+export function sgShareFloorEur(minQty: number): number | null {
+  if (minQty < 250) return customerSellEurFloor(100);
+  return customerSellEurFloor(minQty);
+}
+
 export const SEEDS_GENETICS_LOT_FREIGHT_THB = 1000;
 
 export const BULK_SUPPLIER_BOOKS: BulkSupplierBook[] = [
@@ -175,6 +194,60 @@ export function getBulkSupplierBook(slug: BulkSupplierSlug): BulkSupplierBook | 
   return BULK_SUPPLIER_BOOKS.find((b) => b.slug === slug);
 }
 
+function priceSgTier(opts: {
+  book: BulkSupplierBook;
+  tier: BulkCostTier;
+  fx: number;
+  landedPct: number;
+  gmOverride?: number | null;
+}): BulkPricedTier {
+  const costThb =
+    opts.tier.costThb > 0 ? opts.tier.costThb : (opts.tier.costEur ?? 0) * opts.fx;
+  const freightPerSeedThb =
+    opts.book.lotFreightThb > 0 && opts.tier.minQty > 0
+      ? opts.book.lotFreightThb / opts.tier.minQty
+      : 0;
+  const landed = landedThb(costThb + freightPerSeedThb, opts.landedPct);
+  const gm =
+    opts.gmOverride != null && Number.isFinite(opts.gmOverride)
+      ? opts.gmOverride
+      : gmForMinQty(opts.tier.minQty);
+  const publicEur = publicEurAtQty(opts.tier.minQty < 250 ? 100 : opts.tier.minQty);
+  let sell = sellFromGrossMargin(landed, gm);
+  let sellEur = opts.fx > 0 ? sell / opts.fx : 0;
+  const floorEur = sgShareFloorEur(opts.tier.minQty);
+  if (floorEur != null && sellEur < floorEur) {
+    sellEur = floorEur;
+    sell = Math.ceil(floorEur * opts.fx);
+  }
+  const actualGm = grossMarginPct(sell, landed);
+  return {
+    ...opts.tier,
+    costThb,
+    freightPerSeedThb,
+    publicEur,
+    publicThb: publicEur != null ? publicEur * opts.fx : null,
+    landedThb: landed,
+    gmPct: actualGm,
+    sellThb: sell,
+    sellEur,
+    markupPct: markupOnCostPct(sell, landed),
+  };
+}
+
+/** Seeds Genetics pricing on customer share links (includes Starter 50–249). */
+export function priceSgShareTiers(opts: {
+  book: BulkSupplierBook;
+  eurThb: number;
+  landedPct: number;
+  gmOverride?: number | null;
+}): BulkPricedTier[] {
+  const fx = opts.eurThb > 0 ? opts.eurThb : DEFAULT_EUR_THB;
+  return SG_SHARE_TIER_STEPS.map((tier) =>
+    priceSgTier({ book: opts.book, tier, fx, landedPct: opts.landedPct, gmOverride: opts.gmOverride })
+  );
+}
+
 export function priceSupplierBook(opts: {
   book: BulkSupplierBook;
   eurThb: number;
@@ -183,6 +256,15 @@ export function priceSupplierBook(opts: {
 }): BulkPricedTier[] {
   const fx = opts.eurThb > 0 ? opts.eurThb : DEFAULT_EUR_THB;
   return opts.book.tiers.map((tier) => {
+    if (opts.book.slug === "seeds-genetics") {
+      return priceSgTier({
+        book: opts.book,
+        tier,
+        fx,
+        landedPct: opts.landedPct,
+        gmOverride: opts.gmOverride,
+      });
+    }
     const costThb =
       tier.costThb > 0 ? tier.costThb : (tier.costEur ?? 0) * fx;
     const freightPerSeedThb =
