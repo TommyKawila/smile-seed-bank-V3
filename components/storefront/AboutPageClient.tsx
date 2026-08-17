@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   companySeedLicenseUrl: string | null;
+  companyBusinessRegistrationUrl: string | null;
+  companyBusinessRegistrationNumber: string | null;
   storeSeedLicenseUrl: string | null;
   businessRegistrationUrl: string | null;
   companyEmail: string | null;
@@ -59,6 +61,8 @@ function DocButton({
 
 export function AboutPageClient({
   companySeedLicenseUrl,
+  companyBusinessRegistrationUrl,
+  companyBusinessRegistrationNumber,
   storeSeedLicenseUrl,
   businessRegistrationUrl,
   companyEmail,
@@ -66,7 +70,7 @@ export function AboutPageClient({
 }: Props) {
   const { locale, t } = useLanguage();
   const lang = (locale === "en" ? "en" : "th") as LegalLocale;
-  const legal = getLegalEntity(lang);
+  const legal = getLegalEntity(lang, companyBusinessRegistrationNumber);
   const store = getStoreEntity(lang);
   const companyLicenseNo = resolveCompanySeedLicenseNumber();
   const storeLicenseNo = resolveStoreSeedLicenseNumber();
@@ -99,11 +103,23 @@ export function AboutPageClient({
               {legal.seedLicenseLabel}:{" "}
               <span className="font-mono text-foreground">{companyLicenseNo}</span>
             </p>
+            {legal.partnershipRegistrationNumber && (
+              <p>
+                {legal.partnershipRegistrationLabel}:{" "}
+                <span className="font-mono text-foreground">
+                  {legal.partnershipRegistrationNumber}
+                </span>
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-3 pt-2">
             <DocButton
               href={companySeedLicenseUrl}
               label={t("ดูใบอนุญาตเมล็ดพันธุ์ (หจก.)", "View company seed license")}
+            />
+            <DocButton
+              href={companyBusinessRegistrationUrl}
+              label={t("ดูทะเบียนห้างหุ้นส่วนจำกัด", "View partnership registration")}
             />
           </div>
         </section>

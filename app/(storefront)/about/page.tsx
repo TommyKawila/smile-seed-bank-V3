@@ -14,6 +14,12 @@ export default async function AboutPage() {
   return (
     <AboutPageClient
       companySeedLicenseUrl={settings.legal_company_seed_license_url?.trim() || null}
+      companyBusinessRegistrationUrl={
+        settings.legal_company_business_registration_url?.trim() || null
+      }
+      companyBusinessRegistrationNumber={
+        settings.legal_company_business_registration_number?.trim() || null
+      }
       storeSeedLicenseUrl={settings.legal_seed_license_url?.trim() || null}
       businessRegistrationUrl={settings.legal_business_registration_url?.trim() || null}
       companyEmail={settings.company_email?.trim() || null}

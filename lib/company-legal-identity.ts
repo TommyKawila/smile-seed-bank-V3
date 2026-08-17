@@ -30,6 +30,8 @@ export type LocalizedLegalEntity = {
   address: string;
   seedLicenseNumber: string;
   seedLicenseLabel: string;
+  partnershipRegistrationNumber: string | null;
+  partnershipRegistrationLabel: string;
 };
 
 export type LocalizedStoreEntity = {
@@ -43,8 +45,14 @@ export type LocalizedStoreEntity = {
   seedLicenseLabel: string;
 };
 
-export function getLegalEntity(locale: LegalLocale): LocalizedLegalEntity {
+export function getLegalEntity(
+  locale: LegalLocale,
+  partnershipRegistrationOverride?: string | null
+): LocalizedLegalEntity {
   const th = locale === "th";
+  const partnershipRegistrationNumber = resolveCompanyPartnershipRegistrationNumber(
+    partnershipRegistrationOverride
+  );
   return {
     name: th ? LEGAL_ENTITY.nameTh : LEGAL_ENTITY.nameEn,
     address: th ? LEGAL_ENTITY.addressTh : LEGAL_ENTITY.addressEn,
@@ -52,6 +60,10 @@ export function getLegalEntity(locale: LegalLocale): LocalizedLegalEntity {
     seedLicenseLabel: th
       ? "ใบอนุญาตขายเมล็ดพันธุ์ควบคุมเลขที่"
       : "Controlled seed sales license number",
+    partnershipRegistrationNumber,
+    partnershipRegistrationLabel: th
+      ? "ทะเบียนห้างหุ้นส่วนจำกัดเลขที่"
+      : "Limited partnership registration number",
   };
 }
 
@@ -110,4 +122,11 @@ export function resolveStoreCommercialRegistrationNumber(override?: string | nul
 export function resolveCompanySeedLicenseNumber(override?: string | null): string {
   const v = override?.trim();
   return v || LEGAL_ENTITY.seedLicenseNumber;
+}
+
+export function resolveCompanyPartnershipRegistrationNumber(
+  override?: string | null
+): string | null {
+  const v = override?.trim();
+  return v || null;
 }

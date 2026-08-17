@@ -228,23 +228,46 @@ export default function SettingsPage() {
                 onSaved={handleSaved}
                 onClear={handleClear}
               />
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">เลขที่ใบอนุญาต (หจก.)</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Label className="text-sm">เลขที่ใบอนุญาตเมล็ดพันธุ์ (หจก.)</Label>
-                  <Input
-                    value={settings.legal_company_seed_license_number ?? ""}
-                    onChange={(e) => updateSetting("legal_company_seed_license_number", e.target.value)}
-                    onBlur={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
-                    placeholder={LEGAL_ENTITY.seedLicenseNumber}
-                    className="h-9"
-                  />
-                  <p className="text-xs text-zinc-500">ว่าง = ใช้ค่ามาตรฐาน {LEGAL_ENTITY.seedLicenseNumber}</p>
-                </CardContent>
-              </Card>
+              <LogoUploadCard
+                title="ทะเบียนห้างหุ้นส่วนจำกัด (หจก.)"
+                description="Limited partnership registration (PDF/Image)"
+                settingKey="legal_company_business_registration_url"
+                accept="image/*,application/pdf"
+                currentUrl={settings.legal_company_business_registration_url}
+                onSaved={handleSaved}
+                onClear={handleClear}
+              />
             </div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">เลขที่เอกสารหจก. (แสดงใน About)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-sm">เลขที่ใบอนุญาตเมล็ดพันธุ์ (หจก.)</Label>
+                    <Input
+                      value={settings.legal_company_seed_license_number ?? ""}
+                      onChange={(e) => updateSetting("legal_company_seed_license_number", e.target.value)}
+                      onBlur={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+                      placeholder={LEGAL_ENTITY.seedLicenseNumber}
+                      className="h-9"
+                    />
+                    <p className="text-xs text-zinc-500">ว่าง = ใช้ค่ามาตรฐาน {LEGAL_ENTITY.seedLicenseNumber}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">เลขทะเบียนห้างหุ้นส่วนจำกัด</Label>
+                    <Input
+                      value={settings.legal_company_business_registration_number ?? ""}
+                      onChange={(e) => updateSetting("legal_company_business_registration_number", e.target.value)}
+                      onBlur={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+                      placeholder="เลขทะเบียนจากหนังสือจดทะเบียนหจก."
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="space-y-4">
@@ -461,6 +484,7 @@ ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 -- Keys: logo_main_url, logo_secondary_png_url, company_name, company_address, company_email, company_phone,
 --       social_media (JSON), legal_seed_license_url, legal_seed_license_number,
 --       legal_company_seed_license_url, legal_company_seed_license_number,
+--       legal_company_business_registration_url, legal_company_business_registration_number,
 --       legal_business_registration_url, legal_business_registration_number, hero_bg_mode, hero_svg_code`}
         </pre>
       </div>
