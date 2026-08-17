@@ -148,7 +148,7 @@ const STOREFRONT_HOME_FEATURED_PRODUCT_SELECT = {
   yield_info: true,
 } satisfies Prisma.productsSelect;
 
-const STOREFRONT_CLEARANCE_DRILL_PRODUCT_SELECT = {
+const STOREFRONT_LANDING_DRILL_PRODUCT_SELECT = {
   ...STOREFRONT_HOME_CARD_PRODUCT_SELECT,
   cbd_percent: true,
   yield_info: true,
@@ -472,7 +472,7 @@ export async function getPinnedNewSeedsStorefrontProductsByBreederSlug(
         { id: "desc" },
       ],
       take,
-      select: STOREFRONT_HOME_CARD_PRODUCT_SELECT,
+      select: STOREFRONT_LANDING_DRILL_PRODUCT_SELECT,
     });
     const mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
     const listable = mapped.filter(isListableNewSeedsProduct);
@@ -1689,7 +1689,7 @@ export async function getClearanceStorefrontProductsByBreederSlug(
       },
       orderBy: [{ id: "desc" }],
       take: fetchTake,
-      select: STOREFRONT_CLEARANCE_DRILL_PRODUCT_SELECT,
+      select: STOREFRONT_LANDING_DRILL_PRODUCT_SELECT,
     });
     let mapped = rows.map((p) => bigintToJson(p)) as unknown as ProductWithBreederAndVariants[];
     if (pctFilter != null) {

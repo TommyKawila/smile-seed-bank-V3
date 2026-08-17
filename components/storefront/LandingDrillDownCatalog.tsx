@@ -1,18 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SlidersHorizontal from "lucide-react/dist/esm/icons/sliders-horizontal";
 import Tag from "lucide-react/dist/esm/icons/tag";
 import { Button } from "@/components/ui/button";
-import { ClearanceCard } from "@/components/storefront/ClearanceCard";
 import { useLanguage } from "@/context/LanguageContext";
 import {
   CATALOG_GENETICS_STRIP_LABELS,
   CATALOG_GENETICS_STRIP_SLUGS,
 } from "@/lib/catalog-filter-strip-labels";
-import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
+import { saveCatalogReturnPath, touchCatalogReturnFromWindow } from "@/lib/catalog-return-path";
 import { productMatchesCatalogFtParam } from "@/lib/seed-type-filter";
 import {
   calculateFilterCounts,
@@ -31,8 +30,6 @@ import type { CatalogSidebarQuickFiltersProps } from "@/components/storefront/Ca
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
 import type { ProductListItem } from "@/services/storefront-product-service";
 import { cn } from "@/lib/utils";
-
-const KEEP_PARAMS = new Set(["breeder", "pct"]);
 
 const LazyFilterSidebar = dynamic(
   () =>
@@ -56,7 +53,7 @@ const LazyShopPriceFilterBottomSheet = dynamic(
   { ssr: false }
 );
 
-function clearancePackVariants(p: ProductWithBreederAndVariants) {
+export function clearancePackVariants(p: ProductWithBreederAndVariants) {
   const all = p.product_variants ?? [];
   const clearance = all.filter(
     (v) =>
@@ -67,10 +64,20 @@ function clearancePackVariants(p: ProductWithBreederAndVariants) {
   return clearance.length > 0 ? clearance : all;
 }
 
-export function ClearanceDrillDownCatalog({
+export function LandingDrillDownCatalog({
   products,
+  keepParams = ["breeder"],
+  showClearanceFilter = false,
+  packVariants,
+  renderCard,
 }: {
   products: ProductWithBreederAndVariants[];
+  keepParams?: readonly string[];
+  showClearanceFilter?: boolean;
+  packVariants?: (
+    p: ProductWithBreederAndVariants
+  ) => NonNullable<ProductWithBreederAndVariants["product_variants"]>;
+  renderCard: (product: ProductWithBreederAndVariants) => ReactNode;
 }) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -79,6 +86,7 @@ export function ClearanceDrillDownCatalog({
   const [showFilter, setShowFilter] = useState(false);
   const [showDesktopFilters, setShowDesktopFilters] = useState(false);
   const [showPriceSheet, setShowPriceSheet] = useState(false);
+  const keep = useMemo(() => new Set(keepParams), [keepParams]);
 
   const replaceCatalog = useCallback(
     (mutate: (sp: URLSearchParams) => void) => {
@@ -108,15 +116,20 @@ export function ClearanceDrillDownCatalog({
     [searchParams]
   );
 
+  const variantsFor = useCallback(
+    (p: ProductWithBreederAndVariants) => packVariants?.(p) ?? p.product_variants ?? [],
+    [packVariants]
+  );
+
   const filterOptionCounts = useMemo(
     () =>
       calculateFilterCounts(
         products.map((p) => ({
           ...p,
-          product_variants: clearancePackVariants(p),
+          product_variants: variantsFor(p),
         }))
       ),
-    [products]
+    [products, variantsFor]
   );
 
   const priceCap = useMemo(
@@ -172,7 +185,7 @@ export function ClearanceDrillDownCatalog({
     () => ({
       replaceCatalog,
       t,
-      showClearanceFilter: false,
+      showClearanceFilter,
       floweringOptions: catalogFloweringQuickOptions,
       geneticsOptions: catalogGeneticsPillOptions,
       sexCounts: {
@@ -183,6 +196,7 @@ export function ClearanceDrillDownCatalog({
     [
       replaceCatalog,
       t,
+      showClearanceFilter,
       catalogFloweringQuickOptions,
       catalogGeneticsPillOptions,
       filterOptionCounts.sex.feminized,
@@ -202,7 +216,7 @@ export function ClearanceDrillDownCatalog({
       if (!productMatchesCatalogFtParam(p, ftParam)) return false;
       if (
         !productMatchesShopAttributeFilters(
-          { ...p, product_variants: clearancePackVariants(p) },
+          { ...p, product_variants: variantsFor(p) },
           genetics,
           difficulty,
           thc,
@@ -232,6 +246,7 @@ export function ClearanceDrillDownCatalog({
     yieldQuickParam,
     priceMin,
     priceMax,
+    variantsFor,
   ]);
 
   const hasFilters =
@@ -248,10 +263,10 @@ export function ClearanceDrillDownCatalog({
   const clearFilters = useCallback(() => {
     replaceCatalog((sp) => {
       for (const key of [...sp.keys()]) {
-        if (!KEEP_PARAMS.has(key)) sp.delete(key);
+        if (!keep.has(key)) sp.delete(key);
       }
     });
-  }, [replaceCatalog]);
+  }, [replaceCatalog, keep]);
 
   return (
     <div
@@ -341,10 +356,14 @@ export function ClearanceDrillDownCatalog({
             {t("ไม่พบสินค้าที่ตรงกับตัวกรอง", "No products match these filters")}
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {filteredProducts.map((p) => (
-              <ClearanceCard key={p.id} product={p} />
-            ))}
+          <div
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+            onClickCapture={(e) => {
+              const el = (e.target as HTMLElement).closest("a");
+              if (el) touchCatalogReturnFromWindow();
+            }}
+          >
+            {filteredProducts.map((p) => renderCard(p))}
           </div>
         )}
       </div>

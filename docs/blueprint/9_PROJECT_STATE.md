@@ -4,10 +4,17 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-17 (New Seeds drill-down Show/Hide filters)
+- **What:** `/new?breeder=` มีปุ่มแสดง/ซ่อนตัวกรองเหมือน Shop/Clearance
+- **Logic:** ใช้ `LandingDrillDownCatalog` ร่วมกับ Clearance · คง `breeder`
+- **ไฟล์:** `LandingDrillDownCatalog.tsx` · `NewSeedsLandingClient.tsx` · `ClearanceLandingClient.tsx` · `product-service.ts`
+
+---
+
 ### บันทึกการทำงาน — 2026-08-17 (Clearance drill-down Show/Hide filters)
 - **What:** `/clearance?breeder=&pct=` มีปุ่มแสดง/ซ่อนตัวกรองเหมือน Shop (เดสก์ท็อป sidebar + มือถือ sheet ราคา/ตัวกรอง)
 - **Logic:** กรองในหน่วยความจำจากสินค้าที่โหลดแล้ว · คง `breeder`/`pct` · แพ็กนับจากแพ็ก clearance
-- **ไฟล์:** `ClearanceDrillDownCatalog.tsx` · `ClearanceLandingClient.tsx` · `product-service.ts`
+- **ไฟล์:** `LandingDrillDownCatalog.tsx` · `ClearanceLandingClient.tsx` · `product-service.ts`
 
 ---
 

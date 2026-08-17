@@ -1,18 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
 import { fetchWithTimeout } from "@/lib/timeout";
 import { NewSeedsBreederBoxCard } from "@/components/storefront/NewSeedsBreederBoxCard";
 import { NewSeedsProductCard } from "@/components/storefront/NewSeedsProductCard";
+import { LandingDrillDownCatalog } from "@/components/storefront/LandingDrillDownCatalog";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { StorefrontNewSeedsBreederBox } from "@/lib/new-seeds";
 import type { ProductWithBreederAndVariants } from "@/lib/supabase/types";
-import { touchCatalogReturnFromWindow } from "@/lib/catalog-return-path";
 
 export function NewSeedsLandingClient({
   boxes,
@@ -66,12 +66,9 @@ export function NewSeedsLandingClient({
   }, [drillDown, boxes.length]);
 
   useEffect(() => {
-    if (!breederSlug) {
-      saveCatalogReturnPath("/new");
-      return;
-    }
-    saveCatalogReturnPath(`/new?breeder=${encodeURIComponent(breederSlug)}`);
-  }, [breederSlug]);
+    if (drillDown) return;
+    saveCatalogReturnPath("/new");
+  }, [drillDown]);
 
   return (
     <div className={`min-h-[60vh] bg-background text-foreground ${JOURNAL_PRODUCT_FONT_VARS}`}>
@@ -137,17 +134,24 @@ export function NewSeedsLandingClient({
               {t("ไม่พบสินค้าใหม่ของค่ายนี้", "No new seeds for this breeder")}
             </p>
           ) : (
-            <div
-              className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-              onClickCapture={(e) => {
-                const el = (e.target as HTMLElement).closest("a");
-                if (el) touchCatalogReturnFromWindow();
-              }}
+            <Suspense
+              fallback={
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {products.map((p) => (
+                    <div
+                      key={p.id}
+                      className="aspect-[3/4] animate-pulse rounded-2xl bg-violet-950/40"
+                    />
+                  ))}
+                </div>
+              }
             >
-              {products.map((p) => (
-                <NewSeedsProductCard key={p.id} product={p} />
-              ))}
-            </div>
+              <LandingDrillDownCatalog
+                products={products}
+                showClearanceFilter
+                renderCard={(p) => <NewSeedsProductCard key={p.id} product={p} />}
+              />
+            </Suspense>
           )
         ) : loadingBoxes ? (
           <div className="grid auto-rows-[minmax(10rem,auto)] grid-cols-2 gap-3 md:grid-cols-4">

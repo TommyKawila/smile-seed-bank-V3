@@ -7,7 +7,11 @@ import { useLanguage } from "@/context/LanguageContext";
 import { saveCatalogReturnPath } from "@/lib/catalog-return-path";
 import { fetchWithTimeout } from "@/lib/timeout";
 import { ClearanceBreederBoxCard } from "@/components/storefront/ClearanceBreederBoxCard";
-import { ClearanceDrillDownCatalog } from "@/components/storefront/ClearanceDrillDownCatalog";
+import {
+  LandingDrillDownCatalog,
+  clearancePackVariants,
+} from "@/components/storefront/LandingDrillDownCatalog";
+import { ClearanceCard } from "@/components/storefront/ClearanceCard";
 import { BreederLogoImage } from "@/components/storefront/BreederLogoImage";
 import { JOURNAL_PRODUCT_FONT_VARS } from "@/components/storefront/journal-product-fonts";
 import type { StorefrontClearanceBreederBox } from "@/lib/clearance";
@@ -195,7 +199,12 @@ export function ClearanceLandingClient({
                 </div>
               }
             >
-              <ClearanceDrillDownCatalog products={products} />
+              <LandingDrillDownCatalog
+                products={products}
+                keepParams={["breeder", "pct"]}
+                packVariants={clearancePackVariants}
+                renderCard={(p) => <ClearanceCard key={p.id} product={p} />}
+              />
             </Suspense>
           )
         ) : loadingBoxes ? (
