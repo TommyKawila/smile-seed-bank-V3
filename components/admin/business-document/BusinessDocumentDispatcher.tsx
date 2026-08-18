@@ -7,6 +7,10 @@ import { useBusinessDocumentDispatch } from "@/hooks/useBusinessDocumentDispatch
 import { useBusinessDocumentDrafts } from "@/hooks/useBusinessDocumentDrafts";
 import { useBusinessContacts } from "@/hooks/useBusinessContacts";
 import { formatRawBusinessLetter } from "@/lib/business-document-raw-format";
+import {
+  GREEN_FUTURE_CLARIFICATION_RAW,
+  GREEN_FUTURE_CLARIFICATION_SUBJECT,
+} from "@/lib/green-future-clarification-letter";
 import { exportBusinessDocumentPdf } from "@/lib/business-document-pdf.client";
 import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
 import { resolveCompanyContactEmail } from "@/lib/company-legal-identity";
@@ -106,6 +110,15 @@ export function BusinessDocumentDispatcher() {
     companyPhone,
     toast,
   ]);
+
+  const handleLoadGreenFutureTemplate = useCallback(() => {
+    setRawPaste(GREEN_FUTURE_CLARIFICATION_RAW);
+    setSubject(GREEN_FUTURE_CLARIFICATION_SUBJECT);
+    toast({
+      title: "GF letter loaded",
+      description: "Format letter → attach plan PDF + legal docs → send.",
+    });
+  }, [toast]);
 
   const handleSaveDraft = useCallback(async () => {
     const result = await saveDraft({
@@ -303,6 +316,7 @@ export function BusinessDocumentDispatcher() {
           onRecipientEmailChange={setRecipientEmail}
           onRawPasteChange={setRawPaste}
           onFormatRaw={handleFormatRaw}
+          onLoadGreenFutureTemplate={handleLoadGreenFutureTemplate}
           onSignatureUrlChange={setSignatureImageUrl}
           onAttachmentUrlsChange={setAttachmentImageUrls}
           onPersistSignatureDefault={(url) => updateSetting(FOUNDER_SIGNATURE_SETTING_KEY, url)}

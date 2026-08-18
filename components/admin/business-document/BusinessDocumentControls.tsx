@@ -45,6 +45,7 @@ type Props = {
   onRecipientEmailChange: (value: string) => void;
   onRawPasteChange: (value: string) => void;
   onFormatRaw: () => void;
+  onLoadGreenFutureTemplate?: () => void;
   onSignatureUrlChange: (url: string | null) => void;
   onAttachmentUrlsChange: (urls: string[]) => void;
   onPersistSignatureDefault: (url: string) => Promise<void>;
@@ -83,6 +84,7 @@ export function BusinessDocumentControls({
   onRecipientEmailChange,
   onRawPasteChange,
   onFormatRaw,
+  onLoadGreenFutureTemplate,
   onSignatureUrlChange,
   onAttachmentUrlsChange,
   onPersistSignatureDefault,
@@ -188,6 +190,16 @@ export function BusinessDocumentControls({
               className="min-h-[140px] resize-y border-slate-200 bg-white text-sm"
             />
           </div>
+          {onLoadGreenFutureTemplate ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={onLoadGreenFutureTemplate}
+            >
+              Load GF clarification letter
+            </Button>
+          ) : null}
           <Button
             type="button"
             className="w-full bg-[#12463e] hover:bg-[#0f3a34]"
