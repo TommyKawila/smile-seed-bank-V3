@@ -202,6 +202,87 @@ export const ASSISTANT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
       properties: {},
     },
   },
+  {
+    name: "search_bulk_strains",
+    description:
+      "Search wholesale bulk strain lists: Seeds Genetics (NL) and SGF Seeds / Green Future (TH). Use for B2B orders (50+ seeds/strain), not retail shop.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        query: {
+          type: Type.STRING,
+          description: "Strain name or keyword (e.g. Critical 2.0, Purple Skunk)",
+        },
+        supplier: {
+          type: Type.STRING,
+          description:
+            "Optional filter: seeds-genetics | green-future | sg | gf | sgf | all (default all)",
+        },
+        limit: {
+          type: Type.NUMBER,
+          description: "Max results (default 12)",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "quote_bulk_order",
+    description:
+      "Price a bulk order at share-link tiers (min 50 seeds/strain). Returns per-supplier subtotals EUR/THB, split-invoice hint, and admin next steps.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        items: {
+          type: Type.ARRAY,
+          description: "Line items to price",
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              strainName: { type: Type.STRING },
+              qty: { type: Type.NUMBER, description: "Seeds per strain (min 50)" },
+              supplierSlug: {
+                type: Type.STRING,
+                description: "seeds-genetics or green-future",
+              },
+              breederName: {
+                type: Type.STRING,
+                description: "Seeds Genetics or SGF Seeds (if supplierSlug omitted)",
+              },
+              category: {
+                type: Type.STRING,
+                description: "Optional hint: Photo FF, Autoflower, etc.",
+              },
+            },
+            required: ["strainName", "qty"],
+          },
+        },
+        currency: {
+          type: Type.STRING,
+          description: "EUR or THB for display (pricing uses same ladder)",
+        },
+      },
+      required: ["items"],
+    },
+  },
+  {
+    name: "get_bulk_pricing_tiers",
+    description:
+      "List bulk starter/volume unit prices for Seeds Genetics and/or SGF Seeds at sample quantities (50, 101, 251, 500).",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        supplier: {
+          type: Type.STRING,
+          description: "seeds-genetics | green-future | all",
+        },
+        currency: {
+          type: Type.STRING,
+          description: "EUR or THB",
+        },
+      },
+    },
+  },
 ];
 
 export const EMPTY_AI_REPLY_TH =
@@ -400,6 +481,46 @@ function formatOneToolTh(name: string, result: unknown): string | null {
 
   if (name === "get_partner_cost_terms") {
     return `Partner cost ${String(r.refCode ?? "—")} · confidential · ${Array.isArray(r.tiers) ? r.tiers.length : 0} tiers`;
+  }
+
+  if (name === "search_bulk_strains") {
+    const strains = Array.isArray(r.strains) ? r.strains : [];
+    if (!strains.length) return "ไม่พบสายพันธุ์ bulk ที่ตรงกับคำค้น";
+    const lines = strains.slice(0, 10).map((raw) => {
+      const s = asRecord(raw);
+      if (!s) return "—";
+      return `• ${String(s.strainName)} · ${String(s.supplierLabel)} · ${String(s.category ?? "—")}`;
+    });
+    return `พบ bulk strain ${strains.length} รายการ:\n${lines.join("\n")}`;
+  }
+
+  if (name === "quote_bulk_order") {
+    const suppliers = Array.isArray(r.supplierTotals) ? r.supplierTotals : [];
+    const parts = suppliers.map((raw) => {
+      const s = asRecord(raw);
+      if (!s) return "—";
+      return `${String(s.supplierLabel)}: €${String(s.subtotalEur)} (~$${String(s.subtotalUsdEstimate)}) · ${String(s.seedCount)} เมล็ด`;
+    });
+    return [
+      `รวม ${String(r.seedCount ?? "—")} เมล็ด · €${String(r.grandTotalEur ?? "—")} (~$${String(r.grandTotalUsdEstimate ?? "—")})`,
+      r.excludesShipping ? "(ยังไม่รวมค่าส่ง)" : null,
+      r.splitInvoicesOk ? "แยก 2 ใบชำระได้ (ทุก supplier < $1,000)" : null,
+      parts.length ? parts.join("\n") : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (name === "get_bulk_pricing_tiers") {
+    const tiers = Array.isArray(r.tiers) ? r.tiers : [];
+    const lines = tiers.map((raw) => {
+      const t = asRecord(raw);
+      if (!t) return "—";
+      const samples = Array.isArray(t.samplePrices) ? t.samplePrices : [];
+      const p50 = asRecord(samples[0]);
+      return `• ${String(t.supplierLabel)}: 50 เมล็ด ≈ ${String(p50?.unitPrice ?? "—")} ${String(r.currency ?? "EUR")}/เมล็ด`;
+    });
+    return lines.length ? `Bulk pricing tiers:\n${lines.join("\n")}` : "ไม่มีข้อมูลราคา bulk";
   }
 
   return null;

@@ -29,7 +29,10 @@ export const SUMMARY_REFRESH_EVERY = 20;
 
 const TOOLS_RULE = [
   "DATA RULES: For live shop data you MUST call tools — never invent numbers.",
-  "Catalog: get_catalog_stats, search_products, get_product_detail, get_low_stock.",
+  "Retail catalog: get_catalog_stats, search_products, get_product_detail, get_low_stock.",
+  "Bulk B2B (Seeds Genetics NL + SGF/Green Future TH): search_bulk_strains, quote_bulk_order, get_bulk_pricing_tiers.",
+  "For wholesale / 50+ seeds per strain: use bulk tools — NOT search_products.",
+  "Bulk quotes exclude shipping. Split invoices per supplier when customer asks (SG vs SGF).",
   "Sales: get_sales_summary.",
   "Orders/customers: lookup_order, search_customers, get_customer_orders, list_recent_orders, get_order_message_log.",
   "Supplier cost (Green Future): get_partner_cost_terms — INTERNAL ONLY; never paste raw EUR/THB cost to customers.",

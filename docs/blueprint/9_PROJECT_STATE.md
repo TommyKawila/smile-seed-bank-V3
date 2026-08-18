@@ -9,13 +9,13 @@
 *โฟกัสหลักจนกว่าดีล Green Future นิ่ง — อัปเดตเมื่อปิดรายการ*
 
 ### A. Deploy / เอกสารนิติบุคคล (ทำก่อนคุย GF)
-1. [ ] Apply Supabase migration `20260817210000_site_settings_company_business_registration_rls.sql`
-2. [ ] รอ/ตรวจ production deploy commit `d4f6eb6` (ช่องอัปโหลดทะเบียนหจก. TMY)
-3. [ ] Admin → Settings: อัปโหลด **พ.พ.4 หจก. TMY** + **ทะเบียนหจก. TMY** + กรอกเลขทะเบียน
-4. [ ] ตรวจ `/about` — ปุ่มเอกสารหจก. ใช้งานได้
+1. [x] Apply Supabase migration `20260817210000_site_settings_company_business_registration_rls.sql`
+2. [x] รอ/ตรวจ production deploy commit `d4f6eb6` (ช่องอัปโหลดทะเบียนหจก. TMY)
+3. [x] Admin → Settings: อัปโหลด **พ.พ.4 หจก. TMY** + **ทะเบียนหจก. TMY** + กรอกเลขทะเบียน
+4. [x] ตรวจ `/about` — ปุ่มเอกสารหจก. ใช้งานได้
 
 ### B. ชี้แจง / ขอบเขตคู่ค้า GF
-5. [ ] ส่งจดหมายชี้แจง 2 ใบ พ.พ.4 → คู่สัญญา = **หจก. TMY** · Smile = แบรนด์ · แนบสแกนหจก.
+5. [x] ส่งจดหมายชี้แจง 2 ใบ พ.พ.4 → คู่สัญญา = **หจก. TMY** · Smile = แบรนด์ · แนบสแกนหจก.
 6. [ ] ใส่ประโยคขอบเขตในจดหมาย/MOU: **multi-brand retailer** · ความร่วมมือนี้ครอบคลุมเฉพาะ **GF documented seed program** · genetics อื่นอยู่นอกโปรแกรม · ไม่ใช้เอกสาร/แบรนด์ GF กับสินค้าค่ายอื่น
 7. [ ] **อย่าเซ็น exclusivity ทั้งบริษัท** — ถ้าขอ exclusive ให้จำกัดเฉพาะ documented/GACP-ready bulk ของ GF ในช่อง wholesale
 
@@ -37,6 +37,11 @@
 18. [ ] รีวิวรายเดือน: สัดส่วนรายได้ GF documented vs ช่องอื่น
 
 **หลักที่บันทึกแล้ว:** โปรแกรม GF = ช่องถูกระบบที่ปกป้อง · genetics อื่น = คนละโปรแกรม · ความสัมพันธ์กับ GF ชัดด้วยขอบเขต ไม่พึ่งการซ่อนอย่างเดียว
+
+### บันทึกการทำงาน — 2026-08-18 (Ops — TMY legal docs live)
+- **What:** Apply migrations `20260817210000` + `20260818100000` · Admin Settings อัปโหลด พ.พ.4 หจก. TMY + ทะเบียนหจก. + เลขทะเบียน · `/about` ปุ่มเอกสารหจก. ใช้งานได้
+- **Logic:** site_settings SSOT · public RLS select · About แสดงเมื่อมี URL/เลข
+- **ไฟล์:** migrations · `app/admin/settings/page.tsx` · `AboutPageClient.tsx` · `company-legal-identity.ts`
 
 ### บันทึกการทำงาน — 2026-08-18 (Channel firewall — GF/SG isolation)
 - **What:** Bulk share default GF-only + preset GF/SG/Both · RFQ stamp SGF breeder · GACP ตัด link ไป `/wholesale` · relabel `/wholesale` เป็น SGF lane · B2B quote `?channel=gf|sg` lock + block mixed send/PDF · GF admin mint GF-only link
@@ -207,6 +212,11 @@
 ---
 
 ---
+
+### บันทึกการทำงาน — 2026-08-18 (Assistant bulk B2B tools)
+- **What:** เลขา Tommy — tools ค้น/คำนวณ bulk Seeds Genetics + SGF (50+ เมล็ด/สาย) · แยกยอด supplier · hint แยก 2 pro-forma
+- **Logic:** `search_bulk_strains` · `quote_bulk_order` · `get_bulk_pricing_tiers` — reuse `bulk-share-order` + partner catalog · ไม่รวมค่าส่ง
+- **ไฟล์:** `assistant-bulk-service.ts` · `assistant-tools-service.ts` · `ai-tools.ts` · `assistant-orchestrator-service.ts`
 
 ### บันทึกการทำงาน — 2026-08-14 (Green Future GACP strategy — Admin)
 - **What:** หน้าวางกลยุทธ์ GACP ปลีก 50 เมล็ด — Domestic vs Export tiers · matrix เอกสาร · break-even · RFQ/PO checklist

@@ -8,6 +8,11 @@ import { getFinancialSummary } from "@/services/dashboard-service";
 import { searchCustomersOmni } from "@/lib/customer-omni-search";
 import { loadAdminOrderDetail } from "@/lib/load-admin-order-detail";
 import { listOrderLogs } from "@/lib/order-logs";
+import {
+  getBulkPricingTiers,
+  quoteBulkOrder,
+  searchBulkStrains,
+} from "@/services/assistant-bulk-service";
 import { getActivePartnerPriceList } from "@/services/partner-catalog-service";
 import { GREEN_FUTURE_SLUG } from "@/types/partner-catalog";
 
@@ -27,7 +32,10 @@ export type AssistantToolName =
   | "get_customer_orders"
   | "list_recent_orders"
   | "get_order_message_log"
-  | "get_partner_cost_terms";
+  | "get_partner_cost_terms"
+  | "search_bulk_strains"
+  | "quote_bulk_order"
+  | "get_bulk_pricing_tiers";
 
 export async function searchProducts(query: string): Promise<unknown> {
   const q = query.trim();
@@ -683,6 +691,43 @@ export async function executeAssistantTool(
     }
     case "get_partner_cost_terms":
       return getPartnerCostTerms();
+    case "search_bulk_strains":
+      return searchBulkStrains({
+        query: String(args.query ?? args.q ?? ""),
+        supplier: args.supplier != null ? String(args.supplier) : undefined,
+        limit: args.limit != null ? Number(args.limit) : undefined,
+      });
+    case "quote_bulk_order": {
+      const rawItems = args.items;
+      const items = Array.isArray(rawItems)
+        ? (rawItems as Record<string, unknown>[])
+        : [];
+      return quoteBulkOrder({
+        items: items.map((it) => ({
+          supplierSlug:
+            it.supplierSlug != null
+              ? String(it.supplierSlug)
+              : it.supplier_slug != null
+                ? String(it.supplier_slug)
+                : undefined,
+          breederName:
+            it.breederName != null
+              ? String(it.breederName)
+              : it.breeder_name != null
+                ? String(it.breeder_name)
+                : undefined,
+          strainName: String(it.strainName ?? it.strain_name ?? ""),
+          qty: Number(it.qty ?? it.quantity ?? 0),
+          category: it.category != null ? String(it.category) : undefined,
+        })),
+        currency: args.currency != null ? String(args.currency) : undefined,
+      });
+    }
+    case "get_bulk_pricing_tiers":
+      return getBulkPricingTiers({
+        supplier: args.supplier != null ? String(args.supplier) : undefined,
+        currency: args.currency != null ? String(args.currency) : undefined,
+      });
     default:
       return { error: `Unknown tool: ${name}` };
   }
