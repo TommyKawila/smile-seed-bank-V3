@@ -1,4 +1,4 @@
-import { DEFAULT_EUR_THB } from "@/lib/bulk-seeds-book";
+import { DEFAULT_EUR_THB } from "@/lib/bulk-seeds-labels";
 import type {
   B2BCurrency,
   B2BQuoteDraft,

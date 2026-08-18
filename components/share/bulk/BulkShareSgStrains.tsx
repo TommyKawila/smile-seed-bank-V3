@@ -8,7 +8,7 @@ import {
 } from "@/lib/seeds-genetics-supreme-copy";
 import { SgSupremeInfoButton } from "@/components/share/bulk/SgSupremeInfoButton";
 import { strainMatchesQuery } from "@/components/share/bulk/BulkShareStrainSearch";
-import { cartLineKey, type BulkShareStrainPick } from "@/lib/bulk-share-order";
+import { cartLineKey, type BulkShareStrainPick } from "@/lib/bulk-share-public";
 import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
 
 type Group = {

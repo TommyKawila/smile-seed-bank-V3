@@ -1,3 +1,4 @@
+/** Supplier cost book — admin/server only. Public share UI must import `@/lib/bulk-seeds-labels`. */
 import gfList from "@/data/partners/green-future/price-list-gf-ssb-2026-0803.json";
 import {
   grossMarginPct,
@@ -10,11 +11,21 @@ import {
   recommendedLandedPct,
   type TradeLane,
 } from "@/lib/bulk-seeds-trade";
+import {
+  DEFAULT_EUR_THB,
+  SEED_FORMAT_LABEL,
+  SEEDS_GENETICS_SLUG,
+  type BulkSeedFormat,
+  type BulkSupplierSlug,
+} from "@/lib/bulk-seeds-labels";
 
-export const SEEDS_GENETICS_SLUG = "seeds-genetics";
-export const DEFAULT_EUR_THB = 38.44;
-
-export type BulkSupplierSlug = "green-future" | "seeds-genetics";
+export {
+  DEFAULT_EUR_THB,
+  SEED_FORMAT_LABEL,
+  SEEDS_GENETICS_SLUG,
+  type BulkSeedFormat,
+  type BulkSupplierSlug,
+};
 
 export type BulkCostTier = {
   code: string;
@@ -33,8 +44,6 @@ export type PublicListTier = {
   publicEur: number;
   label: string;
 };
-
-export type BulkSeedFormat = "photo" | "auto" | "photo-ff";
 
 export type BulkSupplierBook = {
   slug: BulkSupplierSlug;
@@ -62,12 +71,6 @@ export type BulkPricedTier = BulkCostTier & {
   sellThb: number;
   sellEur: number;
   markupPct: number;
-};
-
-export const SEED_FORMAT_LABEL: Record<BulkSeedFormat, string> = {
-  photo: "Photo",
-  auto: "Auto",
-  "photo-ff": "Photo FF",
 };
 
 function gfTiers(): BulkCostTier[] {

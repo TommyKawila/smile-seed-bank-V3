@@ -2,9 +2,8 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { BULK_SHARE_MIN_QTY, cartLineKey } from "@/lib/bulk-share-order";
+import { BULK_SHARE_MIN_QTY, cartLineKey, type BulkShareStrainPick } from "@/lib/bulk-share-public";
 import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
-import type { BulkShareStrainPick } from "@/lib/bulk-share-order";
 
 export type StrainSearchEntry = BulkShareStrainPick & { id: string };
 

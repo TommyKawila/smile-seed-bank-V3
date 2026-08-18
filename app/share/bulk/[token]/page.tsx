@@ -10,7 +10,7 @@ import {
 import { sgStrainsGrouped } from "@/lib/seeds-genetics-catalog";
 import { listPartnerStrains } from "@/services/partner-catalog-service";
 import { GREEN_FUTURE_SLUG } from "@/types/partner-catalog";
-import { SEEDS_GENETICS_SLUG, type BulkSupplierSlug } from "@/lib/bulk-seeds-book";
+import { SEEDS_GENETICS_SLUG, type BulkSupplierSlug } from "@/lib/bulk-seeds-labels";
 
 export const dynamic = "force-dynamic";
 export const robots = { index: false, follow: false };

@@ -11,10 +11,25 @@ import {
   type BulkSupplierBook,
 } from "@/lib/bulk-seeds-book";
 import { gmForMinQty } from "@/lib/bulk-seeds-trade";
-import type { PartnerStrainRecord } from "@/types/partner-catalog";
+import {
+  SGF_SEEDS_SHARE_NAME,
+  SGF_SEEDS_SHARE_TAGLINE,
+  SGF_STRAIN_BUCKET_LABEL,
+  SGF_STRAIN_BUCKET_ORDER,
+  sgfStrainBucket,
+  sgfStrainsGrouped,
+  type SgfStrainBucket,
+} from "@/lib/sgf-seeds-display";
 
-export const SGF_SEEDS_SHARE_NAME = "SGF Seeds";
-export const SGF_SEEDS_SHARE_TAGLINE = "Smile Seed Bank × Green Future Thailand";
+export {
+  SGF_SEEDS_SHARE_NAME,
+  SGF_SEEDS_SHARE_TAGLINE,
+  SGF_STRAIN_BUCKET_LABEL,
+  SGF_STRAIN_BUCKET_ORDER,
+  sgfStrainBucket,
+  sgfStrainsGrouped,
+  type SgfStrainBucket,
+};
 
 /** Customer-facing tier labels — aligned with Seeds Genetics share layout. */
 export const SGF_SHARE_TIER_STEPS: Pick<BulkCostTier, "minQty" | "label" | "qtyDescription">[] = [
@@ -27,16 +42,6 @@ export const SGF_SHARE_TIER_STEPS: Pick<BulkCostTier, "minQty" | "label" | "qtyD
   { minQty: 10000, label: "Wholesale", qtyDescription: "10,000 seeds / strain" },
   { minQty: 25000, label: "Contract", qtyDescription: "25,000 seeds / strain" },
 ];
-
-export type SgfStrainBucket = "autoflower" | "photo" | "photo-ff";
-
-export const SGF_STRAIN_BUCKET_ORDER: SgfStrainBucket[] = ["autoflower", "photo", "photo-ff"];
-
-export const SGF_STRAIN_BUCKET_LABEL: Record<SgfStrainBucket, string> = {
-  autoflower: "Autoflower",
-  photo: "Photo",
-  "photo-ff": "Photo FF",
-};
 
 const GF_SKIP_COST_CODES = new Set(["ssb_test_order"]);
 const SGF_STARTER_FALLBACK_EUR = 1.15;
@@ -109,23 +114,4 @@ export function priceSgfShareTiers(opts: {
       markupPct: markupOnCostPct(sell, landed),
     };
   });
-}
-
-export function sgfStrainBucket(strain: PartnerStrainRecord): SgfStrainBucket {
-  const code = strain.varietyCode.trim().toUpperCase();
-  if (code.startsWith("AF")) return "autoflower";
-  if (code.startsWith("FF")) return "photo-ff";
-  const typeHay = `${strain.typeLabel ?? ""} ${strain.strainName}`.toLowerCase();
-  if (typeHay.includes("fast flowering") || typeHay.includes("fast-flowering")) {
-    return "photo-ff";
-  }
-  return "photo";
-}
-
-export function sgfStrainsGrouped(strains: PartnerStrainRecord[]) {
-  return SGF_STRAIN_BUCKET_ORDER.map((bucket) => ({
-    bucket,
-    label: SGF_STRAIN_BUCKET_LABEL[bucket],
-    strains: strains.filter((s) => sgfStrainBucket(s) === bucket),
-  })).filter((g) => g.strains.length > 0);
 }
