@@ -5,6 +5,14 @@
 
 export type LegalLocale = "th" | "en";
 
+/** Admin site_settings overrides for document letterhead/footer numbers. */
+export type LegalDocumentOverrides = {
+  companySeedLicenseNumber?: string | null;
+  companyPartnershipRegistrationNumber?: string | null;
+  storeSeedLicenseNumber?: string | null;
+  storeCommercialRegistrationNumber?: string | null;
+};
+
 /** Entity A — registered partnership (formal letterhead). */
 export const LEGAL_ENTITY = {
   nameTh: "ห้างหุ้นส่วนจำกัด ทีเอ็มวาย อะโกร เทรด",
@@ -84,27 +92,45 @@ export function getStoreEntity(locale: LegalLocale): LocalizedStoreEntity {
 }
 
 /** Letterhead lines — legal entity + operating brand (EN default for international docs). */
-export function formatLetterheadBlock(locale: LegalLocale = "en"): string[] {
-  const legal = getLegalEntity(locale);
+export function formatLetterheadBlock(
+  locale: LegalLocale = "en",
+  overrides?: LegalDocumentOverrides
+): string[] {
+  const th = locale === "th";
+  const legal = getLegalEntity(locale, overrides?.companyPartnershipRegistrationNumber);
   const store = getStoreEntity(locale);
-  return [
+  const seedLicenseNumber = resolveCompanySeedLicenseNumber(overrides?.companySeedLicenseNumber);
+  const lines = [
     legal.name,
     legal.address,
-    `${legal.seedLicenseLabel} : ${legal.seedLicenseNumber}`,
-    locale === "th"
-      ? `ดำเนินการภายใต้แบรนด์ ${store.brandName}`
-      : `Operating as ${store.brandName}`,
+    `${legal.seedLicenseLabel} : ${seedLicenseNumber}`,
   ];
+  if (legal.partnershipRegistrationNumber) {
+    lines.push(
+      `${legal.partnershipRegistrationLabel} : ${legal.partnershipRegistrationNumber}`
+    );
+  }
+  lines.push(
+    th ? `ดำเนินการภายใต้แบรนด์ ${store.brandName}` : `Operating as ${store.brandName}`
+  );
+  return lines;
 }
 
 /** Store trust / footer lines for docs and About. */
-export function formatStoreTrustBlock(locale: LegalLocale = "en"): string[] {
+export function formatStoreTrustBlock(
+  locale: LegalLocale = "en",
+  overrides?: LegalDocumentOverrides
+): string[] {
   const store = getStoreEntity(locale);
+  const commercialRegistrationNumber = resolveStoreCommercialRegistrationNumber(
+    overrides?.storeCommercialRegistrationNumber
+  );
+  const seedLicenseNumber = resolveStoreSeedLicenseNumber(overrides?.storeSeedLicenseNumber);
   return [
     store.name,
     store.websiteDisplay,
-    `${store.commercialRegistrationLabel} : ${store.commercialRegistrationNumber}`,
-    `${store.seedLicenseLabel} : ${store.seedLicenseNumber}`,
+    `${store.commercialRegistrationLabel} : ${commercialRegistrationNumber}`,
+    `${store.seedLicenseLabel} : ${seedLicenseNumber}`,
   ];
 }
 

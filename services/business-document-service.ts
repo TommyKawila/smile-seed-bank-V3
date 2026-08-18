@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/get-url";
 import { buildBusinessDocumentEmailHtml } from "@/lib/email-business-document-html";
+import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
 import {
   BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
   FOUNDER_SIGNATURE_SETTING_KEY,
@@ -189,6 +190,26 @@ async function fetchSiteSettingRow(key: string): Promise<string | null> {
   }
 }
 
+async function fetchLegalDocumentOverrides(): Promise<LegalDocumentOverrides> {
+  const [
+    companySeedLicenseNumber,
+    companyPartnershipRegistrationNumber,
+    storeSeedLicenseNumber,
+    storeCommercialRegistrationNumber,
+  ] = await Promise.all([
+    fetchSiteSettingRow("legal_company_seed_license_number"),
+    fetchSiteSettingRow("legal_company_business_registration_number"),
+    fetchSiteSettingRow("legal_seed_license_number"),
+    fetchSiteSettingRow("legal_business_registration_number"),
+  ]);
+  return {
+    companySeedLicenseNumber,
+    companyPartnershipRegistrationNumber,
+    storeSeedLicenseNumber,
+    storeCommercialRegistrationNumber,
+  };
+}
+
 async function fetchLogoUrl(): Promise<string | null> {
   const fromDb = await fetchSiteSettingRow("logo_main_url");
   if (fromDb) return fromDb;
@@ -289,9 +310,10 @@ export async function sendBusinessDocumentEmail(
   const sigUrl =
     signatureImageUrl?.trim() || (await fetchDefaultSignatureUrl()) || null;
   const attachments = parseAttachmentUrls(attachmentImageUrls);
-  const [companyEmail, companyPhone] = await Promise.all([
+  const [companyEmail, companyPhone, legalOverrides] = await Promise.all([
     fetchSiteSettingRow("company_email"),
     fetchSiteSettingRow("company_phone"),
+    fetchLegalDocumentOverrides(),
   ]);
   const html = buildBusinessDocumentEmailHtml(
     plain,
@@ -302,6 +324,7 @@ export async function sendBusinessDocumentEmail(
       companyEmail,
       companyPhone,
       locale: "en",
+      legalOverrides,
     },
     attachments
   );

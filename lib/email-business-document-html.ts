@@ -45,8 +45,12 @@ export function buildBusinessDocumentEmailHtml(
     companyEmail: letterheadOpts?.companyEmail,
     companyPhone: letterheadOpts?.companyPhone,
     locale: letterheadOpts?.locale ?? "en",
+    legalOverrides: letterheadOpts?.legalOverrides,
   });
-  const footer = buildBusinessDocumentEmailFooterHtml(letterheadOpts?.locale ?? "en");
+  const footer = buildBusinessDocumentEmailFooterHtml({
+    locale: letterheadOpts?.locale ?? "en",
+    legalOverrides: letterheadOpts?.legalOverrides,
+  });
 
   return `<!DOCTYPE html>
 <html lang="en">

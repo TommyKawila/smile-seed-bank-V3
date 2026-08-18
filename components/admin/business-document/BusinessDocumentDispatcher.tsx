@@ -8,6 +8,7 @@ import { useBusinessDocumentDrafts } from "@/hooks/useBusinessDocumentDrafts";
 import { useBusinessContacts } from "@/hooks/useBusinessContacts";
 import { formatRawBusinessLetter } from "@/lib/business-document-raw-format";
 import { exportBusinessDocumentPdf } from "@/lib/business-document-pdf.client";
+import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
 import {
   DEFAULT_BUSINESS_DOCUMENT_FIELDS,
   FOUNDER_SIGNATURE_SETTING_KEY,
@@ -59,6 +60,12 @@ export function BusinessDocumentDispatcher() {
   const logoUrl = settings.logo_main_url ?? null;
   const companyEmail = settings.company_email ?? null;
   const companyPhone = settings.company_phone ?? null;
+  const legalOverrides: LegalDocumentOverrides = {
+    companySeedLicenseNumber: settings.legal_company_seed_license_number,
+    companyPartnershipRegistrationNumber: settings.legal_company_business_registration_number,
+    storeSeedLicenseNumber: settings.legal_seed_license_number,
+    storeCommercialRegistrationNumber: settings.legal_business_registration_number,
+  };
 
   useEffect(() => {
     if (sigHydrated) return;
@@ -76,11 +83,28 @@ export function BusinessDocumentDispatcher() {
     const formatted = formatRawBusinessLetter(rawPaste, {
       documentDate: fields.documentDate,
       senderName: fields.senderName,
+      senderTitle: "Founder",
+      recipientName: fields.recipientName,
+      companyEmail: companyEmail ?? "",
+      companyPhone: companyPhone ?? "",
     });
     setBodyText(formatted.bodyPlain);
-    setSubject(formatted.subject);
-    toast({ title: "Formatted", description: "Letter layout applied — review the preview." });
-  }, [rawPaste, fields.documentDate, fields.senderName, toast]);
+    if (formatted.subject.trim()) {
+      setSubject(formatted.subject.trim());
+    }
+    toast({
+      title: "Formatted",
+      description: "Placeholders filled from form fields — review the preview.",
+    });
+  }, [
+    rawPaste,
+    fields.documentDate,
+    fields.senderName,
+    fields.recipientName,
+    companyEmail,
+    companyPhone,
+    toast,
+  ]);
 
   const handleSaveDraft = useCallback(async () => {
     const result = await saveDraft({
@@ -210,6 +234,7 @@ export function BusinessDocumentDispatcher() {
         {
           companyEmail,
           companyPhone,
+          legalOverrides,
         },
         attachmentImageUrls
       );
@@ -234,6 +259,7 @@ export function BusinessDocumentDispatcher() {
     attachmentImageUrls,
     companyEmail,
     companyPhone,
+    legalOverrides,
     toast,
   ]);
 
@@ -251,6 +277,7 @@ export function BusinessDocumentDispatcher() {
           attachmentImageUrls={attachmentImageUrls}
           companyEmail={companyEmail}
           companyPhone={companyPhone}
+          legalOverrides={legalOverrides}
         />
       </div>
       <aside className="lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">

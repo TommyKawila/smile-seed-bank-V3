@@ -17,44 +17,102 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function formatDateLabel(isoDate: string): string {
+function formatDateLabel(isoDate: string, locale: string = "en-GB"): string {
   const d = new Date(`${isoDate}T12:00:00`);
   if (Number.isNaN(d.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
   }).format(d);
 }
 
+export type LetterPlaceholderValues = {
+  recipientName?: string;
+  senderName?: string;
+  senderTitle?: string;
+  companyEmail?: string;
+  companyPhone?: string;
+  documentDate?: string;
+};
+
+/** Replace [placeholder] tokens from dispatcher form fields before formatting. */
+export function applyLetterPlaceholders(
+  raw: string,
+  values: LetterPlaceholderValues
+): string {
+  const recipient = values.recipientName?.trim() ?? "";
+  const sender = values.senderName?.trim() ?? "";
+  const title = values.senderTitle?.trim() || "Founder";
+  const email = values.companyEmail?.trim() ?? "";
+  const phone = values.companyPhone?.trim() ?? "";
+  const dateEn = values.documentDate
+    ? formatDateLabel(values.documentDate, "en-GB")
+    : "";
+  const dateTh = values.documentDate
+    ? formatDateLabel(values.documentDate, "th-TH")
+    : "";
+
+  const pairs: [RegExp, string][] = [
+    [/\[ชื่อผู้ติดต่อ\]/g, recipient],
+    [/\[Contact Name\]/gi, recipient],
+    [/\[ชื่อผู้ลงนาม\]/g, sender],
+    [/\[Your Name\]/gi, sender],
+    [/\[Name\]/g, sender],
+    [/\[ตำแหน่ง\]/g, title],
+    [/\[Title\]/gi, title],
+    [/\[email\]/gi, email],
+    [/\[phone\]/gi, phone],
+    [/\[วันที่\]/g, dateTh || dateEn],
+    [/\[date\]/gi, dateEn || dateTh],
+    [/\[Date\]/g, dateEn || dateTh],
+  ];
+
+  let out = raw;
+  for (const [pattern, replacement] of pairs) {
+    if (replacement) out = out.replace(pattern, replacement);
+  }
+  return out;
+}
+
 function normalizeWhitespace(raw: string): string {
   return raw.replace(/\r\n/g, "\n").replace(/\u00a0/g, " ").trim();
 }
 
-/** Collapse blob into single-spaced text keeping intentional newlines as spaces if sparse. */
+/** Collapse blob into single-spaced text keeping intentional newlines when present. */
 function flattenBlob(raw: string): string {
   const n = normalizeWhitespace(raw);
   const newlineCount = (n.match(/\n/g) ?? []).length;
-  if (newlineCount >= 4) {
+  if (newlineCount >= 2) {
     return n.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n");
   }
   return n.replace(/\s+/g, " ").trim();
 }
 
 function extractSubject(text: string): { subject: string; rest: string } {
-  const m = text.match(/^Subject:\s*(.+?)(?=\s*Dear\s|\s*$)/i);
-  if (m) {
-    const subject = m[1]!.trim().replace(/\s+/g, " ");
-    const rest = text.slice(m[0].length).trim();
+  const th = text.match(/^เรื่อง:\s*(.+?)(?=\n|$)/s);
+  if (th) {
+    const subject = th[1]!.trim().replace(/\s+/g, " ");
+    const rest = text.slice(th[0].length).trim();
+    return { subject, rest };
+  }
+  const en = text.match(/^Subject:\s*(.+?)(?=\s*Dear\s|\s*เรียน\s|\s*$)/is);
+  if (en) {
+    const subject = en[1]!.trim().replace(/\s+/g, " ");
+    const rest = text.slice(en[0].length).trim();
     return { subject, rest };
   }
   return { subject: "", rest: text };
 }
 
 function extractGreeting(text: string): { greeting: string; rest: string } {
-  const m = text.match(/^(Dear\s+[^,]+,)\s*/i);
-  if (m) {
-    return { greeting: m[1]!.trim(), rest: text.slice(m[0].length).trim() };
+  const th = text.match(/^(เรียน\s+[^\n]+)\n?/);
+  if (th) {
+    return { greeting: th[1]!.trim(), rest: text.slice(th[0].length).trim() };
+  }
+  const en = text.match(/^(Dear\s+[^,]+,)\s*/i);
+  if (en) {
+    return { greeting: en[1]!.trim(), rest: text.slice(en[0].length).trim() };
   }
   return { greeting: "", rest: text };
 }
@@ -64,13 +122,17 @@ function extractSignOff(text: string): {
   signOff: string;
   signatureLines: string[];
 } {
-  const m = text.match(/\b(Best regards|Sincerely|Kind regards|Warm regards),?\s*/i);
+  const en = text.match(/\b(Best regards|Sincerely|Kind regards|Warm regards),?\s*/i);
+  const th = text.match(/(ขอแสดงความนับถือ)\s*/);
+  const m = en ?? th;
   if (!m || m.index == null) {
     return { body: text, signOff: "", signatureLines: [] };
   }
   const body = text.slice(0, m.index).trim();
   const after = text.slice(m.index + m[0].length).trim();
-  const signOff = `${m[1]},`;
+  const signOff = th
+    ? m[1]!.trim()
+    : `${m[1]},`;
   const signatureLines = after
     ? after.split(/\n+/).map((l) => l.trim()).filter(Boolean)
     : [];
@@ -144,6 +206,11 @@ function resolveSignature(
   senderName: string
 ): string[] {
   const sender = senderName.trim() || "[Your Name]";
+  if (signatureLines.length >= 2) {
+    return signatureLines.map((l) =>
+      l === "[Your Name]" || /^\[Your Name\]/i.test(l) ? sender : l
+    );
+  }
   let lines = [...signatureLines];
   if (lines.length === 0) {
     return [sender, FOUNDER_LINE];
@@ -160,9 +227,7 @@ function resolveSignature(
   return lines;
 }
 
-export type FormatRawLetterOptions = {
-  documentDate: string;
-  senderName: string;
+export type FormatRawLetterOptions = LetterPlaceholderValues & {
   /** Include formatted date line under subject */
   includeDate?: boolean;
 };
@@ -174,28 +239,38 @@ export function formatRawBusinessLetter(
   raw: string,
   opts: FormatRawLetterOptions
 ): FormattedBusinessLetter {
-  const flat = flattenBlob(raw);
+  const thaiSubjectLine = /^เรื่อง:/m.test(raw);
+  const withPlaceholders = applyLetterPlaceholders(raw, opts);
+  const flat = flattenBlob(withPlaceholders);
   const { subject: extractedSubject, rest: afterSubject } = extractSubject(flat);
   const { greeting, rest: afterGreeting } = extractGreeting(afterSubject);
   const { body, signOff, signatureLines } = extractSignOff(afterGreeting);
   const paragraphs = splitParagraphs(body);
-  const sig = resolveSignature(signatureLines, opts.senderName);
-  const dateLabel = formatDateLabel(opts.documentDate);
-  const includeDate = opts.includeDate !== false;
+  const sig = resolveSignature(signatureLines, opts.senderName ?? "");
+  const dateLabel = opts.documentDate
+    ? formatDateLabel(opts.documentDate, "en-GB")
+    : "";
+  const includeDate =
+    opts.includeDate !== false &&
+    Boolean(dateLabel) &&
+    !/วันที่\s*:/.test(withPlaceholders);
 
-  const subject =
-    extractedSubject ||
-    "Business Correspondence — Smile Seed Bank";
+  const subject = extractedSubject.trim();
 
   const plainParts: string[] = [];
-  if (subject) plainParts.push(`Subject: ${subject}`, "");
+  if (subject) {
+    plainParts.push(
+      thaiSubjectLine ? `เรื่อง: ${subject}` : `Subject: ${subject}`,
+      ""
+    );
+  }
   if (includeDate) plainParts.push(dateLabel, "");
   if (greeting) plainParts.push(greeting, "");
   for (const p of paragraphs) {
     plainParts.push(boldInlinePlain(p).replace(/\*\*/g, ""), "");
   }
   if (signOff) {
-    plainParts.push(signOff, "");
+    plainParts.push(signOff.endsWith(",") ? signOff : `${signOff}`, "");
   } else {
     plainParts.push("Best regards,", "");
   }
@@ -204,9 +279,13 @@ export function formatRawBusinessLetter(
   const bodyPlain = plainParts.join("\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
 
   const htmlParts: string[] = [];
-  htmlParts.push(
-    `<p class="doc-subject"><strong>Subject:</strong> ${escapeHtml(subject)}</p>`
-  );
+  if (subject) {
+    htmlParts.push(
+      thaiSubjectLine
+        ? `<p class="doc-subject"><strong>เรื่อง:</strong> ${escapeHtml(subject)}</p>`
+        : `<p class="doc-subject"><strong>Subject:</strong> ${escapeHtml(subject)}</p>`
+    );
+  }
   if (includeDate) {
     htmlParts.push(`<p class="doc-date">${escapeHtml(dateLabel)}</p>`);
   }
@@ -248,12 +327,15 @@ export function plainLetterBodyToHtml(bodyText: string): string {
         const rest = joined.replace(/^Subject:\s*/i, "");
         return `<p class="doc-subject"><strong>Subject:</strong> ${escapeHtml(rest)}</p>`;
       }
-      if (/^(Best regards|Sincerely|Kind regards|Warm regards),?\s*$/i.test(joined)) {
-        return `<p class="doc-signoff"><strong>${escapeHtml(joined.replace(/,?$/, ","))}</strong></p>`;
+      if (/^(Best regards|Sincerely|Kind regards|Warm regards|ขอแสดงความนับถือ),?\s*$/i.test(joined)) {
+        return `<p class="doc-signoff"><strong>${escapeHtml(joined.replace(/,?$/, joined.includes("ขอแสดง") ? "" : ","))}</strong></p>`;
       }
       if (
         lines.length >= 2 &&
-        lines.some((l) => /Founder,\s*Smile Seed Bank/i.test(l))
+        (lines.some((l) => /Founder,\s*Smile Seed Bank/i.test(l)) ||
+          lines.some((l) =>
+            /ห้างหุ้นส่วนจำกัด|T\.M\.Y Agro Trade|Smile Seed Bank/i.test(l)
+          ))
       ) {
         return `<p class="doc-signature">${lines.map((l) => escapeHtml(l)).join("<br>")}</p>`;
       }

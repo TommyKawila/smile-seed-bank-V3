@@ -1,6 +1,7 @@
 "use client";
 
 import { buildBusinessDocumentPrintHtmlFromBody } from "@/lib/business-document-template";
+import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
 
 /** Client-only: print via hidden iframe (no pop-up). */
 export function exportBusinessDocumentPdf(
@@ -8,7 +9,11 @@ export function exportBusinessDocumentPdf(
   logoUrl: string | null,
   subject?: string,
   signatureImageUrl?: string | null,
-  letterheadOpts?: { companyEmail?: string | null; companyPhone?: string | null },
+  letterheadOpts?: {
+    companyEmail?: string | null;
+    companyPhone?: string | null;
+    legalOverrides?: LegalDocumentOverrides;
+  },
   attachmentImageUrls: string[] = []
 ): void {
   const html = buildBusinessDocumentPrintHtmlFromBody(

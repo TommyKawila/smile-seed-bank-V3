@@ -142,8 +142,12 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     companyEmail: letterheadOpts?.companyEmail,
     companyPhone: letterheadOpts?.companyPhone,
     locale: letterheadOpts?.locale ?? "en",
+    legalOverrides: letterheadOpts?.legalOverrides,
   });
-  const footer = buildBusinessDocumentFooterHtml(letterheadOpts?.locale ?? "en");
+  const footer = buildBusinessDocumentFooterHtml({
+    locale: letterheadOpts?.locale ?? "en",
+    legalOverrides: letterheadOpts?.legalOverrides,
+  });
   const attachments = (attachmentImageUrls ?? [])
     .map((u) => u?.trim())
     .filter(Boolean)
@@ -241,8 +245,12 @@ export function buildBusinessDocumentPrintHtml(
     companyEmail: letterheadOpts?.companyEmail,
     companyPhone: letterheadOpts?.companyPhone,
     locale: letterheadOpts?.locale ?? "en",
+    legalOverrides: letterheadOpts?.legalOverrides,
   });
-  const footer = buildBusinessDocumentFooterHtml(letterheadOpts?.locale ?? "en");
+  const footer = buildBusinessDocumentFooterHtml({
+    locale: letterheadOpts?.locale ?? "en",
+    legalOverrides: letterheadOpts?.legalOverrides,
+  });
 
   return `<!DOCTYPE html>
 <html lang="en">

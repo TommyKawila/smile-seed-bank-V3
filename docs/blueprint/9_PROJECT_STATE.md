@@ -4,6 +4,52 @@
 
 ---
 
+## NEXT FOCUS QUEUE — GF dual-channel + legal docs (2026-08-17)
+
+*โฟกัสหลักจนกว่าดีล Green Future นิ่ง — อัปเดตเมื่อปิดรายการ*
+
+### A. Deploy / เอกสารนิติบุคคล (ทำก่อนคุย GF)
+1. [ ] Apply Supabase migration `20260817210000_site_settings_company_business_registration_rls.sql`
+2. [ ] รอ/ตรวจ production deploy commit `d4f6eb6` (ช่องอัปโหลดทะเบียนหจก. TMY)
+3. [ ] Admin → Settings: อัปโหลด **พ.พ.4 หจก. TMY** + **ทะเบียนหจก. TMY** + กรอกเลขทะเบียน
+4. [ ] ตรวจ `/about` — ปุ่มเอกสารหจก. ใช้งานได้
+
+### B. ชี้แจง / ขอบเขตคู่ค้า GF
+5. [ ] ส่งจดหมายชี้แจง 2 ใบ พ.พ.4 → คู่สัญญา = **หจก. TMY** · Smile = แบรนด์ · แนบสแกนหจก.
+6. [ ] ใส่ประโยคขอบเขตในจดหมาย/MOU: **multi-brand retailer** · ความร่วมมือนี้ครอบคลุมเฉพาะ **GF documented seed program** · genetics อื่นอยู่นอกโปรแกรม · ไม่ใช้เอกสาร/แบรนด์ GF กับสินค้าค่ายอื่น
+7. [ ] **อย่าเซ็น exclusivity ทั้งบริษัท** — ถ้าขอ exclusive ให้จำกัดเฉพาะ documented/GACP-ready bulk ของ GF ในช่อง wholesale
+
+### C. ไฟร์วอลล์ช่องทาง (ทำแล้วบางส่วน — ล็อกเป็นนโยบาย)
+8. [ ] หน้าสาธารณะ `/wholesale` `/wholesale/gacp` = **เฉพาะโปรแกรมเอกสาร GF** (ไม่โชว์ Seeds Genetics bulk)
+9. [ ] ใบเสนอราคา / share link / อีเมลคุย GF **ห้ามปน** แคตตาล็อกหิ้วหรือ Seeds Genetics
+10. [ ] ฉลาก + เลข พ.พ.4 หจก. ใช้กับช่องถูกระบบเท่านั้น
+11. [ ] ลูกค้า GACP ไม่ถูกเสนอเมล็ดหิ้วในแชท/เอกสารชุดเดียวกับโปรแกรม GF
+
+### D. ประชุม/ต่อรอง GF (เปิดค้างจาก draft 15 ส.ค.)
+12. [ ] GACP = เอกสารสนับสนุน lot ไม่ใช่ certificate เมล็ด
+13. [ ] ISTA / COA คิดแยก · Traceability Pack = planned
+14. [ ] ฉลาก: **กฎหมายก่อน** (ชื่อหจก. + พ.พ.4 หจก. + lot + ฟิลด์บังคับ DOA — รอ confirm กรมฯ) · **แบรนด์การค้าทีหลัง** (Smile Seeds / SGF Seeds / co-brand — ยังไม่ล็อก ไม่ใส่จดหมายชี้แจง)
+15. [ ] MOQ / ราคา / landed / margin
+
+### E. หลัง GF ตอบ — คุมความเสี่ยงระยะยาว
+16. [ ] ตัดสินใจ: ซ่อน/ลดปุ่ม พ.พ.4 ร้านบน About สำหรับ B2B หรือเก็บไว้เฉพาะ retail/Shopee
+17. [ ] จำกัดขนาดช่อง bulk หิ้ว (รอง/ลูกค้าเก่า) — ไม่ขยายเป็นผลิตภัณฑ์หลักคู่ดีล GF
+18. [ ] รีวิวรายเดือน: สัดส่วนรายได้ GF documented vs ช่องอื่น
+
+**หลักที่บันทึกแล้ว:** โปรแกรม GF = ช่องถูกระบบที่ปกป้อง · genetics อื่น = คนละโปรแกรม · ความสัมพันธ์กับ GF ชัดด้วยขอบเขต ไม่พึ่งการซ่อนอย่างเดียว
+
+---
+
+### บันทึกการทำงาน — 2026-08-18 (Business Documents — letterhead/footer legal numbers)
+- **What:** Dispatcher preview/PDF/email header+footer อ่านเลข พ.พ.4 / ทะเบียนจาก site_settings · header = หจก. TMY + พ.พ.4 หจก. + ทะเบียนหจก. · footer = ร้าน + ทะเบียนพาณิชย์ + พ.พ.4 ร้าน
+- **Logic:** `LegalDocumentOverrides` · `formatLetterheadBlock` / `formatStoreTrustBlock` รับ override · wire ใน Preview/Dispatcher/email service
+- **ไฟล์:** `company-legal-identity.ts` · `business-document-letterhead.ts` · `BusinessDocumentPreview.tsx` · `BusinessDocumentDispatcher.tsx` · `business-document-service.ts`
+
+### บันทึกการทำงาน — 2026-08-17 (TMY — ช่องอัปโหลดทะเบียนหจก.)
+- **What:** Admin Settings มีอัปโหลดทะเบียนหจก. TMY แยกจากทะเบียนพาณิชย์ร้าน · About โชว์ปุ่ม + เลขเมื่อมี
+- **Logic:** keys `legal_company_business_registration_*` · RLS public select · `resolveCompanyPartnershipRegistrationNumber`
+- **ไฟล์:** `app/admin/settings/page.tsx` · `AboutPageClient.tsx` · `company-legal-identity.ts` · `storefront-site-setting-keys.ts` · migration `20260817210000_…`
+
 ### บันทึกการทำงาน — 2026-08-17 (GF 2026-0815 — จัด copy GACP / แผนร่วม)
 - **What:** ตัดข้อความว่าเมล็ดเป็น GACP · PDF เป็นเอกสารสนับสนุน · คู่สัญญาฝั่งเรา = หจก. TMY trading as Smile Seed Bank · lineage เหลือ lot identity · ISTA/COA นอกคิดแยก · Traceability Pack = planned
 - **Logic:** ถ้อยคำตาม GF/SSB/2026-0815 · ไม่สร้าง generator

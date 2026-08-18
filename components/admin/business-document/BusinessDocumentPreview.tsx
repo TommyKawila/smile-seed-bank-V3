@@ -2,7 +2,11 @@
 
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { formatLetterheadBlock, formatStoreTrustBlock } from "@/lib/company-legal-identity";
+import {
+  formatLetterheadBlock,
+  formatStoreTrustBlock,
+  type LegalDocumentOverrides,
+} from "@/lib/company-legal-identity";
 
 type Props = {
   bodyText: string;
@@ -12,6 +16,7 @@ type Props = {
   attachmentImageUrls?: string[];
   companyEmail?: string | null;
   companyPhone?: string | null;
+  legalOverrides?: LegalDocumentOverrides;
   className?: string;
 };
 
@@ -23,10 +28,13 @@ export function BusinessDocumentPreview({
   attachmentImageUrls = [],
   companyEmail,
   companyPhone,
+  legalOverrides,
   className,
 }: Props) {
-  const letterhead = formatLetterheadBlock("en");
-  const footer = formatStoreTrustBlock("en");
+  const letterhead = formatLetterheadBlock("en", legalOverrides);
+  const footer = formatStoreTrustBlock("en", legalOverrides);
+  const brandLine = letterhead[letterhead.length - 1] ?? "";
+  const letterheadMiddle = letterhead.slice(1, -1);
   const contactBits = [companyEmail?.trim(), companyPhone?.trim()].filter(Boolean);
 
   return (
@@ -56,9 +64,10 @@ export function BusinessDocumentPreview({
           )}
           <div className="min-w-0 flex-1 space-y-0.5 text-[10px] leading-snug text-slate-600 sm:text-[11px]">
             <p className="font-semibold text-[#12463e]">{letterhead[0]}</p>
-            <p>{letterhead[1]}</p>
-            <p>{letterhead[2]}</p>
-            <p className="font-medium text-[#12463e]">{letterhead[3]}</p>
+            {letterheadMiddle.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+            <p className="font-medium text-[#12463e]">{brandLine}</p>
             {contactBits.length > 0 ? <p>{contactBits.join(" · ")}</p> : null}
           </div>
         </div>

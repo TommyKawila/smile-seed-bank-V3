@@ -2,6 +2,7 @@ import {
   formatLetterheadBlock,
   formatStoreTrustBlock,
   STORE_ENTITY,
+  type LegalDocumentOverrides,
   type LegalLocale,
 } from "@/lib/company-legal-identity";
 
@@ -18,14 +19,33 @@ export type BusinessDocumentLetterheadOpts = {
   companyEmail?: string | null;
   companyPhone?: string | null;
   locale?: LegalLocale;
+  legalOverrides?: LegalDocumentOverrides;
 };
+
+function printLetterheadTextHtml(lines: string[]): string {
+  if (lines.length === 0) return "";
+  const brandLine = lines[lines.length - 1] ?? "";
+  const middle = lines.slice(1, -1);
+  return `<p class="doc-entity-name">${escapeHtml(lines[0] ?? "")}</p>
+      ${middle.map((line) => `<p class="doc-entity-line">${escapeHtml(line)}</p>`).join("\n      ")}
+      <p class="doc-entity-brand">${escapeHtml(brandLine)}</p>`;
+}
+
+function emailLetterheadTextHtml(lines: string[]): string {
+  if (lines.length === 0) return "";
+  const brandLine = lines[lines.length - 1] ?? "";
+  const middle = lines.slice(1, -1);
+  return `<p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#12463e;line-height:1.35;">${escapeHtml(lines[0] ?? "")}</p>
+${middle.map((line) => `<p style="margin:0 0 2px;font-size:12px;color:#64748b;line-height:1.4;">${escapeHtml(line)}</p>`).join("\n")}
+<p style="margin:0 0 8px;font-size:12px;font-weight:500;color:#12463e;line-height:1.4;">${escapeHtml(brandLine)}</p>`;
+}
 
 /** Print CSS letterhead (logo + legal entity). */
 export function buildBusinessDocumentLetterheadHtml(
   opts: BusinessDocumentLetterheadOpts = {}
 ): string {
   const locale = opts.locale ?? "en";
-  const lines = formatLetterheadBlock(locale);
+  const lines = formatLetterheadBlock(locale, opts.legalOverrides);
   const logo = opts.logoUrl?.trim()
     ? `<img src="${escapeHtml(opts.logoUrl.trim())}" alt="${escapeHtml(STORE_ENTITY.brandName)}" class="doc-logo" />`
     : `<div class="doc-logo-fallback">${escapeHtml(STORE_ENTITY.brandName)}</div>`;
@@ -38,10 +58,7 @@ export function buildBusinessDocumentLetterheadHtml(
   <div class="doc-letterhead">
     ${logo}
     <div class="doc-letterhead-text">
-      <p class="doc-entity-name">${escapeHtml(lines[0] ?? "")}</p>
-      <p class="doc-entity-line">${escapeHtml(lines[1] ?? "")}</p>
-      <p class="doc-entity-line">${escapeHtml(lines[2] ?? "")}</p>
-      <p class="doc-entity-brand">${escapeHtml(lines[3] ?? "")}</p>
+      ${printLetterheadTextHtml(lines)}
       ${
         contactBits.length
           ? `<p class="doc-entity-line">${contactBits.join(" · ")}</p>`
@@ -53,8 +70,11 @@ export function buildBusinessDocumentLetterheadHtml(
 }
 
 /** Print CSS footer (online store trust block). */
-export function buildBusinessDocumentFooterHtml(locale: LegalLocale = "en"): string {
-  const lines = formatStoreTrustBlock(locale);
+export function buildBusinessDocumentFooterHtml(
+  opts: Pick<BusinessDocumentLetterheadOpts, "locale" | "legalOverrides"> = {}
+): string {
+  const locale = opts.locale ?? "en";
+  const lines = formatStoreTrustBlock(locale, opts.legalOverrides);
   return `<footer class="doc-footer">
   ${lines.map((line) => `<p class="doc-footer-line">${escapeHtml(line)}</p>`).join("\n  ")}
 </footer>`;
@@ -79,7 +99,7 @@ export function buildBusinessDocumentEmailLetterheadHtml(
   opts: BusinessDocumentLetterheadOpts = {}
 ): string {
   const locale = opts.locale ?? "en";
-  const lines = formatLetterheadBlock(locale);
+  const lines = formatLetterheadBlock(locale, opts.legalOverrides);
   const logo = opts.logoUrl?.trim()
     ? `<img src="${escapeHtml(opts.logoUrl.trim())}" alt="${escapeHtml(STORE_ENTITY.brandName)}" width="160" style="max-width:160px;height:auto;display:block;margin-bottom:12px;" />`
     : `<p style="margin:0 0 12px;font-size:18px;font-weight:600;color:#12463e;">${escapeHtml(STORE_ENTITY.brandName)}</p>`;
@@ -89,10 +109,7 @@ export function buildBusinessDocumentEmailLetterheadHtml(
   if (opts.companyPhone?.trim()) contactBits.push(escapeHtml(opts.companyPhone.trim()));
 
   return `${logo}
-<p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#12463e;line-height:1.35;">${escapeHtml(lines[0] ?? "")}</p>
-<p style="margin:0 0 2px;font-size:12px;color:#64748b;line-height:1.4;">${escapeHtml(lines[1] ?? "")}</p>
-<p style="margin:0 0 2px;font-size:12px;color:#64748b;line-height:1.4;">${escapeHtml(lines[2] ?? "")}</p>
-<p style="margin:0 0 8px;font-size:12px;font-weight:500;color:#12463e;line-height:1.4;">${escapeHtml(lines[3] ?? "")}</p>
+${emailLetterheadTextHtml(lines)}
 ${
   contactBits.length
     ? `<p style="margin:0 0 16px;font-size:12px;color:#64748b;">${contactBits.join(" · ")}</p>`
@@ -102,8 +119,11 @@ ${
 }
 
 /** Email-safe store footer. */
-export function buildBusinessDocumentEmailFooterHtml(locale: LegalLocale = "en"): string {
-  const lines = formatStoreTrustBlock(locale);
+export function buildBusinessDocumentEmailFooterHtml(
+  opts: Pick<BusinessDocumentLetterheadOpts, "locale" | "legalOverrides"> = {}
+): string {
+  const locale = opts.locale ?? "en";
+  const lines = formatStoreTrustBlock(locale, opts.legalOverrides);
   return `<div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;">
   ${lines
     .map(
