@@ -266,40 +266,164 @@ function structuredBlockToHtml(block: string): string {
   return `<p>${applyBoldHtml(withBreaks)}</p>`;
 }
 
-function normalizeParagraphBlock(block: string): string {
+function isBulletLine(line: string): boolean {
+  return /^[-•*]\s+/.test(line.trim());
+}
+
+function isTableLine(line: string): boolean {
+  const t = line.trim();
+  if (!t) return false;
+  if (isMarkdownTableSeparator(t)) return true;
+  return t.includes("|");
+}
+
+function isTsvLine(line: string): boolean {
+  return line.trim().includes("\t");
+}
+
+function isSectionHeadingLine(line: string): boolean {
+  const t = line.trim();
+  return /^\d+\)\s/.test(t) || /^[A-Z]\)\s/.test(t) || /^---+$/.test(t);
+}
+
+type LineBlockKind = "para" | "table" | "list" | "tsv";
+
+function lineBlockKind(trimmed: string): LineBlockKind | "heading" {
+  if (isTableLine(trimmed)) return "table";
+  if (isBulletLine(trimmed)) return "list";
+  if (isTsvLine(trimmed)) return "tsv";
+  if (isSectionHeadingLine(trimmed)) return "heading";
+  return "para";
+}
+
+/** Scan body line-by-line; preserve markdown tables, lists, and section headings. */
+export function splitLetterBodyIntoBlocks(body: string): string[] {
+  const normalized = normalizeWhitespace(body);
+  if (!normalized) return [];
+
+  const blocks: string[] = [];
+  let buf: string[] = [];
+  let bufKind: LineBlockKind | null = null;
+
+  const flush = () => {
+    if (buf.length === 0) return;
+    blocks.push(buf.join("\n").trim());
+    buf = [];
+    bufKind = null;
+  };
+
+  for (const raw of normalized.split("\n")) {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      flush();
+      continue;
+    }
+
+    const kind = lineBlockKind(trimmed);
+    if (kind === "heading") {
+      flush();
+      blocks.push(trimmed);
+      continue;
+    }
+
+    if (kind === "table" || kind === "tsv") {
+      const tableKind: LineBlockKind = kind === "tsv" ? "tsv" : "table";
+      if (bufKind && bufKind !== tableKind && bufKind !== "table" && bufKind !== "tsv") {
+        flush();
+      }
+      bufKind = tableKind;
+      buf.push(trimmed);
+      continue;
+    }
+
+    if (kind === "list") {
+      if (bufKind && bufKind !== "list") flush();
+      bufKind = "list";
+      buf.push(trimmed);
+      continue;
+    }
+
+    if (bufKind && bufKind !== "para") flush();
+    bufKind = "para";
+    buf.push(trimmed);
+  }
+
+  flush();
+  return blocks.filter(Boolean);
+}
+
+function isSectionHeadingBlock(block: string): boolean {
+  return isSectionHeadingLine(block.trim());
+}
+
+function letterBlockToHtml(block: string): string {
   const trimmed = block.trim();
   if (!trimmed) return "";
-  if (
-    isMarkdownTableBlock(trimmed) ||
-    isTsvTableBlock(trimmed) ||
-    isBulletListBlock(trimmed)
-  ) {
-    return trimmed;
+
+  if (isMarkdownTableBlock(trimmed) || isTsvTableBlock(trimmed)) {
+    return structuredTableToHtml(trimmed);
   }
-  return trimmed.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").trim();
+  if (isBulletListBlock(trimmed)) {
+    return structuredBlockToHtml(trimmed);
+  }
+
+  const lines = trimmed.split("\n").map((l) => l.trim());
+  const joined = lines.join("\n");
+
+  if (/^Subject:/i.test(joined)) {
+    const rest = joined.replace(/^Subject:\s*/i, "");
+    return `<p class="doc-subject"><strong>Subject:</strong> ${escapeHtml(rest)}</p>`;
+  }
+  if (/^เรื่อง:/.test(joined)) {
+    const rest = joined.replace(/^เรื่อง:\s*/, "");
+    return `<p class="doc-subject"><strong>เรื่อง:</strong> ${escapeHtml(rest)}</p>`;
+  }
+  if (
+    /^(Best regards|Sincerely|Kind regards|Warm regards|ขอแสดงความนับถือ),?\s*$/i.test(
+      joined
+    )
+  ) {
+    return `<p class="doc-signoff"><strong>${escapeHtml(joined.replace(/,?$/, joined.includes("ขอแสดง") ? "" : ","))}</strong></p>`;
+  }
+  if (
+    lines.length >= 2 &&
+    (lines.some((l) => /Founder,\s*Smile Seed Bank/i.test(l)) ||
+      lines.some((l) =>
+        /ห้างหุ้นส่วนจำกัด|T\.M\.Y Agro Trade|Smile Seed Bank/i.test(l)
+      ))
+  ) {
+    return `<p class="doc-signature">${lines.map((l) => escapeHtml(l)).join("<br>")}</p>`;
+  }
+  if (
+    lines.length === 1 &&
+    /^(?:\d{1,2}\s+\w+\s+\d{4}|\w+\s+\d{1,2},?\s+\d{4})$/.test(joined)
+  ) {
+    return `<p class="doc-date">${escapeHtml(joined)}</p>`;
+  }
+  if (isSectionHeadingBlock(trimmed)) {
+    return `<p class="doc-heading"><strong>${escapeHtml(trimmed)}</strong></p>`;
+  }
+
+  if (lines.length === 1) {
+    return `<p>${applyBoldHtml(escapeHtml(lines[0]!))}</p>`;
+  }
+  const withBreaks = lines.map((l) => escapeHtml(l)).join("<br>");
+  return `<p>${applyBoldHtml(withBreaks)}</p>`;
 }
 
 function splitParagraphs(body: string): string[] {
+  const blocks = splitLetterBodyIntoBlocks(body);
+  if (blocks.length > 0) return blocks;
+
   let working = body.trim();
   if (!working) return [];
 
-  // Prefer existing double newlines
-  if (/\n\s*\n/.test(working)) {
-    return working
-      .split(/\n\s*\n+/)
-      .map(normalizeParagraphBlock)
-      .filter(Boolean);
-  }
-
-  // Insert breaks before known connectors
   working = working.replace(PARA_BREAK_MARKERS, "\n\n$1");
-
-  // Break after sentence end before capital (avoid abbreviations carefully)
   working = working.replace(/([.!?])\s+(?=[A-Z])/g, "$1\n\n");
 
   return working
     .split(/\n\s*\n+/)
-    .map((p) => normalizeParagraphBlock(p.replace(/\s+/g, " ").trim()))
+    .map((p) => p.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").trim())
     .filter(Boolean);
 }
 
@@ -416,15 +540,7 @@ export function formatRawBusinessLetter(
     htmlParts.push(`<p>${escapeHtml(greeting)}</p>`);
   }
   for (const p of paragraphs) {
-    if (
-      isMarkdownTableBlock(p) ||
-      isTsvTableBlock(p) ||
-      isBulletListBlock(p)
-    ) {
-      htmlParts.push(structuredBlockToHtml(p));
-    } else {
-      htmlParts.push(`<p>${applyBoldHtml(escapeHtml(p))}</p>`);
-    }
+    htmlParts.push(letterBlockToHtml(p));
   }
   htmlParts.push(
     `<p class="doc-signoff"><strong>${escapeHtml(signOff || "Best regards,")}</strong></p>`
@@ -445,46 +561,10 @@ export function plainLetterBodyToHtml(bodyText: string): string {
   const text = normalizeWhitespace(bodyText);
   if (!text) return "";
 
-  const blocks = text.split(/\n\s*\n+/).map((b) => b.trim()).filter(Boolean);
+  const blocks = splitLetterBodyIntoBlocks(text);
   if (blocks.length === 0) {
-    return `<div class="doc-body" style="white-space:pre-wrap">${escapeHtml(text)}</div>`;
+    return `<div class="doc-body-fallback" style="white-space:pre-wrap">${escapeHtml(text)}</div>`;
   }
 
-  return blocks
-    .map((block) => {
-      const lines = block.split("\n").map((l) => l.trim());
-      const joined = lines.join("\n");
-      if (isMarkdownTableBlock(block) || isTsvTableBlock(block)) {
-        return structuredTableToHtml(block);
-      }
-      if (isBulletListBlock(block)) {
-        return structuredBlockToHtml(block);
-      }
-      if (/^Subject:/i.test(joined)) {
-        const rest = joined.replace(/^Subject:\s*/i, "");
-        return `<p class="doc-subject"><strong>Subject:</strong> ${escapeHtml(rest)}</p>`;
-      }
-      if (/^(Best regards|Sincerely|Kind regards|Warm regards|ขอแสดงความนับถือ),?\s*$/i.test(joined)) {
-        return `<p class="doc-signoff"><strong>${escapeHtml(joined.replace(/,?$/, joined.includes("ขอแสดง") ? "" : ","))}</strong></p>`;
-      }
-      if (
-        lines.length >= 2 &&
-        (lines.some((l) => /Founder,\s*Smile Seed Bank/i.test(l)) ||
-          lines.some((l) =>
-            /ห้างหุ้นส่วนจำกัด|T\.M\.Y Agro Trade|Smile Seed Bank/i.test(l)
-          ))
-      ) {
-        return `<p class="doc-signature">${lines.map((l) => escapeHtml(l)).join("<br>")}</p>`;
-      }
-      // Date-only short line
-      if (
-        lines.length === 1 &&
-        /^(?:\d{1,2}\s+\w+\s+\d{4}|\w+\s+\d{1,2},?\s+\d{4})$/.test(joined)
-      ) {
-        return `<p class="doc-date">${escapeHtml(joined)}</p>`;
-      }
-      const withBreaks = lines.map((l) => escapeHtml(l)).join("<br>");
-      return `<p>${applyBoldHtml(withBreaks)}</p>`;
-    })
-    .join("\n");
+  return blocks.map((block) => letterBlockToHtml(block)).join("\n");
 }

@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   formatLetterheadBlock,
   formatStoreTrustBlock,
@@ -12,6 +15,18 @@ import {
   attachmentDisplayName,
   isPdfAttachmentUrl,
 } from "@/lib/business-document-attachments";
+
+const DOC_BODY_PREVIEW_CLASS =
+  "doc-body min-h-[80mm] flex-1 text-[11pt] leading-[1.35] text-slate-700 " +
+  "[&_p]:mb-[3.5mm] [&_.doc-subject]:mb-[2mm] [&_.doc-subject]:text-[12pt] [&_.doc-subject]:font-semibold [&_.doc-subject]:text-[#12463e] " +
+  "[&_.doc-date]:mb-[4mm] [&_.doc-date]:text-[10pt] [&_.doc-date]:text-slate-500 " +
+  "[&_.doc-heading]:mb-[2mm] [&_.doc-heading]:mt-[4mm] [&_.doc-heading]:font-semibold [&_.doc-heading]:text-[#12463e] " +
+  "[&_.doc-signoff]:mt-[4mm] [&_.doc-signoff]:font-semibold " +
+  "[&_.doc-signature]:mt-[1mm] [&_.doc-table]:my-[3mm] [&_.doc-table]:w-full [&_.doc-table]:border-collapse " +
+  "[&_.doc-table_td]:border [&_.doc-table_td]:border-slate-200 [&_.doc-table_td]:p-1.5 [&_.doc-table_td]:align-top " +
+  "[&_.doc-table_th]:border [&_.doc-table_th]:border-slate-200 [&_.doc-table_th]:bg-slate-100 [&_.doc-table_th]:p-1.5 " +
+  "[&_.doc-table_th]:text-left [&_.doc-table_th]:font-semibold [&_.doc-table_th]:text-[#12463e] " +
+  "[&_.doc-list]:my-[2mm] [&_.doc-list]:list-disc [&_.doc-list]:pl-5 [&_.doc-list_li]:mb-[1mm]";
 
 type Props = {
   bodyText: string;
@@ -36,11 +51,13 @@ export function BusinessDocumentPreview({
   legalOverrides,
   className,
 }: Props) {
+  const [editSource, setEditSource] = useState(false);
   const letterhead = formatLetterheadBlock("en", legalOverrides);
   const footer = formatStoreTrustBlock("en", legalOverrides);
   const brandLine = letterhead[letterhead.length - 1] ?? "";
   const letterheadMiddle = letterhead.slice(1, -1);
   const contactBits = [companyEmail?.trim(), companyPhone?.trim()].filter(Boolean);
+  const bodyHtml = plainLetterBodyToHtml(bodyText);
 
   return (
     <article
@@ -78,32 +95,56 @@ export function BusinessDocumentPreview({
         </div>
       </header>
 
-      <textarea
-        value={bodyText}
-        onChange={(e) => onBodyChange(e.target.value)}
-        spellCheck={false}
-        aria-label="Document body — spaces and line breaks are preserved"
-        className={cn(
-          "min-h-[120mm] w-full flex-1 resize-y border-0 bg-transparent p-0",
-          "font-[inherit] text-[11pt] leading-[1.22] text-slate-700",
-          "whitespace-pre-wrap break-words outline-none",
-          "focus:ring-0 placeholder:text-slate-400",
-          "selection:bg-[#12463e]/15"
-        )}
-        placeholder="Type your letter here…"
-      />
+      <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          Letter preview (PDF / email)
+        </p>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1 text-xs text-slate-500"
+          onClick={() => setEditSource((v) => !v)}
+        >
+          {editSource ? (
+            <>
+              <ChevronUp className="h-3.5 w-3.5" />
+              Hide source
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3.5 w-3.5" />
+              Edit source
+            </>
+          )}
+        </Button>
+      </div>
+
+      {editSource ? (
+        <textarea
+          value={bodyText}
+          onChange={(e) => onBodyChange(e.target.value)}
+          spellCheck={false}
+          aria-label="Document body source"
+          className={cn(
+            "mb-4 min-h-[80mm] w-full shrink-0 resize-y rounded-md border border-slate-200 bg-slate-50/80 p-3",
+            "font-mono text-[10pt] leading-[1.35] text-slate-700",
+            "whitespace-pre-wrap break-words outline-none focus:border-[#12463e]/40 focus:ring-1 focus:ring-[#12463e]/20"
+          )}
+          placeholder="Paste or edit letter text…"
+        />
+      ) : null}
 
       {bodyText.trim() ? (
-        <div className="mt-4 shrink-0 border-t border-dashed border-slate-200 pt-4">
-          <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-            PDF / email layout
-          </p>
-          <div
-            className="doc-body text-[11pt] leading-[1.22] text-slate-700 [&_.doc-table]:my-3 [&_.doc-table_td]:border [&_.doc-table_td]:border-slate-200 [&_.doc-table_td]:p-1.5 [&_.doc-table_th]:border [&_.doc-table_th]:border-slate-200 [&_.doc-table_th]:bg-slate-100 [&_.doc-table_th]:p-1.5 [&_.doc-table_th]:text-left [&_.doc-table_th]:font-semibold [&_.doc-table_th]:text-[#12463e] [&_.doc-list]:my-2 [&_.doc-list]:list-disc [&_.doc-list]:pl-5"
-            dangerouslySetInnerHTML={{ __html: plainLetterBodyToHtml(bodyText) }}
-          />
-        </div>
-      ) : null}
+        <div
+          className={DOC_BODY_PREVIEW_CLASS}
+          dangerouslySetInnerHTML={{ __html: bodyHtml }}
+        />
+      ) : (
+        <p className="flex-1 text-[11pt] text-slate-400">
+          Paste raw letter → Format → preview appears here.
+        </p>
+      )}
 
       {attachmentImageUrls.length > 0 ? (
         <div className="mt-4 space-y-3 shrink-0">
@@ -147,10 +188,6 @@ export function BusinessDocumentPreview({
           <p key={line}>{line}</p>
         ))}
       </footer>
-
-      <p className="mt-3 shrink-0 text-[10px] text-slate-400 lg:hidden">
-        Tap inside the document — Space &amp; Enter keep your layout.
-      </p>
     </article>
   );
 }

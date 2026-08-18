@@ -196,6 +196,7 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     ${BUSINESS_DOCUMENT_LETTERHEAD_CSS}
     .doc-body { word-wrap: break-word; line-height: 1.22; }
     .doc-body p { margin-bottom: 4mm; }
+    .doc-heading { margin-top: 5mm; margin-bottom: 2mm; font-weight: 600; color: #12463e; }
     .doc-table { width: 100%; border-collapse: collapse; margin: 4mm 0 5mm; font-size: 9pt; }
     .doc-table th, .doc-table td { border: 1px solid #cbd5e1; padding: 2mm 2.5mm; text-align: left; vertical-align: top; }
     .doc-table th { background: #f1f5f9; font-weight: 600; color: #12463e; }
