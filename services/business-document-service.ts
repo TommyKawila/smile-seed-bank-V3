@@ -2,7 +2,11 @@ import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/get-url";
 import { buildBusinessDocumentEmailHtml } from "@/lib/email-business-document-html";
-import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
+import {
+  resolveCompanyContactEmail,
+  STORE_ENTITY,
+  type LegalDocumentOverrides,
+} from "@/lib/company-legal-identity";
 import {
   BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
   FOUNDER_SIGNATURE_SETTING_KEY,
@@ -19,7 +23,7 @@ export type { BusinessContactRecord };
 
 const RESEND_URL = "https://api.resend.com/emails";
 const FROM_RESEND = "Smile Seed Bank <orders@smileseedbank.com>";
-const DEFAULT_GMAIL_USER = "smileseedsbank@gmail.com";
+const DEFAULT_GMAIL_USER = STORE_ENTITY.contactEmail;
 
 export type BusinessDocumentSendResult = {
   success: boolean;
@@ -311,7 +315,7 @@ export async function sendBusinessDocumentEmail(
     signatureImageUrl?.trim() || (await fetchDefaultSignatureUrl()) || null;
   const attachments = parseAttachmentUrls(attachmentImageUrls);
   const [companyEmail, companyPhone, legalOverrides] = await Promise.all([
-    fetchSiteSettingRow("company_email"),
+    fetchSiteSettingRow("company_email").then(resolveCompanyContactEmail),
     fetchSiteSettingRow("company_phone"),
     fetchLegalDocumentOverrides(),
   ]);

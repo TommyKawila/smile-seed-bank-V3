@@ -121,7 +121,7 @@ export default function SettingsPage() {
                     value={settings.company_email ?? ""}
                     onChange={(e) => updateSetting("company_email", e.target.value)}
                     onBlur={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}
-                    placeholder="contact@example.com"
+                    placeholder={STORE_ENTITY.contactEmail}
                     className="h-9"
                   />
                 </div>

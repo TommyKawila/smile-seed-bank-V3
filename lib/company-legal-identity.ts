@@ -31,6 +31,7 @@ export const STORE_ENTITY = {
   websiteUrl: "https://www.smileseedbank.com",
   commercialRegistrationNumber: "1500900026221",
   seedLicenseNumber: "1011043900132566",
+  contactEmail: "smileseedsbank@gmail.com",
 } as const;
 
 export type LocalizedLegalEntity = {
@@ -155,4 +156,10 @@ export function resolveCompanyPartnershipRegistrationNumber(
 ): string | null {
   const v = override?.trim();
   return v || null;
+}
+
+export function resolveCompanyContactEmail(override?: string | null): string {
+  const v = override?.trim();
+  if (v && v.toLowerCase() !== "contact@smileseedbank.com") return v;
+  return STORE_ENTITY.contactEmail;
 }

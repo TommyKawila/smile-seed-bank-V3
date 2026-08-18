@@ -5,6 +5,7 @@ import { getSql } from "@/lib/db";
 import { STOREFRONT_SITE_SETTING_KEYS } from "@/lib/storefront-site-setting-keys";
 import type { PdfSettings } from "@/lib/pdf-settings";
 import { resolvePdfLogo } from "./pdf-logo";
+import { resolveCompanyContactEmail } from "./company-legal-identity";
 
 /** Same data as `fetchStorefrontReceiptPdfSettings` for API routes (DB + logo). */
 export async function getStorefrontReceiptPdfSettingsServer(): Promise<PdfSettings> {
@@ -62,7 +63,7 @@ export async function getStorefrontReceiptPdfSettingsServer(): Promise<PdfSettin
     logoDataUrl,
     companyName: site.company_name?.trim() || "Smile Seed Bank",
     companyAddress: site.company_address ?? null,
-    companyEmail: site.company_email ?? null,
+    companyEmail: resolveCompanyContactEmail(site.company_email),
     companyPhone: site.company_phone ?? null,
     companyLineId: lineId,
     bankName: bank?.bankName ?? null,

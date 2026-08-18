@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AboutPageClient } from "@/components/storefront/AboutPageClient";
+import { resolveCompanyContactEmail } from "@/lib/company-legal-identity";
 import { getStorefrontSiteSettingsServer } from "@/services/storefront-site-settings-server";
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ export default async function AboutPage() {
       }
       storeSeedLicenseUrl={settings.legal_seed_license_url?.trim() || null}
       businessRegistrationUrl={settings.legal_business_registration_url?.trim() || null}
-      companyEmail={settings.company_email?.trim() || null}
+      companyEmail={resolveCompanyContactEmail(settings.company_email)}
       companyPhone={settings.company_phone?.trim() || null}
     />
   );

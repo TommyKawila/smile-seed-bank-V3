@@ -1,4 +1,5 @@
 import { resolvePdfLogo } from "./pdf-logo";
+import { resolveCompanyContactEmail } from "./company-legal-identity";
 
 export type SocialLink = { platform: string; handle: string };
 
@@ -53,7 +54,7 @@ export async function fetchPdfSettings(): Promise<PdfSettings> {
     logoDataUrl,
     companyName: (site.company_name || store.storeName) ?? "Smile Seed Bank",
     companyAddress: (site.company_address || store.address) ?? null,
-    companyEmail: (site.company_email || store.contactEmail) ?? null,
+    companyEmail: resolveCompanyContactEmail(site.company_email || store.contactEmail),
     companyPhone: (site.company_phone || store.supportPhone) ?? null,
     companyLineId: payment.lineId ?? null,
     bankName: activeBank?.bankName ?? null,
@@ -101,7 +102,7 @@ export async function fetchStorefrontReceiptPdfSettings(): Promise<PdfSettings> 
     logoDataUrl,
     companyName: site.company_name?.trim() || "Smile Seed Bank",
     companyAddress: site.company_address ?? null,
-    companyEmail: site.company_email ?? null,
+    companyEmail: resolveCompanyContactEmail(site.company_email),
     companyPhone: site.company_phone ?? null,
     companyLineId: payment.lineId ?? null,
     bankName: b?.name ?? null,

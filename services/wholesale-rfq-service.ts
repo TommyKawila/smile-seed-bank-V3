@@ -4,6 +4,7 @@
 
 import { saveB2BQuote } from "@/services/b2b-quote-service";
 import { upsertBusinessContact } from "@/services/business-document-service";
+import { STORE_ENTITY } from "@/lib/company-legal-identity";
 import {
   isValidQty,
   resolveQuote,
@@ -61,7 +62,7 @@ function notifyTeamEmail(body: {
   const to =
     process.env.WHOLESALE_RFQ_NOTIFY_EMAIL?.trim() ||
     process.env.B2B_GMAIL_USER?.trim() ||
-    "contact@smileseedbank.com";
+    STORE_ENTITY.contactEmail;
 
   return fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -271,7 +272,7 @@ export async function captureGacpInquiry(input: GacpInquiryInput): Promise<void>
   const to =
     process.env.WHOLESALE_RFQ_NOTIFY_EMAIL?.trim() ||
     process.env.B2B_GMAIL_USER?.trim() ||
-    "contact@smileseedbank.com";
+    STORE_ENTITY.contactEmail;
 
   await fetch("https://api.resend.com/emails", {
     method: "POST",

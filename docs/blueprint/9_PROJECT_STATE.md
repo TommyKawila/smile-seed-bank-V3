@@ -45,6 +45,11 @@
 - **Logic:** `LegalDocumentOverrides` · `formatLetterheadBlock` / `formatStoreTrustBlock` รับ override · wire ใน Preview/Dispatcher/email service
 - **ไฟล์:** `company-legal-identity.ts` · `business-document-letterhead.ts` · `BusinessDocumentPreview.tsx` · `BusinessDocumentDispatcher.tsx` · `business-document-service.ts`
 
+### บันทึกการทำงาน — 2026-08-18 (Contact email → smileseedsbank@gmail.com)
+- **What:** SSOT contact = Gmail · แก้ fallback ที่ยังเป็น `contact@smileseedbank.com` · migration อัปเดต `site_settings.company_email`
+- **Logic:** `STORE_ENTITY.contactEmail` · `resolveCompanyContactEmail()` ข้าม legacy domain email
+- **ไฟล์:** `company-legal-identity.ts` · `BusinessDocumentDispatcher.tsx` · `business-document-service.ts` · `wholesale-rfq-service.ts` · `pdf-settings.ts` · `pdf-settings.server.ts` · `about/page.tsx` · migration `20260818100000_…`
+
 ### บันทึกการทำงาน — 2026-08-17 (TMY — ช่องอัปโหลดทะเบียนหจก.)
 - **What:** Admin Settings มีอัปโหลดทะเบียนหจก. TMY แยกจากทะเบียนพาณิชย์ร้าน · About โชว์ปุ่ม + เลขเมื่อมี
 - **Logic:** keys `legal_company_business_registration_*` · RLS public select · `resolveCompanyPartnershipRegistrationNumber`

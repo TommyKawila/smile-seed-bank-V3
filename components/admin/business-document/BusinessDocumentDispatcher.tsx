@@ -9,6 +9,7 @@ import { useBusinessContacts } from "@/hooks/useBusinessContacts";
 import { formatRawBusinessLetter } from "@/lib/business-document-raw-format";
 import { exportBusinessDocumentPdf } from "@/lib/business-document-pdf.client";
 import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
+import { resolveCompanyContactEmail } from "@/lib/company-legal-identity";
 import {
   DEFAULT_BUSINESS_DOCUMENT_FIELDS,
   FOUNDER_SIGNATURE_SETTING_KEY,
@@ -58,7 +59,7 @@ export function BusinessDocumentDispatcher() {
   const [sigHydrated, setSigHydrated] = useState(false);
 
   const logoUrl = settings.logo_main_url ?? null;
-  const companyEmail = settings.company_email ?? null;
+  const companyEmail = resolveCompanyContactEmail(settings.company_email);
   const companyPhone = settings.company_phone ?? null;
   const legalOverrides: LegalDocumentOverrides = {
     companySeedLicenseNumber: settings.legal_company_seed_license_number,
