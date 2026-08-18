@@ -7,6 +7,7 @@ import {
   formatStoreTrustBlock,
   type LegalDocumentOverrides,
 } from "@/lib/company-legal-identity";
+import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
 import {
   attachmentDisplayName,
   isPdfAttachmentUrl,
@@ -83,7 +84,7 @@ export function BusinessDocumentPreview({
         spellCheck={false}
         aria-label="Document body — spaces and line breaks are preserved"
         className={cn(
-          "min-h-[180mm] w-full flex-1 resize-y border-0 bg-transparent p-0",
+          "min-h-[120mm] w-full flex-1 resize-y border-0 bg-transparent p-0",
           "font-[inherit] text-[11pt] leading-[1.22] text-slate-700",
           "whitespace-pre-wrap break-words outline-none",
           "focus:ring-0 placeholder:text-slate-400",
@@ -91,6 +92,18 @@ export function BusinessDocumentPreview({
         )}
         placeholder="Type your letter here…"
       />
+
+      {bodyText.trim() ? (
+        <div className="mt-4 shrink-0 border-t border-dashed border-slate-200 pt-4">
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            PDF / email layout
+          </p>
+          <div
+            className="doc-body text-[11pt] leading-[1.22] text-slate-700 [&_.doc-table]:my-3 [&_.doc-table_td]:border [&_.doc-table_td]:border-slate-200 [&_.doc-table_td]:p-1.5 [&_.doc-table_th]:border [&_.doc-table_th]:border-slate-200 [&_.doc-table_th]:bg-slate-100 [&_.doc-table_th]:p-1.5 [&_.doc-table_th]:text-left [&_.doc-table_th]:font-semibold [&_.doc-table_th]:text-[#12463e] [&_.doc-list]:my-2 [&_.doc-list]:list-disc [&_.doc-list]:pl-5"
+            dangerouslySetInnerHTML={{ __html: plainLetterBodyToHtml(bodyText) }}
+          />
+        </div>
+      ) : null}
 
       {attachmentImageUrls.length > 0 ? (
         <div className="mt-4 space-y-3 shrink-0">

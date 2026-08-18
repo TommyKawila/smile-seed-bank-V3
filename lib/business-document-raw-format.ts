@@ -156,6 +156,129 @@ function extractSignOff(text: string): {
   return { body, signOff, signatureLines };
 }
 
+function isMarkdownTableSeparator(line: string): boolean {
+  const t = line.trim();
+  return /^\|?[\s\-:|]+\|?$/.test(t) && /-{2,}/.test(t);
+}
+
+function isMarkdownTableBlock(block: string): boolean {
+  const lines = block
+    .trim()
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length < 2) return false;
+  const pipeLines = lines.filter((l) => l.includes("|"));
+  if (pipeLines.length < 2) return false;
+  return lines.some(isMarkdownTableSeparator) || pipeLines.length >= 2;
+}
+
+function isTsvTableBlock(block: string): boolean {
+  const lines = block
+    .trim()
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length < 2) return false;
+  if (lines.some((l) => l.includes("|"))) return false;
+  const tabLines = lines.filter((l) => l.includes("\t"));
+  if (tabLines.length < 2) return false;
+  const cols = tabLines[0]!.split("\t").length;
+  return cols >= 2 && tabLines.every((l) => l.split("\t").length === cols);
+}
+
+function isBulletListBlock(block: string): boolean {
+  const lines = block
+    .trim()
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  return lines.length >= 1 && lines.every((l) => /^[-•*]\s+/.test(l));
+}
+
+function parseMarkdownTableRow(line: string): string[] {
+  let row = line.trim();
+  if (row.startsWith("|")) row = row.slice(1);
+  if (row.endsWith("|")) row = row.slice(0, -1);
+  return row.split("|").map((c) => c.trim());
+}
+
+function tableToHtml(rows: string[][]): string {
+  if (rows.length === 0) return "";
+  const [header, ...bodyRows] = rows;
+  const ths = header!
+    .map(
+      (c) =>
+        `<th style="border:1px solid #cbd5e1;padding:6px 8px;background:#f1f5f9;font-weight:600;color:#12463e;text-align:left;">${escapeHtml(c)}</th>`
+    )
+    .join("");
+  const trs = bodyRows
+    .map((row) => {
+      const cells = header!.map((_, i) => {
+        const val = row[i] ?? "";
+        return `<td style="border:1px solid #cbd5e1;padding:6px 8px;vertical-align:top;">${escapeHtml(val)}</td>`;
+      }).join("");
+      return `<tr>${cells}</tr>`;
+    })
+    .join("");
+  return `<table class="doc-table" style="width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:10pt;"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+}
+
+function structuredTableToHtml(block: string): string {
+  const trimmed = block.trim();
+  if (isMarkdownTableBlock(trimmed)) {
+    const rows = trimmed
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l && !isMarkdownTableSeparator(l))
+      .map(parseMarkdownTableRow);
+    return tableToHtml(rows);
+  }
+  if (isTsvTableBlock(trimmed)) {
+    const rows = trimmed
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => l.split("\t").map((c) => c.trim()));
+    return tableToHtml(rows);
+  }
+  return `<p>${escapeHtml(trimmed.replace(/\s*\n\s*/g, " "))}</p>`;
+}
+
+function structuredBlockToHtml(block: string): string {
+  const trimmed = block.trim();
+  if (isMarkdownTableBlock(trimmed) || isTsvTableBlock(trimmed)) {
+    return structuredTableToHtml(trimmed);
+  }
+  if (isBulletListBlock(trimmed)) {
+    const items = trimmed
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => l.replace(/^[-•*]\s+/, ""));
+    return `<ul class="doc-list">${items
+      .map((i) => `<li>${applyBoldHtml(escapeHtml(i))}</li>`)
+      .join("")}</ul>`;
+  }
+  const lines = trimmed.split("\n").map((l) => l.trim());
+  const joined = lines.join("\n");
+  const withBreaks = lines.map((l) => escapeHtml(l)).join("<br>");
+  return `<p>${applyBoldHtml(withBreaks)}</p>`;
+}
+
+function normalizeParagraphBlock(block: string): string {
+  const trimmed = block.trim();
+  if (!trimmed) return "";
+  if (
+    isMarkdownTableBlock(trimmed) ||
+    isTsvTableBlock(trimmed) ||
+    isBulletListBlock(trimmed)
+  ) {
+    return trimmed;
+  }
+  return trimmed.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function splitParagraphs(body: string): string[] {
   let working = body.trim();
   if (!working) return [];
@@ -164,7 +287,7 @@ function splitParagraphs(body: string): string[] {
   if (/\n\s*\n/.test(working)) {
     return working
       .split(/\n\s*\n+/)
-      .map((p) => p.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").trim())
+      .map(normalizeParagraphBlock)
       .filter(Boolean);
   }
 
@@ -176,7 +299,7 @@ function splitParagraphs(body: string): string[] {
 
   return working
     .split(/\n\s*\n+/)
-    .map((p) => p.replace(/\s+/g, " ").trim())
+    .map((p) => normalizeParagraphBlock(p.replace(/\s+/g, " ").trim()))
     .filter(Boolean);
 }
 
@@ -293,7 +416,15 @@ export function formatRawBusinessLetter(
     htmlParts.push(`<p>${escapeHtml(greeting)}</p>`);
   }
   for (const p of paragraphs) {
-    htmlParts.push(`<p>${applyBoldHtml(escapeHtml(p))}</p>`);
+    if (
+      isMarkdownTableBlock(p) ||
+      isTsvTableBlock(p) ||
+      isBulletListBlock(p)
+    ) {
+      htmlParts.push(structuredBlockToHtml(p));
+    } else {
+      htmlParts.push(`<p>${applyBoldHtml(escapeHtml(p))}</p>`);
+    }
   }
   htmlParts.push(
     `<p class="doc-signoff"><strong>${escapeHtml(signOff || "Best regards,")}</strong></p>`
@@ -323,6 +454,12 @@ export function plainLetterBodyToHtml(bodyText: string): string {
     .map((block) => {
       const lines = block.split("\n").map((l) => l.trim());
       const joined = lines.join("\n");
+      if (isMarkdownTableBlock(block) || isTsvTableBlock(block)) {
+        return structuredTableToHtml(block);
+      }
+      if (isBulletListBlock(block)) {
+        return structuredBlockToHtml(block);
+      }
       if (/^Subject:/i.test(joined)) {
         const rest = joined.replace(/^Subject:\s*/i, "");
         return `<p class="doc-subject"><strong>Subject:</strong> ${escapeHtml(rest)}</p>`;

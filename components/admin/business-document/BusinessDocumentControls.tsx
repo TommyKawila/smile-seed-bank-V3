@@ -183,7 +183,7 @@ export function BusinessDocumentControls({
               id="doc-raw"
               value={rawPaste}
               onChange={(e) => onRawPasteChange(e.target.value)}
-              placeholder="Paste Subject: … Dear … Best regards …"
+              placeholder="Paste Subject: … Dear … — use markdown | tables | for tables"
               rows={8}
               className="min-h-[140px] resize-y border-slate-200 bg-white text-sm"
             />

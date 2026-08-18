@@ -196,6 +196,11 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     ${BUSINESS_DOCUMENT_LETTERHEAD_CSS}
     .doc-body { word-wrap: break-word; line-height: 1.22; }
     .doc-body p { margin-bottom: 4mm; }
+    .doc-table { width: 100%; border-collapse: collapse; margin: 4mm 0 5mm; font-size: 9pt; }
+    .doc-table th, .doc-table td { border: 1px solid #cbd5e1; padding: 2mm 2.5mm; text-align: left; vertical-align: top; }
+    .doc-table th { background: #f1f5f9; font-weight: 600; color: #12463e; }
+    .doc-list { margin: 0 0 4mm 1.2em; padding: 0; }
+    .doc-list li { margin-bottom: 1.5mm; }
     .doc-subject { font-size: 12pt; font-weight: 600; color: #12463e; margin-bottom: 4mm; line-height: 1.25; }
     .doc-date { font-size: 10pt; color: #64748b; margin-bottom: 8mm; }
     .doc-signoff { margin-top: 6mm; margin-bottom: 2mm; }
