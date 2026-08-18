@@ -2,6 +2,7 @@ import {
   attachmentDisplayName,
   splitAttachmentUrls,
 } from "@/lib/business-document-attachments";
+import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
 import {
   BUSINESS_DOCUMENT_LETTERHEAD_CSS,
   buildBusinessDocumentFooterHtml,
