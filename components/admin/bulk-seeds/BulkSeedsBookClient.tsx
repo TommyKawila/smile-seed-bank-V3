@@ -15,6 +15,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import {
+  mintButtonLabel,
+  sharePresetFromSuppliers,
+  shareStrainLabel,
+  suppliersForSharePreset,
+  type BulkSharePreset,
+} from "@/lib/bulk-share-presets";
 import {
   BULK_SUPPLIER_BOOKS,
   DEFAULT_EUR_THB,
@@ -74,7 +82,6 @@ export function BulkSeedsBookClient() {
   const [shareDays, setShareDays] = useState(14);
   const [shareSuppliers, setShareSuppliers] = useState<BulkSupplierSlug[]>([
     "green-future",
-    "seeds-genetics",
   ]);
   const [showStrains, setShowStrains] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -96,11 +103,11 @@ export function BulkSeedsBookClient() {
     [eurThb, landed, overrideNum]
   );
 
-  function toggleSupplier(slug: BulkSupplierSlug) {
-    setShareSuppliers((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-    );
+  function setSharePreset(preset: BulkSharePreset) {
+    setShareSuppliers(suppliersForSharePreset(preset));
   }
+
+  const sharePreset = sharePresetFromSuppliers(shareSuppliers);
 
   async function mintLink() {
     setBusy(true);
@@ -365,33 +372,51 @@ export function BulkSeedsBookClient() {
               />
             </div>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm">
-            {BULK_SUPPLIER_BOOKS.map((book) => (
-              <label key={book.slug} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={shareSuppliers.includes(book.slug)}
-                  onChange={() => toggleSupplier(book.slug)}
-                />
-                {book.name}
-              </label>
-            ))}
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={showStrains}
-                onChange={(e) => setShowStrains(e.target.checked)}
-              />
-              โชว์รายการสายพันธุ์ (GF + SG)
-            </label>
+          <div className="space-y-2">
+            <Label className="text-xs">ช่องทางลิงก์</Label>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  ["gf", "GF only"],
+                  ["sg", "SG only"],
+                  ["both", "Both"],
+                ] as const
+              ).map(([preset, label]) => (
+                <Button
+                  key={preset}
+                  type="button"
+                  size="sm"
+                  variant={sharePreset === preset ? "default" : "outline"}
+                  className={cn(
+                    sharePreset === preset && "bg-[#12463e] hover:bg-[#0f3a34]"
+                  )}
+                  onClick={() => setSharePreset(preset)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+            {sharePreset === "both" ? (
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                ลูกค้าจะเห็นทั้ง SGF Seeds และ Seeds Genetics รวมข้อความนำเข้า — ใช้เฉพาะลูกค้าที่ตั้งใจให้เห็นทั้งสองช่อง
+              </p>
+            ) : null}
           </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={showStrains}
+              onChange={(e) => setShowStrains(e.target.checked)}
+            />
+            {shareStrainLabel(shareSuppliers)}
+          </label>
           <Button type="button" onClick={() => void mintLink()} disabled={busy}>
             {busy ? (
               <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
             ) : (
               <Link2 className="mr-1.5 h-4 w-4" />
             )}
-            สร้างและคัดลอกลิงก์
+            {mintButtonLabel(sharePreset)}
           </Button>
           {link ? (
             <p className="break-all font-mono text-xs text-slate-600">

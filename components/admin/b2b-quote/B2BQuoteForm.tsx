@@ -29,6 +29,8 @@ import {
   type B2BQuoteDraft,
   type B2BQuoteLineItem,
 } from "@/types/b2b-quote";
+import type { B2BQuoteChannel } from "@/lib/b2b-quote-channel";
+import { channelBreeder } from "@/lib/b2b-quote-channel";
 
 type StrainPreset = {
   id: string;
@@ -41,9 +43,10 @@ type StrainPreset = {
 type Props = {
   draft: B2BQuoteDraft;
   onChange: (next: B2BQuoteDraft) => void;
+  channel?: B2BQuoteChannel | null;
 };
 
-export function B2BQuoteForm({ draft, onChange }: Props) {
+export function B2BQuoteForm({ draft, onChange, channel = null }: Props) {
   const [sgfPresets, setSgfPresets] = useState<StrainPreset[]>([]);
 
   useEffect(() => {
@@ -100,7 +103,13 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
     []
   );
 
-  const allPresets = useMemo(() => [...sgfPresets, ...sgPresets], [sgfPresets, sgPresets]);
+  const lockedBreeder = channel ? channelBreeder(channel) : null;
+
+  const allPresets = useMemo(() => {
+    if (channel === "gf") return sgfPresets;
+    if (channel === "sg") return sgPresets;
+    return [...sgfPresets, ...sgPresets];
+  }, [channel, sgfPresets, sgPresets]);
   const presetByValue = useMemo(() => {
     const map = new Map<string, StrainPreset>();
     for (const p of allPresets) map.set(p.value.toLowerCase(), p);
@@ -130,7 +139,10 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
   const updateItem = (id: string, patchItem: Partial<B2BQuoteLineItem>) => {
     const items = draft.items.map((it) => {
       if (it.id !== id) return it;
-      return applyBulkBookPrice({ ...it, ...patchItem }, draft.currency);
+      const merged = lockedBreeder
+        ? { ...it, ...patchItem, breederName: lockedBreeder }
+        : { ...it, ...patchItem };
+      return applyBulkBookPrice(merged, draft.currency);
     });
     patch({ items });
   };
@@ -152,11 +164,23 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
 
   const removeItem = (id: string) => {
     const items = draft.items.filter((it) => it.id !== id);
-    patch({ items: items.length ? items : [emptyBulkPricedLineItem(B2B_BREEDER_SGF, draft.currency)] });
+    const fallbackBreeder = lockedBreeder ?? B2B_BREEDER_SGF;
+    patch({
+      items: items.length ? items : [emptyBulkPricedLineItem(fallbackBreeder, draft.currency)],
+    });
   };
+
+  const addLineBreeder = lockedBreeder ?? B2B_BREEDER_SGF;
 
   return (
     <div className="space-y-4">
+      {channel ? (
+        <div className="rounded-lg border border-[#12463e]/30 bg-[#12463e]/5 px-3 py-2 text-xs text-[#12463e]">
+          {channel === "gf"
+            ? "GF channel — SGF Seeds only. Mixed breeders blocked on send/PDF."
+            : "SG channel — Seeds Genetics only. Mixed breeders blocked on send/PDF."}
+        </div>
+      ) : null}
       <Card className="border-slate-200/80 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-slate-800">
@@ -251,24 +275,33 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
             Line items
           </CardTitle>
           <div className="flex flex-wrap items-center gap-1">
-            <Button asChild type="button" size="sm" variant="ghost" className="h-8 text-xs">
-              <Link href="/admin/partners/green-future" target="_blank">
-                <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                SGF Seeds
-              </Link>
-            </Button>
-            <Button asChild type="button" size="sm" variant="ghost" className="h-8 text-xs">
-              <Link href="/admin/bulk-seeds" target="_blank">
-                <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                Seeds Genetics
-              </Link>
-            </Button>
+            {channel !== "sg" ? (
+              <Button asChild type="button" size="sm" variant="ghost" className="h-8 text-xs">
+                <Link href="/admin/partners/green-future" target="_blank">
+                  <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                  SGF Seeds
+                </Link>
+              </Button>
+            ) : null}
+            {channel !== "gf" ? (
+              <Button asChild type="button" size="sm" variant="ghost" className="h-8 text-xs">
+                <Link href="/admin/bulk-seeds" target="_blank">
+                  <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                  Seeds Genetics
+                </Link>
+              </Button>
+            ) : null}
             <Button
               type="button"
               size="sm"
               variant="outline"
               onClick={() =>
-                patch({ items: [...draft.items, emptyBulkPricedLineItem(B2B_BREEDER_SGF, draft.currency)] })
+                patch({
+                  items: [
+                    ...draft.items,
+                    emptyBulkPricedLineItem(addLineBreeder, draft.currency),
+                  ],
+                })
               }
             >
               <Plus className="mr-1 h-4 w-4" />
@@ -294,22 +327,26 @@ export function B2BQuoteForm({ draft, onChange }: Props) {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs text-slate-600">Breeder</Label>
-                <div className="flex gap-2">
-                  {([B2B_BREEDER_SGF, B2B_BREEDER_SG] as const).map((b) => (
-                    <Button
-                      key={b}
-                      type="button"
-                      size="sm"
-                      variant={it.breederName === b ? "default" : "outline"}
-                      className={
-                        it.breederName === b ? "bg-[#12463e] hover:bg-[#0f3a34]" : ""
-                      }
-                      onClick={() => updateItem(it.id, { breederName: b })}
-                    >
-                      {b}
-                    </Button>
-                  ))}
-                </div>
+                {lockedBreeder ? (
+                  <p className="text-sm font-medium text-[#12463e]">{lockedBreeder}</p>
+                ) : (
+                  <div className="flex gap-2">
+                    {([B2B_BREEDER_SGF, B2B_BREEDER_SG] as const).map((b) => (
+                      <Button
+                        key={b}
+                        type="button"
+                        size="sm"
+                        variant={it.breederName === b ? "default" : "outline"}
+                        className={
+                          it.breederName === b ? "bg-[#12463e] hover:bg-[#0f3a34]" : ""
+                        }
+                        onClick={() => updateItem(it.id, { breederName: b })}
+                      >
+                        {b}
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1.5">

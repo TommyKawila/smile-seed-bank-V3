@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Calculator, FileCheck2, ShieldCheck } from "lucide-react";
+import { FileCheck2, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 export function GacpHero() {
@@ -42,13 +41,6 @@ export function GacpHero() {
             <FileCheck2 className="h-4 w-4" aria-hidden />
             {t("ขอแคตตาล็อก B2B และชุดเอกสารล็อต", "Request B2B catalog & lot documents")}
           </a>
-          <Link
-            href="/wholesale"
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
-          >
-            <Calculator className="h-4 w-4" aria-hidden />
-            {t("คำนวณราคาขายส่ง", "Bulk pricing calculator")}
-          </Link>
         </div>
         <p className="mt-6 max-w-2xl text-xs leading-relaxed text-slate-500">
           {t(

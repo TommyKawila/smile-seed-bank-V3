@@ -11,10 +11,17 @@ import {
   bulkShareLeadToB2BDraft,
   consumeBulkShareLeadForB2B,
 } from "@/lib/bulk-share-lead-to-b2b";
+import {
+  draftViolatesChannel,
+  parseB2BQuoteChannel,
+  channelBreeder,
+  type B2BQuoteChannel,
+} from "@/lib/b2b-quote-channel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   defaultValidUntil,
+  B2B_BREEDER_SGF,
   type B2BQuoteDraft,
   type B2BQuoteRecord,
 } from "@/types/b2b-quote";
@@ -49,6 +56,29 @@ export function B2BQuoteWorkspace() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [quoteNumber, setQuoteNumber] = useState("SSB-B2B-DRAFT");
   const [exporting, setExporting] = useState(false);
+  const [channel, setChannel] = useState<B2BQuoteChannel | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setChannel(parseB2BQuoteChannel(params.get("channel")));
+  }, []);
+
+  const quotePath = channel
+    ? `/admin/documents/b2b-quote?channel=${channel}`
+    : "/admin/documents/b2b-quote";
+
+  const channelGuard = useCallback(
+    (items: B2BQuoteDraft["items"]) => {
+      const err = draftViolatesChannel(items, channel);
+      if (err) {
+        toast({ title: "Channel blocked", description: err, variant: "destructive" });
+        return false;
+      }
+      return true;
+    },
+    [channel, toast]
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -64,8 +94,8 @@ export function B2BQuoteWorkspace() {
       title: "โหลดจากคำสั่งลิงก์",
       description: lead.refNumber,
     });
-    window.history.replaceState({}, "", "/admin/documents/b2b-quote");
-  }, [toast]);
+    window.history.replaceState({}, "", quotePath);
+  }, [toast, quotePath]);
 
   const logoUrl = settings.logo_main_url ?? settings.logo_secondary_png_url ?? null;
   const company = useMemo(
@@ -109,6 +139,13 @@ export function B2BQuoteWorkspace() {
     (q: B2BQuoteRecord) => {
       setActiveId(q.id);
       setQuoteNumber(q.quoteNumber);
+      const locked = channel ? channelBreeder(channel) : null;
+      const items = q.items.length
+        ? q.items.map((it) => {
+            const base = locked ? { ...it, breederName: locked } : it;
+            return applyBulkBookPrice(base, q.currency);
+          })
+        : [emptyBulkPricedLineItem(locked ?? B2B_BREEDER_SGF, q.currency)];
       setDraft({
         clientName: q.clientName,
         clientEmail: q.clientEmail,
@@ -119,13 +156,11 @@ export function B2BQuoteWorkspace() {
         discountAmount: q.discountAmount,
         shippingFee: q.shippingFee,
         paymentNotes: q.paymentNotes,
-        items: q.items.length
-          ? q.items.map((it) => applyBulkBookPrice(it, q.currency))
-          : [emptyBulkPricedLineItem("SGF Seeds", q.currency)],
+        items,
       });
       toast({ title: "Loaded", description: q.quoteNumber });
     },
-    [toast]
+    [toast, channel]
   );
 
   const handleDelete = useCallback(
@@ -149,6 +184,8 @@ export function B2BQuoteWorkspace() {
   );
 
   const handleSend = useCallback(async () => {
+    const items = draft.items.filter((it) => it.strainName.trim());
+    if (!channelGuard(items)) return;
     const result = await sendEmail({
       ...draft,
       quoteId: activeId,
@@ -166,7 +203,7 @@ export function B2BQuoteWorkspace() {
         variant: "destructive",
       });
     }
-  }, [draft, activeId, quoteNumber, sendEmail, refresh, toast]);
+  }, [draft, activeId, quoteNumber, sendEmail, refresh, toast, channelGuard]);
 
   const handlePasteApply = useCallback(
     (prefill: B2BQuoteDraft) => {
@@ -182,6 +219,8 @@ export function B2BQuoteWorkspace() {
   );
 
   const handlePdf = useCallback(() => {
+    const items = draft.items.filter((it) => it.strainName.trim());
+    if (!channelGuard(items)) return;
     setExporting(true);
     try {
       exportB2BQuotePdf(draft, quoteNumber, logoUrl, company);
@@ -198,13 +237,13 @@ export function B2BQuoteWorkspace() {
     } finally {
       setTimeout(() => setExporting(false), 400);
     }
-  }, [draft, quoteNumber, logoUrl, company, toast]);
+  }, [draft, quoteNumber, logoUrl, company, toast, channelGuard]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
       <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
-        <B2BQuotePastePanel onApply={handlePasteApply} />
-        <B2BQuoteForm draft={draft} onChange={setDraft} />
+        <B2BQuotePastePanel onApply={handlePasteApply} channel={channel} />
+        <B2BQuoteForm draft={draft} onChange={setDraft} channel={channel} />
 
         <Card className="border-slate-200/80 shadow-sm">
           <CardHeader className="pb-3">

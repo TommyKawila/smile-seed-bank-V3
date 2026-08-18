@@ -1,4 +1,5 @@
 import { GreenFutureCatalogClient } from "@/components/admin/partners/GreenFutureCatalogClient";
+import { GfShareLinkPanel } from "@/components/admin/partners/GfShareLinkPanel";
 
 export const metadata = {
   title: "Green Future Catalog · Admin",
@@ -18,6 +19,7 @@ export default function GreenFuturePartnerPage() {
           code-first refs in quotes per partner guidelines.
         </p>
       </div>
+      <GfShareLinkPanel />
       <GreenFutureCatalogClient />
     </div>
   );

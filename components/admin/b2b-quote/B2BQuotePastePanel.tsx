@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { parseBulkLeadPaste } from "@/lib/b2b-quote-paste";
+import { pasteTextHasWrongBreeder, type B2BQuoteChannel } from "@/lib/b2b-quote-channel";
 import type { B2BQuoteDraft } from "@/types/b2b-quote";
 
 type Props = {
   onApply: (draft: B2BQuoteDraft) => void;
+  channel?: B2BQuoteChannel | null;
 };
 
-export function B2BQuotePastePanel({ onApply }: Props) {
+export function B2BQuotePastePanel({ onApply, channel = null }: Props) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -20,6 +22,14 @@ export function B2BQuotePastePanel({ onApply }: Props) {
   function apply() {
     setError(null);
     setWarnings([]);
+    if (channel && pasteTextHasWrongBreeder(text, channel)) {
+      setError(
+        channel === "gf"
+          ? "GF channel: paste มี Seeds Genetics — ใช้ข้อความ SGF Seeds เท่านั้น"
+          : "SG channel: paste มี SGF Seeds — ใช้ข้อความ Seeds Genetics เท่านั้น"
+      );
+      return;
+    }
     const result = parseBulkLeadPaste(text);
     if (!result.ok) {
       setError(result.error);
@@ -47,7 +57,7 @@ export function B2BQuotePastePanel({ onApply }: Props) {
             setText(e.target.value);
             setError(null);
           }}
-          placeholder={"SSB-BL-2026-001\nContact: …\nEmail: …\n---\nSeeds Genetics · … · 50 · €3.10/seed · ฿6,000\n---"}
+          placeholder={"SSB-BL-2026-001\nContact: …\nEmail: …\n---\nSGF Seeds · … · 50 · €3.10/seed · ฿6,000\n---"}
           rows={6}
           className="font-mono text-xs"
         />

@@ -20,10 +20,10 @@
 7. [ ] **อย่าเซ็น exclusivity ทั้งบริษัท** — ถ้าขอ exclusive ให้จำกัดเฉพาะ documented/GACP-ready bulk ของ GF ในช่อง wholesale
 
 ### C. ไฟร์วอลล์ช่องทาง (ทำแล้วบางส่วน — ล็อกเป็นนโยบาย)
-8. [ ] หน้าสาธารณะ `/wholesale` `/wholesale/gacp` = **เฉพาะโปรแกรมเอกสาร GF** (ไม่โชว์ Seeds Genetics bulk)
-9. [ ] ใบเสนอราคา / share link / อีเมลคุย GF **ห้ามปน** แคตตาล็อกหิ้วหรือ Seeds Genetics
+8. [x] หน้าสาธารณะ `/wholesale` `/wholesale/gacp` = **เฉพาะโปรแกรมเอกสาร GF** (ไม่โชว์ Seeds Genetics bulk)
+9. [x] ใบเสนอราคา / share link / อีเมลคุย GF **ห้ามปน** แคตตาล็อกหิ้วหรือ Seeds Genetics
 10. [ ] ฉลาก + เลข พ.พ.4 หจก. ใช้กับช่องถูกระบบเท่านั้น
-11. [ ] ลูกค้า GACP ไม่ถูกเสนอเมล็ดหิ้วในแชท/เอกสารชุดเดียวกับโปรแกรม GF
+11. [x] ลูกค้า GACP ไม่ถูกเสนอเมล็ดหิ้วในแชท/เอกสารชุดเดียวกับโปรแกรม GF
 
 ### D. ประชุม/ต่อรอง GF (เปิดค้างจาก draft 15 ส.ค.)
 12. [ ] GACP = เอกสารสนับสนุน lot ไม่ใช่ certificate เมล็ด
@@ -37,6 +37,11 @@
 18. [ ] รีวิวรายเดือน: สัดส่วนรายได้ GF documented vs ช่องอื่น
 
 **หลักที่บันทึกแล้ว:** โปรแกรม GF = ช่องถูกระบบที่ปกป้อง · genetics อื่น = คนละโปรแกรม · ความสัมพันธ์กับ GF ชัดด้วยขอบเขต ไม่พึ่งการซ่อนอย่างเดียว
+
+### บันทึกการทำงาน — 2026-08-18 (Channel firewall — GF/SG isolation)
+- **What:** Bulk share default GF-only + preset GF/SG/Both · RFQ stamp SGF breeder · GACP ตัด link ไป `/wholesale` · relabel `/wholesale` เป็น SGF lane · B2B quote `?channel=gf|sg` lock + block mixed send/PDF · GF admin mint GF-only link
+- **Logic:** `bulk-share-presets.ts` · `b2b-quote-channel.ts` · share mint default `green-future` · `draftViolatesChannel()` ก่อน send/PDF
+- **ไฟล์:** `BulkSeedsBookClient.tsx` · `wholesale-rfq-service.ts` · `GacpHero.tsx` · `WholesaleHero.tsx` · `wholesale/page.tsx` · `B2BQuoteForm/Workspace/PastePanel.tsx` · `GfShareLinkPanel.tsx` · `green-future/page.tsx`
 
 ---
 

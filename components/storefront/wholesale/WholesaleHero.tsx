@@ -24,18 +24,18 @@ export function WholesaleHero({ onRequestCatalog }: Props) {
       <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
           <Building2 className="h-3.5 w-3.5" aria-hidden />
-          {t("B2B Wholesale · Thailand", "B2B Wholesale · Thailand")}
+          {t("SGF Seeds · B2B Wholesale", "SGF Seeds · B2B Wholesale")}
         </p>
         <h1 className="max-w-3xl font-sans text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
           {t(
-            "พาร์ทเนอร์เมล็ดพันธุ์กัญชา B2B ที่ธุรกิจไทยไว้ใจ",
-            "Thailand's Trusted B2B Cannabis Seed Partner"
+            "โปรแกรมเมล็ดพันธุ์เอกสาร SGF Seeds สำหรับพาร์ทเนอร์ B2B",
+            "SGF Seeds documented bulk program for B2B partners"
           )}
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
           {t(
-            "พันธุกรรมพรีเมียมจากบรีดเดอร์ชั้นนำ ส่งจากคลังบางพลี สมุทรปราการ (3–5 วัน) ถูกกฎหมาย ครบเอกสาร ไม่เสี่ยงศุลกากรนำเข้า",
-            "Premium genetics sourced directly from top breeders. Fast local fulfillment from our Bang Phli, Samut Prakan warehouse (3-5 days delivery). 100% legal, compliant, and zero import customs risk."
+            "สายพันธุ์จากโปรแกรม Green Future ที่ Smile Seed Bank จัดจำหน่าย — ส่งจากคลังบางพลี สมุทรปราการ (3–5 วัน) ครบเอกสารล็อต ไม่ปน genetics อื่น",
+            "Green Future documented genetics distributed by Smile Seed Bank — Bang Phli fulfillment (3–5 days), lot documentation support, no mixed genetics."
           )}
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">

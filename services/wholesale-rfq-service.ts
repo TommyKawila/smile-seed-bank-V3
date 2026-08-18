@@ -14,6 +14,7 @@ import {
 import { getBulkPricingConfig } from "@/services/wholesale-catalog-service";
 import {
   defaultValidUntil,
+  B2B_BREEDER_SGF,
   type B2BCurrency,
   type B2BQuoteLineItem,
 } from "@/types/b2b-quote";
@@ -137,6 +138,7 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
   const items: B2BQuoteLineItem[] = quoteCalc.lines.map((l, i) => ({
     id: `rfq-${i}`,
     strainName: l.name,
+    breederName: B2B_BREEDER_SGF,
     quantity: l.quantity,
     unitPrice: toUnit(l.unitThb),
     lineTotal: toLine(l.lineTotalThb),
@@ -149,6 +151,7 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
       items.push({
         id: "rfq-coa-a",
         strainName: "COA Package A (Purity + Germination)",
+        breederName: B2B_BREEDER_SGF,
         quantity: a,
         unitPrice: toUnit(config.coaPackageAThb),
         lineTotal: toLine(a * config.coaPackageAThb),
@@ -158,6 +161,7 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
       items.push({
         id: "rfq-coa-b",
         strainName: "COA Package B (Purity + Germination + Moisture)",
+        breederName: B2B_BREEDER_SGF,
         quantity: b,
         unitPrice: toUnit(config.coaPackageBThb),
         lineTotal: toLine(b * config.coaPackageBThb),

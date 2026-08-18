@@ -9,9 +9,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "B2B Wholesale | Smile Seed Bank",
+  title: "SGF Seeds B2B Wholesale | Smile Seed Bank",
   description:
-    "Thailand's trusted B2B cannabis seed partner. Tiered wholesale pricing, local Bang Phli fulfillment, COA documentation support.",
+    "SGF Seeds documented bulk program — tiered B2B pricing, Bang Phli fulfillment, lot documentation support for licensed partners.",
   alternates: { canonical: "/wholesale" },
 };
 
