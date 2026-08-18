@@ -7,6 +7,10 @@ import {
   formatStoreTrustBlock,
   type LegalDocumentOverrides,
 } from "@/lib/company-legal-identity";
+import {
+  attachmentDisplayName,
+  isPdfAttachmentUrl,
+} from "@/lib/business-document-attachments";
 
 type Props = {
   bodyText: string;
@@ -90,15 +94,27 @@ export function BusinessDocumentPreview({
 
       {attachmentImageUrls.length > 0 ? (
         <div className="mt-4 space-y-3 shrink-0">
-          {attachmentImageUrls.map((url) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={url}
-              src={url}
-              alt="Attachment"
-              className="max-h-[320px] w-auto max-w-full rounded border border-slate-200 object-contain object-left"
-            />
-          ))}
+          {attachmentImageUrls.map((url) =>
+            isPdfAttachmentUrl(url) ? (
+              <a
+                key={url}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-[#12463e] hover:bg-slate-100"
+              >
+                PDF · {attachmentDisplayName(url)}
+              </a>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={url}
+                src={url}
+                alt="Attachment"
+                className="max-h-[320px] w-auto max-w-full rounded border border-slate-200 object-contain object-left"
+              />
+            )
+          )}
         </div>
       ) : null}
 

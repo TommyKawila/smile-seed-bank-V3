@@ -61,6 +61,8 @@ export async function POST(req: Request) {
     let contentType = file.type || "application/octet-stream";
 
     const isVideo = ext === "mp4" || ext === "webm";
+    const isPdf =
+      ext === "pdf" || file.type === "application/pdf" || contentType === "application/pdf";
     if (isVideo) {
       contentType =
         ext === "webm"
@@ -68,10 +70,13 @@ export async function POST(req: Request) {
           : file.type?.startsWith("video/")
             ? file.type
             : "video/mp4";
-    } else if (preset) {
+    } else if (preset && !isPdf) {
       buffer = await optimizeImage(buffer, preset);
       ext = "webp";
       contentType = "image/webp";
+    } else if (isPdf) {
+      contentType = "application/pdf";
+      ext = "pdf";
     }
 
     const path = `${key}-${Date.now()}.${ext}`;

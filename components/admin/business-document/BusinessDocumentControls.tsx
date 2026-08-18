@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   FileDown,
+  FileText,
   Loader2,
   Mail,
   Save,
@@ -16,6 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FOUNDER_SIGNATURE_SETTING_KEY } from "@/types/business-document";
+import {
+  attachmentDisplayName,
+  isPdfAttachmentUrl,
+} from "@/lib/business-document-attachments";
 import type { BusinessDocumentRecord } from "@/types/business-document";
 import type { BusinessContactRecord } from "@/types/business-contact";
 
@@ -55,6 +60,7 @@ type Props = {
 };
 
 const MAX_ATTACHMENTS = 8;
+const MAX_PDF_BYTES = 15 * 1024 * 1024;
 
 export function BusinessDocumentControls({
   subject,
@@ -134,10 +140,18 @@ export function BusinessDocumentControls({
     try {
       const uploaded: string[] = [];
       for (const file of list) {
+        const isPdf =
+          file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+        if (isPdf && file.size > MAX_PDF_BYTES) {
+          throw new Error(`PDF ต้องไม่เกิน ${Math.round(MAX_PDF_BYTES / (1024 * 1024))} MB`);
+        }
         const formData = new FormData();
         formData.append("file", file);
         formData.append("key", `biz-doc-attach-${Date.now()}`);
-        const res = await fetch("/api/admin/settings/upload?preset=product", {
+        const endpoint = isPdf
+          ? "/api/admin/settings/upload"
+          : "/api/admin/settings/upload?preset=product";
+        const res = await fetch(endpoint, {
           method: "POST",
           body: formData,
         });
@@ -265,12 +279,12 @@ export function BusinessDocumentControls({
       <Card className="border-slate-200/80 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-slate-800">
-            Attach images
+            Attachments
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-[11px] text-slate-500">
-            Images appear in the letter preview, Save as PDF, and email (max{" "}
+            Images show in preview/PDF; PDFs attach to email and appear as links (max{" "}
             {MAX_ATTACHMENTS}).
           </p>
           {attachmentImageUrls.length > 0 ? (
@@ -280,14 +294,20 @@ export function BusinessDocumentControls({
                   key={url}
                   className="flex items-center gap-2 rounded-md border border-slate-100 bg-slate-50 p-1.5"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt=""
-                    className="h-12 w-12 shrink-0 rounded object-cover"
-                  />
+                  {isPdfAttachmentUrl(url) ? (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-red-50 text-red-700">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={url}
+                      alt=""
+                      className="h-12 w-12 shrink-0 rounded object-cover"
+                    />
+                  )}
                   <p className="min-w-0 flex-1 truncate text-[10px] text-slate-500">
-                    {url}
+                    {attachmentDisplayName(url)}
                   </p>
                   <Button
                     type="button"
@@ -310,7 +330,7 @@ export function BusinessDocumentControls({
           <input
             ref={attachInputRef}
             type="file"
-            accept="image/png,image/webp,image/jpeg"
+            accept="image/png,image/webp,image/jpeg,application/pdf"
             multiple
             className="hidden"
             onChange={(e) => {
@@ -332,7 +352,7 @@ export function BusinessDocumentControls({
             ) : (
               <Upload className="mr-2 h-4 w-4" />
             )}
-            Upload images
+            Upload files
           </Button>
         </CardContent>
       </Card>

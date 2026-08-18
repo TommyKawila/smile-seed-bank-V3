@@ -8,6 +8,10 @@ import {
   type LegalDocumentOverrides,
 } from "@/lib/company-legal-identity";
 import {
+  attachmentDisplayName,
+  isPdfAttachmentUrl,
+} from "@/lib/business-document-attachments";
+import {
   BUSINESS_DOCUMENT_FALLBACK_SUBJECT,
   FOUNDER_SIGNATURE_SETTING_KEY,
 } from "@/types/business-document";
@@ -240,6 +244,24 @@ function gmailSmtpConfigured(): { user: string; pass: string } | null {
   return { user, pass };
 }
 
+async function fetchPdfMailAttachments(
+  urls: string[]
+): Promise<{ filename: string; content: Buffer; contentType: string }[]> {
+  const out: { filename: string; content: Buffer; contentType: string }[] = [];
+  for (const url of urls.filter(isPdfAttachmentUrl)) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch PDF attachment: ${attachmentDisplayName(url)}`);
+    }
+    out.push({
+      filename: attachmentDisplayName(url),
+      content: Buffer.from(await res.arrayBuffer()),
+      contentType: "application/pdf",
+    });
+  }
+  return out;
+}
+
 async function sendViaGmail(opts: {
   user: string;
   pass: string;
@@ -247,6 +269,7 @@ async function sendViaGmail(opts: {
   subject: string;
   html: string;
   text: string;
+  attachments?: { filename: string; content: Buffer; contentType: string }[];
 }): Promise<void> {
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -260,6 +283,11 @@ async function sendViaGmail(opts: {
     subject: opts.subject,
     html: opts.html,
     text: opts.text,
+    attachments: opts.attachments?.map((a) => ({
+      filename: a.filename,
+      content: a.content,
+      contentType: a.contentType,
+    })),
   });
 }
 
@@ -270,6 +298,7 @@ async function sendViaResend(opts: {
   html: string;
   text: string;
   replyTo: string;
+  attachments?: { filename: string; path: string }[];
 }): Promise<void> {
   const res = await fetch(RESEND_URL, {
     method: "POST",
@@ -284,6 +313,7 @@ async function sendViaResend(opts: {
       subject: opts.subject,
       html: opts.html,
       text: opts.text,
+      ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
     }),
   });
   if (!res.ok) {
@@ -335,6 +365,10 @@ export async function sendBusinessDocumentEmail(
 
   const gmail = gmailSmtpConfigured();
   const replyTo = (process.env.B2B_GMAIL_USER ?? DEFAULT_GMAIL_USER).trim();
+  const pdfMailAttachments = await fetchPdfMailAttachments(attachments);
+  const pdfResendAttachments = attachments
+    .filter(isPdfAttachmentUrl)
+    .map((url) => ({ filename: attachmentDisplayName(url), path: url }));
 
   try {
     let via: "gmail" | "resend" = "resend";
@@ -346,6 +380,7 @@ export async function sendBusinessDocumentEmail(
         subject,
         html,
         text: plain,
+        attachments: pdfMailAttachments,
       });
       via = "gmail";
     } else {
@@ -364,6 +399,7 @@ export async function sendBusinessDocumentEmail(
         html,
         text: plain,
         replyTo,
+        attachments: pdfResendAttachments,
       });
     }
 

@@ -1,5 +1,9 @@
 import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
 import {
+  attachmentDisplayName,
+  splitAttachmentUrls,
+} from "@/lib/business-document-attachments";
+import {
   buildBusinessDocumentEmailFooterHtml,
   buildBusinessDocumentEmailLetterheadHtml,
   type BusinessDocumentLetterheadOpts,
@@ -30,6 +34,20 @@ function attachmentImagesBlock(urls: string[] | undefined): string {
     .join("")}</div>`;
 }
 
+function attachmentPdfLinksBlock(urls: string[] | undefined): string {
+  const list = (urls ?? []).map((u) => u?.trim()).filter(Boolean);
+  if (list.length === 0) return "";
+  return `<div style="margin:16px 0 8px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#12463e;">PDF attachments</p>
+    ${list
+      .map(
+        (url) =>
+          `<p style="margin:0 0 6px;font-size:13px;"><a href="${escapeHtml(url)}" style="color:#12463e;text-decoration:underline;">${escapeHtml(attachmentDisplayName(url))}</a></p>`
+      )
+      .join("")}
+  </div>`;
+}
+
 /** Transactional email wrapper — muted Eco-Clinical palette + formal letterhead. */
 export function buildBusinessDocumentEmailHtml(
   bodyText: string,
@@ -40,6 +58,7 @@ export function buildBusinessDocumentEmailHtml(
   attachmentImageUrls: string[] = []
 ): string {
   const bodyHtml = plainLetterBodyToHtml(bodyText);
+  const { imageUrls, pdfUrls } = splitAttachmentUrls(attachmentImageUrls);
   const header = buildBusinessDocumentEmailLetterheadHtml({
     logoUrl,
     companyEmail: letterheadOpts?.companyEmail,
@@ -60,7 +79,8 @@ export function buildBusinessDocumentEmailHtml(
     ${header}
     <div style="font-size:15px;line-height:1.45;color:#334155;">
       ${bodyHtml}
-      ${attachmentImagesBlock(attachmentImageUrls)}
+      ${attachmentImagesBlock(imageUrls)}
+      ${attachmentPdfLinksBlock(pdfUrls)}
       ${signatureImageBlock(signatureImageUrl)}
     </div>
     ${footer}

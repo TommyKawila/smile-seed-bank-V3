@@ -45,6 +45,11 @@
 - **Logic:** `LegalDocumentOverrides` · `formatLetterheadBlock` / `formatStoreTrustBlock` รับ override · wire ใน Preview/Dispatcher/email service
 - **ไฟล์:** `company-legal-identity.ts` · `business-document-letterhead.ts` · `BusinessDocumentPreview.tsx` · `BusinessDocumentDispatcher.tsx` · `business-document-service.ts`
 
+### บันทึกการทำงาน — 2026-08-18 (Business Documents — PDF attachments)
+- **What:** Dispatcher แนบ PDF ได้ (upload ไม่ผ่าน image preset) · preview/link · email แนบไฟล์จริง
+- **Logic:** `isPdfAttachmentUrl` · upload แยก image/PDF · Gmail/Resend PDF attachments
+- **ไฟล์:** `business-document-attachments.ts` · `BusinessDocumentControls.tsx` · `business-document-service.ts` · upload route
+
 ### บันทึกการทำงาน — 2026-08-18 (Contact email → smileseedsbank@gmail.com)
 - **What:** SSOT contact = Gmail · แก้ fallback ที่ยังเป็น `contact@smileseedbank.com` · migration อัปเดต `site_settings.company_email`
 - **Logic:** `STORE_ENTITY.contactEmail` · `resolveCompanyContactEmail()` ข้าม legacy domain email

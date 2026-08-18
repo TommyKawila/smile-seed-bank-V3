@@ -1,4 +1,7 @@
-import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
+import {
+  attachmentDisplayName,
+  splitAttachmentUrls,
+} from "@/lib/business-document-attachments";
 import {
   BUSINESS_DOCUMENT_LETTERHEAD_CSS,
   buildBusinessDocumentFooterHtml,
@@ -148,14 +151,20 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     locale: letterheadOpts?.locale ?? "en",
     legalOverrides: letterheadOpts?.legalOverrides,
   });
-  const attachments = (attachmentImageUrls ?? [])
-    .map((u) => u?.trim())
-    .filter(Boolean)
+  const { imageUrls, pdfUrls } = splitAttachmentUrls(attachmentImageUrls ?? []);
+  const imageBlocks = imageUrls
     .map(
       (url) =>
         `<p class="doc-attach"><img src="${escapeHtml(url)}" alt="Attachment" /></p>`
     )
     .join("\n");
+  const pdfBlocks = pdfUrls
+    .map(
+      (url) =>
+        `<p class="doc-attach-pdf"><a href="${escapeHtml(url)}">${escapeHtml(attachmentDisplayName(url))}</a></p>`
+    )
+    .join("\n");
+  const attachments = [imageBlocks, pdfBlocks].filter(Boolean).join("\n");
   const attachmentsBlock = attachments
     ? `<div class="doc-attachments">${attachments}</div>`
     : "";
@@ -193,6 +202,8 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     .doc-attachments { margin-top: 6mm; }
     .doc-attach { margin: 0 0 4mm; page-break-inside: avoid; }
     .doc-attach img { max-width: 100%; max-height: 120mm; width: auto; height: auto; display: block; }
+    .doc-attach-pdf { margin: 0 0 4mm; font-size: 10pt; }
+    .doc-attach-pdf a { color: #12463e; text-decoration: underline; }
     .doc-sig-img { margin-top: 2mm; }
     .doc-sig-img img { max-height: 18mm; width: auto; display: block; }
   </style>
