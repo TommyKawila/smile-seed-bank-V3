@@ -6,26 +6,28 @@ import {
   type BulkSupplierSlug,
 } from "@/lib/bulk-seeds-book";
 import type { BulkSharePayload } from "@/lib/bulk-share-token";
-import { priceSgfShareTiers, SGF_SEEDS_SHARE_NAME } from "@/lib/sgf-seeds-share";
+import { priceSgfShareTiers } from "@/lib/sgf-seeds-share";
+import { SGF_SEEDS_SHARE_NAME } from "@/lib/sgf-seeds-display";
+import {
+  pickTierForQty,
+  validateBulkShareQty,
+  type SerializedPricedBook,
+} from "@/lib/bulk-share-public";
 
-export const BULK_SHARE_MIN_QTY = 50;
+export {
+  BULK_SHARE_MIN_QTY,
+  cartLineKey,
+  pickTierForQty,
+  priceLineFromBook,
+  type BulkShareCartLine,
+  type BulkShareStrainPick,
+  type SerializedPricedBook,
+} from "@/lib/bulk-share-public";
 
 export type BulkSharePricedBook = {
   supplierSlug: BulkSupplierSlug;
   supplierLabel: string;
   rows: BulkPricedTier[];
-};
-
-export type BulkShareStrainPick = {
-  supplierSlug: BulkSupplierSlug;
-  supplierLabel: string;
-  strainName: string;
-  category: string;
-};
-
-export type BulkShareCartLine = BulkShareStrainPick & {
-  key: string;
-  qty: number;
 };
 
 export type BulkShareOrderItemInput = {
@@ -52,19 +54,6 @@ export type BulkShareOrderTotals = {
   subtotalEur: number;
   lines: BulkSharePricedLine[];
 };
-
-export function cartLineKey(supplierSlug: BulkSupplierSlug, strainName: string): string {
-  return `${supplierSlug}|${strainName.trim().toLowerCase()}`;
-}
-
-export function pickTierForQty(rows: BulkPricedTier[], qty: number): BulkPricedTier {
-  const sorted = [...rows].sort((a, b) => a.minQty - b.minQty);
-  let picked = sorted[0]!;
-  for (const row of sorted) {
-    if (qty >= row.minQty) picked = row;
-  }
-  return picked;
-}
 
 export function supplierLabel(slug: BulkSupplierSlug): string {
   if (slug === "green-future") return SGF_SEEDS_SHARE_NAME;
@@ -98,13 +87,6 @@ export function buildPricedBooks(payload: BulkSharePayload): BulkSharePricedBook
     .filter((b): b is BulkSharePricedBook => Boolean(b));
 }
 
-function validateQty(qty: number): string | null {
-  const n = Math.floor(qty);
-  if (!Number.isFinite(n) || n <= 0) return "Invalid quantity";
-  if (n < BULK_SHARE_MIN_QTY) return `Minimum ${BULK_SHARE_MIN_QTY} seeds per strain`;
-  return null;
-}
-
 export function priceBulkShareOrder(
   payload: BulkSharePayload,
   items: BulkShareOrderItemInput[]
@@ -125,7 +107,7 @@ export function priceBulkShareOrder(
     if (!book?.rows.length) return { ok: false, error: "Pricing unavailable" };
 
     const category = (raw.category ?? "").trim();
-    const qtyErr = validateQty(raw.qty);
+    const qtyErr = validateBulkShareQty(raw.qty);
     if (qtyErr) return { ok: false, error: qtyErr };
 
     const qty = Math.floor(raw.qty);
@@ -157,7 +139,7 @@ export function priceBulkShareOrder(
   };
 }
 
-export function serializePricedBooks(books: BulkSharePricedBook[]) {
+export function serializePricedBooks(books: BulkSharePricedBook[]): SerializedPricedBook[] {
   return books.map((b) => ({
     supplierSlug: b.supplierSlug,
     supplierLabel: b.supplierLabel,
@@ -169,18 +151,4 @@ export function serializePricedBooks(books: BulkSharePricedBook[]) {
       sellEur: r.sellEur,
     })),
   }));
-}
-
-export type SerializedPricedBook = ReturnType<typeof serializePricedBooks>[number];
-
-export function priceLineFromBook(
-  book: SerializedPricedBook,
-  qty: number,
-  category: string
-): { unitThb: number; unitEur: number; lineThb: number } | null {
-  const qtyErr = validateQty(qty);
-  if (qtyErr) return null;
-  const n = Math.floor(qty);
-  const tier = pickTierForQty(book.rows as BulkPricedTier[], n);
-  return { unitThb: tier.sellThb, unitEur: tier.sellEur, lineThb: tier.sellThb * n };
 }

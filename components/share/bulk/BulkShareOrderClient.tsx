@@ -27,9 +27,9 @@ import {
   type BulkShareCartLine,
   type BulkShareStrainPick,
   type SerializedPricedBook,
-} from "@/lib/bulk-share-order";
-import { SEED_FORMAT_LABEL, SEEDS_GENETICS_SLUG } from "@/lib/bulk-seeds-book";
-import { SGF_SEEDS_SHARE_TAGLINE, sgfStrainsGrouped } from "@/lib/sgf-seeds-share";
+} from "@/lib/bulk-share-public";
+import { SEED_FORMAT_LABEL, SEEDS_GENETICS_SLUG } from "@/lib/bulk-seeds-labels";
+import { SGF_SEEDS_SHARE_TAGLINE, sgfStrainsGrouped } from "@/lib/sgf-seeds-display";
 import { BULK_SHARE_COPY, BULK_SHARE_LANG_KEY, localizeQtyDescription, type BulkShareLang } from "@/lib/bulk-share-i18n";
 import type { SgCategorySlug, SgCatalogStrain } from "@/lib/seeds-genetics-catalog";
 import type { PartnerStrainRecord } from "@/types/partner-catalog";

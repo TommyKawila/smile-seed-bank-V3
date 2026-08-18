@@ -1,8 +1,8 @@
 "use client";
 
 import type { PartnerStrainRecord } from "@/types/partner-catalog";
-import { sgfStrainsGrouped } from "@/lib/sgf-seeds-share";
-import { cartLineKey, type BulkShareStrainPick } from "@/lib/bulk-share-order";
+import { sgfStrainsGrouped } from "@/lib/sgf-seeds-display";
+import { cartLineKey, type BulkShareStrainPick } from "@/lib/bulk-share-public";
 import { BULK_SHARE_COPY, type BulkShareLang } from "@/lib/bulk-share-i18n";
 import { strainMatchesQuery } from "@/components/share/bulk/BulkShareStrainSearch";
 

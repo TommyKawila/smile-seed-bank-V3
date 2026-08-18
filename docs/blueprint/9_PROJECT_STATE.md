@@ -38,6 +38,11 @@
 
 **หลักที่บันทึกแล้ว:** โปรแกรม GF = ช่องถูกระบบที่ปกป้อง · genetics อื่น = คนละโปรแกรม · ความสัมพันธ์กับ GF ชัดด้วยขอบเขต ไม่พึ่งการซ่อนอย่างเดียว
 
+### บันทึกการทำงาน — 2026-08-18 (Bulk share — กัน cost JSON หลุด client bundle)
+- **What:** หน้า `/share/bulk/[token]` เป็น client component ที่ import `bulk-seeds-book` / `sgf-seeds-share` / `bulk-share-order` → webpack ประเมินโมดูลทั้งก้อน รวม `price-list-gf-ssb-2026-0803.json` (EUR/THB ต้นทุน GF) + GM targets
+- **Logic:** แยก labels/display/cart ไปโมดูลที่ไม่มี cost · client import เฉพาะนั้น · ราคา sell ยังมาจาก server `serializePricedBooks`
+- **ไฟล์:** `lib/bulk-seeds-labels.ts` · `lib/sgf-seeds-display.ts` · `lib/bulk-share-public.ts` · `components/share/bulk/*` · `scripts/assert-bulk-share-client-no-cost.mjs`
+
 ### บันทึกการทำงาน — 2026-08-18 (Channel firewall — GF/SG isolation)
 - **What:** Bulk share default GF-only + preset GF/SG/Both · RFQ stamp SGF breeder · GACP ตัด link ไป `/wholesale` · relabel `/wholesale` เป็น SGF lane · B2B quote `?channel=gf|sg` lock + block mixed send/PDF · GF admin mint GF-only link
 - **Logic:** `bulk-share-presets.ts` · `b2b-quote-channel.ts` · share mint default `green-future` · `draftViolatesChannel()` ก่อน send/PDF
