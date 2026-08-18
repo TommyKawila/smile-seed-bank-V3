@@ -83,42 +83,48 @@ export function BusinessDocumentDispatcher() {
     }
   }, [settings, sigHydrated, historyLoading]);
 
+  const applyFormattedLetter = useCallback(
+    (raw: string, subjectFallback?: string) => {
+      const formatted = formatRawBusinessLetter(raw, {
+        documentDate: fields.documentDate,
+        senderName: fields.senderName,
+        senderTitle: "Founder",
+        recipientName: fields.recipientName,
+        companyEmail: companyEmail ?? "",
+        companyPhone: companyPhone ?? "",
+      });
+      setBodyText(formatted.bodyPlain);
+      setSubject(formatted.subject.trim() || subjectFallback || "");
+    },
+    [
+      fields.documentDate,
+      fields.senderName,
+      fields.recipientName,
+      companyEmail,
+      companyPhone,
+    ]
+  );
+
   const handleFormatRaw = useCallback(() => {
     if (!rawPaste.trim()) return;
-    const formatted = formatRawBusinessLetter(rawPaste, {
-      documentDate: fields.documentDate,
-      senderName: fields.senderName,
-      senderTitle: "Founder",
-      recipientName: fields.recipientName,
-      companyEmail: companyEmail ?? "",
-      companyPhone: companyPhone ?? "",
-    });
-    setBodyText(formatted.bodyPlain);
-    if (formatted.subject.trim()) {
-      setSubject(formatted.subject.trim());
-    }
+    applyFormattedLetter(rawPaste);
     toast({
       title: "Formatted",
       description: "Placeholders filled from form fields — review the preview.",
     });
-  }, [
-    rawPaste,
-    fields.documentDate,
-    fields.senderName,
-    fields.recipientName,
-    companyEmail,
-    companyPhone,
-    toast,
-  ]);
+  }, [rawPaste, applyFormattedLetter, toast]);
 
   const handleLoadGreenFutureTemplate = useCallback(() => {
     setRawPaste(GREEN_FUTURE_CLARIFICATION_RAW);
-    setSubject(GREEN_FUTURE_CLARIFICATION_SUBJECT);
+    applyFormattedLetter(
+      GREEN_FUTURE_CLARIFICATION_RAW,
+      GREEN_FUTURE_CLARIFICATION_SUBJECT
+    );
     toast({
       title: "GF letter loaded",
-      description: "Format letter → attach plan PDF + legal docs → send.",
+      description: "Preview updated — attach plan PDF + legal docs, then send.",
     });
-  }, [toast]);
+  }, [applyFormattedLetter, toast]);
 
   const handleSaveDraft = useCallback(async () => {
     const result = await saveDraft({

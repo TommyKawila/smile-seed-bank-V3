@@ -170,6 +170,30 @@ export function BusinessDocumentControls({
 
   return (
     <div className="space-y-4">
+      {onLoadGreenFutureTemplate ? (
+        <Card className="border-[#12463e]/35 bg-[#12463e]/5 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold text-[#12463e]">
+              Templates
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button
+              type="button"
+              className="w-full bg-[#12463e] hover:bg-[#0f3a34]"
+              onClick={onLoadGreenFutureTemplate}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Load GF clarification letter
+            </Button>
+            <p className="text-[10px] leading-snug text-slate-500">
+              Loads English-first GF letter + formats preview. Attach Collaboration Plan PDF
+              separately.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card className="border-slate-200/80 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-slate-800">
@@ -190,16 +214,6 @@ export function BusinessDocumentControls({
               className="min-h-[140px] resize-y border-slate-200 bg-white text-sm"
             />
           </div>
-          {onLoadGreenFutureTemplate ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={onLoadGreenFutureTemplate}
-            >
-              Load GF clarification letter
-            </Button>
-          ) : null}
           <Button
             type="button"
             className="w-full bg-[#12463e] hover:bg-[#0f3a34]"
