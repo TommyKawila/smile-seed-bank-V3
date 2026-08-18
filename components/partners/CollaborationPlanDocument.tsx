@@ -2,13 +2,13 @@
 
 import { useCallback, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { FileDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   COLLABORATION_PLAN,
-  collaborationPlanSharePath,
   type PlanLocale,
 } from "@/lib/green-future-collaboration-plan";
-import { CopyShareLinkButton } from "@/components/admin/partners/CopyShareLinkButton";
 
 function parseLocale(raw: string | null): PlanLocale {
   return raw === "en" ? "en" : "th";
@@ -142,11 +142,18 @@ function LocaleToggle({
   );
 }
 
+function PrintPlanButton() {
+  return (
+    <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
+      <FileDown className="mr-1.5 h-4 w-4" />
+      Save as PDF
+    </Button>
+  );
+}
+
 export function CollaborationPlanView({
-  showCopyLink = false,
   adminChrome = false,
 }: {
-  showCopyLink?: boolean;
   adminChrome?: boolean;
 }) {
   const searchParams = useSearchParams();
@@ -164,31 +171,48 @@ export function CollaborationPlanView({
 
   return (
     <div className="space-y-4">
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          #collaboration-plan-print, #collaboration-plan-print * {
+            visibility: visible !important;
+          }
+          #collaboration-plan-print {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none !important;
+            box-shadow: none !important;
+          }
+        }
+      `}</style>
       {adminChrome ? (
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
           <div className="space-y-1">
             <h2 className="text-base font-semibold text-slate-900">
               {locale === "th" ? "แผนงานความร่วมมือ" : "Collaboration Plan"}
             </h2>
             <p className="max-w-2xl text-sm text-slate-500">
               {locale === "th"
-                ? "แผนงานความร่วมมือ Green Future × Smile Seed Bank — แชร์ลิงก์ให้คู่ค้าอ่านได้"
-                : "Green Future × Smile Seed Bank collaboration plan — share the link with partners."}
+                ? "ไม่มี public link — Save as PDF แล้วแนบใน Business Document Dispatcher ส่งให้คู่ค้า"
+                : "No public link — Save as PDF and attach via Business Document Dispatcher."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <LocaleToggle locale={locale} onChange={onLocale} />
-            {showCopyLink ? (
-              <CopyShareLinkButton path={collaborationPlanSharePath(locale)} />
-            ) : null}
+            <PrintPlanButton />
           </div>
         </div>
       ) : (
-        <div className="flex justify-center">
+        <div className="flex justify-center print:hidden">
           <LocaleToggle locale={locale} onChange={onLocale} />
         </div>
       )}
-      <div className="rounded-lg border border-slate-200 bg-white p-5 sm:p-8">
+      <div
+        id="collaboration-plan-print"
+        className="rounded-lg border border-slate-200 bg-white p-5 sm:p-8"
+      >
         <CollaborationPlanDocument locale={locale} />
       </div>
     </div>

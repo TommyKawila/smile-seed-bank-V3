@@ -8,7 +8,7 @@ export const metadata = {
 export default function GreenFuturePlanPage() {
   return (
     <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
-      <CollaborationPlanView showCopyLink adminChrome />
+      <CollaborationPlanView adminChrome />
     </Suspense>
   );
 }

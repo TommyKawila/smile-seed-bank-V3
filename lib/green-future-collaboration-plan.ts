@@ -1,6 +1,6 @@
 export type PlanLocale = "th" | "en";
 
-export const COLLABORATION_PLAN_SHARE_PATH = "/share/green-future/plan";
+/** Public share disabled — send plan as PDF via Business Document Dispatcher. */
 
 type PlanCopy = {
   kicker: string;
@@ -209,8 +209,3 @@ export const COLLABORATION_PLAN: Record<PlanLocale, PlanCopy> = {
   },
 };
 
-export function collaborationPlanSharePath(locale: PlanLocale): string {
-  return locale === "en"
-    ? `${COLLABORATION_PLAN_SHARE_PATH}?lang=en`
-    : COLLABORATION_PLAN_SHARE_PATH;
-}
