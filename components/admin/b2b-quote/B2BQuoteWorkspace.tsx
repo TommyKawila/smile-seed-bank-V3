@@ -25,7 +25,8 @@ import {
   type B2BQuoteDraft,
   type B2BQuoteRecord,
 } from "@/types/b2b-quote";
-import { applyBulkBookPrice, emptyBulkPricedLineItem } from "@/lib/b2b-quote-bulk-price";
+import { emptyBulkPricedLineItem } from "@/lib/b2b-quote-bulk-price";
+import { recalculateItem } from "@/lib/b2b-quote-calc";
 import { B2BQuoteForm } from "./B2BQuoteForm";
 import { B2BQuotePastePanel } from "./B2BQuotePastePanel";
 import { ProFormaInvoiceTemplate } from "./ProFormaInvoiceTemplate";
@@ -143,7 +144,7 @@ export function B2BQuoteWorkspace() {
       const items = q.items.length
         ? q.items.map((it) => {
             const base = locked ? { ...it, breederName: locked } : it;
-            return applyBulkBookPrice(base, q.currency);
+            return recalculateItem(base, q.currency);
           })
         : [emptyBulkPricedLineItem(locked ?? B2B_BREEDER_SGF, q.currency)];
       setDraft({

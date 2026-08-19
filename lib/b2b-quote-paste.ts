@@ -1,5 +1,4 @@
 import { lineTotal, recalculateItem } from "@/lib/b2b-quote-calc";
-import { applyBulkBookPrice } from "@/lib/b2b-quote-bulk-price";
 import { normalizeBreederLabel } from "@/lib/b2b-quote-line";
 import { B2B_BREEDER_SG, B2B_BREEDER_SGF, defaultValidUntil, type B2BQuoteDraft } from "@/types/b2b-quote";
 
@@ -225,7 +224,7 @@ export function parseBulkLeadPaste(text: string): BulkLeadPasteResult {
       unitPrice: p.unitEur,
       lineTotal: lineTotal(p.qty, p.unitEur, currency),
     };
-    return p.fromLead ? applyBulkBookPrice(base, currency) : recalculateItem(base, currency);
+    return recalculateItem(base, currency);
   });
 
   if (items.length === 0) {

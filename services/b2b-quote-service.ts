@@ -7,13 +7,14 @@ import {
   buildB2BQuoteEmailHtml,
   buildB2BQuotePlainText,
 } from "@/lib/email-b2b-quote-html";
-import type {
-  B2BCurrency,
-  B2BQuoteDispatchInput,
-  B2BQuoteDraft,
-  B2BQuoteLineItem,
-  B2BQuoteRecord,
-  B2BQuoteStatus,
+import {
+  parseB2BCurrency,
+  type B2BCurrency,
+  type B2BQuoteDispatchInput,
+  type B2BQuoteDraft,
+  type B2BQuoteLineItem,
+  type B2BQuoteRecord,
+  type B2BQuoteStatus,
 } from "@/types/b2b-quote";
 
 const RESEND_URL = "https://api.resend.com/emails";
@@ -60,7 +61,7 @@ function toRecord(row: QuoteWithItems): B2BQuoteRecord {
     shippingAddress: row.shipping_address,
     invoiceDate: row.invoice_date,
     validUntil: row.valid_until,
-    currency: (row.currency === "THB" ? "THB" : "EUR") as B2BCurrency,
+    currency: parseB2BCurrency(row.currency),
     discountAmount: toNum(row.discount_amount),
     shippingFee: toNum(row.shipping_fee),
     subtotal: toNum(row.subtotal),
@@ -138,7 +139,7 @@ export async function getB2BQuote(id: string): Promise<B2BQuoteRecord | null> {
 }
 
 export async function saveB2BQuote(input: SaveB2BQuoteInput): Promise<B2BQuoteRecord> {
-  const currency = input.currency === "THB" ? "THB" : "EUR";
+  const currency = parseB2BCurrency(input.currency);
   const totals = calculateB2BQuoteTotals(
     input.items,
     input.discountAmount,

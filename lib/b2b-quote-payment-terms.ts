@@ -16,7 +16,7 @@ export function buildB2BPaymentTerms(opts?: {
   const address = opts?.companyAddress?.trim();
 
   const bankTransfer = [
-    `Bank Transfer (THB / EUR) — payable to ${company}`,
+    `Bank Transfer (THB / EUR / USD) — payable to ${company}`,
     email ? `Contact for bank details: ${email}` : "Contact us for bank details",
   ];
   if (phone) bankTransfer.push(`Phone: ${phone}`);

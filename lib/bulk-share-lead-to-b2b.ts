@@ -1,5 +1,4 @@
-import { lineTotal } from "@/lib/b2b-quote-calc";
-import { applyBulkBookPrice } from "@/lib/b2b-quote-bulk-price";
+import { lineTotal, recalculateItem } from "@/lib/b2b-quote-calc";
 import { normalizeBreederLabel } from "@/lib/b2b-quote-line";
 import { defaultValidUntil, type B2BQuoteDraft } from "@/types/b2b-quote";
 import type { BulkShareLeadRecord } from "@/types/bulk-share-lead";
@@ -33,7 +32,7 @@ export function bulkShareLeadToB2BDraft(lead: BulkShareLeadRecord): B2BQuoteDraf
   ].filter(Boolean);
 
   const items = lead.items.map((it) =>
-    applyBulkBookPrice(
+    recalculateItem(
       {
         id: `bl-${it.id}`,
         strainName: it.strainName,

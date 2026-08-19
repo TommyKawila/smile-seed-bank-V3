@@ -13,6 +13,8 @@ import {
 
 export const SEEDS_GENETICS_SLUG = "seeds-genetics";
 export const DEFAULT_EUR_THB = 38.44;
+/** EUR 1 → USD (approx. bank sell; invoice toggle). */
+export const DEFAULT_EUR_USD = 1.17;
 
 export type BulkSupplierSlug = "green-future" | "seeds-genetics";
 

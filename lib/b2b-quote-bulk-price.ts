@@ -7,7 +7,7 @@ import {
 } from "@/lib/bulk-seeds-book";
 import { pickTierForQty } from "@/lib/bulk-share-order";
 import { normalizeBreederLabel } from "@/lib/b2b-quote-line";
-import { lineTotal, recalculateItem, roundMoney } from "@/lib/b2b-quote-calc";
+import { lineTotal, recalculateItem, roundMoney, amountFromEur } from "@/lib/b2b-quote-calc";
 import { priceSgfShareTiers } from "@/lib/sgf-seeds-share";
 import { B2B_BREEDER_SG, B2B_BREEDER_SGF, type B2BCurrency, type B2BQuoteLineItem } from "@/types/b2b-quote";
 
@@ -48,8 +48,10 @@ export function bulkUnitPriceForBreeder(
   const rows = pricedRowsForSlug(slug);
   if (!rows.length) return null;
   const tier = pickTierForQty(rows, snapB2BBulkQty(qty));
+  const eur = roundMoney(tier.sellEur, "EUR");
   if (currency === "THB") return roundMoney(tier.sellThb, "THB");
-  return roundMoney(tier.sellEur, "EUR");
+  if (currency === "USD") return roundMoney(amountFromEur(eur, "USD"), "USD");
+  return eur;
 }
 
 export function isBulkPricedBreeder(breederName: string): boolean {

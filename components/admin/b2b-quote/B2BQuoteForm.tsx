@@ -22,6 +22,7 @@ import {
 } from "@/lib/b2b-quote-bulk-price";
 import { SEEDS_GENETICS_CATALOG } from "@/lib/seeds-genetics-catalog";
 import {
+  B2B_CURRENCIES,
   B2B_BREEDER_SG,
   B2B_BREEDER_SGF,
   defaultValidUntil,
@@ -129,11 +130,7 @@ export function B2BQuoteForm({ draft, onChange, channel = null }: Props) {
   const patch = (partial: Partial<B2BQuoteDraft>) => onChange({ ...draft, ...partial });
 
   const setCurrency = (currency: B2BCurrency) => {
-    const converted = convertB2BDraftCurrency(draft, currency);
-    onChange({
-      ...converted,
-      items: converted.items.map((it) => applyBulkBookPrice(it, currency)),
-    });
+    onChange(convertB2BDraftCurrency(draft, currency));
   };
 
   const updateItem = (id: string, patchItem: Partial<B2BQuoteLineItem>) => {
@@ -245,7 +242,7 @@ export function B2BQuoteForm({ draft, onChange, channel = null }: Props) {
           <div className="space-y-1.5">
             <Label className="text-xs text-slate-600">Currency</Label>
             <div className="flex gap-2">
-              {(["EUR", "THB"] as const).map((c) => (
+              {B2B_CURRENCIES.map((c) => (
                 <Button
                   key={c}
                   type="button"
@@ -263,7 +260,7 @@ export function B2BQuoteForm({ draft, onChange, channel = null }: Props) {
               ))}
             </div>
             <p className="text-[11px] text-slate-500">
-              สลับสกุลเงินจะแปลงราคาตามเรท €→฿ (ค่าเริ่มต้นจาก bulk book)
+              สลับสกุลเงินแปลงผ่าน EUR (฿ จาก bulk book · $ ≈ € × 1.17)
             </p>
           </div>
         </CardContent>

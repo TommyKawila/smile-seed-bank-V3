@@ -1,5 +1,12 @@
-export type B2BCurrency = "EUR" | "THB";
+export type B2BCurrency = "EUR" | "THB" | "USD";
 export type B2BQuoteStatus = "DRAFT" | "SENT";
+
+export const B2B_CURRENCIES = ["EUR", "THB", "USD"] as const;
+
+export function parseB2BCurrency(raw: string | null | undefined): B2BCurrency {
+  if (raw === "THB" || raw === "USD" || raw === "EUR") return raw;
+  return "EUR";
+}
 
 export type B2BQuoteLineItem = {
   id: string;

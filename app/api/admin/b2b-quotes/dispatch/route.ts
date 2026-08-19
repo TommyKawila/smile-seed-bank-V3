@@ -22,7 +22,7 @@ const BodySchema = z.object({
   shippingAddress: z.string().max(500).optional().default(""),
   invoiceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   validUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  currency: z.enum(["EUR", "THB"]),
+  currency: z.enum(["EUR", "THB", "USD"]),
   items: z.array(LineSchema).min(1).max(100),
   discountAmount: z.number().min(0).max(1_000_000_000),
   shippingFee: z.number().min(0).max(1_000_000_000),

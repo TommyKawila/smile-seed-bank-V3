@@ -12,7 +12,7 @@ export default function B2BQuotePage() {
           B2B Quotation &amp; Pro-Forma Invoice
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Build EUR/THB wholesale quotes, preview A4 pro-forma, save drafts, email via Resend, or
+          Build EUR/THB/USD wholesale quotes, preview A4 pro-forma, save drafts, email via Resend, or
           Save as PDF.
         </p>
       </header>

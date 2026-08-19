@@ -1,4 +1,3 @@
-import type { B2BCurrency } from "@/types/b2b-quote";
 import type { CoaMode } from "@/lib/wholesale-bulk-pricing";
 
 export type QuoteCartLine = {
@@ -25,4 +24,4 @@ export type RfqFormState = {
   message: string;
 };
 
-export type WholesaleCurrency = B2BCurrency;
+export type WholesaleCurrency = "THB" | "EUR";

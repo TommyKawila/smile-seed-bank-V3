@@ -1,4 +1,4 @@
-import { DEFAULT_EUR_THB } from "@/lib/bulk-seeds-book";
+import { DEFAULT_EUR_THB, DEFAULT_EUR_USD } from "@/lib/bulk-seeds-book";
 import type {
   B2BCurrency,
   B2BQuoteDraft,
@@ -7,8 +7,7 @@ import type {
 } from "@/types/b2b-quote";
 
 export function roundMoney(n: number, currency: B2BCurrency = "EUR"): number {
-  const decimals = currency === "THB" ? 2 : 2;
-  const f = 10 ** decimals;
+  const f = 100;
   return Math.round((n + Number.EPSILON) * f) / f;
 }
 
@@ -47,30 +46,55 @@ export function calculateB2BQuoteTotals(
   };
 }
 
+function moneySymbol(currency: B2BCurrency): string {
+  if (currency === "THB") return "฿";
+  if (currency === "USD") return "$";
+  return "€";
+}
+
 export function formatB2BMoney(amount: number, currency: B2BCurrency): string {
-  if (currency === "THB") {
-    return `฿${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
-  return `€${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${moneySymbol(currency)}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function formatB2BUnitPrice(amount: number, currency: B2BCurrency): string {
-  if (currency === "THB") {
-    return `฿${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
-  }
-  return `€${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
+  return `${moneySymbol(currency)}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
 }
 
-/** Convert draft money fields when toggling EUR ↔ THB (unit + discount + shipping). */
+export function amountToEur(
+  amount: number,
+  currency: B2BCurrency,
+  eurThb: number = DEFAULT_EUR_THB,
+  eurUsd: number = DEFAULT_EUR_USD
+): number {
+  if (currency === "EUR") return amount;
+  if (currency === "THB") return amount / (eurThb > 0 ? eurThb : DEFAULT_EUR_THB);
+  return amount / (eurUsd > 0 ? eurUsd : DEFAULT_EUR_USD);
+}
+
+export function amountFromEur(
+  amountEur: number,
+  currency: B2BCurrency,
+  eurThb: number = DEFAULT_EUR_THB,
+  eurUsd: number = DEFAULT_EUR_USD
+): number {
+  if (currency === "EUR") return amountEur;
+  if (currency === "THB") return amountEur * (eurThb > 0 ? eurThb : DEFAULT_EUR_THB);
+  return amountEur * (eurUsd > 0 ? eurUsd : DEFAULT_EUR_USD);
+}
+
+/** Convert draft money fields when toggling EUR / THB / USD (via EUR). */
 export function convertB2BDraftCurrency(
   draft: B2BQuoteDraft,
   nextCurrency: B2BCurrency,
-  eurThb: number = DEFAULT_EUR_THB
+  eurThb: number = DEFAULT_EUR_THB,
+  eurUsd: number = DEFAULT_EUR_USD
 ): B2BQuoteDraft {
   if (draft.currency === nextCurrency) return draft;
-  const fx = eurThb > 0 ? eurThb : DEFAULT_EUR_THB;
-  const factor = draft.currency === "EUR" && nextCurrency === "THB" ? fx : 1 / fx;
-  const convert = (n: number) => roundMoney(Math.max(0, n) * factor, nextCurrency);
+  const convert = (n: number) =>
+    roundMoney(
+      amountFromEur(amountToEur(Math.max(0, n), draft.currency, eurThb, eurUsd), nextCurrency, eurThb, eurUsd),
+      nextCurrency
+    );
   return {
     ...draft,
     currency: nextCurrency,

@@ -38,6 +38,14 @@
 
 **หลักที่บันทึกแล้ว:** โปรแกรม GF = ช่องถูกระบบที่ปกป้อง · genetics อื่น = คนละโปรแกรม · ความสัมพันธ์กับ GF ชัดด้วยขอบเขต ไม่พึ่งการซ่อนอย่างเดียว
 
+### บันทึกการทำงาน — 2026-08-19 (B2B quote — USD)
+- **What:** ใบเสนอราคาเลือก EUR / THB / USD · แปลงผ่าน EUR (USD ≈ € × 1.17) · สลับสกุลไม่ทับราคาจาก book
+- **ไฟล์:** `types/b2b-quote.ts` · `lib/b2b-quote-calc.ts` · `B2BQuoteForm.tsx` · b2b-quotes API
+
+### บันทึกการทำงาน — 2026-08-19 (B2B quote จาก bulk lead คง qty/ราคา)
+- **What:** ปุ่มสร้างใบเสนอราคาจาก lead ไม่ snap ×50 และไม่ทับ unit จาก bulk book (เคส 101 @ €2.50)
+- **ไฟล์:** `lib/bulk-share-lead-to-b2b.ts` · `lib/b2b-quote-paste.ts` · `B2BQuoteWorkspace.tsx`
+
 ### บันทึกการทำงาน — 2026-08-19 (Bulk lead มือจาก Admin)
 - **What:** Admin สร้าง `bulk_share_leads` จากแชท (ไม่ต้องกดฟอร์มลิงก์) · ได้เลข SSB-BL · คง qty/ราคาที่กรอก
 - **ไฟล์:** `lib/bulk-share-manual-lead.ts` · `POST /api/admin/bulk-seeds/leads` · `BulkShareManualLeadForm.tsx`
