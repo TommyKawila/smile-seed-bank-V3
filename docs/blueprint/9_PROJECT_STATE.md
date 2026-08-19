@@ -38,6 +38,11 @@
 
 **หลักที่บันทึกแล้ว:** โปรแกรม GF = ช่องถูกระบบที่ปกป้อง · genetics อื่น = คนละโปรแกรม · ความสัมพันธ์กับ GF ชัดด้วยขอบเขต ไม่พึ่งการซ่อนอย่างเดียว
 
+### บันทึกการทำงาน — 2026-08-19 (B2B pro-forma footer — ตัด GACP/COA)
+- **What:** ตัด default note “Batch-specific COA … GACP / licensing” และคำสัญญาจัดส่ง 1–2 วัน · ใบเสนอราคาทุกช่องไม่โฆษณา COA/GACP/ใบอนุญาต
+- **Logic:** `buildB2BPaymentTerms` notes = dispatch ตามที่ระบุ + commercial terms only + วันหมดอายุ
+- **ไฟล์:** `lib/b2b-quote-payment-terms.ts`
+
 ### บันทึกการทำงาน — 2026-08-19 (B2B quote — USD)
 - **What:** ใบเสนอราคาเลือก EUR / THB / USD · แปลงผ่าน EUR (USD ≈ € × 1.17) · สลับสกุลไม่ทับราคาจาก book
 - **ไฟล์:** `types/b2b-quote.ts` · `lib/b2b-quote-calc.ts` · `B2BQuoteForm.tsx` · b2b-quotes API

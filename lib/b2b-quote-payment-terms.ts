@@ -29,8 +29,8 @@ export function buildB2BPaymentTerms(opts?: {
       "Request wallet address and network (TRC20 / ERC20) before transfer.",
     ],
     notes: [
-      "Shipping timeframe: 1–2 business days to Bangkok after payment confirmation.",
-      "Batch-specific COA available upon request for GACP / licensing use.",
+      "Dispatch date is as stated in the order notes, or confirmed in writing after payment. Domestic shipping in Thailand is quoted separately.",
+      "This quotation lists genetics and commercial terms only.",
       "This pro-forma is valid until the expiry date shown above.",
     ],
   };
