@@ -38,6 +38,14 @@
 
 **หลักที่บันทึกแล้ว:** โปรแกรม GF = ช่องถูกระบบที่ปกป้อง · genetics อื่น = คนละโปรแกรม · ความสัมพันธ์กับ GF ชัดด้วยขอบเขต ไม่พึ่งการซ่อนอย่างเดียว
 
+### บันทึกการทำงาน — 2026-08-19 (Bulk lead มือจาก Admin)
+- **What:** Admin สร้าง `bulk_share_leads` จากแชท (ไม่ต้องกดฟอร์มลิงก์) · ได้เลข SSB-BL · คง qty/ราคาที่กรอก
+- **ไฟล์:** `lib/bulk-share-manual-lead.ts` · `POST /api/admin/bulk-seeds/leads` · `BulkShareManualLeadForm.tsx`
+
+### บันทึกการทำงาน — 2026-08-19 (B2B quote paste — invoice + lead)
+- **What:** Paste รับ `---`/`___` · `BILL TO:` · บรรทัด invoice Strain · Breeder + qty €unit · คงราคาที่วาง · lead เดิมยังใช้ bulk book
+- **ไฟล์:** `lib/b2b-quote-paste.ts` · `B2BQuotePastePanel.tsx`
+
 ### บันทึกการทำงาน — 2026-08-18 (Ops — TMY legal docs live)
 - **What:** Apply migrations `20260817210000` + `20260818100000` · Admin Settings อัปโหลด พ.พ.4 หจก. TMY + ทะเบียนหจก. + เลขทะเบียน · `/about` ปุ่มเอกสารหจก. ใช้งานได้
 - **Logic:** site_settings SSOT · public RLS select · About แสดงเมื่อมี URL/เลข

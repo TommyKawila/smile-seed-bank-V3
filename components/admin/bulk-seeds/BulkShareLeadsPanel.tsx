@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { formatBulkShareLeadCopyText } from "@/lib/bulk-share-lead-copy";
 import { stashBulkShareLeadForB2B } from "@/lib/bulk-share-lead-to-b2b";
+import { BulkShareManualLeadForm } from "@/components/admin/bulk-seeds/BulkShareManualLeadForm";
 import type { BulkShareLeadRecord } from "@/types/bulk-share-lead";
 
 function fmtThb(n: number): string {
@@ -60,7 +61,7 @@ export function BulkShareLeadsPanel() {
   return (
     <Card className="border-slate-200 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <CardTitle className="text-base">คำสั่งจากลิงก์ (NEW)</CardTitle>
+        <CardTitle className="text-base">คำสั่ง Bulk (NEW)</CardTitle>
         <Button type="button" variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -70,10 +71,16 @@ export function BulkShareLeadsPanel() {
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">
+        <BulkShareManualLeadForm
+          onCreated={(lead) => {
+            setLeads((prev) => [lead, ...prev.filter((l) => l.id !== lead.id)]);
+            setExpandedId(lead.id);
+          }}
+        />
         {loading && leads.length === 0 ? (
           <p className="text-sm text-slate-500">กำลังโหลด…</p>
         ) : leads.length === 0 ? (
-          <p className="text-sm text-slate-500">ยังไม่มีคำสั่งใหม่จากลิงก์ exclusive</p>
+          <p className="text-sm text-slate-500">ยังไม่มีคำสั่งใหม่ — สร้างมือจากแชทหรือรอลูกค้ากดลิงก์</p>
         ) : (
           <ul className="space-y-2">
             {leads.map((lead) => {

@@ -47,7 +47,7 @@ export function B2BQuotePastePanel({ onApply, channel = null }: Props) {
           วางข้อความจากคำสั่งลิงก์
         </CardTitle>
         <p className="text-xs leading-relaxed text-slate-600">
-          Copy จาก /admin/bulk-seeds แล้ววางที่นี่ — ระบบใส่ลูกค้า + รายการ + ราคาให้
+          Lead จาก /admin/bulk-seeds หรือ invoice มือ (BILL TO + Strain · Breeder + qty €unit)
         </p>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -57,7 +57,9 @@ export function B2BQuotePastePanel({ onApply, channel = null }: Props) {
             setText(e.target.value);
             setError(null);
           }}
-          placeholder={"SSB-BL-2026-001\nContact: …\nEmail: …\n---\nSGF Seeds · … · 50 · €3.10/seed · ฿6,000\n---"}
+          placeholder={
+            "Contact: Chris\n---\nSGF Seeds · Purple Skunk · 50 · €2.13/seed · ฿4,106\n---\n\nor\n\nBILL TO:\nChris\n___\nPurple Skunk · SGF Seeds\n50     €2.13      €106.50\n___"
+          }
           rows={6}
           className="font-mono text-xs"
         />
