@@ -12,14 +12,21 @@ export type LinkOrderChatResult = {
   orderNumber?: string;
 };
 
-/** Legacy patterns: "Order #ABC123", "ออเดอร์ #…", standalone #TOKEN */
+/** B2B / bulk refs — not retail order numbers. */
+export function extractB2BRefFromLineMessage(text: string): string | null {
+  const m = text.trim().match(/#?(SSB-(?:B2B|BL)-[\d-]+)/i);
+  return m?.[1]?.toUpperCase() ?? null;
+}
+
+/** Requires `#` after Order/ออเดอร์ — avoids false positives like "order in advance". */
 function extractOrderNumberToken(text: string): string | null {
   const t = text.trim();
   if (!t) return null;
   const patterns = [
-    /Order\s*#?\s*([A-Za-z0-9-]+)/i,
-    /ออเดอร์\s*#?\s*([A-Za-z0-9-]+)/i,
-    /(?:^|\s)#([A-Za-z0-9-]{4,})(?:\s|$)/,
+    /Order\s*#\s*([A-Za-z0-9-]+)/i,
+    /ออเดอร์\s*#\s*([A-Za-z0-9-]+)/i,
+    /(?:^|\s)#(SSB-\d+)(?:\s|$|[.,!?])/i,
+    /(?:^|\s)#([A-Za-z0-9-]{4,})(?:\s|$|[.,!?])/,
   ];
   for (const p of patterns) {
     const m = t.match(p);
@@ -30,17 +37,20 @@ function extractOrderNumberToken(text: string): string | null {
 
 /**
  * Resolve order reference from chat: #SSB-12345, Order #XXX, digits-only order_number or DB id.
+ * Ignores B2B refs (SSB-B2B-… / SSB-BL-…).
  */
 export function extractOrderRefFromLineMessage(text: string): string | null {
   const t = text.trim();
   if (!t) return null;
 
-  const ssb = t.match(/#?(SSB-\d+)/i);
+  if (extractB2BRefFromLineMessage(t)) return null;
+
+  const ssb = t.match(/#?(SSB-\d+)\b/i);
   if (ssb?.[1]) return ssb[1].toUpperCase();
 
   if (/^\d{1,18}$/.test(t)) return t;
 
-  return extractOrderNumberToken(text);
+  return extractOrderNumberToken(t);
 }
 
 /** @deprecated use extractOrderRefFromLineMessage */

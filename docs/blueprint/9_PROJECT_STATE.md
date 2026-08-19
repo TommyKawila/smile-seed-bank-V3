@@ -38,6 +38,11 @@
 
 **หลักที่บันทึกแล้ว:** โปรแกรม GF = ช่องถูกระบบที่ปกป้อง · genetics อื่น = คนละโปรแกรม · ความสัมพันธ์กับ GF ชัดด้วยขอบเขต ไม่พึ่งการซ่อนอย่างเดียว
 
+### บันทึกการทำงาน — 2026-08-19 (LINE OA auto-reply — นุ่มลง + ตัด false positive)
+- **What:** ทักทั่วไปตอบรับทราบแทนบังคับ Order # · เลขไม่เจอข้อความนุ่มลง · ลูกค้า linked / cooldown 24h เงียบ · รองรับ SSB-B2B / SSB-BL
+- **Logic:** regex `Order #` ต้องมี `#` (กัน "order in advance") · `line-oa-auto-reply.ts` SSOT copy
+- **ไฟล์:** `lib/line-inbound-webhook.ts` · `lib/line-order-message-link.ts` · `lib/line-oa-auto-reply.ts`
+
 ### บันทึกการทำงาน — 2026-08-19 (B2B pro-forma footer — ตัด GACP/COA)
 - **What:** ตัด default note “Batch-specific COA … GACP / licensing” และคำสัญญาจัดส่ง 1–2 วัน · ใบเสนอราคาทุกช่องไม่โฆษณา COA/GACP/ใบอนุญาต
 - **Logic:** `buildB2BPaymentTerms` notes = dispatch ตามที่ระบุ + commercial terms only + วันหมดอายุ

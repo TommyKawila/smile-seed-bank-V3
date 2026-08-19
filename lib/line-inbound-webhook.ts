@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import { verifyLineChannelWebhookSignature } from "@/lib/line-webhook-signature";
 import {
+  extractB2BRefFromLineMessage,
   linkLineUserFromOrderChatMessage,
   type LinkOrderChatResult,
 } from "@/lib/line-order-message-link";
 import { buildOrderLineLinkSuccessFlex } from "@/lib/line-order-link-flex";
+import {
+  LINE_OA_ALREADY_LINKED_OTHER,
+  LINE_OA_ALREADY_LINKED_YOU_GENERIC,
+  LINE_OA_GENERAL_ACK,
+  LINE_OA_ORDER_NOT_FOUND,
+  lineOaAlreadyLinkedYou,
+  lineOaB2bAck,
+} from "@/lib/line-oa-auto-reply";
 import {
   recordLineUserInteraction,
   shouldSuppressLineOrderLinkPrompt,
@@ -66,15 +75,15 @@ function replyTextForOutcome(
 ): string {
   switch (outcome) {
     case "linked":
-      return ""; // Flex only
+      return "";
     case "already_linked_you":
       return orderNumber
-        ? `เชื่อมต่อออเดอร์ #${orderNumber} อยู่แล้ว — เราจะแจ้งเตือนคุณเมื่อพัสดุถูกจัดส่ง\n\nEN: Already linked; we will notify you when your order ships.`
-        : "เชื่อมต่อออเดอร์นี้อยู่แล้ว\n\nEN: This order is already linked to your LINE.";
+        ? lineOaAlreadyLinkedYou(orderNumber)
+        : LINE_OA_ALREADY_LINKED_YOU_GENERIC;
     case "already_linked_other":
-      return "ออเดอร์นี้เชื่อมกับ LINE อื่นแล้ว หากเป็นของคุณจริง กรุณาติดต่อแอดมิน\n\nEN: This order is linked to another LINE account.";
+      return LINE_OA_ALREADY_LINKED_OTHER;
     case "order_not_found":
-      return "ไม่พบเลขออเดอร์นี้ กรุณาตรวจสอบแล้วส่งใหม่ เช่น Order #XXXXXX\n\nEN: Order not found. Send e.g. Order #YOUR_ORDER_NUMBER";
+      return LINE_OA_ORDER_NOT_FOUND;
     case "no_token":
       return "";
     default:
@@ -106,23 +115,29 @@ export async function handleLineMessagingWebhookPost(req: Request): Promise<Resp
       const text = ev.message?.text ?? "";
       if (!lineUserId || !text.trim()) continue;
 
-      const result = await linkLineUserFromOrderChatMessage(lineUserId, text);
       const rt = ev.replyToken;
+      const suppress = await shouldSuppressLineOrderLinkPrompt(lineUserId);
 
-      if (result.outcome === "no_token") {
-        const suppress = await shouldSuppressLineOrderLinkPrompt(lineUserId);
-        if (!suppress && rt) {
-          await replyLineText(
-            rt,
-            "ส่งรูปแบบ เช่น Order #เลขออเดอร์ หรือ #SSB-12345 เพื่อเชื่อม LINE\nSend e.g. Order #YOUR_ORDER_NUMBER or #SSB-12345"
-          );
-        }
-      } else if (result.outcome === "linked" && rt && result.orderNumber) {
+      const b2bRef = extractB2BRefFromLineMessage(text);
+      if (b2bRef) {
+        if (!suppress && rt) await replyLineText(rt, lineOaB2bAck(b2bRef));
+        await recordLineUserInteraction(lineUserId);
+        continue;
+      }
+
+      const result = await linkLineUserFromOrderChatMessage(lineUserId, text);
+
+      if (result.outcome === "linked" && rt && result.orderNumber) {
         const flex = buildOrderLineLinkSuccessFlex(result.orderNumber);
         await replyLineFlex(rt, flex);
+      } else if (result.outcome === "no_token") {
+        if (!suppress && rt) await replyLineText(rt, LINE_OA_GENERAL_ACK);
+      } else if (result.outcome === "order_not_found") {
+        if (!suppress && rt) await replyLineText(rt, LINE_OA_ORDER_NOT_FOUND);
       } else if (rt) {
         const msg = replyTextForOutcome(result.outcome, result.orderNumber);
-        if (msg) await replyLineText(rt, msg);
+        const alwaysReply = result.outcome === "already_linked_other";
+        if (msg && (alwaysReply || !suppress)) await replyLineText(rt, msg);
       }
 
       await recordLineUserInteraction(lineUserId);
