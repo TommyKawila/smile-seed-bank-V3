@@ -13,6 +13,14 @@ import { B2B_BREEDER_SG, B2B_BREEDER_SGF, type B2BCurrency, type B2BQuoteLineIte
 
 export const B2B_BULK_QTY_STEP = 50;
 
+/** Floor qty and enforce the 50-seed minimum. Do not round onto a ×50 grid — SG tiers break at 101 / 251. */
+export function clampB2BBulkQty(qty: number): number {
+  const n = Math.floor(Number(qty));
+  if (!Number.isFinite(n) || n < B2B_BULK_QTY_STEP) return B2B_BULK_QTY_STEP;
+  return n;
+}
+
+/** +/- 50 UI only. Never use this before pickTierForQty. */
 export function snapB2BBulkQty(qty: number): number {
   const n = Math.floor(Number(qty));
   if (!Number.isFinite(n) || n < B2B_BULK_QTY_STEP) return B2B_BULK_QTY_STEP;
@@ -47,7 +55,7 @@ export function bulkUnitPriceForBreeder(
   if (!slug) return null;
   const rows = pricedRowsForSlug(slug);
   if (!rows.length) return null;
-  const tier = pickTierForQty(rows, snapB2BBulkQty(qty));
+  const tier = pickTierForQty(rows, clampB2BBulkQty(qty));
   const eur = roundMoney(tier.sellEur, "EUR");
   if (currency === "THB") return roundMoney(tier.sellThb, "THB");
   if (currency === "USD") return roundMoney(amountFromEur(eur, "USD"), "USD");
@@ -58,12 +66,12 @@ export function isBulkPricedBreeder(breederName: string): boolean {
   return bulkSupplierSlugFromBreeder(breederName) != null;
 }
 
-/** Snap qty ×50 and fill unit from Bulk seeds when breeder is SGF / Seeds Genetics. */
+/** Keep entered qty (min 50) and fill unit from the share ladder for SGF / Seeds Genetics. */
 export function applyBulkBookPrice(
   item: B2BQuoteLineItem,
   currency: B2BCurrency
 ): B2BQuoteLineItem {
-  const quantity = snapB2BBulkQty(item.quantity);
+  const quantity = clampB2BBulkQty(item.quantity);
   const unit = bulkUnitPriceForBreeder(item.breederName, quantity, currency);
   if (unit == null) {
     return recalculateItem({ ...item, quantity }, currency);
