@@ -5,7 +5,7 @@
 import {
   bulkSupplierSlugFromBreeder,
   bulkUnitPriceForBreeder,
-  snapB2BBulkQty,
+  clampB2BBulkQty,
 } from "@/lib/b2b-quote-bulk-price";
 import {
   BULK_SUPPLIER_BOOKS,
@@ -282,7 +282,7 @@ export async function quoteBulkOrder(opts: {
       supplierSlug: slug,
       strainName,
       category: raw.category != null ? String(raw.category) : undefined,
-      qty: snapB2BBulkQty(qty),
+      qty: clampB2BBulkQty(qty),
     });
   }
 

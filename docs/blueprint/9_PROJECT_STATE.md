@@ -79,6 +79,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-20 (B2B/assistant — อย่า snap ×50 ก่อน pick tier)
+- **What:** 101 / 251 เมล็ด SG ถูกปัดเป็น 100 / 250 แล้วได้ราคา Starter แพงกว่า (€3.10 / €2.50 แทน €2.50 / €2.25)
+- **Logic:** `clampB2BBulkQty` ใช้ตอนคิดราคา · `snapB2BBulkQty` เหลือแค่ปุ่ม +/- 50 · assistant `quoteBulkOrder` ไม่ snap
+- **ไฟล์:** `lib/b2b-quote-bulk-price.ts` · `services/assistant-bulk-service.ts` · `scripts/assert-b2b-bulk-tier-qty.ts`
+
 ### บันทึกการทำงาน — 2026-08-19 (LINE OA auto-reply — นุ่มลง + ตัด false positive)
 - **What:** ทักทั่วไปตอบรับทราบแทนบังคับ Order # · เลขไม่เจอข้อความนุ่มลง · ลูกค้า linked / cooldown 24h เงียบ · รองรับ SSB-B2B / SSB-BL
 - **Logic:** regex `Order #` ต้องมี `#` (กัน "order in advance") · `line-oa-auto-reply.ts` SSOT copy
