@@ -141,6 +141,11 @@
 - **Logic:** ใช้หัวจดหมายของ T.M.Y Agro Trade สำหรับ GF programme และซ่อน store footer ที่มีเลขใบอนุญาต retail คนละชุด
 - **ไฟล์:** `green-future-response-reply-letter.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentPreview.tsx` · `business-document-letterhead.ts` · `business-document-template.ts` · `business-document-pdf.client.ts` · `email-business-document-html.ts` · `business-document-service.ts`
 
+### บันทึกการทำงาน — 2026-08-22 (GF dispatcher structured preview)
+- **What:** แก้ Preview ที่ยุบเนื้อหา Meeting pack/Test order เป็นย่อหน้ายาว
+- **Logic:** รักษา line breaks และแยก Markdown tables, bullet lists, headings ให้แสดงเป็นโครงสร้างอ่านได้ใน Preview/PDF
+- **ไฟล์:** `lib/business-document-raw-format.ts`
+
 ### บันทึกการทำงาน — 2026-08-19 (LINE OA auto-reply — นุ่มลง + ตัด false positive)
 - **What:** ทักทั่วไปตอบรับทราบแทนบังคับ Order # · เลขไม่เจอข้อความนุ่มลง · ลูกค้า linked / cooldown 24h เงียบ · รองรับ SSB-B2B / SSB-BL
 - **Logic:** regex `Order #` ต้องมี `#` (กัน "order in advance") · `line-oa-auto-reply.ts` SSOT copy

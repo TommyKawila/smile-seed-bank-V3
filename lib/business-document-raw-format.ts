@@ -96,7 +96,7 @@ function extractSubject(text: string): { subject: string; rest: string } {
     const rest = text.slice(th[0].length).trim();
     return { subject, rest };
   }
-  const en = text.match(/^Subject:\s*(.+?)(?=\s*Dear\s|\s*เรียน\s|\s*$)/is);
+  const en = text.match(/^Subject:\s*(.+?)(?=\n|$)/i);
   if (en) {
     const subject = en[1]!.trim().replace(/\s+/g, " ");
     const rest = text.slice(en[0].length).trim();
@@ -488,7 +488,7 @@ export function formatRawBusinessLetter(
 ): FormattedBusinessLetter {
   const thaiSubjectLine = /^เรื่อง:/m.test(raw);
   const withPlaceholders = applyLetterPlaceholders(raw, opts);
-  const flat = flattenBlob(withPlaceholders);
+  const flat = normalizeWhitespace(withPlaceholders);
   const { subject: extractedSubject, rest: afterSubject } = extractSubject(flat);
   const { greeting, rest: afterGreeting } = extractGreeting(afterSubject);
   const { body, signOff, signatureLines } = extractSignOff(afterGreeting);
