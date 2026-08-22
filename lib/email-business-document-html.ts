@@ -65,10 +65,12 @@ export function buildBusinessDocumentEmailHtml(
     companyPhone: letterheadOpts?.companyPhone,
     locale: letterheadOpts?.locale ?? "en",
     legalOverrides: letterheadOpts?.legalOverrides,
+    includeStoreFooter: letterheadOpts?.includeStoreFooter,
   });
   const footer = buildBusinessDocumentEmailFooterHtml({
     locale: letterheadOpts?.locale ?? "en",
     legalOverrides: letterheadOpts?.legalOverrides,
+    includeStoreFooter: letterheadOpts?.includeStoreFooter,
   });
 
   return `<!DOCTYPE html>

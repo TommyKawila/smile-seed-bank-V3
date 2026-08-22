@@ -32,9 +32,9 @@ We welcome your suggestion to meet next week. Please confirm one of the followin
 
 | Option | Date | Time |
 | --- | --- | --- |
-| A | Tuesday, 26 August 2026 | 10:00–11:00 |
-| B | Wednesday, 27 August 2026 | 14:00–15:00 |
-| C | Thursday, 28 August 2026 | 10:00–11:00 |
+| A | Wednesday, 26 August 2026 | 10:00–11:00 |
+| B | Thursday, 27 August 2026 | 14:00–15:00 |
+| C | Friday, 28 August 2026 | 10:00–11:00 |
 
 Video link: we can host via Google Meet or join your preferred platform — please advise.
 

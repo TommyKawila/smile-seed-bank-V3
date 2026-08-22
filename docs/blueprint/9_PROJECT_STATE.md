@@ -136,6 +136,11 @@
 - **Logic:** ตัดคำรับประกัน GACP/COA/ISTA · ราคา/สต็อก/COA = indicative จน GF quotation+PO · bulk share = quotation request · แพ็ค = producer-packed · เอกสาร GF เปิดผ่าน `/api/admin/partner-docs/*` เท่านั้น
 - **ไฟล์:** `TrustCompliance.tsx` · `WholesaleHero.tsx` · `CoaAddonSection.tsx` · `CoaOptionCards.tsx` · `BulkOrderCalculator.tsx` · `BulkOrderSummary.tsx` · `WholesaleComplianceNotice.tsx` · `bulk-share-i18n.ts` · `BulkShareOrderClient.tsx` · `gacp-featured-strains.ts` · `GacpInquiryForm.tsx` · `lib/partner-docs-path.ts` · `app/api/admin/partner-docs/[...path]/route.ts` · `data/partners/green-future/documents/*`
 
+### บันทึกการทำงาน — 2026-08-22 (GF reply PDF pre-send correction)
+- **What:** แก้วันประชุมใน reply เป็น Wednesday 26, Thursday 27, Friday 28 August 2026
+- **Logic:** ใช้หัวจดหมายของ T.M.Y Agro Trade สำหรับ GF programme และซ่อน store footer ที่มีเลขใบอนุญาต retail คนละชุด
+- **ไฟล์:** `green-future-response-reply-letter.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentPreview.tsx` · `business-document-letterhead.ts` · `business-document-template.ts` · `business-document-pdf.client.ts` · `email-business-document-html.ts` · `business-document-service.ts`
+
 ### บันทึกการทำงาน — 2026-08-19 (LINE OA auto-reply — นุ่มลง + ตัด false positive)
 - **What:** ทักทั่วไปตอบรับทราบแทนบังคับ Order # · เลขไม่เจอข้อความนุ่มลง · ลูกค้า linked / cooldown 24h เงียบ · รองรับ SSB-B2B / SSB-BL
 - **Logic:** regex `Order #` ต้องมี `#` (กัน "order in advance") · `line-oa-auto-reply.ts` SSOT copy

@@ -147,10 +147,12 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     companyPhone: letterheadOpts?.companyPhone,
     locale: letterheadOpts?.locale ?? "en",
     legalOverrides: letterheadOpts?.legalOverrides,
+    includeStoreFooter: letterheadOpts?.includeStoreFooter,
   });
   const footer = buildBusinessDocumentFooterHtml({
     locale: letterheadOpts?.locale ?? "en",
     legalOverrides: letterheadOpts?.legalOverrides,
+    includeStoreFooter: letterheadOpts?.includeStoreFooter,
   });
   const { imageUrls, pdfUrls } = splitAttachmentUrls(attachmentImageUrls ?? []);
   const imageBlocks = imageUrls
@@ -264,10 +266,12 @@ export function buildBusinessDocumentPrintHtml(
     companyPhone: letterheadOpts?.companyPhone,
     locale: letterheadOpts?.locale ?? "en",
     legalOverrides: letterheadOpts?.legalOverrides,
+    includeStoreFooter: letterheadOpts?.includeStoreFooter,
   });
   const footer = buildBusinessDocumentFooterHtml({
     locale: letterheadOpts?.locale ?? "en",
     legalOverrides: letterheadOpts?.legalOverrides,
+    includeStoreFooter: letterheadOpts?.includeStoreFooter,
   });
 
   return `<!DOCTYPE html>

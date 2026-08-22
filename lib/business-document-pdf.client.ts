@@ -13,6 +13,7 @@ export function exportBusinessDocumentPdf(
     companyEmail?: string | null;
     companyPhone?: string | null;
     legalOverrides?: LegalDocumentOverrides;
+    includeStoreFooter?: boolean;
   },
   attachmentImageUrls: string[] = []
 ): void {

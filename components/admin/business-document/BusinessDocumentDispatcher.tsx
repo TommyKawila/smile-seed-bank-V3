@@ -83,6 +83,8 @@ export function BusinessDocumentDispatcher() {
     storeSeedLicenseNumber: settings.legal_seed_license_number,
     storeCommercialRegistrationNumber: settings.legal_business_registration_number,
   };
+  const isGreenFutureReply =
+    subject.includes("GF/SSB/2026-0821");
 
   useEffect(() => {
     if (sigHydrated) return;
@@ -300,6 +302,7 @@ export function BusinessDocumentDispatcher() {
           companyEmail,
           companyPhone,
           legalOverrides,
+          includeStoreFooter: !isGreenFutureReply,
         },
         attachmentImageUrls
       );
@@ -325,6 +328,7 @@ export function BusinessDocumentDispatcher() {
     companyEmail,
     companyPhone,
     legalOverrides,
+    isGreenFutureReply,
     toast,
   ]);
 
@@ -343,6 +347,7 @@ export function BusinessDocumentDispatcher() {
           companyEmail={companyEmail}
           companyPhone={companyPhone}
           legalOverrides={legalOverrides}
+          includeStoreFooter={!isGreenFutureReply}
         />
       </div>
       <aside className="lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">

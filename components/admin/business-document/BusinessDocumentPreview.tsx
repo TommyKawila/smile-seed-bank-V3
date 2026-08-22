@@ -37,6 +37,7 @@ type Props = {
   companyEmail?: string | null;
   companyPhone?: string | null;
   legalOverrides?: LegalDocumentOverrides;
+  includeStoreFooter?: boolean;
   className?: string;
 };
 
@@ -49,11 +50,14 @@ export function BusinessDocumentPreview({
   companyEmail,
   companyPhone,
   legalOverrides,
+  includeStoreFooter = true,
   className,
 }: Props) {
   const [editSource, setEditSource] = useState(false);
   const letterhead = formatLetterheadBlock("en", legalOverrides);
-  const footer = formatStoreTrustBlock("en", legalOverrides);
+  const footer = includeStoreFooter
+    ? formatStoreTrustBlock("en", legalOverrides)
+    : [];
   const brandLine = letterhead[letterhead.length - 1] ?? "";
   const letterheadMiddle = letterhead.slice(1, -1);
   const contactBits = [companyEmail?.trim(), companyPhone?.trim()].filter(Boolean);
@@ -183,11 +187,13 @@ export function BusinessDocumentPreview({
         </div>
       ) : null}
 
-      <footer className="mt-6 shrink-0 space-y-0.5 border-t border-slate-200 pt-3 text-[9px] leading-snug text-slate-500">
-        {footer.map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-      </footer>
+      {footer.length > 0 ? (
+        <footer className="mt-6 shrink-0 space-y-0.5 border-t border-slate-200 pt-3 text-[9px] leading-snug text-slate-500">
+          {footer.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </footer>
+      ) : null}
     </article>
   );
 }

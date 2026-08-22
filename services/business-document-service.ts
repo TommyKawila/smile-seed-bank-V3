@@ -359,6 +359,7 @@ export async function sendBusinessDocumentEmail(
       companyPhone,
       locale: "en",
       legalOverrides,
+      includeStoreFooter: !subject.includes("GF/SSB/2026-0821"),
     },
     attachments
   );

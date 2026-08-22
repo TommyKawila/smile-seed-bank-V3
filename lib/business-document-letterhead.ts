@@ -20,6 +20,7 @@ export type BusinessDocumentLetterheadOpts = {
   companyPhone?: string | null;
   locale?: LegalLocale;
   legalOverrides?: LegalDocumentOverrides;
+  includeStoreFooter?: boolean;
 };
 
 function printLetterheadTextHtml(lines: string[]): string {
@@ -71,8 +72,12 @@ export function buildBusinessDocumentLetterheadHtml(
 
 /** Print CSS footer (online store trust block). */
 export function buildBusinessDocumentFooterHtml(
-  opts: Pick<BusinessDocumentLetterheadOpts, "locale" | "legalOverrides"> = {}
+  opts: Pick<
+    BusinessDocumentLetterheadOpts,
+    "locale" | "legalOverrides" | "includeStoreFooter"
+  > = {}
 ): string {
+  if (opts.includeStoreFooter === false) return "";
   const locale = opts.locale ?? "en";
   const lines = formatStoreTrustBlock(locale, opts.legalOverrides);
   return `<footer class="doc-footer">
@@ -120,8 +125,12 @@ ${
 
 /** Email-safe store footer. */
 export function buildBusinessDocumentEmailFooterHtml(
-  opts: Pick<BusinessDocumentLetterheadOpts, "locale" | "legalOverrides"> = {}
+  opts: Pick<
+    BusinessDocumentLetterheadOpts,
+    "locale" | "legalOverrides" | "includeStoreFooter"
+  > = {}
 ): string {
+  if (opts.includeStoreFooter === false) return "";
   const locale = opts.locale ?? "en";
   const lines = formatStoreTrustBlock(locale, opts.legalOverrides);
   return `<div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;">
