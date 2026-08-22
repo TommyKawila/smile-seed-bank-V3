@@ -59,13 +59,13 @@ export function CoaAddonSection({
   const sampleTitle =
     sample === "A"
       ? t(
-          "ตัวอย่างใบรับรอง Package A (ISTA Standard)",
-          "Sample Certificate Package A (ISTA Standard)"
+          "ตัวอย่างใบรับรอง Package A (External lab COA)",
+          "Sample Certificate Package A (External lab COA)"
         )
       : sample === "B"
         ? t(
-            "ตัวอย่างใบรับรอง Package B (Full ISTA Standard)",
-            "Sample Certificate Package B (Full ISTA Standard)"
+            "ตัวอย่างใบรับรอง Package B (External lab COA + moisture)",
+            "Sample Certificate Package B (External lab COA + moisture)"
           )
         : "";
 
@@ -104,8 +104,8 @@ export function CoaAddonSection({
               </Label>
               <p className="text-xs leading-snug text-slate-500">
                 {t(
-                  "ตรวจวิเคราะห์ความบริสุทธิ์ของเมล็ดพันธุ์และอัตราการงอกมาตรฐานสากล (ISTA Standard)",
-                  "Purity and germination analysis to international ISTA Standard"
+                  "ตรวจวิเคราะห์ความบริสุทธิ์และอัตราการงอกโดยแล็บภายนอก — แล็บและวิธีทดสอบตาม quotation",
+                  "External laboratory purity and germination analysis — lab and method per quotation"
                 )}
               </p>
               <SampleLink
@@ -135,8 +135,8 @@ export function CoaAddonSection({
               </Label>
               <p className="text-xs leading-snug text-slate-500">
                 {t(
-                  "ตรวจเต็มรูปแบบ ครอบคลุมความบริสุทธิ์ อัตราการงอก และตรวจวัดค่าความชื้นของเมล็ดพันธุ์ (Full ISTA Standard)",
-                  "Full comprehensive test: purity, germination, and seed moisture (Full ISTA Standard)"
+                  "ตรวจเต็มรูปแบบ ครอบคลุมความบริสุทธิ์ อัตราการงอก และความชื้นโดยแล็บภายนอก — แล็บและวิธีทดสอบตาม quotation",
+                  "External lab test: purity, germination, and moisture — lab and method per quotation"
                 )}
               </p>
               <SampleLink

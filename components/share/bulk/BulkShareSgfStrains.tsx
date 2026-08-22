@@ -39,6 +39,9 @@ export function BulkShareSgfStrains({
       <p className="mt-1 text-xs text-slate-500">
         {t.tapHint} · {t.sgfFormats}
       </p>
+      <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
+        {BULK_SHARE_COPY[lang].catalogDisclaimer}
+      </p>
       <div className="mt-3 space-y-4">
         {groups.map((group) => (
           <div key={group.bucket}>

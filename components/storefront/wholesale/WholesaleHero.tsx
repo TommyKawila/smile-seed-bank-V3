@@ -34,8 +34,8 @@ export function WholesaleHero({ onRequestCatalog }: Props) {
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
           {t(
-            "สายพันธุ์จากโปรแกรม Green Future ที่ Smile Seed Bank จัดจำหน่าย — ส่งจากคลังบางพลี สมุทรปราการ (3–5 วัน) ครบเอกสารล็อต ไม่ปน genetics อื่น",
-            "Green Future documented genetics distributed by Smile Seed Bank — Bang Phli fulfillment (3–5 days), lot documentation support, no mixed genetics."
+            "สายพันธุ์จากโปรแกรม Green Future ที่ Smile Seed Bank จัดจำหน่าย — ระยะเวลาและเอกสารตามล็อตที่ยืนยันใน quotation ไม่ปน genetics อื่น",
+            "Green Future documented genetics distributed by Smile Seed Bank — lead time and lot data subject to confirmed quotation, no mixed genetics."
           )}
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -51,7 +51,7 @@ export function WholesaleHero({ onRequestCatalog }: Props) {
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
           >
             <FileDown className="h-4 w-4" aria-hidden />
-            {t("ดาวน์โหลดตัวอย่าง COA", "Download COA Samples")}
+            {t("ข้อมูลเอกสารล็อต", "Lot document information")}
           </a>
         </div>
         <p className="mt-4 text-sm text-slate-600">
@@ -72,7 +72,7 @@ export function WholesaleHero({ onRequestCatalog }: Props) {
           </li>
           <li className="inline-flex items-center gap-2">
             <MapPin className="h-4 w-4 text-emerald-600" aria-hidden />
-            {t("คลังบางพลี · ส่งในประเทศ 3–5 วัน", "Bang Phli warehouse · 3–5 days")}
+            {t("จัดส่งในประเทศ · ระยะเวลาตาม quotation", "Domestic dispatch · lead time per quotation")}
           </li>
         </ul>
       </div>

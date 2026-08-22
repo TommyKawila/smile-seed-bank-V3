@@ -4,52 +4,42 @@ export type GacpFeaturedStrain = {
   displayName: string;
   seedFormat: "AUTO_FEM" | "FEM";
   typeLabel: string;
-  thcRange: string;
-  cbdNote: string;
   documents: string[];
 };
 
 /** Curated GACP marketing cards — code-first refs aligned with Green Future. */
 export const GACP_FEATURED_STRAINS: GacpFeaturedStrain[] = [
   {
-    varietyCode: "AF29",
-    strainName: "GORILLA COOKIES AUTO",
-    displayName: "Gorilla Cookies Auto",
-    seedFormat: "AUTO_FEM",
-    typeLabel: "Balanced Hybrid",
-    thcRange: "24–28%",
-    cbdNote: "Low",
-    documents: ["Variety code", "Lot / test data", "Lab extras on request"],
-  },
-  {
-    varietyCode: "PF024",
-    strainName: "PERMANENT MARKER",
-    displayName: "Permanent Marker",
-    seedFormat: "FEM",
-    typeLabel: "Hybrid",
-    thcRange: "26–30%",
-    cbdNote: "Low",
-    documents: ["Variety code", "Lot / test data", "Lab extras on request"],
-  },
-  {
-    varietyCode: "AF121",
-    strainName: "ZOAP AUTO",
-    displayName: "Zoap Auto",
-    seedFormat: "AUTO_FEM",
-    typeLabel: "Balanced Hybrid",
-    thcRange: "23–26%",
-    cbdNote: "<1%",
-    documents: ["Variety code", "Lot / test data", "Lab extras on request"],
-  },
-  {
-    varietyCode: "AF138",
-    strainName: "GELATO AUTO",
-    displayName: "Gelato Auto",
+    varietyCode: "AF99",
+    strainName: "BUBBA KUSH AUTO",
+    displayName: "Bubba Kush Auto",
     seedFormat: "AUTO_FEM",
     typeLabel: "Indica-dominant",
-    thcRange: "24–25%",
-    cbdNote: "Low",
-    documents: ["Variety code", "Lot / test data", "Lab extras on request"],
+    documents: ["Variety code", "Lot / test data", "External lab COA on request"],
+  },
+  {
+    varietyCode: "AF143",
+    strainName: "DO-SI-DOS AUTO",
+    displayName: "Do-Si-Dos Auto",
+    seedFormat: "AUTO_FEM",
+    typeLabel: "Indica-dominant",
+    documents: ["Variety code", "Lot / test data", "External lab COA on request"],
+  },
+  {
+    varietyCode: "AF02",
+    strainName: "NORTHERN LIGHTS AUTO",
+    displayName: "Northern Lights Auto",
+    seedFormat: "AUTO_FEM",
+    typeLabel: "Indica-dominant",
+    documents: ["Variety code", "Lot / test data", "External lab COA on request"],
+  },
+  {
+    varietyCode: "AF22",
+    strainName: "PINEAPPLE EXPRESS AUTO",
+    displayName: "Pineapple Express Auto",
+    seedFormat: "AUTO_FEM",
+    typeLabel: "Sativa-dominant",
+    documents: ["Variety code", "Lot / test data", "External lab COA on request"],
   },
 ];
 

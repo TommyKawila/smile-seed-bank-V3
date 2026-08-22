@@ -314,6 +314,9 @@ export function BulkShareOrderClient({
             <p className="text-xs text-slate-400">
               {t.expires(expireDate)} · {t.tapToCart}
             </p>
+            <p className="mx-auto mt-3 max-w-xl rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
+              {t.catalogDisclaimer}
+            </p>
           </header>
 
           {pricedBooks.map((book) => (

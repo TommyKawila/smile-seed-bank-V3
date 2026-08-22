@@ -37,8 +37,8 @@ export function CoaOptionCards({ mode, onChange }: Props) {
           </p>
           <p className="mt-2 text-xs font-medium text-emerald-800">
             {t(
-              "จัดส่งทันทีหลังชำระเงิน (ได้รับสินค้าใน 3–7 วันทำการ)",
-              "Ships after payment (delivery in 3–7 business days)"
+              "ประมาณการจัดส่ง 3–7 วันทำการหลังมัดจำ 50% — ขึ้นกับล็อตที่ยืนยัน quality release และ quotation",
+              "Indicative dispatch 3–7 business days after 50% advance — subject to confirmed lot, quality release and quotation"
             )}
           </p>
         </button>
@@ -66,8 +66,8 @@ export function CoaOptionCards({ mode, onChange }: Props) {
           </p>
           <p className="mt-2 text-xs font-medium text-amber-800">
             {t(
-              "ต้องส่งตรวจแล็บมาตรฐานสากล ~30 วันทำการ (จัดส่งหลังผลแล็บออกใน 3–7 วัน)",
-              "Requires international lab testing ~30 business days (then ships in 3–7 days after results)"
+              "แล็บภายนอก ~30 วันทำการ แล้วจัดส่งอีก 3–7 วัน — ขึ้นกับล็อตที่ยืนยันและ quotation",
+              "External lab ~30 business days, then indicative dispatch 3–7 days — subject to confirmed lot and quotation"
             )}
           </p>
         </button>

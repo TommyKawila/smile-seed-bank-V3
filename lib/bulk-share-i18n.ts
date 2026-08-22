@@ -4,6 +4,7 @@ export const BULK_SHARE_LANG_KEY = "ssb-bulk-share-lang";
 
 type Dict = {
   exclusive: string;
+  catalogDisclaimer: string;
   pricePerSeed: string;
   expires: (date: string) => string;
   tapToCart: string;
@@ -57,7 +58,9 @@ type Dict = {
 
 export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
   th: {
-    exclusive: "ข้อเสนอพิเศษ",
+    exclusive: "ข้อเสนอส่วนตัว",
+    catalogDisclaimer:
+      "แคตตาล็อกอ้างอิงเท่านั้น — สต็อก ล็อต รูปแบบบรรจุที่ผู้ผลิตซีล ราคา และเอกสารต้องรอ Green Future ยืนยันเป็นลายลักษณ์อักษร · ไม่ใช่ PO ที่ผูกพัน",
     pricePerSeed: "Smile Seed Bank · ราคาต่อเมล็ด (THB) ตามปริมาณ · ไม่รวมค่าขนส่งปลายทาง",
     expires: (date) => `ลิงก์หมดอายุ ${date}`,
     tapToCart: "กดชื่อสายเพื่อเพิ่มในตะกร้า — ครั้งละ 50 เมล็ด",
@@ -75,8 +78,8 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     invalidQty: "จำนวนไม่ถูกต้อง",
     confidential: "ลับ · ไม่เผยแพร่สาธารณะ · Smile Seed Bank",
     strainCount: (n, seeds) => `${n} สาย · ${seeds} เมล็ด`,
-    submitOrder: "ส่งคำสั่งซื้อ",
-    sheetTitle: "ส่งคำสั่งซื้อ",
+    submitOrder: "ส่งคำขอราคา",
+    sheetTitle: "ส่งคำขอราคา",
     name: "ชื่อ *",
     namePh: "ชื่อผู้ติดต่อ",
     email: "อีเมล",
@@ -88,15 +91,16 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     note: "หมายเหตุ",
     notePh: "ไม่บังคับ",
     cancel: "ยกเลิก",
-    confirm: "ยืนยันส่งคำสั่ง",
+    confirm: "ยืนยันคำขอ",
     errName: "กรุณากรอกชื่อ",
     errContact: "กรุณากรอก LINE ID เบอร์โทร หรืออีเมล",
     errEmail: "รูปแบบอีเมลไม่ถูกต้อง",
     errEmpty: "ตะกร้าว่าง",
     errFail: "ส่งไม่สำเร็จ",
-    thanksEyebrow: "ส่งคำสั่งแล้ว",
+    thanksEyebrow: "ได้รับคำขอแล้ว",
     thanksTitle: "ขอบคุณครับ",
-    thanksBody: "เราได้รับคำสั่งของคุณแล้ว — ทีม Smile Seed Bank จะติดต่อกลับเร็วๆ นี้",
+    thanksBody:
+      "เราได้รับคำขอราคาของคุณแล้ว — ทีม Smile Seed Bank จะติดต่อกลับหลังยืนยันสต็อกและ quotation จาก Green Future",
     thanksKeep: "เก็บเลขอ้างอิงนี้ไว้สำหรับติดตาม",
     sgfStrainsTitle: "สายพันธุ์ (SGF Seeds)",
     sgStrainsTitle: "สายพันธุ์ (Seeds Genetics)",
@@ -111,7 +115,9 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     seedsPerStrain: "เมล็ด / สาย",
   },
   en: {
-    exclusive: "Exclusive offer",
+    exclusive: "Private offer",
+    catalogDisclaimer:
+      "Reference catalog only — availability, lot, producer-sealed pack size, price and documents require Green Future written confirmation · not a binding PO",
     pricePerSeed:
       "Smile Seed Bank · price per seed (THB) by quantity · destination shipping not included",
     expires: (date) => `Link expires ${date}`,
@@ -130,8 +136,8 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     invalidQty: "Invalid quantity",
     confidential: "Confidential · not for public listing · Smile Seed Bank",
     strainCount: (n, seeds) => `${n} strains · ${seeds} seeds`,
-    submitOrder: "Submit order",
-    sheetTitle: "Submit order",
+    submitOrder: "Request quotation",
+    sheetTitle: "Request quotation",
     name: "Name *",
     namePh: "Contact name",
     email: "Email",
@@ -143,15 +149,16 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     note: "Note",
     notePh: "Optional",
     cancel: "Cancel",
-    confirm: "Confirm order",
+    confirm: "Confirm request",
     errName: "Name is required",
     errContact: "LINE ID, phone, or email is required",
     errEmail: "Invalid email address",
     errEmpty: "Cart is empty",
     errFail: "Could not submit",
-    thanksEyebrow: "Order received",
+    thanksEyebrow: "Request received",
     thanksTitle: "Thank you",
-    thanksBody: "We received your order — Smile Seed Bank will contact you shortly",
+    thanksBody:
+      "We received your quotation request — Smile Seed Bank will follow up after Green Future confirms availability and quotation",
     thanksKeep: "Keep this reference number for follow-up",
     sgfStrainsTitle: "Strains (SGF Seeds)",
     sgStrainsTitle: "Strains (Seeds Genetics)",

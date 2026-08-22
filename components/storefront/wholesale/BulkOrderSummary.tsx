@@ -36,8 +36,8 @@ export function BulkOrderSummary({ quote, coaMode }: Props) {
         </div>
         <div className="flex justify-between gap-4">
           <dt className="text-slate-600">{t("ค่าจัดส่ง", "Shipping")}</dt>
-          <dd className="font-medium text-emerald-700">
-            {t("ฟรีค่าจัดส่ง", "Free shipping")}
+          <dd className="font-medium text-slate-700">
+            {t("คำนวณในใบเสนอราคาสุดท้าย", "Calculated in final quotation")}
           </dd>
         </div>
         <div className="flex justify-between gap-4 border-t border-slate-200 pt-2 text-base">
@@ -70,16 +70,26 @@ export function BulkOrderSummary({ quote, coaMode }: Props) {
         </p>
       </div>
 
+      <p className="mt-1 text-xs text-amber-700">
+        {t(
+          "* ราคาข้างต้นเป็นการประมาณการ — ผูกพันเมื่อ GF quotation + PO ยืนยัน",
+          "* Prices above are indicative estimates — binding only after GF quotation + accepted PO"
+        )}
+      </p>
+
       <p className="mt-4 text-sm text-slate-700">
         <span className="font-semibold">
           {t("ประมาณการจัดส่ง:", "Estimated Delivery:")}{" "}
         </span>
         {coaMode === "with"
           ? t(
-              "ประมาณ 35–40 วัน (รวมเวลาตรวจแล็บ 30 วัน)",
-              "About 35–40 days (including ~30 days lab time)"
+              "ประมาณการ ~35–40 วัน (รวมแล็บ ~30 วัน) — ขึ้นกับล็อตและ quotation",
+              "Indicative ~35–40 days (incl. ~30 days lab) — subject to lot and quotation"
             )
-          : t("ภายใน 3–7 วันทำการ", "Within 3–7 business days")}
+          : t(
+              "ประมาณการ 3–7 วันทำการหลังมัดจำ 50% — ขึ้นกับล็อตและ quotation",
+              "Indicative 3–7 business days after 50% advance — subject to lot and quotation"
+            )}
       </p>
     </div>
   );

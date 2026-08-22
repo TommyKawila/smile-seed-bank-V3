@@ -183,13 +183,22 @@ export function RfqModal({
                 </div>
               </dl>
               <p className="mt-2 text-xs text-slate-500">
+                {t(
+                  "* ประมาณการ — ผูกพันเมื่อ GF quotation + PO ยืนยัน",
+                  "* Indicative estimate — binding after GF quotation + accepted PO"
+                )}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
                 COA:{" "}
                 {form.coaMode === "with"
                   ? t(
-                      "With COA (~35–40 วัน)",
-                      "With COA (~35–40 days)"
+                      "With COA (~35–40 วัน · ประมาณการ)",
+                      "With COA (~35–40 days · indicative)"
                     )
-                  : t("No COA (3–7 วันทำการ)", "No COA (3–7 days)")}
+                  : t(
+                      "No COA (3–7 วันทำการหลังมัดจำ 50% · ประมาณการ)",
+                      "No COA (3–7 days after 50% advance · indicative)"
+                    )}
               </p>
             </div>
 

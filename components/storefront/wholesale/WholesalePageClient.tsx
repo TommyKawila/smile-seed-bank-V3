@@ -9,6 +9,7 @@ import {
   BulkOrderCalculator,
   type BulkOrderState,
 } from "./BulkOrderCalculator";
+import { WholesaleComplianceNotice } from "./WholesaleComplianceNotice";
 import { TrustCompliance } from "./TrustCompliance";
 import { WholesaleHero } from "./WholesaleHero";
 import type { QuoteCartLine, RfqFormState, WholesaleCurrency } from "./types";
@@ -149,6 +150,7 @@ export function WholesalePageClient({
         onStateChange={setBulkState}
         onRequestQuote={openRfqFromCalc}
       />
+      <WholesaleComplianceNotice />
       <TrustCompliance />
 
       <FloatingQuoteBar

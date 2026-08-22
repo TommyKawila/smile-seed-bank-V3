@@ -15,6 +15,7 @@ type FormState = {
   email: string;
   phone: string;
   licenseNumber: string;
+  licenseStatus: "active" | "pending" | "";
   estimatedQty: string;
   message: string;
 };
@@ -25,6 +26,7 @@ const empty: FormState = {
   email: "",
   phone: "",
   licenseNumber: "",
+  licenseStatus: "",
   estimatedQty: "",
   message: "",
 };
@@ -40,6 +42,20 @@ export function GacpInquiryForm() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.licenseStatus) {
+      toast({
+        title: t("กรุณาระบุสถานะใบอนุญาต", "License status required"),
+        variant: "destructive",
+      });
+      return;
+    }
+    if (form.licenseStatus === "active" && !form.licenseNumber.trim()) {
+      toast({
+        title: t("กรุณากรอกเลขใบอนุญาต", "License number required"),
+        variant: "destructive",
+      });
+      return;
+    }
     setSending(true);
     try {
       const res = await fetch("/api/wholesale/gacp-inquiry", {
@@ -51,6 +67,7 @@ export function GacpInquiryForm() {
           email: form.email.trim(),
           phone: form.phone.trim(),
           licenseNumber: form.licenseNumber.trim() || undefined,
+          licenseStatus: form.licenseStatus || undefined,
           estimatedQty: form.estimatedQty.trim() || undefined,
           message: form.message.trim() || undefined,
         }),
@@ -154,16 +171,42 @@ export function GacpInquiryForm() {
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="gacp-license-status" className="text-xs text-slate-600">
+                {t("สถานะใบอนุญาต", "Licence status")} *
+              </Label>
+              <select
+                id="gacp-license-status"
+                required
+                value={form.licenseStatus}
+                onChange={(e) =>
+                  patch({ licenseStatus: e.target.value as FormState["licenseStatus"] })
+                }
+                className="flex h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900"
+              >
+                <option value="">{t("เลือกสถานะ", "Select status")}</option>
+                <option value="active">{t("มีใบอนุญาตแล้ว", "Licensed")}</option>
+                <option value="pending">{t("อยู่ระหว่างยื่น", "Application pending")}</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="gacp-license" className="text-xs text-slate-600">
-                {t("เลขใบอนุญาต (ถ้ามี)", "License Number (optional)")}
+                {t("เลขใบอนุญาต", "Licence number")}
+                {form.licenseStatus === "active" ? " *" : ""}
               </Label>
               <Input
                 id="gacp-license"
+                required={form.licenseStatus === "active"}
                 value={form.licenseNumber}
                 onChange={(e) => patch({ licenseNumber: e.target.value })}
                 className="h-11 bg-white"
               />
             </div>
+            <p className="text-xs text-slate-500 sm:col-span-2">
+              {t(
+                "การขายขึ้นกับการตรวจสอบใบอนุญาตและกฎหมายที่บังคับใช้",
+                "Sales are subject to licence verification and applicable law."
+              )}
+            </p>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="gacp-qty" className="text-xs text-slate-600">
                 {t("ปริมาณเมล็ดโดยประมาณ", "Estimated Seed Quantity")}

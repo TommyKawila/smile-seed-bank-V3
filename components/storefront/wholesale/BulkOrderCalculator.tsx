@@ -120,24 +120,24 @@ export function BulkOrderCalculator({
 
   const upsellText = quote.upsell
     ? t(
-        `💡 เพิ่มอีก ${quote.upsell.needSeeds.toLocaleString("en-US")} เมล็ด เพื่อปลดล็อกเรท ${quote.upsell.nextThbPerSeed.toLocaleString("en-US")} บาท/เมล็ด${
+        `💡 เพิ่มอีก ${quote.upsell.needSeeds.toLocaleString("en-US")} เมล็ด เพื่อปลดล็อกเรทประมาณการ ${quote.upsell.nextThbPerSeed.toLocaleString("en-US")} บาท/เมล็ด${
           quote.upsell.nextFreeCoaCount > 0
-            ? ` และรับฟรี COA ${quote.upsell.nextFreeCoaCount} ใบ`
+            ? ` และสิทธิ์ COA ฟรีโดยประมาณ ${quote.upsell.nextFreeCoaCount} ใบ`
             : ""
-        }!`,
-        `💡 Add ${quote.upsell.needSeeds.toLocaleString("en-US")} more seeds to unlock ${quote.upsell.nextThbPerSeed.toLocaleString("en-US")} THB/seed${
+        } (ขึ้นกับ GF quotation)`,
+        `💡 Add ${quote.upsell.needSeeds.toLocaleString("en-US")} more seeds to unlock estimated ${quote.upsell.nextThbPerSeed.toLocaleString("en-US")} THB/seed${
           quote.upsell.nextFreeCoaCount > 0
-            ? ` and ${quote.upsell.nextFreeCoaCount} free COA(s)`
+            ? ` and ~${quote.upsell.nextFreeCoaCount} free COA(s)`
             : ""
-        }!`
+        } (subject to GF quotation)`
       )
     : null;
 
   const freeCoaText =
     quote.freeCoaCount > 0
       ? t(
-          `คุณได้รับสิทธิ์ตรวจ COA ฟรี ${quote.freeCoaCount} สายพันธุ์! (ประหยัดเงินได้ ${quote.freeCoaValueThb.toLocaleString("en-US")} บาท)`,
-          `You qualify for ${quote.freeCoaCount} free COA strain(s)! (Save ${quote.freeCoaValueThb.toLocaleString("en-US")} THB)`
+          `สิทธิ์ COA ฟรีโดยประมาณ ${quote.freeCoaCount} สายพันธุ์ (ประมาณ ${quote.freeCoaValueThb.toLocaleString("en-US")} บาท) — ขึ้นกับ GF quotation, สต็อกล็อต และค่าแล็บปัจจุบัน`,
+          `Estimated eligibility for ${quote.freeCoaCount} free COA strain(s) (~${quote.freeCoaValueThb.toLocaleString("en-US")} THB) — subject to GF quotation, lot availability and current lab charges`
         )
       : null;
 
@@ -149,8 +149,8 @@ export function BulkOrderCalculator({
         </h2>
         <p className="mt-1 text-sm text-slate-600">
           {t(
-            "ขั้นต่ำ 500 เมล็ด/สาย หรือแพ็คเกจ Smile Seed Bank 100 เมล็ด · ราคาเป็นจำนวนเต็ม THB",
-            "Min. 500 seeds/strain or Smile Seed Bank 100-seed pack · Whole-number THB pricing"
+            "ขั้นต่ำ 500 เมล็ด/สาย หรือแพ็ค 100 เมล็ด (ผู้ผลิตบรรจุและซีล · รูปแบบแพ็คตาม GF ยืนยัน) · ราคาเป็นการประมาณการ",
+            "Min. 500 seeds/strain or 100-seed pack (producer-packed & sealed · pack format per GF confirmation) · indicative pricing"
           )}
         </p>
       </div>
@@ -218,8 +218,8 @@ export function BulkOrderCalculator({
                 <div className="mt-3 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
                   <p>
                     {t(
-                      "ขั้นต่ำสำหรับเรทราคาส่ง B2B คือ 500 เมล็ดต่อสายพันธุ์ หรือเลือกสั่งซื้อ 'แพ็คเกจ Smile Seed Bank (100 เมล็ด)'",
-                      "B2B wholesale rate requires 500 seeds per strain, or order the 'Smile Seed Bank Pack (100 seeds)'"
+                      "ขั้นต่ำสำหรับเรทราคาส่ง B2B คือ 500 เมล็ดต่อสายพันธุ์ หรือเลือกแพ็ค 100 เมล็ด (ผู้ผลิตบรรจุและซีล — รูปแบบตาม GF ยืนยัน)",
+                      "B2B wholesale rate requires 500 seeds per strain, or a 100-seed pack (producer-packed & sealed — format per GF confirmation)"
                     )}
                   </p>
                   <Button
@@ -232,8 +232,8 @@ export function BulkOrderCalculator({
                     }
                   >
                     {t(
-                      "เปลี่ยนเป็นแพ็คเกจ Smile Seed Bank (100 เมล็ด)",
-                      "Switch to Smile Seed Bank Pack (100 seeds)"
+                      "เปลี่ยนเป็นแพ็ค 100 เมล็ด (ผู้ผลิตบรรจุ)",
+                      "Switch to 100-seed pack (producer-packed)"
                     )}
                   </Button>
                 </div>
@@ -241,7 +241,9 @@ export function BulkOrderCalculator({
 
               {resolved?.valid && (
                 <p className="mt-2 text-sm text-slate-600">
-                  {resolved.isMicroPack ? "SSB Branded Pack · " : ""}
+                  {resolved.isMicroPack
+                    ? t("แพ็คผู้ผลิตบรรจุ · ", "Producer-packed · ")
+                    : ""}
                   {money(resolved.unitThb, currency, config.eurThb)}
                   {t("/เมล็ด · ราคารวม ", "/seed · Line ")}
                   {money(resolved.lineTotalThb, currency, config.eurThb)}

@@ -11,6 +11,7 @@ const bodySchema = z.object({
   email: z.string().trim().email().max(200),
   phone: z.string().trim().max(50).optional(),
   licenseNumber: z.string().trim().max(100).optional(),
+  licenseStatus: z.enum(["active", "pending"]).optional(),
   estimatedQty: z.string().trim().max(100).optional(),
   message: z.string().trim().max(4000).optional(),
 });

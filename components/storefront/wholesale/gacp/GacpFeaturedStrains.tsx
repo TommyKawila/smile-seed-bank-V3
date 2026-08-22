@@ -35,17 +35,17 @@ export function GacpFeaturedStrains() {
                     {strain.displayName}
                   </h3>
                   <p className="mt-1 font-mono text-xs text-emerald-800">{ref}</p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {t(
+                      "สถานะและขอบเขตเอกสารยืนยันตาม quotation",
+                      "Availability and document scope confirmed per quotation"
+                    )}
+                  </p>
                   <dl className="mt-4 space-y-1.5 text-xs text-slate-600">
                     <div className="flex justify-between gap-2">
                       <dt>{t("ประเภท", "Type")}</dt>
                       <dd className="text-right font-medium text-slate-800">
                         {strain.typeLabel}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <dt>THC / CBD</dt>
-                      <dd className="text-right font-medium text-slate-800">
-                        {strain.thcRange} · {strain.cbdNote}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-2">

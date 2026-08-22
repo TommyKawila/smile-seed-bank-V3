@@ -131,6 +131,11 @@
 - **Logic:** ยืนยันข้อตกลงที่ปิดแล้ว (GACP=site, PP.4 หจก., 80/99, lot fields, storage) · รับ non-exclusive ช่วง test order · ใช้ถ้อยคำ GF “supporting traceability documentation for GACP purposes” · นัดประชุม 26–28 ส.ค. · test order Option A 5×200 ไม่มี COA · Lead Protection เลื่อนไป Distribution Agreement
 - **ไฟล์:** `lib/green-future-response-reply-letter.ts` · `lib/green-future-meeting-pack.ts` · `lib/green-future-test-order.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx` · `9_PROJECT_STATE.md` (OPS GF section)
 
+### บันทึกการทำงาน — 2026-08-22 (GF web copy compliance 0821)
+- **What:** ปรับข้อความ `/wholesale` `/wholesale/gacp` + bulk share ให้ตรง GF/SSB/2026-0821 · ย้าย PDF คู่ค้าออกจาก `public/` · เพิ่ม disclosure กลาง
+- **Logic:** ตัดคำรับประกัน GACP/COA/ISTA · ราคา/สต็อก/COA = indicative จน GF quotation+PO · bulk share = quotation request · แพ็ค = producer-packed · เอกสาร GF เปิดผ่าน `/api/admin/partner-docs/*` เท่านั้น
+- **ไฟล์:** `TrustCompliance.tsx` · `WholesaleHero.tsx` · `CoaAddonSection.tsx` · `CoaOptionCards.tsx` · `BulkOrderCalculator.tsx` · `BulkOrderSummary.tsx` · `WholesaleComplianceNotice.tsx` · `bulk-share-i18n.ts` · `BulkShareOrderClient.tsx` · `gacp-featured-strains.ts` · `GacpInquiryForm.tsx` · `lib/partner-docs-path.ts` · `app/api/admin/partner-docs/[...path]/route.ts` · `data/partners/green-future/documents/*`
+
 ### บันทึกการทำงาน — 2026-08-19 (LINE OA auto-reply — นุ่มลง + ตัด false positive)
 - **What:** ทักทั่วไปตอบรับทราบแทนบังคับ Order # · เลขไม่เจอข้อความนุ่มลง · ลูกค้า linked / cooldown 24h เงียบ · รองรับ SSB-B2B / SSB-BL
 - **Logic:** regex `Order #` ต้องมี `#` (กัน "order in advance") · `line-oa-auto-reply.ts` SSOT copy

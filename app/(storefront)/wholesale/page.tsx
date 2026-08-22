@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "SGF Seeds B2B Wholesale | Smile Seed Bank",
   description:
-    "SGF Seeds documented bulk program — tiered B2B pricing, Bang Phli fulfillment, lot documentation support for licensed partners.",
+    "SGF Seeds documented bulk program — tiered B2B pricing, lot documentation support for licensed partners. Subject to confirmed lot and quotation.",
   alternates: { canonical: "/wholesale" },
 };
 
