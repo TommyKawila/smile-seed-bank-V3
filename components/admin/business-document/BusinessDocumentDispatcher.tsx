@@ -11,6 +11,18 @@ import {
   GREEN_FUTURE_CLARIFICATION_RAW,
   GREEN_FUTURE_CLARIFICATION_SUBJECT,
 } from "@/lib/green-future-clarification-letter";
+import {
+  GREEN_FUTURE_MEETING_PACK_RAW,
+  GREEN_FUTURE_MEETING_PACK_SUBJECT,
+} from "@/lib/green-future-meeting-pack";
+import {
+  GREEN_FUTURE_RESPONSE_REPLY_RAW,
+  GREEN_FUTURE_RESPONSE_REPLY_SUBJECT,
+} from "@/lib/green-future-response-reply-letter";
+import {
+  GREEN_FUTURE_TEST_ORDER_RAW,
+  GREEN_FUTURE_TEST_ORDER_SUBJECT,
+} from "@/lib/green-future-test-order";
 import { exportBusinessDocumentPdf } from "@/lib/business-document-pdf.client";
 import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
 import { resolveCompanyContactEmail } from "@/lib/company-legal-identity";
@@ -114,17 +126,50 @@ export function BusinessDocumentDispatcher() {
     });
   }, [rawPaste, applyFormattedLetter, toast]);
 
-  const handleLoadGreenFutureTemplate = useCallback(() => {
-    setRawPaste(GREEN_FUTURE_CLARIFICATION_RAW);
-    applyFormattedLetter(
-      GREEN_FUTURE_CLARIFICATION_RAW,
-      GREEN_FUTURE_CLARIFICATION_SUBJECT
+  const loadTemplate = useCallback(
+    (raw: string, subjectFallback: string, title: string, description: string) => {
+      setRawPaste(raw);
+      applyFormattedLetter(raw, subjectFallback);
+      toast({ title, description });
+    },
+    [applyFormattedLetter, toast]
+  );
+
+  const handleLoadGreenFutureReply = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_RESPONSE_REPLY_RAW,
+      GREEN_FUTURE_RESPONSE_REPLY_SUBJECT,
+      "GF reply loaded",
+      "Main reply — attach Meeting pack + Test order PDFs, then send."
     );
-    toast({
-      title: "GF letter loaded",
-      description: "Preview updated — attach plan PDF + legal docs, then send.",
-    });
-  }, [applyFormattedLetter, toast]);
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureMeetingPack = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_MEETING_PACK_RAW,
+      GREEN_FUTURE_MEETING_PACK_SUBJECT,
+      "Meeting pack loaded",
+      "Export PDF and attach to reply email."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureTestOrder = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_TEST_ORDER_RAW,
+      GREEN_FUTURE_TEST_ORDER_SUBJECT,
+      "Test order loaded",
+      "Export PDF and attach to reply email."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureTemplate = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_CLARIFICATION_RAW,
+      GREEN_FUTURE_CLARIFICATION_SUBJECT,
+      "GF clarification loaded",
+      "0815 clarification — attach plan PDF + legal docs."
+    );
+  }, [loadTemplate]);
 
   const handleSaveDraft = useCallback(async () => {
     const result = await saveDraft({
@@ -323,6 +368,9 @@ export function BusinessDocumentDispatcher() {
           onRawPasteChange={setRawPaste}
           onFormatRaw={handleFormatRaw}
           onLoadGreenFutureTemplate={handleLoadGreenFutureTemplate}
+          onLoadGreenFutureReply={handleLoadGreenFutureReply}
+          onLoadGreenFutureMeetingPack={handleLoadGreenFutureMeetingPack}
+          onLoadGreenFutureTestOrder={handleLoadGreenFutureTestOrder}
           onSignatureUrlChange={setSignatureImageUrl}
           onAttachmentUrlsChange={setAttachmentImageUrls}
           onPersistSignatureDefault={(url) => updateSetting(FOUNDER_SIGNATURE_SETTING_KEY, url)}

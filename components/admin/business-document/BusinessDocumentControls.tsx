@@ -46,6 +46,9 @@ type Props = {
   onRawPasteChange: (value: string) => void;
   onFormatRaw: () => void;
   onLoadGreenFutureTemplate?: () => void;
+  onLoadGreenFutureReply?: () => void;
+  onLoadGreenFutureMeetingPack?: () => void;
+  onLoadGreenFutureTestOrder?: () => void;
   onSignatureUrlChange: (url: string | null) => void;
   onAttachmentUrlsChange: (urls: string[]) => void;
   onPersistSignatureDefault: (url: string) => Promise<void>;
@@ -85,6 +88,9 @@ export function BusinessDocumentControls({
   onRawPasteChange,
   onFormatRaw,
   onLoadGreenFutureTemplate,
+  onLoadGreenFutureReply,
+  onLoadGreenFutureMeetingPack,
+  onLoadGreenFutureTestOrder,
   onSignatureUrlChange,
   onAttachmentUrlsChange,
   onPersistSignatureDefault,
@@ -170,25 +176,63 @@ export function BusinessDocumentControls({
 
   return (
     <div className="space-y-4">
-      {onLoadGreenFutureTemplate ? (
+      {onLoadGreenFutureReply ||
+      onLoadGreenFutureMeetingPack ||
+      onLoadGreenFutureTestOrder ||
+      onLoadGreenFutureTemplate ? (
         <Card className="border-[#12463e]/35 bg-[#12463e]/5 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold text-[#12463e]">
-              Templates
+              Green Future templates
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Button
-              type="button"
-              className="w-full bg-[#12463e] hover:bg-[#0f3a34]"
-              onClick={onLoadGreenFutureTemplate}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Load GF clarification letter
-            </Button>
+            {onLoadGreenFutureReply ? (
+              <Button
+                type="button"
+                className="w-full bg-[#12463e] hover:bg-[#0f3a34]"
+                onClick={onLoadGreenFutureReply}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Reply to GF/SSB/2026-0821
+              </Button>
+            ) : null}
+            {onLoadGreenFutureMeetingPack ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-[#12463e]/40 text-[#12463e] hover:bg-[#12463e]/5"
+                onClick={onLoadGreenFutureMeetingPack}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Meeting pack (pre-read)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureTestOrder ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-[#12463e]/40 text-[#12463e] hover:bg-[#12463e]/5"
+                onClick={onLoadGreenFutureTestOrder}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Test order line list
+              </Button>
+            ) : null}
+            {onLoadGreenFutureTemplate ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-slate-600"
+                onClick={onLoadGreenFutureTemplate}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Clarification letter (0815)
+              </Button>
+            ) : null}
             <p className="text-[10px] leading-snug text-slate-500">
-              Loads English-first GF letter + formats preview. Attach Collaboration Plan PDF
-              separately.
+              Load reply + attach Meeting pack + Test order PDFs. Export label mockup from
+              /admin/partners/green-future/mockup separately.
             </p>
           </CardContent>
         </Card>

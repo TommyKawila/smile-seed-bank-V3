@@ -26,10 +26,10 @@
 11. [x] ลูกค้า GACP ไม่ถูกเสนอเมล็ดหิ้วในแชท/เอกสารชุดเดียวกับโปรแกรม GF
 
 ### D. ประชุม/ต่อรอง GF (เปิดค้างจาก draft 15 ส.ค.)
-12. [ ] GACP = เอกสารสนับสนุน lot ไม่ใช่ certificate เมล็ด
-13. [ ] ISTA / COA คิดแยก · Traceability Pack = planned
+12. [x] GACP = เอกสารสนับสนุน lot ไม่ใช่ certificate เมล็ด — GF ยืนยัน **0821**
+13. [x] ISTA / COA คิดแยก · Traceability Pack = planned — GF ยืนยัน **0821**
 14. [ ] ฉลาก: **กฎหมายก่อน** (ชื่อหจก. + พ.พ.4 หจก. + lot + ฟิลด์บังคับ DOA — รอ confirm กรมฯ) · **แบรนด์การค้าทีหลัง** (Smile Seeds / SGF Seeds / co-brand — ยังไม่ล็อก ไม่ใส่จดหมายชี้แจง)
-15. [ ] MOQ / ราคา / landed / margin
+15. [ ] MOQ / ราคา / landed / margin — รอ quotation test order หลังประชุม **26–28 ส.ค.**
 
 ### E. หลัง GF ตอบ — คุมความเสี่ยงระยะยาว
 16. [ ] ตัดสินใจ: ซ่อน/ลดปุ่ม พ.พ.4 ร้านบน About สำหรับ B2B หรือเก็บไว้เฉพาะ retail/Shopee
@@ -78,6 +78,58 @@
 รอเงินเข้า: ขอบคุณสลิป Wise · รอเข้าบัญชีไทย 1–2 วันทำการ · SGF ค้างปลาย ก.ย. · ขอที่อยู่
 
 ---
+
+## OPS — Green Future × SSB (2026-08-21)
+
+*ดีล documented seed programme · สถานะ: aligned on framework, not yet contracted*
+
+### สถานะล่าสุด (อัปเดต 2026-08-21)
+| รายการ | รายละเอียด |
+|--------|-------------|
+| จดหมาย GF ล่าสุด | **GF/SSB/2026-0821** (21 ส.ค.) — ตอบจดหมายชี้แจง SSB 18 ส.ค. |
+| สถานะดีล | กรอบกฎหมาย/บทบาท **ตกลงแล้ว** · สัญญา Distribution ยังไม่เซ็น · test order ทำได้ก่อนสัญญา (ต้องมี quotation + PO + mini-terms เป็นลายลักษณ์อักษร) |
+| Exclusivity | **Non-exclusive** ช่วง test order — คุยทีหลังถ้ามีปริมาณ |
+| คุณภาพผูกพัน | งอก ≥80% · บริสุทธิ์ ≥99% ต่อ PO + claims procedure |
+| ISTA 4 สาย | AF99, AF143, AF02, AF22 — แล็บกำลังทำ · คาดผล **~10 ก.ย. 2026** |
+| Lead Protection | จดหมาย SSB 10 ส.ค. — **GF ยังไม่ตอบใน 0821** |
+| ประชุม | GF ตกลง 60 นาทีสัปดาห์หน้า · SSB เสนอ slot **26–28 ส.ค. 2026** |
+
+### เอกสารอ้างอิง (B2B email folder)
+| Ref | ไฟล์ / แหล่ง |
+|-----|----------------|
+| GF/SSB/2026-0821 | `เอกสารสำคัญ/B2B email/Docs from Green Future/Green_Future_Response_to_Smile_21-08-2026.pdf` |
+| GF/SSB/2026-0815 | Business Cooperation Plan (GF annotated) |
+| GF/SSB/2026-0803 | Seed Supply & COA Proposal — ขั้นราคา + test order tier |
+| GF/SSB/2026-0810 | ISTA 4 สาย (AF99, AF143, AF02, AF22) |
+| SSB 18 ส.ค. | Clarification & Next Steps (ส่งแล้ว) |
+
+### เอกสารตอบกลับ SSB (Dispatcher — ร่างพร้อมส่ง)
+| Template | ไฟล์ code |
+|----------|-----------|
+| Reply to GF/SSB/2026-0821 | `lib/green-future-response-reply-letter.ts` |
+| Meeting pack (pre-read) | `lib/green-future-meeting-pack.ts` |
+| Test order line list | `lib/green-future-test-order.ts` |
+| UI | `/admin/documents/dispatcher` — ปุ่ม Green Future templates |
+
+### Test order ร่าง (Option A — ไม่มี COA)
+- ขั้น **SSB Test Order** (0803): 5 สาย × 200 เมล็ด · €1.15 / 44.21 THB ต่อเมล็ด
+- สาย: AF99, AF143, AF02, AF22 + **AF102** (สายที่ 5 — ยืนยัน availability ในประชุม)
+- มัดจำ 50% ~22,105 THB · lead 3–7 วันหลังมัดจำ (ประมาณการ)
+
+### งานถัดไป (GF)
+- [ ] ส่ง reply + แนบ Meeting pack + Test order PDF (+ ฉลาก mockup จาก `/admin/partners/green-future/mockup`)
+- [ ] ยืนยัน slot ประชุม 26–28 ส.ค.
+- [ ] รับ GF working label template + Claims Procedure Template
+- [ ] รับ quotation → ออก PO → mini-terms test order
+- [ ] ตรวจคลัง พ.พ.4: +5–+10°C, RH ≤50%, electronic log (จำเป็นถ้าเคลมงอก)
+- [ ] หลัง test order สำเร็จ → Distribution Agreement + Lead Protection
+
+---
+
+### บันทึกการทำงาน — 2026-08-21 (GF 0821 — วิเคราะห์ + เอกสารตอบกลับ Dispatcher)
+- **What:** อ่านจดหมาย GF/SSB/2026-0821 · สรุปสถานะดีล (framework aligned, not contracted) · ร่างชุดตอบกลับ 3 ฉบับใน Business Document Dispatcher
+- **Logic:** ยืนยันข้อตกลงที่ปิดแล้ว (GACP=site, PP.4 หจก., 80/99, lot fields, storage) · รับ non-exclusive ช่วง test order · ใช้ถ้อยคำ GF “supporting traceability documentation for GACP purposes” · นัดประชุม 26–28 ส.ค. · test order Option A 5×200 ไม่มี COA · Lead Protection เลื่อนไป Distribution Agreement
+- **ไฟล์:** `lib/green-future-response-reply-letter.ts` · `lib/green-future-meeting-pack.ts` · `lib/green-future-test-order.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx` · `9_PROJECT_STATE.md` (OPS GF section)
 
 ### บันทึกการทำงาน — 2026-08-19 (LINE OA auto-reply — นุ่มลง + ตัด false positive)
 - **What:** ทักทั่วไปตอบรับทราบแทนบังคับ Order # · เลขไม่เจอข้อความนุ่มลง · ลูกค้า linked / cooldown 24h เงียบ · รองรับ SSB-B2B / SSB-BL
