@@ -5,6 +5,7 @@
 import { saveB2BQuote } from "@/services/b2b-quote-service";
 import { upsertBusinessContact } from "@/services/business-document-service";
 import { STORE_ENTITY } from "@/lib/company-legal-identity";
+import { isGfPreGate } from "@/lib/green-future-approved-marketing";
 import {
   isValidQty,
   resolveQuote,
@@ -102,16 +103,17 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
   const currency: B2BCurrency = input.currency === "THB" ? "THB" : "EUR";
   const config = await getBulkPricingConfig();
 
+  const pilotMode = true;
   const lines = input.lines
     .map((l) => ({
       strainName: l.strainName.trim(),
       quantity: Math.floor(l.quantity),
     }))
-    .filter((l) => l.strainName && isValidQty(l.quantity, config));
+    .filter((l) => l.strainName && isValidQty(l.quantity, config, pilotMode));
 
   if (!lines.length) {
     throw new Error(
-      "At least one strain with qty 100 (SSB pack) or ≥ 500 is required"
+      "At least one strain with a valid pilot pack quantity (50–200 seeds in 50-seed steps) is required"
     );
   }
 
@@ -127,6 +129,7 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
       buyExtra: input.buyExtraCoa,
       packageACount: input.coaPackageA,
       packageBCount: input.coaPackageB,
+      pilotMode,
     }
   );
 
@@ -171,23 +174,29 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
 
   const invoiceDate = new Date().toISOString().slice(0, 10);
   const paymentNotes = [
-    `Payment: ${PAYMENT_LABEL[input.paymentMethod]}`,
+    isGfPreGate()
+      ? "Quotation request only — not a PO or deposit (Regulatory Gate pending)"
+      : `Payment: ${PAYMENT_LABEL[input.paymentMethod]}`,
     `Company: ${input.companyName.trim()}`,
     `Contact: ${input.contactName.trim()}`,
     `Phone: ${input.phone.trim()}`,
-    `COA mode: ${input.coaMode === "with" ? "With COA" : "No COA"}`,
+    `COA mode: ${input.coaMode === "with" ? "With COA" : "Option 1 (internal lot test)"}`,
     quoteCalc.freeCoaCount > 0
       ? `Free COA entitlement: ${quoteCalc.freeCoaCount}`
       : null,
     input.buyExtraCoa
       ? `Extra COA: A×${input.coaPackageA}, B×${input.coaPackageB}`
       : null,
-    `Deposit 50%: ${quoteCalc.depositThb} THB`,
-    `Balance 50%: ${quoteCalc.balanceThb} THB`,
+    isGfPreGate()
+      ? null
+      : `Deposit 50%: ${quoteCalc.depositThb} THB`,
+    isGfPreGate()
+      ? null
+      : `Balance 50%: ${quoteCalc.balanceThb} THB`,
     `ETA: ${
       input.coaMode === "with"
-        ? "approx 35-40 days (incl. lab)"
-        : "3-7 business days"
+        ? "after accepted PO — approx 35-40 days (incl. lab)"
+        : "after accepted PO — indicative 3-7 business days"
     }`,
     input.message?.trim() ? `Message: ${input.message.trim()}` : null,
     "Source: /wholesale public RFQ",

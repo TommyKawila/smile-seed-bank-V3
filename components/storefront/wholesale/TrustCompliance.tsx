@@ -3,11 +3,12 @@
 import { FileStack, Truck } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import {
+  GF_DISPATCH_AFTER_PO_EN,
+  GF_DISPATCH_AFTER_PO_TH,
   GF_TRACEABILITY_CLAIM_EN,
   GF_TRACEABILITY_CLAIM_TH,
   GF_TRACEABILITY_DISCLAIMER_EN,
   GF_TRACEABILITY_DISCLAIMER_TH,
-  gfGateNotice,
 } from "@/lib/green-future-approved-marketing";
 
 export function TrustCompliance() {
@@ -34,10 +35,6 @@ export function TrustCompliance() {
           </div>
         </div>
 
-        <div className="mt-10 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
-          <p className="text-sm font-medium text-amber-950">{gfGateNotice(t)}</p>
-        </div>
-
         <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
           <h3 className="text-base font-bold text-emerald-900">
             {t("เอกสารตรวจสอบย้อนกลับสำหรับ GACP", "Supporting traceability for GACP")}
@@ -50,13 +47,18 @@ export function TrustCompliance() {
           </p>
         </div>
 
-        <div className="mt-6 inline-flex max-w-full items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-          <Truck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
-          <p>
-            {t(
-              "ระยะเวลาจัดส่งเป็นประมาณการตามล็อตและ quotation — ไม่มี COA: ประมาณ 3–7 วันทำการหลังมัดจำ 50% · มี COA: แล็บ ~30 วัน แล้วจัดส่งอีก 3–7 วัน",
-              "Dispatch is indicative per lot and quotation — no COA: ~3–7 business days after 50% advance · with COA: lab ~30 days then dispatch ~3–7 business days."
-            )}
+        <div className="mt-6 inline-flex max-w-full flex-col gap-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+          <div className="flex items-start gap-3">
+            <Truck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
+            <p>
+              {t(
+                "ระยะเวลาจัดส่งเป็นประมาณการตามล็อตและ quotation — Option 1: ประมาณ 3–7 วันทำการหลัง accepted PO · มี COA: แล็บ ~30 วัน แล้วจัดส่งอีก 3–7 วัน",
+                "Dispatch is indicative per lot and quotation — Option 1: ~3–7 business days after accepted PO · with COA: lab ~30 days then dispatch ~3–7 days"
+              )}
+            </p>
+          </div>
+          <p className="pl-8 text-xs text-slate-500">
+            {t(GF_DISPATCH_AFTER_PO_TH, GF_DISPATCH_AFTER_PO_EN)}
           </p>
         </div>
       </div>

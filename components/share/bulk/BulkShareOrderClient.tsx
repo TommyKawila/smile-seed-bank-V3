@@ -31,6 +31,7 @@ import {
 import { SEED_FORMAT_LABEL, SEEDS_GENETICS_SLUG } from "@/lib/bulk-seeds-book";
 import { SGF_SEEDS_SHARE_TAGLINE, sgfStrainsGrouped } from "@/lib/sgf-seeds-share";
 import { BULK_SHARE_COPY, BULK_SHARE_LANG_KEY, localizeQtyDescription, type BulkShareLang } from "@/lib/bulk-share-i18n";
+import { GfGateNoticeBanner } from "@/components/storefront/wholesale/GfGateNoticeBanner";
 import type { SgCategorySlug, SgCatalogStrain } from "@/lib/seeds-genetics-catalog";
 import type { PartnerStrainRecord } from "@/types/partner-catalog";
 
@@ -318,6 +319,10 @@ export function BulkShareOrderClient({
               {t.catalogDisclaimer}
             </p>
           </header>
+
+          {sgfStrains.length > 0 ? (
+            <GfGateNoticeBanner showNonBinding />
+          ) : null}
 
           {pricedBooks.map((book) => (
             <section

@@ -9,6 +9,15 @@ import {
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/context/LanguageContext";
 import {
+  GF_OPTION1_DISPATCH_EN,
+  GF_OPTION1_DISPATCH_TH,
+  GF_RFQ_NON_BINDING_EN,
+  GF_RFQ_NON_BINDING_TH,
+  GF_WITH_COA_DISPATCH_EN,
+  GF_WITH_COA_DISPATCH_TH,
+  gfShowPaymentTerms,
+} from "@/lib/green-future-approved-marketing";
+import {
   formatThb,
   resolveQuote,
   thbToEurDisplay,
@@ -34,6 +43,7 @@ type Props = {
   submitError: string | null;
   successQuoteNumber: string | null;
   bulkPricing: BulkPricingConfig;
+  pilotMode?: boolean;
 };
 
 const PAYMENTS: { id: WholesalePaymentMethod; th: string; en: string }[] = [
@@ -66,8 +76,10 @@ export function RfqModal({
   submitError,
   successQuoteNumber,
   bulkPricing,
+  pilotMode = true,
 }: Props) {
   const { t } = useLanguage();
+  const showPayment = gfShowPaymentTerms();
   const quote = resolveQuote(
     lines.map((l) => ({
       strainId: l.strainId,
@@ -80,6 +92,7 @@ export function RfqModal({
       buyExtra: form.buyExtraCoa,
       packageACount: form.coaPackageA,
       packageBCount: form.coaPackageB,
+      pilotMode,
     }
   );
 
@@ -88,31 +101,34 @@ export function RfqModal({
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto border-slate-200 bg-white text-slate-900 sm:rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-slate-900">
-            {t("ส่งคำขอใบเสนอราคา (RFQ)", "Submit Request for Quote (RFQ)")}
+            {t("ขอใบเสนอราคา (ไม่ผูกพัน)", "Request quotation (non-binding)")}
           </DialogTitle>
           <DialogDescription className="text-slate-600">
-            {t(
-              "ทีม B2B จะออกใบแจ้งหนี้ฉบับร่างและติดต่อกลับ",
-              "Our B2B team will generate a draft invoice and follow up."
-            )}
+            {t(GF_RFQ_NON_BINDING_TH, GF_RFQ_NON_BINDING_EN)}
           </DialogDescription>
         </DialogHeader>
 
         {successQuoteNumber ? (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
             <p className="font-semibold">
-              {t("ส่งคำขอสำเร็จ", "RFQ submitted")}
+              {t("ส่งคำขอสำเร็จ", "Quotation request submitted")}
             </p>
             <p className="mt-1">
-              {t("เลขที่ใบเสนอราคาฉบับร่าง", "Draft quote number")}:{" "}
+              {t("เลขอ้างอิงคำขอ", "Request reference")}:{" "}
               <strong>{successQuoteNumber}</strong>
+            </p>
+            <p className="mt-2 text-xs">
+              {t(
+                "ทีม B2B จะติดต่อกลับ — ยังไม่ใช่คำสั่งซื้อหรือมัดจำ",
+                "Our B2B team will follow up — this is not a purchase order or deposit"
+              )}
             </p>
           </div>
         ) : (
           <div className="space-y-5">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <h3 className="text-sm font-semibold text-slate-800">
-                {t("สรุปรายการ", "Quote summary")}
+                {t("สรุปประมาณการ", "Quotation estimate")}
               </h3>
               {quote.lines.length === 0 ? (
                 <p className="mt-2 text-sm text-slate-500">
@@ -173,14 +189,22 @@ export function RfqModal({
                     {money(quote.grandTotalThb, currency, bulkPricing.eurThb)}
                   </dd>
                 </div>
-                <div className="flex justify-between text-xs text-slate-600">
-                  <dt>{t("มัดจำ 50%", "Deposit 50%")}</dt>
-                  <dd>{money(quote.depositThb, currency, bulkPricing.eurThb)}</dd>
-                </div>
-                <div className="flex justify-between text-xs text-slate-600">
-                  <dt>{t("ยอดค้าง 50%", "Balance 50%")}</dt>
-                  <dd>{money(quote.balanceThb, currency, bulkPricing.eurThb)}</dd>
-                </div>
+                {showPayment ? (
+                  <>
+                    <div className="flex justify-between text-xs text-slate-600">
+                      <dt>{t("มัดจำ 50%", "Deposit 50%")}</dt>
+                      <dd>
+                        {money(quote.depositThb, currency, bulkPricing.eurThb)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-600">
+                      <dt>{t("ยอดค้าง 50%", "Balance 50%")}</dt>
+                      <dd>
+                        {money(quote.balanceThb, currency, bulkPricing.eurThb)}
+                      </dd>
+                    </div>
+                  </>
+                ) : null}
               </dl>
               <p className="mt-2 text-xs text-slate-500">
                 {t(
@@ -191,14 +215,8 @@ export function RfqModal({
               <p className="mt-1 text-xs text-slate-500">
                 COA:{" "}
                 {form.coaMode === "with"
-                  ? t(
-                      "With COA (~35–40 วัน · ประมาณการ)",
-                      "With COA (~35–40 days · indicative)"
-                    )
-                  : t(
-                      "No COA (3–7 วันทำการหลังมัดจำ 50% · ประมาณการ)",
-                      "No COA (3–7 days after 50% advance · indicative)"
-                    )}
+                  ? t(GF_WITH_COA_DISPATCH_TH, GF_WITH_COA_DISPATCH_EN)
+                  : t(GF_OPTION1_DISPATCH_TH, GF_OPTION1_DISPATCH_EN)}
               </p>
             </div>
 
@@ -239,28 +257,30 @@ export function RfqModal({
                 className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-3 text-base text-slate-900 outline-none ring-emerald-500 focus:ring-2"
               />
             </label>
-            <fieldset>
-              <legend className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {t("วิธีชำระเงินที่ต้องการ", "Preferred Payment Method")}
-              </legend>
-              <div className="mt-2 flex flex-col gap-2">
-                {PAYMENTS.map((p) => (
-                  <label
-                    key={p.id}
-                    className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-3 text-sm text-slate-800"
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={form.paymentMethod === p.id}
-                      onChange={() => onFormChange({ paymentMethod: p.id })}
-                      className="h-4 w-4 accent-emerald-600"
-                    />
-                    {t(p.th, p.en)}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            {showPayment ? (
+              <fieldset>
+                <legend className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {t("วิธีชำระเงินที่ต้องการ", "Preferred Payment Method")}
+                </legend>
+                <div className="mt-2 flex flex-col gap-2">
+                  {PAYMENTS.map((p) => (
+                    <label
+                      key={p.id}
+                      className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-3 text-sm text-slate-800"
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        checked={form.paymentMethod === p.id}
+                        onChange={() => onFormChange({ paymentMethod: p.id })}
+                        className="h-4 w-4 accent-emerald-600"
+                      />
+                      {t(p.th, p.en)}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ) : null}
             <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
               {t("ข้อความ / ความต้องการพิเศษ", "Message / Special Requirements")}
               <textarea
@@ -281,10 +301,7 @@ export function RfqModal({
             >
               {submitting
                 ? t("กำลังส่ง…", "Submitting…")
-                : t(
-                    "ส่ง RFQ และสร้างใบแจ้งหนี้ฉบับร่าง",
-                    "Submit RFQ & Generate Draft Invoice"
-                  )}
+                : t("ส่งคำขอใบเสนอราคา", "Submit quotation request")}
             </button>
           </div>
         )}

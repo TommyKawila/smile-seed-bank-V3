@@ -9,6 +9,7 @@ import {
   BulkOrderCalculator,
   type BulkOrderState,
 } from "./BulkOrderCalculator";
+import { GfGateNoticeBanner } from "./GfGateNoticeBanner";
 import { WholesaleComplianceNotice } from "./WholesaleComplianceNotice";
 import { TrustCompliance } from "./TrustCompliance";
 import { WholesaleHero } from "./WholesaleHero";
@@ -52,7 +53,7 @@ export function WholesalePageClient({
 
   const openRfqFromCalc = (state: BulkOrderState) => {
     const validLines = state.lines.filter((l) =>
-      isValidQty(l.quantity, bulkPricing)
+      isValidQty(l.quantity, bulkPricing, true)
     );
     if (!validLines.length) return;
     setBulkState(state);
@@ -132,6 +133,12 @@ export function WholesalePageClient({
       <WholesaleHero onRequestCatalog={scrollToCatalog} />
 
       <div className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+          <GfGateNoticeBanner />
+        </div>
+      </div>
+
+      <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-sm font-medium text-slate-600">
             {t(
@@ -147,6 +154,7 @@ export function WholesalePageClient({
         catalog={catalog}
         config={bulkPricing}
         currency={currency}
+        pilotMode
         onStateChange={setBulkState}
         onRequestQuote={openRfqFromCalc}
       />
@@ -176,6 +184,7 @@ export function WholesalePageClient({
         submitError={submitError}
         successQuoteNumber={successQuoteNumber}
         bulkPricing={bulkPricing}
+        pilotMode
       />
     </div>
   );

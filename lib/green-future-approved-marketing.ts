@@ -1,9 +1,82 @@
 /** Approved marketing wording — use only after Regulatory Gate passes */
 
+import type { Metadata } from "next";
+import { GF_PILOT_DEFAULT_QTY, GF_PILOT_POUCH_QTY } from "@/lib/green-future-pilot-config";
+
 export type GfMarketingGateStatus = "pre_gate" | "post_gate";
 
 /** Current gate — flip to post_gate after written regulatory evidence */
 export const GF_MARKETING_GATE_STATUS: GfMarketingGateStatus = "pre_gate";
+
+export function isGfPreGate(): boolean {
+  return GF_MARKETING_GATE_STATUS === "pre_gate";
+}
+
+export function isGfPostGate(): boolean {
+  return GF_MARKETING_GATE_STATUS === "post_gate";
+}
+
+export function gfAcceptsPublicDeposits(): boolean {
+  return isGfPostGate();
+}
+
+export function gfShowPaymentTerms(): boolean {
+  return isGfPostGate();
+}
+
+export const GF_RFQ_NON_BINDING_TH =
+  "คำขอใบเสนอราคานี้ไม่ใช่คำสั่งซื้อหรือมัดจำ — ราคาและระยะเวลาเป็นประมาณการจนกว่า Green Future ยืนยัน quotation และ accepted PO";
+
+export const GF_RFQ_NON_BINDING_EN =
+  "This quotation request is not a purchase order or deposit — price and timing are indicative until Green Future confirms quotation and an accepted PO";
+
+export const GF_OPTION1_LABEL_TH =
+  "Option 1 — ปล่อยของตามผลทดสอบล็อตภายใน GF ตอนส่ง · ใบ COA ทางการภายหลัง (รูปแบบขอราคา/ตรวจกฎหมาย)";
+
+export const GF_OPTION1_LABEL_EN =
+  "Option 1 — dispatch on GF documented internal lot test · official COA later (quotation/regulatory review configuration)";
+
+export const GF_PILOT_PACK_DESC_TH = `รอบทดลอง: ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด · 4 ซองต่อสาย (${GF_PILOT_DEFAULT_QTY} เมล็ด) · 5 สาย — สำหรับขอราคาเท่านั้น`;
+
+export const GF_PILOT_PACK_DESC_EN = `Pilot: ${GF_PILOT_POUCH_QTY}-seed sealed pouches · 4 pouches per strain (${GF_PILOT_DEFAULT_QTY} seeds) · 5 strains — quotation planning only`;
+
+export const GF_DISPATCH_AFTER_PO_TH =
+  "ระยะเวลาจัดส่งเป็นประมาณการหลัง accepted PO และมัดจำตาม quotation — ไม่ใช่การรับประกันวันส่ง";
+
+export const GF_DISPATCH_AFTER_PO_EN =
+  "Dispatch timing is indicative after an accepted PO and deposit per quotation — not a guaranteed ship date";
+
+export const GF_OPTION1_DISPATCH_TH =
+  "Option 1 (ไม่มี COA ภายนอก): ประมาณการ 3–7 วันทำการหลัง accepted PO และมัดจำ 50% — ขึ้นกับล็อตและ quotation";
+
+export const GF_OPTION1_DISPATCH_EN =
+  "Option 1 (no external COA): indicative 3–7 business days after accepted PO and 50% advance — subject to lot and quotation";
+
+export const GF_WITH_COA_DISPATCH_TH =
+  "มี COA แล็บภายนอก: แล็บ ~30 วันทำการ แล้วจัดส่งอีก 3–7 วัน — หลัง accepted PO ตาม quotation";
+
+export const GF_WITH_COA_DISPATCH_EN =
+  "With external lab COA: lab ~30 business days, then indicative dispatch 3–7 days — after accepted PO per quotation";
+
+export const GF_STRAIN_STATUS_PRE_GATE_TH = "เสนอขอราคา — ยังไม่พร้อมขาย";
+
+export const GF_STRAIN_STATUS_PRE_GATE_EN = "Proposed for quotation — not yet for sale";
+
+export const GF_CONDITIONAL_DEPOSIT_SHORT_TH =
+  "มัดจำจองสิทธิ์แบบมีเงื่อนไข — คืนเงินเต็มหากไม่ถึงขั้นต่ำ GF ไม่ยืนยัน หรือฉลาก/กระบวนการไม่ผ่าน";
+
+export const GF_CONDITIONAL_DEPOSIT_SHORT_EN =
+  "Conditional reservation deposit — full refund if minimums are not met, GF does not confirm, or label/process approval fails";
+
+export function gfWholesaleRobots(): NonNullable<Metadata["robots"]> {
+  return isGfPreGate()
+    ? { index: false, follow: false }
+    : { index: true, follow: true };
+}
+
+export function gfWholesaleInSitemap(): boolean {
+  return isGfPostGate();
+}
 
 export const GF_TRACEABILITY_CLAIM_TH =
   "เมล็ดจากโปรแกรม Green Future พร้อมเอกสารตรวจสอบย้อนกลับเพื่อใช้สนับสนุนเอกสาร GACP (supporting traceability documentation for GACP purposes)";

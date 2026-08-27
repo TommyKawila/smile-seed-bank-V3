@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSiteOrigin } from "@/lib/get-url";
 import { breederSlugFromName } from "@/lib/breeder-slug";
 import { GROWER_TOOLS } from "@/lib/grower-tools";
+import { gfWholesaleInSitemap } from "@/lib/green-future-approved-marketing";
 
 /** Product PDPs use `/product/[slug]` (slug or numeric id). Nested `/seeds/[breeder]/[product]` is not a route in this app. */
 export const revalidate = 3600;
@@ -74,8 +75,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
+  const wholesaleEntries: MetadataRoute.Sitemap = gfWholesaleInSitemap()
+    ? [
+        {
+          url: `${base}/wholesale`,
+          lastModified: now,
+          changeFrequency: "weekly",
+          priority: 0.55,
+        },
+        {
+          url: `${base}/wholesale/gacp`,
+          lastModified: now,
+          changeFrequency: "weekly",
+          priority: 0.55,
+        },
+      ]
+    : [];
+
   return [
     ...staticEntries,
+    ...wholesaleEntries,
     ...growerToolEntries,
     ...breederCatalogEntries,
     ...blogEntries,

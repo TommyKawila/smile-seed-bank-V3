@@ -170,6 +170,11 @@
 - **Logic:** Smile Seed Bank ห้าม print/apply/repack/relabel ก่อนมี written approval; label application ดำเนินการโดย GF ตาม workflow ที่อนุมัติ
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts`
 
+### บันทึกการทำงาน — 2026-08-27 (GF wholesale gate alignment)
+- **What:** ปรับ Wholesale/B2B/GACP ให้ quotation-only ระหว่าง pre_gate — ซ่อน deposit/payment UI, ย้าย gate notice ใต้ Hero, pilot 4×50 + Option 1, AF102, noindex/sitemap ตาม gate
+- **Logic:** `GF_MARKETING_GATE_STATUS=pre_gate` → ไม่แสดงมัดจำ/ช่องทางชำระ · RFQ = non-binding · ระยะเวลาหลัง accepted PO · post_gate เปิด conditional deposit UI
+- **ไฟล์:** `green-future-approved-marketing.ts` · `green-future-pilot-config.ts` · `GfGateNoticeBanner.tsx` · `BulkOrderCalculator.tsx` · `BulkOrderSummary.tsx` · `RfqModal.tsx` · `CoaOptionCards.tsx` · `TrustCompliance.tsx` · `WholesalePageClient.tsx` · `GacpLandingClient.tsx` · `GacpFeaturedStrains.tsx` · `gacp-featured-strains.ts` · `wholesale-bulk-pricing.ts` · `wholesale-rfq-service.ts` · `BulkShareOrderClient.tsx` · `wholesale/page.tsx` · `wholesale/gacp/page.tsx` · `sitemap.ts`
+
 ### บันทึกการทำงาน — 2026-08-27 (GF Regulatory + Demand Gate)
 - **What:** ปรับจดหมาย 0824 EN/TH ให้ 4×50 + Option 1 เป็นรูปแบบขอราคา/ตรวจกฎหมาย ไม่ใช่ PO · เพิ่ม Gate sequence · brief ประชุมจูเลีย · conditional deposit · marketing pack · evidence checklist
 - **Logic:** Validate → Market → Deposit → PO · Regulatory Gate (ฉลาก/กระบวนการ + หน่วยงาน 2 ประเด็น) ก่อน marketing/มัดจำ · Demand Gate threshold ~23,630 THB ก่อน PO GF · หน้าเว็บ pre-gate = quotation only

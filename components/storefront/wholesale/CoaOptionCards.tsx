@@ -1,6 +1,14 @@
 "use client";
 
 import { useLanguage } from "@/context/LanguageContext";
+import {
+  GF_OPTION1_DISPATCH_EN,
+  GF_OPTION1_DISPATCH_TH,
+  GF_OPTION1_LABEL_EN,
+  GF_OPTION1_LABEL_TH,
+  GF_WITH_COA_DISPATCH_EN,
+  GF_WITH_COA_DISPATCH_TH,
+} from "@/lib/green-future-approved-marketing";
 import type { CoaMode } from "@/lib/wholesale-bulk-pricing";
 
 type Props = {
@@ -14,7 +22,7 @@ export function CoaOptionCards({ mode, onChange }: Props) {
   return (
     <div className="space-y-4">
       <h3 className="text-base font-semibold text-slate-900">
-        {t("ตัวเลือกใบรับรอง COA", "COA certificate options")}
+        {t("ตัวเลือกการส่ง (สำหรับขอราคา)", "Dispatch options (for quotation)")}
       </h3>
       <div className="grid gap-3 md:grid-cols-2">
         <button
@@ -27,19 +35,13 @@ export function CoaOptionCards({ mode, onChange }: Props) {
           }`}
         >
           <p className="font-semibold text-slate-900">
-            {t("No COA (จัดส่งด่วน)", "No COA (Express shipping)")}
+            {t("Option 1", "Option 1")}
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            {t(
-              "เหมาะสำหรับผู้ที่ต้องการสินค้าด่วน",
-              "Best if you need seeds quickly"
-            )}
+            {t(GF_OPTION1_LABEL_TH, GF_OPTION1_LABEL_EN)}
           </p>
           <p className="mt-2 text-xs font-medium text-emerald-800">
-            {t(
-              "ประมาณการจัดส่ง 3–7 วันทำการหลังมัดจำ 50% — ขึ้นกับล็อตที่ยืนยัน quality release และ quotation",
-              "Indicative dispatch 3–7 business days after 50% advance — subject to confirmed lot, quality release and quotation"
-            )}
+            {t(GF_OPTION1_DISPATCH_TH, GF_OPTION1_DISPATCH_EN)}
           </p>
         </button>
 
@@ -54,21 +56,18 @@ export function CoaOptionCards({ mode, onChange }: Props) {
         >
           <p className="font-semibold text-slate-900">
             {t(
-              "With COA (รวมใบรับรองผลแล็บ)",
-              "With COA (includes lab certificates)"
+              "With external lab COA",
+              "With external lab COA"
             )}
           </p>
           <p className="mt-1 text-sm text-slate-600">
             {t(
-              "เหมาะสำหรับฟาร์มที่ต้องใช้เอกสารยื่นหน่วยงานรัฐ",
-              "Best for farms that need documents for government filings"
+              "เพิ่ม COA แล็บภายนอกต่อสาย — คิดแยกตามล็อต",
+              "Add external lab COA per strain — charged separately per lot"
             )}
           </p>
           <p className="mt-2 text-xs font-medium text-amber-800">
-            {t(
-              "แล็บภายนอก ~30 วันทำการ แล้วจัดส่งอีก 3–7 วัน — ขึ้นกับล็อตที่ยืนยันและ quotation",
-              "External lab ~30 business days, then indicative dispatch 3–7 days — subject to confirmed lot and quotation"
-            )}
+            {t(GF_WITH_COA_DISPATCH_TH, GF_WITH_COA_DISPATCH_EN)}
           </p>
         </button>
       </div>
@@ -79,8 +78,8 @@ export function CoaOptionCards({ mode, onChange }: Props) {
           className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
         >
           {t(
-            "⚠️ โปรดทราบ: การขอใบรับรอง COA มีขั้นตอนการตรวจแล็บมาตรฐาน ซึ่งใช้เวลาดำเนินการประมาณ 30 วันทำการ",
-            "⚠️ Note: COA certificates require standard lab testing, which takes about 30 business days"
+            "⚠️ COA แล็บภายนอกเป็นบริการเสริม คิดแยกตามล็อต — ไม่รับประกันผล GACP",
+            "⚠️ External lab COA is an optional add-on per lot — not a GACP audit guarantee"
           )}
         </div>
       )}

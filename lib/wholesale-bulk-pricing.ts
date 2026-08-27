@@ -2,6 +2,13 @@
  * B2B Bulk Order pricing — integer THB (ceil), editable via wholesale_settings.tiers v2.
  */
 
+import {
+  GF_PILOT_DEFAULT_QTY,
+  GF_PILOT_POUCH_QTY,
+  GF_PILOT_THB_PER_SEED,
+  isGfPilotPackQty,
+} from "@/lib/green-future-pilot-config";
+
 export type StrainTier = {
   minQty: number;
   maxQty: number | null;
@@ -128,14 +135,30 @@ export function isMicroPackQty(qty: number, config: BulkPricingConfig): boolean 
   return Math.floor(qty) === config.microPackQty;
 }
 
-export function isValidQty(qty: number, config: BulkPricingConfig): boolean {
+export type QuoteResolveOptions = CoaOptions & {
+  pilotMode?: boolean;
+};
+
+export function isValidQty(
+  qty: number,
+  config: BulkPricingConfig,
+  pilotMode = false
+): boolean {
   const q = Math.floor(qty);
+  if (pilotMode) return isGfPilotPackQty(q);
   if (q === config.microPackQty) return true;
   return q >= 500;
 }
 
-export function qtyNeedsNudge(qty: number, config: BulkPricingConfig): boolean {
+export function qtyNeedsNudge(
+  qty: number,
+  config: BulkPricingConfig,
+  pilotMode = false
+): boolean {
   const q = Math.floor(qty);
+  if (pilotMode) {
+    return q >= 1 && !isGfPilotPackQty(q);
+  }
   return q >= 1 && q < 500 && q !== config.microPackQty;
 }
 
@@ -274,13 +297,14 @@ export function normalizeBulkPricingConfig(
 export function resolveQuote(
   linesIn: BulkQuoteLineInput[],
   config: BulkPricingConfig = DEFAULT_BULK_PRICING,
-  coa: CoaOptions = {
+  coa: QuoteResolveOptions = {
     mode: "none",
     buyExtra: false,
     packageACount: 0,
     packageBCount: 0,
   }
 ): BulkQuoteResult {
+  const pilotMode = coa.pilotMode === true;
   const linesBase = linesIn.map((l) => ({
     ...l,
     quantity: Math.max(0, Math.floor(l.quantity)),
@@ -291,19 +315,27 @@ export function resolveQuote(
   const totalSeeds = activeLines.reduce((s, l) => s + l.quantity, 0);
   const allValid =
     activeLines.length > 0 &&
-    activeLines.every((l) => isValidQty(l.quantity, config));
+    activeLines.every((l) => isValidQty(l.quantity, config, pilotMode));
   const allLinesMin500 =
-    activeLines.length > 0 && activeLines.every((l) => l.quantity >= 500);
+    !pilotMode &&
+    activeLines.length > 0 &&
+    activeLines.every((l) => l.quantity >= 500);
 
-  const perk = resolveActivePerk(totalSeeds, allLinesMin500, config);
+  const perk = pilotMode
+    ? null
+    : resolveActivePerk(totalSeeds, allLinesMin500, config);
   const bulkUnlocked = perk != null;
 
   const lines: ResolvedLine[] = linesBase.map((l) => {
-    const valid = isValidQty(l.quantity, config);
-    const isMicro = isMicroPackQty(l.quantity, config);
+    const valid = isValidQty(l.quantity, config, pilotMode);
+    const isMicro = pilotMode
+      ? valid && l.quantity === GF_PILOT_POUCH_QTY
+      : isMicroPackQty(l.quantity, config);
     let unitThb = 0;
     if (valid) {
-      if (isMicro) {
+      if (pilotMode) {
+        unitThb = ceilThb(GF_PILOT_THB_PER_SEED);
+      } else if (isMicro) {
         unitThb = ceilThb(config.microPackThb);
       } else if (perk) {
         unitThb = ceilThb(perk.thbPerSeed);
@@ -311,12 +343,17 @@ export function resolveQuote(
         unitThb = strainUnitThb(l.quantity, config);
       }
     }
+    const lineTotalThb = pilotMode
+      ? ceilThb(unitThb * l.quantity)
+      : isMicro
+        ? unitThb
+        : ceilThb(unitThb * l.quantity);
     return {
       ...l,
       valid,
       isMicroPack: isMicro,
       unitThb,
-      lineTotalThb: ceilThb(unitThb * l.quantity),
+      lineTotalThb,
     };
   });
 
@@ -354,6 +391,8 @@ export function resolveQuote(
     grandTotalThb,
     depositThb,
     balanceThb,
-    upsell: getUpsellInfo(totalSeeds, allLinesMin500, config),
+    upsell: pilotMode
+      ? null
+      : getUpsellInfo(totalSeeds, allLinesMin500, config),
   };
 }

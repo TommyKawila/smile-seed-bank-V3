@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { WholesalePageClient } from "@/components/storefront/wholesale/WholesalePageClient";
+import { gfWholesaleRobots } from "@/lib/green-future-approved-marketing";
 import { DEFAULT_BULK_PRICING } from "@/lib/wholesale-bulk-pricing";
 import {
   getBulkPricingConfig,
@@ -11,8 +12,9 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "SGF Seeds B2B Wholesale | Smile Seed Bank",
   description:
-    "SGF Seeds documented bulk program — tiered B2B pricing, lot documentation support for licensed partners. Subject to confirmed lot and quotation.",
+    "โปรแกรมเมล็ด Green Future สำหรับ B2B — รับคำขอใบเสนอราคาเท่านั้น · Green Future documented bulk programme — quotation requests only.",
   alternates: { canonical: "/wholesale" },
+  robots: gfWholesaleRobots(),
 };
 
 export default async function WholesalePage() {

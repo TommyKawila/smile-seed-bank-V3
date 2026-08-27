@@ -3,6 +3,11 @@
 import { Check } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import {
+  GF_STRAIN_STATUS_PRE_GATE_EN,
+  GF_STRAIN_STATUS_PRE_GATE_TH,
+  isGfPreGate,
+} from "@/lib/green-future-approved-marketing";
+import {
   GACP_FEATURED_STRAINS,
   formatGacpVarietyRef,
 } from "@/lib/gacp-featured-strains";
@@ -22,14 +27,16 @@ export function GacpFeaturedStrains() {
             "Sample genetics referenced by variety code. The actual document pack depends on the producer-confirmed lot and is not guaranteed for every listed item."
           )}
         </p>
-        <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {GACP_FEATURED_STRAINS.map((strain) => {
             const ref = formatGacpVarietyRef(strain.varietyCode, strain.strainName);
             return (
               <li key={strain.varietyCode}>
                 <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-md">
                   <span className="inline-flex w-fit items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                    {t("เอกสารตามล็อต", "Per-lot documents")}
+                    {isGfPreGate()
+                      ? t(GF_STRAIN_STATUS_PRE_GATE_TH, GF_STRAIN_STATUS_PRE_GATE_EN)
+                      : t("เอกสารตามล็อต", "Per-lot documents")}
                   </span>
                   <h3 className="mt-3 text-base font-semibold text-slate-900">
                     {strain.displayName}

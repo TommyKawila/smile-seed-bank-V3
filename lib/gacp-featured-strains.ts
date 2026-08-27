@@ -41,6 +41,14 @@ export const GACP_FEATURED_STRAINS: GacpFeaturedStrain[] = [
     typeLabel: "Sativa-dominant",
     documents: ["Variety code", "Lot / test data", "External lab COA on request"],
   },
+  {
+    varietyCode: "AF102",
+    strainName: "CRITICAL 2.0 AUTO",
+    displayName: "Critical 2.0 Auto",
+    seedFormat: "AUTO_FEM",
+    typeLabel: "Indica-dominant",
+    documents: ["Variety code", "Lot / test data", "External lab COA on request"],
+  },
 ];
 
 export function formatGacpVarietyRef(code: string, name: string): string {

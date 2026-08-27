@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import { GacpLandingClient } from "@/components/storefront/wholesale/gacp/GacpLandingClient";
+import { gfWholesaleRobots } from "@/lib/green-future-approved-marketing";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Controlled seeds & lot documents for licensed farms | Smile Seed Bank",
+  title:
+    "เมล็ดควบคุมและเอกสารล็อตสำหรับฟาร์มที่มีใบอนุญาต | Controlled seeds & lot documents | Smile Seed Bank",
   description:
-    "Controlled cannabis seeds for licensed Thai farms, with lot traceability documents that support the customer’s GACP file. Not a GACP certificate or DTAM document. External lab tests billed separately.",
+    "เมล็ดควบคุมสำหรับฟาร์มที่มีใบอนุญาต พร้อมเอกสาร traceability สนับสนุน GACP — รับคำขอใบเสนอราคาเท่านั้น · Controlled cannabis seeds for licensed farms with supporting traceability documents — quotation requests only.",
   alternates: { canonical: "/wholesale/gacp" },
+  robots: gfWholesaleRobots(),
 };
 
 export default function GacpWholesalePage() {
