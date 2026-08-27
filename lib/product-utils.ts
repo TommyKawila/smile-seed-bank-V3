@@ -329,11 +329,18 @@ export function getEffectiveVariantPrice(
   return directPrice;
 }
 
+function isSellableVariant(v: { is_active?: boolean | null; stock?: number | null }): boolean {
+  return v.is_active !== false && (v.stock ?? 0) > 0;
+}
+
 export function getClearancePercentOff(product: ClearanceProductSlice): number | null {
   if (product.is_clearance !== true) return null;
   const packs = product.product_variants ?? [];
+  const pool = packs.filter(isSellableVariant);
+  const scan = pool.length > 0 ? pool : packs;
   let best: { list: number; sale: number } | null = null;
-  for (const v of packs) {
+  for (const v of scan) {
+    if (v.is_active === false) continue;
     const list = Number(v.price ?? 0);
     const sale = resolveVariantClearancePrice(v, product, list);
     if (sale == null || sale <= 0 || list <= sale) continue;
@@ -351,14 +358,14 @@ export type ClearancePackSummary = {
   percentOff: number;
 };
 
-/** Packs currently on Clearance (`clearance_price > 0` and below list). */
+/** In-stock packs currently on Clearance (`clearance_price > 0` and below list). */
 export function listClearancePackSummaries(
   product: ClearanceProductSlice
 ): ClearancePackSummary[] {
   if (product.is_clearance !== true) return [];
   const out: ClearancePackSummary[] = [];
   for (const v of product.product_variants ?? []) {
-    if (v.is_active === false) continue;
+    if (!isSellableVariant(v)) continue;
     const list = Number(v.price ?? 0);
     const sale = resolveVariantClearancePrice(v, product, list);
     if (sale == null || sale <= 0 || list <= sale) continue;

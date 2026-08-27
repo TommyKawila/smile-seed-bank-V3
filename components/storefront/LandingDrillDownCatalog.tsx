@@ -56,13 +56,13 @@ const LazyShopPriceFilterBottomSheet = dynamic(
 
 export function clearancePackVariants(p: ProductWithBreederAndVariants) {
   const all = p.product_variants ?? [];
-  const clearance = all.filter(
-    (v) =>
-      v.is_active !== false &&
-      v.clearance_price != null &&
-      Number(v.clearance_price) > 0
+  const inStock = all.filter(
+    (v) => v.is_active !== false && (v.stock ?? 0) > 0
   );
-  return clearance.length > 0 ? clearance : all;
+  const clearance = inStock.filter(
+    (v) => v.clearance_price != null && Number(v.clearance_price) > 0
+  );
+  return clearance.length > 0 ? clearance : inStock;
 }
 
 export function LandingDrillDownCatalog({

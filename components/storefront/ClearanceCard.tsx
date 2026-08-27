@@ -39,7 +39,7 @@ export function ClearanceCard({ product }: { product: ProductWithBreederAndVaria
   const pct = getClearancePercentOff(product);
   const clearancePacks = listClearancePackSummaries(product);
   const activePackCount = (product.product_variants ?? []).filter(
-    (v) => v.is_active !== false
+    (v) => v.is_active !== false && (v.stock ?? 0) > 0
   ).length;
   const partialClearance =
     clearancePacks.length > 0 && clearancePacks.length < activePackCount;
