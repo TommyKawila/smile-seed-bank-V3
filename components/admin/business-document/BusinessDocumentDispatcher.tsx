@@ -34,6 +34,8 @@ import {
 import {
   GREEN_FUTURE_0824_REPLY_RAW,
   GREEN_FUTURE_0824_REPLY_SUBJECT,
+  GREEN_FUTURE_0824_REPLY_TH_RAW,
+  GREEN_FUTURE_0824_REPLY_TH_SUBJECT,
 } from "@/lib/green-future-0824-reply-letter";
 import { exportBusinessDocumentPdf } from "@/lib/business-document-pdf.client";
 import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
@@ -191,6 +193,15 @@ export function BusinessDocumentDispatcher() {
       GREEN_FUTURE_0824_REPLY_SUBJECT,
       "0824 reply loaded",
       "Confirm 4×50, Option 1, sample pouches, then send Meet link."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFuture0824ReplyTh = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_0824_REPLY_TH_RAW,
+      GREEN_FUTURE_0824_REPLY_TH_SUBJECT,
+      "0824 Thai reply loaded",
+      "Thai evidence copy — attach with the English original."
     );
   }, [loadTemplate]);
 
@@ -419,6 +430,7 @@ export function BusinessDocumentDispatcher() {
             handleLoadGreenFuturePackagingProposal
           }
           onLoadGreenFuture0824Reply={handleLoadGreenFuture0824Reply}
+          onLoadGreenFuture0824ReplyTh={handleLoadGreenFuture0824ReplyTh}
           onLoadGreenFutureJuliaBrief={handleLoadGreenFutureJuliaBrief}
           onSignatureUrlChange={setSignatureImageUrl}
           onAttachmentUrlsChange={setAttachmentImageUrls}

@@ -111,6 +111,7 @@
 | Template | ไฟล์ code |
 |----------|-----------|
 | Reply to GF/SSB/2026-0824 | `lib/green-future-0824-reply-letter.ts` |
+| Reply 0824 (Thai evidence) | ชุดเดียวกัน — ปุ่ม Dispatcher |
 | Julia meeting brief (internal) | `lib/green-future-julia-meeting-brief.ts` |
 | UI | `/admin/documents/dispatcher` |
 

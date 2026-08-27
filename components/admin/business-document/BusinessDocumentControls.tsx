@@ -51,6 +51,7 @@ type Props = {
   onLoadGreenFutureTestOrder?: () => void;
   onLoadGreenFuturePackagingProposal?: () => void;
   onLoadGreenFuture0824Reply?: () => void;
+  onLoadGreenFuture0824ReplyTh?: () => void;
   onLoadGreenFutureJuliaBrief?: () => void;
   onSignatureUrlChange: (url: string | null) => void;
   onAttachmentUrlsChange: (urls: string[]) => void;
@@ -96,6 +97,7 @@ export function BusinessDocumentControls({
   onLoadGreenFutureTestOrder,
   onLoadGreenFuturePackagingProposal,
   onLoadGreenFuture0824Reply,
+  onLoadGreenFuture0824ReplyTh,
   onLoadGreenFutureJuliaBrief,
   onSignatureUrlChange,
   onAttachmentUrlsChange,
@@ -187,6 +189,7 @@ export function BusinessDocumentControls({
       onLoadGreenFutureTestOrder ||
       onLoadGreenFuturePackagingProposal ||
       onLoadGreenFuture0824Reply ||
+      onLoadGreenFuture0824ReplyTh ||
       onLoadGreenFutureJuliaBrief ||
       onLoadGreenFutureTemplate ? (
         <Card className="border-[#12463e]/35 bg-[#12463e]/5 shadow-sm">
@@ -247,6 +250,17 @@ export function BusinessDocumentControls({
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Reply to GF/SSB/2026-0824
+              </Button>
+            ) : null}
+            {onLoadGreenFuture0824ReplyTh ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-[#12463e]/40 text-[#12463e] hover:bg-[#12463e]/5"
+                onClick={onLoadGreenFuture0824ReplyTh}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Reply 0824 (Thai evidence)
               </Button>
             ) : null}
             {onLoadGreenFutureJuliaBrief ? (
