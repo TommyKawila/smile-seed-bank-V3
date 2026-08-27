@@ -96,8 +96,13 @@ export function ImageUploader() {
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium text-slate-600">Package background</p>
+    <div className="space-y-2 rounded-md border border-dashed border-slate-200 bg-slate-50/80 p-3">
+      <div>
+        <p className="text-xs font-semibold text-slate-700">Package photo</p>
+        <p className="text-[11px] text-slate-500">
+          Upload rear of 7 × 10 cm SSB pack. JPEG / PNG / WebP under ~4MB.
+        </p>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <input
           ref={inputRef}
@@ -118,7 +123,7 @@ export function ImageUploader() {
           ) : (
             <Upload className="mr-1.5 h-4 w-4" />
           )}
-          Upload image
+          Upload package
         </Button>
         {data.bgImageUrl ? (
           <Button
@@ -132,12 +137,8 @@ export function ImageUploader() {
         ) : null}
       </div>
       {data.bgImageUrl ? (
-        <p className="truncate text-[11px] text-slate-400">{data.bgImageUrl}</p>
-      ) : (
-        <p className="text-[11px] text-slate-400">
-          JPEG / PNG / WebP under ~4MB (not HEIC)
-        </p>
-      )}
+        <p className="truncate text-[11px] text-emerald-600">Image ready — position sticker on preview</p>
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
 import {
   attachmentDisplayName,
+  ATTACHMENT_IMAGE_EMAIL_STYLE,
   splitAttachmentUrls,
 } from "@/lib/business-document-attachments";
 import {
@@ -29,7 +30,7 @@ function attachmentImagesBlock(urls: string[] | undefined): string {
   return `<div style="margin:16px 0 8px;">${list
     .map(
       (url) =>
-        `<p style="margin:0 0 12px;"><img src="${escapeHtml(url)}" alt="Attachment" style="max-width:100%;max-height:420px;height:auto;display:block;border:1px solid #e2e8f0;border-radius:4px;" /></p>`
+        `<p style="margin:0 0 12px;"><img src="${escapeHtml(url)}" alt="Attachment" style="${ATTACHMENT_IMAGE_EMAIL_STYLE}" /></p>`
     )
     .join("")}</div>`;
 }

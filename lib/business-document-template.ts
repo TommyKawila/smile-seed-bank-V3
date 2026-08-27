@@ -1,5 +1,6 @@
 import {
   attachmentDisplayName,
+  ATTACHMENT_IMAGE_PRINT_CSS,
   splitAttachmentUrls,
 } from "@/lib/business-document-attachments";
 import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
@@ -208,9 +209,9 @@ export function buildBusinessDocumentPrintHtmlFromBody(
     .doc-date { font-size: 10pt; color: #64748b; margin-bottom: 8mm; }
     .doc-signoff { margin-top: 6mm; margin-bottom: 2mm; }
     .doc-signature { font-weight: 500; color: #0f172a; line-height: 1.35; }
-    .doc-attachments { margin-top: 6mm; }
-    .doc-attach { margin: 0 0 4mm; page-break-inside: avoid; }
-    .doc-attach img { max-width: 100%; max-height: 120mm; width: auto; height: auto; display: block; }
+    .doc-attachments { margin-top: 8mm; }
+    .doc-attach { margin: 0 0 6mm; page-break-inside: avoid; }
+    ${ATTACHMENT_IMAGE_PRINT_CSS}
     .doc-attach-pdf { margin: 0 0 4mm; font-size: 10pt; }
     .doc-attach-pdf a { color: #12463e; text-decoration: underline; }
     .doc-sig-img { margin-top: 2mm; }

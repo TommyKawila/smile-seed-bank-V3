@@ -109,10 +109,11 @@ export function LabelForm() {
           onChange={(e) => setField("distributorName", e.target.value)}
         />
       </Field>
-      <Field label="Distributor license พ.พ.3">
+      <Field label="Distributor license พ.พ.4">
         <Input
-          value={data.distributorLicensePP3}
-          onChange={(e) => setField("distributorLicensePP3", e.target.value)}
+          value={data.distributorLicensePP4}
+          onChange={(e) => setField("distributorLicensePP4", e.target.value)}
+          placeholder="1011043900042568"
         />
       </Field>
       <Field label="Address">

@@ -1,16 +1,25 @@
 "use client";
 
-import { useRef } from "react";
-import { Copy, Download, Loader2, Link2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { ChevronDown, Copy, Download, Loader2, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FontScaleControls } from "@/components/mockup/FontScaleControls";
 import { ImageUploader } from "@/components/mockup/ImageUploader";
 import { LabelForm } from "@/components/mockup/LabelForm";
 import { MockupControls } from "@/components/mockup/MockupControls";
+import { StickerSizeControls } from "@/components/mockup/StickerSizeControls";
 import { useMockup } from "@/components/mockup/MockupContext";
 import { VisualPreview } from "@/components/mockup/VisualPreview";
+import { formatCm } from "@/lib/mockup-dimensions";
 import {
-  domElementToPngBlob,
-  saveOrSharePngBlob,
+  exportDomElementAsFile,
+  type ExportImageFormat,
 } from "@/lib/save-dom-image";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +27,7 @@ export function MockupWorkspace() {
   const { data, setLabelPosition, setData, saving, setSaving } = useMockup();
   const { toast } = useToast();
   const previewRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
 
   async function saveAndCopyLink() {
     setSaving(true);
@@ -55,27 +65,25 @@ export function MockupWorkspace() {
     }
   }
 
-  async function exportPng() {
+  async function exportFile(format: ExportImageFormat) {
     const el = previewRef.current;
-    if (!el) return;
-    const blob = await domElementToPngBlob(el, "#f8fafc");
-    if (!blob) {
-      toast({
-        title: "Export failed",
-        description: "Could not render preview",
-        variant: "destructive",
-      });
-      return;
-    }
-    const name = `label-mockup-${data.strainName || data.id}.png`.replace(
-      /\s+/g,
-      "-"
-    );
-    const result = await saveOrSharePngBlob(blob, name, "Label mockup");
-    if (result === "failed") {
-      toast({ title: "Export failed", variant: "destructive" });
-    } else if (result === "downloaded" || result === "shared") {
-      toast({ title: result === "shared" ? "Shared" : "PNG downloaded" });
+    if (!el || exporting) return;
+    setExporting(true);
+    try {
+      const base = `label-mockup-${data.strainName || data.id}`;
+      const ok = await exportDomElementAsFile(el, format, base, "#f8fafc");
+      if (!ok) {
+        toast({
+          title: "Export failed",
+          description: "Could not render preview",
+          variant: "destructive",
+        });
+        return;
+      }
+      const ext = format === "jpeg" ? "JPG" : format.toUpperCase();
+      toast({ title: `Downloaded ${ext}` });
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -83,19 +91,45 @@ export function MockupWorkspace() {
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="space-y-5 rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">Label data</h2>
+          <h2 className="text-sm font-semibold text-slate-900">
+            Package sticker mockup
+          </h2>
           <p className="text-xs text-slate-500">
-            Fill fields, upload package, position the label, then save or export.
+            Upload pack photo, set sticker to {formatCm(data.labelSizeCm.width)} ×{" "}
+            {formatCm(data.labelSizeCm.height)} cm, drag on preview, then export.
           </p>
         </div>
-        <LabelForm />
+
         <ImageUploader />
+
         <div className="space-y-2">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Position
+            Sticker size
+          </h3>
+          <StickerSizeControls />
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Font size
+          </h3>
+          <FontScaleControls />
+        </div>
+
+        <div className="space-y-2 border-t border-slate-100 pt-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Label content
+          </h3>
+          <LabelForm />
+        </div>
+
+        <div className="space-y-2 border-t border-slate-100 pt-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Position &amp; fine-tune
           </h3>
           <MockupControls />
         </div>
+
         <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
           <Button type="button" disabled={saving} onClick={saveAndCopyLink}>
             {saving ? (
@@ -105,10 +139,30 @@ export function MockupWorkspace() {
             )}
             Save &amp; Get Link
           </Button>
-          <Button type="button" variant="outline" onClick={exportPng}>
-            <Download className="mr-1.5 h-4 w-4" />
-            Export Image
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" disabled={exporting}>
+                {exporting ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-1.5 h-4 w-4" />
+                )}
+                Export
+                <ChevronDown className="ml-1 h-4 w-4 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => void exportFile("png")}>
+                Download PNG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void exportFile("jpeg")}>
+                Download JPG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void exportFile("pdf")}>
+                Download PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             type="button"
             variant="ghost"
@@ -127,7 +181,12 @@ export function MockupWorkspace() {
       </div>
 
       <div className="space-y-2">
-        <h2 className="text-sm font-semibold text-slate-900">Preview</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-slate-900">Preview</h2>
+          <p className="text-[11px] text-slate-500">
+            Dashed box = sticker · amber = pack bounds
+          </p>
+        </div>
         <VisualPreview
           ref={previewRef}
           data={data}

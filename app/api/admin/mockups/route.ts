@@ -2,13 +2,18 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminUser } from "@/lib/auth-utils";
 import { saveMockup } from "@/services/mockupService";
-import { DEFAULT_LABEL_POSITION } from "@/types/label";
+import { DEFAULT_LABEL_POSITION, DEFAULT_LABEL_SIZE_CM, DEFAULT_FONT_SCALE } from "@/types/label";
 
 const positionSchema = z.object({
   x: z.number(),
   y: z.number(),
   scale: z.number().positive(),
   rotation: z.number(),
+});
+
+const labelSizeCmSchema = z.object({
+  width: z.number().positive(),
+  height: z.number().positive(),
 });
 
 const bodySchema = z.object({
@@ -24,11 +29,15 @@ const bodySchema = z.object({
   producerName: z.string(),
   producerLicenseRP2: z.string(),
   distributorName: z.string(),
-  distributorLicensePP3: z.string(),
+  distributorLicensePP4: z.string(),
+  /** @deprecated use distributorLicensePP4 */
+  distributorLicensePP3: z.string().optional(),
   address: z.string(),
   storageInstructions: z.string(),
   bgImageUrl: z.union([z.string().url(), z.literal(""), z.undefined()]).optional(),
   labelPosition: positionSchema.default(DEFAULT_LABEL_POSITION),
+  labelSizeCm: labelSizeCmSchema.default(DEFAULT_LABEL_SIZE_CM),
+  fontScale: z.number().min(0.5).max(1.5).default(DEFAULT_FONT_SCALE),
 });
 
 export async function POST(req: Request) {
@@ -46,11 +55,18 @@ export async function POST(req: Request) {
     }
 
     const bg = parsed.data.bgImageUrl?.trim();
+    const pp4 =
+      parsed.data.distributorLicensePP4?.trim() ||
+      parsed.data.distributorLicensePP3?.trim() ||
+      "";
     const saved = await saveMockup({
       ...parsed.data,
       id: parsed.data.id ?? crypto.randomUUID(),
       bgImageUrl: bg || undefined,
+      distributorLicensePP4: pp4,
       labelPosition: parsed.data.labelPosition,
+      labelSizeCm: parsed.data.labelSizeCm,
+      fontScale: parsed.data.fontScale,
     });
 
     const origin = new URL(req.url).origin;

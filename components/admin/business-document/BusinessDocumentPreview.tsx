@@ -13,6 +13,7 @@ import {
 import { plainLetterBodyToHtml } from "@/lib/business-document-raw-format";
 import {
   attachmentDisplayName,
+  ATTACHMENT_IMAGE_PREVIEW_CLASS,
   isPdfAttachmentUrl,
 } from "@/lib/business-document-attachments";
 
@@ -151,7 +152,10 @@ export function BusinessDocumentPreview({
       )}
 
       {attachmentImageUrls.length > 0 ? (
-        <div className="mt-4 space-y-3 shrink-0">
+        <div className="mt-6 space-y-4 shrink-0 border-t border-slate-100 pt-4">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            Attachments
+          </p>
           {attachmentImageUrls.map((url) =>
             isPdfAttachmentUrl(url) ? (
               <a
@@ -168,8 +172,8 @@ export function BusinessDocumentPreview({
               <img
                 key={url}
                 src={url}
-                alt="Attachment"
-                className="max-h-[320px] w-auto max-w-full rounded border border-slate-200 object-contain object-left"
+                alt={attachmentDisplayName(url)}
+                className={ATTACHMENT_IMAGE_PREVIEW_CLASS}
               />
             )
           )}

@@ -81,48 +81,54 @@
 
 ## OPS — Green Future × SSB (2026-08-21)
 
-*ดีล documented seed programme · สถานะ: aligned on framework, not yet contracted*
+*ดีล documented seed programme · สถานะ: framework locked · รอ quotation หลังยืนยันแพ็ก/Option*
 
-### สถานะล่าสุด (อัปเดต 2026-08-21)
+### สถานะล่าสุด (อัปเดต 2026-08-25)
 | รายการ | รายละเอียด |
 |--------|-------------|
-| จดหมาย GF ล่าสุด | **GF/SSB/2026-0821** (21 ส.ค.) — ตอบจดหมายชี้แจง SSB 18 ส.ค. |
-| สถานะดีล | กรอบกฎหมาย/บทบาท **ตกลงแล้ว** · สัญญา Distribution ยังไม่เซ็น · test order ทำได้ก่อนสัญญา (ต้องมี quotation + PO + mini-terms เป็นลายลักษณ์อักษร) |
-| Exclusivity | **Non-exclusive** ช่วง test order — คุยทีหลังถ้ามีปริมาณ |
-| คุณภาพผูกพัน | งอก ≥80% · บริสุทธิ์ ≥99% ต่อ PO + claims procedure |
-| ISTA 4 สาย | AF99, AF143, AF02, AF22 — แล็บกำลังทำ · คาดผล **~10 ก.ย. 2026** |
-| Lead Protection | จดหมาย SSB 10 ส.ค. — **GF ยังไม่ตอบใน 0821** |
-| ประชุม | GF ตกลง 60 นาทีสัปดาห์หน้า · SSB เสนอ slot **26–28 ส.ค. 2026** |
+| จดหมาย GF ล่าสุด | **GF/SSB/2026-0824** (24 ส.ค.) — ยืนยันกรอบ + ขอให้เลือกแพ็ก/COA |
+| สถานะดีล | กรอบกฎหมายปิดแล้ว · ยังไม่ใช่สัญญา · test order เดินได้หลัง quotation + PO |
+| Exclusivity | **Non-exclusive** รอบแรก · exclusive คุยทีหลัง |
+| คุณภาพผูกพัน | งอก ≥80% · บริสุทธิ์ ≥99% ต่อ PO + claims template (รอ GF ส่ง) |
+| ISTA 4 สาย | AF99, AF143, AF02, AF22 — ยังรอผล · ไม่บล็อก Option 1 |
+| AF102 | **มีสต็อก** ใช้ใน test order ได้ |
+| Lead Protection | รับไปใส่ Distribution Agreement · **ไม่เป็นเงื่อนไข test order** |
+| ประชุม | ศุกร์ **28 ส.ค. 2026 10:00–11:00 ICT** · คุณจูเลีย · SSB ส่ง Meet link |
+| แพ็กที่เลือก (ร่างตอบ) | **4×50 = 20 ซองซีล** · Option 1 ส่งเมล็ดก่อน COA |
+| ซอง SSB | รับไปประเมินเท่านั้น · ส่งตัวอย่างก่อน · ยังไม่อนุมัติจนกว่าทดสอบของจริง |
+| ค่าส่งรอบแรก | Smile จ่ายซองเปล่าไป GF · GF จ่ายเมล็ดมา Smile (ครั้งเดียว) |
 
 ### เอกสารอ้างอิง (B2B email folder)
 | Ref | ไฟล์ / แหล่ง |
 |-----|----------------|
-| GF/SSB/2026-0821 | `เอกสารสำคัญ/B2B email/Docs from Green Future/Green_Future_Response_to_Smile_21-08-2026.pdf` |
+| GF/SSB/2026-0824 | `เอกสารสำคัญ/B2B email/Docs from Green Future/Green_Future_Response_to_Smile_24_08_2026_EN_FINAL.pdf` |
+| GF/SSB/2026-0821 | `Green_Future_Response_to_Smile_21-08-2026.pdf` |
 | GF/SSB/2026-0815 | Business Cooperation Plan (GF annotated) |
-| GF/SSB/2026-0803 | Seed Supply & COA Proposal — ขั้นราคา + test order tier |
-| GF/SSB/2026-0810 | ISTA 4 สาย (AF99, AF143, AF02, AF22) |
-| SSB 18 ส.ค. | Clarification & Next Steps (ส่งแล้ว) |
+| GF/SSB/2026-0803 | Seed Supply & COA Proposal |
+| GF/SSB/2026-0810 | ISTA 4 สาย |
 
-### เอกสารตอบกลับ SSB (Dispatcher — ร่างพร้อมส่ง)
+### เอกสารตอบกลับ SSB (Dispatcher)
 | Template | ไฟล์ code |
 |----------|-----------|
-| Reply to GF/SSB/2026-0821 | `lib/green-future-response-reply-letter.ts` |
-| Meeting pack (pre-read) | `lib/green-future-meeting-pack.ts` |
-| Test order line list | `lib/green-future-test-order.ts` |
-| UI | `/admin/documents/dispatcher` — ปุ่ม Green Future templates |
+| Reply to GF/SSB/2026-0824 | `lib/green-future-0824-reply-letter.ts` |
+| Julia meeting brief (internal) | `lib/green-future-julia-meeting-brief.ts` |
+| UI | `/admin/documents/dispatcher` |
 
-### Test order ร่าง (Option A — ไม่มี COA)
-- ขั้น **SSB Test Order** (0803): 5 สาย × 200 เมล็ด · €1.15 / 44.21 THB ต่อเมล็ด
-- สาย: AF99, AF143, AF02, AF22 + **AF102** (สายที่ 5 — ยืนยัน availability ในประชุม)
-- มัดจำ 50% ~22,105 THB · lead 3–7 วันหลังมัดจำ (ประมาณการ)
+### Test order ที่ล็อกในจดหมายตอบ
+- 5 สาย × 200 เมล็ด รวม AF102 · **4×50 (20 ซอง)** · Option 1 (internal lot test ปล่อยของ)
+- มัดจำ 50% · ยอดเหลือเมื่อของพร้อม · จ่ายครบก่อนส่ง · ราคา EUR จ่าย THB ตามเรทในใบ 14 วัน
+- ค่าแพ็ก 20 ซองตามตาราง GF ≈ 400 บาท (ขอให้ระบุใน quotation)
 
 ### งานถัดไป (GF)
-- [ ] ส่ง reply + แนบ Meeting pack + Test order PDF (+ ฉลาก mockup จาก `/admin/partners/green-future/mockup`)
-- [ ] ยืนยัน slot ประชุม 26–28 ส.ค.
-- [ ] รับ GF working label template + Claims Procedure Template
-- [ ] รับ quotation → ออก PO → mini-terms test order
-- [ ] ตรวจคลัง พ.พ.4: +5–+10°C, RH ≤50%, electronic log (จำเป็นถ้าเคลมงอก)
-- [ ] หลัง test order สำเร็จ → Distribution Agreement + Lead Protection
+- [ ] ส่ง Reply 0824 + Google Meet link (ก่อนประชุม 28 ส.ค.)
+- [ ] ประชุมกับจูเลียตาม brief ภายใน
+- [ ] ขอให้ทีม GF ใกล้ กทม. ช่วยนัดหน่วยงานตรวจซองติดฉลาก + สรุปกระบวนการ 1 หน้า (ประสาน ไม่โอนความรับผิด)
+- [ ] ส่งซองตัวอย่างชุดเล็ก + ใบนับจำนวน + โน้ตวัสดุ/ซีล ไปที่ GF บางพลี
+- [ ] รับ quotation / รายการฟิลด์ฉลาก / Claims Template
+- [ ] ทดสอบซอง+ฉลากผ่าน → written approval เวอร์ชัน → ส่งซองสำหรับ 20 หน่วย (+สำรอง)
+- [ ] PO + มัดจำ 50% หลัง quotation
+- [ ] ตรวจคลัง +5–+10°C, RH ≤50%, electronic log ก่อนของถึง
+- [ ] หลังส่งของสำเร็จ → Distribution Agreement + Lead Protection
 
 ---
 
@@ -145,6 +151,29 @@
 - **What:** แก้ Preview ที่ยุบเนื้อหา Meeting pack/Test order เป็นย่อหน้ายาว
 - **Logic:** รักษา line breaks และแยก Markdown tables, bullet lists, headings ให้แสดงเป็นโครงสร้างอ่านได้ใน Preview/PDF
 - **ไฟล์:** `lib/business-document-raw-format.ts`
+
+### บันทึกการทำงาน — 2026-08-22 (GF temporary packaging proposal)
+- **What:** เพิ่มเอกสารเสนอใช้แพ็กเกจ Smile Seed Bank เดิมชั่วคราวใน first-stage test order
+- **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
+- **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
+
+### บันทึกการทำงาน — 2026-08-22 (GF packaging proposal label responsibility correction)
+- **What:** แก้ถ้อยคำให้ Green Future เป็นผู้ติดฉลาก บรรจุ และซีลที่ต้นทาง
+- **Logic:** Smile Seed Bank ห้าม print/apply/repack/relabel ก่อนมี written approval; label application ดำเนินการโดย GF ตาม workflow ที่อนุมัติ
+- **ไฟล์:** `lib/green-future-packaging-proposal.ts`
+
+### บันทึกการทำงาน — 2026-08-27 (Clearance card — ซ่อนแพ็กหมดสต็อก)
+- **What:** ชิปแพ็กบน `/clearance` ไม่โชว์ขนาดที่สต็อกเป็น 0 (เช่น Candyman S1 1/2 เมล็ด) — ราคา/−% ตามแพ็กที่ซื้อได้
+- **Logic:** `listClearancePackSummaries` / `getClearancePercentOff` / `clearancePackVariants` กรอง `stock > 0`
+- **ไฟล์:** `lib/product-utils.ts` · `LandingDrillDownCatalog.tsx` · `ClearanceCard.tsx`
+
+### บันทึกการทำงาน — 2026-08-25 (GF 0824 reply)
+- **What:** อ่าน GF/SSB/2026-0824 · ล็อก Option 1 + แพ็ก 4×50 · ส่งซองตัวอย่างก่อนสต็อกเต็ม · ร่างจดหมายตอบใน Dispatcher
+- **Logic:** 20 ซองซีลขายได้โดยไม่เปิดแบ่ง · COA มาทีหลัง · ค่าแพ็ก ≈400 บาท · GF จ่ายค่าส่งเมล็ดรอบแรก · ไม่พิมพ์ GACP-ready บนซองจนกว่าอนุมัติงานศิลป์
+- **ไฟล์:** `lib/green-future-0824-reply-letter.ts` · `lib/green-future-julia-meeting-brief.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
+- **What:** ยืนยันประชุม 28 ส.ค. 10:00–11:00 กับคุณจูเลีย · เพิ่มเช็คลิสต์ถามภายในภาษาไทย
+- **Logic:** test order ลงทุนน้อย · แฟร์ทั้งสองฝ่าย · ข้อผูกพันต้องเป็นลายลักษณ์อักษรหลังแปล · ไม่เปิด exclusive/Traceability Pack/ซองใหม่ในรอบนี้
+- **ไฟล์:** `lib/green-future-julia-meeting-brief.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
 ### บันทึกการทำงาน — 2026-08-19 (LINE OA auto-reply — นุ่มลง + ตัด false positive)
 - **What:** ทักทั่วไปตอบรับทราบแทนบังคับ Order # · เลขไม่เจอข้อความนุ่มลง · ลูกค้า linked / cooldown 24h เงียบ · รองรับ SSB-B2B / SSB-BL

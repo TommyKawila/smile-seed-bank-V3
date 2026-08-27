@@ -1,4 +1,6 @@
 import type { SeedLabelData } from "@/types/label";
+import { labelFontPx } from "@/lib/mockup-dimensions";
+import { DEFAULT_FONT_SCALE } from "@/types/label";
 
 type Props = {
   data: SeedLabelData;
@@ -7,6 +9,8 @@ type Props = {
 
 /** Stateless B&W print-ready seed label */
 export function LabelGraphic({ data, className }: Props) {
+  const fs = data.fontScale ?? DEFAULT_FONT_SCALE;
+
   return (
     <div
       className={
@@ -16,12 +20,25 @@ export function LabelGraphic({ data, className }: Props) {
       style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
     >
       <div className="border-b border-black pb-1.5 mb-1.5 text-center">
-        <p className="text-[9px] uppercase tracking-wide">Seed Label</p>
-        <p className="text-sm font-bold leading-snug">{data.strainName || "—"}</p>
-        <p className="text-[10px]">{data.species}</p>
+        <p
+          className="uppercase tracking-wide"
+          style={{ fontSize: labelFontPx(9, fs) }}
+        >
+          Seed Label
+        </p>
+        <p
+          className="font-bold leading-snug"
+          style={{ fontSize: labelFontPx(14, fs) }}
+        >
+          {data.strainName || "—"}
+        </p>
+        <p style={{ fontSize: labelFontPx(10, fs) }}>{data.species}</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-x-1 gap-y-0.5 text-[10px] mb-1.5">
+      <div
+        className="grid grid-cols-3 gap-x-1 gap-y-0.5 mb-1.5"
+        style={{ fontSize: labelFontPx(10, fs) }}
+      >
         <div>
           <span className="opacity-60">Qty</span>
           <p className="font-semibold">{data.quantity}</p>
@@ -36,7 +53,10 @@ export function LabelGraphic({ data, className }: Props) {
         </div>
       </div>
 
-      <div className="space-y-0.5 text-[9px] mb-1.5 border-y border-black/40 py-1.5">
+      <div
+        className="space-y-0.5 mb-1.5 border-y border-black/40 py-1.5"
+        style={{ fontSize: labelFontPx(9, fs) }}
+      >
         <p>
           <span className="opacity-60">Collected: </span>
           {data.collectedDate || "—"}
@@ -51,7 +71,10 @@ export function LabelGraphic({ data, className }: Props) {
         </p>
       </div>
 
-      <div className="space-y-1 text-[9px] mb-1.5">
+      <div
+        className="space-y-1 mb-1.5"
+        style={{ fontSize: labelFontPx(9, fs) }}
+      >
         <div>
           <p className="font-semibold">Producer</p>
           <p>{data.producerName || "—"}</p>
@@ -60,7 +83,9 @@ export function LabelGraphic({ data, className }: Props) {
         <div>
           <p className="font-semibold">Distributor</p>
           <p>{data.distributorName || "—"}</p>
-          <p className="opacity-70">พ.พ.3: {data.distributorLicensePP3 || "—"}</p>
+          <p className="opacity-70">
+            พ.พ.4: {data.distributorLicensePP4 || "—"}
+          </p>
         </div>
         <div>
           <p className="font-semibold">Address</p>
@@ -68,7 +93,10 @@ export function LabelGraphic({ data, className }: Props) {
         </div>
       </div>
 
-      <div className="border-t border-black pt-1.5 text-[8px] leading-snug">
+      <div
+        className="border-t border-black pt-1.5 leading-snug"
+        style={{ fontSize: labelFontPx(8, fs) }}
+      >
         <p className="font-semibold mb-0.5">Storage</p>
         <p>{data.storageInstructions}</p>
       </div>

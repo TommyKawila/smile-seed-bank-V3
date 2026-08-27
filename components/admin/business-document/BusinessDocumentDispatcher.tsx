@@ -23,6 +23,18 @@ import {
   GREEN_FUTURE_TEST_ORDER_RAW,
   GREEN_FUTURE_TEST_ORDER_SUBJECT,
 } from "@/lib/green-future-test-order";
+import {
+  GREEN_FUTURE_PACKAGING_PROPOSAL_RAW,
+  GREEN_FUTURE_PACKAGING_PROPOSAL_SUBJECT,
+} from "@/lib/green-future-packaging-proposal";
+import {
+  GREEN_FUTURE_JULIA_MEETING_BRIEF_RAW,
+  GREEN_FUTURE_JULIA_MEETING_BRIEF_SUBJECT,
+} from "@/lib/green-future-julia-meeting-brief";
+import {
+  GREEN_FUTURE_0824_REPLY_RAW,
+  GREEN_FUTURE_0824_REPLY_SUBJECT,
+} from "@/lib/green-future-0824-reply-letter";
 import { exportBusinessDocumentPdf } from "@/lib/business-document-pdf.client";
 import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
 import { resolveCompanyContactEmail } from "@/lib/company-legal-identity";
@@ -161,6 +173,33 @@ export function BusinessDocumentDispatcher() {
       GREEN_FUTURE_TEST_ORDER_SUBJECT,
       "Test order loaded",
       "Export PDF and attach to reply email."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFuturePackagingProposal = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_PACKAGING_PROPOSAL_RAW,
+      GREEN_FUTURE_PACKAGING_PROPOSAL_SUBJECT,
+      "Packaging proposal loaded",
+      "Temporary packaging proposal — attach the package artwork for GF review."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFuture0824Reply = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_0824_REPLY_RAW,
+      GREEN_FUTURE_0824_REPLY_SUBJECT,
+      "0824 reply loaded",
+      "Confirm 4×50, Option 1, sample pouches, then send Meet link."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureJuliaBrief = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_JULIA_MEETING_BRIEF_RAW,
+      GREEN_FUTURE_JULIA_MEETING_BRIEF_SUBJECT,
+      "Julia meeting brief loaded",
+      "Internal Thai checklist — print for the 28 Aug meeting. Do not send to GF."
     );
   }, [loadTemplate]);
 
@@ -376,6 +415,11 @@ export function BusinessDocumentDispatcher() {
           onLoadGreenFutureReply={handleLoadGreenFutureReply}
           onLoadGreenFutureMeetingPack={handleLoadGreenFutureMeetingPack}
           onLoadGreenFutureTestOrder={handleLoadGreenFutureTestOrder}
+          onLoadGreenFuturePackagingProposal={
+            handleLoadGreenFuturePackagingProposal
+          }
+          onLoadGreenFuture0824Reply={handleLoadGreenFuture0824Reply}
+          onLoadGreenFutureJuliaBrief={handleLoadGreenFutureJuliaBrief}
           onSignatureUrlChange={setSignatureImageUrl}
           onAttachmentUrlsChange={setAttachmentImageUrls}
           onPersistSignatureDefault={(url) => updateSetting(FOUNDER_SIGNATURE_SETTING_KEY, url)}

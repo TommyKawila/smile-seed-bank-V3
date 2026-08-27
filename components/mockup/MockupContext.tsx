@@ -11,6 +11,7 @@ import {
 import {
   createEmptySeedLabelData,
   type LabelPosition,
+  type LabelSizeCm,
   type SeedLabelData,
 } from "@/types/label";
 
@@ -18,6 +19,7 @@ type MockupContextValue = {
   data: SeedLabelData;
   setField: <K extends keyof SeedLabelData>(key: K, value: SeedLabelData[K]) => void;
   setLabelPosition: (patch: Partial<LabelPosition>) => void;
+  setLabelSizeCm: (patch: Partial<LabelSizeCm>) => void;
   setData: (next: SeedLabelData) => void;
   uploading: boolean;
   setUploading: (v: boolean) => void;
@@ -54,18 +56,26 @@ export function MockupProvider({
     }));
   }, []);
 
+  const setLabelSizeCm = useCallback((patch: Partial<LabelSizeCm>) => {
+    setData((prev) => ({
+      ...prev,
+      labelSizeCm: { ...prev.labelSizeCm, ...patch },
+    }));
+  }, []);
+
   const value = useMemo(
     () => ({
       data,
       setField,
       setLabelPosition,
+      setLabelSizeCm,
       setData,
       uploading,
       setUploading,
       saving,
       setSaving,
     }),
-    [data, setField, setLabelPosition, uploading, saving]
+    [data, setField, setLabelPosition, setLabelSizeCm, uploading, saving]
   );
 
   return (

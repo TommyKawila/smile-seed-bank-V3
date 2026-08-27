@@ -49,6 +49,9 @@ type Props = {
   onLoadGreenFutureReply?: () => void;
   onLoadGreenFutureMeetingPack?: () => void;
   onLoadGreenFutureTestOrder?: () => void;
+  onLoadGreenFuturePackagingProposal?: () => void;
+  onLoadGreenFuture0824Reply?: () => void;
+  onLoadGreenFutureJuliaBrief?: () => void;
   onSignatureUrlChange: (url: string | null) => void;
   onAttachmentUrlsChange: (urls: string[]) => void;
   onPersistSignatureDefault: (url: string) => Promise<void>;
@@ -91,6 +94,9 @@ export function BusinessDocumentControls({
   onLoadGreenFutureReply,
   onLoadGreenFutureMeetingPack,
   onLoadGreenFutureTestOrder,
+  onLoadGreenFuturePackagingProposal,
+  onLoadGreenFuture0824Reply,
+  onLoadGreenFutureJuliaBrief,
   onSignatureUrlChange,
   onAttachmentUrlsChange,
   onPersistSignatureDefault,
@@ -179,6 +185,9 @@ export function BusinessDocumentControls({
       {onLoadGreenFutureReply ||
       onLoadGreenFutureMeetingPack ||
       onLoadGreenFutureTestOrder ||
+      onLoadGreenFuturePackagingProposal ||
+      onLoadGreenFuture0824Reply ||
+      onLoadGreenFutureJuliaBrief ||
       onLoadGreenFutureTemplate ? (
         <Card className="border-[#12463e]/35 bg-[#12463e]/5 shadow-sm">
           <CardHeader className="pb-2">
@@ -217,6 +226,38 @@ export function BusinessDocumentControls({
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Test order line list
+              </Button>
+            ) : null}
+            {onLoadGreenFuturePackagingProposal ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-[#12463e]/40 text-[#12463e] hover:bg-[#12463e]/5"
+                onClick={onLoadGreenFuturePackagingProposal}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Packaging proposal (for review)
+              </Button>
+            ) : null}
+            {onLoadGreenFuture0824Reply ? (
+              <Button
+                type="button"
+                className="w-full bg-[#12463e] hover:bg-[#0f3a34]"
+                onClick={onLoadGreenFuture0824Reply}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Reply to GF/SSB/2026-0824
+              </Button>
+            ) : null}
+            {onLoadGreenFutureJuliaBrief ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-amber-700/40 text-amber-900 hover:bg-amber-50"
+                onClick={onLoadGreenFutureJuliaBrief}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Julia meeting brief (internal)
               </Button>
             ) : null}
             {onLoadGreenFutureTemplate ? (
@@ -354,8 +395,8 @@ export function BusinessDocumentControls({
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-[11px] text-slate-500">
-            Images show in preview/PDF; PDFs attach to email and appear as links (max{" "}
-            {MAX_ATTACHMENTS}).
+            Images show full-width in preview/PDF; PDFs attach to email (max{" "}
+            {MAX_ATTACHMENTS}). Package mockups → upload here, not Signature.
           </p>
           {attachmentImageUrls.length > 0 ? (
             <ul className="space-y-2">

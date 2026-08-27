@@ -3,11 +3,15 @@ import "server-only";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { parseFontScale, parseLabelSizeCm } from "@/lib/mockup-dimensions";
 import {
+  DEFAULT_FONT_SCALE,
   DEFAULT_LABEL_POSITION,
+  DEFAULT_LABEL_SIZE_CM,
   DEFAULT_SPECIES,
   DEFAULT_STORAGE,
   type LabelPosition,
+  type LabelSizeCm,
   type SeedLabelData,
 } from "@/types/label";
 import type { Prisma } from "@prisma/client";
@@ -65,15 +69,39 @@ export async function uploadPackageImage(
   return data.publicUrl;
 }
 
-function parsePosition(raw: unknown): LabelPosition {
-  if (!raw || typeof raw !== "object") return { ...DEFAULT_LABEL_POSITION };
+function parsePosition(raw: unknown): {
+  position: LabelPosition;
+  labelSizeCm: LabelSizeCm;
+  fontScale: number;
+} {
+  if (!raw || typeof raw !== "object") {
+    return {
+      position: { ...DEFAULT_LABEL_POSITION },
+      labelSizeCm: { ...DEFAULT_LABEL_SIZE_CM },
+      fontScale: DEFAULT_FONT_SCALE,
+    };
+  }
   const o = raw as Record<string, unknown>;
   return {
-    x: typeof o.x === "number" ? o.x : DEFAULT_LABEL_POSITION.x,
-    y: typeof o.y === "number" ? o.y : DEFAULT_LABEL_POSITION.y,
-    scale: typeof o.scale === "number" ? o.scale : DEFAULT_LABEL_POSITION.scale,
-    rotation:
-      typeof o.rotation === "number" ? o.rotation : DEFAULT_LABEL_POSITION.rotation,
+    position: {
+      x: typeof o.x === "number" ? o.x : DEFAULT_LABEL_POSITION.x,
+      y: typeof o.y === "number" ? o.y : DEFAULT_LABEL_POSITION.y,
+      scale: typeof o.scale === "number" ? o.scale : DEFAULT_LABEL_POSITION.scale,
+      rotation:
+        typeof o.rotation === "number"
+          ? o.rotation
+          : DEFAULT_LABEL_POSITION.rotation,
+    },
+    labelSizeCm: parseLabelSizeCm(o.labelSizeCm),
+    fontScale: parseFontScale(o.fontScale),
+  };
+}
+
+function serializeLabelPosition(data: SeedLabelData): Prisma.InputJsonValue {
+  return {
+    ...data.labelPosition,
+    labelSizeCm: data.labelSizeCm ?? DEFAULT_LABEL_SIZE_CM,
+    fontScale: data.fontScale ?? DEFAULT_FONT_SCALE,
   };
 }
 
@@ -109,11 +137,18 @@ function rowToSeedLabel(row: {
     producerName: row.producer_name,
     producerLicenseRP2: row.producer_license_rp2,
     distributorName: row.distributor_name,
-    distributorLicensePP3: row.distributor_license_pp3,
+    distributorLicensePP4: row.distributor_license_pp3,
     address: row.address,
     storageInstructions: row.storage_instructions || DEFAULT_STORAGE,
     bgImageUrl: row.bg_image_url ?? undefined,
-    labelPosition: parsePosition(row.label_position),
+    ...(() => {
+      const parsed = parsePosition(row.label_position);
+      return {
+        labelPosition: parsed.position,
+        labelSizeCm: parsed.labelSizeCm,
+        fontScale: parsed.fontScale,
+      };
+    })(),
   };
 }
 
@@ -131,11 +166,15 @@ export async function saveMockup(data: SeedLabelData): Promise<SeedLabelData> {
     producer_name: data.producerName?.trim() || "",
     producer_license_rp2: data.producerLicenseRP2?.trim() || "",
     distributor_name: data.distributorName?.trim() || "",
-    distributor_license_pp3: data.distributorLicensePP3?.trim() || "",
+    distributor_license_pp3: data.distributorLicensePP4?.trim() || "",
     address: data.address?.trim() || "",
     storage_instructions: data.storageInstructions?.trim() || DEFAULT_STORAGE,
     bg_image_url: data.bgImageUrl?.trim() || null,
-    label_position: data.labelPosition ?? DEFAULT_LABEL_POSITION,
+    label_position: serializeLabelPosition({
+      ...data,
+      labelPosition: data.labelPosition ?? DEFAULT_LABEL_POSITION,
+      labelSizeCm: data.labelSizeCm ?? DEFAULT_LABEL_SIZE_CM,
+    }),
   };
 
   const row = await prisma.label_mockups.upsert({
