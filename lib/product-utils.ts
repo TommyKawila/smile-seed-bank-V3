@@ -279,15 +279,18 @@ function resolveVariantClearancePrice(
   return null;
 }
 
+function isSellableVariant(v: { is_active?: boolean | null; stock?: number | null }): boolean {
+  return v.is_active !== false && (v.stock ?? 0) > 0;
+}
+
 /** Storefront “from” price: list/`price` + optional clearance; variant `discount_percent` is ignored (use `brand_promotions`). */
 export function getEffectiveListingPrice(product: ClearanceProductSlice): number {
   const regular = computeStartingPrice(product.product_variants);
   if (product.is_clearance === true) {
-    const fromClearance = deriveClearanceSalePrice(
-      true,
-      product.product_variants ?? [],
-      null
-    );
+    const variants = product.product_variants ?? [];
+    const sellable = variants.filter(isSellableVariant);
+    const pool = sellable.length > 0 ? sellable : variants;
+    const fromClearance = deriveClearanceSalePrice(true, pool, null);
     if (fromClearance != null && fromClearance > 0) {
       return regular > 0 ? Math.min(fromClearance, regular) : fromClearance;
     }
@@ -327,10 +330,6 @@ export function getEffectiveVariantPrice(
   const clearance = resolveVariantClearancePrice(variant, product, variantListPrice);
   if (clearance != null) return clearance;
   return directPrice;
-}
-
-function isSellableVariant(v: { is_active?: boolean | null; stock?: number | null }): boolean {
-  return v.is_active !== false && (v.stock ?? 0) > 0;
 }
 
 export function getClearancePercentOff(product: ClearanceProductSlice): number | null {
@@ -403,20 +402,22 @@ export function variantHasClearancePrice(
 }
 
 /**
- * Prefer first in-stock Clearance pack; else first Clearance pack; else first in-stock / first pack.
+ * Prefer first in-stock Clearance pack; else first in-stock pack; else first Clearance pack (fully OOS).
  */
 export function pickDefaultClearanceVariant<T extends ProductVariant>(
   product: ClearanceProductSlice,
   activeSorted: T[]
 ): T | null {
   if (activeSorted.length === 0) return null;
+  const inStock = activeSorted.find((v) => (v.stock ?? 0) > 0);
   if (product.is_clearance === true) {
     const clearance = activeSorted.filter((v) => variantHasClearancePrice(v));
-    const inStock = clearance.find((v) => (v.stock ?? 0) > 0);
+    const inStockClearance = clearance.find((v) => (v.stock ?? 0) > 0);
+    if (inStockClearance) return inStockClearance;
     if (inStock) return inStock;
     if (clearance[0]) return clearance[0];
   }
-  return activeSorted.find((v) => (v.stock ?? 0) > 0) ?? activeSorted[0] ?? null;
+  return inStock ?? activeSorted[0] ?? null;
 }
 
 /**
