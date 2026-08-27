@@ -90,7 +90,7 @@
 | สถานะดีล | กรอบกฎหมายปิดแล้ว · ยังไม่ใช่สัญญา · **ไม่ออก PO จนกว่า Regulatory Gate + Demand Gate** |
 | Gate ลำดับ | Validate → Market → Deposit → PO |
 | Regulatory Gate | รอ — ฉลาก/กระบวนการ + บันทึกหน่วยงาน (ผู้ขาย + เอกสารประกอบ GACP ผู้ซื้อ) |
-| Demand Gate | รอ — มัดจำลูกค้า threshold ~23,630 THB (ปรับตาม quotation จริง) |
+| Demand Gate | รอ — threshold ตาม PI ปัจจุบัน 27,583 THB (ปรับอีกครั้งหลัง PI แก้ตรง Option 1/COA) |
 | Exclusivity | **Non-exclusive** รอบแรก · exclusive คุยทีหลัง |
 | คุณภาพผูกพัน | งอก ≥80% · บริสุทธิ์ ≥99% ต่อ PO + claims template (รอ GF ส่ง) |
 | ISTA 4 สาย | AF99, AF143, AF02, AF22 — ยังรอผล · ไม่บล็อก Option 1 |
@@ -123,7 +123,7 @@
 
 ### Test order ที่ล็อกในจดหมายตอบ (รูปแบบเสนอขอราคา — ไม่ใช่ PO)
 - 5 สาย × 200 เมล็ด รวม AF102 · **4×50 (20 ซอง)** · Option 1 (internal lot test ปล่อยของ)
-- มัดจำ GF 50% **หลัง PO เท่านั้น** · Demand Gate threshold ~23,630 THB ก่อนออก PO
+- มัดจำ GF 50% **หลัง PO เท่านั้น** · Demand Gate threshold ปัจจุบัน 27,583 THB ก่อนออก PO
 - ค่าแพ็ก 20 ซองตามตาราง GF ≈ 400 บาท (ขอให้ระบุใน quotation)
 
 ### งานถัดไป (GF)
@@ -169,6 +169,11 @@
 - **What:** แก้ถ้อยคำให้ Green Future เป็นผู้ติดฉลาก บรรจุ และซีลที่ต้นทาง
 - **Logic:** Smile Seed Bank ห้าม print/apply/repack/relabel ก่อนมี written approval; label application ดำเนินการโดย GF ตาม workflow ที่อนุมัติ
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts`
+
+### บันทึกการทำงาน — 2026-08-27 (GF Pro Forma + Seed Viability Claim reference)
+- **What:** บันทึก PI 20102618 (26 ส.ค.) และลิงก์ Seed Viability Claim · ปรับ Brief/หลักฐาน Gate ตามราคาและประเด็นที่ต้องขอแก้
+- **Logic:** PI = quotation เพื่อวางแผน ไม่ใช่ PO · total 52,537.36 / advance 26,268.68 THB · threshold+5% ≈27,582.11 · รอยืนยัน 4×50, Option 1 และค่า COA AF102 · Form รอสิทธิ์เข้าถึง/field review
+- **ไฟล์:** `green-future-proforma-20260826.ts` · `green-future-julia-meeting-brief.ts` · `green-future-gate-evidence.ts`
 
 ### บันทึกการทำงาน — 2026-08-27 (GF 0824 TH + meeting brief pages)
 - **What:** เพิ่มหน้า admin อ่านจดหมายตอบ 0824 ฉบับไทย และ Brief ประชุมจูเลีย พร้อม Save as PDF

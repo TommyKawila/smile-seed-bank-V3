@@ -1,3 +1,8 @@
+import {
+  GF_PROFORMA_20260826,
+  GF_SEED_VIABILITY_CLAIM_FORM,
+} from "@/lib/green-future-proforma-20260826";
+
 /** Internal Thai briefing for GF meeting with Julia — 28 Aug 2026 10:00–11:00 ICT */
 
 export const GREEN_FUTURE_JULIA_MEETING_BRIEF_SUBJECT =
@@ -9,6 +14,20 @@ export const GREEN_FUTURE_JULIA_MEETING_BRIEF_RAW = `Subject: Internal — GF ×
 ประชุม: วันศุกร์ 28 สิงหาคม 2026 เวลา 10:00–11:00 น. (ICT)
 คู่สนทนา: คุณจูเลีย (ตัวแทนไทยของ Green Future) — แปลให้เจ้านายที่พูดภาษารัสเซีย
 Ref. GF/SSB/2026-0824 (จดหมาย GF 24 ส.ค.) · ประชุมยืนยัน Option C
+
+---
+
+เอกสารใหม่ที่ได้รับก่อนประชุม
+
+- Pro Forma Invoice เลข ${GF_PROFORMA_20260826.invoiceNo} ลงวันที่ 26 ส.ค. 2026 · ใช้ได้ถึง ${GF_PROFORMA_20260826.validUntil}
+- เมล็ด 1,000 เมล็ด ${GF_PROFORMA_20260826.seedSubtotalThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} บาท + COA ${GF_PROFORMA_20260826.coaSubtotalThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} บาท = รวม ${GF_PROFORMA_20260826.totalThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} บาท
+- มัดจำ 50% = ${GF_PROFORMA_20260826.advanceThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} บาท · Demand Gate ใหม่รวมสำรอง 5% ≈ ${GF_PROFORMA_20260826.demandGateWithFivePctReserveThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} บาท
+- ซอง 20 หน่วย = 0 บาท (one-time exception) แต่ pack format ยังเขียนว่า “mutually agreed” จึงยังต้องล็อก 4×50 เป็นลายลักษณ์อักษร
+- PI ใส่ค่า COA AF102 และใช้คำ Option A/B ไม่ตรงจดหมายที่เลือก Option 1 — ต้องขอแก้/ยืนยันก่อนออก PO
+- ได้ลิงก์ Seed Viability Claim Form: ${GF_SEED_VIABILITY_CLAIM_FORM.url}
+- Form บังคับ Google Sign-in ขณะตรวจ จึงต้องขอสิทธิ์เข้าถึงหรือ PDF/รายการคำถามก่อนนำมาใช้จริง
+
+สถานะ: ถือว่าได้รับ quotation เพื่อวางแผนแล้ว แต่ยังไม่ใช่การยอมรับราคา ไม่ใช่ PO และยังไม่ผ่าน Regulatory Gate
 
 ---
 
@@ -67,14 +86,15 @@ A) บทบาทและการสื่อสาร (5 นาที)
 
 ---
 
-B) รูปแบบเสนอขอราคา — ไม่ใช่ PO (12 นาที)
+B) ตรวจ Pro Forma และรูปแบบเสนอขอราคา — ไม่ใช่ PO (12 นาที)
 
 4. ยืนยันในห้อง: 5 สายรวม AF102 · 4×50 (20 ซองซีล) · Option 1 ไม่รอ COA — **สำหรับ quotation และตรวจกฎหมายเท่านั้น ไม่ใช่คำสั่งซื้อ**
-5. ค่าแพ็ก 20 ซองตามตาราง GF ≈ 400 บาท — ขอให้ใส่บรรทัดแยกใน quotation หรือระบุว่ารวมในราคาทดลอง
-6. Lead time Option 1: เตรียม ~7 วันหลังมัดจำ **เมื่อมี PO แล้ว** — ขอวันส่งโดยประมาณสำหรับวางแผน quotation
-7. Internal lot test ที่มากับ Option 1 ต้องมี: ขนาดตัวอย่าง · วิธีงอก/บริสุทธิ์ · วันที่ · ผู้รับผิดชอบ · เลขล็อต
-8. จุดโอนความรับผิดรอบนี้: ลงชื่อรับของที่ที่ตั้ง พ.พ.4 ของหจก. (เพราะ GF จ่ายค่าส่งเมล็ดมาให้)
-9. ถ้า GF ต้องการ PO ก่อนช่วยประสานกรมฯ — Smile ไม่เดินตามแผน low-risk ขอ pilot validation ที่ไม่ผูกพันการซื้อแทน
+5. PI ระบุซอง 20 หน่วยฟรีครั้งเดียว แต่ pack format ยังไม่ล็อก — ขอ reissue/confirmation ให้เขียน “4 sealed packages × 50 seeds per strain; 20 sealed units total”
+6. PI คิด COA AF102 ${GF_PROFORMA_20260826.coaSubtotalThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} บาท ทั้งที่เราเลือก Option 1 — ถ้า COA มาทีหลังยังจำเป็นต้องซื้อหรือไม่; ถ้าไม่จำเป็น ขอเอารายการนี้ออกและออก PI ใหม่
+7. PI ใช้ Option A/B ขณะที่จดหมายเราใช้ Option 1 — ให้ยืนยันว่า shipment-before-new-COA คือทางเลือกเดียวกัน และ lead time ~7 วันเริ่มนับจากวันใด
+8. Internal lot test ที่มากับ Option 1 ต้องมี: ขนาดตัวอย่าง · วิธีงอก/บริสุทธิ์ · วันที่ · ผู้รับผิดชอบ · เลขล็อต
+9. จุดโอนความรับผิดรอบนี้: ลงชื่อรับของที่ที่ตั้ง พ.พ.4 ของหจก. (เพราะ GF จ่ายค่าส่งเมล็ดมาให้)
+10. ถ้า GF ต้องการ PO ก่อนช่วยประสานกรมฯ — Smile ไม่เดินตามแผน low-risk ขอ pilot validation ที่ไม่ผูกพันการซื้อแทน
 
 บอกตรง ๆ: ยังไม่มีลูกค้า รอบนี้ทดลองตลาด ถ้า quotation สูงเกินจะลดจำนวนหรือเลื่อน ไม่ฝืน ไม่ออก PO จนมัดจำลูกค้าถึง threshold
 
@@ -107,10 +127,12 @@ C) ซองและฉลาก (15 นาที) — จุดที่ยั
 
 D) คุณภาพและการเคลม (8 นาที)
 
-16. ขอ Claims Procedure Template ตามที่จดหมาย 0821 บอกว่าจะส่งแยก
-17. ถ้าไม่มี COA ภายนอก: เอกสารล็อตขั้นต่ำที่ส่งมากับของมีอะไรบ้าง (Lot, งอก, บริสุทธิ์, วันที่ทดสอบ, Test Basis)
-18. ตรวจรับภายในกี่วัน · แจ้งเคลมภายในกี่วัน · วิธีพิสูจน์งอกถ้าไม่มีแล็บนอก
-19. Smile จะเก็บ +5 ถึง +10°C และมี log — ถ้าไม่มี log เคลมยาก เข้าใจตรงกันไหม
+18. Seed Viability Claim Google Form ที่ส่งมาเป็นแบบอ้างอิงหรือเป็นช่องทางเคลมจริงของ Smile — ใครรับเรื่อง ใครตัดสิน และ SLA กี่วัน
+19. Form บังคับ Google Sign-in — ขอสิทธิ์เข้าถึง หรือขอ PDF/รายการคำถามและขั้นตอนพิจารณา เพื่อให้ Smile ดัดแปลงเป็นแบบฟอร์มของตนเอง
+20. ต้องแนบหลักฐานอะไร: invoice/PO, lot, strain, จำนวน, วันรับ/วันเปิดซอง, storage log, วิธีเพาะ, จำนวนทดสอบ, ภาพ/วิดีโอ และ timeline
+21. ถ้าไม่มี COA ภายนอก: เอกสารล็อตขั้นต่ำที่ส่งมากับของมีอะไรบ้าง (Lot, งอก, บริสุทธิ์, วันที่ทดสอบ, Test Basis)
+22. ตรวจรับภายในกี่วัน · แจ้งเคลมภายในกี่วัน · วิธีพิสูจน์งอกถ้าไม่มีแล็บนอก
+23. Smile จะเก็บ +5 ถึง +10°C และมี log — ถ้าไม่มี log เคลมยาก เข้าใจตรงกันไหม
 
 บอกตรง ๆ: เกณฑ์ 80/99 ต้องอยู่ใน PO รอบนี้ ไม่งั้น Smile ไม่จ่ายมัดจำ
 
@@ -137,9 +159,9 @@ F) สิ่งที่ยังไม่ทำวันนี้ (ตัดเ
 
 สิ่งที่ต้องเดินออกจากห้องให้ได้
 
-1. วันส่ง quotation หลังยืนยัน 4×50 + Option 1 (ขอภายใน 5 วันทำการ)
+1. PI ฉบับแก้/อีเมลยืนยัน 4×50 + Option 1 + ชี้แจง/ถอดค่า COA AF102
 2. จำนวนซองตัวอย่างที่ GF อยากได้ และที่อยู่รับของที่สมุทรปราการ
-3. วันส่ง Claims Template + รายการฟิลด์ฉลาก
+3. สิทธิ์เปิด Seed Viability Claim Form หรือ PDF/รายการคำถาม + Claims Procedure + รายการฟิลด์ฉลาก
 4. จูเลีย/ทีมบางพลี ช่วยนัดหน่วยงานตรวจซองตัวอย่างได้ไหม — ได้ / ไม่ได้ / ต้องให้เจ้านายตอบ
 5. จุดเริ่มนับระยะเคลม = วันลงชื่อรับของที่หจก.
 6. ผู้ติดต่อหลัก = จูเลีย + อีเมล info@greenfuture.global
@@ -149,7 +171,7 @@ F) สิ่งที่ยังไม่ทำวันนี้ (ตัดเ
 - สรุป 1 หน้า ไทย ให้จูเลียแปล + อีเมลอังกฤษยืนยัน
 - บันทึกหลักฐานใน evidence checklist (label version, process summary, authority notes, quotation, meeting recap)
 - Regulatory Gate ผ่าน → เปิด marketing ถ้อยคำอนุมัติ → รับมัดจำลูกค้าแบบมีเงื่อนไข → Demand Gate ถึง threshold → PO + มัดจำ GF
-- อย่าจ่ายมัดจำ GF จนกว่ามี quotation + เกณฑ์ 80/99 + รูปแบบแพ็ก + ฉลากที่อนุมัติ + มัดจำลูกค้าถึง threshold
+- อย่าจ่ายมัดจำ GF จนกว่า PI แก้ตรงจดหมาย + เกณฑ์ 80/99 + รูปแบบแพ็ก + ฉลากที่อนุมัติ + มัดจำลูกค้าถึง threshold ${GF_PROFORMA_20260826.demandGateWithFivePctReserveThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} บาท
 - ตรวจตู้เก็บของ + log อุณหภูมิ/ความชื้น ก่อนของถึง
 
 เกณฑ์ตัดสินหลังประชุม

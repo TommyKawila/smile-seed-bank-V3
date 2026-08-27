@@ -1,3 +1,5 @@
+import { GF_PROFORMA_20260826 } from "@/lib/green-future-proforma-20260826";
+
 /** Conditional customer deposit terms — Demand Gate before GF PO */
 
 export const GREEN_FUTURE_CONDITIONAL_DEPOSIT_SUBJECT =
@@ -15,7 +17,7 @@ A) When deposits open
 Customer deposits open only after:
 
 1. Regulatory Gate passed — label/process version reviewed; authority feedback recorded in writing where available; approved marketing wording locked.
-2. Green Future quotation received in writing — THB price, 14-day validity, packing fee, lead time, minimum quantity.
+2. Green Future quotation received and aligned in writing — THB price, validity, pack format, COA scope, lead time, minimum quantity.
 3. Smile Seed Bank publishes approved wording on web / email / social (same text across channels).
 
 Before Regulatory Gate: quotation requests only — no public deposits.
@@ -54,17 +56,18 @@ Issue PO and pay Green Future 50% advance only when:
 | GF confirmation | Written quotation + availability + approved label version + pack format |
 | Regulatory Gate | Passed (see evidence checklist) |
 
-Pilot reference (indicative — confirm in GF quotation):
+Pilot reference from PI ${GF_PROFORMA_20260826.invoiceNo} (indicative — recalc after correction/confirmation):
 
 | Item | Indicative THB |
 | --- | --- |
-| Seed cost 1,000 @ ~44.21/seed landed | ~44,210 |
-| GF 50% advance | ~22,105 |
-| Packing 20 pouches | ~400 |
-| Reserve 5% | ~1,125 |
-| **Deposit threshold target** | **~23,630** |
+| Seed cost 1,000 @ 44.21/seed | ${GF_PROFORMA_20260826.seedSubtotalThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} |
+| COA listed in current PI | ${GF_PROFORMA_20260826.coaSubtotalThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} |
+| GF 50% advance | ${GF_PROFORMA_20260826.advanceThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} |
+| Packing 20 pouches | 0.00 (one-time exception) |
+| Reserve 5% | ${(GF_PROFORMA_20260826.demandGateWithFivePctReserveThb - GF_PROFORMA_20260826.advanceThb).toLocaleString("en-US", { minimumFractionDigits: 2 })} |
+| **Deposit threshold target** | **${GF_PROFORMA_20260826.demandGateWithFivePctReserveThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} (round up to 27,583)** |
 
-Adjust threshold when final quotation arrives.
+Current PI still needs written alignment on 4×50, Option 1 mapping, and AF102 COA charge. Adjust threshold after corrected PI.
 
 ---
 
@@ -109,14 +112,16 @@ Prepared by Smile Seed Bank / T.M.Y Agro Trade Limited Partnership
 Internal use only
 `;
 
-/** Default pilot threshold — update when GF quotation arrives */
-export const GF_PILOT_DEPOSIT_THRESHOLD_THB = 23630;
+/** Default pilot threshold — rounded up from PI 20102618 advance + 5% reserve */
+export const GF_PILOT_DEPOSIT_THRESHOLD_THB = 27583;
 
 export const GF_PILOT_SEED_COUNT = 1000;
 
-export const GF_PILOT_INDICATIVE_ADVANCE_THB = 22105;
+export const GF_PILOT_INDICATIVE_ADVANCE_THB =
+  GF_PROFORMA_20260826.advanceThb;
 
-export const GF_PILOT_PACKING_FEE_THB = 400;
+export const GF_PILOT_PACKING_FEE_THB =
+  GF_PROFORMA_20260826.retailPackagingThb;
 
 export const GF_PILOT_RESERVE_PCT = 5;
 

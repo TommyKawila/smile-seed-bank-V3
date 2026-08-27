@@ -1,3 +1,8 @@
+import {
+  GF_PROFORMA_20260826,
+  GF_SEED_VIABILITY_CLAIM_FORM,
+} from "@/lib/green-future-proforma-20260826";
+
 /** Regulatory / Demand Gate evidence checklist — single evidence pack */
 
 export type GfGatePhase =
@@ -66,6 +71,12 @@ export const GF_REGULATORY_EVIDENCE_ITEMS: GfEvidenceItem[] = [
     labelEn: "28 Aug meeting recap / English follow-up email",
     required: true,
   },
+  {
+    id: "viability_claim_process",
+    labelTh: "ขั้นตอน Seed Viability Claim + ฟิลด์หลักฐาน + ผู้อนุมัติ/SLA",
+    labelEn: "Seed Viability Claim process + evidence fields + approver/SLA",
+    required: true,
+  },
 ];
 
 export const GREEN_FUTURE_GATE_EVIDENCE_SUBJECT =
@@ -83,7 +94,7 @@ Gate status (update after each step)
 | Phase | Status |
 | --- | --- |
 | Regulatory Gate | pending |
-| Quotation received | pending |
+| Quotation received | received — PI ${GF_PROFORMA_20260826.invoiceNo}, valid to ${GF_PROFORMA_20260826.validUntil} |
 | Marketing open (approved wording) | pending |
 | Customer deposits open | pending |
 | Demand Gate (threshold met) | pending |
@@ -104,8 +115,11 @@ Regulatory evidence (same review set)
 
 Commercial evidence
 
-7. GF quotation PDF — ref: ___ · valid until: ___
-8. Meeting recap / English confirmation email — date: ___
+7. GF quotation PDF — PI ${GF_PROFORMA_20260826.invoiceNo} · valid until ${GF_PROFORMA_20260826.validUntil} · total ${GF_PROFORMA_20260826.totalThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} THB · advance ${GF_PROFORMA_20260826.advanceThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} THB
+   - Pending correction/confirmation: 4×50 pack format, Option 1 mapping, and AF102 COA charge
+8. Seed Viability Claim reference — ${GF_SEED_VIABILITY_CLAIM_FORM.url}
+   - Access currently requires Google Sign-in; obtain access or PDF/question list before adoption
+9. Meeting recap / English confirmation email — date: ___
 
 ---
 
@@ -120,7 +134,7 @@ Decision after meeting
 
 Demand Gate (when deposits open)
 
-- Threshold target (indicative): ~23,630 THB (GF 50% advance + packing + 5% reserve — recalc from final quotation)
+- Threshold target from current PI (indicative): ${GF_PROFORMA_20260826.demandGateWithFivePctReserveThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} THB (GF advance ${GF_PROFORMA_20260826.advanceThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} + 5% reserve; recalc after corrected PI)
 - Deposits collected: ___ THB
 - PO issued: date ___ · GF advance paid: ___
 
