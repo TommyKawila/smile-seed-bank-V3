@@ -162,6 +162,11 @@
 - **Logic:** Smile Seed Bank ห้าม print/apply/repack/relabel ก่อนมี written approval; label application ดำเนินการโดย GF ตาม workflow ที่อนุมัติ
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts`
 
+### บันทึกการทำงาน — 2026-08-27 (Clearance listing — ราคาตามแพ็กที่ซื้อได้)
+- **What:** `getEffectiveListingPrice` / JSON-LD / ตัวกรองราคา ยังดึง `clearance_price` ของแพ็กสต็อก 0 หลังซ่อนชิปแล้ว — PDP default เลือกแพ็กเคลียร์แรนซ์ที่หมด
+- **Logic:** listing “from” สแกนแพ็ก `stock > 0` (ถ้าไม่มีเลยค่อย fallback) · `pickDefaultClearanceVariant` ไม่เปิด PDP ที่แพ็ก OOS ถ้ายังมีแพ็กอื่นขายได้
+- **ไฟล์:** `lib/product-utils.ts` · `scripts/assert-clearance-listing-in-stock.ts`
+
 ### บันทึกการทำงาน — 2026-08-27 (Clearance card — ซ่อนแพ็กหมดสต็อก)
 - **What:** ชิปแพ็กบน `/clearance` ไม่โชว์ขนาดที่สต็อกเป็น 0 (เช่น Candyman S1 1/2 เมล็ด) — ราคา/−% ตามแพ็กที่ซื้อได้
 - **Logic:** `listClearancePackSummaries` / `getClearancePercentOff` / `clearancePackVariants` กรอง `stock > 0`
