@@ -170,6 +170,11 @@
 - **Logic:** Smile Seed Bank ห้าม print/apply/repack/relabel ก่อนมี written approval; label application ดำเนินการโดย GF ตาม workflow ที่อนุมัติ
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts`
 
+### บันทึกการทำงาน — 2026-08-27 (GF 0824 TH + meeting brief pages)
+- **What:** เพิ่มหน้า admin อ่านจดหมายตอบ 0824 ฉบับไทย และ Brief ประชุมจูเลีย พร้อม Save as PDF
+- **Logic:** ดึงจาก `green-future-0824-reply-letter.ts` / `green-future-julia-meeting-brief.ts` · ลิงก์ใน Green Future sub-nav
+- **ไฟล์:** `GreenFutureLetterView.tsx` · `green-future/0824-reply-th/page.tsx` · `green-future/meeting-brief/page.tsx` · `GreenFutureSubNav.tsx`
+
 ### บันทึกการทำงาน — 2026-08-27 (GF wholesale gate alignment)
 - **What:** ปรับ Wholesale/B2B/GACP ให้ quotation-only ระหว่าง pre_gate — ซ่อน deposit/payment UI, ย้าย gate notice ใต้ Hero, pilot 4×50 + Option 1, AF102, noindex/sitemap ตาม gate
 - **Logic:** `GF_MARKETING_GATE_STATUS=pre_gate` → ไม่แสดงมัดจำ/ช่องทางชำระ · RFQ = non-binding · ระยะเวลาหลัง accepted PO · post_gate เปิด conditional deposit UI

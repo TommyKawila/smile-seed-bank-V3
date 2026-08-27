@@ -26,6 +26,16 @@ const items = [
     label: "Label Mockup",
     exact: false,
   },
+  {
+    href: "/admin/partners/green-future/0824-reply-th",
+    label: "Reply 0824 (TH)",
+    exact: false,
+  },
+  {
+    href: "/admin/partners/green-future/meeting-brief",
+    label: "Meeting brief",
+    exact: false,
+  },
 ] as const;
 
 export function GreenFutureSubNav() {
