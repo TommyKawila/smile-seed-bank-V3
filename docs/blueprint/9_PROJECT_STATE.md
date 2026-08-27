@@ -81,20 +81,23 @@
 
 ## OPS — Green Future × SSB (2026-08-21)
 
-*ดีล documented seed programme · สถานะ: framework locked · รอ quotation หลังยืนยันแพ็ก/Option*
+*ดีล documented seed programme · สถานะ: framework locked · รอ Regulatory Gate ก่อน PO*
 
-### สถานะล่าสุด (อัปเดต 2026-08-25)
+### สถานะล่าสุด (อัปเดต 2026-08-27)
 | รายการ | รายละเอียด |
 |--------|-------------|
 | จดหมาย GF ล่าสุด | **GF/SSB/2026-0824** (24 ส.ค.) — ยืนยันกรอบ + ขอให้เลือกแพ็ก/COA |
-| สถานะดีล | กรอบกฎหมายปิดแล้ว · ยังไม่ใช่สัญญา · test order เดินได้หลัง quotation + PO |
+| สถานะดีล | กรอบกฎหมายปิดแล้ว · ยังไม่ใช่สัญญา · **ไม่ออก PO จนกว่า Regulatory Gate + Demand Gate** |
+| Gate ลำดับ | Validate → Market → Deposit → PO |
+| Regulatory Gate | รอ — ฉลาก/กระบวนการ + บันทึกหน่วยงาน (ผู้ขาย + เอกสารประกอบ GACP ผู้ซื้อ) |
+| Demand Gate | รอ — มัดจำลูกค้า threshold ~23,630 THB (ปรับตาม quotation จริง) |
 | Exclusivity | **Non-exclusive** รอบแรก · exclusive คุยทีหลัง |
 | คุณภาพผูกพัน | งอก ≥80% · บริสุทธิ์ ≥99% ต่อ PO + claims template (รอ GF ส่ง) |
 | ISTA 4 สาย | AF99, AF143, AF02, AF22 — ยังรอผล · ไม่บล็อก Option 1 |
 | AF102 | **มีสต็อก** ใช้ใน test order ได้ |
 | Lead Protection | รับไปใส่ Distribution Agreement · **ไม่เป็นเงื่อนไข test order** |
 | ประชุม | ศุกร์ **28 ส.ค. 2026 10:00–11:00 ICT** · คุณจูเลีย · SSB ส่ง Meet link |
-| แพ็กที่เลือก (ร่างตอบ) | **4×50 = 20 ซองซีล** · Option 1 ส่งเมล็ดก่อน COA |
+| แพ็กที่เลือก (ร่างตอบ) | **4×50 = 20 ซองซีล** · Option 1 — **สำหรับขอราคา/ตรวจกฎหมาย ไม่ใช่ PO** |
 | ซอง SSB | รับไปประเมินเท่านั้น · ส่งตัวอย่างก่อน · ยังไม่อนุมัติจนกว่าทดสอบของจริง |
 | ค่าส่งรอบแรก | Smile จ่ายซองเปล่าไป GF · GF จ่ายเมล็ดมา Smile (ครั้งเดียว) |
 
@@ -110,24 +113,28 @@
 ### เอกสารตอบกลับ SSB (Dispatcher)
 | Template | ไฟล์ code |
 |----------|-----------|
-| Reply to GF/SSB/2026-0824 | `lib/green-future-0824-reply-letter.ts` |
+| Reply to GF/SSB/2026-0824 | `lib/green-future-0824-reply-letter.ts` (quotation + regulatory review — not PO) |
 | Reply 0824 (Thai evidence) | ชุดเดียวกัน — ปุ่ม Dispatcher |
 | Julia meeting brief (internal) | `lib/green-future-julia-meeting-brief.ts` |
+| Conditional deposit (internal) | `lib/green-future-conditional-deposit-flow.ts` |
+| Marketing pack (post-gate) | `lib/green-future-approved-marketing.ts` |
+| Gate evidence checklist | `lib/green-future-gate-evidence.ts` |
 | UI | `/admin/documents/dispatcher` |
 
-### Test order ที่ล็อกในจดหมายตอบ
+### Test order ที่ล็อกในจดหมายตอบ (รูปแบบเสนอขอราคา — ไม่ใช่ PO)
 - 5 สาย × 200 เมล็ด รวม AF102 · **4×50 (20 ซอง)** · Option 1 (internal lot test ปล่อยของ)
-- มัดจำ 50% · ยอดเหลือเมื่อของพร้อม · จ่ายครบก่อนส่ง · ราคา EUR จ่าย THB ตามเรทในใบ 14 วัน
+- มัดจำ GF 50% **หลัง PO เท่านั้น** · Demand Gate threshold ~23,630 THB ก่อนออก PO
 - ค่าแพ็ก 20 ซองตามตาราง GF ≈ 400 บาท (ขอให้ระบุใน quotation)
 
 ### งานถัดไป (GF)
-- [ ] ส่ง Reply 0824 + Google Meet link (ก่อนประชุม 28 ส.ค.)
-- [ ] ประชุมกับจูเลียตาม brief ภายใน
-- [ ] ขอให้ทีม GF ใกล้ กทม. ช่วยนัดหน่วยงานตรวจซองติดฉลาก + สรุปกระบวนการ 1 หน้า (ประสาน ไม่โอนความรับผิด)
+- [ ] ส่ง Reply 0824 (ฉบับ Gate) + Google Meet link (ก่อนประชุม 28 ส.ค.)
+- [ ] ประชุมกับจูเลียตาม brief ภายใน — ขอคำตอบหน่วยงาน 2 ประเด็น (ผู้ขาย + เอกสาร GACP ผู้ซื้อ)
+- [ ] ขอให้ทีม GF ใกล้ กทม. ช่วยนัดหน่วยงานตรวจซองติดฉลาก + สรุปกระบวนการ 1 หน้า
 - [ ] ส่งซองตัวอย่างชุดเล็ก + ใบนับจำนวน + โน้ตวัสดุ/ซีล ไปที่ GF บางพลี
 - [ ] รับ quotation / รายการฟิลด์ฉลาก / Claims Template
+- [ ] Regulatory Gate ผ่าน → เปิด marketing ถ้อยคำอนุมัติ → รับมัดจำลูกค้าแบบมีเงื่อนไข
+- [ ] Demand Gate ถึง threshold → PO + มัดจำ GF 50%
 - [ ] ทดสอบซอง+ฉลากผ่าน → written approval เวอร์ชัน → ส่งซองสำหรับ 20 หน่วย (+สำรอง)
-- [ ] PO + มัดจำ 50% หลัง quotation
 - [ ] ตรวจคลัง +5–+10°C, RH ≤50%, electronic log ก่อนของถึง
 - [ ] หลังส่งของสำเร็จ → Distribution Agreement + Lead Protection
 
@@ -162,6 +169,11 @@
 - **What:** แก้ถ้อยคำให้ Green Future เป็นผู้ติดฉลาก บรรจุ และซีลที่ต้นทาง
 - **Logic:** Smile Seed Bank ห้าม print/apply/repack/relabel ก่อนมี written approval; label application ดำเนินการโดย GF ตาม workflow ที่อนุมัติ
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts`
+
+### บันทึกการทำงาน — 2026-08-27 (GF Regulatory + Demand Gate)
+- **What:** ปรับจดหมาย 0824 EN/TH ให้ 4×50 + Option 1 เป็นรูปแบบขอราคา/ตรวจกฎหมาย ไม่ใช่ PO · เพิ่ม Gate sequence · brief ประชุมจูเลีย · conditional deposit · marketing pack · evidence checklist
+- **Logic:** Validate → Market → Deposit → PO · Regulatory Gate (ฉลาก/กระบวนการ + หน่วยงาน 2 ประเด็น) ก่อน marketing/มัดจำ · Demand Gate threshold ~23,630 THB ก่อน PO GF · หน้าเว็บ pre-gate = quotation only
+- **ไฟล์:** `green-future-0824-reply-letter.ts` · `green-future-julia-meeting-brief.ts` · `green-future-conditional-deposit-flow.ts` · `green-future-approved-marketing.ts` · `green-future-gate-evidence.ts` · `TrustCompliance.tsx` · `WholesaleComplianceNotice.tsx` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx` · `9_PROJECT_STATE.md`
 
 ### บันทึกการทำงาน — 2026-08-27 (Clearance card — ซ่อนแพ็กหมดสต็อก)
 - **What:** ชิปแพ็กบน `/clearance` ไม่โชว์ขนาดที่สต็อกเป็น 0 (เช่น Candyman S1 1/2 เมล็ด) — ราคา/−% ตามแพ็กที่ซื้อได้

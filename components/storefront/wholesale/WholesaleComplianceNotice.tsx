@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/context/LanguageContext";
+import { gfGateNotice } from "@/lib/green-future-approved-marketing";
 
 export function WholesaleComplianceNotice() {
   const { t } = useLanguage();
@@ -12,6 +13,7 @@ export function WholesaleComplianceNotice() {
           {t("ข้อมูลสำคัญสำหรับพาร์ทเนอร์ B2B", "Important information for B2B partners")}
         </h2>
         <ul className="mt-4 space-y-2 text-sm leading-relaxed text-slate-600">
+          <li className="font-medium text-amber-900">{gfGateNotice(t)}</li>
           <li>
             {t(
               "ราคาบนหน้าเว็บเป็นการประมาณการ — ราคาผูกพันเมื่อ Green Future ออก quotation และ PO ได้รับการยอมรับเท่านั้น",

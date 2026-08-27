@@ -53,6 +53,9 @@ type Props = {
   onLoadGreenFuture0824Reply?: () => void;
   onLoadGreenFuture0824ReplyTh?: () => void;
   onLoadGreenFutureJuliaBrief?: () => void;
+  onLoadGreenFutureConditionalDeposit?: () => void;
+  onLoadGreenFutureMarketingPack?: () => void;
+  onLoadGreenFutureGateEvidence?: () => void;
   onSignatureUrlChange: (url: string | null) => void;
   onAttachmentUrlsChange: (urls: string[]) => void;
   onPersistSignatureDefault: (url: string) => Promise<void>;
@@ -99,6 +102,9 @@ export function BusinessDocumentControls({
   onLoadGreenFuture0824Reply,
   onLoadGreenFuture0824ReplyTh,
   onLoadGreenFutureJuliaBrief,
+  onLoadGreenFutureConditionalDeposit,
+  onLoadGreenFutureMarketingPack,
+  onLoadGreenFutureGateEvidence,
   onSignatureUrlChange,
   onAttachmentUrlsChange,
   onPersistSignatureDefault,
@@ -191,6 +197,9 @@ export function BusinessDocumentControls({
       onLoadGreenFuture0824Reply ||
       onLoadGreenFuture0824ReplyTh ||
       onLoadGreenFutureJuliaBrief ||
+      onLoadGreenFutureConditionalDeposit ||
+      onLoadGreenFutureMarketingPack ||
+      onLoadGreenFutureGateEvidence ||
       onLoadGreenFutureTemplate ? (
         <Card className="border-[#12463e]/35 bg-[#12463e]/5 shadow-sm">
           <CardHeader className="pb-2">
@@ -272,6 +281,39 @@ export function BusinessDocumentControls({
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Julia meeting brief (internal)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureConditionalDeposit ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-amber-700/40 text-amber-900 hover:bg-amber-50"
+                onClick={onLoadGreenFutureConditionalDeposit}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Conditional deposit (internal)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureMarketingPack ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-amber-700/40 text-amber-900 hover:bg-amber-50"
+                onClick={onLoadGreenFutureMarketingPack}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Marketing pack (post-gate)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureGateEvidence ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-amber-700/40 text-amber-900 hover:bg-amber-50"
+                onClick={onLoadGreenFutureGateEvidence}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Gate evidence checklist
               </Button>
             ) : null}
             {onLoadGreenFutureTemplate ? (

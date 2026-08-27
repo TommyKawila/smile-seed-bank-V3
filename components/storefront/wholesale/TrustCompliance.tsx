@@ -2,6 +2,13 @@
 
 import { FileStack, Truck } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import {
+  GF_TRACEABILITY_CLAIM_EN,
+  GF_TRACEABILITY_CLAIM_TH,
+  GF_TRACEABILITY_DISCLAIMER_EN,
+  GF_TRACEABILITY_DISCLAIMER_TH,
+  gfGateNotice,
+} from "@/lib/green-future-approved-marketing";
 
 export function TrustCompliance() {
   const { t } = useLanguage();
@@ -27,14 +34,18 @@ export function TrustCompliance() {
           </div>
         </div>
 
-        <div className="mt-10 rounded-xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
+        <div className="mt-10 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
+          <p className="text-sm font-medium text-amber-950">{gfGateNotice(t)}</p>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
           <h3 className="text-base font-bold text-emerald-900">
             {t("เอกสารตรวจสอบย้อนกลับสำหรับ GACP", "Supporting traceability for GACP")}
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-emerald-950/80">
             {t(
-              "เมล็ดจากโปรแกรม Green Future พร้อมเอกสารตรวจสอบย้อนกลับเพื่อใช้สนับสนุนเอกสาร GACP (supporting traceability documentation for GACP purposes) — ไม่ใช่ใบ GACP, เอกสาร DTAM หรือการรับประกันผลตรวจ ติดต่อทีม B2B เพื่อขอรายละเอียดตามล็อตที่ยืนยัน",
-              "Green Future documented seeds with supporting traceability documentation for GACP purposes — not a GACP certificate, DTAM document, or audit guarantee. Contact our B2B team for details on the confirmed lot."
+              `${GF_TRACEABILITY_CLAIM_TH} — ${GF_TRACEABILITY_DISCLAIMER_TH} ติดต่อทีม B2B เพื่อขอรายละเอียดตามล็อตที่ยืนยัน`,
+              `${GF_TRACEABILITY_CLAIM_EN} — ${GF_TRACEABILITY_DISCLAIMER_EN}. Contact our B2B team for details on the confirmed lot.`
             )}
           </p>
         </div>

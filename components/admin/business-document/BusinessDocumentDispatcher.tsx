@@ -37,6 +37,18 @@ import {
   GREEN_FUTURE_0824_REPLY_TH_RAW,
   GREEN_FUTURE_0824_REPLY_TH_SUBJECT,
 } from "@/lib/green-future-0824-reply-letter";
+import {
+  GREEN_FUTURE_CONDITIONAL_DEPOSIT_RAW,
+  GREEN_FUTURE_CONDITIONAL_DEPOSIT_SUBJECT,
+} from "@/lib/green-future-conditional-deposit-flow";
+import {
+  GREEN_FUTURE_MARKETING_PACK_RAW,
+  GREEN_FUTURE_MARKETING_PACK_SUBJECT,
+} from "@/lib/green-future-approved-marketing";
+import {
+  GREEN_FUTURE_GATE_EVIDENCE_RAW,
+  GREEN_FUTURE_GATE_EVIDENCE_SUBJECT,
+} from "@/lib/green-future-gate-evidence";
 import { exportBusinessDocumentPdf } from "@/lib/business-document-pdf.client";
 import type { LegalDocumentOverrides } from "@/lib/company-legal-identity";
 import { resolveCompanyContactEmail } from "@/lib/company-legal-identity";
@@ -192,7 +204,34 @@ export function BusinessDocumentDispatcher() {
       GREEN_FUTURE_0824_REPLY_RAW,
       GREEN_FUTURE_0824_REPLY_SUBJECT,
       "0824 reply loaded",
-      "Confirm 4×50, Option 1, sample pouches, then send Meet link."
+      "Quotation + regulatory review only — not a PO. Regulatory Gate before deposits."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureConditionalDeposit = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_CONDITIONAL_DEPOSIT_RAW,
+      GREEN_FUTURE_CONDITIONAL_DEPOSIT_SUBJECT,
+      "Conditional deposit terms loaded",
+      "Internal — open deposits only after Regulatory Gate passes."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureMarketingPack = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_MARKETING_PACK_RAW,
+      GREEN_FUTURE_MARKETING_PACK_SUBJECT,
+      "Marketing pack loaded",
+      "Internal — use after Regulatory Gate; flip gate status in code."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureGateEvidence = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_GATE_EVIDENCE_RAW,
+      GREEN_FUTURE_GATE_EVIDENCE_SUBJECT,
+      "Gate evidence checklist loaded",
+      "Internal — track regulator, label, quotation, meeting recap."
     );
   }, [loadTemplate]);
 
@@ -432,6 +471,11 @@ export function BusinessDocumentDispatcher() {
           onLoadGreenFuture0824Reply={handleLoadGreenFuture0824Reply}
           onLoadGreenFuture0824ReplyTh={handleLoadGreenFuture0824ReplyTh}
           onLoadGreenFutureJuliaBrief={handleLoadGreenFutureJuliaBrief}
+          onLoadGreenFutureConditionalDeposit={
+            handleLoadGreenFutureConditionalDeposit
+          }
+          onLoadGreenFutureMarketingPack={handleLoadGreenFutureMarketingPack}
+          onLoadGreenFutureGateEvidence={handleLoadGreenFutureGateEvidence}
           onSignatureUrlChange={setSignatureImageUrl}
           onAttachmentUrlsChange={setAttachmentImageUrls}
           onPersistSignatureDefault={(url) => updateSetting(FOUNDER_SIGNATURE_SETTING_KEY, url)}
