@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/context/LanguageContext";
 import { GF_PILOT_PACK_DESC_EN, GF_PILOT_PACK_DESC_TH } from "@/lib/green-future-approved-marketing";
 import {
   GF_PILOT_DEFAULT_QTY,
+  GF_PILOT_POUCHES_PER_STRAIN,
   GF_PILOT_POUCH_QTY,
   gfPilotPouchCount,
 } from "@/lib/green-future-pilot-config";
@@ -47,6 +48,65 @@ function money(thb: number, currency: "THB" | "EUR", fx: number): string {
     return `€${thbToEurDisplay(thb, fx).toLocaleString("en-US")}`;
   }
   return formatThb(thb);
+}
+
+function pilotPouchesFromQty(qty: number): number {
+  const p = Math.floor(qty / GF_PILOT_POUCH_QTY);
+  if (p < 1) return 1;
+  if (p > GF_PILOT_POUCHES_PER_STRAIN) return GF_PILOT_POUCHES_PER_STRAIN;
+  return p;
+}
+
+type PilotPouchStepperProps = {
+  pouches: number;
+  onChange: (pouches: number) => void;
+  t: (th: string, en: string) => string;
+};
+
+function PilotPouchStepper({ pouches, onChange, t }: PilotPouchStepperProps) {
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-medium text-slate-500">
+        {t("จำนวนซอง", "Pouches")}
+      </label>
+      <div className="flex min-h-10 items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 shrink-0 border-slate-200"
+          disabled={pouches <= 1}
+          onClick={() => onChange(pouches - 1)}
+          aria-label={t("ลดจำนวนซอง", "Decrease pouches")}
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <span
+          className="min-w-[3rem] text-center text-lg font-semibold tabular-nums text-slate-900"
+          aria-live="polite"
+        >
+          {pouches}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 shrink-0 border-slate-200"
+          disabled={pouches >= GF_PILOT_POUCHES_PER_STRAIN}
+          onClick={() => onChange(pouches + 1)}
+          aria-label={t("เพิ่มจำนวนซอง", "Increase pouches")}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+      <p className="text-xs leading-snug text-slate-500">
+        {t(
+          `ซองละ ${GF_PILOT_POUCH_QTY} เมล็ด · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP) · สูงสุด ${GF_PILOT_POUCHES_PER_STRAIN} ซอง/สาย`,
+          `${GF_PILOT_POUCH_QTY} seeds per sealed pouch · factory-packed at the GACP production site · max ${GF_PILOT_POUCHES_PER_STRAIN} pouches/strain`
+        )}
+      </p>
+    </div>
+  );
 }
 
 export function BulkOrderCalculator({
@@ -174,8 +234,10 @@ export function BulkOrderCalculator({
       <div className="space-y-4">
         {lines.map((line, idx) => {
           const resolved = quote.lines[idx];
-          const nudge = qtyNeedsNudge(line.quantity, config, pilotMode);
-          const pouches = pilotMode ? gfPilotPouchCount(line.quantity) : 0;
+          const nudge = !pilotMode && qtyNeedsNudge(line.quantity, config, pilotMode);
+          const pouches = pilotMode
+            ? pilotPouchesFromQty(line.quantity)
+            : gfPilotPouchCount(line.quantity);
           return (
             <div
               key={`${line.strainId}-${idx}`}
@@ -204,20 +266,37 @@ export function BulkOrderCalculator({
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500">
-                    {t("จำนวนเมล็ด", "Seed quantity")}
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={line.quantity || ""}
-                    onChange={(e) =>
-                      updateLine(idx, {
-                        quantity: Math.max(0, Math.floor(Number(e.target.value) || 0)),
-                      })
-                    }
-                    className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
-                  />
+                  {pilotMode ? (
+                    <PilotPouchStepper
+                      pouches={pouches}
+                      t={t}
+                      onChange={(nextPouches) =>
+                        updateLine(idx, {
+                          quantity: nextPouches * GF_PILOT_POUCH_QTY,
+                        })
+                      }
+                    />
+                  ) : (
+                    <>
+                      <label className="text-xs font-medium text-slate-500">
+                        {t("จำนวนเมล็ด", "Seed quantity")}
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={line.quantity || ""}
+                        onChange={(e) =>
+                          updateLine(idx, {
+                            quantity: Math.max(
+                              0,
+                              Math.floor(Number(e.target.value) || 0)
+                            ),
+                          })
+                        }
+                        className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
+                      />
+                    </>
+                  )}
                 </div>
                 <Button
                   type="button"
@@ -274,8 +353,8 @@ export function BulkOrderCalculator({
                 <p className="mt-2 text-sm text-slate-600">
                   {pilotMode && pouches > 0
                     ? t(
-                        `ซองซีล ${pouches} ซอง (ซองละ ${GF_PILOT_POUCH_QTY} เมล็ด) · `,
-                        `${pouches} sealed pouches (${GF_PILOT_POUCH_QTY} seeds each) · `
+                        `${pouches * GF_PILOT_POUCH_QTY} เมล็ด (${pouches} ซอง) · `,
+                        `${pouches * GF_PILOT_POUCH_QTY} seeds (${pouches} pouches) · `
                       )
                     : resolved.isMicroPack
                       ? t("แพ็คผู้ผลิตบรรจุ · ", "Producer-packed · ")

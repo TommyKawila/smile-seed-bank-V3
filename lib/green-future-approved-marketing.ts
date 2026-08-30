@@ -1,7 +1,7 @@
 /** Approved marketing wording — use only after Regulatory Gate passes */
 
 import type { Metadata } from "next";
-import { GF_PILOT_DEFAULT_QTY, GF_PILOT_POUCH_QTY } from "@/lib/green-future-pilot-config";
+import { GF_PILOT_POUCHES_PER_STRAIN, GF_PILOT_POUCH_QTY } from "@/lib/green-future-pilot-config";
 
 export type GfMarketingGateStatus = "pre_gate" | "post_gate";
 
@@ -36,9 +36,9 @@ export const GF_OPTION1_LABEL_TH =
 export const GF_OPTION1_LABEL_EN =
   "Seeds first — dispatch on the producer’s lot test · official lab COA later if ordered separately";
 
-export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด · ราคาลดตามยอดรวม 125/100/80 บาท/เมล็ด · สูงสุด ${GF_PILOT_DEFAULT_QTY} เมล็ด/สาย · ประมาณการสำหรับขอใบเสนอราคา`;
+export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด/ซอง · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP) · สูงสุด ${GF_PILOT_POUCHES_PER_STRAIN} ซอง/สาย · ราคาลดตามยอดรวม 125/100/80 บาท/เมล็ด · ประมาณการสำหรับขอใบเสนอราคา`;
 
-export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · tiered pricing by cart total (125/100/80 THB/seed) · up to ${GF_PILOT_DEFAULT_QTY} seeds/strain · indicative quotation estimates`;
+export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · factory-packed at the GACP production site · up to ${GF_PILOT_POUCHES_PER_STRAIN} pouches/strain · tiered cart pricing (125/100/80 THB/seed) · indicative quotation estimates`;
 
 export const GF_DISPATCH_AFTER_PO_TH =
   "ระยะเวลาจัดส่งเป็นประมาณการตามใบเสนอราคา — ไม่ใช่การรับประกันวันส่ง";
