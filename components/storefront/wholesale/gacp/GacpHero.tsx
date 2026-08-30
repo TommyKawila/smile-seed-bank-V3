@@ -41,6 +41,12 @@ export function GacpHero() {
             <FileCheck2 className="h-4 w-4" aria-hidden />
             {t("ขอแคตตาล็อก B2B และชุดเอกสารล็อต", "Request B2B catalog & lot documents")}
           </a>
+          <a
+            href="/traceability"
+            className="inline-flex min-h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+          >
+            {t("ตรวจล็อต Traceability", "Lot traceability lookup")}
+          </a>
         </div>
         <p className="mt-6 max-w-2xl text-xs leading-relaxed text-slate-500">
           {t(

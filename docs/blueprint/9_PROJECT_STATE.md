@@ -143,6 +143,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-30 (GF Traceability public lookup preview)
+- **What:** หน้า `/traceability` + `/traceability/[lot]` ให้ Julia/GF ตรวจลิงก์ — disclaimer ตาม 0824, lookup 2 ชั้น, noindex จนกว่า live
+- **Logic:** preview ไม่ยืนยันว่าเลขล็อตมีอยู่ · ไม่ enumerate · ฟิลด์สาธารณะตาม GF 0824 ข้อ 6.2 · รูปโรงงานรอไฟล์จาก GF (Julia อนุญาตใช้แล้ว)
+- **ไฟล์:** `green-future-traceability.ts` · `traceability-lot-service.ts` · `traceability/page.tsx` · `traceability/[lot]/page.tsx` · `TraceabilityPageClient.tsx` · `GacpHero.tsx` · `Footer.tsx`
+
 ### บันทึกการทำงาน — 2026-08-30 (Homepage conversion UX · PSI-safe)
 - **What:** จัดลำดับ section commerce-first · เปิด `promotion_banner` → `HomeShopIntentBanner` · Hero CTA hierarchy · ProductCard showcase 48px ATC · Featured ไม่ shuffle
 - **ไฟล์:** `HomeShopIntentBanner.tsx` · `HomePageBelowFold.tsx` · `Hero.tsx` · `ProductCard.tsx` · `VaultHeroSlide.tsx` · `storefront-home-service.ts` · `homepage-sections.ts` · migration `20260830100000_homepage_conversion_order`
