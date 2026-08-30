@@ -28,4 +28,5 @@ export const STOREFRONT_SITE_SETTING_KEYS = [
   "shipping_pause_until",
   "shipping_pause_message_th",
   "shipping_pause_message_en",
+  "wholesale_hero_image_url",
 ] as const;

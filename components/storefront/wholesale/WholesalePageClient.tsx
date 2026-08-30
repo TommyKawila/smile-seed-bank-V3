@@ -35,9 +35,11 @@ const emptyForm: RfqFormState = {
 export function WholesalePageClient({
   catalog,
   bulkPricing,
+  heroImageUrl,
 }: {
   catalog: WholesaleCatalogStrain[];
   bulkPricing: BulkPricingConfig;
+  heroImageUrl: string;
 }) {
   const { t } = useLanguage();
   const [currency, setCurrency] = useState<WholesaleCurrency>("THB");
@@ -130,7 +132,10 @@ export function WholesalePageClient({
 
   return (
     <div className="wholesale-b2b min-h-screen bg-white text-slate-900">
-      <WholesaleHero onRequestCatalog={scrollToCatalog} />
+      <WholesaleHero
+        onRequestCatalog={scrollToCatalog}
+        heroImageUrl={heroImageUrl}
+      />
 
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">

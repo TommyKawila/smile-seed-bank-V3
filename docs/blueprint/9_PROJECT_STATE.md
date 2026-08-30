@@ -143,6 +143,11 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-30 (wholesale hero GACP copy + lab image)
+- **What:** หัวข้อ Hero `/wholesale` เป็น “เมล็ดพันธุ์คุณภาพสำหรับผู้ปลูกมาตรฐาน GACP” · บรรยาย SGF-SEEDS ผลิตในไทย มาตรฐาน GACP · รูปแล็บด้านขวา
+- **Logic:** รูปเริ่มต้น `public/images/wholesale/hero-lab.webp` · เปลี่ยนได้ที่ Admin → Brand Settings (`wholesale_hero_image_url`) · RLS key สาธารณะ
+- **ไฟล์:** `WholesaleHero.tsx` · `wholesale/page.tsx` · `wholesale-hero-image.ts` · `LogoUploadCard.tsx` · `app/admin/settings/page.tsx` · `20260830120000_site_settings_wholesale_hero_image_rls.sql`
+
 ### บันทึกการทำงาน — 2026-08-30 (GF pouch stepper colors + cart rate)
 - **What:** ปุ่ม +/− ซองสีเดียวกัน (ขาว/เทา) · แต่ละสายโชว์ยอดสายอย่างเดียว · สรุปด้านล่างมียอดเมล็ดรวม ราคาต่อเมล็ดตามเรทยอดรวม และราคารวม
 - **Logic:** เรท 125/100/80 นับทั้งคำขอ ไม่ใช่ต่อสาย — แสดงที่ `BulkOrderSummary` พร้อมทิปขั้นถัดไป

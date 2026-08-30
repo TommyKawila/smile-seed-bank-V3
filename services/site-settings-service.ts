@@ -33,6 +33,7 @@ export interface SiteSettings {
   shipping_pause_until?: string;
   shipping_pause_message_th?: string;
   shipping_pause_message_en?: string;
+  wholesale_hero_image_url?: string;
 }
 
 export async function fetchSiteSettings(useAdmin: boolean): Promise<SiteSettings> {

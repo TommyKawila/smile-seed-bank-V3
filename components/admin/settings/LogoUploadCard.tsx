@@ -14,6 +14,8 @@ export function LogoUploadCard({
   currentUrl,
   onSaved,
   onClear,
+  preset,
+  previewFit = "contain",
 }: {
   title: string | React.ReactNode;
   description: string;
@@ -22,6 +24,8 @@ export function LogoUploadCard({
   currentUrl?: string;
   onSaved: (key: string, url: string) => Promise<void>;
   onClear?: (key: string) => Promise<void>;
+  preset?: "hero" | "product" | "logo";
+  previewFit?: "contain" | "cover";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(currentUrl ?? null);
@@ -40,10 +44,13 @@ export function LogoUploadCard({
       formData.append("file", file);
       formData.append("key", settingKey);
 
-      const res = await fetch("/api/admin/settings/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        `/api/admin/settings/upload${preset ? `?preset=${preset}` : ""}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
       const json = await res.json() as { url?: string; error?: string };
 
       if (!res.ok || !json.url) throw new Error(json.error ?? "อัปโหลดล้มเหลว");
@@ -69,7 +76,13 @@ export function LogoUploadCard({
           onClick={() => inputRef.current?.click()}
         >
           {preview ? (
-            <Image src={preview} alt={String(title)} fill className="object-contain p-4" unoptimized />
+            <Image
+              src={preview}
+              alt={String(title)}
+              fill
+              className={previewFit === "cover" ? "object-cover" : "object-contain p-4"}
+              unoptimized
+            />
           ) : (
             <div className="flex flex-col items-center gap-2 text-zinc-400">
               <ImageIcon className="h-8 w-8 opacity-40" />

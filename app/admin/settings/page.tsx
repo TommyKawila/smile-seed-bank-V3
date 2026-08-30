@@ -85,6 +85,34 @@ export default function SettingsPage() {
 
       <Separator />
 
+      <div>
+        <h2 className="text-lg font-semibold text-zinc-800 flex items-center gap-2">
+          <ImageIcon className="h-5 w-5" />
+          Wholesale Hero
+        </h2>
+        <p className="mt-0.5 text-sm text-zinc-500">
+          รูปประกอบหน้า /wholesale — แนวห้องแล็บ/โรงปลูกมาตรฐาน GACP
+        </p>
+      </div>
+
+      {!isLoading && (
+        <div className="max-w-3xl">
+          <LogoUploadCard
+            title="รูป Hero หน้าขายส่ง B2B"
+            description="แนะนำ 4:3 หรือ 16:9 · JPG/PNG/WebP · ถ้าไม่ได้อัปโหลดจะใช้รูปแล็บเริ่มต้น"
+            settingKey="wholesale_hero_image_url"
+            accept="image/jpeg,image/png,image/webp"
+            currentUrl={settings.wholesale_hero_image_url}
+            preset="hero"
+            previewFit="cover"
+            onSaved={handleSaved}
+            onClear={handleClear}
+          />
+        </div>
+      )}
+
+      <Separator />
+
       {/* ── Company & Legal Information ───────────────────────────────────────── */}
       <div>
         <h2 className="text-lg font-semibold text-zinc-800 flex items-center gap-2">

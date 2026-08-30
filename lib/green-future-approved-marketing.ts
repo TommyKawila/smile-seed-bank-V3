@@ -40,6 +40,18 @@ export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} �
 
 export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · factory-packed at the GACP production site · up to ${GF_PILOT_POUCHES_PER_STRAIN} pouches/strain · tiered cart pricing (125/100/80 THB/seed) · indicative quotation estimates`;
 
+export const GF_WHOLESALE_HERO_TITLE_TH =
+  "เมล็ดพันธุ์คุณภาพสำหรับผู้ปลูกมาตรฐาน GACP";
+
+export const GF_WHOLESALE_HERO_TITLE_EN =
+  "Quality seeds for GACP-standard growers";
+
+export const GF_WHOLESALE_HERO_LEAD_TH =
+  "เมล็ดพันธุ์กัญชาแบรนด์ SGF-SEEDS ผลิตในประเทศไทย มาตรฐาน GACP จัดจำหน่ายโดย Smile Seed Bank";
+
+export const GF_WHOLESALE_HERO_LEAD_EN =
+  "SGF-SEEDS cannabis genetics produced in Thailand to GACP standards, distributed by Smile Seed Bank";
+
 export const GF_DISPATCH_AFTER_PO_TH =
   "ระยะเวลาจัดส่งเป็นประมาณการตามใบเสนอราคา — ไม่ใช่การรับประกันวันส่ง";
 
