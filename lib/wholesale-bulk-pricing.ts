@@ -5,7 +5,7 @@
 import {
   GF_PILOT_DEFAULT_QTY,
   GF_PILOT_POUCH_QTY,
-  GF_PILOT_THB_PER_SEED,
+  gfPilotSellThbPerSeed,
   isGfPilotPackQty,
 } from "@/lib/green-future-pilot-config";
 
@@ -325,6 +325,8 @@ export function resolveQuote(
     ? null
     : resolveActivePerk(totalSeeds, allLinesMin500, config);
   const bulkUnlocked = perk != null;
+  const pilotUnitThb =
+    pilotMode && allValid ? ceilThb(gfPilotSellThbPerSeed(totalSeeds)) : 0;
 
   const lines: ResolvedLine[] = linesBase.map((l) => {
     const valid = isValidQty(l.quantity, config, pilotMode);
@@ -334,7 +336,7 @@ export function resolveQuote(
     let unitThb = 0;
     if (valid) {
       if (pilotMode) {
-        unitThb = ceilThb(GF_PILOT_THB_PER_SEED);
+        unitThb = pilotUnitThb;
       } else if (isMicro) {
         unitThb = ceilThb(config.microPackThb);
       } else if (perk) {

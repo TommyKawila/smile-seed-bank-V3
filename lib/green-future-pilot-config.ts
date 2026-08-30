@@ -7,8 +7,30 @@ export const GF_PILOT_POUCHES_PER_STRAIN = 4;
 export const GF_PILOT_DEFAULT_QTY =
   GF_PILOT_POUCH_QTY * GF_PILOT_POUCHES_PER_STRAIN;
 
-/** Indicative test-order landed rate — confirm in GF quotation */
+/** Indicative GF test-order cost — not a public sell rate */
 export const GF_PILOT_THB_PER_SEED = 44.21;
+
+/** Sealed-pouch B2B sell tiers — keyed on total cart seeds (all strains). */
+export const GF_PILOT_POUCH_TIERS = [
+  { minTotalSeeds: 50, maxTotalSeeds: 200, thbPerSeed: 125 },
+  { minTotalSeeds: 250, maxTotalSeeds: 450, thbPerSeed: 100 },
+  { minTotalSeeds: 500, maxTotalSeeds: 1000, thbPerSeed: 80 },
+] as const;
+
+/** @deprecated Use gfPilotSellThbPerSeed(totalSeeds) — tier 1 rate */
+export const GF_PILOT_SELL_THB_PER_SEED = GF_PILOT_POUCH_TIERS[0].thbPerSeed;
+
+export function gfPilotSellThbPerSeed(totalSeeds: number): number {
+  const q = Math.floor(totalSeeds);
+  if (q < GF_PILOT_POUCH_QTY) return 0;
+  for (const tier of GF_PILOT_POUCH_TIERS) {
+    if (q >= tier.minTotalSeeds && q <= tier.maxTotalSeeds) {
+      return tier.thbPerSeed;
+    }
+  }
+  if (q > 1000) return GF_PILOT_POUCH_TIERS[2].thbPerSeed;
+  return 0;
+}
 
 export const GF_PILOT_STRAIN_CODES = [
   "AF99",

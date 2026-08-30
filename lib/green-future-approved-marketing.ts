@@ -36,9 +36,9 @@ export const GF_OPTION1_LABEL_TH =
 export const GF_OPTION1_LABEL_EN =
   "Seeds first — dispatch on the producer’s lot test · official lab COA later if ordered separately";
 
-export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด · 4 ซองต่อสาย (${GF_PILOT_DEFAULT_QTY} เมล็ด) · ราคาเป็นการประมาณการสำหรับขอใบเสนอราคา`;
+export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด · ราคาลดตามยอดรวม 125/100/80 บาท/เมล็ด · สูงสุด ${GF_PILOT_DEFAULT_QTY} เมล็ด/สาย · ประมาณการสำหรับขอใบเสนอราคา`;
 
-export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · 4 pouches per strain (${GF_PILOT_DEFAULT_QTY} seeds) · prices are estimates for quotation requests`;
+export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · tiered pricing by cart total (125/100/80 THB/seed) · up to ${GF_PILOT_DEFAULT_QTY} seeds/strain · indicative quotation estimates`;
 
 export const GF_DISPATCH_AFTER_PO_TH =
   "ระยะเวลาจัดส่งเป็นประมาณการตามใบเสนอราคา — ไม่ใช่การรับประกันวันส่ง";

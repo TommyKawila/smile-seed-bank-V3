@@ -143,6 +143,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-30 (GF pouch tiered B2B sell)
+- **What:** ซอง 50 เมล็ดบน `/wholesale` ใช้ราคาขั้นบันไดตามยอดรวมทั้งตะกร้า 125 / 100 / 80 บาท/เมล็ด
+- **Logic:** 50–200 → 125 · 250–450 → 100 · 500–1,000 → 80 · ไม่ใช้ต้นทุน GF 44.21 เป็นหน้าราคา
+- **ไฟล์:** `green-future-pilot-config.ts` · `wholesale-bulk-pricing.ts` · `green-future-approved-marketing.ts`
+
+### บันทึกการทำงาน — 2026-08-30 (GF wholesale Starter sell rate)
+- **What:** เครื่องประมาณการ `/wholesale` ซอง 50 เมล็ดใช้ราคาขาย B2B Starter ไม่ใช่ต้นทุน GF 44.21
+- **Logic:** แทนที่ด้วยขั้นบันไดซองด้านบน (superseded)
+- **ไฟล์:** `green-future-pilot-config.ts` · `wholesale-bulk-pricing.ts`
+
 ### บันทึกการทำงาน — 2026-08-30 (GF wholesale public copy)
 - **What:** ตัดข้อความภายในออกจาก `/wholesale` `/wholesale/gacp` — ไม่โชว์ Option 1, accepted PO, ตรวจกฎหมาย, รอบทดลอง, Generator, 4×50, มัดจำสาธารณะ
 - **Logic:** หน้าสาธารณะเหลือขอใบเสนอราคา · ส่งเมล็ดก่อน/มี COA · ประมาณการตามใบเสนอราคา · ยังไม่เปิดรับมัดจำ (pre_gate)
