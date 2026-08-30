@@ -98,6 +98,7 @@ type ProductCardProps = {
 
 function ProductCardBase({
   product,
+  variant = "shop",
   imagePriority = false,
   catalogSeedsFilter = null,
   linkOnly = false,
@@ -106,6 +107,7 @@ function ProductCardBase({
   const { addToCart, openCart, brandPromotionRules } = useCartContext();
   const { t, locale } = useLanguage();
   const loc = locale as "th" | "en";
+  const isShowcase = variant === "showcase";
   const accent = accentOverride ?? resolveProductAccent(product);
   const tokens = productAccentTokens(accent);
   const href = productDetailHref(product);
@@ -355,7 +357,7 @@ function ProductCardBase({
             </p>
           )}
 
-          {product.breeders ? (
+          {product.breeders && !isShowcase ? (
             <Link
               href={seedsBreederHref(product.breeders)}
               onClick={() => touchCatalogReturnFromWindow()}
@@ -366,13 +368,16 @@ function ProductCardBase({
             >
               {product.breeders.name}
             </Link>
+          ) : product.breeders && isShowcase ? (
+            <p className="line-clamp-1 text-[11px] font-medium text-zinc-500">{product.breeders.name}</p>
           ) : null}
 
           <Link
             href={href}
             onClick={touchCatalogReturnFromWindow}
             className={cn(
-              "line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-zinc-100",
+              "line-clamp-2 font-semibold leading-snug text-zinc-100",
+              isShowcase ? "min-h-[2.75rem] text-[15px]" : "min-h-[2.5rem] text-sm",
               tokens.cardTitleHover
             )}
           >
@@ -393,7 +398,8 @@ function ProductCardBase({
                 )}
                 <p
                   className={cn(
-                    "text-base font-bold tabular-nums",
+                    "font-bold tabular-nums",
+                    isShowcase ? "text-lg" : "text-base",
                     outOfStock ? "text-muted-foreground" : tokens.cardPrice
                   )}
                 >
@@ -409,7 +415,8 @@ function ProductCardBase({
                   onPointerDown={(e) => e.stopPropagation()}
                   aria-label={t("เพิ่มลงตะกร้า", "Add to cart")}
                   className={cn(
-                    "relative z-20 h-10 w-10 shrink-0 rounded-full border text-lg font-bold leading-none shadow-sm transition active:scale-95 disabled:pointer-events-none disabled:opacity-40",
+                    "relative z-20 shrink-0 rounded-full border text-lg font-bold leading-none shadow-sm transition active:scale-95 disabled:pointer-events-none disabled:opacity-40",
+                    isShowcase ? "h-12 w-12" : "h-10 w-10",
                     tokens.addButton
                   )}
                 >

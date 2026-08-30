@@ -22,6 +22,32 @@ import {
   type HeroCtaButtonPayload,
 } from "@/lib/homepage-hero-cta";
 
+function isBlogCta(btn: HeroCtaButtonPayload): boolean {
+  if (btn.id === "hero_cta_blog" || btn.id === "default_3") return true;
+  const href = normalizeHeroCtaHref(btn.href, btn.id).toLowerCase();
+  return href === "/blog" || href.startsWith("/blog?");
+}
+
+function isPrimaryCta(btn: HeroCtaButtonPayload): boolean {
+  if (btn.id === "hero_cta_all_seeds" || btn.id === "default_0") return true;
+  return btn.color === "green";
+}
+
+function purchaseCtaClassName(color: HeroCtaButtonPayload["color"]): string {
+  const base =
+    "motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]";
+  if (color === "yellow") {
+    return cn(
+      base,
+      "motion-safe:animate-pulse motion-safe:[animation-duration:2.8s] motion-safe:motion-reduce:animate-none"
+    );
+  }
+  if (color === "red") {
+    return base;
+  }
+  return base;
+}
+
 const HERO_MONO =
   "font-[family-name:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace]";
 
@@ -125,6 +151,43 @@ export default function Hero({
 
   const ctaButtons =
     heroCtaButtons && heroCtaButtons.length > 0 ? heroCtaButtons : DEFAULT_HERO_CTA_BUTTONS;
+  const primaryCta = ctaButtons.find(isPrimaryCta) ?? ctaButtons[0];
+  const purchaseCtas = ctaButtons.filter(
+    (btn) => !isBlogCta(btn) && btn.id !== primaryCta?.id && !isPrimaryCta(btn)
+  );
+  const blogCta = ctaButtons.find(isBlogCta);
+
+  const renderCtaLink = (
+    btn: HeroCtaButtonPayload,
+    className?: string,
+    showPulse = false
+  ) => {
+    const label = locale === "en" ? btn.labelEn : btn.labelTh;
+    const href = getLocalizedPath(normalizeHeroCtaHref(btn.href, btn.id), locale);
+    const showChevron = heroCtaShowsChevron(btn.color);
+    return (
+      <Link
+        key={btn.id}
+        href={href}
+        aria-label={label}
+        className={cn(
+          "inline-flex min-h-12 h-12 w-full items-center justify-center gap-2 rounded-lg px-6 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-w-0",
+          heroCtaButtonClassName(btn.color),
+          showPulse ? purchaseCtaClassName(btn.color) : undefined,
+          className
+        )}
+      >
+        {label}
+        {showChevron ? (
+          <ChevronRight
+            className="ml-1 h-4 w-4 opacity-90 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5"
+            strokeWidth={1.75}
+            aria-hidden
+          />
+        ) : null}
+      </Link>
+    );
+  };
 
   return (
     <section className="relative flex w-full flex-col overflow-hidden rounded-none bg-background max-lg:max-h-[100svh] max-lg:w-full lg:max-h-none">
@@ -154,28 +217,27 @@ export default function Hero({
               )}
             </p>
 
-            <div className="grid grid-cols-1 gap-2.5 pt-0.5 sm:grid-cols-2 sm:gap-3 sm:pt-2">
-              {ctaButtons.map((btn) => {
-                const label = locale === "en" ? btn.labelEn : btn.labelTh;
-                const href = getLocalizedPath(normalizeHeroCtaHref(btn.href, btn.id), locale);
-                const showChevron = heroCtaShowsChevron(btn.color);
-                return (
-                  <Link
-                    key={btn.id}
-                    href={href}
-                    aria-label={label}
-                    className={cn(
-                      "inline-flex min-h-12 h-12 w-full items-center justify-center gap-2 rounded-lg px-6 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-w-0",
-                      heroCtaButtonClassName(btn.color)
-                    )}
-                  >
-                    {label}
-                    {showChevron ? (
-                      <ChevronRight className="ml-1 h-4 w-4 opacity-90" strokeWidth={1.75} aria-hidden />
-                    ) : null}
-                  </Link>
-                );
-              })}
+            <div className="space-y-3 pt-0.5 sm:space-y-3.5 sm:pt-2">
+              {primaryCta ? (
+                <div className="group">{renderCtaLink(primaryCta, "font-semibold shadow-sm")}</div>
+              ) : null}
+              {purchaseCtas.length > 0 ? (
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
+                  {purchaseCtas.map((btn) => (
+                    <div key={btn.id} className="group">
+                      {renderCtaLink(btn, undefined, true)}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {blogCta ? (
+                <Link
+                  href={getLocalizedPath(normalizeHeroCtaHref(blogCta.href, blogCta.id), locale)}
+                  className="inline-flex min-h-12 items-center justify-center px-1 text-sm font-medium text-zinc-400 underline-offset-4 transition-colors hover:text-zinc-200 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  {locale === "en" ? blogCta.labelEn : blogCta.labelTh}
+                </Link>
+              ) : null}
             </div>
           </div>
         </div>

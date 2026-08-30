@@ -2,15 +2,14 @@
 export const DEFAULT_HOME_SECTION_KEYS = [
   "hero",
   "ai_quick_tools_dock",
-  "promotion_banner",
   "categories",
   "breeder_showcase",
-  "clearance",
-  "blog",
-  "featured",
-  "breeders",
-  "trust",
+  "promotion_banner",
   "new_strains",
+  "clearance",
+  "featured",
+  "blog",
+  "trust",
   "newsletter",
 ] as const;
 
@@ -34,8 +33,8 @@ export const DEFAULT_SECTION_FALLBACK_LABELS: Record<
     label_en: "AI Quick Tools Dock",
   },
   promotion_banner: {
-    label_th: "แบนเนอร์โปรโมชัน (คงที่ · ไม่ใช้งาน)",
-    label_en: "Promotion banner (legacy · unused)",
+    label_th: "แบนเนอร์มาใหม่ / ลดราคา",
+    label_en: "New & clearance intent banners",
   },
   categories: { label_th: "เลือกสไตล์การปลูก", label_en: "Find your grow style" },
   breeder_showcase: {

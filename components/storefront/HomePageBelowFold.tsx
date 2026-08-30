@@ -19,7 +19,7 @@ import {
   type SectionTitle,
 } from "@/lib/homepage-section-title";
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
-import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
+import { HOME_STOREFRONT_HOME_API_SECTION_LIMIT } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 const BELOW_FOLD_CV =
@@ -27,6 +27,14 @@ const BELOW_FOLD_CV =
 
 const BELOW_FOLD_REVEAL =
   "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-500 motion-safe:fill-mode-both";
+
+const HomeShopIntentBanner = dynamic(
+  () =>
+    import("@/components/storefront/HomeShopIntentBanner").then((m) => ({
+      default: m.HomeShopIntentBanner,
+    })),
+  { ssr: false }
+);
 
 const ProductCard = dynamic(
   () =>
@@ -130,7 +138,14 @@ export function HomePageBelowFold({
     switch (section.key) {
       case "hero":
       case "promotion_banner":
-        return null;
+        return (
+          <div key={sk} className={BELOW_FOLD_CV}>
+            <HomeShopIntentBanner
+              newArrivals={newArrivals}
+              clearanceProducts={clearanceProducts}
+            />
+          </div>
+        );
       case "ai_quick_tools_dock":
         return (
           <div key={sk} className={BELOW_FOLD_CV}>
@@ -186,7 +201,7 @@ export function HomePageBelowFold({
 
               {newArrivalsLoading ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {[...Array(8)].map((_, i) => (
+                  {[...Array(HOME_STOREFRONT_HOME_API_SECTION_LIMIT)].map((_, i) => (
                     <div
                       key={i}
                       className="overflow-hidden rounded-xl border border-border/60 bg-zinc-950/40"
@@ -206,7 +221,7 @@ export function HomePageBelowFold({
                 </div>
               ) : hasNewArrivals ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {newArrivals.slice(0, HOME_NEW_ARRIVALS_LIMIT).map((product) => (
+                  {newArrivals.slice(0, HOME_STOREFRONT_HOME_API_SECTION_LIMIT).map((product) => (
                     <div key={product.id} className="flex h-full min-h-0 min-w-0 flex-col">
                       <ProductCard product={product} variant="showcase" />
                     </div>

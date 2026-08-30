@@ -69,7 +69,7 @@ const HOMEPAGE_SECTION_ROW_ICONS: Partial<Record<string, LucideIcon>> = {
 /** Short hint under the technical `key` in admin list (not stored in DB). */
 const HOMEPAGE_SECTION_KEY_HINTS: Record<string, string> = {
   hero: "หัวข้อใหญ่บน Hero (H1) — แก้ป้าย TH/EN แล้วกด Save Layout",
-  promotion_banner: "Carousel · dynamic_banners (mobile 4:5 / desktop cinematic)",
+  promotion_banner: "แบนเนอร์มาใหม่/ลดราคา · HomeShopIntentBanner (T2 dynamic)",
   breeder_showcase: "Top 8 grid · strain count · BreederShowcase",
   breeders: "Full marquee · all logos · BreederRibbon",
   categories: "Quick pills · QuickCategoryNav",

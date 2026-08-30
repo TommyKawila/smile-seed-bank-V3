@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { HomePageBelowFold } from "@/components/storefront/HomePageBelowFold";
 import { signalFramerMotionNeeded } from "@/lib/framer-motion-events";
 import type { ProductWithBreeder, ProductWithBreederAndVariants } from "@/lib/supabase/types";
-import { HOME_NEW_ARRIVALS_LIMIT } from "@/lib/constants";
+import { HOME_STOREFRONT_HOME_API_SECTION_LIMIT } from "@/lib/constants";
 import type { MagazinePostPublic } from "@/lib/blog-service";
 import type { HomePageSectionPayload } from "@/lib/homepage-sections";
 import { scheduleInteractionMount } from "@/lib/schedule-interaction-mount";
@@ -49,7 +49,7 @@ async function fetchStorefrontHomeClient(): Promise<StorefrontHomePayload> {
   const result = (await response.json()) as RawHomePayload | ProductWithBreederAndVariants[];
   const newArrivals = Array.isArray(result) ? result : result.newArrivals ?? result.data ?? [];
   return {
-    newArrivals: Array.isArray(newArrivals) ? newArrivals.slice(0, HOME_NEW_ARRIVALS_LIMIT) : [],
+    newArrivals: Array.isArray(newArrivals) ? newArrivals.slice(0, HOME_STOREFRONT_HOME_API_SECTION_LIMIT) : [],
     featured: !Array.isArray(result) && Array.isArray(result.featured) ? result.featured : [],
     clearance: !Array.isArray(result) && Array.isArray(result.clearance) ? result.clearance : [],
     magazine: !Array.isArray(result) && Array.isArray(result.magazine) ? result.magazine : [],

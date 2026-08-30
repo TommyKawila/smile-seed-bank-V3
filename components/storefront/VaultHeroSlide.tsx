@@ -124,7 +124,7 @@ export function VaultHeroSlide({
           <Link
             href={productDetailHref(product)}
             aria-label={t("เปิดรายงานสายพันธุ์ — รายละเอียดสินค้า", "Open strain dossier — product details")}
-            className="mt-5 inline-flex w-fit items-center font-sans text-xs font-semibold tabular-nums text-zinc-400 underline-offset-4 hover:text-zinc-200 hover:underline sm:mt-6"
+            className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-5 font-sans text-sm font-semibold text-emerald-300 transition-colors hover:border-emerald-400/50 hover:bg-emerald-500/20 sm:mt-6 sm:w-fit"
           >
             {t("เปิดรายงานสายพันธุ์", "Open strain dossier")} →
           </Link>

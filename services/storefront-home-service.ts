@@ -67,17 +67,6 @@ function compactHomePayload(payload: StorefrontHomePayload): StorefrontHomePaylo
   };
 }
 
-function shuffleInPlace<T>(arr: T[]): void {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const a = arr[i];
-    const b = arr[j];
-    if (a === undefined || b === undefined) continue;
-    arr[i] = b;
-    arr[j] = a;
-  }
-}
-
 export function normalizeStorefrontHomePayload(
   result: RawHomePayload | ProductWithBreederAndVariants[]
 ): StorefrontHomePayload {
@@ -101,8 +90,7 @@ export async function getStorefrontHomePayload(
     withTimeout(getRecentPublishedPosts(HOME_API_LIMIT), timeoutMs, []),
   ]);
 
-  const featuredPool = [...(featured.data ?? [])];
-  shuffleInPlace(featuredPool);
+  const featuredPool = featured.data ?? [];
 
   return compactHomePayload({
     newArrivals: (newArrivals.data ?? []).slice(0, HOME_API_LIMIT),

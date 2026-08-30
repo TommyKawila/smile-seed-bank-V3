@@ -83,7 +83,7 @@
 
 *ดีล documented seed programme · สถานะ: framework locked · รอ Regulatory Gate ก่อน PO*
 
-### สถานะล่าสุด (อัปเดต 2026-08-27)
+### สถานะล่าสุด (อัปเดต 2026-08-30)
 | รายการ | รายละเอียด |
 |--------|-------------|
 | จดหมาย GF ล่าสุด | **GF/SSB/2026-0824** (24 ส.ค.) — ยืนยันกรอบ + ขอให้เลือกแพ็ก/COA |
@@ -96,7 +96,7 @@
 | ISTA 4 สาย | AF99, AF143, AF02, AF22 — ยังรอผล · ไม่บล็อก Option 1 |
 | AF102 | **มีสต็อก** ใช้ใน test order ได้ |
 | Lead Protection | รับไปใส่ Distribution Agreement · **ไม่เป็นเงื่อนไข test order** |
-| ประชุม | ศุกร์ **28 ส.ค. 2026 10:00–11:00 ICT** · คุณจูเลีย · SSB ส่ง Meet link |
+| ประชุม | **28 ส.ค. 2026 10:00–11:00 ICT** — คุณจูเลีย · สรุปแล้ว (Recap TH/EN) |
 | แพ็กที่เลือก (ร่างตอบ) | **4×50 = 20 ซองซีล** · Option 1 — **สำหรับขอราคา/ตรวจกฎหมาย ไม่ใช่ PO** |
 | ซอง SSB | รับไปประเมินเท่านั้น · ส่งตัวอย่างก่อน · ยังไม่อนุมัติจนกว่าทดสอบของจริง |
 | ค่าส่งรอบแรก | Smile จ่ายซองเปล่าไป GF · GF จ่ายเมล็ดมา Smile (ครั้งเดียว) |
@@ -116,6 +116,7 @@
 | Reply to GF/SSB/2026-0824 | `lib/green-future-0824-reply-letter.ts` (quotation + regulatory review — not PO) |
 | Reply 0824 (Thai evidence) | ชุดเดียวกัน — ปุ่ม Dispatcher |
 | Julia meeting brief (internal) | `lib/green-future-julia-meeting-brief.ts` |
+| Julia meeting recap (TH/EN) | `lib/green-future-julia-meeting-recap.ts` · `/admin/partners/green-future/meeting-recap/th` · `.../en` |
 | Conditional deposit (internal) | `lib/green-future-conditional-deposit-flow.ts` |
 | Marketing pack (post-gate) | `lib/green-future-approved-marketing.ts` |
 | Gate evidence checklist | `lib/green-future-gate-evidence.ts` |
@@ -127,8 +128,8 @@
 - ค่าแพ็ก 20 ซองตามตาราง GF ≈ 400 บาท (ขอให้ระบุใน quotation)
 
 ### งานถัดไป (GF)
-- [ ] ส่ง Reply 0824 (ฉบับ Gate) + Google Meet link (ก่อนประชุม 28 ส.ค.)
-- [ ] ประชุมกับจูเลียตาม brief ภายใน — ขอคำตอบหน่วยงาน 2 ประเด็น (ผู้ขาย + เอกสาร GACP ผู้ซื้อ)
+- [x] ประชุมกับจูเลียตาม brief ภายใน — 28 ส.ค. · สรุป Recap TH/EN แล้ว
+- [ ] ส่ง Recap ให้จูเลียแปล + อีเมล EN ยืนยัน
 - [ ] ขอให้ทีม GF ใกล้ กทม. ช่วยนัดหน่วยงานตรวจซองติดฉลาก + สรุปกระบวนการ 1 หน้า
 - [ ] ส่งซองตัวอย่างชุดเล็ก + ใบนับจำนวน + โน้ตวัสดุ/ซีล ไปที่ GF บางพลี
 - [ ] รับ quotation / รายการฟิลด์ฉลาก / Claims Template
@@ -139,6 +140,14 @@
 - [ ] หลังส่งของสำเร็จ → Distribution Agreement + Lead Protection
 
 ---
+
+---
+
+### บันทึกการทำงาน — 2026-08-30 (Homepage conversion UX · PSI-safe)
+- **What:** จัดลำดับ section commerce-first · เปิด `promotion_banner` → `HomeShopIntentBanner` · Hero CTA hierarchy · ProductCard showcase 48px ATC · Featured ไม่ shuffle
+- **ไฟล์:** `HomeShopIntentBanner.tsx` · `HomePageBelowFold.tsx` · `Hero.tsx` · `ProductCard.tsx` · `VaultHeroSlide.tsx` · `storefront-home-service.ts` · `homepage-sections.ts` · migration `20260830100000_homepage_conversion_order`
+- **Logic:** T2 dynamic only · ไม่แตะ LCP/hero stream · reuse `/api/storefront/home` payload · `breeders` section ปิด
+- **Pending บอส:** `prisma migrate deploy` · deploy · PSI `/` Mobile ×3 median (เป้า ≥90, ไม่ตก >2 จาก lock 93)
 
 ### บันทึกการทำงาน — 2026-08-21 (GF 0821 — วิเคราะห์ + เอกสารตอบกลับ Dispatcher)
 - **What:** อ่านจดหมาย GF/SSB/2026-0821 · สรุปสถานะดีล (framework aligned, not contracted) · ร่างชุดตอบกลับ 3 ฉบับใน Business Document Dispatcher
@@ -164,6 +173,11 @@
 - **What:** เพิ่มเอกสารเสนอใช้แพ็กเกจ Smile Seed Bank เดิมชั่วคราวใน first-stage test order
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
+
+### บันทึกการทำงาน — 2026-08-30 (GF meeting recap TH/EN)
+- **What:** สรุปหลังประชุม GF × SSB กับคุณจูเลีย 28 ส.ค. — ฉบับไทยให้แปล + อังกฤษยืนยัน · หน้า admin + Dispatcher
+- **Logic:** หลักการพูด 1–6 และข้อปิด 0824 รับทราบร่วมกัน · Gate sequence · เก็บของ 5°C/RH 30–40% + log รายวัน · เคลม GF 90 วัน · ข้อ 23 รอเจ้านาย GF · SSB ทำ Traceability QR + claim form บนเว็บ
+- **ไฟล์:** `green-future-julia-meeting-recap.ts` · `meeting-recap/th/page.tsx` · `meeting-recap/en/page.tsx` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx` · `GreenFutureSubNav.tsx`
 
 ### บันทึกการทำงาน — 2026-08-22 (GF packaging proposal label responsibility correction)
 - **What:** แก้ถ้อยคำให้ Green Future เป็นผู้ติดฉลาก บรรจุ และซีลที่ต้นทาง
