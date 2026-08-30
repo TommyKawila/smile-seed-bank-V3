@@ -35,7 +35,7 @@ export function GacpHero() {
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
           <a
-            href="#gacp-inquiry"
+            href="#documents"
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
           >
             <FileCheck2 className="h-4 w-4" aria-hidden />

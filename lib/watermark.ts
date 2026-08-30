@@ -113,7 +113,8 @@ async function fetchLogoBuffer(url: string): Promise<Buffer | null> {
   }
 }
 
-async function resolveWatermarkLogoBuffer(): Promise<Buffer | null> {
+/** Shared logo source for image + PDF watermarks. */
+export async function getWatermarkLogoBuffer(): Promise<Buffer | null> {
   const dbUrl = await getSecondaryLogoUrlFromDb();
   if (dbUrl) {
     const fromRemote = await fetchLogoBuffer(dbUrl);
@@ -140,7 +141,7 @@ export type WatermarkResult = {
  * Logo: `site_settings.logo_secondary_png_url` (cached fetch) → optional local fallback PNG.
  */
 export async function applyWatermark(imageBuffer: Buffer): Promise<WatermarkResult> {
-  const logoBuf = await resolveWatermarkLogoBuffer();
+  const logoBuf = await getWatermarkLogoBuffer();
   if (!logoBuf) {
     return { buffer: imageBuffer, watermarked: false };
   }

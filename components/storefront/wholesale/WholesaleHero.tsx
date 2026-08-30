@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { Building2, FileDown, MapPin, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -51,24 +50,13 @@ export function WholesaleHero({ onRequestCatalog, heroImageUrl }: Props) {
               {t("ขอแคตตาล็อกขายส่ง", "Request Wholesale Catalog")}
             </button>
             <a
-              href="#coa"
+              href="#documents"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
             >
               <FileDown className="h-4 w-4" aria-hidden />
-              {t("ข้อมูลเอกสารล็อต", "Lot document information")}
+              {t("เอกสารล็อต / ฟาร์มใบอนุญาต", "Lot documents / licensed farms")}
             </a>
           </div>
-          <p className="mt-4 text-sm text-slate-600">
-            <Link
-              href="/wholesale/gacp"
-              className="font-medium text-emerald-700 underline-offset-4 hover:underline"
-            >
-              {t(
-                "เอกสารล็อตสำหรับฟาร์มใบอนุญาต →",
-                "Lot documents for licensed farms →"
-              )}
-            </Link>
-          </p>
           <ul className="mt-8 flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:gap-6">
             <li className="inline-flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden />

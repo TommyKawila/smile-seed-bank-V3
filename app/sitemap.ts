@@ -83,12 +83,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: "weekly",
           priority: 0.55,
         },
-        {
-          url: `${base}/wholesale/gacp`,
-          lastModified: now,
-          changeFrequency: "weekly",
-          priority: 0.55,
-        },
       ]
     : [];
 

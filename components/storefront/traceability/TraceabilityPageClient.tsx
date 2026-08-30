@@ -129,7 +129,7 @@ export function TraceabilityPageClient() {
       <section className="bg-slate-50">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
           <Link
-            href="/wholesale/gacp"
+            href="/wholesale#documents"
             className="inline-flex min-h-12 items-center text-sm font-semibold text-emerald-700 hover:text-emerald-800"
           >
             {t("← โปรแกรมเมล็ดสำหรับฟาร์มใบอนุญาต", "← Licensed-farm seed programme")}

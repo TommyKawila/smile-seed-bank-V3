@@ -8,7 +8,6 @@ import { useLanguage } from "@/context/LanguageContext";
 import { GF_PILOT_PACK_DESC_EN, GF_PILOT_PACK_DESC_TH } from "@/lib/green-future-approved-marketing";
 import {
   GF_PILOT_DEFAULT_QTY,
-  GF_PILOT_POUCHES_PER_STRAIN,
   GF_PILOT_POUCH_QTY,
   gfPilotPouchCount,
 } from "@/lib/green-future-pilot-config";
@@ -25,6 +24,7 @@ import {
 import { CoaAddonSection } from "./CoaAddonSection";
 import { CoaOptionCards } from "./CoaOptionCards";
 import { BulkOrderSummary } from "./BulkOrderSummary";
+import { PilotLotDocsIncluded } from "./PilotLotDocsIncluded";
 
 export type BulkOrderState = {
   lines: BulkQuoteLineInput[];
@@ -51,10 +51,7 @@ function money(thb: number, currency: "THB" | "EUR", fx: number): string {
 }
 
 function pilotPouchesFromQty(qty: number): number {
-  const p = Math.floor(qty / GF_PILOT_POUCH_QTY);
-  if (p < 1) return 1;
-  if (p > GF_PILOT_POUCHES_PER_STRAIN) return GF_PILOT_POUCHES_PER_STRAIN;
-  return p;
+  return Math.max(1, gfPilotPouchCount(qty));
 }
 
 type PilotPouchStepperProps = {
@@ -91,7 +88,6 @@ function PilotPouchStepper({ pouches, onChange, t }: PilotPouchStepperProps) {
         <button
           type="button"
           className={pouchStepBtnClass}
-          disabled={pouches >= GF_PILOT_POUCHES_PER_STRAIN}
           onClick={() => onChange(pouches + 1)}
           aria-label={t("เพิ่มจำนวนซอง", "Increase pouches")}
         >
@@ -100,8 +96,8 @@ function PilotPouchStepper({ pouches, onChange, t }: PilotPouchStepperProps) {
       </div>
       <p className="text-xs leading-snug text-slate-500">
         {t(
-          `ซองละ ${GF_PILOT_POUCH_QTY} เมล็ด · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP) · สูงสุด ${GF_PILOT_POUCHES_PER_STRAIN} ซอง/สาย`,
-          `${GF_PILOT_POUCH_QTY} seeds per sealed pouch · factory-packed at the GACP production site · max ${GF_PILOT_POUCHES_PER_STRAIN} pouches/strain`
+          `ซองละ ${GF_PILOT_POUCH_QTY} เมล็ด · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP)`,
+          `${GF_PILOT_POUCH_QTY} seeds per sealed pouch · factory-packed at the GACP production site`
         )}
       </p>
     </div>
@@ -314,8 +310,8 @@ export function BulkOrderCalculator({
                   <p>
                     {pilotMode
                       ? t(
-                          `จำนวนต้องเป็นทวีคูณของ ${GF_PILOT_POUCH_QTY} เมล็ด สูงสุด ${GF_PILOT_DEFAULT_QTY} เมล็ดต่อสาย (ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด)`,
-                          `Quantity must be a multiple of ${GF_PILOT_POUCH_QTY} seeds, up to ${GF_PILOT_DEFAULT_QTY} per strain (sealed ${GF_PILOT_POUCH_QTY}-seed pouches)`
+                          `จำนวนต้องเป็นทวีคูณของ ${GF_PILOT_POUCH_QTY} เมล็ด (ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด)`,
+                          `Quantity must be a multiple of ${GF_PILOT_POUCH_QTY} seeds (sealed ${GF_PILOT_POUCH_QTY}-seed pouches)`
                         )
                       : t(
                           "ขั้นต่ำสำหรับเรทราคาส่ง B2B คือ 500 เมล็ดต่อสายพันธุ์ หรือเลือกแพ็ค 100 เมล็ด (ผู้ผลิตบรรจุและซีล)",
@@ -388,6 +384,8 @@ export function BulkOrderCalculator({
           {freeCoaText}
         </div>
       )}
+
+      {pilotMode ? <PilotLotDocsIncluded /> : null}
 
       <CoaOptionCards
         mode={coaMode}

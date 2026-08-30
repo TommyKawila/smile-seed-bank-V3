@@ -61,7 +61,6 @@ export const GF_PILOT_STRAIN_CODES = [
 export function isGfPilotPackQty(qty: number): boolean {
   const q = Math.floor(qty);
   if (q < GF_PILOT_POUCH_QTY) return false;
-  if (q > GF_PILOT_DEFAULT_QTY) return false;
   return q % GF_PILOT_POUCH_QTY === 0;
 }
 

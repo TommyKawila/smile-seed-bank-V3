@@ -94,6 +94,7 @@
     "nodemailer": "^7.0.13",
     "openai": "^7.4.0",
     "papaparse": "^5.5.3",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.20.0",
     "postgres": "^3.4.8",
     "prisma": "^6.19.3",

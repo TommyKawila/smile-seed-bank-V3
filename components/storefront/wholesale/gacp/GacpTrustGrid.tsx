@@ -42,14 +42,14 @@ export function GacpTrustGrid() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           {t(
-            "ทำไมเลือก Smile Seed Bank สำหรับฟาร์มใบอนุญาต",
-            "Why licensed farms work with Smile Seed Bank"
+            "เมล็ดชุดเดียวกัน — เลือกได้ว่าจะขอเอกสารหรือไม่",
+            "The same seed catalog — documents are optional"
           )}
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
           {t(
-            "ออกแบบมาสำหรับฟาร์มใบอนุญาตที่ต้องการเอกสารล็อตประกอบแฟ้มของตนเอง ไม่ใช่แค่ราคาขายส่ง",
-            "Built for licensed farms that need lot documents for their own file — not wholesale price alone."
+            "ผู้ปลูกใช้ ผู้ขายต่อ หรือฟาร์มใบอนุญาต — สายพันธุ์เดียวกัน ต่างกันที่ตัวเลือกเอกสารล็อตและ COA แล็บภายนอก",
+            "Growers, resellers, or licensed farms — same strains, different document and external COA options."
           )}
         </p>
         <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

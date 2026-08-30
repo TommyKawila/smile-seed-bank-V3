@@ -20,7 +20,7 @@
 7. [ ] **อย่าเซ็น exclusivity ทั้งบริษัท** — ถ้าขอ exclusive ให้จำกัดเฉพาะ documented/GACP-ready bulk ของ GF ในช่อง wholesale
 
 ### C. ไฟร์วอลล์ช่องทาง (ทำแล้วบางส่วน — ล็อกเป็นนโยบาย)
-8. [x] หน้าสาธารณะ `/wholesale` `/wholesale/gacp` = **เฉพาะโปรแกรมเอกสาร GF** (ไม่โชว์ Seeds Genetics bulk)
+8. [x] หน้าสาธารณะ `/wholesale` = **เฉพาะโปรแกรมเอกสาร GF** (รวม GACP/B2B หน้าเดียว · `/wholesale/gacp` redirect)
 9. [x] ใบเสนอราคา / share link / อีเมลคุย GF **ห้ามปน** แคตตาล็อกหิ้วหรือ Seeds Genetics
 10. [ ] ฉลาก + เลข พ.พ.4 หจก. ใช้กับช่องถูกระบบเท่านั้น
 11. [x] ลูกค้า GACP ไม่ถูกเสนอเมล็ดหิ้วในแชท/เอกสารชุดเดียวกับโปรแกรม GF
@@ -142,6 +142,16 @@
 ---
 
 ---
+
+### บันทึกการทำงาน — 2026-08-30 (GF lot test sample AF22 + SSB watermark)
+- **What:** ตัวอย่างผลทดสอบล็อต AF22 บน `/wholesale` — ลายน้ำ SSB ก่อนเสิร์ฟสาธารณะ
+- **Logic:** ต้นฉบับ `SEED_COA_AF22_GF.pdf` (1 หน้า, AF22) ใน `data/partners/green-future/documents/` · admin เปิดผ่าน `/api/admin/partner-docs/*` · สาธารณะผ่าน `GET /api/wholesale/lot-test-sample?code=AF22` (`pdf-lib` + โลโก้จาก `watermark.ts`) · ปุ่มใน `PilotLotDocsIncluded` — ไม่ใช่ GACP/COA แล็บนอก
+- **ไฟล์:** `lib/pdf-watermark.ts` · `lib/lot-test-sample-config.ts` · `lib/watermark.ts` · `app/api/wholesale/lot-test-sample/route.ts` · `PilotLotDocsIncluded.tsx` · `CoaSamplePreviewModal.tsx` · `data/partners/green-future/documents/SEED_COA_AF22_GF.pdf`
+
+### บันทึกการทำงาน — 2026-08-30 (รวมหน้า wholesale + GACP)
+- **What:** รวม `/wholesale` กับ `/wholesale/gacp` เป็นหน้าเดียว — สายพันธุ์ชุดเดียวกัน ต่างที่ตัวเลือกเอกสาร · `/wholesale/gacp` redirect → `/wholesale#documents`
+- **Logic:** dual-channel ยังหมายถึง GF documented vs ช่องอื่น ไม่ใช่สอง URL · RFQ เพิ่มเลขใบอนุญาตเมื่อเลือกเอกสาร · ค่าตรวจสายอื่นยังไม่ทำในรอบนี้
+- **ไฟล์:** `WholesalePageClient.tsx` · `WholesaleHero.tsx` · `CoaOptionCards.tsx` · `GacpTrustGrid.tsx` · `GacpInquiryForm.tsx` · `RfqModal.tsx` · `types.ts` · `wholesale-rfq-service.ts` · `wholesale/gacp/page.tsx` · `Footer.tsx` · `TraceabilityPageClient.tsx` · `sitemap.ts`
 
 ### บันทึกการทำงาน — 2026-08-30 (wholesale hero GACP copy + lab image)
 - **What:** หัวข้อ Hero `/wholesale` เป็น “เมล็ดพันธุ์คุณภาพสำหรับผู้ปลูกมาตรฐาน GACP” · บรรยาย SGF-SEEDS ผลิตในไทย มาตรฐาน GACP · รูปแล็บด้านขวา

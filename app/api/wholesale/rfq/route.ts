@@ -16,6 +16,8 @@ const bodySchema = z.object({
   buyExtraCoa: z.boolean().default(false),
   coaPackageA: z.number().int().min(0).max(100).default(0),
   coaPackageB: z.number().int().min(0).max(100).default(0),
+  licenseStatus: z.enum(["active", "pending"]).optional(),
+  licenseNumber: z.string().trim().max(100).optional(),
   message: z.string().trim().max(2000).optional(),
   currency: z.enum(["THB", "EUR"]),
   lines: z

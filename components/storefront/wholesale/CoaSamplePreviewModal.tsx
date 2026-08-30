@@ -22,7 +22,7 @@ type Props = {
 };
 
 function isPdfUrl(url: string): boolean {
-  return /\.pdf($|\?)/i.test(url);
+  return /\.pdf($|\?)/i.test(url) || /\/api\/wholesale\/lot-test-sample/i.test(url);
 }
 
 export function CoaSamplePreviewModal({

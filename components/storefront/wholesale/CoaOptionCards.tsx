@@ -22,8 +22,14 @@ export function CoaOptionCards({ mode, onChange }: Props) {
   return (
     <div className="space-y-4">
       <h3 className="text-base font-semibold text-slate-900">
-        {t("ตัวเลือกการส่ง", "Dispatch options")}
+        {t("ตัวเลือกเอกสาร", "Document options")}
       </h3>
+      <p className="text-sm text-slate-600">
+        {t(
+          "เลือกเพิ่ม COA แล็บภายนอกได้ด้านล่าง — เอกสารพื้นฐานต่อล็อตแถมตามรายการด้านบน",
+          "Optional external lab COA below — basic per-lot documents are included as listed above"
+        )}
+      </p>
       <div className="grid gap-3 md:grid-cols-2">
         <button
           type="button"
@@ -35,7 +41,7 @@ export function CoaOptionCards({ mode, onChange }: Props) {
           }`}
         >
           <p className="font-semibold text-slate-900">
-            {t("ส่งเมล็ดก่อน", "Seeds first")}
+            {t("เมล็ดอย่างเดียว", "Seeds only")}
           </p>
           <p className="mt-1 text-sm text-slate-600">
             {t(GF_OPTION1_LABEL_TH, GF_OPTION1_LABEL_EN)}
@@ -56,8 +62,8 @@ export function CoaOptionCards({ mode, onChange }: Props) {
         >
           <p className="font-semibold text-slate-900">
             {t(
-              "With external lab COA",
-              "With external lab COA"
+              "ชุดเอกสารล็อต / COA แล็บภายนอก",
+              "Lot document pack / external lab COA"
             )}
           </p>
           <p className="mt-1 text-sm text-slate-600">

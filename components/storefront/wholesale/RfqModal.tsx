@@ -281,6 +281,39 @@ export function RfqModal({
                 </div>
               </fieldset>
             ) : null}
+            {form.coaMode === "with" ? (
+              <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+                  {t(
+                    "ชุดเอกสารสำหรับยื่น GACP (ไม่บังคับ)",
+                    "GACP document pack (optional)"
+                  )}
+                </p>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {t("สถานะใบอนุญาต", "Licence status")}
+                  <select
+                    value={form.licenseStatus}
+                    onChange={(e) =>
+                      onFormChange({
+                        licenseStatus: e.target.value as RfqFormState["licenseStatus"],
+                      })
+                    }
+                    className="mt-1.5 flex h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none ring-emerald-500 focus:ring-2"
+                  >
+                    <option value="">{t("เลือกสถานะ", "Select status")}</option>
+                    <option value="active">{t("มีใบอนุญาตแล้ว", "Licensed")}</option>
+                    <option value="pending">
+                      {t("อยู่ระหว่างยื่น", "Application pending")}
+                    </option>
+                  </select>
+                </label>
+                <Field
+                  label={t("เลขใบอนุญาต", "Licence number")}
+                  value={form.licenseNumber}
+                  onChange={(v) => onFormChange({ licenseNumber: v })}
+                />
+              </div>
+            ) : null}
             <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
               {t("ข้อความ / ความต้องการพิเศษ", "Message / Special Requirements")}
               <textarea

@@ -36,6 +36,8 @@ export type WholesaleRfqInput = {
   buyExtraCoa: boolean;
   coaPackageA: number;
   coaPackageB: number;
+  licenseStatus?: "active" | "pending";
+  licenseNumber?: string;
   message?: string;
   currency: B2BCurrency;
   lines: WholesaleRfqLineInput[];
@@ -113,7 +115,7 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
 
   if (!lines.length) {
     throw new Error(
-      "At least one strain with a valid pilot pack quantity (50–200 seeds in 50-seed steps) is required"
+      "At least one strain with a valid pilot pack quantity (50-seed pouch multiples) is required"
     );
   }
 
@@ -186,6 +188,12 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
       : null,
     input.buyExtraCoa
       ? `Extra COA: A×${input.coaPackageA}, B×${input.coaPackageB}`
+      : null,
+    input.licenseStatus
+      ? `Licence status: ${input.licenseStatus}`
+      : null,
+    input.licenseNumber?.trim()
+      ? `Licence number: ${input.licenseNumber.trim()}`
       : null,
     isGfPreGate()
       ? null

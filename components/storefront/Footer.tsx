@@ -21,8 +21,10 @@ export function Footer() {
 
   const quickLinks = [
     { href: "/shop?category=Seeds", label: t("เมล็ดพันธุ์", "Seeds") },
-    { href: "/wholesale", label: t("ขายส่ง B2B", "B2B Wholesale") },
-    { href: "/wholesale/gacp", label: t("GACP / ฟาร์มใบอนุญาต", "GACP / Licensed Farms") },
+    {
+      href: "/wholesale",
+      label: t("ขายส่ง B2B / GACP", "B2B Wholesale / GACP"),
+    },
     { href: "/blog", label: t("คลังความรู้สายเขียว", "Knowledge vault") },
     { href: "/profile", label: t("บัญชีของฉัน", "My Account") },
   ];

@@ -5,6 +5,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { WholesaleCatalogStrain } from "@/lib/wholesale-public-pricing";
+import { GACP_FEATURED_STRAINS } from "@/lib/gacp-featured-strains";
+import { GF_PILOT_STRAIN_CODES } from "@/lib/green-future-pilot-config";
 import {
   DEFAULT_BULK_PRICING,
   normalizeBulkPricingConfig,
@@ -35,14 +37,6 @@ export type WholesaleRfqListItem = {
 export type WholesaleSettingsDTO = {
   bulkPricing: BulkPricingConfig;
 };
-
-function slugId(name: string, id: string): string {
-  const base = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  return base || `strain-${id}`;
-}
 
 async function ensureSettingsRow(): Promise<void> {
   const existing = await prisma.wholesale_settings.findUnique({
@@ -119,15 +113,27 @@ export async function listWholesaleStrains(opts?: {
   }));
 }
 
+export function listGfPilotWholesaleCatalog(): WholesaleCatalogStrain[] {
+  const byCode = new Map(
+    GACP_FEATURED_STRAINS.map((s) => [s.varietyCode, s])
+  );
+  return GF_PILOT_STRAIN_CODES.flatMap((code) => {
+    const strain = byCode.get(code);
+    if (!strain) return [];
+    return [
+      {
+        id: code.toLowerCase(),
+        name: strain.displayName,
+        typeLabel: "Auto",
+      },
+    ];
+  });
+}
+
 export async function listPublicWholesaleCatalog(): Promise<
   WholesaleCatalogStrain[]
 > {
-  const rows = await listWholesaleStrains({ activeOnly: true });
-  return rows.map((r) => ({
-    id: slugId(r.name, r.id),
-    name: r.name,
-    typeLabel: r.typeLabel,
-  }));
+  return listGfPilotWholesaleCatalog();
 }
 
 export async function createWholesaleStrain(input: {

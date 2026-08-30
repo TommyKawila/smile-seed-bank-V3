@@ -95,7 +95,7 @@ export function GacpInquiryForm() {
   };
 
   return (
-    <section id="gacp-inquiry" className="scroll-mt-20 bg-white py-14 sm:py-16">
+    <section id="documents" className="scroll-mt-20 bg-white py-14 sm:py-16">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -107,6 +107,12 @@ export function GacpInquiryForm() {
               "For farm owners requesting document packages or bulk quotes. Submit below — our team replies within 1–2 business days."
             )}
           </p>
+          <a
+            href="/traceability"
+            className="mt-4 inline-flex min-h-10 items-center text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
+          >
+            {t("ตรวจเลขล็อตที่มีอยู่ →", "Look up an existing lot number →")}
+          </a>
           {sent ? (
             <p className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
               {t(

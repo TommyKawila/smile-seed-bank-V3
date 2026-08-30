@@ -1,7 +1,7 @@
 /** Approved marketing wording — use only after Regulatory Gate passes */
 
 import type { Metadata } from "next";
-import { GF_PILOT_POUCHES_PER_STRAIN, GF_PILOT_POUCH_QTY } from "@/lib/green-future-pilot-config";
+import { GF_PILOT_POUCH_QTY } from "@/lib/green-future-pilot-config";
 
 export type GfMarketingGateStatus = "pre_gate" | "post_gate";
 
@@ -36,9 +36,35 @@ export const GF_OPTION1_LABEL_TH =
 export const GF_OPTION1_LABEL_EN =
   "Seeds first — dispatch on the producer’s lot test · official lab COA later if ordered separately";
 
-export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด/ซอง · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP) · สูงสุด ${GF_PILOT_POUCHES_PER_STRAIN} ซอง/สาย · ราคาลดตามยอดรวม 125/100/80 บาท/เมล็ด · ประมาณการสำหรับขอใบเสนอราคา`;
+export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด/ซอง · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP) · ราคาลดตามยอดรวม 125/100/80 บาท/เมล็ด · ประมาณการสำหรับขอใบเสนอราคา`;
 
-export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · factory-packed at the GACP production site · up to ${GF_PILOT_POUCHES_PER_STRAIN} pouches/strain · tiered cart pricing (125/100/80 THB/seed) · indicative quotation estimates`;
+export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · factory-packed at the GACP production site · tiered cart pricing (125/100/80 THB/seed) · indicative quotation estimates`;
+
+export const GF_PILOT_INCLUDED_DOCS_TITLE_TH =
+  "เอกสารที่แถมต่อล็อต — 5 สายนำร่อง (AF99 · AF143 · AF02 · AF22 · AF102)";
+
+export const GF_PILOT_INCLUDED_DOCS_TITLE_EN =
+  "Documents included per lot — 5 pilot strains (AF99 · AF143 · AF02 · AF22 · AF102)";
+
+export const GF_PILOT_INCLUDED_DOCS_TH = [
+  "รหัสพันธุ์ · ชื่อการค้า · เลขล็อต",
+  "ผลทดสอบภายในของผู้ผลิตต่อล็อต (อัตรางอก / บริสุทธิ์ / วันที่ ตามที่ยืนยัน)",
+  "ฉลากบนซองซีล (เลขล็อต + ชื่อผู้จำหน่ายตาม พ.พ.4)",
+  "อ้างอิงใบแจ้งหนี้/ล็อตและสรุปตรวจสอบย้อนกลับสำหรับ GACP",
+] as const;
+
+export const GF_PILOT_INCLUDED_DOCS_EN = [
+  "Variety code · commercial name · lot number",
+  "Producer internal lot test data (germination / purity / dates as confirmed per lot)",
+  "Label on sealed pouch (lot number + licensed seller per Por.Por. 4)",
+  "Invoice/lot reference and traceability summary for GACP support",
+] as const;
+
+export const GF_PILOT_INCLUDED_DOCS_NOTE_TH =
+  "ตามโปรแกรมเอกสาร Green Future — ไม่ใช่ใบ GACP หรือ DTAM · COA แล็บภายนอก (Package A/B) และ ISTA คิดแยกเมื่อสั่ง";
+
+export const GF_PILOT_INCLUDED_DOCS_NOTE_EN =
+  "Under the Green Future documented programme — not a GACP certificate or DTAM document · external lab COA (Package A/B) and ISTA are optional add-ons, billed separately when ordered";
 
 export const GF_WHOLESALE_HERO_TITLE_TH =
   "เมล็ดพันธุ์คุณภาพสำหรับผู้ปลูกมาตรฐาน GACP";

@@ -21,6 +21,8 @@ export type RfqFormState = {
   buyExtraCoa: boolean;
   coaPackageA: number;
   coaPackageB: number;
+  licenseStatus: "active" | "pending" | "";
+  licenseNumber: string;
   message: string;
 };
 

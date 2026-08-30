@@ -79,7 +79,7 @@ export function GacpFeaturedStrains() {
                     </ul>
                   </div>
                   <a
-                    href="#gacp-inquiry"
+                    href="#documents"
                     className="mt-5 inline-flex min-h-12 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
                   >
                     {t("ขอเอกสารสายนี้", "Request this package")}

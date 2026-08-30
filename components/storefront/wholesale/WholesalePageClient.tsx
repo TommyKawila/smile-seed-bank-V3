@@ -10,6 +10,8 @@ import {
   type BulkOrderState,
 } from "./BulkOrderCalculator";
 import { GfGateNoticeBanner } from "./GfGateNoticeBanner";
+import { GacpInquiryForm } from "./gacp/GacpInquiryForm";
+import { GacpTrustGrid } from "./gacp/GacpTrustGrid";
 import { WholesaleComplianceNotice } from "./WholesaleComplianceNotice";
 import { TrustCompliance } from "./TrustCompliance";
 import { WholesaleHero } from "./WholesaleHero";
@@ -29,6 +31,8 @@ const emptyForm: RfqFormState = {
   buyExtraCoa: false,
   coaPackageA: 0,
   coaPackageB: 0,
+  licenseStatus: "",
+  licenseNumber: "",
   message: "",
 };
 
@@ -106,6 +110,8 @@ export function WholesalePageClient({
           buyExtraCoa: form.buyExtraCoa,
           coaPackageA: form.coaPackageA,
           coaPackageB: form.coaPackageB,
+          licenseStatus: form.licenseStatus || undefined,
+          licenseNumber: form.licenseNumber.trim() || undefined,
           lines: cart.map((l) => ({
             strainName: l.name,
             quantity: l.quantity,
@@ -143,6 +149,19 @@ export function WholesalePageClient({
         </div>
       </div>
 
+      <GacpTrustGrid />
+
+      <div className="border-b border-slate-200 bg-slate-50 py-6">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <p className="max-w-3xl text-xs leading-relaxed text-slate-500 sm:text-sm">
+            {t(
+              "เอกสารสนับสนุน GACP ไม่ใช่ใบรับรองเมล็ด — ใบรับรอง GACP ของผู้ผลิตเป็นของสถานที่ผลิต ไม่ใช่ของล็อตเมล็ด แล็บภายนอกคิดแยกตามที่สั่ง",
+              "GACP support documents are not seed certificates — the producer’s GACP certificate covers the production site, not a seed lot. External laboratory tests are charged separately when ordered."
+            )}
+          </p>
+        </div>
+      </div>
+
       <div className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-sm font-medium text-slate-600">
@@ -163,8 +182,9 @@ export function WholesalePageClient({
         onStateChange={setBulkState}
         onRequestQuote={openRfqFromCalc}
       />
-      <WholesaleComplianceNotice />
       <TrustCompliance />
+      <GacpInquiryForm />
+      <WholesaleComplianceNotice />
 
       <FloatingQuoteBar
         itemCount={cart.length || (bulkState?.lines.length ?? 0)}
