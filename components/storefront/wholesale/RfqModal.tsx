@@ -208,8 +208,8 @@ export function RfqModal({
               </dl>
               <p className="mt-2 text-xs text-slate-500">
                 {t(
-                  "* ประมาณการ — ผูกพันเมื่อ GF quotation + PO ยืนยัน",
-                  "* Indicative estimate — binding after GF quotation + accepted PO"
+                  "* ประมาณการ — ผูกพันเมื่อยืนยันในใบเสนอราคา",
+                  "* Indicative estimate — binding when confirmed in a quotation"
                 )}
               </p>
               <p className="mt-1 text-xs text-slate-500">

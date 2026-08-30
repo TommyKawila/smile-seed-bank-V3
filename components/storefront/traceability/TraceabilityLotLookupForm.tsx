@@ -62,8 +62,8 @@ export function TraceabilityLotLookupForm({ initialLot = "" }: Props) {
       ) : (
         <p className="text-xs leading-relaxed text-slate-500">
           {t(
-            "ระบบไม่เปิดค้นเลขล็อตทั้งหมด และไม่ยืนยันว่าเลขที่กรอกมีอยู่จนกว่าจะนำเข้าข้อมูลล็อตรอบแรก",
-            "This form does not list all lots and does not confirm that a number exists until the first lot is imported."
+            "กรอกเลขล็อตตามฉลากบนซอง หากยังไม่พบข้อมูล แสดงว่าล็อตนี้ยังไม่มีสรุปสาธารณะ",
+            "Enter the lot number printed on the pouch. If no record appears, a public summary is not available for that number yet."
           )}
         </p>
       )}

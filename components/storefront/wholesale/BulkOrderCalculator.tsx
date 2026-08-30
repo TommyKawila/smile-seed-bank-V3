@@ -135,20 +135,20 @@ export function BulkOrderCalculator({
             quote.upsell.nextFreeCoaCount > 0
               ? ` และสิทธิ์ COA ฟรีโดยประมาณ ${quote.upsell.nextFreeCoaCount} ใบ`
               : ""
-          } (ขึ้นกับ GF quotation)`,
+          } (ขึ้นกับใบเสนอราคา)`,
           `💡 Add ${quote.upsell.needSeeds.toLocaleString("en-US")} more seeds to unlock estimated ${quote.upsell.nextThbPerSeed.toLocaleString("en-US")} THB/seed${
             quote.upsell.nextFreeCoaCount > 0
               ? ` and ~${quote.upsell.nextFreeCoaCount} free COA(s)`
               : ""
-          } (subject to GF quotation)`
+          } (subject to quotation)`
         )
       : null;
 
   const freeCoaText =
     !pilotMode && quote.freeCoaCount > 0
       ? t(
-          `สิทธิ์ COA ฟรีโดยประมาณ ${quote.freeCoaCount} สายพันธุ์ (ประมาณ ${quote.freeCoaValueThb.toLocaleString("en-US")} บาท) — ขึ้นกับ GF quotation, สต็อกล็อต และค่าแล็บปัจจุบัน`,
-          `Estimated eligibility for ${quote.freeCoaCount} free COA strain(s) (~${quote.freeCoaValueThb.toLocaleString("en-US")} THB) — subject to GF quotation, lot availability and current lab charges`
+          `สิทธิ์ COA ฟรีโดยประมาณ ${quote.freeCoaCount} สายพันธุ์ (ประมาณ ${quote.freeCoaValueThb.toLocaleString("en-US")} บาท) — ขึ้นกับใบเสนอราคา สต็อกล็อต และค่าแล็บปัจจุบัน`,
+          `Estimated eligibility for ${quote.freeCoaCount} free COA strain(s) (~${quote.freeCoaValueThb.toLocaleString("en-US")} THB) — subject to quotation, lot availability and current lab charges`
         )
       : null;
 
@@ -165,8 +165,8 @@ export function BulkOrderCalculator({
           {pilotMode
             ? t(GF_PILOT_PACK_DESC_TH, GF_PILOT_PACK_DESC_EN)
             : t(
-                "ขั้นต่ำ 500 เมล็ด/สาย หรือแพ็ค 100 เมล็ด (ผู้ผลิตบรรจุและซีล · รูปแบบแพ็คตาม GF ยืนยัน) · ราคาเป็นการประมาณการ",
-                "Min. 500 seeds/strain or 100-seed pack (producer-packed & sealed · pack format per GF confirmation) · indicative pricing"
+                "ขั้นต่ำ 500 เมล็ด/สาย หรือแพ็ค 100 เมล็ด (ผู้ผลิตบรรจุและซีล) · ราคาเป็นการประมาณการ",
+                "Min. 500 seeds/strain or 100-seed pack (producer-packed & sealed) · indicative pricing"
               )}
         </p>
       </div>
@@ -236,12 +236,12 @@ export function BulkOrderCalculator({
                   <p>
                     {pilotMode
                       ? t(
-                          `รอบทดลองใช้ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด — จำนวนต้องเป็นทวีคูณของ ${GF_PILOT_POUCH_QTY} สูงสุด ${GF_PILOT_DEFAULT_QTY} เมล็ดต่อสาย`,
-                          `Pilot uses ${GF_PILOT_POUCH_QTY}-seed sealed pouches — quantity must be a multiple of ${GF_PILOT_POUCH_QTY}, up to ${GF_PILOT_DEFAULT_QTY} seeds per strain`
+                          `จำนวนต้องเป็นทวีคูณของ ${GF_PILOT_POUCH_QTY} เมล็ด สูงสุด ${GF_PILOT_DEFAULT_QTY} เมล็ดต่อสาย (ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด)`,
+                          `Quantity must be a multiple of ${GF_PILOT_POUCH_QTY} seeds, up to ${GF_PILOT_DEFAULT_QTY} per strain (sealed ${GF_PILOT_POUCH_QTY}-seed pouches)`
                         )
                       : t(
-                          "ขั้นต่ำสำหรับเรทราคาส่ง B2B คือ 500 เมล็ดต่อสายพันธุ์ หรือเลือกแพ็ค 100 เมล็ด (ผู้ผลิตบรรจุและซีล — รูปแบบตาม GF ยืนยัน)",
-                          "B2B wholesale rate requires 500 seeds per strain, or a 100-seed pack (producer-packed & sealed — format per GF confirmation)"
+                          "ขั้นต่ำสำหรับเรทราคาส่ง B2B คือ 500 เมล็ดต่อสายพันธุ์ หรือเลือกแพ็ค 100 เมล็ด (ผู้ผลิตบรรจุและซีล)",
+                          "B2B wholesale rate requires 500 seeds per strain, or a 100-seed pack (producer-packed & sealed)"
                         )}
                   </p>
                   <Button
@@ -259,8 +259,8 @@ export function BulkOrderCalculator({
                   >
                     {pilotMode
                       ? t(
-                          `ตั้งเป็น 4×50 (${GF_PILOT_DEFAULT_QTY} เมล็ด)`,
-                          `Set to 4×50 (${GF_PILOT_DEFAULT_QTY} seeds)`
+                          `ตั้งเป็น ${GF_PILOT_DEFAULT_QTY} เมล็ด (4 ซอง)`,
+                          `Set to ${GF_PILOT_DEFAULT_QTY} seeds (4 pouches)`
                         )
                       : t(
                           "เปลี่ยนเป็นแพ็ค 100 เมล็ด (ผู้ผลิตบรรจุ)",
@@ -274,8 +274,8 @@ export function BulkOrderCalculator({
                 <p className="mt-2 text-sm text-slate-600">
                   {pilotMode && pouches > 0
                     ? t(
-                        `ซองซีล ${pouches}×${GF_PILOT_POUCH_QTY} เมล็ด · `,
-                        `${pouches}×${GF_PILOT_POUCH_QTY}-seed sealed pouches · `
+                        `ซองซีล ${pouches} ซอง (ซองละ ${GF_PILOT_POUCH_QTY} เมล็ด) · `,
+                        `${pouches} sealed pouches (${GF_PILOT_POUCH_QTY} seeds each) · `
                       )
                     : resolved.isMicroPack
                       ? t("แพ็คผู้ผลิตบรรจุ · ", "Producer-packed · ")

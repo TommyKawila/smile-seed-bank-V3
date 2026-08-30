@@ -44,7 +44,7 @@ export function GacpFeaturedStrains() {
                   <p className="mt-1 font-mono text-xs text-emerald-800">{ref}</p>
                   <p className="mt-2 text-xs text-slate-500">
                     {t(
-                      "สถานะและขอบเขตเอกสารยืนยันตาม quotation",
+                      "สถานะและขอบเขตเอกสารยืนยันตามใบเสนอราคา",
                       "Availability and document scope confirmed per quotation"
                     )}
                   </p>
@@ -64,7 +64,7 @@ export function GacpFeaturedStrains() {
                   </dl>
                   <div className="mt-4 border-t border-slate-100 pt-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      {t("เอกสารที่ขอได้ (ไม่แถมทุกชุด)", "Available on request (not bundled)")}
+                      {t("เอกสารที่ขอได้ตามล็อต", "Documents available per lot")}
                     </p>
                     <ul className="mt-2 space-y-1.5">
                       {strain.documents.map((doc) => (

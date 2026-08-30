@@ -7,8 +7,6 @@ import { TraceabilityLotLookupForm } from "@/components/storefront/traceability/
 import {
   GF_TRACEABILITY_PACK_DISCLAIMER_EN,
   GF_TRACEABILITY_PACK_DISCLAIMER_TH,
-  GF_TRACEABILITY_PUBLIC_FIELDS,
-  GF_TRACEABILITY_RESTRICTED_FIELDS,
   isGfTraceabilityPreview,
 } from "@/lib/green-future-traceability";
 import { GF_TRACEABILITY_CLAIM_EN, GF_TRACEABILITY_CLAIM_TH } from "@/lib/green-future-approved-marketing";
@@ -23,7 +21,7 @@ export function TraceabilityPageClient() {
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
           <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
             <QrCode className="h-3.5 w-3.5" aria-hidden />
-            {t("Traceability Pack · โปรแกรม Green Future", "Traceability Pack · Green Future programme")}
+            {t("ตรวจสอบย้อนกลับ · โปรแกรม Green Future", "Lot traceability · Green Future programme")}
           </p>
           <h1 className="font-sans text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             {t("ตรวจสอบย้อนกลับล็อตเมล็ด", "Seed lot traceability")}
@@ -34,8 +32,8 @@ export function TraceabilityPageClient() {
           {preview ? (
             <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950">
               {t(
-                "ฉบับตรวจร่วมกับ Green Future — ยังไม่เปิดข้อมูลล็อตจริง และยังไม่ใส่ QR บนซอง จนกว่า GF อนุมัติลิงก์และนำเข้าล็อตรอบแรก",
-                "Partner-review draft — live lot data is not published and pouch QR is not active until Green Future approves this link and the first lot is imported."
+                "บริการนี้พร้อมรับเลขล็อตแล้ว ข้อมูลล็อตสาธารณะจะแสดงเมื่อมีการบันทึกล็อตที่จัดส่งแล้ว",
+                "You can enter a lot number here. Public lot records appear after a delivered lot has been registered."
               )}
             </p>
           ) : null}
@@ -47,7 +45,7 @@ export function TraceabilityPageClient() {
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
             <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
               <ShieldCheck className="h-5 w-5 text-emerald-600" aria-hidden />
-              {t("ข้อความปฏิเสธความรับผิด (ตาม GF/SSB/2026-0824)", "Disclaimer (per GF/SSB/2026-0824)")}
+              {t("ข้อความสำคัญ", "Important notice")}
             </h2>
             <blockquote className="mt-3 space-y-3 text-sm leading-relaxed text-slate-700">
               <p>{t(GF_TRACEABILITY_PACK_DISCLAIMER_TH, GF_TRACEABILITY_PACK_DISCLAIMER_EN)}</p>
@@ -65,8 +63,8 @@ export function TraceabilityPageClient() {
             </h2>
             <p className="mt-2 mb-5 text-sm text-slate-600">
               {t(
-                "กรอกเลขล็อตจากฉลากซองซีล — ชั้นสาธารณะแสดงเฉพาะสรุปล็อต ไม่เปิด pedigree และไม่ค้นรายการล็อตทั้งหมด",
-                "Enter the lot number from the sealed pouch label. The public layer shows a lot summary only — no pedigree and no full lot list."
+                "กรอกเลขล็อตจากฉลากบนซองซีล เพื่อดูสรุปล็อตสาธารณะ",
+                "Enter the lot number from the sealed pouch label to view the public lot summary."
               )}
             </p>
             <TraceabilityLotLookupForm />
@@ -77,42 +75,32 @@ export function TraceabilityPageClient() {
       <section className="border-b border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
           <h2 className="text-lg font-semibold text-slate-900">
-            {t("การเข้าถึง 2 ชั้น", "Two-tier access")}
+            {t("ข้อมูลที่แสดงบนหน้านี้", "What this page shows")}
           </h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-white p-5">
               <FileSearch className="h-5 w-5 text-emerald-600" aria-hidden />
               <h3 className="mt-3 text-sm font-semibold text-slate-900">
-                {t("สาธารณะ — ไม่ต้องสมัคร", "Public — no registration")}
+                {t("สรุปล็อตสาธารณะ", "Public lot summary")}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 {t(
-                  "สแกน QR หรือกรอกเลขล็อต เห็นสรุปชื่อการค้า รหัสพันธุ์ ล็อต สถานะ งอก บริสุทธิ์ วันที่ทดสอบ ฐานทดสอบ ผู้ผลิต และการยืนยันว่าเลขล็อตตรงเอกสาร Green Future",
-                  "Scan the QR or enter a lot number to see commercial name, variety code, lot, status, germination, purity, test date, test basis, producer, and confirmation that the number matches a Green Future record."
+                  "เมื่อมีข้อมูลล็อตแล้ว จะแสดงชื่อสินค้า รหัสพันธุ์ เลขล็อต สถานะ อัตรางอก ความบริสุทธิ์ วันที่ทดสอบ และผู้ผลิต",
+                  "When a lot is registered, this page shows product name, variety code, lot number, status, germination, purity, test date, and producer."
                 )}
               </p>
-              <ul className="mt-3 space-y-1 text-xs text-slate-500">
-                {GF_TRACEABILITY_PUBLIC_FIELDS.map((field) => (
-                  <li key={field.id}>{t(field.th, field.en)}</li>
-                ))}
-              </ul>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-5">
               <Lock className="h-5 w-5 text-emerald-600" aria-hidden />
               <h3 className="mt-3 text-sm font-semibold text-slate-900">
-                {t("QR/token หรือบัญชีที่อนุญาต", "QR/token or authorised account")}
+                {t("เอกสารเพิ่มเติมสำหรับลูกค้าฟาร์ม", "Additional documents for farm customers")}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 {t(
-                  "เอกสารเต็มเปิดหลังยืนยันลูกค้าฟาร์ม — PDF ที่ลงนาม COA/ISTA เอกสารต้นทาง และประวัติแก้ ไม่เปิดค้นแบบไล่เลขล็อต",
-                  "Full documents open after farm-customer verification — signed PDF, COA/ISTA, source document, and change history. Sequential lot enumeration is not allowed."
+                  "ชุดเอกสารล็อตฉบับเต็มจัดให้ลูกค้าฟาร์มใบอนุญาตตามคำสั่งซื้อ ไม่เปิดเป็นรายการค้นหาสาธารณะ",
+                  "Full lot documents are issued to licensed farm customers with their order. They are not published as a public search list."
                 )}
               </p>
-              <ul className="mt-3 space-y-1 text-xs text-slate-500">
-                {GF_TRACEABILITY_RESTRICTED_FIELDS.map((field) => (
-                  <li key={field.en}>{t(field.th, field.en)}</li>
-                ))}
-              </ul>
             </div>
           </div>
         </div>
@@ -129,10 +117,10 @@ export function TraceabilityPageClient() {
               "Producer: Green Future (Global) Co., Ltd., Por.Por. 3 No. 102001102568 · Seller: T.M.Y Agro Trade Limited Partnership, Por.Por. 4 No. 1011043900042568, trading as Smile Seed Bank"
             )}
           </p>
-          <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm leading-relaxed text-slate-600">
+          <p className="text-sm leading-relaxed text-slate-600">
             {t(
-              "รูปโรงปลูกและโรงงานผลิตเมล็ดจะใส่หลังได้รับไฟล์จาก Green Future — คุณจูเลียอนุญาตให้ใช้เพื่อการตลาดและประกอบเอกสาร GACP ของลูกค้า (28 ส.ค. 2026) ตามที่ 0824 กำหนดให้อนุมัติเป็นลายลักษณ์อักษร",
-              "Farm and seed-production photos will be added after Green Future supplies the files. Julia authorised this use for marketing and customer GACP files (28 Aug 2026), matching the 0824 written-approval rule."
+              "ใบรับรอง GACP ของผู้ผลิตเป็นของสถานที่ผลิต ไม่ใช่ของล็อตเมล็ด",
+              "The producer’s GACP certificate covers the production site, not an individual seed lot."
             )}
           </p>
         </div>

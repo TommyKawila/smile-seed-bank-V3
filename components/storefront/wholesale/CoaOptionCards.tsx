@@ -22,7 +22,7 @@ export function CoaOptionCards({ mode, onChange }: Props) {
   return (
     <div className="space-y-4">
       <h3 className="text-base font-semibold text-slate-900">
-        {t("ตัวเลือกการส่ง (สำหรับขอราคา)", "Dispatch options (for quotation)")}
+        {t("ตัวเลือกการส่ง", "Dispatch options")}
       </h3>
       <div className="grid gap-3 md:grid-cols-2">
         <button
@@ -35,7 +35,7 @@ export function CoaOptionCards({ mode, onChange }: Props) {
           }`}
         >
           <p className="font-semibold text-slate-900">
-            {t("Option 1", "Option 1")}
+            {t("ส่งเมล็ดก่อน", "Seeds first")}
           </p>
           <p className="mt-1 text-sm text-slate-600">
             {t(GF_OPTION1_LABEL_TH, GF_OPTION1_LABEL_EN)}

@@ -8,8 +8,8 @@ const ITEMS = [
     icon: Dna,
     titleTh: "ระบุพันธุ์ด้วยรหัสล็อต",
     titleEn: "Variety code and lot identity",
-    bodyTh: "อ้างอิงรหัสพันธุ์ ชื่อการค้า และเลขล็อตตามที่ผู้ผลิตยืนยัน — ไม่เปิดสายพ่อแม่พันธุ์เต็ม",
-    bodyEn: "Commercial name, variety code, and lot number as confirmed by the producer — full pedigree is not disclosed.",
+    bodyTh: "อ้างอิงรหัสพันธุ์ ชื่อการค้า และเลขล็อตตามที่ผู้ผลิตยืนยัน",
+    bodyEn: "Commercial name, variety code, and lot number as confirmed by the producer.",
   },
   {
     icon: FileStack,

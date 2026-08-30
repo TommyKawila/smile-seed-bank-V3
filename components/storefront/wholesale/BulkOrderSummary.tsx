@@ -83,8 +83,8 @@ export function BulkOrderSummary({ quote, coaMode }: Props) {
 
       <p className="mt-3 text-xs text-amber-700">
         {t(
-          "* ราคาข้างต้นเป็นการประมาณการ — ผูกพันเมื่อ GF quotation + PO ยืนยัน",
-          "* Prices above are indicative estimates — binding only after GF quotation + accepted PO"
+          "* ราคาข้างต้นเป็นการประมาณการ — ผูกพันเมื่อยืนยันในใบเสนอราคา",
+          "* Prices above are indicative estimates — binding only when confirmed in a quotation"
         )}
       </p>
 

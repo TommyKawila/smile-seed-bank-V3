@@ -104,7 +104,7 @@ export function CoaAddonSection({
               </Label>
               <p className="text-xs leading-snug text-slate-500">
                 {t(
-                  "ตรวจวิเคราะห์ความบริสุทธิ์และอัตราการงอกโดยแล็บภายนอก — แล็บและวิธีทดสอบตาม quotation",
+                  "ตรวจวิเคราะห์ความบริสุทธิ์และอัตราการงอกโดยแล็บภายนอก — แล็บและวิธีทดสอบตามใบเสนอราคา",
                   "External laboratory purity and germination analysis — lab and method per quotation"
                 )}
               </p>
@@ -135,7 +135,7 @@ export function CoaAddonSection({
               </Label>
               <p className="text-xs leading-snug text-slate-500">
                 {t(
-                  "ตรวจเต็มรูปแบบ ครอบคลุมความบริสุทธิ์ อัตราการงอก และความชื้นโดยแล็บภายนอก — แล็บและวิธีทดสอบตาม quotation",
+                  "ตรวจเต็มรูปแบบ ครอบคลุมความบริสุทธิ์ อัตราการงอก และความชื้นโดยแล็บภายนอก — แล็บและวิธีทดสอบตามใบเสนอราคา",
                   "External lab test: purity, germination, and moisture — lab and method per quotation"
                 )}
               </p>

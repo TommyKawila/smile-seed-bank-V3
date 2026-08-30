@@ -34,8 +34,8 @@ export function WholesaleHero({ onRequestCatalog }: Props) {
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
           {t(
-            "สายพันธุ์จากโปรแกรม Green Future ที่ Smile Seed Bank จัดจำหน่าย — ระยะเวลาและเอกสารตามล็อตที่ยืนยันใน quotation ไม่ปน genetics อื่น",
-            "Green Future documented genetics distributed by Smile Seed Bank — lead time and lot data subject to confirmed quotation, no mixed genetics."
+              "สายพันธุ์จากโปรแกรม Green Future ที่ Smile Seed Bank จัดจำหน่าย — ระยะเวลาและเอกสารตามล็อตที่ยืนยันในใบเสนอราคา",
+              "Green Future documented genetics distributed by Smile Seed Bank — lead time and lot data follow the confirmed quotation."
           )}
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -72,7 +72,7 @@ export function WholesaleHero({ onRequestCatalog }: Props) {
           </li>
           <li className="inline-flex items-center gap-2">
             <MapPin className="h-4 w-4 text-emerald-600" aria-hidden />
-            {t("จัดส่งในประเทศ · ระยะเวลาตาม quotation", "Domestic dispatch · lead time per quotation")}
+            {t("จัดส่งในประเทศ · ระยะเวลาตามใบเสนอราคา", "Domestic dispatch · lead time per quotation")}
           </li>
         </ul>
       </div>

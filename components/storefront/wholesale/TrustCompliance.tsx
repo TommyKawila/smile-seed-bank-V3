@@ -52,8 +52,8 @@ export function TrustCompliance() {
             <Truck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
             <p>
               {t(
-                "ระยะเวลาจัดส่งเป็นประมาณการตามล็อตและ quotation — Option 1: ประมาณ 3–7 วันทำการหลัง accepted PO · มี COA: แล็บ ~30 วัน แล้วจัดส่งอีก 3–7 วัน",
-                "Dispatch is indicative per lot and quotation — Option 1: ~3–7 business days after accepted PO · with COA: lab ~30 days then dispatch ~3–7 days"
+                "ระยะเวลาจัดส่งเป็นประมาณการตามล็อตและใบเสนอราคา — ส่งเมล็ดก่อน: ประมาณ 3–7 วันทำการหลังยืนยันคำสั่ง · มี COA: แล็บประมาณ 30 วัน แล้วจัดส่งอีกประมาณ 3–7 วัน",
+                "Dispatch is indicative per lot and quotation — seeds first: about 3–7 business days after confirmation · with COA: lab about 30 days then dispatch about 3–7 days"
               )}
             </p>
           </div>

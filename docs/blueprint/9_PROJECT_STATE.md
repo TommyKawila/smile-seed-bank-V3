@@ -143,6 +143,16 @@
 
 ---
 
+### บันทึกการทำงาน — 2026-08-30 (GF wholesale public copy)
+- **What:** ตัดข้อความภายในออกจาก `/wholesale` `/wholesale/gacp` — ไม่โชว์ Option 1, accepted PO, ตรวจกฎหมาย, รอบทดลอง, Generator, 4×50, มัดจำสาธารณะ
+- **Logic:** หน้าสาธารณะเหลือขอใบเสนอราคา · ส่งเมล็ดก่อน/มี COA · ประมาณการตามใบเสนอราคา · ยังไม่เปิดรับมัดจำ (pre_gate)
+- **ไฟล์:** `green-future-approved-marketing.ts` · `CoaOptionCards.tsx` · `WholesaleHero.tsx` · `WholesaleComplianceNotice.tsx` · `TrustCompliance.tsx` · `BulkOrderCalculator.tsx` · `BulkOrderSummary.tsx` · `RfqModal.tsx` · `wholesale-rfq-service.ts` · `GacpHero.tsx` · `GacpTrustGrid.tsx` · `GacpFeaturedStrains.tsx`
+
+### บันทึกการทำงาน — 2026-08-30 (GF Traceability public copy)
+- **What:** ตัดข้อความภายในออกจาก `/traceability` — ไม่โชว์ฉบับตรวจ GF, รหัส 0824, ชื่อ Julia, QR/token, ประวัติแก้
+- **Logic:** หน้าสาธารณะเหลือ disclaimer ลูกค้า + lookup + สรุปข้อมูลที่แสดงได้ โดยไม่เปิดรายละเอียดระบบคู่ค้า
+- **ไฟล์:** `TraceabilityPageClient.tsx` · `TraceabilityLotResult.tsx` · `TraceabilityLotLookupForm.tsx`
+
 ### บันทึกการทำงาน — 2026-08-30 (GF Traceability public lookup preview)
 - **What:** หน้า `/traceability` + `/traceability/[lot]` ให้ Julia/GF ตรวจลิงก์ — disclaimer ตาม 0824, lookup 2 ชั้น, noindex จนกว่า live
 - **Logic:** preview ไม่ยืนยันว่าเลขล็อตมีอยู่ · ไม่ enumerate · ฟิลด์สาธารณะตาม GF 0824 ข้อ 6.2 · รูปโรงงานรอไฟล์จาก GF (Julia อนุญาตใช้แล้ว)

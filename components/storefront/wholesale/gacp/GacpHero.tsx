@@ -45,12 +45,12 @@ export function GacpHero() {
             href="/traceability"
             className="inline-flex min-h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
           >
-            {t("ตรวจล็อต Traceability", "Lot traceability lookup")}
+            {t("ตรวจเลขล็อต", "Look up a lot number")}
           </a>
         </div>
         <p className="mt-6 max-w-2xl text-xs leading-relaxed text-slate-500">
           {t(
-            "ใบรับรอง GACP ของพาร์ทเนอร์ผู้ผลิตเป็นของสถานที่ผลิต ไม่ใช่ของล็อตเมล็ด แล็บภายนอกคิดแยกตามที่สั่ง",
+            "ใบรับรอง GACP ของผู้ผลิตเป็นของสถานที่ผลิต ไม่ใช่ของล็อตเมล็ด แล็บภายนอกคิดแยกตามที่สั่ง",
             "The producer’s GACP certificate covers the production site, not a seed lot. External laboratory tests are charged separately when ordered."
           )}
         </p>

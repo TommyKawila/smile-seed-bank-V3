@@ -39,16 +39,16 @@ export function TraceabilityLotResult({ lookup }: Props) {
           {lookup.kind === "unpublished" ? (
             <p>
               {t(
-                `ลิงก์ล็อต ${lookup.lot} พร้อมแล้ว แต่ข้อมูลล็อตยังไม่ถูกนำเข้า — รอส่งของรอบแรกและ Green Future อนุมัติ Traceability Pack ก่อนยืนยันว่าเลขนี้มีในทะเบียน`,
-                `The lot URL for ${lookup.lot} is ready, but lot data is not imported yet. Smile will not confirm whether this number exists until first delivery and Green Future approval.`
+                `ยังไม่มีสรุปล็อตสาธารณะสำหรับ ${lookup.lot} หากเพิ่งได้รับสินค้า ข้อมูลอาจยังไม่ถูกบันทึก`,
+                `No public lot summary is available for ${lookup.lot} yet. If you recently received the pack, the record may still be pending.`
               )}
             </p>
           ) : null}
           {lookup.kind === "unknown" ? (
             <p>
               {t(
-                "ไม่พบสรุปล็อตสาธารณะสำหรับเลขนี้ — ไม่ใช่การยืนยันว่าเลขล็อตไม่มีอยู่ในระบบภายใน",
-                "No public lot summary is available for this number. That is not a confirmation that the lot is absent from internal records."
+                "ไม่พบสรุปล็อตสาธารณะสำหรับเลขนี้",
+                "No public lot summary is available for this number."
               )}
             </p>
           ) : null}

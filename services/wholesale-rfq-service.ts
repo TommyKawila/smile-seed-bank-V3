@@ -175,12 +175,12 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
   const invoiceDate = new Date().toISOString().slice(0, 10);
   const paymentNotes = [
     isGfPreGate()
-      ? "Quotation request only — not a PO or deposit (Regulatory Gate pending)"
+      ? "Quotation request only — not a purchase order or deposit"
       : `Payment: ${PAYMENT_LABEL[input.paymentMethod]}`,
     `Company: ${input.companyName.trim()}`,
     `Contact: ${input.contactName.trim()}`,
     `Phone: ${input.phone.trim()}`,
-    `COA mode: ${input.coaMode === "with" ? "With COA" : "Option 1 (internal lot test)"}`,
+    `COA mode: ${input.coaMode === "with" ? "With external lab COA" : "Seeds first (producer lot test)"}`,
     quoteCalc.freeCoaCount > 0
       ? `Free COA entitlement: ${quoteCalc.freeCoaCount}`
       : null,
@@ -195,8 +195,8 @@ export async function submitWholesaleRfq(input: WholesaleRfqInput): Promise<{
       : `Balance 50%: ${quoteCalc.balanceThb} THB`,
     `ETA: ${
       input.coaMode === "with"
-        ? "after accepted PO — approx 35-40 days (incl. lab)"
-        : "after accepted PO — indicative 3-7 business days"
+        ? "indicative after order confirmation — approx 35-40 days (incl. lab)"
+        : "indicative after order confirmation — 3-7 business days"
     }`,
     input.message?.trim() ? `Message: ${input.message.trim()}` : null,
     "Source: /wholesale public RFQ",

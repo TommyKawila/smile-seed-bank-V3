@@ -25,48 +25,48 @@ export function gfShowPaymentTerms(): boolean {
 }
 
 export const GF_RFQ_NON_BINDING_TH =
-  "คำขอใบเสนอราคานี้ไม่ใช่คำสั่งซื้อหรือมัดจำ — ราคาและระยะเวลาเป็นประมาณการจนกว่า Green Future ยืนยัน quotation และ accepted PO";
+  "คำขอใบเสนอราคานี้ไม่ใช่คำสั่งซื้อหรือมัดจำ — ราคาและระยะเวลาเป็นประมาณการจนกว่าจะยืนยันในใบเสนอราคา";
 
 export const GF_RFQ_NON_BINDING_EN =
-  "This quotation request is not a purchase order or deposit — price and timing are indicative until Green Future confirms quotation and an accepted PO";
+  "This quotation request is not a purchase order or deposit — price and timing are indicative until confirmed in a quotation";
 
 export const GF_OPTION1_LABEL_TH =
-  "Option 1 — ปล่อยของตามผลทดสอบล็อตภายใน GF ตอนส่ง · ใบ COA ทางการภายหลัง (รูปแบบขอราคา/ตรวจกฎหมาย)";
+  "ส่งเมล็ดก่อน — ใช้ผลทดสอบล็อตของผู้ผลิตตอนส่ง · ใบ COA แล็บภายนอกมาทีหลังหากสั่งแยก";
 
 export const GF_OPTION1_LABEL_EN =
-  "Option 1 — dispatch on GF documented internal lot test · official COA later (quotation/regulatory review configuration)";
+  "Seeds first — dispatch on the producer’s lot test · official lab COA later if ordered separately";
 
-export const GF_PILOT_PACK_DESC_TH = `รอบทดลอง: ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด · 4 ซองต่อสาย (${GF_PILOT_DEFAULT_QTY} เมล็ด) · 5 สาย — สำหรับขอราคาเท่านั้น`;
+export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด · 4 ซองต่อสาย (${GF_PILOT_DEFAULT_QTY} เมล็ด) · ราคาเป็นการประมาณการสำหรับขอใบเสนอราคา`;
 
-export const GF_PILOT_PACK_DESC_EN = `Pilot: ${GF_PILOT_POUCH_QTY}-seed sealed pouches · 4 pouches per strain (${GF_PILOT_DEFAULT_QTY} seeds) · 5 strains — quotation planning only`;
+export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · 4 pouches per strain (${GF_PILOT_DEFAULT_QTY} seeds) · prices are estimates for quotation requests`;
 
 export const GF_DISPATCH_AFTER_PO_TH =
-  "ระยะเวลาจัดส่งเป็นประมาณการหลัง accepted PO และมัดจำตาม quotation — ไม่ใช่การรับประกันวันส่ง";
+  "ระยะเวลาจัดส่งเป็นประมาณการตามใบเสนอราคา — ไม่ใช่การรับประกันวันส่ง";
 
 export const GF_DISPATCH_AFTER_PO_EN =
-  "Dispatch timing is indicative after an accepted PO and deposit per quotation — not a guaranteed ship date";
+  "Dispatch timing is indicative per quotation — not a guaranteed ship date";
 
 export const GF_OPTION1_DISPATCH_TH =
-  "Option 1 (ไม่มี COA ภายนอก): ประมาณการ 3–7 วันทำการหลัง accepted PO และมัดจำ 50% — ขึ้นกับล็อตและ quotation";
+  "ประมาณการ 3–7 วันทำการหลังยืนยันคำสั่งตามใบเสนอราคา — ขึ้นกับล็อตที่มี";
 
 export const GF_OPTION1_DISPATCH_EN =
-  "Option 1 (no external COA): indicative 3–7 business days after accepted PO and 50% advance — subject to lot and quotation";
+  "Indicative 3–7 business days after order confirmation per quotation — subject to lot availability";
 
 export const GF_WITH_COA_DISPATCH_TH =
-  "มี COA แล็บภายนอก: แล็บ ~30 วันทำการ แล้วจัดส่งอีก 3–7 วัน — หลัง accepted PO ตาม quotation";
+  "มี COA แล็บภายนอก: แล็บประมาณ 30 วันทำการ แล้วจัดส่งอีกประมาณ 3–7 วัน — ตามใบเสนอราคา";
 
 export const GF_WITH_COA_DISPATCH_EN =
-  "With external lab COA: lab ~30 business days, then indicative dispatch 3–7 days — after accepted PO per quotation";
+  "With external lab COA: lab about 30 business days, then indicative dispatch 3–7 days — per quotation";
 
 export const GF_STRAIN_STATUS_PRE_GATE_TH = "เสนอขอราคา — ยังไม่พร้อมขาย";
 
 export const GF_STRAIN_STATUS_PRE_GATE_EN = "Proposed for quotation — not yet for sale";
 
 export const GF_CONDITIONAL_DEPOSIT_SHORT_TH =
-  "มัดจำจองสิทธิ์แบบมีเงื่อนไข — คืนเงินเต็มหากไม่ถึงขั้นต่ำ GF ไม่ยืนยัน หรือฉลาก/กระบวนการไม่ผ่าน";
+  "มัดจำจองสิทธิ์แบบมีเงื่อนไข — คืนเงินเต็มหากไม่ถึงขั้นต่ำหรือไม่ผ่านเงื่อนไขที่ระบุในใบเสนอราคา";
 
 export const GF_CONDITIONAL_DEPOSIT_SHORT_EN =
-  "Conditional reservation deposit — full refund if minimums are not met, GF does not confirm, or label/process approval fails";
+  "Conditional reservation deposit — full refund if minimums are not met or quotation conditions are not fulfilled";
 
 export function gfWholesaleRobots(): NonNullable<Metadata["robots"]> {
   return isGfPreGate()
@@ -91,13 +91,13 @@ export const GF_TRACEABILITY_DISCLAIMER_EN =
   "not a GACP certificate, DTAM document, or audit guarantee — GACP outcomes depend entirely on the applying farm";
 
 export const GF_PRE_GATE_WEB_NOTICE_TH =
-  "โปรแกรมนี้อยู่ระหว่างตรวจฉลากและกระบวนการกับหน่วยงานที่เกี่ยวข้อง — รับคำขอใบเสนอราคาเท่านั้น ยังไม่เปิดรับมัดจำสาธารณะ";
+  "ขณะนี้รับคำขอใบเสนอราคาเท่านั้น ยังไม่เปิดรับมัดจำ";
 
 export const GF_PRE_GATE_WEB_NOTICE_EN =
-  "This programme is undergoing label and process review with the competent authority — quotation requests only; public deposits are not yet open";
+  "Quotation requests only for now — deposits are not yet open";
 
 export const GF_POST_GATE_WEB_NOTICE_TH =
-  "เปิดรับมัดจำจองสิทธิ์แบบมีเงื่อนไข — คืนเงินเต็มหากไม่ถึงขั้นต่ำหรือไม่ผ่านเงื่อนไขที่กำหนด ราคาและระยะเวลาเป็นประมาณการตาม quotation";
+  "เปิดรับมัดจำจองสิทธิ์แบบมีเงื่อนไข — คืนเงินเต็มหากไม่ถึงขั้นต่ำหรือไม่ผ่านเงื่อนไขที่กำหนด ราคาและระยะเวลาเป็นประมาณการตามใบเสนอราคา";
 
 export const GF_POST_GATE_WEB_NOTICE_EN =
   "Conditional reservation deposits now open — full refund if minimums or approval conditions are not met; price and timing are indicative per quotation";
@@ -115,23 +115,23 @@ We are opening a conditional reservation round for producer-sealed 50-seed pouch
 Approved wording:
 ${GF_TRACEABILITY_CLAIM_EN} — ${GF_TRACEABILITY_DISCLAIMER_EN}.
 
-- Prices are indicative until Green Future confirms quotation and lot in writing.
-- 50% conditional deposit per line; full refund if the round minimum is not met, GF does not confirm, or label/process approval is not obtained.
+- Prices are indicative until confirmed in a quotation.
+- 50% conditional deposit per line; full refund if the round minimum is not met or quotation conditions are not fulfilled.
 - Seeds are producer-packed and sealed — Smile Seed Bank does not open, repack, or relabel.
 - External lab COA is optional per strain, charged separately.
 
 Reply to request a quotation or join the reservation list.
 Distributed by T.M.Y Agro Trade Limited Partnership, Por.Por. 4 No. 1011043900042568.`;
 
-export const GF_EMAIL_BODY_POST_GATE_TH = `โปรแกรมเมล็ด Green Future — รอบทดลอง
+export const GF_EMAIL_BODY_POST_GATE_TH = `โปรแกรมเมล็ด Green Future — เปิดจองแบบมีเงื่อนไข
 
-เปิดรับมัดจำจองสิทธิ์แบบมีเงื่อนไขสำหรับซองซีล 50 เมล็ด (5 สายทดลอง)
+เปิดรับมัดจำจองสิทธิ์แบบมีเงื่อนไขสำหรับซองซีล 50 เมล็ด (5 สาย)
 
 ถ้อยคำที่อนุมัติ:
 ${GF_TRACEABILITY_CLAIM_TH} — ${GF_TRACEABILITY_DISCLAIMER_TH}
 
-- ราคาเป็นประมาณการจนกว่า Green Future ยืนยัน quotation และล็อตเป็นลายลักษณ์อักษร
-- มัดจำ 50% ต่อรายการ คืนเงินเต็มหากไม่ถึงขั้นต่ำ GF ไม่ยืนยัน หรือฉลาก/กระบวนการไม่ผ่าน
+- ราคาเป็นประมาณการจนกว่าจะยืนยันในใบเสนอราคา
+- มัดจำ 50% ต่อรายการ คืนเงินเต็มหากไม่ถึงขั้นต่ำหรือไม่ผ่านเงื่อนไขที่ระบุในใบเสนอราคา
 - เมล็ดบรรจุและซีลโดยผู้ผลิต — Smile Seed Bank ไม่เปิด แบ่ง หรือเปลี่ยนฉลาก
 - COA แล็บภายนอกเป็นตัวเลือกเสริม คิดแยกตามสาย
 
@@ -148,7 +148,7 @@ Not GACP-certified seeds. Quotation-based pricing. DM for B2B details.
 
 export const GF_FACEBOOK_POST_POST_GATE_TH = `${GF_TRACEABILITY_CLAIM_TH}
 
-รอบทดลอง: ซองซีล 50 เมล็ด · 5 สาย · มัดจำมีเงื่อนไข · คืนเงินเต็มหากไม่ผ่านเงื่อนไข
+รอบเปิดจอง: ซองซีล 50 เมล็ด · 5 สาย · มัดจำมีเงื่อนไข · คืนเงินเต็มหากไม่ผ่านเงื่อนไข
 
 ไม่ใช่เมล็ดรับรอง GACP ราคาตาม quotation ทักขอรายละเอียด B2B
 

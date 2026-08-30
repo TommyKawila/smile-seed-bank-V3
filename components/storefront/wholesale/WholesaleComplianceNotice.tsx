@@ -16,8 +16,8 @@ export function WholesaleComplianceNotice() {
           <li className="font-medium text-amber-900">{gfGateNotice(t)}</li>
           <li>
             {t(
-              "ราคาบนหน้าเว็บเป็นการประมาณการ — ราคาผูกพันเมื่อ Green Future ออก quotation และ PO ได้รับการยอมรับเท่านั้น",
-              "Prices shown are indicative estimates — binding only after Green Future issues a quotation and an accepted PO."
+              "ราคาบนหน้าเว็บเป็นการประมาณการ — ราคาผูกพันเมื่อยืนยันในใบเสนอราคาเท่านั้น",
+              "Prices shown are indicative estimates — binding only when confirmed in a quotation."
             )}
           </li>
           <li>
@@ -34,20 +34,20 @@ export function WholesaleComplianceNotice() {
           </li>
           <li>
             {t(
-              "เอกสารล็อตเป็น supporting traceability documentation for GACP purposes — ไม่ใช่ใบ GACP, เอกสาร DTAM หรือการรับประกันผลตรวจ",
-              "Lot documents are supporting traceability documentation for GACP purposes — not a GACP certificate, DTAM document, or audit guarantee."
+              "เอกสารล็อตใช้สนับสนุนการตรวจสอบย้อนกลับสำหรับ GACP — ไม่ใช่ใบ GACP, เอกสาร DTAM หรือการรับประกันผลตรวจ",
+              "Lot documents support traceability for GACP purposes — not a GACP certificate, DTAM document, or audit guarantee."
             )}
           </li>
           <li>
             {t(
-              "Traceability Pack Generator ยังไม่เปิดใช้งาน — ชุดเอกสารตามล็อตที่ยืนยันใน PO",
-              "Traceability Pack Generator is not yet available — document scope follows the confirmed lot in the PO."
+              "เอกสารตรวจสอบย้อนกลับฉบับเต็มจัดให้ตามคำสั่งซื้อที่ยืนยัน",
+              "Full traceability documents are issued with a confirmed order."
             )}
           </li>
           <li>
             {t(
-              "เกณฑ์งอก ≥80% / บริสุทธิ์ ≥99% มีผลเมื่อระบุใน accepted PO และตามวิธีทดสอบที่ตกลง",
-              "Germination ≥80% / purity ≥99% applies when stated in an accepted PO and per the agreed test method."
+              "เกณฑ์งอก ≥80% / บริสุทธิ์ ≥99% มีผลเมื่อระบุในใบเสนอราคาที่ยืนยัน และตามวิธีทดสอบที่ตกลง",
+              "Germination ≥80% / purity ≥99% applies when stated in a confirmed quotation and per the agreed test method."
             )}
           </li>
           <li>
