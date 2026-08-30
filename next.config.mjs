@@ -178,6 +178,12 @@ const nextConfig = {
             : []),
         ],
       },
+      {
+        source: "/api/wholesale/lot-test-sample",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        ],
+      },
     ];
   },
   webpack(config, { webpack }) {

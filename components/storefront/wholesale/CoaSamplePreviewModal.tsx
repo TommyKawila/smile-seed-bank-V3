@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Loader2, X } from "lucide-react";
+import { ExternalLink, Loader2, X } from "lucide-react";
 import {
   Dialog,
   DialogFooter,
@@ -33,6 +34,13 @@ export function CoaSamplePreviewModal({
   packageKey,
 }: Props) {
   const { t } = useLanguage();
+  const [pdfLoading, setPdfLoading] = useState(true);
+
+  useEffect(() => {
+    if (open && sampleUrl) setPdfLoading(true);
+  }, [open, sampleUrl]);
+
+  const showPdf = Boolean(sampleUrl && isPdfUrl(sampleUrl));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,14 +58,28 @@ export function CoaSamplePreviewModal({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex min-h-[240px] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <div className="relative flex min-h-[240px] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
             {sampleUrl ? (
-              isPdfUrl(sampleUrl) ? (
-                <iframe
-                  title={title}
-                  src={sampleUrl}
-                  className="h-[min(60vh,480px)] w-full bg-white"
-                />
+              showPdf ? (
+                <>
+                  {pdfLoading && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-50 px-6 text-center">
+                      <Loader2
+                        className="h-8 w-8 animate-spin text-emerald-600"
+                        aria-hidden
+                      />
+                      <p className="text-sm text-slate-600">
+                        {t("กำลังโหลดเอกสารตัวอย่าง…", "Sample document loading…")}
+                      </p>
+                    </div>
+                  )}
+                  <iframe
+                    title={title}
+                    src={sampleUrl}
+                    onLoad={() => setPdfLoading(false)}
+                    className="h-[min(60vh,480px)] w-full bg-white"
+                  />
+                </>
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element -- sample URL from supplier
                 <img
@@ -87,6 +109,18 @@ export function CoaSamplePreviewModal({
               </div>
             )}
           </div>
+
+          {showPdf && sampleUrl ? (
+            <a
+              href={sampleUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-emerald-700 transition hover:text-emerald-800 hover:underline"
+            >
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {t("เปิดเอกสารในแท็บใหม่", "Open document in new tab")}
+            </a>
+          ) : null}
 
           <DialogFooter className="sm:justify-end">
             <button

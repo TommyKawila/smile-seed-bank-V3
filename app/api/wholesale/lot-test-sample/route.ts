@@ -35,6 +35,7 @@ export async function GET(req: Request) {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${safeName}"`,
         "Cache-Control": "private, no-store",
+        "X-Frame-Options": "SAMEORIGIN",
       },
     });
   } catch (err) {
