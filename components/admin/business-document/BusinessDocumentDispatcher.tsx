@@ -32,6 +32,12 @@ import {
   GREEN_FUTURE_JULIA_MEETING_BRIEF_SUBJECT,
 } from "@/lib/green-future-julia-meeting-brief";
 import {
+  GREEN_FUTURE_JULIA_MEETING_RECAP_EN_RAW,
+  GREEN_FUTURE_JULIA_MEETING_RECAP_EN_SUBJECT,
+  GREEN_FUTURE_JULIA_MEETING_RECAP_TH_RAW,
+  GREEN_FUTURE_JULIA_MEETING_RECAP_TH_SUBJECT,
+} from "@/lib/green-future-julia-meeting-recap";
+import {
   GREEN_FUTURE_0824_REPLY_RAW,
   GREEN_FUTURE_0824_REPLY_SUBJECT,
   GREEN_FUTURE_0824_REPLY_TH_RAW,
@@ -253,6 +259,24 @@ export function BusinessDocumentDispatcher() {
     );
   }, [loadTemplate]);
 
+  const handleLoadGreenFutureJuliaRecapTh = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_JULIA_MEETING_RECAP_TH_RAW,
+      GREEN_FUTURE_JULIA_MEETING_RECAP_TH_SUBJECT,
+      "Meeting recap (TH) loaded",
+      "For Julia to translate — attach English recap for evidence."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureJuliaRecapEn = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_JULIA_MEETING_RECAP_EN_RAW,
+      GREEN_FUTURE_JULIA_MEETING_RECAP_EN_SUBJECT,
+      "Meeting recap (EN) loaded",
+      "English confirmation copy — email to Julia / GF for written record."
+    );
+  }, [loadTemplate]);
+
   const handleLoadGreenFutureTemplate = useCallback(() => {
     loadTemplate(
       GREEN_FUTURE_CLARIFICATION_RAW,
@@ -471,6 +495,8 @@ export function BusinessDocumentDispatcher() {
           onLoadGreenFuture0824Reply={handleLoadGreenFuture0824Reply}
           onLoadGreenFuture0824ReplyTh={handleLoadGreenFuture0824ReplyTh}
           onLoadGreenFutureJuliaBrief={handleLoadGreenFutureJuliaBrief}
+          onLoadGreenFutureJuliaRecapTh={handleLoadGreenFutureJuliaRecapTh}
+          onLoadGreenFutureJuliaRecapEn={handleLoadGreenFutureJuliaRecapEn}
           onLoadGreenFutureConditionalDeposit={
             handleLoadGreenFutureConditionalDeposit
           }

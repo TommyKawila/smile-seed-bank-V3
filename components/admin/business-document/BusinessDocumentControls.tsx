@@ -53,6 +53,8 @@ type Props = {
   onLoadGreenFuture0824Reply?: () => void;
   onLoadGreenFuture0824ReplyTh?: () => void;
   onLoadGreenFutureJuliaBrief?: () => void;
+  onLoadGreenFutureJuliaRecapTh?: () => void;
+  onLoadGreenFutureJuliaRecapEn?: () => void;
   onLoadGreenFutureConditionalDeposit?: () => void;
   onLoadGreenFutureMarketingPack?: () => void;
   onLoadGreenFutureGateEvidence?: () => void;
@@ -102,6 +104,8 @@ export function BusinessDocumentControls({
   onLoadGreenFuture0824Reply,
   onLoadGreenFuture0824ReplyTh,
   onLoadGreenFutureJuliaBrief,
+  onLoadGreenFutureJuliaRecapTh,
+  onLoadGreenFutureJuliaRecapEn,
   onLoadGreenFutureConditionalDeposit,
   onLoadGreenFutureMarketingPack,
   onLoadGreenFutureGateEvidence,
@@ -197,6 +201,8 @@ export function BusinessDocumentControls({
       onLoadGreenFuture0824Reply ||
       onLoadGreenFuture0824ReplyTh ||
       onLoadGreenFutureJuliaBrief ||
+      onLoadGreenFutureJuliaRecapTh ||
+      onLoadGreenFutureJuliaRecapEn ||
       onLoadGreenFutureConditionalDeposit ||
       onLoadGreenFutureMarketingPack ||
       onLoadGreenFutureGateEvidence ||
@@ -281,6 +287,28 @@ export function BusinessDocumentControls({
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Julia meeting brief (internal)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureJuliaRecapTh ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-amber-700/40 text-amber-900 hover:bg-amber-50"
+                onClick={onLoadGreenFutureJuliaRecapTh}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Meeting recap (TH)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureJuliaRecapEn ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-amber-700/40 text-amber-900 hover:bg-amber-50"
+                onClick={onLoadGreenFutureJuliaRecapEn}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Meeting recap (EN)
               </Button>
             ) : null}
             {onLoadGreenFutureConditionalDeposit ? (

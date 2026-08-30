@@ -36,6 +36,16 @@ const items = [
     label: "Meeting brief",
     exact: false,
   },
+  {
+    href: "/admin/partners/green-future/meeting-recap/th",
+    label: "Recap (TH)",
+    exact: false,
+  },
+  {
+    href: "/admin/partners/green-future/meeting-recap/en",
+    label: "Recap (EN)",
+    exact: false,
+  },
 ] as const;
 
 export function GreenFutureSubNav() {
