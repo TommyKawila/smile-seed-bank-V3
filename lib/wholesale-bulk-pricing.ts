@@ -385,7 +385,13 @@ export function resolveQuote(
     allValid,
     bulkUnlocked,
     activePerk: perk,
-    unitThbForBulk: perk ? ceilThb(perk.thbPerSeed) : null,
+    unitThbForBulk: pilotMode
+      ? allValid
+        ? pilotUnitThb
+        : null
+      : perk
+        ? ceilThb(perk.thbPerSeed)
+        : null,
     freeCoaCount,
     freeCoaValueThb,
     seedTotalThb,

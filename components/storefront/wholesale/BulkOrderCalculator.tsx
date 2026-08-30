@@ -63,41 +63,40 @@ type PilotPouchStepperProps = {
   t: (th: string, en: string) => string;
 };
 
+const pouchStepBtnClass =
+  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-300 disabled:opacity-100";
+
 function PilotPouchStepper({ pouches, onChange, t }: PilotPouchStepperProps) {
   return (
     <div className="space-y-1">
       <label className="text-xs font-medium text-slate-500">
         {t("จำนวนซอง", "Pouches")}
       </label>
-      <div className="flex min-h-10 items-center gap-2">
-        <Button
+      <div className="flex min-h-12 items-center gap-2">
+        <button
           type="button"
-          variant="outline"
-          size="icon"
-          className="h-10 w-10 shrink-0 border-slate-200"
+          className={pouchStepBtnClass}
           disabled={pouches <= 1}
           onClick={() => onChange(pouches - 1)}
           aria-label={t("ลดจำนวนซอง", "Decrease pouches")}
         >
           <Minus className="h-4 w-4" />
-        </Button>
+        </button>
         <span
           className="min-w-[3rem] text-center text-lg font-semibold tabular-nums text-slate-900"
           aria-live="polite"
         >
           {pouches}
         </span>
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="icon"
-          className="h-10 w-10 shrink-0 border-slate-200"
+          className={pouchStepBtnClass}
           disabled={pouches >= GF_PILOT_POUCHES_PER_STRAIN}
           onClick={() => onChange(pouches + 1)}
           aria-label={t("เพิ่มจำนวนซอง", "Increase pouches")}
         >
           <Plus className="h-4 w-4" />
-        </Button>
+        </button>
       </div>
       <p className="text-xs leading-snug text-slate-500">
         {t(
@@ -353,14 +352,12 @@ export function BulkOrderCalculator({
                 <p className="mt-2 text-sm text-slate-600">
                   {pilotMode && pouches > 0
                     ? t(
-                        `${pouches * GF_PILOT_POUCH_QTY} เมล็ด (${pouches} ซอง) · `,
-                        `${pouches * GF_PILOT_POUCH_QTY} seeds (${pouches} pouches) · `
+                        `${pouches * GF_PILOT_POUCH_QTY} เมล็ด (${pouches} ซอง) · ราคารวมสายนี้ `,
+                        `${pouches * GF_PILOT_POUCH_QTY} seeds (${pouches} pouches) · Line `
                       )
                     : resolved.isMicroPack
-                      ? t("แพ็คผู้ผลิตบรรจุ · ", "Producer-packed · ")
-                      : ""}
-                  {money(resolved.unitThb, currency, config.eurThb)}
-                  {t("/เมล็ด · ราคารวม ", "/seed · Line ")}
+                      ? t("แพ็คผู้ผลิตบรรจุ · ราคารวมสายนี้ ", "Producer-packed · Line ")
+                      : t("ราคารวมสายนี้ ", "Line ")}
                   {money(resolved.lineTotalThb, currency, config.eurThb)}
                 </p>
               )}
@@ -421,7 +418,13 @@ export function BulkOrderCalculator({
         />
       )}
 
-      <BulkOrderSummary quote={quote} coaMode={coaMode} />
+      <BulkOrderSummary
+        quote={quote}
+        coaMode={coaMode}
+        currency={currency}
+        fx={config.eurThb}
+        pilotMode={pilotMode}
+      />
 
       <Button
         type="button"

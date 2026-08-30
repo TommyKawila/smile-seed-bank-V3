@@ -32,6 +32,24 @@ export function gfPilotSellThbPerSeed(totalSeeds: number): number {
   return 0;
 }
 
+export function gfPilotNextTier(totalSeeds: number): {
+  needSeeds: number;
+  nextThbPerSeed: number;
+} | null {
+  const q = Math.floor(totalSeeds);
+  for (let i = 0; i < GF_PILOT_POUCH_TIERS.length - 1; i++) {
+    const cur = GF_PILOT_POUCH_TIERS[i];
+    const next = GF_PILOT_POUCH_TIERS[i + 1];
+    if (q >= cur.minTotalSeeds && q <= cur.maxTotalSeeds) {
+      return {
+        needSeeds: next.minTotalSeeds - q,
+        nextThbPerSeed: next.thbPerSeed,
+      };
+    }
+  }
+  return null;
+}
+
 export const GF_PILOT_STRAIN_CODES = [
   "AF99",
   "AF143",
