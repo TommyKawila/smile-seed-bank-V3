@@ -60,7 +60,7 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
   th: {
     exclusive: "ข้อเสนอส่วนตัว",
     catalogDisclaimer:
-      "แคตตาล็อกอ้างอิงเท่านั้น — สต็อก ล็อต รูปแบบบรรจุที่ผู้ผลิตซีล ราคา และเอกสารต้องรอ Green Future ยืนยันเป็นลายลักษณ์อักษร · ไม่ใช่ PO ที่ผูกพัน",
+      "แคตตาล็อกอ้างอิงเท่านั้น — สต็อก ล็อต รูปแบบบรรจุที่ผู้ผลิตซีล ราคา และเอกสารต้องรอยืนยันเป็นลายลักษณ์อักษร · ไม่ใช่ PO ที่ผูกพัน",
     pricePerSeed: "Smile Seed Bank · ราคาต่อเมล็ด (THB) ตามปริมาณ · ไม่รวมค่าขนส่งปลายทาง",
     expires: (date) => `ลิงก์หมดอายุ ${date}`,
     tapToCart: "กดชื่อสายเพื่อเพิ่มในตะกร้า — ครั้งละ 50 เมล็ด",
@@ -100,7 +100,7 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     thanksEyebrow: "ได้รับคำขอแล้ว",
     thanksTitle: "ขอบคุณครับ",
     thanksBody:
-      "เราได้รับคำขอราคาของคุณแล้ว — ทีม Smile Seed Bank จะติดต่อกลับหลังยืนยันสต็อกและ quotation จาก Green Future",
+      "เราได้รับคำขอราคาของคุณแล้ว — ทีม Smile Seed Bank จะติดต่อกลับหลังยืนยันสต็อกและใบเสนอราคา",
     thanksKeep: "เก็บเลขอ้างอิงนี้ไว้สำหรับติดตาม",
     sgfStrainsTitle: "สายพันธุ์ (SGF Seeds)",
     sgStrainsTitle: "สายพันธุ์ (Seeds Genetics)",
@@ -117,7 +117,7 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
   en: {
     exclusive: "Private offer",
     catalogDisclaimer:
-      "Reference catalog only — availability, lot, producer-sealed pack size, price and documents require Green Future written confirmation · not a binding PO",
+      "Reference catalog only — availability, lot, producer-sealed pack size, price and documents require written confirmation · not a binding PO",
     pricePerSeed:
       "Smile Seed Bank · price per seed (THB) by quantity · destination shipping not included",
     expires: (date) => `Link expires ${date}`,
@@ -158,7 +158,7 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     thanksEyebrow: "Request received",
     thanksTitle: "Thank you",
     thanksBody:
-      "We received your quotation request — Smile Seed Bank will follow up after Green Future confirms availability and quotation",
+      "We received your quotation request — Smile Seed Bank will follow up after availability and quotation are confirmed",
     thanksKeep: "Keep this reference number for follow-up",
     sgfStrainsTitle: "Strains (SGF Seeds)",
     sgStrainsTitle: "Strains (Seeds Genetics)",

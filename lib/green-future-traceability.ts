@@ -26,14 +26,14 @@ export const GF_TRACEABILITY_PUBLIC_FIELDS = [
   { id: "testDate", th: "วันที่ทดสอบ", en: "Test Date" },
   { id: "testBasis", th: "ฐานการทดสอบ", en: "Test Basis" },
   { id: "producer", th: "ผู้ผลิต", en: "Producer" },
-  { id: "authentic", th: "ยืนยันเลขล็อตตรงเอกสาร GF", en: "Lot-authenticity confirmation" },
+  { id: "authentic", th: "ยืนยันเลขล็อตตรงเอกสาร SGF SEEDS", en: "Lot-authenticity confirmation" },
 ] as const;
 
 export const GF_TRACEABILITY_RESTRICTED_FIELDS = [
   { th: "PDF Traceability ที่ลงนาม", en: "Signed Traceability PDF" },
   { th: "COA / ISTA", en: "COA / ISTA" },
   { th: "เอกสารต้นทาง / เวอร์ชัน", en: "Source Document / Version" },
-  { th: "เอกสาร GF เพิ่มเติม", en: "Additional Green Future documents" },
+  { th: "เอกสาร SGF SEEDS เพิ่มเติม", en: "Additional SGF SEEDS documents" },
   { th: "ประวัติการแก้ไข", en: "Change history" },
 ] as const;
 

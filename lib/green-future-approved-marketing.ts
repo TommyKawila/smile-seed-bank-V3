@@ -61,10 +61,10 @@ export const GF_PILOT_INCLUDED_DOCS_EN = [
 ] as const;
 
 export const GF_PILOT_INCLUDED_DOCS_NOTE_TH =
-  "ตามโปรแกรมเอกสาร Green Future — ไม่ใช่ใบ GACP หรือ DTAM · COA แล็บภายนอก (Package A/B) และ ISTA คิดแยกเมื่อสั่ง";
+  "ตามโปรแกรมเอกสาร SGF SEEDS — ไม่ใช่ใบ GACP หรือ DTAM · COA แล็บภายนอก (Package A/B) และ ISTA คิดแยกเมื่อสั่ง";
 
 export const GF_PILOT_INCLUDED_DOCS_NOTE_EN =
-  "Under the Green Future documented programme — not a GACP certificate or DTAM document · external lab COA (Package A/B) and ISTA are optional add-ons, billed separately when ordered";
+  "Under the SGF SEEDS documented programme — not a GACP certificate or DTAM document · external lab COA (Package A/B) and ISTA are optional add-ons, billed separately when ordered";
 
 export const GF_WHOLESALE_HERO_TITLE_TH =
   "เมล็ดพันธุ์คุณภาพสำหรับผู้ปลูกมาตรฐาน GACP";
@@ -73,10 +73,10 @@ export const GF_WHOLESALE_HERO_TITLE_EN =
   "Quality seeds for GACP-standard growers";
 
 export const GF_WHOLESALE_HERO_LEAD_TH =
-  "เมล็ดพันธุ์กัญชาแบรนด์ SGF-SEEDS ผลิตในประเทศไทย มาตรฐาน GACP จัดจำหน่ายโดย Smile Seed Bank";
+  "เมล็ดพันธุ์กัญชาแบรนด์ SGF SEEDS ผลิตในประเทศไทย มาตรฐาน GACP จัดจำหน่ายโดย Smile Seed Bank";
 
 export const GF_WHOLESALE_HERO_LEAD_EN =
-  "SGF-SEEDS cannabis genetics produced in Thailand to GACP standards, distributed by Smile Seed Bank";
+  "SGF SEEDS cannabis genetics produced in Thailand to GACP standards, distributed by Smile Seed Bank";
 
 export const GF_DISPATCH_AFTER_PO_TH =
   "ระยะเวลาจัดส่งเป็นประมาณการตามใบเสนอราคา — ไม่ใช่การรับประกันวันส่ง";
@@ -117,10 +117,10 @@ export function gfWholesaleInSitemap(): boolean {
 }
 
 export const GF_TRACEABILITY_CLAIM_TH =
-  "เมล็ดจากโปรแกรม Green Future พร้อมเอกสารตรวจสอบย้อนกลับเพื่อใช้สนับสนุนเอกสาร GACP (supporting traceability documentation for GACP purposes)";
+  "เมล็ดจากโปรแกรม SGF SEEDS พร้อมเอกสารตรวจสอบย้อนกลับเพื่อใช้สนับสนุนเอกสาร GACP (supporting traceability documentation for GACP purposes)";
 
 export const GF_TRACEABILITY_CLAIM_EN =
-  "Green Future documented seeds with supporting traceability documentation for GACP purposes";
+  "SGF SEEDS documented seeds with supporting traceability documentation for GACP purposes";
 
 export const GF_TRACEABILITY_DISCLAIMER_TH =
   "ไม่ใช่ใบ GACP, เอกสาร DTAM หรือการรับประกันผลตรวจ — ผล GACP ขึ้นกับฟาร์มผู้ยื่นคำขอทั้งหมด";
@@ -141,12 +141,12 @@ export const GF_POST_GATE_WEB_NOTICE_EN =
   "Conditional reservation deposits now open — full refund if minimums or approval conditions are not met; price and timing are indicative per quotation";
 
 export const GF_EMAIL_SUBJECT_PRE_GATE =
-  "Green Future documented seed programme — quotation request";
+  "SGF SEEDS documented seed programme — quotation request";
 
 export const GF_EMAIL_SUBJECT_POST_GATE =
-  "Green Future pilot pouches — conditional reservation (50 seeds)";
+  "SGF SEEDS pilot pouches — conditional reservation (50 seeds)";
 
-export const GF_EMAIL_BODY_POST_GATE_EN = `Green Future documented seed programme — pilot round
+export const GF_EMAIL_BODY_POST_GATE_EN = `SGF SEEDS documented seed programme — pilot round
 
 We are opening a conditional reservation round for producer-sealed 50-seed pouches (5 pilot strains).
 
@@ -161,7 +161,7 @@ ${GF_TRACEABILITY_CLAIM_EN} — ${GF_TRACEABILITY_DISCLAIMER_EN}.
 Reply to request a quotation or join the reservation list.
 Distributed by T.M.Y Agro Trade Limited Partnership, Por.Por. 4 No. 1011043900042568.`;
 
-export const GF_EMAIL_BODY_POST_GATE_TH = `โปรแกรมเมล็ด Green Future — เปิดจองแบบมีเงื่อนไข
+export const GF_EMAIL_BODY_POST_GATE_TH = `โปรแกรมเมล็ด SGF SEEDS — เปิดจองแบบมีเงื่อนไข
 
 เปิดรับมัดจำจองสิทธิ์แบบมีเงื่อนไขสำหรับซองซีล 50 เมล็ด (5 สาย)
 
@@ -182,7 +182,7 @@ Pilot: producer-sealed 50-seed pouches · 5 strains · conditional deposit · fu
 
 Not GACP-certified seeds. Quotation-based pricing. DM for B2B details.
 
-#SmileSeedBank #GreenFuture #B2B`;
+#SmileSeedBank #SGFSeeds #B2B`;
 
 export const GF_FACEBOOK_POST_POST_GATE_TH = `${GF_TRACEABILITY_CLAIM_TH}
 
@@ -190,7 +190,7 @@ export const GF_FACEBOOK_POST_POST_GATE_TH = `${GF_TRACEABILITY_CLAIM_TH}
 
 ไม่ใช่เมล็ดรับรอง GACP ราคาตาม quotation ทักขอรายละเอียด B2B
 
-#SmileSeedBank #GreenFuture #B2B`;
+#SmileSeedBank #SGFSeeds #B2B`;
 
 export const GREEN_FUTURE_MARKETING_PACK_SUBJECT =
   "Internal — GF Approved Marketing Pack (post Regulatory Gate)";

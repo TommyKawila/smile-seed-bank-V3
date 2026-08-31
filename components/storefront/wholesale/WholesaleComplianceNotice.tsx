@@ -27,8 +27,8 @@ export function WholesaleComplianceNotice() {
           </li>
           <li>
             {t(
-              "เมล็ดบรรจุและซีลโดยผู้ผลิต (Green Future) — Smile Seed Bank ไม่เปิด แบ่ง หรือเปลี่ยนฉลากโดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร",
-              "Seeds are producer-packed and sealed (Green Future) — Smile Seed Bank does not open, repack, or relabel without prior written consent."
+              "เมล็ดบรรจุและซีลโดยผู้ผลิต (SGF SEEDS) — Smile Seed Bank ไม่เปิด แบ่ง หรือเปลี่ยนฉลากโดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร",
+              "Seeds are producer-packed and sealed (SGF SEEDS) — Smile Seed Bank does not open, repack, or relabel without prior written consent."
             )}
           </li>
           <li>

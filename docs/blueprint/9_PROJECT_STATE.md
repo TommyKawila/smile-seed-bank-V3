@@ -28,7 +28,7 @@
 ### D. ประชุม/ต่อรอง GF (เปิดค้างจาก draft 15 ส.ค.)
 12. [x] GACP = เอกสารสนับสนุน lot ไม่ใช่ certificate เมล็ด — GF ยืนยัน **0821**
 13. [x] ISTA / COA คิดแยก · Traceability Pack = planned — GF ยืนยัน **0821**
-14. [ ] ฉลาก: **กฎหมายก่อน** (ชื่อหจก. + พ.พ.4 หจก. + lot + ฟิลด์บังคับ DOA — รอ confirm กรมฯ) · **แบรนด์การค้าทีหลัง** (Smile Seeds / SGF Seeds / co-brand — ยังไม่ล็อก ไม่ใส่จดหมายชี้แจง)
+14. [ ] ฉลาก: **กฎหมายก่อน** (ชื่อหจก. + พ.พ.4 หจก. + lot + ฟิลด์บังคับ DOA) · **V.2 รอ Julia ส่งตัวอย่างจากหน่วยงาน** แล้วใส่ภาษาอังกฤษให้ตรงเงื่อนไข Final · แบรนด์การค้าทีหลัง
 15. [ ] MOQ / ราคา / landed / margin — รอ quotation test order หลังประชุม **26–28 ส.ค.**
 
 ### E. หลัง GF ตอบ — คุมความเสี่ยงระยะยาว
@@ -83,7 +83,7 @@
 
 *ดีล documented seed programme · สถานะ: framework locked · รอ Regulatory Gate ก่อน PO*
 
-### สถานะล่าสุด (อัปเดต 2026-08-30)
+### สถานะล่าสุด (อัปเดต 2026-08-31)
 | รายการ | รายละเอียด |
 |--------|-------------|
 | จดหมาย GF ล่าสุด | **GF/SSB/2026-0824** (24 ส.ค.) — ยืนยันกรอบ + ขอให้เลือกแพ็ก/COA |
@@ -96,10 +96,40 @@
 | ISTA 4 สาย | AF99, AF143, AF02, AF22 — ยังรอผล · ไม่บล็อก Option 1 |
 | AF102 | **มีสต็อก** ใช้ใน test order ได้ |
 | Lead Protection | รับไปใส่ Distribution Agreement · **ไม่เป็นเงื่อนไข test order** |
-| ประชุม | **28 ส.ค. 2026 10:00–11:00 ICT** — คุณจูเลีย · สรุปแล้ว (Recap TH/EN) |
+| ประชุม | **28 ส.ค. 2026 10:00–11:00 ICT** — คุณจูเลีย · Recap TH/EN **ส่งแล้ว** (31 ส.ค.) |
+| Traceability | Preview `/traceability` · จดหมายขอ GF ตรวจลิงก์ + ขอข้อมูลข้อ 6 **ส่งแล้ว** (31 ส.ค.) · ยังไม่ live |
 | แพ็กที่เลือก (ร่างตอบ) | **4×50 = 20 ซองซีล** · Option 1 — **สำหรับขอราคา/ตรวจกฎหมาย ไม่ใช่ PO** |
-| ซอง SSB | รับไปประเมินเท่านั้น · ส่งตัวอย่างก่อน · ยังไม่อนุมัติจนกว่าทดสอบของจริง |
+| ซอง SSB | ส่งตัวอย่าง **10 ซองแล้ว** (31 ส.ค.) · รับไปประเมินเท่านั้น · ยังไม่อนุมัติจนกว่าทดสอบของจริง + ฉลาก V.2 |
 | ค่าส่งรอบแรก | Smile จ่ายซองเปล่าไป GF · GF จ่ายเมล็ดมา Smile (ครั้งเดียว) |
+
+### งานหลังประชุม 28 ส.ค. — สถานะ 31 ส.ค. 2026
+| รายการ | สถานะ | หมายเหตุ |
+|--------|--------|----------|
+| ส่งสรุปการประชุม GF × SSB กับคุณจูเลีย (28 ส.ค.) | **ส่งแล้ว** | Recap TH ให้แปล + EN หลักฐาน |
+| ส่งเอกสารติดตาม Traceability + ขอข้อมูลเพิ่มจาก GF | **ส่งแล้ว** | ลิงก์ preview + ขอไฟล์ล็อต / QR หรือบัญชี / อนุมัติเทมเพลต / รูป / ระยะ audit log |
+| ส่งตัวอย่างซองแพคเกจ 10 ซอง | **ส่งแล้ว** | ให้ GF ตรวจคุณภาพซอง |
+| ฟอร์มเคลมเมล็ดบนเว็บ Smile | **ยังไม่ทำ** | อ้างอิง Google Form ของ GF → ส่งต่อเข้าระบบเคลม GF |
+| ลิงก์เก็บ log อุณหภูมิ/ความชื้นตู้เก็บเมล็ด | **ยังไม่ทำ** | ช่วงแรก: รูป Hygrometer รายวัน → Google Drive ที่แชร์ |
+| สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability | **ยังไม่ทำ** | ฝั่งผู้ซื้อ — นำชุดเอกสาร+แพคเกจ/ฉลากที่เสร็จแล้วไปถาม |
+| ฉลากติดหลังซอง **V.2** มีภาษาอังกฤษ ให้หน่วยงานตรวจ Final | **ยังไม่ทำ · รอ Julia** | รอตัวอย่างฉลากจากหน่วยงานที่ Julia ส่งมา แล้วทำตามเงื่อนไขอีกครั้ง |
+
+### งานถัดไป (GF) — รอตอบ / ยังไม่ทำ
+- [x] ประชุมกับจูเลีย — 28 ส.ค. · Recap TH/EN
+- [x] ส่ง Recap ให้จูเลียแปล + อีเมล EN ยืนยัน — **31 ส.ค.**
+- [x] ส่งจดหมาย Traceability review + ลิงก์ https://www.smileseedbank.com/traceability — **31 ส.ค.**
+- [x] ส่งซองตัวอย่าง 10 ซอง — **31 ส.ค.**
+- [ ] รอ GF ตอบ Traceability (disclaimer + ชั้นข้อมูล + ไฟล์ล็อต + วิธี QR/บัญชี + อนุมัติเทมเพลต)
+- [ ] รอ Julia ส่งตัวอย่างฉลากจากหน่วยงาน → ออกแบบฉลากหลังซอง V.2 (TH+EN) ให้ตรงเงื่อนไข Final
+- [ ] ทำฟอร์มเคลมเมล็ดบนเว็บ Smile (อ้างอิง GF Form)
+- [ ] ทำลิงก์/โฟลเดอร์ log Temp + RH ตู้เก็บเมล็ด (รูป Hygrometer รายวัน)
+- [ ] สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability
+- [ ] ขอให้ทีม GF ใกล้ กทม. ช่วยนัดหน่วยงานตรวจซองติดฉลาก + สรุปกระบวนการ 1 หน้า
+- [ ] รับ quotation / รายการฟิลด์ฉลาก / Claims Template
+- [ ] Regulatory Gate ผ่าน → เปิด marketing ถ้อยคำอนุมัติ → รับมัดจำลูกค้าแบบมีเงื่อนไข
+- [ ] Demand Gate ถึง threshold → PO + มัดจำ GF 50%
+- [ ] ทดสอบซอง+ฉลากผ่าน → written approval เวอร์ชัน → ส่งซองสำหรับ 20 หน่วย (+สำรอง)
+- [ ] ตรวจคลัง +5–+10°C, RH ≤50%, electronic log ก่อนของถึง
+- [ ] หลังส่งของสำเร็จ → Distribution Agreement + Lead Protection
 
 ### เอกสารอ้างอิง (B2B email folder)
 | Ref | ไฟล์ / แหล่ง |
@@ -129,22 +159,16 @@
 - มัดจำ GF 50% **หลัง PO เท่านั้น** · Demand Gate threshold ปัจจุบัน 27,583 THB ก่อนออก PO
 - ค่าแพ็ก 20 ซองตามตาราง GF ≈ 400 บาท (ขอให้ระบุใน quotation)
 
-### งานถัดไป (GF)
-- [x] ประชุมกับจูเลียตาม brief ภายใน — 28 ส.ค. · สรุป Recap TH/EN แล้ว
-- [ ] ส่ง Recap ให้จูเลียแปล + อีเมล EN ยืนยัน
-- [ ] ส่งจดหมาย Traceability review (TH ให้แปล + EN หลักฐาน) + ลิงก์ https://www.smileseedbank.com/traceability
-- [ ] ขอให้ทีม GF ใกล้ กทม. ช่วยนัดหน่วยงานตรวจซองติดฉลาก + สรุปกระบวนการ 1 หน้า
-- [ ] ส่งซองตัวอย่างชุดเล็ก + ใบนับจำนวน + โน้ตวัสดุ/ซีล ไปที่ GF บางพลี
-- [ ] รับ quotation / รายการฟิลด์ฉลาก / Claims Template
-- [ ] Regulatory Gate ผ่าน → เปิด marketing ถ้อยคำอนุมัติ → รับมัดจำลูกค้าแบบมีเงื่อนไข
-- [ ] Demand Gate ถึง threshold → PO + มัดจำ GF 50%
-- [ ] ทดสอบซอง+ฉลากผ่าน → written approval เวอร์ชัน → ส่งซองสำหรับ 20 หน่วย (+สำรอง)
-- [ ] ตรวจคลัง +5–+10°C, RH ≤50%, electronic log ก่อนของถึง
-- [ ] หลังส่งของสำเร็จ → Distribution Agreement + Lead Protection
-
 ---
 
----
+### บันทึกการทำงาน — 2026-08-31 (Traceability hero — สแกน QR บนซอง)
+- **What:** เพิ่มรูป Hero ขวาของ `/traceability` เลย์เอาต์เดียวกับ `/wholesale` — มือถือสแกน QR บนซองซีล
+- **ไฟล์:** `TraceabilityPageClient.tsx` · `public/images/traceability/hero-scan.webp`
+
+### บันทึกการทำงาน — 2026-08-31 (สาธารณะใช้แบรนด์ SGF SEEDS แทน Green Future)
+- **What:** หน้าลูกค้า `/traceability` `/wholesale` ลิงก์แชร์ bulk และถ้อยคำการตลาดใช้ **SGF SEEDS** (Smile × Green Future) แทนชื่อ Green Future
+- **Logic:** Admin / จดหมายคู่ค้า / ชื่อนิติบุคคลผู้ผลิต พ.พ.3 (`Green Future (Global) Co., Ltd.`) คงเดิม
+- **ไฟล์:** `TraceabilityPageClient.tsx` · `WholesaleComplianceNotice.tsx` · `green-future-approved-marketing.ts` · `green-future-traceability.ts` · `sgf-seeds-share.ts` · `bulk-share-i18n.ts`
 
 ### บันทึกการทำงาน — 2026-08-30 (GF lot test sample AF22 + SSB watermark)
 - **What:** ตัวอย่างผลทดสอบล็อต AF22 บน `/wholesale` — ลายน้ำ SSB ก่อนเสิร์ฟสาธารณะ
@@ -226,6 +250,10 @@
 - **What:** เพิ่มเอกสารเสนอใช้แพ็กเกจ Smile Seed Bank เดิมชั่วคราวใน first-stage test order
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
+
+### บันทึกการทำงาน — 2026-08-31 (OPS GF — ส่ง Recap / Traceability / ซอง 10 ชิ้น)
+- **What:** อัปเดตสถานะหลังประชุม — ส่ง Recap, จดหมายขอ GF ตรวจ Traceability, ซองตัวอย่าง 10 ซองแล้ว · ค้างฟอร์มเคลม / log Temp-RH / ถามหน่วยงานเชียงใหม่ / ฉลาก V.2 รอตัวอย่างจาก Julia
+- **ไฟล์:** `docs/blueprint/9_PROJECT_STATE.md`
 
 ### บันทึกการทำงาน — 2026-08-31 (จดหมายขอ GF ตรวจ Traceability preview)
 - **What:** จดหมาย TH/EN ขอให้ Julia/GF เปิด `/traceability` ตรวจ disclaimer + ชั้นข้อมูล และขอไฟล์ล็อต / วิธี QR หรือบัญชี / อนุมัติเทมเพลต / รูป / ระยะ audit log ก่อน live

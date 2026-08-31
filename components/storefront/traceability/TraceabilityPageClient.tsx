@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FileSearch, Lock, QrCode, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
@@ -11,32 +12,64 @@ import {
 } from "@/lib/green-future-traceability";
 import { GF_TRACEABILITY_CLAIM_EN, GF_TRACEABILITY_CLAIM_TH } from "@/lib/green-future-approved-marketing";
 
+const TRACEABILITY_HERO_IMAGE = "/images/traceability/hero-scan.webp";
+
 export function TraceabilityPageClient() {
   const { t, locale } = useLanguage();
   const preview = isGfTraceabilityPreview();
 
   return (
     <div className="wholesale-b2b min-h-screen bg-white text-slate-900">
-      <section className="border-b border-slate-200 bg-gradient-to-b from-slate-50 via-white to-emerald-50/40">
-        <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-            <QrCode className="h-3.5 w-3.5" aria-hidden />
-            {t("ตรวจสอบย้อนกลับ · โปรแกรม Green Future", "Lot traceability · Green Future programme")}
-          </p>
-          <h1 className="font-sans text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-            {t("ตรวจสอบย้อนกลับล็อตเมล็ด", "Seed lot traceability")}
-          </h1>
-          <p className="mt-4 text-base leading-relaxed text-slate-600">
-            {t(GF_TRACEABILITY_CLAIM_TH, GF_TRACEABILITY_CLAIM_EN)}
-          </p>
-          {preview ? (
-            <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950">
-              {t(
-                "บริการนี้พร้อมรับเลขล็อตแล้ว ข้อมูลล็อตสาธารณะจะแสดงเมื่อมีการบันทึกล็อตที่จัดส่งแล้ว",
-                "You can enter a lot number here. Public lot records appear after a delivered lot has been registered."
-              )}
+      <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-slate-50 via-white to-emerald-50/40">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 20% 20%, rgba(16,185,129,0.12), transparent 40%), radial-gradient(circle at 80% 0%, rgba(15,23,42,0.06), transparent 35%)",
+          }}
+          aria-hidden
+        />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 sm:py-20 md:grid-cols-2 md:gap-12 lg:gap-14">
+          <div>
+            <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+              <QrCode className="h-3.5 w-3.5" aria-hidden />
+              {t("ตรวจสอบย้อนกลับ · โปรแกรม SGF SEEDS", "Lot traceability · SGF SEEDS programme")}
             </p>
-          ) : null}
+            <h1 className="font-sans text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              {t("ตรวจสอบย้อนกลับล็อตเมล็ด", "Seed lot traceability")}
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+              {t(GF_TRACEABILITY_CLAIM_TH, GF_TRACEABILITY_CLAIM_EN)}
+            </p>
+            {preview ? (
+              <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950">
+                {t(
+                  "บริการนี้พร้อมรับเลขล็อตแล้ว ข้อมูลล็อตสาธารณะจะแสดงเมื่อมีการบันทึกล็อตที่จัดส่งแล้ว",
+                  "You can enter a lot number here. Public lot records appear after a delivered lot has been registered."
+                )}
+              </p>
+            ) : null}
+          </div>
+          <figure className="relative">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+              <Image
+                src={TRACEABILITY_HERO_IMAGE}
+                alt={t(
+                  "สแกน QR บนซองเมล็ดเพื่อตรวจล็อตบนมือถือ",
+                  "Scan the QR on a seed pouch to look up the lot on a phone"
+                )}
+                fill
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="object-cover"
+              />
+            </div>
+            <figcaption className="mt-2 text-xs text-slate-500">
+              {t(
+                "สแกน QR บนซองซีล — ตรวจล็อตได้ทันทีจากมือถือ",
+                "Scan the QR on the sealed pouch — look up the lot instantly on your phone"
+              )}
+            </figcaption>
+          </figure>
         </div>
       </section>
 

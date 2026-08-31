@@ -15,7 +15,7 @@ import type { PartnerStrainRecord } from "@/types/partner-catalog";
 
 export const SGF_SEEDS_SHARE_NAME = "SGF Seeds";
 export const SGF_SEEDS_SHARE_TAGLINE =
-  "Green Future documented seed programme — distributed by Smile Seed Bank";
+  "SGF SEEDS documented seed programme — distributed by Smile Seed Bank";
 
 /** Customer-facing tier labels — aligned with Seeds Genetics share layout. */
 export const SGF_SHARE_TIER_STEPS: Pick<BulkCostTier, "minQty" | "label" | "qtyDescription">[] = [
