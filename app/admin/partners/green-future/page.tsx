@@ -1,4 +1,5 @@
 import { GreenFutureCatalogClient } from "@/components/admin/partners/GreenFutureCatalogClient";
+import { GfInboundDocsPanel } from "@/components/admin/partners/GfInboundDocsPanel";
 import { GfShareLinkPanel } from "@/components/admin/partners/GfShareLinkPanel";
 
 export const metadata = {
@@ -20,6 +21,7 @@ export default function GreenFuturePartnerPage() {
         </p>
       </div>
       <GfShareLinkPanel />
+      <GfInboundDocsPanel />
       <GreenFutureCatalogClient />
     </div>
   );

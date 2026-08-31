@@ -64,6 +64,24 @@ const DOCS = [
     refCode: "GF/SSB/2026-0803",
     notes: "Supplier cost tiers + COA fees — preliminary & confidential",
   },
+  {
+    title: "Green Future Response — GF/SSB/2026-0824",
+    docType: "LETTER",
+    fileUrl: adminPartnerDocUrl("gf-ssb-2026-0824-response-en.pdf"),
+    fileName: "gf-ssb-2026-0824-response-en.pdf",
+    issuedAt: "2026-08-24",
+    refCode: "GF/SSB/2026-0824",
+    notes: "Inbound GF letter — closed framework for Gate / recap / replies",
+  },
+  {
+    title: "Pro Forma Invoice 20102618",
+    docType: "PROFORMA",
+    fileUrl: adminPartnerDocUrl("gf-proforma-20102618-20260826.pdf"),
+    fileName: "gf-proforma-20102618-20260826.pdf",
+    issuedAt: "2026-08-26",
+    refCode: "20102618",
+    notes: "Quotation for planning — not a PO; pending 4×50 / Option 1 / AF102 COA",
+  },
 ] as const;
 
 type PriceListSeed = {

@@ -6,6 +6,8 @@ export type PartnerDocType =
   | "CATALOG_FEM"
   | "ISTA_LETTER"
   | "PRICE_LIST"
+  | "LETTER"
+  | "PROFORMA"
   | "OTHER";
 
 export type PartnerPriceListStatus = "ACTIVE" | "SUPERSEDED";

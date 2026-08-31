@@ -55,6 +55,8 @@ type Props = {
   onLoadGreenFutureJuliaBrief?: () => void;
   onLoadGreenFutureJuliaRecapTh?: () => void;
   onLoadGreenFutureJuliaRecapEn?: () => void;
+  onLoadGreenFutureTraceabilityReviewTh?: () => void;
+  onLoadGreenFutureTraceabilityReviewEn?: () => void;
   onLoadGreenFutureConditionalDeposit?: () => void;
   onLoadGreenFutureMarketingPack?: () => void;
   onLoadGreenFutureGateEvidence?: () => void;
@@ -106,6 +108,8 @@ export function BusinessDocumentControls({
   onLoadGreenFutureJuliaBrief,
   onLoadGreenFutureJuliaRecapTh,
   onLoadGreenFutureJuliaRecapEn,
+  onLoadGreenFutureTraceabilityReviewTh,
+  onLoadGreenFutureTraceabilityReviewEn,
   onLoadGreenFutureConditionalDeposit,
   onLoadGreenFutureMarketingPack,
   onLoadGreenFutureGateEvidence,
@@ -203,6 +207,8 @@ export function BusinessDocumentControls({
       onLoadGreenFutureJuliaBrief ||
       onLoadGreenFutureJuliaRecapTh ||
       onLoadGreenFutureJuliaRecapEn ||
+      onLoadGreenFutureTraceabilityReviewTh ||
+      onLoadGreenFutureTraceabilityReviewEn ||
       onLoadGreenFutureConditionalDeposit ||
       onLoadGreenFutureMarketingPack ||
       onLoadGreenFutureGateEvidence ||
@@ -309,6 +315,28 @@ export function BusinessDocumentControls({
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Meeting recap (EN)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureTraceabilityReviewTh ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-emerald-700/40 text-emerald-900 hover:bg-emerald-50"
+                onClick={onLoadGreenFutureTraceabilityReviewTh}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Traceability review (TH)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureTraceabilityReviewEn ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-emerald-700/40 text-emerald-900 hover:bg-emerald-50"
+                onClick={onLoadGreenFutureTraceabilityReviewEn}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Traceability review (EN)
               </Button>
             ) : null}
             {onLoadGreenFutureConditionalDeposit ? (

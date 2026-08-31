@@ -18,11 +18,13 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   const segments = (await params).path;
-  if (!segments?.length || segments.some((s) => s.includes(".."))) {
+  const fileSegments =
+    segments[0] === "green-future" ? segments.slice(1) : segments;
+  if (!fileSegments?.length || fileSegments.some((s) => s.includes(".."))) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
-  const filePath = path.join(PARTNER_DOCS_ROOT, ...segments);
+  const filePath = path.join(PARTNER_DOCS_ROOT, ...fileSegments);
   const resolved = path.resolve(filePath);
   if (!resolved.startsWith(path.resolve(PARTNER_DOCS_ROOT))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

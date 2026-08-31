@@ -44,6 +44,12 @@ import {
   GREEN_FUTURE_0824_REPLY_TH_SUBJECT,
 } from "@/lib/green-future-0824-reply-letter";
 import {
+  GREEN_FUTURE_TRACEABILITY_REVIEW_EN_RAW,
+  GREEN_FUTURE_TRACEABILITY_REVIEW_EN_SUBJECT,
+  GREEN_FUTURE_TRACEABILITY_REVIEW_TH_RAW,
+  GREEN_FUTURE_TRACEABILITY_REVIEW_TH_SUBJECT,
+} from "@/lib/green-future-traceability-review-letter";
+import {
   GREEN_FUTURE_CONDITIONAL_DEPOSIT_RAW,
   GREEN_FUTURE_CONDITIONAL_DEPOSIT_SUBJECT,
 } from "@/lib/green-future-conditional-deposit-flow";
@@ -277,6 +283,24 @@ export function BusinessDocumentDispatcher() {
     );
   }, [loadTemplate]);
 
+  const handleLoadGreenFutureTraceabilityReviewTh = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_TRACEABILITY_REVIEW_TH_RAW,
+      GREEN_FUTURE_TRACEABILITY_REVIEW_TH_SUBJECT,
+      "Traceability review (TH) loaded",
+      "For Julia to translate — attach English copy for written record."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureTraceabilityReviewEn = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_TRACEABILITY_REVIEW_EN_RAW,
+      GREEN_FUTURE_TRACEABILITY_REVIEW_EN_SUBJECT,
+      "Traceability review (EN) loaded",
+      "Ask GF to review preview URL and confirm data/approvals for 0824 §6."
+    );
+  }, [loadTemplate]);
+
   const handleLoadGreenFutureTemplate = useCallback(() => {
     loadTemplate(
       GREEN_FUTURE_CLARIFICATION_RAW,
@@ -497,6 +521,12 @@ export function BusinessDocumentDispatcher() {
           onLoadGreenFutureJuliaBrief={handleLoadGreenFutureJuliaBrief}
           onLoadGreenFutureJuliaRecapTh={handleLoadGreenFutureJuliaRecapTh}
           onLoadGreenFutureJuliaRecapEn={handleLoadGreenFutureJuliaRecapEn}
+          onLoadGreenFutureTraceabilityReviewTh={
+            handleLoadGreenFutureTraceabilityReviewTh
+          }
+          onLoadGreenFutureTraceabilityReviewEn={
+            handleLoadGreenFutureTraceabilityReviewEn
+          }
           onLoadGreenFutureConditionalDeposit={
             handleLoadGreenFutureConditionalDeposit
           }

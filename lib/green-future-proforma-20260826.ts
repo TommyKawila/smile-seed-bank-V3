@@ -13,8 +13,7 @@ export const GF_PROFORMA_20260826 = {
   demandGateWithFivePctReserveThb: 27_582.11,
   retailPackagingUnits: 20,
   retailPackagingThb: 0,
-  sourceFile:
-    "ProForma_Invoice_T.M.Y Agro Trade Limited Partnership 26082026.pdf",
+  sourceFile: "gf-proforma-20102618-20260826.pdf",
 } as const;
 
 export const GF_SEED_VIABILITY_CLAIM_FORM = {

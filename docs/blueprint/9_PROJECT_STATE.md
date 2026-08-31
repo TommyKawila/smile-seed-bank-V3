@@ -104,7 +104,8 @@
 ### เอกสารอ้างอิง (B2B email folder)
 | Ref | ไฟล์ / แหล่ง |
 |-----|----------------|
-| GF/SSB/2026-0824 | `เอกสารสำคัญ/B2B email/Docs from Green Future/Green_Future_Response_to_Smile_24_08_2026_EN_FINAL.pdf` |
+| GF/SSB/2026-0824 | `data/partners/green-future/documents/gf-ssb-2026-0824-response-en.pdf` · Admin `/api/admin/partner-docs/green-future/gf-ssb-2026-0824-response-en.pdf` |
+| Pro Forma 20102618 (26 ส.ค.) | `data/partners/green-future/documents/gf-proforma-20102618-20260826.pdf` · Admin `/api/admin/partner-docs/green-future/gf-proforma-20102618-20260826.pdf` |
 | GF/SSB/2026-0821 | `Green_Future_Response_to_Smile_21-08-2026.pdf` |
 | GF/SSB/2026-0815 | Business Cooperation Plan (GF annotated) |
 | GF/SSB/2026-0803 | Seed Supply & COA Proposal |
@@ -117,6 +118,7 @@
 | Reply 0824 (Thai evidence) | ชุดเดียวกัน — ปุ่ม Dispatcher |
 | Julia meeting brief (internal) | `lib/green-future-julia-meeting-brief.ts` |
 | Julia meeting recap (TH/EN) | `lib/green-future-julia-meeting-recap.ts` · `/admin/partners/green-future/meeting-recap/th` · `.../en` |
+| Traceability review (TH/EN) | `lib/green-future-traceability-review-letter.ts` · `/admin/partners/green-future/traceability-review/th` · `.../en` |
 | Conditional deposit (internal) | `lib/green-future-conditional-deposit-flow.ts` |
 | Marketing pack (post-gate) | `lib/green-future-approved-marketing.ts` |
 | Gate evidence checklist | `lib/green-future-gate-evidence.ts` |
@@ -130,6 +132,7 @@
 ### งานถัดไป (GF)
 - [x] ประชุมกับจูเลียตาม brief ภายใน — 28 ส.ค. · สรุป Recap TH/EN แล้ว
 - [ ] ส่ง Recap ให้จูเลียแปล + อีเมล EN ยืนยัน
+- [ ] ส่งจดหมาย Traceability review (TH ให้แปล + EN หลักฐาน) + ลิงก์ https://www.smileseedbank.com/traceability
 - [ ] ขอให้ทีม GF ใกล้ กทม. ช่วยนัดหน่วยงานตรวจซองติดฉลาก + สรุปกระบวนการ 1 หน้า
 - [ ] ส่งซองตัวอย่างชุดเล็ก + ใบนับจำนวน + โน้ตวัสดุ/ซีล ไปที่ GF บางพลี
 - [ ] รับ quotation / รายการฟิลด์ฉลาก / Claims Template
@@ -223,6 +226,16 @@
 - **What:** เพิ่มเอกสารเสนอใช้แพ็กเกจ Smile Seed Bank เดิมชั่วคราวใน first-stage test order
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
+
+### บันทึกการทำงาน — 2026-08-31 (จดหมายขอ GF ตรวจ Traceability preview)
+- **What:** จดหมาย TH/EN ขอให้ Julia/GF เปิด `/traceability` ตรวจ disclaimer + ชั้นข้อมูล และขอไฟล์ล็อต / วิธี QR หรือบัญชี / อนุมัติเทมเพลต / รูป / ระยะ audit log ก่อน live
+- **Logic:** preview ไม่ใช่ launch · เปิดใช้กับลูกค้าหลัง 0824 ข้อ 6.3 + import ล็อตรอบแรก · Dispatcher + admin pages
+- **ไฟล์:** `lib/green-future-traceability-review-letter.ts` · `traceability-review/th/page.tsx` · `.../en/page.tsx` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx` · `GreenFutureSubNav.tsx`
+
+### บันทึกการทำงาน — 2026-08-31 (เก็บต้นฉบับ GF 0824 + Pro Forma ใน repo)
+- **What:** คัดลอกจดหมาย GF/SSB/2026-0824 และ Pro Forma 20102618 เข้า `data/partners/green-future/documents/` (admin เท่านั้น) เพื่อเปิดวางกลยุทธ์จาก Catalog / GACP strategy
+- **Logic:** ไม่ใส่ `/public` · URL `/api/admin/partner-docs/green-future/*` · แก้ route ให้ตัด prefix `green-future/` ให้ตรงโฟลเดอร์จริง · PI = quotation ไม่ใช่ PO
+- **ไฟล์:** `gf-ssb-2026-0824-response-en.pdf` · `gf-proforma-20102618-20260826.pdf` · `lib/green-future-inbound-docs.ts` · `GfInboundDocsPanel.tsx` · `partner-docs/[...path]/route.ts` · `green-future-proforma-20260826.ts` · `import-green-future-catalog.ts`
 
 ### บันทึกการทำงาน — 2026-08-31 (GF meeting recap — ลิงก์วิดีโอ Drive)
 - **What:** ใส่ลิงก์ Google Drive บันทึกประชุม 28 ส.ค. ใน recap TH/EN ให้ Julia เปิดดูอ้างอิง · ระบุว่า recap ที่เขียนคือชุดที่ยืนยัน วิดีโอเป็นเอกสารประกอบ

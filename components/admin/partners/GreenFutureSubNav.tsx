@@ -46,6 +46,16 @@ const items = [
     label: "Recap (EN)",
     exact: false,
   },
+  {
+    href: "/admin/partners/green-future/traceability-review/th",
+    label: "Traceability (TH)",
+    exact: false,
+  },
+  {
+    href: "/admin/partners/green-future/traceability-review/en",
+    label: "Traceability (EN)",
+    exact: false,
+  },
 ] as const;
 
 export function GreenFutureSubNav() {
