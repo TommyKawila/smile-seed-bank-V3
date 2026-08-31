@@ -224,6 +224,20 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-08-31 (GF meeting recap — ลิงก์วิดีโอ Drive)
+- **What:** ใส่ลิงก์ Google Drive บันทึกประชุม 28 ส.ค. ใน recap TH/EN ให้ Julia เปิดดูอ้างอิง · ระบุว่า recap ที่เขียนคือชุดที่ยืนยัน วิดีโอเป็นเอกสารประกอบ
+- **ไฟล์:** `lib/green-future-julia-meeting-recap.ts`
+
+### บันทึกการทำงาน — 2026-08-31 (GF meeting recap — ขยายข้อ D เคลม + ข้อ E)
+- **What:** ใส่เนื้อหาข้อ D (ฟอร์มเคลม หลักฐาน เอกสารล็อต 80/99 log ระยะ 90 วัน) และข้อ E (ขายแบรนด์อื่น exclusive lead protection ใครขายลูกค้าไทย) ทั้ง TH/EN — ไม่ใช้เลขอ้างอิง brief
+- **Logic:** ข้อ E.4 (เดิม brief ข้อ 23) คือประเด็นเปิดรอเจ้านาย GF · แยกจากข้อ D เรื่อง log เพื่อไม่สับสนเลข
+- **ไฟล์:** `lib/green-future-julia-meeting-recap.ts`
+
+### บันทึกการทำงาน — 2026-08-31 (GF meeting recap — ยกข้อ 1–6 + ปิด 0824)
+- **What:** recap ไม่กล่าวลอย ๆ “ข้อ 1–6” อีกต่อไป — ใส่หลักการพูดครบ 6 ข้อ + รายการที่ปิดแล้วใน 0824 + รูปแบบขอราคา (Option 1 / 4×50) ทั้ง TH และ EN ให้ Julia/เจ้านายอ่าน recap อย่างเดียวเข้าใจ
+- **Logic:** brief เป็นเอกสารภายใน SSB ห้ามส่ง GF · recap คือชุดที่แปลให้เจ้านาย จึงต้องมีเนื้อหาที่อ่านในห้อง ไม่ใช่เลขอ้างอิงไป brief
+- **ไฟล์:** `lib/green-future-julia-meeting-recap.ts`
+
 ### บันทึกการทำงาน — 2026-08-30 (GF meeting recap TH/EN)
 - **What:** สรุปหลังประชุม GF × SSB กับคุณจูเลีย 28 ส.ค. — ฉบับไทยให้แปล + อังกฤษยืนยัน · หน้า admin + Dispatcher
 - **Logic:** หลักการพูด 1–6 และข้อปิด 0824 รับทราบร่วมกัน · Gate sequence · เก็บของ 5°C/RH 30–40% + log รายวัน · เคลม GF 90 วัน · ข้อ 23 รอเจ้านาย GF · SSB ทำ Traceability QR + claim form บนเว็บ
