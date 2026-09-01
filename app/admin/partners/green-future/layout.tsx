@@ -13,7 +13,7 @@ export default function GreenFutureLayout({
             Green Future
           </h1>
           <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-            Partner catalog, collaboration plan, resale pricing, GACP strategy, and label mockup.
+            Partner catalog, collaboration plan, resale pricing, GACP strategy, label mockup, and seed claim inbox.
           </p>
         </div>
         <GreenFutureSubNav />

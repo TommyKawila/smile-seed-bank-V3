@@ -435,6 +435,16 @@ export function validateGfClaimStep(
   }
 }
 
+export function gfClaimOptionLabel(options: GfClaimOption[], id: string): string {
+  const hit = options.find((o) => o.id === id);
+  return hit ? `${hit.en} (${hit.th})` : id;
+}
+
+export function gfClaimOptionLabels(options: GfClaimOption[], ids: string[]): string {
+  if (!ids.length) return "—";
+  return ids.map((id) => gfClaimOptionLabel(options, id)).join("; ");
+}
+
 export function buildGfClaimForwardSummary(data: GfSeedClaimFormData): string {
   const lines = [
     "GF Seed Viability Claim — Smile Seed Bank intake",

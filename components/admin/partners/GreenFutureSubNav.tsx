@@ -66,6 +66,11 @@ const items = [
     label: "Traceability (EN)",
     exact: false,
   },
+  {
+    href: "/admin/partners/green-future/claims",
+    label: "Claim inbox",
+    exact: false,
+  },
 ] as const;
 
 export function GreenFutureSubNav() {

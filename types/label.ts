@@ -32,7 +32,7 @@ export type SeedLabelData = {
   bgImageUrl?: string;
   labelPosition: LabelPosition;
   labelSizeCm: LabelSizeCm;
-  /** Multiplier for label text (0.5–1.5, default 1) */
+  /** Multiplier for label text (0.5–3, default 1) */
   fontScale: number;
 };
 
@@ -69,6 +69,8 @@ export const DEFAULT_PACKAGE_SIZE_CM: LabelSizeCm = {
 };
 
 export const DEFAULT_FONT_SCALE = 1;
+export const MIN_FONT_SCALE = 0.5;
+export const MAX_FONT_SCALE = 3;
 
 export const DEFAULT_DISTRIBUTOR_NAME = "หจก. ทีเอ็มวาย อะโกร เทรด";
 export const DEFAULT_DISTRIBUTOR_LICENSE_PP4 = "1011043900042568";

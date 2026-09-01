@@ -28,7 +28,7 @@
 ### D. ประชุม/ต่อรอง GF (เปิดค้างจาก draft 15 ส.ค.)
 12. [x] GACP = เอกสารสนับสนุน lot ไม่ใช่ certificate เมล็ด — GF ยืนยัน **0821**
 13. [x] ISTA / COA คิดแยก · Traceability Pack = planned — GF ยืนยัน **0821**
-14. [ ] ฉลาก V.2 ตามตัวอย่างกรมฯ (TH+EN) + อนุมัติเวอร์ชันเป็นลายลักษณ์อักษร — **mockup ทำแล้ว** รอ GF ยืนยันฟิลด์ + heat seal
+14. [ ] ฉลาก V.2 ตามตัวอย่างกรมฯ (TH+EN) + อนุมัติเวอร์ชันเป็นลายลักษณ์อักษร — **ส่งจดหมายตอบ 0901 + รูป mock-up แล้ว (1 ก.ย.)** รอ GF ยืนยันฟิลด์ + heat seal
 15. [ ] MOQ / ราคา / landed / margin — รอ quotation test order หลังประชุม **26–28 ส.ค.**
 
 ### E. หลัง GF ตอบ — คุมความเสี่ยงระยะยาว
@@ -100,8 +100,8 @@
 | Traceability | Preview `/traceability` · รอ GF ตอบจดหมาย 31 ส.ค. |
 | แพ็กที่เลือก | **4×50 = 20 ซองซีล** · Option 1 — ขอ PI แก้ใน 0901 reply |
 | ซอง SSB | GF รับ 10 ซองแล้ว · ตรวจ heat seal + ฉลาก 5.5×5.5 |
-| ฉลาก V.2 | Mockup admin ตามฟิลด์กรมฯ+GF · จดหมายตอบ 0901 EN/TH + Dispatcher |
-| ฟอร์มเคลม | **`/claim/seeds` เสร็จ (preview)** — wizard 9 ขั้นตรง GF · อัปโหลด Drive (`GF Seed Claims`) + fallback Supabase · submit → `gf_seed_claim_submissions` |
+| ฉลาก V.2 | Mockup ส่งแล้ว (1 ก.ย.) · รอ GF ยืนยันฟิลด์ + heat seal + อนุมัติเวอร์ชัน |
+| ฟอร์มเคลม | **`/claim/seeds` เสร็จ (preview)** + **admin inbox** `/admin/partners/green-future/claims` · อัปโหลด Drive (`GF Seed Claims`) + fallback Supabase · submit → `gf_seed_claim_submissions` |
 | เอกสาร inbound | `gf-ssb-2026-0901-confirmation-en.pdf` · `gf-doa-label-fields-af99-sample.pdf` · `doa-controlled-seed-label-guide.pdf` |
 
 ### งานหลังประชุม 28 ส.ค. — สถานะ 31 ส.ค. 2026
@@ -113,7 +113,7 @@
 | ฟอร์มเคลมเมล็ดบนเว็บ Smile | **เสร็จ (preview)** | wizard + upload + submit ทดสอบแล้ว · Drive env ตั้งแล้ว · ยังไม่เปิดลูกค้าจนกว่า Regulatory Gate |
 | ลิงก์เก็บ log อุณหภูมิ/ความชื้นตู้เก็บเมล็ด | **ยังไม่ทำ** | ช่วงแรก: รูป Hygrometer รายวัน → Google Drive ที่แชร์ |
 | สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability | **ยังไม่ทำ** | รอซองติดฉลาก V.2 จริง |
-| ฉลากติดหลังซอง **V.2** TH+EN ตามตัวอย่างกรมฯ | **mockup แล้ว** | รอ GF ยืนยันฟิลด์ + heat seal · ส่งจดหมายตอบ 0901 |
+| ฉลากติดหลังซอง **V.2** TH+EN ตามตัวอย่างกรมฯ | **ส่ง mock-up แล้ว** | จดหมายตอบ 0901 + รูป Package Mockup V.2 ส่ง GF แล้ว (1 ก.ย.) · รอยืนยันฟิลด์ + heat seal |
 
 ### งานถัดไป (GF) — รอตอบ / ยังไม่ทำ
 - [x] ประชุมกับจูเลีย — 28 ส.ค. · Recap TH/EN
@@ -122,8 +122,9 @@
 - [x] ส่งซองตัวอย่าง 10 ซอง — **31 ส.ค.**
 - [ ] รอ GF ตอบ Traceability (disclaimer + ชั้นข้อมูล + ไฟล์ล็อต + วิธี QR/บัญชี + อนุมัติเทมเพลต)
 - [x] รับตัวอย่างฉลากกรมฯ จาก GF (0901) → ออกแบบฉลาก V.2 mockup (TH+EN)
-- [ ] ส่งจดหมายตอบ GF/SSB/2026-0901 + mock-up PDF ฉลาก V.2
+- [x] ส่งจดหมายตอบ GF/SSB/2026-0901 + รูป Package Mockup V.2 — **1 ก.ย. 2026**
 - [x] ฟอร์มเคลมเมล็ด `/claim/seeds` — wizard + Drive upload + submit (preview, ทดสอบแล้ว)
+- [x] Admin inbox คำขอเคลม `/admin/partners/green-future/claims`
 - [ ] ทำลิงก์/โฟลเดอร์ log Temp + RH ตู้เก็บเมล็ด (รูป Hygrometer รายวัน)
 - [ ] สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability (หลังมีซองติดฉลาก)
 - [ ] รอผลตรวจ heat seal + ฉลากจาก GF
@@ -270,6 +271,16 @@
 - **What:** `/claim/seeds` พร้อมใช้งาน preview — ทดสอบอัปโหลดหลักฐาน + submit บันทึก DB แล้ว · ตั้ง `GOOGLE_DRIVE_CLAIM_FOLDER_ID` + service account · แก้ input สีดำ (light theme) · แก้ Drive 403 (อัปโหลดตรงโฟลเดอร์ `GF Seed Claims` ชื่อ `claim-{session}-{category}-{file}` แทน subfolder ของ SA)
 - **Logic:** SA สร้าง subfolder ได้แต่ใส่ไฟล์ไม่ได้ (403) → ใช้โฟลเดอร์ที่แชร์ของ Smile เป็น parent · fallback Supabase `brand-assets/gf-seed-claims/` · UI แสดง storage Drive/Supabase หลังอัปโหลด · launch ยัง `preview` จน Regulatory Gate
 - **ไฟล์:** `services/gf-seed-claim-drive-service.ts` · `components/storefront/claim/ClaimFormPrimitives.tsx` · `ClaimEvidenceUpload.tsx` · `9_PROJECT_STATE.md`
+
+### บันทึกการทำงาน — 2026-09-01 (Admin inbox คำขอเคลมเมล็ด)
+- **What:** หน้า `/admin/partners/green-future/claims` ดูรายการคำขอจาก `gf_seed_claim_submissions` · หน้ารายละเอียดคัดลอก `forwardSummary` ส่ง GF + ลิงก์ไฟล์ Drive/Supabase
+- **Logic:** GET `/api/admin/claim/seeds` + `/[id]` ผ่าน `requireAdminUser` · รองรับ payload wizard ใหม่และฟอร์ม 14 ฟิลด์เก่า
+- **ไฟล์:** `services/gf-seed-claim-service.ts` · `lib/gf-seed-claim-admin.ts` · `GfClaimInboxClient.tsx` · `GfClaimDetailClient.tsx` · `GreenFutureSubNav.tsx` · `app/api/admin/claim/seeds/`
+
+### บันทึกการทำงาน — 2026-09-01 (OPS GF — ส่งจดหมายตอบ 0901 + Mockup V.2)
+- **What:** ส่งจดหมายตอบ GF/SSB/2026-0901 พร้อมรูป Package / Label Mockup V.2 ให้ Green Future แล้ว
+- **Logic:** รอ GF ยืนยันฟิลด์ฉลาก + heat seal + อนุมัติเวอร์ชันเป็นลายลักษณ์อักษร ก่อนพิมพ์ติดซองจริง
+- **ไฟล์:** `docs/blueprint/9_PROJECT_STATE.md`
 
 ### บันทึกการทำงาน — 2026-08-31 (OPS GF — ส่ง Recap / Traceability / ซอง 10 ชิ้น)
 - **What:** อัปเดตสถานะหลังประชุม — ส่ง Recap, จดหมายขอ GF ตรวจ Traceability, ซองตัวอย่าง 10 ซองแล้ว · ค้างฟอร์มเคลม / log Temp-RH / ถามหน่วยงานเชียงใหม่ / ฉลาก V.2 รอตัวอย่างจาก Julia

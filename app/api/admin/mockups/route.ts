@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminUser } from "@/lib/auth-utils";
 import { saveMockup } from "@/services/mockupService";
-import { DEFAULT_LABEL_POSITION, DEFAULT_LABEL_SIZE_CM, DEFAULT_FONT_SCALE } from "@/types/label";
+import { DEFAULT_FONT_SCALE, DEFAULT_LABEL_POSITION, DEFAULT_LABEL_SIZE_CM, MAX_FONT_SCALE, MIN_FONT_SCALE } from "@/types/label";
 
 const positionSchema = z.object({
   x: z.number(),
@@ -42,7 +42,7 @@ const bodySchema = z.object({
   bgImageUrl: z.union([z.string().url(), z.literal(""), z.undefined()]).optional(),
   labelPosition: positionSchema.default(DEFAULT_LABEL_POSITION),
   labelSizeCm: labelSizeCmSchema.default(DEFAULT_LABEL_SIZE_CM),
-  fontScale: z.number().min(0.5).max(1.5).default(DEFAULT_FONT_SCALE),
+  fontScale: z.number().min(MIN_FONT_SCALE).max(MAX_FONT_SCALE).default(DEFAULT_FONT_SCALE),
 });
 
 export async function POST(req: Request) {

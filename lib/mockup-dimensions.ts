@@ -1,5 +1,7 @@
 import {
   DEFAULT_FONT_SCALE,
+  MAX_FONT_SCALE,
+  MIN_FONT_SCALE,
   DEFAULT_LABEL_SIZE_CM,
   DEFAULT_PACKAGE_SIZE_CM,
   type LabelSizeCm,
@@ -38,7 +40,7 @@ export function formatCm(n: number): string {
 
 export function parseFontScale(raw: unknown): number {
   if (typeof raw !== "number" || !Number.isFinite(raw)) return DEFAULT_FONT_SCALE;
-  return Math.max(0.5, Math.min(1.5, raw));
+  return Math.max(MIN_FONT_SCALE, Math.min(MAX_FONT_SCALE, raw));
 }
 
 export function labelFontPx(basePx: number, scale: number): string {
