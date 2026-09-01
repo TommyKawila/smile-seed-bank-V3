@@ -9,7 +9,7 @@ import {
   DEFAULT_LABEL_POSITION,
   DEFAULT_LABEL_SIZE_CM,
   DEFAULT_SPECIES,
-  DEFAULT_STORAGE,
+  DEFAULT_STORAGE_TH,
   type LabelPosition,
   type LabelSizeCm,
   type SeedLabelData,
@@ -109,6 +109,9 @@ function rowToSeedLabel(row: {
   id: string;
   species: string;
   strain_name: string;
+  lot_no: string;
+  trademark: string;
+  collection_source: string;
   quantity: number;
   purity: number;
   germination: number;
@@ -128,18 +131,21 @@ function rowToSeedLabel(row: {
     id: row.id,
     species: row.species || DEFAULT_SPECIES,
     strainName: row.strain_name,
+    lotNo: row.lot_no ?? "",
+    trademark: row.trademark ?? "",
     quantity: row.quantity,
     purity: row.purity,
     germination: row.germination,
     collectedDate: row.collected_date,
     testedDate: row.tested_date,
     expiryDate: row.expiry_date,
+    collectionSource: row.collection_source ?? "",
     producerName: row.producer_name,
-    producerLicenseRP2: row.producer_license_rp2,
+    producerLicensePP: row.producer_license_rp2,
     distributorName: row.distributor_name,
     distributorLicensePP4: row.distributor_license_pp3,
     address: row.address,
-    storageInstructions: row.storage_instructions || DEFAULT_STORAGE,
+    storageInstructions: row.storage_instructions || DEFAULT_STORAGE_TH,
     bgImageUrl: row.bg_image_url ?? undefined,
     ...(() => {
       const parsed = parsePosition(row.label_position);
@@ -157,6 +163,9 @@ export async function saveMockup(data: SeedLabelData): Promise<SeedLabelData> {
   const payload = {
     species: data.species?.trim() || DEFAULT_SPECIES,
     strain_name: data.strainName?.trim() || "",
+    lot_no: data.lotNo?.trim() || "",
+    trademark: data.trademark?.trim() || "",
+    collection_source: data.collectionSource?.trim() || "",
     quantity: Math.max(0, Math.floor(Number(data.quantity) || 0)),
     purity: Number(data.purity) || 0,
     germination: Number(data.germination) || 0,
@@ -164,11 +173,11 @@ export async function saveMockup(data: SeedLabelData): Promise<SeedLabelData> {
     tested_date: data.testedDate?.trim() || "",
     expiry_date: data.expiryDate?.trim() || "",
     producer_name: data.producerName?.trim() || "",
-    producer_license_rp2: data.producerLicenseRP2?.trim() || "",
+    producer_license_rp2: data.producerLicensePP?.trim() || "",
     distributor_name: data.distributorName?.trim() || "",
     distributor_license_pp3: data.distributorLicensePP4?.trim() || "",
     address: data.address?.trim() || "",
-    storage_instructions: data.storageInstructions?.trim() || DEFAULT_STORAGE,
+    storage_instructions: data.storageInstructions?.trim() || DEFAULT_STORAGE_TH,
     bg_image_url: data.bgImageUrl?.trim() || null,
     label_position: serializeLabelPosition({
       ...data,

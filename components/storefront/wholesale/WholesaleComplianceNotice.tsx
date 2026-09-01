@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 
-/** Future public seed-claim form — route not live yet */
+/** Seed claim form — preview until Regulatory Gate */
 const SEED_CLAIM_FORM_HREF = "/claim/seeds";
 
 export function WholesaleComplianceNotice() {
@@ -69,8 +69,14 @@ export function WholesaleComplianceNotice() {
           </li>
           <li>
             {t(
-              "ขั้นตอนการขอเคลมเมล็ด: กรอกข้อมูลในฟอร์มเคลมเมล็ดบนเว็บให้ครบถ้วนที่",
-              "Seed claim process: complete the online seed claim form"
+              "ฉลากเมล็ดพันธุ์ควบคุมต้องตรงตัวอย่างกรมวิชาการเกษตร — กรมฯ ไม่ประทับอนุมัติฉลากเป็นลายลักษณ์อักษร",
+              "Controlled seed labels must follow the Department of Agriculture reference — DOA does not formally approve individual label designs."
+            )}
+          </li>
+          <li>
+            {t(
+              "ขั้นตอนการขอเคลมเมล็ด (preview): กรอกข้อมูลในฟอร์มเคลมเมล็ดบนเว็บให้ครบถ้วนที่",
+              "Seed claim process (preview): complete the online seed claim form"
             )}{" "}
             <Link
               href={SEED_CLAIM_FORM_HREF}

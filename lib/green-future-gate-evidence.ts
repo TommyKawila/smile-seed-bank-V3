@@ -43,8 +43,10 @@ export const GF_REGULATORY_EVIDENCE_ITEMS: GfEvidenceItem[] = [
   },
   {
     id: "seller_authority",
-    labelTh: "คำตอบหน่วยงาน — ฝั่งผู้ขาย (บรรจุ ฉลาก ส่งมอบ เก็บ ขาย)",
-    labelEn: "Authority feedback — seller process (pack, label, handover, storage, resale)",
+    labelTh:
+      "ฉลาก V.2 ตรงตัวอย่างกรมฯ + อนุมัติเวอร์ชันเป็นลายลักษณ์อักษร (กรมฯ ไม่ประทับฉลาก)",
+    labelEn:
+      "Label V.2 matches DOA reference + written version approval (DOA does not stamp labels)",
     required: true,
   },
   {

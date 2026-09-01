@@ -1132,6 +1132,9 @@ model label_mockups {
   id                        String   @id @default(uuid()) @db.Uuid
   species                   String
   strain_name               String
+  lot_no                    String   @default("")
+  trademark                 String   @default("")
+  collection_source         String   @default("")
   quantity                  Int
   purity                    Float
   germination               Float
@@ -1150,6 +1153,16 @@ model label_mockups {
   updated_at                DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   @@map("label_mockups")
+  @@schema("public")
+}
+
+/// GF seed claim intake — Smile records before forwarding to GF
+model gf_seed_claim_submissions {
+  id         String   @id @default(uuid()) @db.Uuid
+  payload    Json
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("gf_seed_claim_submissions")
   @@schema("public")
 }
 

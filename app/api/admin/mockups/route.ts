@@ -20,6 +20,9 @@ const bodySchema = z.object({
   id: z.string().uuid().optional(),
   species: z.string().min(1),
   strainName: z.string(),
+  lotNo: z.string().default(""),
+  trademark: z.string().default(""),
+  collectionSource: z.string().default(""),
   quantity: z.number(),
   purity: z.number(),
   germination: z.number(),
@@ -27,7 +30,9 @@ const bodySchema = z.object({
   testedDate: z.string(),
   expiryDate: z.string(),
   producerName: z.string(),
-  producerLicenseRP2: z.string(),
+  producerLicensePP: z.string().default(""),
+  /** @deprecated use producerLicensePP */
+  producerLicenseRP2: z.string().optional(),
   distributorName: z.string(),
   distributorLicensePP4: z.string(),
   /** @deprecated use distributorLicensePP4 */
@@ -59,10 +64,15 @@ export async function POST(req: Request) {
       parsed.data.distributorLicensePP4?.trim() ||
       parsed.data.distributorLicensePP3?.trim() ||
       "";
+    const producerPP =
+      parsed.data.producerLicensePP?.trim() ||
+      parsed.data.producerLicenseRP2?.trim() ||
+      "";
     const saved = await saveMockup({
       ...parsed.data,
       id: parsed.data.id ?? crypto.randomUUID(),
       bgImageUrl: bg || undefined,
+      producerLicensePP: producerPP,
       distributorLicensePP4: pp4,
       labelPosition: parsed.data.labelPosition,
       labelSizeCm: parsed.data.labelSizeCm,

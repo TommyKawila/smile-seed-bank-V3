@@ -52,6 +52,8 @@ type Props = {
   onLoadGreenFuturePackagingProposal?: () => void;
   onLoadGreenFuture0824Reply?: () => void;
   onLoadGreenFuture0824ReplyTh?: () => void;
+  onLoadGreenFuture0901Reply?: () => void;
+  onLoadGreenFuture0901ReplyTh?: () => void;
   onLoadGreenFutureJuliaBrief?: () => void;
   onLoadGreenFutureJuliaRecapTh?: () => void;
   onLoadGreenFutureJuliaRecapEn?: () => void;
@@ -105,6 +107,8 @@ export function BusinessDocumentControls({
   onLoadGreenFuturePackagingProposal,
   onLoadGreenFuture0824Reply,
   onLoadGreenFuture0824ReplyTh,
+  onLoadGreenFuture0901Reply,
+  onLoadGreenFuture0901ReplyTh,
   onLoadGreenFutureJuliaBrief,
   onLoadGreenFutureJuliaRecapTh,
   onLoadGreenFutureJuliaRecapEn,
@@ -204,6 +208,8 @@ export function BusinessDocumentControls({
       onLoadGreenFuturePackagingProposal ||
       onLoadGreenFuture0824Reply ||
       onLoadGreenFuture0824ReplyTh ||
+      onLoadGreenFuture0901Reply ||
+      onLoadGreenFuture0901ReplyTh ||
       onLoadGreenFutureJuliaBrief ||
       onLoadGreenFutureJuliaRecapTh ||
       onLoadGreenFutureJuliaRecapEn ||
@@ -282,6 +288,27 @@ export function BusinessDocumentControls({
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Reply 0824 (Thai evidence)
+              </Button>
+            ) : null}
+            {onLoadGreenFuture0901Reply ? (
+              <Button
+                type="button"
+                className="w-full bg-[#12463e] hover:bg-[#0f3a34]"
+                onClick={onLoadGreenFuture0901Reply}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Reply to GF/SSB/2026-0901
+              </Button>
+            ) : null}
+            {onLoadGreenFuture0901ReplyTh ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-[#12463e]/40 text-[#12463e] hover:bg-[#12463e]/5"
+                onClick={onLoadGreenFuture0901ReplyTh}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Reply 0901 (Thai evidence)
               </Button>
             ) : null}
             {onLoadGreenFutureJuliaBrief ? (

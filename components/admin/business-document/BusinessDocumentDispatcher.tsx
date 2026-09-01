@@ -8,6 +8,12 @@ import { useBusinessDocumentDrafts } from "@/hooks/useBusinessDocumentDrafts";
 import { useBusinessContacts } from "@/hooks/useBusinessContacts";
 import { formatRawBusinessLetter } from "@/lib/business-document-raw-format";
 import {
+  GREEN_FUTURE_0901_REPLY_RAW,
+  GREEN_FUTURE_0901_REPLY_SUBJECT,
+  GREEN_FUTURE_0901_REPLY_TH_RAW,
+  GREEN_FUTURE_0901_REPLY_TH_SUBJECT,
+} from "@/lib/green-future-0901-reply-letter";
+import {
   GREEN_FUTURE_CLARIFICATION_RAW,
   GREEN_FUTURE_CLARIFICATION_SUBJECT,
 } from "@/lib/green-future-clarification-letter";
@@ -301,6 +307,24 @@ export function BusinessDocumentDispatcher() {
     );
   }, [loadTemplate]);
 
+  const handleLoadGreenFuture0901Reply = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_0901_REPLY_RAW,
+      GREEN_FUTURE_0901_REPLY_SUBJECT,
+      "0901 reply loaded",
+      "Label V.2, Lead Registration, photos, PI — attach label mock-up PDF."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFuture0901ReplyTh = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_0901_REPLY_TH_RAW,
+      GREEN_FUTURE_0901_REPLY_TH_SUBJECT,
+      "0901 Thai reply loaded",
+      "Thai evidence copy — attach with English original."
+    );
+  }, [loadTemplate]);
+
   const handleLoadGreenFutureTemplate = useCallback(() => {
     loadTemplate(
       GREEN_FUTURE_CLARIFICATION_RAW,
@@ -518,6 +542,8 @@ export function BusinessDocumentDispatcher() {
           }
           onLoadGreenFuture0824Reply={handleLoadGreenFuture0824Reply}
           onLoadGreenFuture0824ReplyTh={handleLoadGreenFuture0824ReplyTh}
+          onLoadGreenFuture0901Reply={handleLoadGreenFuture0901Reply}
+          onLoadGreenFuture0901ReplyTh={handleLoadGreenFuture0901ReplyTh}
           onLoadGreenFutureJuliaBrief={handleLoadGreenFutureJuliaBrief}
           onLoadGreenFutureJuliaRecapTh={handleLoadGreenFutureJuliaRecapTh}
           onLoadGreenFutureJuliaRecapEn={handleLoadGreenFutureJuliaRecapEn}

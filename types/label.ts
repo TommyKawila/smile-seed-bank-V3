@@ -14,14 +14,17 @@ export type SeedLabelData = {
   id: string;
   species: string;
   strainName: string;
+  lotNo: string;
+  trademark: string;
   quantity: number;
   purity: number;
   germination: number;
   collectedDate: string;
   testedDate: string;
   expiryDate: string;
+  collectionSource: string;
   producerName: string;
-  producerLicenseRP2: string;
+  producerLicensePP: string;
   distributorName: string;
   distributorLicensePP4: string;
   address: string;
@@ -33,9 +36,19 @@ export type SeedLabelData = {
   fontScale: number;
 };
 
-export const DEFAULT_SPECIES = "กัญชา (Cannabis)";
-export const DEFAULT_STORAGE =
-  "ควรเก็บในภาชนะปิดสนิททึบแสง อุณหภูมิ 5-10°C และกันความชื้น ก่อนเพาะควรพักในอุณหภูมิห้อง 2-3 ชม.";
+export const DEFAULT_SPECIES = "Cannabis sativa L.";
+export const DEFAULT_STRAIN_NAME = "AF99 – Bubba Kush Auto";
+export const DEFAULT_LOT_NO = "GF-AF99-2606-B01";
+export const DEFAULT_TRADEMARK = "SMILE";
+export const DEFAULT_COLLECTION_SOURCE = "ประเทศไทย / Thailand";
+export const DEFAULT_PRODUCER_NAME = "GF (Global) Co., Ltd.";
+export const DEFAULT_PRODUCER_LICENSE_PP = "102001102568";
+export const DEFAULT_PRODUCER_ADDRESS =
+  "49/1 Moo 4, King Kaew 30, Racha Thewa, Bang Phli, Samut Prakan 10540, Thailand";
+export const DEFAULT_STORAGE_TH =
+  "เก็บในที่เย็น แห้ง และมีอากาศถ่ายเทสะดวก หลีกเลี่ยงแสงแดดโดยตรง";
+export const DEFAULT_STORAGE_EN =
+  "Keep in a cool, dry, well-ventilated place, away from direct sunlight.";
 
 export const DEFAULT_LABEL_POSITION: LabelPosition = {
   x: 40,
@@ -64,19 +77,22 @@ export function createEmptySeedLabelData(id?: string): SeedLabelData {
   return {
     id: id ?? crypto.randomUUID(),
     species: DEFAULT_SPECIES,
-    strainName: "",
-    quantity: 1,
+    strainName: DEFAULT_STRAIN_NAME,
+    lotNo: DEFAULT_LOT_NO,
+    trademark: DEFAULT_TRADEMARK,
+    quantity: 50,
     purity: 99,
-    germination: 90,
-    collectedDate: "",
+    germination: 80,
+    collectedDate: "06/2026",
     testedDate: "",
     expiryDate: "",
-    producerName: "",
-    producerLicenseRP2: "",
+    collectionSource: DEFAULT_COLLECTION_SOURCE,
+    producerName: DEFAULT_PRODUCER_NAME,
+    producerLicensePP: DEFAULT_PRODUCER_LICENSE_PP,
     distributorName: DEFAULT_DISTRIBUTOR_NAME,
     distributorLicensePP4: DEFAULT_DISTRIBUTOR_LICENSE_PP4,
-    address: "",
-    storageInstructions: DEFAULT_STORAGE,
+    address: DEFAULT_PRODUCER_ADDRESS,
+    storageInstructions: `${DEFAULT_STORAGE_TH}\n${DEFAULT_STORAGE_EN}`,
     bgImageUrl: undefined,
     labelPosition: { ...DEFAULT_LABEL_POSITION },
     labelSizeCm: { ...DEFAULT_LABEL_SIZE_CM },

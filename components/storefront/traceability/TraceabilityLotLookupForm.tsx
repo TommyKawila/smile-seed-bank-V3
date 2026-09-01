@@ -21,8 +21,8 @@ export function TraceabilityLotLookupForm({ initialLot = "" }: Props) {
     if (!lot) {
       setError(
         t(
-          "กรอกเลขล็อตเป็นภาษาอังกฤษ/ตัวเลข เช่น GF-AF99-2608-B01",
-          "Enter a lot number such as GF-AF99-2608-B01"
+          "กรอกเลขล็อตเป็นภาษาอังกฤษ/ตัวเลข เช่น GF-AF99-2606-B01",
+          "Enter a lot number such as GF-AF99-2606-B01"
         )
       );
       return;
@@ -45,7 +45,7 @@ export function TraceabilityLotLookupForm({ initialLot = "" }: Props) {
           autoComplete="off"
           spellCheck={false}
           inputMode="text"
-          placeholder="GF-AF99-2608-B01"
+          placeholder="GF-AF99-2606-B01"
           className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-base text-slate-900 placeholder:text-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 sm:flex-1"
         />
         <button

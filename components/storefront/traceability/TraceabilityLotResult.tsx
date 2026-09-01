@@ -31,8 +31,8 @@ export function TraceabilityLotResult({ lookup }: Props) {
           {lookup.kind === "invalid" ? (
             <p>
               {t(
-                "รูปแบบเลขล็อตไม่ถูกต้อง ใช้ตัวอักษรภาษาอังกฤษ ตัวเลข จุด หรือขีด เช่น GF-AF99-2608-B01",
-                "That lot number is not a valid format. Use letters, numbers, dots or hyphens, e.g. GF-AF99-2608-B01."
+                "รูปแบบเลขล็อตไม่ถูกต้อง ใช้ตัวอักษรภาษาอังกฤษ ตัวเลข จุด หรือขีด เช่น GF-AF99-2606-B01",
+                "That lot number is not a valid format. Use letters, numbers, dots or hyphens, e.g. GF-AF99-2606-B01."
               )}
             </p>
           ) : null}
