@@ -67,6 +67,29 @@
     --ring: 160 84% 45%;
   }
 
+  /* B2B / claim / traceability — light tokens inside storefront-v4 dark shell */
+  .wholesale-b2b {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 162 70% 22%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 158 60% 94%;
+    --accent-foreground: 162 70% 22%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 162 70% 22%;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+
   * {
     @apply border-border;
   }

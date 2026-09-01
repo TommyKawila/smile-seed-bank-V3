@@ -1,49 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  GF_SEED_CLAIM_REFERENCE_FORM,
+  createEmptyGfSeedClaimForm,
+  GF_CLAIM_STEPS,
   isGfSeedClaimPreview,
-  type GfSeedClaimPayload,
+  validateGfClaimStep,
+  type GfClaimStepId,
+  type GfSeedClaimFormData,
 } from "@/lib/green-future-seed-claim";
-
-const EMPTY: GfSeedClaimPayload = {
-  contactName: "",
-  contactEmail: "",
-  contactPhone: "",
-  invoicePo: "",
-  lotNumber: "",
-  varietyCode: "",
-  quantity: "",
-  receivedDate: "",
-  openedDate: "",
-  storageLogNotes: "",
-  germinationMethod: "",
-  testCount: "",
-  timeline: "",
-  notes: "",
-};
+import { ClaimStepContent, claimStepTitle } from "./ClaimStepContent";
 
 export function SeedClaimFormClient() {
   const { t } = useLanguage();
   const preview = isGfSeedClaimPreview();
-  const [form, setForm] = useState<GfSeedClaimPayload>(EMPTY);
+  const [stepIdx, setStepIdx] = useState(0);
+  const [form, setForm] = useState<GfSeedClaimFormData>(() => createEmptyGfSeedClaimForm());
+  const [fieldError, setFieldError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [doneId, setDoneId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (key: keyof GfSeedClaimPayload, value: string) => {
+  const step = GF_CLAIM_STEPS[stepIdx] as GfClaimStepId;
+  const isFirst = stepIdx === 0;
+  const isLast = stepIdx === GF_CLAIM_STEPS.length - 1;
+
+  const set = useCallback(<K extends keyof GfSeedClaimFormData>(key: K, value: GfSeedClaimFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setFieldError(null);
+  }, []);
+
+  const progress = useMemo(
+    () => Math.round(((stepIdx + 1) / GF_CLAIM_STEPS.length) * 100),
+    [stepIdx]
+  );
+
+  const goNext = () => {
+    const err = validateGfClaimStep(step, form);
+    if (err) {
+      setFieldError(err);
+      return;
+    }
+    setFieldError(null);
+    setStepIdx((i) => Math.min(i + 1, GF_CLAIM_STEPS.length - 1));
   };
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const goBack = () => {
+    setFieldError(null);
+    setStepIdx((i) => Math.max(i - 1, 0));
+  };
+
+  const onSubmit = async () => {
+    const err = validateGfClaimStep("confirm", form);
+    if (err) {
+      setFieldError(err);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -58,13 +73,30 @@ export function SeedClaimFormClient() {
         return;
       }
       setDoneId(json.id ?? "ok");
-      setForm(EMPTY);
     } catch {
       setError(t("ส่งไม่สำเร็จ ลองใหม่อีกครั้ง", "Submission failed — please try again"));
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (doneId) {
+    return (
+      <div className="wholesale-b2b min-h-screen bg-white text-slate-900">
+        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+            {t("รับคำขอแล้ว — ทีมจะติดต่อหลังตรวจสอบเอกสาร", "Claim received — our team will follow up after document review.")}{" "}
+            <span className="font-mono text-xs">#{doneId.slice(0, 8)}</span>
+          </p>
+          <p className="mt-6 text-sm text-slate-500">
+            <Link href="/wholesale" className="text-emerald-700 hover:underline">
+              {t("← กลับหน้าขายส่ง", "← Back to wholesale")}
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="wholesale-b2b min-h-screen bg-white text-slate-900">
@@ -77,96 +109,64 @@ export function SeedClaimFormClient() {
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-600">
           {t(
-            "กรอกข้อมูลครบถ้วนเพื่อให้ทีม Smile ตรวจสอบและส่งต่อเข้าระบบเคลมของ Green Future ตามเงื่อนไขในใบเสนอราคา",
-            "Complete all fields so Smile can review and forward your claim to Green Future per the quotation terms."
+            "กรอกข้อมูลครบถ้วนเพื่อให้ทีม Smile ตรวจสอบและส่งต่อเข้าระบบเคลมของ Green Future",
+            "Complete all sections so Smile can review and forward your claim to Green Future."
           )}
         </p>
 
         {preview ? (
           <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
             {t(
-              "ฟอร์มนี้อยู่ในขั้นทดสอบภายใน — ยังไม่เปิดให้ลูกค้าทั่วไปจนกว่า Regulatory Gate จะผ่าน การส่งจะบันทึกไว้เพื่อทดสอบกระบวนการเท่านั้น",
-              "This form is in internal preview — not open to the general public until the Regulatory Gate passes. Submissions are recorded for process testing only."
+              "ฟอร์มนี้อยู่ในขั้นทดสอบภายใน — ยังไม่เปิดให้ลูกค้าทั่วไปจนกว่า Regulatory Gate จะผ่าน",
+              "This form is in internal preview — not open to the general public until the Regulatory Gate passes."
             )}
           </p>
         ) : null}
 
-        {doneId ? (
-          <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            {t(
-              "รับคำขอแล้ว — ทีมจะติดต่อหลังตรวจสอบเอกสาร",
-              "Claim received — our team will follow up after document review."
-            )}{" "}
-            <span className="font-mono text-xs">#{doneId.slice(0, 8)}</span>
-          </p>
-        ) : null}
-
         {error ? (
-          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
+          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
         ) : null}
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t("ชื่อผู้ติดต่อ", "Contact name")}>
-              <Input required value={form.contactName} onChange={(e) => set("contactName", e.target.value)} />
-            </Field>
-            <Field label={t("อีเมล", "Email")}>
-              <Input required type="email" value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} />
-            </Field>
-            <Field label={t("โทรศัพท์", "Phone")}>
-              <Input value={form.contactPhone} onChange={(e) => set("contactPhone", e.target.value)} />
-            </Field>
-            <Field label={t("Invoice / PO", "Invoice / PO")}>
-              <Input required value={form.invoicePo} onChange={(e) => set("invoicePo", e.target.value)} />
-            </Field>
-            <Field label={t("เลขล็อต", "Lot number")}>
-              <Input required value={form.lotNumber} onChange={(e) => set("lotNumber", e.target.value)} placeholder="GF-AF99-2606-B01" />
-            </Field>
-            <Field label={t("รหัสพันธุ์", "Variety code")}>
-              <Input required value={form.varietyCode} onChange={(e) => set("varietyCode", e.target.value)} placeholder="AF99" />
-            </Field>
-            <Field label={t("จำนวนเมล็ด", "Seed quantity")}>
-              <Input required value={form.quantity} onChange={(e) => set("quantity", e.target.value)} />
-            </Field>
-            <Field label={t("วันที่รับสินค้า", "Date received")}>
-              <Input required type="date" value={form.receivedDate} onChange={(e) => set("receivedDate", e.target.value)} />
-            </Field>
-            <Field label={t("วันที่เปิดซอง", "Date pouch opened")}>
-              <Input type="date" value={form.openedDate} onChange={(e) => set("openedDate", e.target.value)} />
-            </Field>
-            <Field label={t("จำนวนที่ทดสอบ", "Seeds tested")}>
-              <Input required value={form.testCount} onChange={(e) => set("testCount", e.target.value)} />
-            </Field>
+        <div className="mt-6">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>
+              {t("ขั้นตอน", "Step")} {stepIdx + 1}/{GF_CLAIM_STEPS.length}
+            </span>
+            <span>{progress}%</span>
           </div>
-          <Field label={t("วิธีเพาะ / ทดสอบ", "Germination method")}>
-            <Textarea required rows={2} value={form.germinationMethod} onChange={(e) => set("germinationMethod", e.target.value)} />
-          </Field>
-          <Field label={t("บันทึกการเก็บรักษา (storage log)", "Storage log notes")}>
-            <Textarea rows={2} value={form.storageLogNotes} onChange={(e) => set("storageLogNotes", e.target.value)} />
-          </Field>
-          <Field label={t("ลำดับเหตุการณ์ / timeline", "Timeline")}>
-            <Textarea rows={2} value={form.timeline} onChange={(e) => set("timeline", e.target.value)} />
-          </Field>
-          <Field label={t("หมายเหตุเพิ่มเติม", "Additional notes")}>
-            <Textarea rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
-          </Field>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
 
-          <p className="text-xs text-slate-500">
-            {t(
-              "หลักฐานภาพ/วิดีโอ — ส่งทางอีเมลหลังยืนยันคำขอ อ้างอิงฟอร์ม GF:",
-              "Photo/video evidence — send by email after we confirm receipt. GF reference form:"
-            )}{" "}
-            <Link href={GF_SEED_CLAIM_REFERENCE_FORM.url} className="text-emerald-700 underline" target="_blank" rel="noopener noreferrer">
-              Google Form
-            </Link>
-          </p>
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-slate-900">{claimStepTitle(step, t)}</h2>
+          <div className="mt-4">
+            <ClaimStepContent step={step} data={form} set={set} t={t} fieldError={fieldError} />
+          </div>
+          {fieldError ? (
+            <p className="mt-3 text-sm text-red-600">
+              {t("กรุณากรอกข้อมูลที่จำเป็นให้ครบ", "Please complete all required fields")}
+            </p>
+          ) : null}
+        </div>
 
-          <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
-            {submitting ? t("กำลังส่ง…", "Submitting…") : t("ส่งคำขอเคลม", "Submit claim")}
-          </Button>
-        </form>
+        <div className="mt-8 flex flex-wrap gap-3">
+          {!isFirst ? (
+            <Button type="button" variant="outline" onClick={goBack} className="border-slate-200 bg-white text-slate-900 hover:bg-slate-50">
+              {t("ย้อนกลับ", "Back")}
+            </Button>
+          ) : null}
+          {!isLast ? (
+            <Button type="button" onClick={goNext}>
+              {t("ถัดไป", "Next")}
+            </Button>
+          ) : (
+            <Button type="button" disabled={submitting} onClick={onSubmit}>
+              {submitting ? t("กำลังส่ง…", "Submitting…") : t("ส่งคำขอเคลม", "Submit claim")}
+            </Button>
+          )}
+        </div>
 
         <p className="mt-8 text-sm text-slate-500">
           <Link href="/wholesale" className="text-emerald-700 hover:underline">
@@ -174,15 +174,6 @@ export function SeedClaimFormClient() {
           </Link>
         </p>
       </div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-sm text-slate-700">{label}</Label>
-      {children}
     </div>
   );
 }

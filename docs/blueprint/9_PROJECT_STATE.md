@@ -101,7 +101,7 @@
 | แพ็กที่เลือก | **4×50 = 20 ซองซีล** · Option 1 — ขอ PI แก้ใน 0901 reply |
 | ซอง SSB | GF รับ 10 ซองแล้ว · ตรวจ heat seal + ฉลาก 5.5×5.5 |
 | ฉลาก V.2 | Mockup admin ตามฟิลด์กรมฯ+GF · จดหมายตอบ 0901 EN/TH + Dispatcher |
-| ฟอร์มเคลม | `/claim/seeds` preview · บันทึก `gf_seed_claim_submissions` |
+| ฟอร์มเคลม | **`/claim/seeds` เสร็จ (preview)** — wizard 9 ขั้นตรง GF · อัปโหลด Drive (`GF Seed Claims`) + fallback Supabase · submit → `gf_seed_claim_submissions` |
 | เอกสาร inbound | `gf-ssb-2026-0901-confirmation-en.pdf` · `gf-doa-label-fields-af99-sample.pdf` · `doa-controlled-seed-label-guide.pdf` |
 
 ### งานหลังประชุม 28 ส.ค. — สถานะ 31 ส.ค. 2026
@@ -110,7 +110,7 @@
 | ส่งสรุปการประชุม GF × SSB กับคุณจูเลีย (28 ส.ค.) | **ส่งแล้ว** | Recap TH ให้แปล + EN หลักฐาน |
 | ส่งเอกสารติดตาม Traceability + ขอข้อมูลเพิ่มจาก GF | **ส่งแล้ว** | ลิงก์ preview + ขอไฟล์ล็อต / QR หรือบัญชี / อนุมัติเทมเพลต / รูป / ระยะ audit log |
 | ส่งตัวอย่างซองแพคเกจ 10 ซอง | **ส่งแล้ว** | ให้ GF ตรวจคุณภาพซอง |
-| ฟอร์มเคลมเมล็ดบนเว็บ Smile | **preview** | `/claim/seeds` · บันทึก DB · ยังไม่เปิดลูกค้าจนกว่า Regulatory Gate |
+| ฟอร์มเคลมเมล็ดบนเว็บ Smile | **เสร็จ (preview)** | wizard + upload + submit ทดสอบแล้ว · Drive env ตั้งแล้ว · ยังไม่เปิดลูกค้าจนกว่า Regulatory Gate |
 | ลิงก์เก็บ log อุณหภูมิ/ความชื้นตู้เก็บเมล็ด | **ยังไม่ทำ** | ช่วงแรก: รูป Hygrometer รายวัน → Google Drive ที่แชร์ |
 | สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability | **ยังไม่ทำ** | รอซองติดฉลาก V.2 จริง |
 | ฉลากติดหลังซอง **V.2** TH+EN ตามตัวอย่างกรมฯ | **mockup แล้ว** | รอ GF ยืนยันฟิลด์ + heat seal · ส่งจดหมายตอบ 0901 |
@@ -123,7 +123,7 @@
 - [ ] รอ GF ตอบ Traceability (disclaimer + ชั้นข้อมูล + ไฟล์ล็อต + วิธี QR/บัญชี + อนุมัติเทมเพลต)
 - [x] รับตัวอย่างฉลากกรมฯ จาก GF (0901) → ออกแบบฉลาก V.2 mockup (TH+EN)
 - [ ] ส่งจดหมายตอบ GF/SSB/2026-0901 + mock-up PDF ฉลาก V.2
-- [x] ฟอร์มเคลมเมล็ด `/claim/seeds` (preview)
+- [x] ฟอร์มเคลมเมล็ด `/claim/seeds` — wizard + Drive upload + submit (preview, ทดสอบแล้ว)
 - [ ] ทำลิงก์/โฟลเดอร์ log Temp + RH ตู้เก็บเมล็ด (รูป Hygrometer รายวัน)
 - [ ] สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability (หลังมีซองติดฉลาก)
 - [ ] รอผลตรวจ heat seal + ฉลากจาก GF
@@ -260,6 +260,16 @@
 - **What:** เก็บ PDF GF/SSB/2026-0901 + ตัวอย่างฉลากกรมฯ · จดหมายตอบ EN/TH · ฉลาก mockup V.2 สองภาษา · `/claim/seeds` preview · อัปเดต Regulatory Gate
 - **Logic:** กรมฯ ไม่ประทับฉลาก — เกณฑ์ใหม่ = ฉลากตรงตัวอย่าง + อนุมัติเวอร์ชัน + heat seal · Lead Registration ใน reply 0901 · งอก/บริสุทธิ์ = ค่าล็อตจริง
 - **ไฟล์:** `lib/green-future-0901-reply-letter.ts` · `lib/green-future-inbound-docs.ts` · `types/label.ts` · `LabelGraphic.tsx` · `LabelForm.tsx` · `mockupService.ts` · `lib/green-future-seed-claim.ts` · `app/(storefront)/claim/seeds/page.tsx` · migrations `20260901140000` · `20260901150000` · `9_PROJECT_STATE.md`
+
+### บันทึกการทำงาน — 2026-09-01 (GF claim form — wizard ครบทุก section)
+- **What:** ขยาย `/claim/seeds` เป็น wizard 9 ขั้นตรงฟอร์ม GF Seed Viability Claim · อัปโหลดหลักฐาน `POST /api/storefront/claim/seeds/upload` (Drive service account หรือ fallback Supabase `brand-assets/gf-seed-claims/`) · submit บันทึก JSONB + `forwardSummary`
+- **Logic:** ไม่บังคับ Google Sign-in GF · ข้าม "Вариант 1" · ไม่รับ PDF ฟอร์ม GF · Smile forward หลังบันทึก · env `GOOGLE_DRIVE_CLAIM_FOLDER_ID` + `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`
+- **ไฟล์:** `lib/gf-seed-claim-form.ts` · `lib/gf-seed-claim-zod.ts` · `services/gf-seed-claim-drive-service.ts` · `services/gf-seed-claim-upload-service.ts` · `components/storefront/claim/*` · `app/api/storefront/claim/seeds/route.ts` · `app/api/storefront/claim/seeds/upload/route.ts`
+
+### บันทึกการทำงาน — 2026-09-01 (GF claim form — เสร็จ + ทดสอบ Drive/DB)
+- **What:** `/claim/seeds` พร้อมใช้งาน preview — ทดสอบอัปโหลดหลักฐาน + submit บันทึก DB แล้ว · ตั้ง `GOOGLE_DRIVE_CLAIM_FOLDER_ID` + service account · แก้ input สีดำ (light theme) · แก้ Drive 403 (อัปโหลดตรงโฟลเดอร์ `GF Seed Claims` ชื่อ `claim-{session}-{category}-{file}` แทน subfolder ของ SA)
+- **Logic:** SA สร้าง subfolder ได้แต่ใส่ไฟล์ไม่ได้ (403) → ใช้โฟลเดอร์ที่แชร์ของ Smile เป็น parent · fallback Supabase `brand-assets/gf-seed-claims/` · UI แสดง storage Drive/Supabase หลังอัปโหลด · launch ยัง `preview` จน Regulatory Gate
+- **ไฟล์:** `services/gf-seed-claim-drive-service.ts` · `components/storefront/claim/ClaimFormPrimitives.tsx` · `ClaimEvidenceUpload.tsx` · `9_PROJECT_STATE.md`
 
 ### บันทึกการทำงาน — 2026-08-31 (OPS GF — ส่ง Recap / Traceability / ซอง 10 ชิ้น)
 - **What:** อัปเดตสถานะหลังประชุม — ส่ง Recap, จดหมายขอ GF ตรวจ Traceability, ซองตัวอย่าง 10 ซองแล้ว · ค้างฟอร์มเคลม / log Temp-RH / ถามหน่วยงานเชียงใหม่ / ฉลาก V.2 รอตัวอย่างจาก Julia
