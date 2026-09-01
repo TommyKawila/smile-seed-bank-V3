@@ -256,6 +256,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-09-01 (RLS — gf_seed_claim_submissions)
+- **What:** เปิด RLS บนตารางเคลมเมล็ดที่สร้างใน `20260901150000` โดยไม่มี RLS — กัน PostgREST anon dump PII
+- **Logic:** ENABLE RLS ไม่มี anon policy · Prisma/service_role ยัง insert ผ่าน `/api/storefront/claim/seeds` ได้ · Aug 12 lockdown list ไม่ครอบคลุมตารางใหม่
+- **ไฟล์:** `prisma/migrations/20260901160000_gf_seed_claim_submissions_rls` · `supabase/migrations/20260901160000_gf_seed_claim_submissions_rls.sql` · `scripts/assert-gf-seed-claim-rls.mjs`
+
 ### บันทึกการทำงาน — 2026-09-01 (GF 0901 — ฉลาก V.2, จดหมายตอบ, เคลม preview)
 - **What:** เก็บ PDF GF/SSB/2026-0901 + ตัวอย่างฉลากกรมฯ · จดหมายตอบ EN/TH · ฉลาก mockup V.2 สองภาษา · `/claim/seeds` preview · อัปเดต Regulatory Gate
 - **Logic:** กรมฯ ไม่ประทับฉลาก — เกณฑ์ใหม่ = ฉลากตรงตัวอย่าง + อนุมัติเวอร์ชัน + heat seal · Lead Registration ใน reply 0901 · งอก/บริสุทธิ์ = ค่าล็อตจริง
