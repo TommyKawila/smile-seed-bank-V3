@@ -272,6 +272,11 @@
 - **Logic:** SA สร้าง subfolder ได้แต่ใส่ไฟล์ไม่ได้ (403) → ใช้โฟลเดอร์ที่แชร์ของ Smile เป็น parent · fallback Supabase `brand-assets/gf-seed-claims/` · UI แสดง storage Drive/Supabase หลังอัปโหลด · launch ยัง `preview` จน Regulatory Gate
 - **ไฟล์:** `services/gf-seed-claim-drive-service.ts` · `components/storefront/claim/ClaimFormPrimitives.tsx` · `ClaimEvidenceUpload.tsx` · `9_PROJECT_STATE.md`
 
+### บันทึกการทำงาน — 2026-09-02 (Admin claim inbox — block javascript: href XSS)
+- **What:** ฟอร์มสาธารณะ `/claim/seeds` ส่ง `extraMediaUrl` + `publicUrl`/`webViewLink` เข้า inbox ได้โดยไม่จำกัดโปรโตคอล · React 18 ไม่บล็อก `javascript:` ใน production · แอดมินคลิก Extra media / ลิงก์ไฟล์แล้ว XSS ใน origin แอดมิน
+- **Logic:** `safeHttpHref` อนุญาตเฉพาะ http(s) · Zod reject ตอน POST · inbox ใช้ href ที่กรองแล้ว (ข้อความยังแสดงได้ถ้าโปรโตคอลไม่ปลอดภัย)
+- **ไฟล์:** `lib/gf-seed-claim-admin.ts` · `lib/gf-seed-claim-zod.ts` · `services/gf-seed-claim-service.ts` · `GfClaimDetailClient.tsx` · `scripts/assert-gf-claim-safe-href.ts`
+
 ### บันทึกการทำงาน — 2026-09-01 (Admin inbox คำขอเคลมเมล็ด)
 - **What:** หน้า `/admin/partners/green-future/claims` ดูรายการคำขอจาก `gf_seed_claim_submissions` · หน้ารายละเอียดคัดลอก `forwardSummary` ส่ง GF + ลิงก์ไฟล์ Drive/Supabase
 - **Logic:** GET `/api/admin/claim/seeds` + `/[id]` ผ่าน `requireAdminUser` · รองรับ payload wizard ใหม่และฟอร์ม 14 ฟิลด์เก่า

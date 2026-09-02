@@ -22,6 +22,20 @@ export type GfClaimFileView = {
   href?: string;
 };
 
+/** Allow only http(s) hrefs. React 18 does not block `javascript:` URLs in production. */
+export function safeHttpHref(raw: string | undefined | null): string | undefined {
+  if (raw == null) return undefined;
+  const s = raw.trim();
+  if (!s) return undefined;
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return undefined;
+    return u.href;
+  } catch {
+    return undefined;
+  }
+}
+
 export type GfClaimSectionView = {
   title: string;
   rows: { label: string; value: string }[];

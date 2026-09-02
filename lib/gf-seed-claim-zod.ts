@@ -1,4 +1,12 @@
 import { z } from "zod";
+import { safeHttpHref } from "@/lib/gf-seed-claim-admin";
+
+const optionalHttpUrl = z
+  .string()
+  .optional()
+  .refine((s) => s == null || s === "" || Boolean(safeHttpHref(s)), {
+    message: "URL must be http or https",
+  });
 
 const uploadedFileSchema = z.object({
   id: z.string().min(1),
@@ -7,8 +15,8 @@ const uploadedFileSchema = z.object({
   sizeBytes: z.number().int().positive(),
   storage: z.enum(["google_drive", "supabase"]),
   fileId: z.string().optional(),
-  webViewLink: z.string().optional(),
-  publicUrl: z.string().optional(),
+  webViewLink: optionalHttpUrl,
+  publicUrl: optionalHttpUrl,
 });
 
 export const gfSeedClaimPayloadSchema = z.object({
@@ -69,7 +77,12 @@ export const gfSeedClaimPayloadSchema = z.object({
   moistenedHowOften: z.string().min(1),
   moistenedHowOftenOther: z.string().default(""),
   radicleFirstEmergedRecorded: z.enum(["yes", "no"]),
-  extraMediaUrl: z.string().default(""),
+  extraMediaUrl: z
+    .string()
+    .default("")
+    .refine((s) => s === "" || Boolean(safeHttpHref(s)), {
+      message: "URL must be http or https",
+    }),
   packagingAndLotPhotos: z.array(uploadedFileSchema).min(1),
   claimedSeedsPhotos: z.array(uploadedFileSchema).min(1),
   processPhotosVideos: z.array(uploadedFileSchema).min(1),
