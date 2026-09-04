@@ -46,3 +46,36 @@ export function parseFontScale(raw: unknown): number {
 export function labelFontPx(basePx: number, scale: number): string {
   return `${Math.max(6, Math.round(basePx * scale))}px`;
 }
+
+export function isPackRatioPosition(p: {
+  x: number;
+  y: number;
+  unit?: "ratio" | "px";
+}): boolean {
+  if (p.unit === "ratio") return true;
+  if (p.unit === "px") return false;
+  return p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1;
+}
+
+export function stickerOffsetInPack(opts: {
+  position: { x: number; y: number; unit?: "ratio" | "px" };
+  packW: number;
+  packH: number;
+  stickerW: number;
+  stickerH: number;
+}): { x: number; y: number } {
+  const { position, packW, packH, stickerW, stickerH } = opts;
+  let x = isPackRatioPosition(position)
+    ? position.x * packW
+    : position.x;
+  let y = isPackRatioPosition(position)
+    ? position.y * packH
+    : position.y;
+  const maxX = Math.max(0, packW - stickerW);
+  const maxY = Math.max(0, packH - stickerH);
+  if (x > maxX || x < 0 || y > maxY || y < 0) {
+    x = Math.min(maxX, Math.max(0, x));
+    y = Math.min(maxY, Math.max(0, y));
+  }
+  return { x, y };
+}

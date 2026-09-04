@@ -267,6 +267,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-09-04 (Share mockup — ฉลากเลื่อนขวาถูกตัด)
+- **What:** ลิงก์แชร์วางฉลากนอกซองเพราะเซฟพิกเซลจอแอดมิน · ยึดตำแหน่งกับรูปซอง (ratio) และ clamp ให้อยู่ในแพ็ก 7×10
+- **Logic:** overlay อยู่ในกรอบ `object-contain` ของรูปซอง · พิกัดเก่าที่เป็น px ถ้าล้นจะดึงกลับเข้าซอง · ข้อความยาวขึ้นบรรทัดใหม่
+- **ไฟล์:** `VisualPreview.tsx` · `mockup-dimensions.ts` · `types/label.ts` · `LabelGraphic.tsx` · `MockupControls.tsx` · `mockupService.ts` · `share/mockup/[id]/page.tsx` · `9_PROJECT_STATE.md`
+
 ### บันทึกการทำงาน — 2026-09-04 (Julia — ฉลากวันที่รวบรวม + เลือกรูป Presentation)
 - **What:** ฉลาก V.2.1 ตัดคำว่านำเข้า เหลือวันที่รวบรวม · ล็อกรายการรูป 6 ภาพจากชุดกระบวนการผลิตเมล็ด ให้จูเลียส่งไฟล์แยก
 - **Logic:** เมล็ดผลิตในไทยจึงไม่ใช้ฟิลด์นำเข้า · รูป A/E จากสไลด์ 01, B จาก 06, C จาก 10 (ข้อ C = พื้นที่ในสถานที่ GACP), D จาก 11, F จาก 12 · ไม่ขอ hygiene/ดอกใกล้ในรอบแรก · ยังต้องอนุมัติรายภาพ + ลายน้ำ

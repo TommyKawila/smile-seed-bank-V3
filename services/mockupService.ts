@@ -91,6 +91,7 @@ function parsePosition(raw: unknown): {
         typeof o.rotation === "number"
           ? o.rotation
           : DEFAULT_LABEL_POSITION.rotation,
+      unit: o.unit === "ratio" || o.unit === "px" ? o.unit : undefined,
     },
     labelSizeCm: parseLabelSizeCm(o.labelSizeCm),
     fontScale: parseFontScale(o.fontScale),

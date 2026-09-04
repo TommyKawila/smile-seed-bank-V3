@@ -1,8 +1,10 @@
 export type LabelPosition = {
+  /** Pack-relative 0–1 when unit is `ratio`; otherwise legacy canvas pixels */
   x: number;
   y: number;
   scale: number;
   rotation: number;
+  unit?: "ratio" | "px";
 };
 
 export type LabelSizeCm = {
@@ -50,13 +52,6 @@ export const DEFAULT_STORAGE_TH =
 export const DEFAULT_STORAGE_EN =
   "Keep in a cool, dry, well-ventilated place, away from direct sunlight.";
 
-export const DEFAULT_LABEL_POSITION: LabelPosition = {
-  x: 40,
-  y: 40,
-  scale: 1,
-  rotation: 0,
-};
-
 export const DEFAULT_LABEL_SIZE_CM: LabelSizeCm = {
   width: 5.5,
   height: 5.5,
@@ -66,6 +61,21 @@ export const DEFAULT_LABEL_SIZE_CM: LabelSizeCm = {
 export const DEFAULT_PACKAGE_SIZE_CM: LabelSizeCm = {
   width: 7,
   height: 10,
+};
+
+/** Centered 5.5×5.5 cm sticker on a 7×10 cm pack (ratios of pack) */
+export const DEFAULT_LABEL_POSITION: LabelPosition = {
+  x:
+    (DEFAULT_PACKAGE_SIZE_CM.width - DEFAULT_LABEL_SIZE_CM.width) /
+    2 /
+    DEFAULT_PACKAGE_SIZE_CM.width,
+  y:
+    (DEFAULT_PACKAGE_SIZE_CM.height - DEFAULT_LABEL_SIZE_CM.height) /
+    2 /
+    DEFAULT_PACKAGE_SIZE_CM.height,
+  scale: 1,
+  rotation: 0,
+  unit: "ratio",
 };
 
 export const DEFAULT_FONT_SCALE = 1;

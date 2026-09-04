@@ -12,8 +12,8 @@ import {
 } from "react";
 import { Rnd } from "react-rnd";
 import { LabelGraphic } from "@/components/mockup/LabelGraphic";
-import { stickerPxFromCm } from "@/lib/mockup-dimensions";
-import type { SeedLabelData } from "@/types/label";
+import { stickerPxFromCm, stickerOffsetInPack } from "@/lib/mockup-dimensions";
+import { DEFAULT_PACKAGE_SIZE_CM, type SeedLabelData } from "@/types/label";
 
 type ImgBounds = {
   left: number;
@@ -29,6 +29,7 @@ type Props = {
     x?: number;
     y?: number;
     scale?: number;
+    unit?: "ratio" | "px";
   }) => void;
   className?: string;
 };
@@ -47,7 +48,7 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
       height: 0,
     });
 
-    const { x, y, scale, rotation } = data.labelPosition;
+    const { scale, rotation } = data.labelPosition;
 
     const measureImage = useCallback(() => {
       const container = containerRef.current;
@@ -69,32 +70,54 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
     useEffect(() => {
       measureImage();
       const container = containerRef.current;
+      const img = imgRef.current;
+      if (img?.complete) measureImage();
       if (!container) return;
       const ro = new ResizeObserver(() => measureImage());
       ro.observe(container);
+      if (img) ro.observe(img);
       return () => ro.disconnect();
     }, [measureImage]);
 
+    const packW = imgBounds.width;
+    const packH = imgBounds.height;
+
     const { width: w, height: h } = useMemo(() => {
-      if (imgBounds.width > 0) {
-        return stickerPxFromCm(
+      if (packW > 0) {
+        const sized = stickerPxFromCm(
           data.labelSizeCm,
-          imgBounds.width,
+          packW,
           undefined,
           scale
         );
+        return {
+          width: Math.min(sized.width, packW),
+          height: Math.min(sized.height, packH || sized.height),
+        };
       }
       return {
         width: Math.round(140 * scale),
         height: Math.round(140 * scale),
       };
-    }, [data.labelSizeCm, imgBounds.width, scale]);
+    }, [data.labelSizeCm, packW, packH, scale]);
+
+    const { x: packX, y: packY } = useMemo(
+      () =>
+        packW > 0
+          ? stickerOffsetInPack({
+              position: data.labelPosition,
+              packW,
+              packH,
+              stickerW: w,
+              stickerH: h,
+            })
+          : { x: 0, y: 0 },
+      [data.labelPosition, packW, packH, w, h]
+    );
 
     const labelStyle = useMemo(
       () =>
         ({
-          width: "100%",
-          height: "100%",
           transform: `rotate(${rotation}deg)`,
           transformOrigin: "center center",
         }) as CSSProperties,
@@ -103,9 +126,14 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
 
     const onDragStop = useCallback(
       (_e: unknown, d: { x: number; y: number }) => {
-        onPositionChange?.({ x: d.x, y: d.y });
+        if (packW <= 0 || packH <= 0) return;
+        onPositionChange?.({
+          x: d.x / packW,
+          y: d.y / packH,
+          unit: "ratio",
+        });
       },
-      [onPositionChange]
+      [onPositionChange, packW, packH]
     );
 
     const onResizeStop = useCallback(
@@ -116,15 +144,16 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
         _delta: unknown,
         pos: { x: number; y: number }
       ) => {
-        const base = stickerPxFromCm(data.labelSizeCm, imgBounds.width || 1);
+        const base = stickerPxFromCm(data.labelSizeCm, packW || 1);
         const nextScale = el.offsetWidth / Math.max(1, base.width);
         onPositionChange?.({
-          x: pos.x,
-          y: pos.y,
+          x: packW > 0 ? pos.x / packW : 0,
+          y: packH > 0 ? pos.y / packH : 0,
           scale: Math.max(0.2, Math.min(3, nextScale)),
+          unit: "ratio",
         });
       },
-      [data.labelSizeCm, imgBounds.width, onPositionChange]
+      [data.labelSizeCm, packW, packH, onPositionChange]
     );
 
     const setRefs = useCallback(
@@ -139,48 +168,60 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
       [ref]
     );
 
-    const overlay = interactive ? (
-      <Rnd
-        size={{ width: w, height: h }}
-        position={{ x, y }}
-        bounds="parent"
-        onDragStop={onDragStop}
-        onResizeStop={onResizeStop}
-        enableResizing={{
-          bottomRight: true,
-          bottom: true,
-          right: true,
-        }}
-        className="z-10"
-        style={{ zIndex: 10 }}
-      >
-        <div style={labelStyle} className="h-full w-full overflow-hidden">
-          <LabelGraphic
-            data={data}
-            className="box-border h-full w-full select-none overflow-auto bg-white text-black border-2 border-dashed border-[#12463e]/60 p-2 font-sans leading-tight shadow-sm"
-          />
+    const graphicClass = interactive
+      ? "box-border h-full w-full select-none overflow-hidden break-words bg-white text-black border-2 border-dashed border-[#12463e]/60 p-2 font-sans leading-tight shadow-sm"
+      : "box-border h-full w-full overflow-hidden break-words bg-white text-black border border-black p-1.5 font-sans leading-tight";
+
+    const overlay =
+      packW > 0 ? (
+        <div
+          className="absolute z-10 overflow-hidden"
+          style={{
+            left: imgBounds.left,
+            top: imgBounds.top,
+            width: packW,
+            height: packH,
+          }}
+        >
+          {interactive ? (
+            <Rnd
+              size={{ width: w, height: h }}
+              position={{ x: packX, y: packY }}
+              bounds="parent"
+              onDragStop={onDragStop}
+              onResizeStop={onResizeStop}
+              enableResizing={{
+                bottomRight: true,
+                bottom: true,
+                right: true,
+              }}
+              className="z-10"
+              style={{ zIndex: 10 }}
+            >
+              <div style={labelStyle} className="h-full w-full overflow-hidden">
+                <LabelGraphic data={data} className={graphicClass} />
+              </div>
+            </Rnd>
+          ) : (
+            <div
+              className="absolute z-10 overflow-hidden"
+              style={{
+                left: packX,
+                top: packY,
+                width: w,
+                height: h,
+              }}
+            >
+              <div style={labelStyle} className="h-full w-full overflow-hidden">
+                <LabelGraphic data={data} className={graphicClass} />
+              </div>
+            </div>
+          )}
         </div>
-      </Rnd>
-    ) : (
-      <div
-        className="absolute z-10"
-        style={{
-          left: x,
-          top: y,
-          width: w,
-          height: h,
-          ...labelStyle,
-        }}
-      >
-        <LabelGraphic
-          data={data}
-          className="box-border h-full w-full overflow-auto bg-white text-black border-2 border-dashed border-[#12463e]/60 p-2 font-sans leading-tight"
-        />
-      </div>
-    );
+      ) : null;
 
     const guideRect =
-      imgBounds.width > 0 ? (
+      interactive && imgBounds.width > 0 ? (
         <div
           className="pointer-events-none absolute z-[5] border border-dashed border-amber-500/70 bg-amber-400/5"
           style={{
@@ -200,7 +241,10 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
           className ??
           "relative w-full overflow-hidden rounded-md border border-slate-200 bg-slate-100"
         }
-        style={{ minHeight: 420, aspectRatio: "4 / 5" }}
+        style={{
+          minHeight: 420,
+          aspectRatio: `${DEFAULT_PACKAGE_SIZE_CM.width} / ${DEFAULT_PACKAGE_SIZE_CM.height}`,
+        }}
       >
         {data.bgImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

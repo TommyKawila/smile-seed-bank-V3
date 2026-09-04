@@ -21,7 +21,10 @@ function Row({
   bold?: boolean;
 }) {
   return (
-    <p style={{ fontSize: labelFontPx(6.5, fs) }} className="leading-tight">
+    <p
+      style={{ fontSize: labelFontPx(6.5, fs) }}
+      className="leading-tight break-words"
+    >
       <span className={bold ? "font-bold" : ""}>
         {th} / {en}:{" "}
       </span>
@@ -125,12 +128,18 @@ export function LabelGraphic({ data, className }: Props) {
           value={data.producerName}
           fs={fs}
         />
-        <p style={{ fontSize: labelFontPx(6, fs) }} className="leading-tight">
+        <p
+          style={{ fontSize: labelFontPx(6, fs) }}
+          className="leading-tight break-words"
+        >
           <span className="font-bold">สถานที่รวบรวม / Collection Place: </span>
           {data.address || "—"}
         </p>
         {data.distributorName ? (
-          <p style={{ fontSize: labelFontPx(5.5, fs) }} className="leading-tight opacity-80">
+          <p
+            style={{ fontSize: labelFontPx(5.5, fs) }}
+            className="leading-tight break-words opacity-80"
+          >
             ผู้ขาย / Seller: {data.distributorName}
             {data.distributorLicensePP4
               ? ` · พ.พ.4 ${data.distributorLicensePP4}`

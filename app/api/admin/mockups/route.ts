@@ -9,6 +9,7 @@ const positionSchema = z.object({
   y: z.number(),
   scale: z.number().positive(),
   rotation: z.number(),
+  unit: z.enum(["ratio", "px"]).optional(),
 });
 
 const labelSizeCmSchema = z.object({

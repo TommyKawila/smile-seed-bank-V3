@@ -21,7 +21,7 @@ export default async function ShareMockupPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6">
-      <div className="mx-auto max-w-lg space-y-4">
+      <div className="mx-auto w-full max-w-sm space-y-4">
         <header className="space-y-1 text-center">
           <p className="text-xs uppercase tracking-wide text-slate-400">
             Shared label mockup
