@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { LabelGraphic } from "@/components/mockup/LabelGraphic";
 import type { SeedLabelData } from "@/types/label";
 
@@ -11,39 +10,27 @@ type Props = {
   width: number;
   height: number;
   className?: string;
+  frameClassName?: string;
   rotation?: number;
 };
 
-/** Render the legal label at a fixed design width, then scale it to fit the sticker box. */
+/** Render the legal label at a fixed design width, then scale uniformly to the sticker box. */
 export function FittedLabelGraphic({
   data,
   width,
   height,
   className,
+  frameClassName,
   rotation = 0,
 }: Props) {
-  const innerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-
-  const measure = useCallback(() => {
-    const el = innerRef.current;
-    if (!el || width <= 0 || height <= 0) return;
-    const contentH = Math.max(1, el.scrollHeight);
-    setScale(Math.min(width / DESIGN_W, height / contentH));
-  }, [width, height, data]);
-
-  useLayoutEffect(() => {
-    measure();
-    const el = innerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [measure]);
+  const scale = width > 0 ? width / DESIGN_W : 1;
 
   return (
     <div
-      className="relative overflow-hidden"
+      className={
+        frameClassName ??
+        "relative box-border overflow-hidden bg-white"
+      }
       style={{
         width,
         height,
@@ -52,7 +39,6 @@ export function FittedLabelGraphic({
       }}
     >
       <div
-        ref={innerRef}
         style={{
           width: DESIGN_W,
           transform: `scale(${scale})`,

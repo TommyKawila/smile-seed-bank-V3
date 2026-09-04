@@ -114,9 +114,12 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
       [data.labelPosition, packW, packH, w, h]
     );
 
+    const frameClass = interactive
+      ? "relative box-border overflow-hidden bg-white border-2 border-dashed border-[#12463e]/60 shadow-sm"
+      : "relative box-border overflow-hidden bg-white border border-black";
     const graphicClass = interactive
-      ? "box-border w-full select-none break-words bg-white text-black border-2 border-dashed border-[#12463e]/60 p-2 font-sans leading-tight shadow-sm"
-      : "box-border w-full break-words bg-white text-black border border-black p-1.5 font-sans leading-tight";
+      ? "box-border w-full select-none break-words bg-white text-black p-2 font-sans leading-tight"
+      : "box-border w-full break-words bg-white text-black p-1.5 font-sans leading-tight";
 
     const fitted = (
       <FittedLabelGraphic
@@ -124,6 +127,7 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
         width={w}
         height={h}
         className={graphicClass}
+        frameClassName={frameClass}
         rotation={rotation}
       />
     );
