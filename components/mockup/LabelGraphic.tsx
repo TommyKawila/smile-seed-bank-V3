@@ -45,7 +45,7 @@ export function LabelGraphic({ data, className }: Props) {
     <div
       className={
         className ??
-        "box-border w-[280px] select-none border border-black bg-white p-1.5 font-sans leading-none text-black"
+        "box-border w-full select-none border border-black bg-white p-1.5 font-sans leading-tight text-black"
       }
       style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
     >

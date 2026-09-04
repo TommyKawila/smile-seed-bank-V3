@@ -267,6 +267,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-09-04 (Share mockup — ย่อฉลากให้ครบทุกฟิลด์)
+- **What:** ลิงก์แชร์ตัดฟิลด์ล่าง (งอก/วันที่รวบรวม/ที่อยู่) เพราะฟอนต์พิกเซลคงที่ในกล่องเล็กกว่าแอดมิน
+- **Logic:** วาดฉลากที่ความกว้างคงที่แล้ว `transform: scale` ให้พอดีกรอบสติ๊กเกอร์ 5.5×5.5 ซม. ทั้งแอดมินและหน้าแชร์
+- **ไฟล์:** `FittedLabelGraphic.tsx` · `VisualPreview.tsx` · `LabelGraphic.tsx` · `share/mockup/[id]/page.tsx` · `9_PROJECT_STATE.md`
+
 ### บันทึกการทำงาน — 2026-09-04 (Share mockup — ฉลากเลื่อนขวาถูกตัด)
 - **What:** ลิงก์แชร์วางฉลากนอกซองเพราะเซฟพิกเซลจอแอดมิน · ยึดตำแหน่งกับรูปซอง (ratio) และ clamp ให้อยู่ในแพ็ก 7×10
 - **Logic:** overlay อยู่ในกรอบ `object-contain` ของรูปซอง · พิกัดเก่าที่เป็น px ถ้าล้นจะดึงกลับเข้าซอง · ข้อความยาวขึ้นบรรทัดใหม่

@@ -7,11 +7,10 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type MutableRefObject,
 } from "react";
 import { Rnd } from "react-rnd";
-import { LabelGraphic } from "@/components/mockup/LabelGraphic";
+import { FittedLabelGraphic } from "@/components/mockup/FittedLabelGraphic";
 import { stickerPxFromCm, stickerOffsetInPack } from "@/lib/mockup-dimensions";
 import { DEFAULT_PACKAGE_SIZE_CM, type SeedLabelData } from "@/types/label";
 
@@ -115,13 +114,18 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
       [data.labelPosition, packW, packH, w, h]
     );
 
-    const labelStyle = useMemo(
-      () =>
-        ({
-          transform: `rotate(${rotation}deg)`,
-          transformOrigin: "center center",
-        }) as CSSProperties,
-      [rotation]
+    const graphicClass = interactive
+      ? "box-border w-full select-none break-words bg-white text-black border-2 border-dashed border-[#12463e]/60 p-2 font-sans leading-tight shadow-sm"
+      : "box-border w-full break-words bg-white text-black border border-black p-1.5 font-sans leading-tight";
+
+    const fitted = (
+      <FittedLabelGraphic
+        data={data}
+        width={w}
+        height={h}
+        className={graphicClass}
+        rotation={rotation}
+      />
     );
 
     const onDragStop = useCallback(
@@ -168,10 +172,6 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
       [ref]
     );
 
-    const graphicClass = interactive
-      ? "box-border h-full w-full select-none overflow-hidden break-words bg-white text-black border-2 border-dashed border-[#12463e]/60 p-2 font-sans leading-tight shadow-sm"
-      : "box-border h-full w-full overflow-hidden break-words bg-white text-black border border-black p-1.5 font-sans leading-tight";
-
     const overlay =
       packW > 0 ? (
         <div
@@ -198,13 +198,11 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
               className="z-10"
               style={{ zIndex: 10 }}
             >
-              <div style={labelStyle} className="h-full w-full overflow-hidden">
-                <LabelGraphic data={data} className={graphicClass} />
-              </div>
+              {fitted}
             </Rnd>
           ) : (
             <div
-              className="absolute z-10 overflow-hidden"
+              className="absolute z-10"
               style={{
                 left: packX,
                 top: packY,
@@ -212,9 +210,7 @@ export const VisualPreview = forwardRef<HTMLDivElement, Props>(
                 height: h,
               }}
             >
-              <div style={labelStyle} className="h-full w-full overflow-hidden">
-                <LabelGraphic data={data} className={graphicClass} />
-              </div>
+              {fitted}
             </div>
           )}
         </div>
