@@ -6,6 +6,9 @@ export type GfTraceabilityLaunchStatus = "preview" | "live";
 export const GF_TRACEABILITY_LAUNCH_STATUS: GfTraceabilityLaunchStatus =
   "preview";
 
+/** GF/SSB/2026-0904: stay preview until first lot import + separate written Live approval */
+export const GF_TRACEABILITY_AUDIT_RETENTION_YEARS = 3;
+
 export function isGfTraceabilityPreview(): boolean {
   return GF_TRACEABILITY_LAUNCH_STATUS === "preview";
 }

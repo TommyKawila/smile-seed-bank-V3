@@ -87,7 +87,7 @@ export const GREEN_FUTURE_GATE_EVIDENCE_SUBJECT =
 export const GREEN_FUTURE_GATE_EVIDENCE_RAW = `Subject: Internal — GF Regulatory & Demand Gate Evidence Checklist
 
 Smile Seed Bank — single evidence pack for GF/SSB/2026-0824 pilot
-Do not open marketing or customer deposits until Regulatory Gate items 1–6 are complete (or conditional path documented).
+Locked sequence (0904 reply): pack+label → authority GACP consult → marketing 4 items (Traceability ready, B2B/GACP page, claim verified by both parties, one customer order on a pilot strain) → customer 50% in hand → first PO → GF 50%. No transfer and no PO before that. See lib/green-future-po-gate.ts.
 
 ---
 
@@ -99,8 +99,10 @@ Gate status (update after each step)
 | Quotation received | received — PI ${GF_PROFORMA_20260826.invoiceNo}, valid to ${GF_PROFORMA_20260826.validUntil} |
 | Marketing open (approved wording) | pending |
 | Customer deposits open | pending |
-| Demand Gate (threshold met) | pending |
+| Demand Gate (one paid pilot order) | pending |
+| Customer 50% received | pending |
 | PO to Green Future | pending |
+| GF 50% paid | pending — only after customer 50% |
 
 ---
 
@@ -134,10 +136,13 @@ Decision after meeting
 
 ---
 
-Demand Gate (when deposits open)
+Demand Gate (locked 4 Sep 2026)
 
-- Threshold target from current PI (indicative): ${GF_PROFORMA_20260826.demandGateWithFivePctReserveThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} THB (GF advance ${GF_PROFORMA_20260826.advanceThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} + 5% reserve; recalc after corrected PI)
-- Deposits collected: ___ THB
+- Not a THB threshold from PI 20102618
+- Trigger: at least one customer order on a pilot strain (AF99 / AF143 / AF02 / AF22 / AF102) + 50% deposit received
+- PO qty = only lines whose customer deposits cover GF 50% for those lines (not the full 1,000-seed pilot from one pouch order)
+- Then PO · GF 50% only after that customer 50% is in hand, for covered lines only
+- Customer order: ___ · strain: ___ · deposit received: ___ THB
 - PO issued: date ___ · GF advance paid: ___
 
 Internal use only
@@ -172,8 +177,8 @@ export const GF_GATE_PHASE_LABELS: Record<
     en: "Customer deposits open",
   },
   demand_met: {
-    th: "ถึง Demand Gate threshold",
-    en: "Demand Gate threshold met",
+    th: "มีออเดอร์ลูกค้าสายนำร่อง + มัดจำ 50% เข้าแล้ว",
+    en: "Pilot-strain customer order + 50% deposit received",
   },
   po_issued: {
     th: "ออก PO ให้ Green Future แล้ว",

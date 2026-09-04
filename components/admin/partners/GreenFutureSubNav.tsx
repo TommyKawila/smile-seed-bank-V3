@@ -27,6 +27,16 @@ const items = [
     exact: false,
   },
   {
+    href: "/admin/partners/green-future/0904-reply-en",
+    label: "Reply 0904 (EN)",
+    exact: false,
+  },
+  {
+    href: "/admin/partners/green-future/0904-reply-th",
+    label: "Reply 0904 (TH)",
+    exact: false,
+  },
+  {
     href: "/admin/partners/green-future/0901-reply-en",
     label: "Reply 0901 (EN)",
     exact: false,

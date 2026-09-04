@@ -28,8 +28,8 @@
 ### D. ประชุม/ต่อรอง GF (เปิดค้างจาก draft 15 ส.ค.)
 12. [x] GACP = เอกสารสนับสนุน lot ไม่ใช่ certificate เมล็ด — GF ยืนยัน **0821**
 13. [x] ISTA / COA คิดแยก · Traceability Pack = planned — GF ยืนยัน **0821**
-14. [ ] ฉลาก V.2 ตามตัวอย่างกรมฯ (TH+EN) + อนุมัติเวอร์ชันเป็นลายลักษณ์อักษร — **ส่งจดหมายตอบ 0901 + รูป mock-up แล้ว (1 ก.ย.)** รอ GF ยืนยันฟิลด์ + heat seal
-15. [ ] MOQ / ราคา / landed / margin — รอ quotation test order หลังประชุม **26–28 ส.ค.**
+14. [ ] ฉลาก V.2.1 ตามตัวอย่างกรมฯ — Julia ขอเหลือ **วันที่รวบรวมอย่างเดียว** (ตัดนำเข้า) · ส่ง PDF กับจดหมาย 0904 · ทดสอบฉลากจริงรอปริ้นท์
+15. [ ] MOQ / ราคา / landed / margin — จดหมาย 0904 ยืนยัน **4×50 Option 1** แต่ไฟล์ Quotation V01 ยังเป็น PI 20102618 (มี COA AF102) — **รอฉบับแก้**
 
 ### E. หลัง GF ตอบ — คุมความเสี่ยงระยะยาว
 16. [ ] ตัดสินใจ: ซ่อน/ลดปุ่ม พ.พ.4 ร้านบน About สำหรับ B2B หรือเก็บไว้เฉพาะ retail/Shopee
@@ -81,28 +81,31 @@
 
 ## OPS — Green Future × SSB (2026-08-21)
 
-*ดีล documented seed programme · สถานะ: framework locked · รอ Regulatory Gate ก่อน PO*
+*ดีล documented seed programme · กรอบล็อก 4 ก.ย. 2026 · ห้ามโอน/ห้าม PO จนกว่าแพ็ก+ฉลาก+หน่วยงาน+การตลาด 4 ข้อ + มัดจำลูกค้า 50%*
 
-### สถานะล่าสุด (อัปเดต 2026-09-01)
+### สถานะล่าสุด (อัปเดต 2026-09-04)
 | รายการ | รายละเอียด |
 |--------|-------------|
-| จดหมาย GF ล่าสุด | **GF/SSB/2026-0901** (1 ก.ย.) — ยืนยัน recap · ส่งตัวอย่างฉลากกรมฯ · Lead Registration · รูปฟาร์ม · PI=Quotation |
-| สถานะดีล | กรอบกฎหมายปิดแล้ว · ยังไม่ใช่สัญญา · **ไม่ออก PO จนกว่า Regulatory Gate + Demand Gate** |
-| Gate ลำดับ | Validate → Market → Deposit → PO |
-| Regulatory Gate | ฉลาก V.2 ตรงตัวอย่างกรมฯ + อนุมัติเวอร์ชันเป็นลายลักษณ์อักษร + ซองผ่าน heat seal — **กรมฯ ไม่ประทับฉลาก** |
-| Demand Gate | รอ — threshold ตาม PI ปัจจุบัน 27,583 THB (ปรับอีกครั้งหลัง PI แก้ตรง Option 1/COA) |
+| จดหมาย GF ล่าสุด | **GF/SSB/2026-0904** (4 ก.ย., v1.2) — ยืนยัน Traceability Preview · Lead Registration (มีข้อยกเว้น) · ฉลาก V.2 ขอ PDF · ยืนยัน 4×50 Option 1 |
+| สถานะดีล | กรอบล็อก 4 ก.ย. · **ห้ามโอน/ห้าม PO** จนกว่าแพ็ก+ฉลาก + สอบถามหน่วยงาน GACP + การตลาด 4 ข้อครบ · **อย่าจ่ายตาม PI 20102618** |
+| Gate ลำดับ | แพ็ก+ฉลาก → สอบถามหน่วยงาน → การตลาด 4 ข้อ → มัดจำลูกค้า 50% เข้า → **PO เท่าที่มัดจำครอบคลุม GF 50% ของบรรทัดนั้น** → โอน GF 50% |
+| Regulatory Gate | ทดสอบซองจริง + ฉลาก V.2 อนุมัติสองฝ่ายและติดซองแล้ว — **กรมฯ ไม่ประทับฉลาก** |
+| หน่วยงาน GACP | สอบถามว่าผู้ปลูกใช้ **SGF Seeds + เอกสารล็อต/Traceability** ยื่น GACP ได้โดยไม่มีปัญหาเรื่องแหล่งเมล็ด/เอกสาร |
+| การตลาดพร้อม (ครบ 4) | (1) ระบบ Traceability พร้อมใช้จริง หน้าสาธารณะยัง Preview จนกว่าล็อตรอบแรก+อนุมัติ Live (2) หน้า B2B/GACP-ready มีข้อความเงื่อนไข (3) ระบบเคลมใช้ได้จริง ตรวจแล้วสองฝ่าย (4) มีลูกค้าสั่ง 1 ใน 5 สายนำร่อง |
+| Demand Gate | มีออเดอร์ลูกค้าสายนำร่อง + **มัดจำลูกค้า 50% เข้าบัญชีแล้ว** · PO **เท่าที่มัดจำครอบคลุม** (ไม่ออกทั้ง 1,000 เมล็ดจากออเดอร์ซองเดียว) · โอน GF 50% เฉพาะบรรทัดนั้น · ห้ามโอน GF ก่อนเงินลูกค้า |
 | Exclusivity | **Non-exclusive** รอบแรก · exclusive คุยทีหลัง |
 | คุณภาพผูกพัน | งอก ≥80% · บริสุทธิ์ ≥99% ต่อ PO · ค่าบนฉลาก = ค่าล็อตจริง ไม่ใช่ตัวอย่าง 100% |
 | ISTA 4 สาย | AF99, AF143, AF02, AF22 — ยังรอผล · ไม่บล็อก Option 1 |
-| AF102 | **มีสต็อก** ใช้ใน test order ได้ |
-| Lead Protection | GF ขอให้ Smile เสนอ Lead Registration — **ร่างในจดหมายตอบ 0901 แล้ว** |
+| AF102 | **มีสต็อก** ใช้ใน test order ได้ · COA AF102 **ไม่ใช่เงื่อนไขเริ่ม Option 1** |
+| Lead Protection | **รับในหลักการ (0904)** · ข้อยกเว้นลูกค้าเดิม/ติดต่อเองก่อนลงทะเบียน · รายละเอียดใส่ Distribution Agreement |
 | ประชุม | **28 ส.ค. 2026** — Recap TH/EN ส่งแล้ว (31 ส.ค.) |
-| Traceability | Preview `/traceability` · รอ GF ตอบจดหมาย 31 ส.ค. |
-| แพ็กที่เลือก | **4×50 = 20 ซองซีล** · Option 1 — ขอ PI แก้ใน 0901 reply |
-| ซอง SSB | GF รับ 10 ซองแล้ว · ตรวจ heat seal + ฉลาก 5.5×5.5 |
-| ฉลาก V.2 | Mockup ส่งแล้ว (1 ก.ย.) · รอ GF ยืนยันฟิลด์ + heat seal + อนุมัติเวอร์ชัน |
-| ฟอร์มเคลม | **`/claim/seeds` เสร็จ (preview)** + **admin inbox** `/admin/partners/green-future/claims` · อัปโหลด Drive (`GF Seed Claims`) + fallback Supabase · submit → `gf_seed_claim_submissions` |
-| เอกสาร inbound | `gf-ssb-2026-0901-confirmation-en.pdf` · `gf-doa-label-fields-af99-sample.pdf` · `doa-controlled-seed-label-guide.pdf` |
+| Traceability | Preview จนกว่า (ก) นำเข้าล็อตรอบแรกแล้วทดสอบ และ (ข) GF อนุมัติ Live เป็นลายลักษณ์อักษร · Public+Restricted รับแล้ว · disclaimer รอ Julia ตรวจ EN/TH · PDF ต้นฉบับ GF ลงนาม SSB ห้ามแก้/ลงนาม · audit ≥ 3 ปี · ล็อตต้องตรงฉลาก/PDF/CSV/lookup |
+| แพ็กที่เลือก | **4×50 = 20 ซองซีล** · Option 1 · COA ทางการตามมาทีหลัง — **รอ quotation ฉบับแก้** |
+| ซอง SSB | GF ยืนยันรับ **12** ซอง (SSB ส่ง 10) · กำลังทดสอบซีล · ฉลาก 5.5×5.5 รอปริ้นท์ mock-up ที่อนุมัติ |
+| ฉลาก V.2.1 | Julia 4 ก.ย.: ฉลากโอเค แต่ตัด “นำเข้า” เหลือ **วันที่รวบรวม** · ส่ง PDF + ลิงก์แชร์ (ไม่ล็อกอิน) · ทดสอบตำแหน่งฉลากรอปริ้นท์ |
+| รูปฟาร์ม | Julia ให้เลือกจาก Presentation · ขอ 6 ภาพ (A,E,B,C,D,F) จาก `gf-seed-production-process-th.pdf` · อนุมัติรายภาพ + ลายน้ำ GF |
+| ฟอร์มเคลม | **`/claim/seeds` เสร็จ (preview)** + **admin inbox** `/admin/partners/green-future/claims` |
+| เอกสาร inbound | `gf-ssb-2026-0904-confirmation-en.pdf` · `gf-gacp-traceability-th-en.pdf` · `gf-seed-production-process-th.pdf` · `gf-quotation-v01-tmy-agro-20102618.pdf` (ยังเป็น PI 26 ส.ค.) |
 
 ### งานหลังประชุม 28 ส.ค. — สถานะ 31 ส.ค. 2026
 | รายการ | สถานะ | หมายเหตุ |
@@ -113,25 +116,30 @@
 | ฟอร์มเคลมเมล็ดบนเว็บ Smile | **เสร็จ (preview)** | wizard + upload + submit ทดสอบแล้ว · Drive env ตั้งแล้ว · ยังไม่เปิดลูกค้าจนกว่า Regulatory Gate |
 | ลิงก์เก็บ log อุณหภูมิ/ความชื้นตู้เก็บเมล็ด | **ยังไม่ทำ** | ช่วงแรก: รูป Hygrometer รายวัน → Google Drive ที่แชร์ |
 | สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability | **ยังไม่ทำ** | รอซองติดฉลาก V.2 จริง |
-| ฉลากติดหลังซอง **V.2** TH+EN ตามตัวอย่างกรมฯ | **ส่ง mock-up แล้ว** | จดหมายตอบ 0901 + รูป Package Mockup V.2 ส่ง GF แล้ว (1 ก.ย.) · รอยืนยันฟิลด์ + heat seal |
+| ฉลากติดหลังซอง **V.2** TH+EN ตามตัวอย่างกรมฯ | **ส่ง mock-up แล้ว · GF ขอ PDF** | จดหมาย 0904 ขอ PDF ไม่ใช้ลิงก์ล็อกอิน · ทดสอบฉลากจริงรอปริ้นท์ mock-up |
 
 ### งานถัดไป (GF) — รอตอบ / ยังไม่ทำ
 - [x] ประชุมกับจูเลีย — 28 ส.ค. · Recap TH/EN
 - [x] ส่ง Recap ให้จูเลียแปล + อีเมล EN ยืนยัน — **31 ส.ค.**
 - [x] ส่งจดหมาย Traceability review + ลิงก์ https://www.smileseedbank.com/traceability — **31 ส.ค.**
 - [x] ส่งซองตัวอย่าง 10 ซอง — **31 ส.ค.**
-- [ ] รอ GF ตอบ Traceability (disclaimer + ชั้นข้อมูล + ไฟล์ล็อต + วิธี QR/บัญชี + อนุมัติเทมเพลต)
+- [x] รอ GF ตอบ Traceability — **0904 รับ Preview + Public/Restricted** · disclaimer รอ Julia ตรวจ EN/TH · Live ต้องมีล็อตรอบแรก + อนุมัติลายลักษณ์อักษร
 - [x] รับตัวอย่างฉลากกรมฯ จาก GF (0901) → ออกแบบฉลาก V.2 mockup (TH+EN)
 - [x] ส่งจดหมายตอบ GF/SSB/2026-0901 + รูป Package Mockup V.2 — **1 ก.ย. 2026**
+- [x] รับ GF/SSB/2026-0904 + แผนภาพ GACP + ชุดภาพกระบวนการ + Quotation V01 — **3–4 ก.ย. 2026**
 - [x] ฟอร์มเคลมเมล็ด `/claim/seeds` — wizard + Drive upload + submit (preview, ทดสอบแล้ว)
 - [x] Admin inbox คำขอเคลม `/admin/partners/green-future/claims`
-- [ ] ทำลิงก์/โฟลเดอร์ log Temp + RH ตู้เก็บเมล็ด (รูป Hygrometer รายวัน)
+- [ ] ส่งจดหมายตอบ 0904 EN+TH + **แนบ Label V.2.1 PDF** (วันที่รวบรวมอย่างเดียว) + ลิงก์ `/share/mockup/{id}`
+- [ ] ตอบ Julia LINE: ยืนยันฉลาก + รายการรูป 6 ภาพจาก Presentation (`lib/green-future-photo-request.ts`)
+- [ ] ทำลิงก์/โฟลเดอร์ log Temp + RH ตู้เก็บเมล็ด (รูป Hygrometer รายวัน) — GF ระบุเก็บสำเร็จรูป **+5°C**
 - [ ] สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability (หลังมีซองติดฉลาก)
-- [ ] รอผลตรวจ heat seal + ฉลากจาก GF
-- [ ] รับ PI แก้ 4×50 + Option 1 · reconfirm สต็อกก่อน PO
-- [ ] GF ยืนยัน Lead Registration เป็นลายลักษณ์อักษร
-- [ ] Regulatory Gate ผ่าน → เปิด marketing ถ้อยคำอนุมัติ → รับมัดจำลูกค้าแบบมีเงื่อนไข
-- [ ] Demand Gate ถึง threshold → PO + มัดจำ GF 50%
+- [ ] รอผลตรวจ heat seal (12 ซอง) + ฉลากจาก GF (หลัง GF พิมพ์ mock-up ที่อนุมัติ)
+- [ ] รับ PI/Quotation **Option 1 ฉบับแก้** (THB อายุ 14 วัน · ไม่คิด COA AF102 เป็นเงื่อนไขเริ่ม) · reconfirm สต็อกก่อน PO · **อย่าใช้ 20102618**
+- [x] GF ยืนยัน Lead Registration ในหลักการ (0904) — ข้อยกเว้นลูกค้าเดิม · รายละเอียดใน Distribution Agreement
+- [ ] แพ็ก+ฉลากเสร็จ (ซีล + V.2 อนุมัติและติดซองจริง)
+- [ ] สอบถามหน่วยงาน: ผู้ปลูกใช้ SGF Seeds + เอกสารประกอบยื่น GACP ได้
+- [ ] การตลาด 4 ข้อ: Traceability พร้อมใช้ · หน้า B2B/GACP มีเงื่อนไข · เคลมตรวจแล้วสองฝ่าย · มีลูกค้าสั่ง 1 ใน 5 สาย
+- [ ] มัดจำลูกค้า 50% เข้าแล้ว → PO **เท่าที่มัดจำครอบคลุม GF 50% ของบรรทัดนั้น** → โอน GF 50% (ห้ามกลับลำดับ · ห้าม PO ทั้ง 1,000 จากออเดอร์ซองเดียว)
 - [ ] ทดสอบซอง+ฉลากผ่าน → written approval เวอร์ชัน → ส่งซองสำหรับ 20 หน่วย (+สำรอง)
 - [ ] ตรวจคลัง +5–+10°C, RH ≤50%, electronic log ก่อนของถึง
 - [ ] หลังส่งของสำเร็จ → Distribution Agreement + Lead Protection
@@ -139,6 +147,7 @@
 ### เอกสารอ้างอิง (B2B email folder)
 | Ref | ไฟล์ / แหล่ง |
 |-----|----------------|
+| GF/SSB/2026-0904 | `gf-ssb-2026-0904-confirmation-en.pdf` · `gf-gacp-traceability-th-en.pdf` · `gf-seed-production-process-th.pdf` · `gf-quotation-v01-tmy-agro-20102618.pdf` (**ยังเป็น PI 20102618 วันที่ 26 ส.ค. ไม่ใช่ Option 1**) |
 | GF/SSB/2026-0901 | `gf-ssb-2026-0901-confirmation-en.pdf` · `gf-doa-label-fields-af99-sample.pdf` · `doa-controlled-seed-label-guide.pdf` |
 | GF/SSB/2026-0824 | `data/partners/green-future/documents/gf-ssb-2026-0824-response-en.pdf` · Admin `/api/admin/partner-docs/green-future/gf-ssb-2026-0824-response-en.pdf` |
 | Pro Forma 20102618 (26 ส.ค.) | `data/partners/green-future/documents/gf-proforma-20102618-20260826.pdf` · Admin `/api/admin/partner-docs/green-future/gf-proforma-20102618-20260826.pdf` |
@@ -150,6 +159,7 @@
 ### เอกสารตอบกลับ SSB (Dispatcher)
 | Template | ไฟล์ code |
 |----------|-----------|
+| Reply to GF/SSB/2026-0904 | `lib/green-future-0904-reply-letter.ts` · `/admin/partners/green-future/0904-reply-en` · `.../0904-reply-th` |
 | Reply to GF/SSB/2026-0824 | `lib/green-future-0824-reply-letter.ts` (quotation + regulatory review — not PO) |
 | Reply 0824 (Thai evidence) | ชุดเดียวกัน — ปุ่ม Dispatcher |
 | Julia meeting brief (internal) | `lib/green-future-julia-meeting-brief.ts` |
@@ -162,8 +172,8 @@
 
 ### Test order ที่ล็อกในจดหมายตอบ (รูปแบบเสนอขอราคา — ไม่ใช่ PO)
 - 5 สาย × 200 เมล็ด รวม AF102 · **4×50 (20 ซอง)** · Option 1 (internal lot test ปล่อยของ)
-- มัดจำ GF 50% **หลัง PO เท่านั้น** · Demand Gate threshold ปัจจุบัน 27,583 THB ก่อนออก PO
-- ค่าแพ็ก 20 ซองตามตาราง GF ≈ 400 บาท (ขอให้ระบุใน quotation)
+- **ห้ามโอน GF** จนกว่าแพ็ก+ฉลาก+หน่วยงาน+การตลาด 4 ข้อครบ และ**มัดจำลูกค้า 50% เข้าแล้ว** จึง PO **เท่าที่มัดจำครอบคลุม** แล้วโอน GF 50% ของบรรทัดนั้น · กรอบล็อกที่ `lib/green-future-po-gate.ts`
+- ค่าแพ็ก 20 ซอง: 0904 ให้ระบุแยกหรือระบุว่ารวมในราคาทดลอง · PI 20102618 ใส่ 0 (ข้อยกเว้นครั้งเดียว)
 
 ---
 
@@ -256,6 +266,21 @@
 - **What:** เพิ่มเอกสารเสนอใช้แพ็กเกจ Smile Seed Bank เดิมชั่วคราวใน first-stage test order
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
+
+### บันทึกการทำงาน — 2026-09-04 (Julia — ฉลากวันที่รวบรวม + เลือกรูป Presentation)
+- **What:** ฉลาก V.2.1 ตัดคำว่านำเข้า เหลือวันที่รวบรวม · ล็อกรายการรูป 6 ภาพจากชุดกระบวนการผลิตเมล็ด ให้จูเลียส่งไฟล์แยก
+- **Logic:** เมล็ดผลิตในไทยจึงไม่ใช้ฟิลด์นำเข้า · รูป A/E จากสไลด์ 01, B จาก 06, C จาก 10 (ข้อ C = พื้นที่ในสถานที่ GACP), D จาก 11, F จาก 12 · ไม่ขอ hygiene/ดอกใกล้ในรอบแรก · ยังต้องอนุมัติรายภาพ + ลายน้ำ
+- **ไฟล์:** `LabelGraphic.tsx` · `LabelForm.tsx` · `lib/green-future-photo-request.ts` · `lib/green-future-0904-reply-letter.ts` · `lib/green-future-0904.ts` · `mockup/page.tsx` · `9_PROJECT_STATE.md`
+
+### บันทึกการทำงาน — 2026-09-04 (ล็อกลำดับก่อนโอน/PO)
+- **What:** ล็อกกรอบทำงาน — ห้ามโอน ห้าม PO จนกว่าแพ็ก+ฉลากเสร็จ + สอบถามหน่วยงาน GACP (ผู้ปลูกใช้ SGF Seeds + เอกสารประกอบได้) + การตลาด 4 ข้อครบ แล้วมีมัดจำลูกค้า 50% จึงโอน GF 50%
+- **Logic:** การตลาด 4 ข้อ = ระบบ Traceability พร้อมใช้จริง (หน้าสาธารณะยัง Preview จนกว่าล็อตรอบแรก+อนุมัติ Live) · หน้า B2B/GACP มีเงื่อนไข · เคลมใช้ได้จริงตรวจแล้วสองฝ่าย · มีลูกค้าสั่ง 1 ใน 5 สายนำร่อง · **PO เท่าที่มัดจำลูกค้าครอบคลุม GF 50% ของบรรทัดนั้น** · ใบเสนอราคาใช้วางแผนเท่านั้น
+- **ไฟล์:** `lib/green-future-po-gate.ts` · `lib/green-future-0904-reply-letter.ts` · `lib/green-future-0904.ts` · `lib/green-future-gate-evidence.ts` · `lib/green-future-conditional-deposit-flow.ts` · `9_PROJECT_STATE.md`
+
+### บันทึกการทำงาน — 2026-09-04 (GF 0904 — รับจดหมาย + วิเคราะห์ + ร่างตอบ)
+- **What:** เก็บต้นฉบับ GF/SSB/2026-0904 + แผนภาพ TH GACP + ชุดภาพกระบวนการผลิต + Quotation V01 · ล็อกข้อเท็จจริง · ร่างจดหมายตอบ EN/TH (ไม่ใช่ PO)
+- **Logic:** Traceability คง Preview จนกว่าล็อตรอบแรก + อนุมัติ Live · Lead Registration รับพร้อมข้อยกเว้นลูกค้าเดิม · ฉลากส่งเป็น PDF ไม่ใช้ลิงก์ล็อกอิน · **Quotation V01 ยังเป็น PI 20102618 (มี COA AF102) ไม่ใช่ Option 1 ตามจดหมาย** · ซองตัวอย่าง GF นับ 12 · รูปต้องอนุมัติรายภาพ + ลายน้ำ GF · ข้อ C = พื้นที่ในสถานที่ GACP ไม่ใช่ไลน์เดี่ยว · แผนภาพ GACP = สถานที่ ไม่ใช่ใบรับรองล็อตเมล็ด
+- **ไฟล์:** `lib/green-future-0904.ts` · `lib/green-future-0904-reply-letter.ts` · `lib/green-future-inbound-docs.ts` · `0904-reply-en/page.tsx` · `0904-reply-th/page.tsx` · `GreenFutureSubNav.tsx` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx` · `data/partners/green-future/documents/gf-ssb-2026-0904-confirmation-en.pdf` · `gf-gacp-traceability-th-en.pdf` · `gf-seed-production-process-th.pdf` · `gf-quotation-v01-tmy-agro-20102618.pdf` · `9_PROJECT_STATE.md`
 
 ### บันทึกการทำงาน — 2026-09-01 (GF 0901 — ฉลาก V.2, จดหมายตอบ, เคลม preview)
 - **What:** เก็บ PDF GF/SSB/2026-0901 + ตัวอย่างฉลากกรมฯ · จดหมายตอบ EN/TH · ฉลาก mockup V.2 สองภาษา · `/claim/seeds` preview · อัปเดต Regulatory Gate

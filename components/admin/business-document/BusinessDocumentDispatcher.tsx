@@ -14,6 +14,12 @@ import {
   GREEN_FUTURE_0901_REPLY_TH_SUBJECT,
 } from "@/lib/green-future-0901-reply-letter";
 import {
+  GREEN_FUTURE_0904_REPLY_RAW,
+  GREEN_FUTURE_0904_REPLY_SUBJECT,
+  GREEN_FUTURE_0904_REPLY_TH_RAW,
+  GREEN_FUTURE_0904_REPLY_TH_SUBJECT,
+} from "@/lib/green-future-0904-reply-letter";
+import {
   GREEN_FUTURE_CLARIFICATION_RAW,
   GREEN_FUTURE_CLARIFICATION_SUBJECT,
 } from "@/lib/green-future-clarification-letter";
@@ -307,6 +313,24 @@ export function BusinessDocumentDispatcher() {
     );
   }, [loadTemplate]);
 
+  const handleLoadGreenFuture0904Reply = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_0904_REPLY_RAW,
+      GREEN_FUTURE_0904_REPLY_SUBJECT,
+      "0904 reply loaded",
+      "Attach Label V.2.1 PDF (collection date only) + photo pick list. Locked pay/PO sequence."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFuture0904ReplyTh = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_0904_REPLY_TH_RAW,
+      GREEN_FUTURE_0904_REPLY_TH_SUBJECT,
+      "0904 Thai reply loaded",
+      "Thai evidence copy — attach with English original + Label V.2 PDF."
+    );
+  }, [loadTemplate]);
+
   const handleLoadGreenFuture0901Reply = useCallback(() => {
     loadTemplate(
       GREEN_FUTURE_0901_REPLY_RAW,
@@ -542,6 +566,8 @@ export function BusinessDocumentDispatcher() {
           }
           onLoadGreenFuture0824Reply={handleLoadGreenFuture0824Reply}
           onLoadGreenFuture0824ReplyTh={handleLoadGreenFuture0824ReplyTh}
+          onLoadGreenFuture0904Reply={handleLoadGreenFuture0904Reply}
+          onLoadGreenFuture0904ReplyTh={handleLoadGreenFuture0904ReplyTh}
           onLoadGreenFuture0901Reply={handleLoadGreenFuture0901Reply}
           onLoadGreenFuture0901ReplyTh={handleLoadGreenFuture0901ReplyTh}
           onLoadGreenFutureJuliaBrief={handleLoadGreenFutureJuliaBrief}

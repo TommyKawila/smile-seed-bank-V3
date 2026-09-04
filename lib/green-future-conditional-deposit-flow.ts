@@ -52,22 +52,23 @@ Issue PO and pay Green Future 50% advance only when:
 
 | Check | Rule |
 | --- | --- |
-| Customer deposits collected | ≥ GF 50% advance on pilot seed cost + approved packing/processing fee + modest reserve (default 5% buffer) |
-| GF confirmation | Written quotation + availability + approved label version + pack format |
-| Regulatory Gate | Passed (see evidence checklist) |
+| Packaging + label | Physical pouch test + Label V.2 written approval by both parties |
+| Authority GACP | Written consult: grower can use SGF Seeds + supporting docs for GACP application |
+| Marketing ready | Traceability system ready · B2B/GACP page with conditions · claim verified by both parties |
+| Demand Gate | At least one customer order on a pilot strain + customer 50% deposit in hand |
+| PO quantity | Only strain/qty whose deposits cover GF 50% of those lines — not the full 1,000-seed pilot from one order |
+| GF 50% | Paid only after that customer 50% is received — never before |
 
-Pilot reference from PI ${GF_PROFORMA_20260826.invoiceNo} (indicative — recalc after correction/confirmation):
+Locked 4 Sep 2026 — see lib/green-future-po-gate.ts. PI ${GF_PROFORMA_20260826.invoiceNo} is planning only (indicative lines below):
 
 | Item | Indicative THB |
 | --- | --- |
 | Seed cost 1,000 @ 44.21/seed | ${GF_PROFORMA_20260826.seedSubtotalThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} |
 | COA listed in current PI | ${GF_PROFORMA_20260826.coaSubtotalThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} |
-| GF 50% advance | ${GF_PROFORMA_20260826.advanceThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} |
+| GF 50% advance (indicative, old PI) | ${GF_PROFORMA_20260826.advanceThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} |
 | Packing 20 pouches | 0.00 (one-time exception) |
-| Reserve 5% | ${(GF_PROFORMA_20260826.demandGateWithFivePctReserveThb - GF_PROFORMA_20260826.advanceThb).toLocaleString("en-US", { minimumFractionDigits: 2 })} |
-| **Deposit threshold target** | **${GF_PROFORMA_20260826.demandGateWithFivePctReserveThb.toLocaleString("en-US", { minimumFractionDigits: 2 })} (round up to 27,583)** |
 
-Current PI still needs written alignment on 4×50, Option 1 mapping, and AF102 COA charge. Adjust threshold after corrected PI.
+Cash-planning only — not a payment trigger. Recalc GF 50% from the Option 1 quotation when issued. Still: no GF transfer until customer 50% is in hand.
 
 ---
 
@@ -103,7 +104,11 @@ G) Internal checklist before opening deposits
 - [ ] Label version V__ approved in writing
 - [ ] GF quotation PDF saved
 - [ ] Approved marketing text published (web = email = social)
-- [ ] Threshold calculated from final quotation
+- [ ] Authority GACP consult recorded
+- [ ] Traceability system ready (Preview until first lot + written Live)
+- [ ] Claim process verified by both parties
+- [ ] At least one pilot-strain customer order + 50% received before GF 50%
+- [ ] PO qty covered by those deposits (not full 1,000 from one pouch)
 - [ ] Round close date set
 - [ ] Refund policy on checkout / RFQ form
 - [ ] Storage ready (+5 to +10°C, RH log)
@@ -112,7 +117,7 @@ Prepared by Smile Seed Bank / T.M.Y Agro Trade Limited Partnership
 Internal use only
 `;
 
-/** Default pilot threshold — rounded up from PI 20102618 advance + 5% reserve */
+/** Indicative GF 50% from PI 20102618 — not a payment trigger. See lib/green-future-po-gate.ts */
 export const GF_PILOT_DEPOSIT_THRESHOLD_THB = 27583;
 
 export const GF_PILOT_SEED_COUNT = 1000;

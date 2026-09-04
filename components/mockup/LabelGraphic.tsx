@@ -102,8 +102,8 @@ export function LabelGraphic({ data, className }: Props) {
           fs={fs}
         />
         <Row
-          th="วันที่รวบรวม/นำเข้า"
-          en="Collection/Import"
+          th="วันที่รวบรวม"
+          en="Date of Collection"
           value={data.collectedDate}
           fs={fs}
         />

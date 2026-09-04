@@ -85,7 +85,7 @@ export function LabelForm() {
         </Field>
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <Field label="Collection/Import (MM/YYYY)">
+        <Field label="Date of Collection / วันที่รวบรวม (MM/YYYY)">
           <Input
             value={data.collectedDate}
             onChange={(e) => setField("collectedDate", e.target.value)}
