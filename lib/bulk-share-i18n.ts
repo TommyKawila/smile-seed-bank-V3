@@ -54,6 +54,13 @@ type Dict = {
   supremeWhat: string;
   explain: string;
   seedsPerStrain: string;
+  tabPhoto: string;
+  tabAuto: string;
+  tabFf: string;
+  highVolumeTiers: string;
+  formatTabsLabel: string;
+  strainsTitleBoth: string;
+  noStrainsInTab: string;
 };
 
 export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
@@ -113,6 +120,13 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     supremeWhat: "Supreme คืออะไร?",
     explain: "อธิบาย",
     seedsPerStrain: "เมล็ด / สาย",
+    tabPhoto: "Photo",
+    tabAuto: "Auto",
+    tabFf: "FF",
+    highVolumeTiers: "ปริมาณสูง (2,500+ เมล็ด / สาย)",
+    formatTabsLabel: "ประเภทเมล็ด",
+    strainsTitleBoth: "เลือกสายพันธุ์",
+    noStrainsInTab: "ไม่มีสายในหมวดนี้",
   },
   en: {
     exclusive: "Private offer",
@@ -171,6 +185,13 @@ export const BULK_SHARE_COPY: Record<BulkShareLang, Dict> = {
     supremeWhat: "What is Supreme?",
     explain: "Explain",
     seedsPerStrain: "seeds / strain",
+    tabPhoto: "Photo",
+    tabAuto: "Auto",
+    tabFf: "FF",
+    highVolumeTiers: "High volume (2,500+ seeds / strain)",
+    formatTabsLabel: "Seed format",
+    strainsTitleBoth: "Choose strains",
+    noStrainsInTab: "No strains in this category",
   },
 };
 

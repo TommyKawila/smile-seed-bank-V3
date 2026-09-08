@@ -14,12 +14,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { BulkShareSgStrains } from "@/components/share/bulk/BulkShareSgStrains";
-import { BulkShareSgfStrains } from "@/components/share/bulk/BulkShareSgfStrains";
-import {
-  BulkShareStrainSearch,
-  type StrainSearchEntry,
-} from "@/components/share/bulk/BulkShareStrainSearch";
+import { BulkSharePriceTable } from "@/components/share/bulk/BulkSharePriceTable";
+import { BulkShareStrainCatalog } from "@/components/share/bulk/BulkShareStrainCatalog";
 import {
   BULK_SHARE_MIN_QTY,
   cartLineKey,
@@ -28,9 +24,8 @@ import {
   type BulkShareStrainPick,
   type SerializedPricedBook,
 } from "@/lib/bulk-share-order";
-import { SEED_FORMAT_LABEL, SEEDS_GENETICS_SLUG } from "@/lib/bulk-seeds-book";
-import { SGF_SEEDS_SHARE_TAGLINE, sgfStrainsGrouped } from "@/lib/sgf-seeds-share";
-import { BULK_SHARE_COPY, BULK_SHARE_LANG_KEY, localizeQtyDescription, type BulkShareLang } from "@/lib/bulk-share-i18n";
+import { SEED_FORMAT_LABEL } from "@/lib/bulk-seeds-book";
+import { BULK_SHARE_COPY, BULK_SHARE_LANG_KEY, type BulkShareLang } from "@/lib/bulk-share-i18n";
 import { GfGateNoticeBanner } from "@/components/storefront/wholesale/GfGateNoticeBanner";
 import type { SgCategorySlug, SgCatalogStrain } from "@/lib/seeds-genetics-catalog";
 import type { PartnerStrainRecord } from "@/types/partner-catalog";
@@ -68,12 +63,12 @@ function LangToggle({
   onChange: (l: BulkShareLang) => void;
 }) {
   return (
-    <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs shadow-sm">
+    <div className="inline-flex rounded-lg border border-border bg-slate-900/60 p-0.5 text-xs shadow-sm">
       <button
         type="button"
         onClick={() => onChange("th")}
         className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
-          lang === "th" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-800"
+          lang === "th" ? "bg-emerald-500 text-slate-950" : "text-muted-foreground hover:text-foreground"
         }`}
       >
         ไทย
@@ -82,7 +77,7 @@ function LangToggle({
         type="button"
         onClick={() => onChange("en")}
         className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
-          lang === "en" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-800"
+          lang === "en" ? "bg-emerald-500 text-slate-950" : "text-muted-foreground hover:text-foreground"
         }`}
       >
         EN
@@ -160,43 +155,25 @@ export function BulkShareOrderClient({
     });
   }, []);
 
-  const strainEntries = useMemo(() => {
-    const entries: StrainSearchEntry[] = [];
-    if (sgfStrains.length > 0) {
-      for (const g of sgfStrainsGrouped(sgfStrains)) {
-        for (const s of g.strains) {
-          const category = g.bucket;
-          entries.push({
-            id: `gf-${s.id}`,
-            supplierSlug: "green-future",
-            supplierLabel: "SGF Seeds",
-            strainName: s.strainName,
-            category,
-          });
-        }
-      }
+  const strainEntries = useMemo(
+    () => sgfStrains.length > 0 || sgGroups.length > 0,
+    [sgfStrains.length, sgGroups.length]
+  );
+
+  const cartSeedBySupplier = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const line of cart) {
+      map.set(line.supplierSlug, (map.get(line.supplierSlug) ?? 0) + line.qty);
     }
-    for (const g of sgGroups) {
-      for (const s of g.strains) {
-        const category = s.primaryCategory;
-        entries.push({
-          id: `sg-${s.id}`,
-          supplierSlug: "seeds-genetics",
-          supplierLabel: "Seeds Genetics",
-          strainName: s.name,
-          category,
-        });
-      }
-    }
-    return entries.sort((a, b) => a.strainName.localeCompare(b.strainName));
-  }, [sgfStrains, sgGroups]);
+    return map;
+  }, [cart]);
 
   const cartQtyByKey = useMemo(
     () => new Map(cart.map((l) => [l.key, l.qty])),
     [cart]
   );
 
-  const hasStrains = strainEntries.length > 0;
+  const hasStrains = strainEntries;
 
   const updateQty = useCallback((key: string, raw: number) => {
     setCart((prev) =>
@@ -286,16 +263,16 @@ export function BulkShareOrderClient({
 
   if (refNumber) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-16 sm:px-6">
+      <main className="min-h-screen bg-background px-4 py-16 sm:px-6">
         <div className="mx-auto mb-8 flex max-w-lg justify-end">
           <LangToggle lang={lang} onChange={changeLang} />
         </div>
         <div className="mx-auto max-w-lg space-y-4 text-center">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-600">{t.thanksEyebrow}</p>
-          <h1 className="text-2xl font-semibold text-slate-900">{t.thanksTitle}</h1>
-          <p className="text-sm text-slate-600">{t.thanksBody}</p>
-          <p className="font-mono text-lg font-semibold text-slate-900">{refNumber}</p>
-          <p className="text-xs text-slate-400">{t.thanksKeep}</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-400">{t.thanksEyebrow}</p>
+          <h1 className="text-2xl font-semibold text-foreground">{t.thanksTitle}</h1>
+          <p className="text-sm text-muted-foreground">{t.thanksBody}</p>
+          <p className="font-mono text-lg font-semibold text-foreground">{refNumber}</p>
+          <p className="text-xs text-muted-foreground">{t.thanksKeep}</p>
         </div>
       </main>
     );
@@ -303,126 +280,68 @@ export function BulkShareOrderClient({
 
   return (
     <>
-      <main className="min-h-screen bg-slate-50 px-4 py-10 pb-28 sm:px-6">
+      <main className="min-h-screen bg-background px-4 py-10 pb-28 sm:px-6">
         <div className="mx-auto max-w-3xl space-y-8">
           <div className="flex justify-end">
             <LangToggle lang={lang} onChange={changeLang} />
           </div>
           <header className="space-y-2 text-center">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{t.exclusive}</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
-            <p className="text-sm text-slate-500">{t.pricePerSeed}</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t.exclusive}</p>
+            <h1 className="bg-gradient-to-r from-white to-emerald-400 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">
+              {title}
+            </h1>
+            <p className="text-sm text-muted-foreground">{t.pricePerSeed}</p>
+            <p className="text-xs text-muted-foreground">
               {t.expires(expireDate)} · {t.tapToCart}
             </p>
-            <p className="mx-auto mt-3 max-w-xl rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
+            <p className="mx-auto mt-3 max-w-xl rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-100">
               {t.catalogDisclaimer}
             </p>
           </header>
 
           {sgfStrains.length > 0 ? (
-            <GfGateNoticeBanner showNonBinding />
+            <GfGateNoticeBanner showNonBinding variant="dark" />
           ) : null}
 
           {pricedBooks.map((book) => (
-            <section
+            <BulkSharePriceTable
               key={book.supplierSlug}
-              className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-            >
-              <div className="border-b border-slate-100 px-4 py-3">
-                <h2 className="text-sm font-semibold text-slate-900">{book.supplierLabel}</h2>
-                {book.supplierSlug === "green-future" ? (
-                  <>
-                    <p className="mt-1 text-xs text-slate-500">{SGF_SEEDS_SHARE_TAGLINE}</p>
-                    <p className="text-xs text-slate-500">{t.sgfFormats}</p>
-                  </>
-                ) : null}
-                {book.supplierSlug === SEEDS_GENETICS_SLUG ? (
-                  <p className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium leading-snug text-sky-950">
-                    {t.sgImportNote}
-                  </p>
-                ) : null}
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-400">
-                    <th className="px-4 py-2 font-medium">{t.qtyCol}</th>
-                    <th className="px-4 py-2 text-right font-medium">{t.priceCol}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {book.rows.map((row) => (
-                    <tr key={row.minQty} className="border-b border-slate-50 last:border-0">
-                      <td className="px-4 py-2.5">
-                        <p className="font-medium text-slate-800">{row.label}</p>
-                        <p className="text-xs text-slate-500">
-                          {localizeQtyDescription(row.qtyDescription, lang)}
-                        </p>
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
-                        <p className="font-mono text-sm font-semibold text-slate-900">
-                          {fmtThb(row.sellThb)}
-                        </p>
-                        {row.sellEur > 0 ? (
-                          <p className="font-mono text-[11px] text-slate-400">{fmtEur(row.sellEur)}</p>
-                        ) : null}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
+              book={book}
+              lang={lang}
+              cartSeedCount={cartSeedBySupplier.get(book.supplierSlug) ?? 0}
+            />
           ))}
 
           {hasStrains ? (
-            <BulkShareStrainSearch
-              entries={strainEntries}
+            <BulkShareStrainCatalog
+              sgfStrains={sgfStrains}
+              sgGroups={sgGroups}
+              onAddStrain={addStrain}
+              focusedKey={focusedKey}
+              cartQtyByKey={cartQtyByKey}
+              lang={lang}
               query={strainQuery}
               onQueryChange={setStrainQuery}
-              onAddStrain={addStrain}
-              cartQtyByKey={cartQtyByKey}
-              focusedKey={focusedKey}
-              lang={lang}
-            />
-          ) : null}
-
-          {sgfStrains.length > 0 ? (
-            <BulkShareSgfStrains
-              strains={sgfStrains}
-              onAddStrain={addStrain}
-              focusedKey={focusedKey}
-              lang={lang}
-              query={strainQuery}
-              cartQtyByKey={cartQtyByKey}
-            />
-          ) : null}
-
-          {sgGroups.length > 0 ? (
-            <BulkShareSgStrains
-              groups={sgGroups}
-              onAddStrain={addStrain}
-              focusedKey={focusedKey}
-              lang={lang}
-              query={strainQuery}
-              cartQtyByKey={cartQtyByKey}
             />
           ) : null}
 
           {cart.length > 0 ? (
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-900">{t.cart}</h2>
+            <section className="rounded-2xl border border-border bg-slate-900/40 p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-foreground">{t.cart}</h2>
               <ul className="mt-3 space-y-3">
                 {pricedCart.map(({ line, priced }) => (
                   <li
                     key={line.key}
                     className={`rounded-xl border p-3 ${
-                      focusedKey === line.key ? "border-emerald-300 bg-emerald-50/40" : "border-slate-100"
+                      focusedKey === line.key
+                        ? "border-emerald-500/40 bg-emerald-500/10"
+                        : "border-border bg-slate-900/30"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900">{line.strainName}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-sm font-medium text-foreground">{line.strainName}</p>
+                        <p className="text-xs text-muted-foreground">
                           {line.supplierLabel}
                           {line.category
                             ? ` · ${SEED_FORMAT_LABEL[line.category as keyof typeof SEED_FORMAT_LABEL] ?? line.category}`
@@ -432,7 +351,7 @@ export function BulkShareOrderClient({
                       <button
                         type="button"
                         onClick={() => removeLine(line.key)}
-                        className="shrink-0 rounded p-1 text-slate-400 hover:text-red-600"
+                        className="shrink-0 rounded p-1 text-muted-foreground hover:text-red-400"
                         aria-label={t.remove}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -442,7 +361,7 @@ export function BulkShareOrderClient({
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          className="rounded border border-slate-200 p-1 hover:bg-slate-50"
+                          className="rounded border border-border p-1 hover:bg-slate-800"
                           onClick={() => updateQty(line.key, line.qty - 50)}
                           aria-label={t.decrease}
                         >
@@ -454,31 +373,31 @@ export function BulkShareOrderClient({
                           step={50}
                           value={line.qty}
                           onChange={(e) => updateQty(line.key, Number(e.target.value))}
-                          className="h-8 w-24 text-center font-mono text-sm"
+                          className="h-8 w-24 border-border bg-slate-900/60 text-center font-mono text-sm text-foreground"
                         />
                         <button
                           type="button"
-                          className="rounded border border-slate-200 p-1 hover:bg-slate-50"
+                          className="rounded border border-border p-1 hover:bg-slate-800"
                           onClick={() => updateQty(line.key, line.qty + 50)}
                           aria-label={t.increase}
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
-                        <span className="text-xs text-slate-400">{t.minQty(BULK_SHARE_MIN_QTY)}</span>
+                        <span className="text-xs text-muted-foreground">{t.minQty(BULK_SHARE_MIN_QTY)}</span>
                       </div>
                       <div className="text-right">
                         {priced ? (
                           <>
-                            <p className="font-mono text-sm font-semibold text-slate-900">
+                            <p className="font-mono text-sm font-semibold text-foreground">
                               {fmtThb(priced.lineThb)}
                             </p>
-                            <p className="font-mono text-[11px] text-slate-400">
+                            <p className="font-mono text-[11px] text-muted-foreground">
                               {fmtThb(priced.unitThb)}
                               {t.perSeed} · {fmtEur(priced.unitEur)}
                             </p>
                           </>
                         ) : (
-                          <p className="text-xs text-red-600">{t.invalidQty}</p>
+                          <p className="text-xs text-red-400">{t.invalidQty}</p>
                         )}
                       </div>
                     </div>
@@ -488,20 +407,24 @@ export function BulkShareOrderClient({
             </section>
           ) : null}
 
-          <p className="text-center text-[11px] text-slate-400">{t.confidential}</p>
+          <p className="text-center text-[11px] text-muted-foreground">{t.confidential}</p>
         </div>
       </main>
 
       {totals.strainCount > 0 ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-slate-950/95 px-4 py-3 shadow-lg backdrop-blur-md">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
             <div className="min-w-0 text-sm">
-              <p className="font-medium text-slate-900">
+              <p className="font-medium text-foreground">
                 {t.strainCount(totals.strainCount, totals.seedCount.toLocaleString())}
               </p>
-              <p className="font-mono text-xs text-slate-500">{fmtThb(totals.subtotalThb)}</p>
+              <p className="font-mono text-xs text-muted-foreground">{fmtThb(totals.subtotalThb)}</p>
             </div>
-            <Button type="button" onClick={() => setSheetOpen(true)} className="shrink-0">
+            <Button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className="shrink-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+            >
               <ShoppingCart className="mr-1.5 h-4 w-4" />
               {t.submitOrder}
             </Button>
@@ -510,7 +433,10 @@ export function BulkShareOrderClient({
       ) : null}
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl">
+        <SheetContent
+          side="bottom"
+          className="max-h-[90vh] overflow-y-auto rounded-t-2xl border-border bg-slate-950 text-foreground"
+        >
           <SheetHeader>
             <SheetTitle>{t.sheetTitle}</SheetTitle>
             <SheetDescription>
@@ -573,7 +499,7 @@ export function BulkShareOrderClient({
             <Button type="button" variant="outline" onClick={() => setSheetOpen(false)} disabled={busy}>
               {t.cancel}
             </Button>
-            <Button type="button" onClick={() => void submitOrder()} disabled={busy}>
+            <Button type="button" onClick={() => void submitOrder()} disabled={busy} className="bg-emerald-500 text-slate-950 hover:bg-emerald-400">
               {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
               {t.confirm}
             </Button>

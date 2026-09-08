@@ -292,6 +292,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-09-08 (Bulk share UI — V4 dark + Photo/Auto/FF tabs)
+- **What:** รีดีไซน์ `/share/bulk/[token]` — ธีม V4 ดำ · ตารางเรท SGF 3 ขั้น 125/100/80 + พับ 2,500+ · แท็บ Photo/Auto/FF sticky · กริดสายกด +50
+- **Logic:** `BulkSharePriceTable` · `BulkShareStrainCatalog` · SG map เข้าแท็บเดียวกัน · ไม่แตะราคา/API
+- **ไฟล์:** `BulkShareOrderClient.tsx` · `BulkSharePriceTable.tsx` · `BulkShareStrainCatalog.tsx` · `bulk-share-format-tabs.ts` · `bulk-share-i18n.ts` · `GfGateNoticeBanner.tsx`
+
 ### บันทึกการทำงาน — 2026-09-08 (fix deploy — node:path ออกจาก client)
 - **What:** Vercel production ของ `bae146a` ล้ม เพราะ `partner-docs-path` (node:path) ถูกดึงเข้า BusinessDocumentDispatcher ผ่าน photo-request — ลิงก์แชร์ bulk เลยยังโชว์เรท GM% เก่า
 - **Logic:** แยก `adminPartnerDocUrl` ไป `lib/partner-docs-url.ts` · ไม่มี node:path ใน client bundle
