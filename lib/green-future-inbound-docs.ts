@@ -18,15 +18,46 @@ export const GF_INBOUND_0824_FILE = "gf-ssb-2026-0824-response-en.pdf";
 export const GF_INBOUND_PROFORMA_FILE = "gf-proforma-20102618-20260826.pdf";
 export const GF_INBOUND_0901_FILE = "gf-ssb-2026-0901-confirmation-en.pdf";
 export const GF_INBOUND_0904_FILE = "gf-ssb-2026-0904-confirmation-en.pdf";
+export const GF_INBOUND_0907_FILE = "gf-ssb-2026-0907-confirmation-en.pdf";
 export const GF_INBOUND_GACP_TRACEABILITY_FILE = "gf-gacp-traceability-th-en.pdf";
 export const GF_INBOUND_SEED_PROCESS_FILE = "gf-seed-production-process-th.pdf";
 export const GF_INBOUND_QUOTATION_V01_FILE = "gf-quotation-v01-tmy-agro-20102618.pdf";
+export const GF_INBOUND_QUOTATION_OPTION1_FILE =
+  "gf-quotation-option1-20102618.pdf";
 export const GF_INBOUND_DOA_LABEL_FIELDS_FILE =
   "gf-doa-label-fields-af99-sample.pdf";
 export const GF_INBOUND_DOA_LABEL_GUIDE_FILE =
   "doa-controlled-seed-label-guide.pdf";
 
 export const GF_INBOUND_DOCS: GfInboundDoc[] = [
+  {
+    id: "gf-0907",
+    refCode: "GF/SSB/2026-0907",
+    titleTh:
+      "ติดตาม — ฉลาก V.2.1, Traceability, ทดสอบบรรจุภัณฑ์ และใบเสนอราคา (7 ก.ย. 2026)",
+    titleEn:
+      "Follow-up — Label V.2.1, Traceability, Packaging Test & Quotation (7 Sep 2026)",
+    issuedAt: "2026-09-07",
+    fileName: GF_INBOUND_0907_FILE,
+    fileUrl: adminPartnerDocUrl(GF_INBOUND_0907_FILE),
+    useTh:
+      "อนุมัติฉลาก V.2.1 + พิมพ์จริงผ่าน · Traceability แก้คำ 1 จุด · Option 1 ยืนยัน · รูปลายน้ำรับแล้ว · ให้ปรึกษาหน่วยงาน GACP ได้",
+    useEn:
+      "Label V.2.1 + print test OK · Traceability one wording change · Option 1 confirmed · watermarked photos received · authority GACP consult may proceed",
+  },
+  {
+    id: "gf-quotation-option1",
+    refCode: "PI 20102618 / Option 1",
+    titleTh: "Quotation Option 1 — ฉบับแก้ (ไม่มี COA · ซองฟรี 20 ใบ)",
+    titleEn: "Quotation Option 1 — revised (no COA · 20 retail packs free)",
+    issuedAt: "2026-08-26",
+    fileName: GF_INBOUND_QUOTATION_OPTION1_FILE,
+    fileUrl: adminPartnerDocUrl(GF_INBOUND_QUOTATION_OPTION1_FILE),
+    useTh:
+      "Invoice 20102618 · ใช้ได้ถึง 9 ก.ย. · รวม 44,210 · มัดจำ 22,105 · วางแผนเท่านั้น · GF จะปรับราคาเมล็ดใหม่หลังหมดอายุ",
+    useEn:
+      "Invoice 20102618 · valid to 9 Sep · total 44,210 · advance 22,105 · planning only · GF to issue revised seed price after expiry",
+  },
   {
     id: "gf-0904",
     refCode: "GF/SSB/2026-0904",

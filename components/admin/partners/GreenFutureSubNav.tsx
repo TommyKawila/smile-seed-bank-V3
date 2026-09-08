@@ -17,6 +17,11 @@ const items = [
     exact: false,
   },
   {
+    href: "/admin/partners/green-future/gacp-consult",
+    label: "GACP consult",
+    exact: false,
+  },
+  {
     href: "/admin/partners/green-future/strategy",
     label: "GACP strategy",
     exact: false,
@@ -24,6 +29,16 @@ const items = [
   {
     href: "/admin/partners/green-future/mockup",
     label: "Label Mockup",
+    exact: false,
+  },
+  {
+    href: "/admin/partners/green-future/0907-reply-en",
+    label: "Reply 0907 (EN)",
+    exact: false,
+  },
+  {
+    href: "/admin/partners/green-future/0907-reply-th",
+    label: "Reply 0907 (TH)",
     exact: false,
   },
   {

@@ -1,4 +1,5 @@
 import { GreenFutureGacpStrategyClient } from "@/components/admin/partners/GreenFutureGacpStrategyClient";
+import { GfFacilityPhotosPanel } from "@/components/admin/partners/GfFacilityPhotosPanel";
 import { GfInboundDocsPanel } from "@/components/admin/partners/GfInboundDocsPanel";
 
 export const metadata = {
@@ -15,6 +16,7 @@ export default function GreenFutureGacpStrategyPage() {
           break-even, and RFQ checklists — internal planning only.
         </p>
       </div>
+      <GfFacilityPhotosPanel />
       <GfInboundDocsPanel />
       <GreenFutureGacpStrategyClient />
     </div>

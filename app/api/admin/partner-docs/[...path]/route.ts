@@ -6,6 +6,10 @@ import { PARTNER_DOCS_ROOT } from "@/lib/partner-docs-path";
 
 const MIME: Record<string, string> = {
   ".pdf": "application/pdf",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
 };
 
 type Params = { params: Promise<{ path: string[] }> };

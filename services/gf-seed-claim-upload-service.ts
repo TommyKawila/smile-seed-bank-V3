@@ -27,7 +27,7 @@ export async function uploadClaimEvidenceFile(params: {
   fileName: string;
   mimeType: string;
   buffer: Buffer;
-}): Promise<GfClaimUploadedFile> {
+}): Promise<{ file: GfClaimUploadedFile; driveWarning?: string }> {
   if (params.buffer.byteLength > GF_CLAIM_MAX_FILE_BYTES) {
     throw new Error("File exceeds 10 MB limit");
   }
@@ -35,17 +35,21 @@ export async function uploadClaimEvidenceFile(params: {
     throw new Error("Only image or video files are allowed");
   }
 
+  let driveWarning: string | undefined;
   if (isDriveClaimUploadConfigured()) {
     try {
-      return await uploadClaimFileToDrive({
-        claimSessionId: params.claimSessionId,
-        category: params.category,
-        fileName: params.fileName,
-        mimeType: params.mimeType,
-        buffer: params.buffer,
-      });
+      return {
+        file: await uploadClaimFileToDrive({
+          claimSessionId: params.claimSessionId,
+          category: params.category,
+          fileName: params.fileName,
+          mimeType: params.mimeType,
+          buffer: params.buffer,
+        }),
+      };
     } catch (e) {
-      console.warn("[claim upload] Drive failed, falling back to Supabase:", e);
+      driveWarning = e instanceof Error ? e.message : String(e);
+      console.warn("[claim upload] Drive failed, falling back to Supabase:", driveWarning);
     }
   }
 
@@ -61,11 +65,14 @@ export async function uploadClaimEvidenceFile(params: {
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return {
-    id: randomUUID(),
-    name: params.fileName,
-    mimeType: params.mimeType,
-    sizeBytes: params.buffer.byteLength,
-    storage: "supabase",
-    publicUrl: data.publicUrl,
+    file: {
+      id: randomUUID(),
+      name: params.fileName,
+      mimeType: params.mimeType,
+      sizeBytes: params.buffer.byteLength,
+      storage: "supabase",
+      publicUrl: data.publicUrl,
+    },
+    driveWarning,
   };
 }

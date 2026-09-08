@@ -52,6 +52,8 @@ type Props = {
   onLoadGreenFuturePackagingProposal?: () => void;
   onLoadGreenFuture0824Reply?: () => void;
   onLoadGreenFuture0824ReplyTh?: () => void;
+  onLoadGreenFuture0907Reply?: () => void;
+  onLoadGreenFuture0907ReplyTh?: () => void;
   onLoadGreenFuture0904Reply?: () => void;
   onLoadGreenFuture0904ReplyTh?: () => void;
   onLoadGreenFuture0901Reply?: () => void;
@@ -109,6 +111,8 @@ export function BusinessDocumentControls({
   onLoadGreenFuturePackagingProposal,
   onLoadGreenFuture0824Reply,
   onLoadGreenFuture0824ReplyTh,
+  onLoadGreenFuture0907Reply,
+  onLoadGreenFuture0907ReplyTh,
   onLoadGreenFuture0904Reply,
   onLoadGreenFuture0904ReplyTh,
   onLoadGreenFuture0901Reply,
@@ -212,6 +216,8 @@ export function BusinessDocumentControls({
       onLoadGreenFuturePackagingProposal ||
       onLoadGreenFuture0824Reply ||
       onLoadGreenFuture0824ReplyTh ||
+      onLoadGreenFuture0907Reply ||
+      onLoadGreenFuture0907ReplyTh ||
       onLoadGreenFuture0904Reply ||
       onLoadGreenFuture0904ReplyTh ||
       onLoadGreenFuture0901Reply ||
@@ -294,6 +300,27 @@ export function BusinessDocumentControls({
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Reply 0824 (Thai evidence)
+              </Button>
+            ) : null}
+            {onLoadGreenFuture0907Reply ? (
+              <Button
+                type="button"
+                className="w-full bg-[#12463e] hover:bg-[#0f3a34]"
+                onClick={onLoadGreenFuture0907Reply}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Reply to GF/SSB/2026-0907
+              </Button>
+            ) : null}
+            {onLoadGreenFuture0907ReplyTh ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-[#12463e]/40 text-[#12463e] hover:bg-[#12463e]/5"
+                onClick={onLoadGreenFuture0907ReplyTh}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Reply 0907 (Thai evidence)
               </Button>
             ) : null}
             {onLoadGreenFuture0904Reply ? (

@@ -128,6 +128,13 @@ export const GF_TRACEABILITY_DISCLAIMER_TH =
 export const GF_TRACEABILITY_DISCLAIMER_EN =
   "not a GACP certificate, DTAM document, or audit guarantee — GACP outcomes depend entirely on the applying farm";
 
+/** GF/SSB/2026-0907 — wholesale compliance line (TH+EN) */
+export const GF_SEED_PACKING_LINE_TH =
+  "เมล็ดบรรจุและซีลโดย SGF SEEDS ผู้รวบรวมเมล็ดพันธุ์ควบคุมเพื่อการค้าที่ได้รับอนุญาต — Smile Seed Bank ไม่เปิด แบ่ง หรือเปลี่ยนฉลากโดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร";
+
+export const GF_SEED_PACKING_LINE_EN =
+  "Seeds are packed and sealed by SGF SEEDS, a licensed collector of controlled seeds for trade. Smile Seed Bank does not open, repack, or relabel them without prior written consent.";
+
 export const GF_PRE_GATE_WEB_NOTICE_TH =
   "ขณะนี้รับคำขอใบเสนอราคาเท่านั้น ยังไม่เปิดรับมัดจำ";
 
@@ -155,7 +162,7 @@ ${GF_TRACEABILITY_CLAIM_EN} — ${GF_TRACEABILITY_DISCLAIMER_EN}.
 
 - Prices are indicative until confirmed in a quotation.
 - 50% conditional deposit per line; full refund if the round minimum is not met or quotation conditions are not fulfilled.
-- Seeds are producer-packed and sealed — Smile Seed Bank does not open, repack, or relabel.
+- ${GF_SEED_PACKING_LINE_EN}
 - External lab COA is optional per strain, charged separately.
 
 Reply to request a quotation or join the reservation list.
@@ -170,7 +177,7 @@ ${GF_TRACEABILITY_CLAIM_TH} — ${GF_TRACEABILITY_DISCLAIMER_TH}
 
 - ราคาเป็นประมาณการจนกว่าจะยืนยันในใบเสนอราคา
 - มัดจำ 50% ต่อรายการ คืนเงินเต็มหากไม่ถึงขั้นต่ำหรือไม่ผ่านเงื่อนไขที่ระบุในใบเสนอราคา
-- เมล็ดบรรจุและซีลโดยผู้ผลิต — Smile Seed Bank ไม่เปิด แบ่ง หรือเปลี่ยนฉลาก
+- ${GF_SEED_PACKING_LINE_TH}
 - COA แล็บภายนอกเป็นตัวเลือกเสริม คิดแยกตามสาย
 
 ติดต่อเพื่อขอใบเสนอราคาหรือเข้ารายการจอง

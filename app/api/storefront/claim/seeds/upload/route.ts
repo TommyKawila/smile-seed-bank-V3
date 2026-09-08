@@ -31,6 +31,7 @@ export async function POST(req: Request) {
     }
 
     const uploaded = [];
+    let driveWarning: string | undefined;
     for (const file of files) {
       if (!isAllowedClaimMime(file.type)) {
         return NextResponse.json(
@@ -46,10 +47,15 @@ export async function POST(req: Request) {
         mimeType: file.type,
         buffer,
       });
-      uploaded.push(row);
+      uploaded.push(row.file);
+      if (row.driveWarning) driveWarning = row.driveWarning;
     }
 
-    return NextResponse.json({ ok: true, files: uploaded });
+    return NextResponse.json({
+      ok: true,
+      files: uploaded,
+      ...(driveWarning ? { driveWarning } : {}),
+    });
   } catch (e) {
     console.error("[claim/seeds/upload POST]", e);
     return NextResponse.json(

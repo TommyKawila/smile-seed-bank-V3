@@ -1,13 +1,19 @@
 /**
  * Photos requested from GF Seed Production & Handling Process deck
  * (Julia 4 Sep 2026 — pick from the presentation, per-image written approval + GF watermark).
+ * Received 8 Sep 2026 — watermarked stills in `data/partners/green-future/documents/photos/`.
  */
+
+import { adminPartnerDocUrl } from "@/lib/partner-docs-path";
 
 export const GF_PHOTO_PRESENTATION = {
   fileName: "gf-seed-production-process-th.pdf",
   titleTh: "กระบวนการผลิตและการจัดการเมล็ดพันธุ์",
   titleEn: "Seed Production & Handling Process",
 } as const;
+
+export const GF_PHOTO_RECEIVED_AT = "2026-09-08";
+export const GF_PHOTO_DIR = "photos";
 
 export type GfPhotoPick = {
   id: string;
@@ -16,7 +22,12 @@ export type GfPhotoPick = {
   pdfPage: number;
   wantTh: string;
   wantEn: string;
+  fileName: string;
 };
+
+export function gfPhotoFileUrl(fileName: string): string {
+  return adminPartnerDocUrl(`${GF_PHOTO_DIR}/${fileName}`);
+}
 
 export const GF_PHOTO_PICKS: GfPhotoPick[] = [
   {
@@ -26,6 +37,7 @@ export const GF_PHOTO_PICKS: GfPhotoPick[] = [
     pdfPage: 3,
     wantTh: "ภายนอกสถานที่ + ป้าย Green Future (มุมกว้าง)",
     wantEn: "Facility exterior and Green Future site signage (wide)",
+    fileName: "gf-photo-a-facility-exterior.jpg",
   },
   {
     id: "e-gacp-cert",
@@ -34,6 +46,7 @@ export const GF_PHOTO_PICKS: GfPhotoPick[] = [
     pdfPage: 3,
     wantTh: "ใบรับรอง TH GACP ติดที่สถานที่ (ถ้าอนุญาตถ่ายแยกไฟล์)",
     wantEn: "TH GACP certificate displayed on site (separate file if permitted)",
+    fileName: "gf-photo-e-th-gacp-certificate.jpg",
   },
   {
     id: "b-veg",
@@ -42,6 +55,7 @@ export const GF_PHOTO_PICKS: GfPhotoPick[] = [
     pdfPage: 9,
     wantTh: "โรงเรือนระยะเจริญเติบโต — มุมกว้าง 1 ภาพ + มุมปฏิบัติงาน 1 ภาพ",
     wantEn: "Vegetative cultivation — one wide shot and one working angle",
+    fileName: "gf-photo-b-vegetation.jpg",
   },
   {
     id: "c-processing",
@@ -52,6 +66,7 @@ export const GF_PHOTO_PICKS: GfPhotoPick[] = [
       "พื้นที่ผลิต/แปรรูปเมล็ดภายในสถานที่ที่ได้รับการรับรอง GACP (ห้อง QC / packing มุมกว้าง)",
     wantEn:
       "Seed production/processing area within the GACP-certified production facility (QC / packing room, wide)",
+    fileName: "gf-photo-c-processing-qc.jpg",
   },
   {
     id: "d-packing",
@@ -60,6 +75,7 @@ export const GF_PHOTO_PICKS: GfPhotoPick[] = [
     pdfPage: 14,
     wantTh: "จุดบรรจุ + ตัวอย่างฉลากล็อตบนถุงเมล็ด",
     wantEn: "Packing area plus example batch/lot label on a packed seed bag",
+    fileName: "gf-photo-d-packed-seed-bag.jpg",
   },
   {
     id: "f-storage",
@@ -68,6 +84,7 @@ export const GF_PHOTO_PICKS: GfPhotoPick[] = [
     pdfPage: 15,
     wantTh: "ตู้เก็บเมล็ด +5°C และจออุณหภูมิ (กันแสง)",
     wantEn: "Seed storage at +5°C with temperature display (light-protected)",
+    fileName: "gf-photo-f-storage-5c.jpg",
   },
 ];
 

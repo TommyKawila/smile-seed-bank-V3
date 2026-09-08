@@ -1,4 +1,5 @@
 import { GreenFutureCatalogClient } from "@/components/admin/partners/GreenFutureCatalogClient";
+import { GfFacilityPhotosPanel } from "@/components/admin/partners/GfFacilityPhotosPanel";
 import { GfInboundDocsPanel } from "@/components/admin/partners/GfInboundDocsPanel";
 import { GfShareLinkPanel } from "@/components/admin/partners/GfShareLinkPanel";
 
@@ -21,6 +22,7 @@ export default function GreenFuturePartnerPage() {
         </p>
       </div>
       <GfShareLinkPanel />
+      <GfFacilityPhotosPanel />
       <GfInboundDocsPanel />
       <GreenFutureCatalogClient />
     </div>

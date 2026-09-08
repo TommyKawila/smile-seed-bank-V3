@@ -14,6 +14,12 @@ import {
   GREEN_FUTURE_0901_REPLY_TH_SUBJECT,
 } from "@/lib/green-future-0901-reply-letter";
 import {
+  GREEN_FUTURE_0907_REPLY_RAW,
+  GREEN_FUTURE_0907_REPLY_SUBJECT,
+  GREEN_FUTURE_0907_REPLY_TH_RAW,
+  GREEN_FUTURE_0907_REPLY_TH_SUBJECT,
+} from "@/lib/green-future-0907-reply-letter";
+import {
   GREEN_FUTURE_0904_REPLY_RAW,
   GREEN_FUTURE_0904_REPLY_SUBJECT,
   GREEN_FUTURE_0904_REPLY_TH_RAW,
@@ -313,6 +319,24 @@ export function BusinessDocumentDispatcher() {
     );
   }, [loadTemplate]);
 
+  const handleLoadGreenFuture0907Reply = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_0907_REPLY_RAW,
+      GREEN_FUTURE_0907_REPLY_SUBJECT,
+      "0907 reply loaded",
+      "Confirm Option 1 quotation + wording fix + GACP consult. Not a PO."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFuture0907ReplyTh = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_0907_REPLY_TH_RAW,
+      GREEN_FUTURE_0907_REPLY_TH_SUBJECT,
+      "0907 Thai reply loaded",
+      "Thai evidence copy — attach with English original."
+    );
+  }, [loadTemplate]);
+
   const handleLoadGreenFuture0904Reply = useCallback(() => {
     loadTemplate(
       GREEN_FUTURE_0904_REPLY_RAW,
@@ -566,6 +590,8 @@ export function BusinessDocumentDispatcher() {
           }
           onLoadGreenFuture0824Reply={handleLoadGreenFuture0824Reply}
           onLoadGreenFuture0824ReplyTh={handleLoadGreenFuture0824ReplyTh}
+          onLoadGreenFuture0907Reply={handleLoadGreenFuture0907Reply}
+          onLoadGreenFuture0907ReplyTh={handleLoadGreenFuture0907ReplyTh}
           onLoadGreenFuture0904Reply={handleLoadGreenFuture0904Reply}
           onLoadGreenFuture0904ReplyTh={handleLoadGreenFuture0904ReplyTh}
           onLoadGreenFuture0901Reply={handleLoadGreenFuture0901Reply}

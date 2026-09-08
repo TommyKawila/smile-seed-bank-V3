@@ -38,6 +38,7 @@ export function ClaimEvidenceUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [driveNotice, setDriveNotice] = useState<string | null>(null);
 
   const remaining = GF_CLAIM_MAX_FILES - files.length;
 
@@ -58,6 +59,7 @@ export function ClaimEvidenceUpload({
       }
     }
     setUploadError(null);
+    setDriveNotice(null);
     setUploading(true);
     try {
       const form = new FormData();
@@ -69,9 +71,18 @@ export function ClaimEvidenceUpload({
         ok?: boolean;
         files?: GfClaimUploadedFile[];
         error?: string;
+        driveWarning?: string;
       };
       if (!res.ok || !json.files) throw new Error(json.error ?? "Upload failed");
       onChange([...files, ...json.files]);
+      if (json.driveWarning) {
+        setDriveNotice(
+          t(
+            "Drive ยังไม่รับไฟล์ — เก็บที่คลังสำรองแล้ว (ย้ายโฟลเดอร์เคลมไป Shared Drive แล้วแชร์ให้ service account)",
+            "Drive rejected the file — stored on backup. Move the claim folder to a Shared Drive and share it with the service account."
+          )
+        );
+      }
     } catch (err) {
       setUploadError(String(err).replace("Error: ", ""));
     } finally {
@@ -130,6 +141,7 @@ export function ClaimEvidenceUpload({
         </Button>
       ) : null}
       {uploadError ? <p className="mt-1 text-xs text-red-600">{uploadError}</p> : null}
+      {driveNotice ? <p className="mt-1 text-xs text-amber-800">{driveNotice}</p> : null}
     </ClaimField>
   );
 }

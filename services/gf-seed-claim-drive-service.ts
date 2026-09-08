@@ -26,13 +26,20 @@ function readServiceAccount(): ServiceAccount | null {
   }
 }
 
+function driveDelegateEmail(): string | undefined {
+  const email = process.env.GOOGLE_DRIVE_DELEGATE_EMAIL?.trim();
+  return email || undefined;
+}
+
 async function getAccessToken(sa: ServiceAccount): Promise<string> {
   const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const now = Math.floor(Date.now() / 1000);
+  const sub = driveDelegateEmail();
   const claim = base64url(
     JSON.stringify({
       iss: sa.client_email,
-      scope: "https://www.googleapis.com/auth/drive.file",
+      ...(sub ? { sub } : {}),
+      scope: "https://www.googleapis.com/auth/drive",
       aud: "https://oauth2.googleapis.com/token",
       iat: now,
       exp: now + 3600,
@@ -115,7 +122,9 @@ export async function uploadClaimFileToDrive(params: {
       body,
     }
   );
-  if (!res.ok) await driveApiError(res, "Drive upload failed");
+  if (!res.ok) {
+    await driveApiError(res, "Drive upload failed");
+  }
   const json = (await res.json()) as { id: string; webViewLink?: string };
 
   return {

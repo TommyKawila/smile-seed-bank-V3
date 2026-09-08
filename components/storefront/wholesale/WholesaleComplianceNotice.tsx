@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
+import {
+  GF_SEED_PACKING_LINE_EN,
+  GF_SEED_PACKING_LINE_TH,
+} from "@/lib/green-future-approved-marketing";
 
 /** Seed claim form — preview until Regulatory Gate */
 const SEED_CLAIM_FORM_HREF = "/claim/seeds";
@@ -26,10 +30,7 @@ export function WholesaleComplianceNotice() {
             )}
           </li>
           <li>
-            {t(
-              "เมล็ดบรรจุและซีลโดยผู้ผลิต (SGF SEEDS) — Smile Seed Bank ไม่เปิด แบ่ง หรือเปลี่ยนฉลากโดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร",
-              "Seeds are producer-packed and sealed (SGF SEEDS) — Smile Seed Bank does not open, repack, or relabel without prior written consent."
-            )}
+            {t(GF_SEED_PACKING_LINE_TH, GF_SEED_PACKING_LINE_EN)}
           </li>
           <li>
             {t(
