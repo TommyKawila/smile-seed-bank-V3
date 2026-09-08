@@ -84,20 +84,20 @@ export function BulkSharePriceTable({ book, lang, cartSeedCount = 0 }: Props) {
         key={`${row.minQty}-${row.label}`}
         className={
           highlight
-            ? "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/30"
-            : "border-b border-border/60 last:border-0"
+            ? "bg-emerald-50 ring-1 ring-inset ring-emerald-200"
+            : "border-b border-slate-100 last:border-0"
         }
       >
         <td className="px-3 py-3 sm:px-4">
-          <p className="text-sm font-medium text-foreground">{row.label}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm font-medium text-slate-800">{row.label}</p>
+          <p className="text-xs text-slate-500">
             {localizeQtyDescription(row.qtyDescription, lang)}
           </p>
         </td>
         <td className="px-3 py-3 text-right sm:px-4">
-          <p className="font-mono text-base font-semibold text-emerald-400">{fmtThb(row.sellThb)}</p>
+          <p className="font-mono text-base font-semibold text-[#12463e]">{fmtThb(row.sellThb)}</p>
           {row.sellEur > 0 ? (
-            <p className="font-mono text-[11px] text-muted-foreground">{fmtEur(row.sellEur)}</p>
+            <p className="font-mono text-[11px] text-slate-400">{fmtEur(row.sellEur)}</p>
           ) : null}
         </td>
       </tr>
@@ -105,17 +105,17 @@ export function BulkSharePriceTable({ book, lang, cartSeedCount = 0 }: Props) {
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-slate-900/40 shadow-sm">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">{book.supplierLabel}</h2>
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-4 py-3">
+        <h2 className="text-sm font-semibold text-slate-900">{book.supplierLabel}</h2>
         {isSgf ? (
           <>
-            <p className="mt-1 text-xs text-muted-foreground">{SGF_SEEDS_SHARE_TAGLINE}</p>
-            <p className="text-xs text-muted-foreground">{t.sgfFormats}</p>
+            <p className="mt-1 text-xs text-slate-500">{SGF_SEEDS_SHARE_TAGLINE}</p>
+            <p className="text-xs text-slate-500">{t.sgfFormats}</p>
           </>
         ) : null}
         {book.supplierSlug === SEEDS_GENETICS_SLUG ? (
-          <p className="mt-2 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-xs font-medium leading-snug text-sky-100">
+          <p className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-medium leading-snug text-sky-950">
             {t.sgImportNote}
           </p>
         ) : null}
@@ -123,7 +123,7 @@ export function BulkSharePriceTable({ book, lang, cartSeedCount = 0 }: Props) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[280px] text-sm">
           <thead>
-            <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+            <tr className="border-b border-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-400">
               <th className="px-3 py-2.5 font-medium sm:px-4">{t.qtyCol}</th>
               <th className="px-3 py-2.5 text-right font-medium sm:px-4">{t.priceCol}</th>
             </tr>
@@ -142,8 +142,8 @@ export function BulkSharePriceTable({ book, lang, cartSeedCount = 0 }: Props) {
         </table>
       </div>
       {volumeRows.length > 0 ? (
-        <details className="border-t border-border">
-          <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-muted-foreground hover:text-foreground">
+        <details className="border-t border-slate-100">
+          <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-slate-500 hover:text-slate-800">
             {t.highVolumeTiers}
           </summary>
           <table className="w-full text-sm">

@@ -131,10 +131,10 @@ export function BulkShareStrainCatalog({
   const visibleTabs = BULK_SHARE_FORMAT_TAB_ORDER.filter((tab) => (tabCounts[tab] ?? 0) > 0);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-slate-900/40 shadow-sm">
-      <div className="border-b border-border px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-4 py-3">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <h2 className="text-sm font-semibold text-foreground">
+          <h2 className="text-sm font-semibold text-slate-900">
             {sgfStrains.length > 0 && sgGroups.length === 0
               ? t.sgfStrainsTitle
               : sgGroups.length > 0 && sgfStrains.length === 0
@@ -150,28 +150,28 @@ export function BulkShareStrainCatalog({
             />
           ) : null}
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">{t.tapHint}</p>
-        <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-100">
+        <p className="mt-1 text-xs text-slate-500">{t.tapHint}</p>
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950">
           {t.catalogDisclaimer}
         </p>
       </div>
 
-      <div className="sticky top-0 z-20 border-b border-border bg-slate-950/90 px-4 py-3 backdrop-blur-md">
-        <p className="mb-2 text-xs text-muted-foreground">{t.tapCallout}</p>
+      <div className="sticky top-0 z-20 border-b border-slate-100 bg-white/95 px-4 py-3 backdrop-blur-sm">
+        <p className="mb-2 text-xs text-slate-500">{t.tapCallout}</p>
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             type="search"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder={t.searchPlaceholder}
-            className="border-border bg-slate-900/60 pl-9 text-foreground placeholder:text-muted-foreground"
+            className="border-slate-200 bg-white pl-9"
             aria-label={t.searchLabel}
           />
         </div>
         {!searchActive ? (
           <div
-            className="mt-3 flex gap-1 rounded-xl border border-border bg-slate-900/60 p-1"
+            className="mt-3 flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
             role="tablist"
             aria-label={t.formatTabsLabel}
           >
@@ -184,8 +184,8 @@ export function BulkShareStrainCatalog({
                 onClick={() => setActiveTab(tab)}
                 className={`min-h-12 flex-1 rounded-lg px-2 text-xs font-semibold transition-colors sm:text-sm ${
                   activeTab === tab
-                    ? "bg-emerald-500 text-slate-950"
-                    : "text-muted-foreground hover:bg-slate-800 hover:text-foreground"
+                    ? "bg-[#12463e] text-white shadow-sm"
+                    : "text-slate-600 hover:bg-white hover:text-slate-900"
                 }`}
               >
                 {tabLabel[tab]}
@@ -198,7 +198,7 @@ export function BulkShareStrainCatalog({
 
       <div className="p-4">
         {visible.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">{t.searchNoResults}</p>
+          <p className="text-center text-sm text-slate-500">{t.searchNoResults}</p>
         ) : (
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {visible.map((entry) => {
@@ -214,22 +214,22 @@ export function BulkShareStrainCatalog({
                     onClick={() => onAddStrain(entry)}
                     className={`flex min-h-12 w-full items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors ${
                       active
-                        ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-100"
-                        : "border-border bg-slate-900/30 text-foreground hover:border-emerald-500/30 hover:bg-emerald-500/5"
+                        ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-900"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50/50"
                     }`}
                   >
                     <span className="min-w-0">
                       {hasBothSuppliers ? (
-                        <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+                        <span className="block text-[10px] uppercase tracking-wide text-slate-400">
                           {entry.supplierLabel}
                         </span>
                       ) : null}
                       <span className="font-medium leading-snug">{entry.strainName}</span>
                       {entry.category === "photo-ff" ? (
-                        <span className="text-xs text-muted-foreground"> · FAST</span>
+                        <span className="text-slate-400"> · FAST</span>
                       ) : null}
                     </span>
-                    <span className="shrink-0 text-xs font-mono text-emerald-400">
+                    <span className="shrink-0 text-xs font-mono text-emerald-700">
                       {qty ? `${qty.toLocaleString()} · ` : ""}+{BULK_SHARE_MIN_QTY}
                     </span>
                   </button>

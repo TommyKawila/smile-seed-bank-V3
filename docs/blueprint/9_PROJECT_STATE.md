@@ -292,6 +292,10 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-09-08 (Bulk share — สีเขียวขาว theme เดิม)
+- **What:** ปรับ `/share/bulk` กลับพื้นขาว + เขียว #12463e แทน V4 ดำที่ contrast อ่านยาก
+- **ไฟล์:** `BulkShareOrderClient.tsx` · `BulkSharePriceTable.tsx` · `BulkShareStrainCatalog.tsx` · `app/share/layout.tsx`
+
 ### บันทึกการทำงาน — 2026-09-08 (Bulk share UI — V4 dark + Photo/Auto/FF tabs)
 - **What:** รีดีไซน์ `/share/bulk/[token]` — ธีม V4 ดำ · ตารางเรท SGF 3 ขั้น 125/100/80 + พับ 2,500+ · แท็บ Photo/Auto/FF sticky · กริดสายกด +50
 - **Logic:** `BulkSharePriceTable` · `BulkShareStrainCatalog` · SG map เข้าแท็บเดียวกัน · ไม่แตะราคา/API
