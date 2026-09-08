@@ -292,6 +292,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-09-08 (fix deploy — node:path ออกจาก client)
+- **What:** Vercel production ของ `bae146a` ล้ม เพราะ `partner-docs-path` (node:path) ถูกดึงเข้า BusinessDocumentDispatcher ผ่าน photo-request — ลิงก์แชร์ bulk เลยยังโชว์เรท GM% เก่า
+- **Logic:** แยก `adminPartnerDocUrl` ไป `lib/partner-docs-url.ts` · ไม่มี node:path ใน client bundle
+- **ไฟล์:** `lib/partner-docs-url.ts` · `lib/partner-docs-path.ts` · `lib/green-future-photo-request.ts` · `lib/green-future-inbound-docs.ts` · `lib/green-future-gacp-consult-brief.ts`
+
 ### บันทึกการทำงาน — 2026-09-08 (SGF bulk sell — ล็อก 125/100/80)
 - **What:** ราคาขาย SGF บน `/admin/bulk-seeds` · ลิงก์แชร์ · B2B quote ขั้น 50–1,000 ตรง `/wholesale` (฿125 / ฿100 / ฿80) แทน GM% ที่ออก ~82/75
 - **Logic:** `priceSgfShareTiers()` ใช้ `gfPilotSellThbPerSeed` เมื่อ minQty &lt; 2,500 · GM คำนวณย้อนจาก landed · 2,500+ ยัง GM% · Seeds Genetics ไม่แตะ

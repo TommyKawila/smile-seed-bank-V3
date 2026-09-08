@@ -1,4 +1,4 @@
-import { adminPartnerDocUrl } from "@/lib/partner-docs-path";
+import { adminPartnerDocUrl } from "@/lib/partner-docs-url";
 import { GF_PROFORMA_20260826 } from "@/lib/green-future-proforma-20260826";
 
 /** GF originals in `data/partners/green-future/documents/` — admin only, not /public. */

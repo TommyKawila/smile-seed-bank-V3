@@ -6,7 +6,7 @@ import {
   GF_INBOUND_SEED_PROCESS_FILE,
 } from "@/lib/green-future-inbound-docs";
 import { GF_PHOTO_PICKS } from "@/lib/green-future-photo-request";
-import { adminPartnerDocUrl } from "@/lib/partner-docs-path";
+import { adminPartnerDocUrl } from "@/lib/partner-docs-url";
 
 export const GREEN_FUTURE_GACP_CONSULT_SUBJECT =
   "Internal — Chiang Mai authority GACP consultation brief (SGF Seeds + traceability)";

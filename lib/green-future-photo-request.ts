@@ -4,7 +4,7 @@
  * Received 8 Sep 2026 — watermarked stills in `data/partners/green-future/documents/photos/`.
  */
 
-import { adminPartnerDocUrl } from "@/lib/partner-docs-path";
+import { adminPartnerDocUrl } from "@/lib/partner-docs-url";
 
 export const GF_PHOTO_PRESENTATION = {
   fileName: "gf-seed-production-process-th.pdf",
