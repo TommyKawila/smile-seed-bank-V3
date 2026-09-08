@@ -292,6 +292,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-09-08 (SGF bulk sell — ล็อก 125/100/80)
+- **What:** ราคาขาย SGF บน `/admin/bulk-seeds` · ลิงก์แชร์ · B2B quote ขั้น 50–1,000 ตรง `/wholesale` (฿125 / ฿100 / ฿80) แทน GM% ที่ออก ~82/75
+- **Logic:** `priceSgfShareTiers()` ใช้ `gfPilotSellThbPerSeed` เมื่อ minQty &lt; 2,500 · GM คำนวณย้อนจาก landed · 2,500+ ยัง GM% · Seeds Genetics ไม่แตะ
+- **ไฟล์:** `lib/sgf-seeds-share.ts` · `lib/bulk-seeds-trade.ts` · `BulkSeedsBookClient.tsx` · `9_PROJECT_STATE.md`
+
 ### บันทึกการทำงาน — 2026-09-08 (ซอง mock-up — รอ GF ส่งคืน)
 - **What:** ซองตัวอย่าง + ฉลากทดสอบ heat seal อยู่ที่ GF — ขอส่งคืน mock-up ติดฉลาก V.2.1 จริง (เปล่า) เพื่อนำสอบถามหน่วยงาน GACP เรื่องการขอปลูก
 - **Logic:** ไม่ต้องใส่เมล็ดจริง · นัดหน่วยงานหลังได้ซอง · ใส่ในจดหมายตอบ 0907

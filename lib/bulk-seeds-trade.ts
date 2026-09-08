@@ -158,7 +158,11 @@ export function recommendedLandedPct(lane: TradeLane, incoterm: string): number 
   }, 0);
 }
 
-/** Volume GM: keep margin at high qty — pass some, not all, of supplier discount. */
+/**
+ * Volume GM: keep margin at high qty — pass some, not all, of supplier discount.
+ * SGF (Green Future) sell tiers 50–1,000 use fixed THB/seed from `gfPilotSellThbPerSeed`
+ * (125 / 100 / 80 — same as `/wholesale`); GM% here applies to SGF 2,500+ and Seeds Genetics only.
+ */
 export const GM_BY_QTY: { minQty: number; gmPct: number; labelTh: string; labelEn: string }[] = [
   { minQty: 50, gmPct: 40, labelTh: "Starter", labelEn: "Starter" },
   { minQty: 250, gmPct: 35, labelTh: "MOQ (ดีลตรง)", labelEn: "MOQ (direct deal)" },

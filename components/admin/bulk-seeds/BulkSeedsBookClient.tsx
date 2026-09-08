@@ -34,6 +34,7 @@ import {
   type BulkSupplierSlug,
 } from "@/lib/bulk-seeds-book";
 import { ADDERS_BY_LANE, GM_BY_QTY } from "@/lib/bulk-seeds-trade";
+import { priceSgfShareTiers } from "@/lib/sgf-seeds-share";
 import { GfStrainCatalogPanel } from "@/components/admin/bulk-seeds/GfStrainCatalogPanel";
 import { SgStrainCatalogPanel } from "@/components/admin/bulk-seeds/SgStrainCatalogPanel";
 import { BulkShareLeadsPanel } from "@/components/admin/bulk-seeds/BulkShareLeadsPanel";
@@ -91,15 +92,21 @@ export function BulkSeedsBookClient() {
 
   const priced = useMemo(
     () =>
-      BULK_SUPPLIER_BOOKS.map((book) => ({
-        book,
-        rows: priceSupplierBook({
+      BULK_SUPPLIER_BOOKS.map((book) => {
+        const priceOpts = {
           book,
           eurThb,
           landedPct: landed[book.slug],
           gmOverride: overrideNum != null && Number.isFinite(overrideNum) ? overrideNum : null,
-        }),
-      })),
+        };
+        return {
+          book,
+          rows:
+            book.slug === "green-future"
+              ? priceSgfShareTiers(priceOpts)
+              : priceSupplierBook(priceOpts),
+        };
+      }),
     [eurThb, landed, overrideNum]
   );
 
@@ -200,7 +207,8 @@ export function BulkSeedsBookClient() {
             ))}
           </div>
           <p className="text-xs text-slate-500">
-            ขั้นบันได GM:{" "}
+            SGF ขาย 50–1,000: ฿125 / ฿100 / ฿80 (ตรง /wholesale) · SGF 2,500+ และ Seeds Genetics
+            ใช้ GM%:{" "}
             {GM_BY_QTY.map((g) => `${g.minQty.toLocaleString()}=${g.gmPct}%`).join(" · ")}
           </p>
         </CardContent>

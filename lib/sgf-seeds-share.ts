@@ -1,3 +1,4 @@
+import { gfPilotSellThbPerSeed } from "@/lib/green-future-pilot-config";
 import {
   grossMarginPct,
   landedThb,
@@ -86,11 +87,20 @@ export function priceSgfShareTiers(opts: {
     const costThb =
       costTier.costThb > 0 ? costTier.costThb : (costTier.costEur ?? 0) * fx;
     const landed = landedThb(costThb, opts.landedPct);
-    const gm =
-      opts.gmOverride != null && Number.isFinite(opts.gmOverride)
-        ? opts.gmOverride
-        : gmForMinQty(step.minQty);
-    const sell = sellFromGrossMargin(landed, gm);
+    const fixedSell =
+      step.minQty < 2500 ? gfPilotSellThbPerSeed(step.minQty) : 0;
+    let sell: number;
+    let gm: number;
+    if (fixedSell > 0) {
+      sell = fixedSell;
+      gm = grossMarginPct(sell, landed);
+    } else {
+      gm =
+        opts.gmOverride != null && Number.isFinite(opts.gmOverride)
+          ? opts.gmOverride
+          : gmForMinQty(step.minQty);
+      sell = sellFromGrossMargin(landed, gm);
+    }
     const sellEur = fx > 0 ? sell / fx : 0;
     return {
       code: `sgf_share_${step.minQty}`,
