@@ -292,6 +292,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-09-09 (RLS — cabinet_storage_log)
+- **What:** เปิด RLS บนตาราง log ตู้เก็บเมล็ดที่สร้างใน `20260909120000` โดยไม่มี RLS — กัน PostgREST anon dump token / ปลอมหลักฐาน temp-RH
+- **Logic:** ENABLE RLS ไม่มี anon policy · Prisma/service_role ยังอ่าน-เขียนผ่าน `/api/admin/partners/green-future/storage-log` ได้
+- **ไฟล์:** `prisma/migrations/20260909180000_cabinet_storage_log_rls` · `supabase/migrations/20260909180000_cabinet_storage_log_rls.sql` · `scripts/assert-cabinet-storage-log-rls.mjs`
+
 ### บันทึกการทำงาน — 2026-09-09 (Cabinet storage log — Temp/RH + share link GF)
 - **What:** log รายวันอุณหภูมิ/ความชื้นตู้เก็บเมล็ด — อัปโหลดรูป Hygrometer + กรอก °C/RH · ลิงก์แชร์ GF เปิดได้ 24 ชม. ไม่ล็อกอิน
 - **Logic:** เกณฑ์ +5–+10°C · RH ≤50% · token ใน DB · รูป Supabase `brand-assets/cabinet-storage-log/` · ประวัติ 30 วันบนหน้าแชร์
