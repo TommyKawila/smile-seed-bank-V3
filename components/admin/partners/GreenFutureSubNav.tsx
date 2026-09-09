@@ -22,6 +22,11 @@ const items = [
     exact: false,
   },
   {
+    href: "/admin/partners/green-future/storage-log",
+    label: "Storage log",
+    exact: false,
+  },
+  {
     href: "/admin/partners/green-future/strategy",
     label: "GACP strategy",
     exact: false,

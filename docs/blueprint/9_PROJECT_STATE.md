@@ -131,7 +131,7 @@
 | ส่งเอกสารติดตาม Traceability + ขอข้อมูลเพิ่มจาก GF | **ส่งแล้ว** | ลิงก์ preview + ขอไฟล์ล็อต / QR หรือบัญชี / อนุมัติเทมเพลต / รูป / ระยะ audit log |
 | ส่งตัวอย่างซองแพคเกจ 10 ซอง | **ส่งแล้ว** | ให้ GF ตรวจคุณภาพซอง |
 | ฟอร์มเคลมเมล็ดบนเว็บ Smile | **เสร็จ (preview)** | wizard + upload + submit ทดสอบแล้ว · Drive env ตั้งแล้ว · ยังไม่เปิดลูกค้าจนกว่า Regulatory Gate |
-| ลิงก์เก็บ log อุณหภูมิ/ความชื้นตู้เก็บเมล็ด | **ยังไม่ทำ** | ช่วงแรก: รูป Hygrometer รายวัน → Google Drive ที่แชร์ |
+| ลิงก์เก็บ log อุณหภูมิ/ความชื้นตู้เก็บเมล็ด | **พร้อมใช้ (9 ก.ย.)** | Admin บันทึกรายวัน + ลิงก์แชร์ GF `/share/storage-log/{token}` · ไม่ใช้ Drive |
 | สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability | **รอซอง mock-up** | รอ GF ส่งคืนซองติดฉลาก V.2.1 จริง (เปล่า) หลัง heat seal |
 | ฉลากติดหลังซอง **V.2** TH+EN ตามตัวอย่างกรมฯ | **ส่ง mock-up แล้ว · GF ขอ PDF** | จดหมาย 0904 ขอ PDF ไม่ใช้ลิงก์ล็อกอิน · ทดสอบฉลากจริงรอปริ้นท์ mock-up |
 
@@ -150,8 +150,8 @@
 - [x] ตอบ Julia LINE: ยืนยันฉลาก + รายการรูป 6 ภาพจาก Presentation (`lib/green-future-photo-request.ts`)
 - [x] รับรูปโรงงานลายน้ำ GF 6 ภาพ (A–F) — **8 ก.ย. 2026** · เก็บ admin `/partners/green-future`
 - [x] รับ GF/SSB/2026-0907 + ใบ Option 1 ฉบับแก้ — **8 ก.ย. 2026**
-- [ ] ส่งจดหมายตอบ 0907 EN+TH · ยืนยันรูปแบบ Option 1 · รับทราบราคาใหม่หลัง 9 ก.ย.
-- [ ] ทำลิงก์/โฟลเดอร์ log Temp + RH ตู้เก็บเมล็ด (รูป Hygrometer รายวัน) — GF ระบุเก็บสำเร็จรูป **+5°C**
+- [x] ส่งจดหมายตอบ 0907 EN+TH · ยืนยันรูปแบบ Option 1 · รับทราบราคาใหม่หลัง 9 ก.ย. — **9 ก.ย. 2026**
+- [x] ทำลิงก์/โฟลเดอร์ log Temp + RH ตู้เก็บเมล็ด (รูป Hygrometer รายวัน) — **9 ก.ย. 2026** · `/admin/partners/green-future/storage-log` · แชร์ `/share/storage-log/{token}`
 - [ ] ขอ GF ส่งคืน **ซอง mock-up ติดฉลาก V.2.1 จริง (เปล่า ไม่ใส่เมล็ด)** หลัง heat seal — สำหรับสอบถามหน่วยงาน GACP
 - [ ] สอบถามหน่วยงานเชียงใหม่เรื่องเอกสารประกอบ GACP/traceability (หลังได้ซอง mock-up จาก GF)
 - [ ] รอผลตรวจ heat seal (12 ซอง) เป็นลายลักษณ์อักษรจาก GF
@@ -291,6 +291,16 @@
 - **What:** เพิ่มเอกสารเสนอใช้แพ็กเกจ Smile Seed Bank เดิมชั่วคราวใน first-stage test order
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
+
+### บันทึกการทำงาน — 2026-09-09 (Cabinet storage log — Temp/RH + share link GF)
+- **What:** log รายวันอุณหภูมิ/ความชื้นตู้เก็บเมล็ด — อัปโหลดรูป Hygrometer + กรอก °C/RH · ลิงก์แชร์ GF เปิดได้ 24 ชม. ไม่ล็อกอิน
+- **Logic:** เกณฑ์ +5–+10°C · RH ≤50% · token ใน DB · รูป Supabase `brand-assets/cabinet-storage-log/` · ประวัติ 30 วันบนหน้าแชร์
+- **ไฟล์:** `lib/cabinet-storage-spec.ts` · `services/cabinet-storage-log-service.ts` · `GfStorageLogClient.tsx` · `StorageLogShareView.tsx` · `app/share/storage-log/[token]/page.tsx` · migration `20260909120000_cabinet_storage_log`
+
+### บันทึกการทำงาน — 2026-09-09 (ส่งจดหมายตอบ GF/SSB/2026-0907)
+- **What:** ส่งจดหมายตอบ 0907 EN+TH ผ่าน Dispatcher — ยืนยัน Option 1 · รับทราบราคาใหม่หลัง 9 ก.ย. · ขอซอง mock-up ติดฉลาก V.2.1 · ยังไม่ PO/โอน
+- **Logic:** รอ GF ตอบ heat seal + ส่งคืน mock-up · รอใบราคาเมล็ดใหม่ · นัดหน่วยงานหลังได้ซอง
+- **ไฟล์:** `lib/green-future-0907-reply-letter.ts` · `9_PROJECT_STATE.md`
 
 ### บันทึกการทำงาน — 2026-09-08 (Bulk share — สีเขียวขาว theme เดิม)
 - **What:** ปรับ `/share/bulk` กลับพื้นขาว + เขียว #12463e แทน V4 ดำที่ contrast อ่านยาก

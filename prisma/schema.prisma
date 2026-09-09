@@ -1166,6 +1166,32 @@ model gf_seed_claim_submissions {
   @@schema("public")
 }
 
+/// Daily hygrometer log — seed storage cabinet (GF partner visibility via share token)
+model cabinet_storage_log_entries {
+  id         String   @id @default(uuid()) @db.Uuid
+  logged_at  DateTime @db.Timestamptz(6)
+  temp_c     Decimal  @db.Decimal(5, 2)
+  rh_pct     Decimal  @db.Decimal(5, 2)
+  photo_path String
+  photo_url  String
+  note       String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([logged_at(sort: Desc)])
+  @@map("cabinet_storage_log_entries")
+  @@schema("public")
+}
+
+/// Singleton share token for GF read-only cabinet log page
+model cabinet_storage_share {
+  singleton_key String   @id @default("gf") @db.VarChar(16)
+  token         String   @unique @db.VarChar(128)
+  rotated_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("cabinet_storage_share")
+  @@schema("public")
+}
+
 enum CustomerTier {
   Retail
   Wholesale
