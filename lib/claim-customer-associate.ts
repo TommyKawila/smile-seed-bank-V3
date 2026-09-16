@@ -5,6 +5,11 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getSql } from "@/lib/db";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import {
+  claimPatchForExistingCustomer,
+  hasCustomerPiiPatch,
+  type ClaimFormPii,
+} from "@/lib/claim-customer-profile-merge";
 
 function normEmail(e: string | undefined | null): string | null {
   const t = e?.trim().toLowerCase();
@@ -23,6 +28,45 @@ async function findAuthUserIdByEmail(email: string): Promise<string | null> {
     SELECT id::text AS id FROM auth.users WHERE lower(trim(email)) = lower(trim(${email})) LIMIT 1
   `;
   return rows[0]?.id ?? null;
+}
+
+const CUSTOMER_PII_SELECT = {
+  full_name: true,
+  phone: true,
+  address: true,
+  email: true,
+} as const;
+
+async function fillExistingCustomerBlanks(customerId: string, claim: ClaimFormPii) {
+  const existing = await prisma.customers.findUnique({
+    where: { id: customerId },
+    select: CUSTOMER_PII_SELECT,
+  });
+  if (!existing) return;
+  const patch = claimPatchForExistingCustomer(existing, claim);
+  if (!hasCustomerPiiPatch(patch)) return;
+  await prisma.customers.update({ where: { id: customerId }, data: patch });
+}
+
+async function upsertCustomerFromClaim(customerId: string, claim: ClaimFormPii) {
+  const existing = await prisma.customers.findUnique({
+    where: { id: customerId },
+    select: CUSTOMER_PII_SELECT,
+  });
+  if (!existing) {
+    await prisma.customers.create({
+      data: {
+        id: customerId,
+        email: claim.email,
+        full_name: claim.fullName,
+        phone: claim.phone ?? undefined,
+        address: claim.address || undefined,
+        role: "USER",
+      },
+    });
+    return;
+  }
+  await fillExistingCustomerBlanks(customerId, claim);
 }
 
 export type ClaimAssociateResult = {
@@ -45,6 +89,7 @@ export async function linkOrderToCustomerAfterClaim(input: {
   const phone = normPhone(input.phone);
   const name = input.fullName.trim() || "Customer";
   const addr = input.address.trim();
+  const claim: ClaimFormPii = { fullName: name, phone, address: addr, email };
 
   const order = await prisma.orders.findUnique({
     where: { id: input.orderId },
@@ -60,15 +105,7 @@ export async function linkOrderToCustomerAfterClaim(input: {
   }
 
   if (order.customer_id) {
-    await prisma.customers.update({
-      where: { id: order.customer_id },
-      data: {
-        full_name: name,
-        phone: phone ?? undefined,
-        address: addr || undefined,
-        ...(email ? { email } : {}),
-      },
-    });
+    await fillExistingCustomerBlanks(order.customer_id, claim);
     const c = await prisma.customers.findUnique({
       where: { id: order.customer_id },
       select: { full_name: true },
@@ -103,25 +140,21 @@ export async function linkOrderToCustomerAfterClaim(input: {
   }
 
   if (customer) {
-    await prisma.$transaction([
-      prisma.orders.update({
+    const matched = customer;
+    const patch = claimPatchForExistingCustomer(matched, claim);
+    await prisma.$transaction(async (tx) => {
+      await tx.orders.update({
         where: { id: input.orderId },
-        data: { customer_id: customer.id },
-      }),
-      prisma.customers.update({
-        where: { id: customer.id },
-        data: {
-          full_name: name,
-          phone: phone ?? customer.phone,
-          address: addr || customer.address,
-          ...(email ? { email } : {}),
-        },
-      }),
-    ]);
+        data: { customer_id: matched.id },
+      });
+      if (hasCustomerPiiPatch(patch)) {
+        await tx.customers.update({ where: { id: matched.id }, data: patch });
+      }
+    });
     return {
       linked: true,
       isExisting: true,
-      displayName: customer.full_name?.trim() || name,
+      displayName: matched.full_name?.trim() || name,
       showSetPasswordHint: false,
     };
   }
@@ -137,22 +170,7 @@ export async function linkOrderToCustomerAfterClaim(input: {
 
   const authIdExisting = await findAuthUserIdByEmail(email);
   if (authIdExisting) {
-    await prisma.customers.upsert({
-      where: { id: authIdExisting },
-      create: {
-        id: authIdExisting,
-        email,
-        full_name: name,
-        phone: phone ?? undefined,
-        address: addr || undefined,
-        role: "USER",
-      },
-      update: {
-        full_name: name,
-        phone: phone ?? undefined,
-        address: addr || undefined,
-      },
-    });
+    await upsertCustomerFromClaim(authIdExisting, claim);
     await prisma.orders.update({
       where: { id: input.orderId },
       data: { customer_id: authIdExisting },
@@ -205,22 +223,7 @@ export async function linkOrderToCustomerAfterClaim(input: {
 
   const createdNewAuth = !!created?.user?.id;
 
-  await prisma.customers.upsert({
-    where: { id: uid },
-    create: {
-      id: uid,
-      email,
-      full_name: name,
-      phone: phone ?? undefined,
-      address: addr || undefined,
-      role: "USER",
-    },
-    update: {
-      full_name: name,
-      phone: phone ?? undefined,
-      address: addr || undefined,
-    },
-  });
+  await upsertCustomerFromClaim(uid, claim);
 
   await prisma.orders.update({
     where: { id: input.orderId },
