@@ -5,13 +5,32 @@ import Link from "next/link";
 import { Check, Copy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import type { GfClaimFileView, GfSeedClaimDetail } from "@/lib/gf-seed-claim-admin";
+import {
+  safeHttpHref,
+  type GfClaimFileView,
+  type GfSeedClaimDetail,
+} from "@/lib/gf-seed-claim-admin";
 
 function formatWhen(iso: string): string {
   return new Date(iso).toLocaleString("th-TH", {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function ExternalHref({ raw, label }: { raw: string; label: string }) {
+  const href = safeHttpHref(raw);
+  if (!href) return <span>{label}</span>;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-emerald-700 hover:underline"
+    >
+      {label}
+    </a>
+  );
 }
 
 function FileList({ title, files }: { title: string; files: GfClaimFileView[] }) {
@@ -26,18 +45,7 @@ function FileList({ title, files }: { title: string; files: GfClaimFileView[] })
         <ul className="space-y-1">
           {files.map((f, i) => (
             <li key={`${f.name}-${i}`} className="text-sm">
-              {f.href ? (
-                <a
-                  href={f.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-700 hover:underline"
-                >
-                  {f.name}
-                </a>
-              ) : (
-                <span>{f.name}</span>
-              )}
+              <ExternalHref raw={f.href ?? ""} label={f.name} />
               <span className="ml-2 text-xs text-slate-400">
                 {f.storage}
                 {f.sizeBytes ? ` · ${Math.round(f.sizeBytes / 1024)} KB` : ""}
@@ -154,14 +162,7 @@ export function GfClaimDetailClient({ id }: { id: string }) {
         {claim.extraMediaUrl ? (
           <p className="text-sm">
             Extra media:{" "}
-            <a
-              href={claim.extraMediaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-emerald-700 hover:underline"
-            >
-              {claim.extraMediaUrl}
-            </a>
+            <ExternalHref raw={claim.extraMediaUrl} label={claim.extraMediaUrl} />
           </p>
         ) : null}
       </section>

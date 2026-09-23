@@ -28,10 +28,11 @@ import {
   type GfSeedClaimFormData,
 } from "@/lib/gf-seed-claim-form";
 import type { GfSeedClaimPayload } from "@/lib/green-future-seed-claim";
-import type {
-  GfClaimFileView,
-  GfSeedClaimDetail,
-  GfSeedClaimListItem,
+import {
+  safeHttpHref,
+  type GfClaimFileView,
+  type GfSeedClaimDetail,
+  type GfSeedClaimListItem,
 } from "@/lib/gf-seed-claim-admin";
 
 export type {
@@ -119,7 +120,7 @@ function fileView(f: GfClaimUploadedFile): GfClaimFileView {
     mimeType: f.mimeType,
     sizeBytes: f.sizeBytes,
     storage: f.storage,
-    href: f.webViewLink || f.publicUrl,
+    href: safeHttpHref(f.webViewLink || f.publicUrl),
   };
 }
 
