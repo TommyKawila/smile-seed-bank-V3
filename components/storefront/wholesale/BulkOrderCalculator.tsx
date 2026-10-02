@@ -144,6 +144,10 @@ export function BulkOrderCalculator({
   const [buyExtra, setBuyExtra] = useState(false);
   const [packageACount, setPackageACount] = useState(0);
   const [packageBCount, setPackageBCount] = useState(0);
+  const [strainQuery, setStrainQuery] = useState("");
+  const [strainGroup, setStrainGroup] = useState<
+    "all" | "docs_ready" | "auto" | "photo"
+  >("all");
 
   const pendingCount = countDocsPendingLines(lines);
   const minPackageACount = pendingCount;
@@ -191,9 +195,42 @@ export function BulkOrderCalculator({
   const unused = catalog.filter(
     (c) => !lines.some((l) => l.strainId === c.id)
   );
+  const docsReadyCount = catalog.filter(
+    (c) => c.fulfillmentTier === "docs_ready"
+  ).length;
+  const autoCount = catalog.filter((c) => c.seedFormat === "AUTO_FEM").length;
+  const photoCount = catalog.filter((c) => c.seedFormat === "FEM").length;
+
+  const visibleCatalog = useMemo(() => {
+    const q = strainQuery.trim().toLowerCase();
+    return catalog.filter((c) => {
+      if (strainGroup === "docs_ready" && c.fulfillmentTier !== "docs_ready") {
+        return false;
+      }
+      if (strainGroup === "auto" && c.seedFormat !== "AUTO_FEM") return false;
+      if (strainGroup === "photo" && c.seedFormat !== "FEM") return false;
+      if (!q) return true;
+      const hay = `${c.name} ${c.varietyCode ?? ""} ${c.typeLabel}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [catalog, strainQuery, strainGroup]);
+
+  const groupedOptions = useMemo(() => {
+    const ready = visibleCatalog.filter((c) => c.fulfillmentTier === "docs_ready");
+    const auto = visibleCatalog.filter(
+      (c) => c.fulfillmentTier !== "docs_ready" && c.seedFormat !== "FEM"
+    );
+    const photo = visibleCatalog.filter(
+      (c) => c.fulfillmentTier !== "docs_ready" && c.seedFormat === "FEM"
+    );
+    return { ready, auto, photo };
+  }, [visibleCatalog]);
 
   const addLine = () => {
-    const nextStrain = unused[0] ?? catalog[0];
+    const nextStrain =
+      unused.find((c) => visibleCatalog.some((v) => v.id === c.id)) ??
+      unused[0] ??
+      catalog[0];
     if (!nextStrain) return;
     setLinesAndEmit([
       ...lines,
@@ -278,6 +315,43 @@ export function BulkOrderCalculator({
             </a>
           </p>
         ) : null}
+        <p className="mt-3 text-sm text-slate-700">
+          {t(
+            `เลือกได้ ${catalog.length.toLocaleString("en-US")} สาย · ${docsReadyCount} สายมีเอกสารพร้อมส่ง · Auto ${autoCount} · Photo ${photoCount} · สายอื่นรอหน่วยงานประมาณ 1 เดือน`,
+            `${catalog.length.toLocaleString("en-US")} strains available · ${docsReadyCount} documented (ready to ship) · Auto ${autoCount} · Photo ${photoCount} · others wait ~1 month for authority review`
+          )}
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Input
+            value={strainQuery}
+            onChange={(e) => setStrainQuery(e.target.value)}
+            placeholder={t("ค้นหารหัสหรือชื่อสาย…", "Search code or strain name…")}
+            className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 sm:max-w-xs"
+          />
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["all", t("ทั้งหมด", "All")],
+                ["docs_ready", t("มีเอกสาร", "Documented")],
+                ["auto", "Auto"],
+                ["photo", "Photo"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setStrainGroup(id)}
+                className={`min-h-10 rounded-lg border px-3 text-xs font-semibold ${
+                  strainGroup === id
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-900"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -313,12 +387,52 @@ export function BulkOrderCalculator({
                       }
                     }}
                   >
-                    {catalog.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.fulfillmentTier === "docs_ready" ? "A · " : "B · "}
-                        {c.name} ({c.typeLabel})
-                      </option>
-                    ))}
+                    {catalog.some((c) => c.id === line.strainId) &&
+                    !visibleCatalog.some((c) => c.id === line.strainId) ? (
+                      <option value={line.strainId}>{line.name}</option>
+                    ) : null}
+                    {groupedOptions.ready.length ? (
+                      <optgroup
+                        label={t(
+                          "มีเอกสาร — พร้อมส่ง 3 วันทำการ",
+                          "Documented — ships in 3 business days"
+                        )}
+                      >
+                        {groupedOptions.ready.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.typeLabel})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ) : null}
+                    {groupedOptions.auto.length ? (
+                      <optgroup
+                        label={t(
+                          "Auto อื่น — รอเอกสาร ~1 เดือน",
+                          "Other Auto — awaiting docs ~1 month"
+                        )}
+                      >
+                        {groupedOptions.auto.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.typeLabel})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ) : null}
+                    {groupedOptions.photo.length ? (
+                      <optgroup
+                        label={t(
+                          "Photo อื่น — รอเอกสาร ~1 เดือน",
+                          "Other Photo — awaiting docs ~1 month"
+                        )}
+                      >
+                        {groupedOptions.photo.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.typeLabel})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ) : null}
                   </select>
                 </div>
                 <div className="space-y-1">

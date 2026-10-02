@@ -218,20 +218,33 @@ export function listGfPilotWholesaleCatalog(): WholesaleCatalogStrain[] {
   });
 }
 
+function mergeWholesaleCatalog(
+  primary: WholesaleCatalogStrain[],
+  extra: WholesaleCatalogStrain[]
+): WholesaleCatalogStrain[] {
+  const map = new Map<string, WholesaleCatalogStrain>();
+  for (const row of primary) map.set(row.id, row);
+  for (const row of extra) {
+    if (!map.has(row.id)) map.set(row.id, row);
+  }
+  return sortWholesaleCatalog([...map.values()]);
+}
+
 export async function listPublicWholesaleCatalog(): Promise<
   WholesaleCatalogStrain[]
 > {
+  const fromJson = catalogFromJson();
   try {
     const { strains } = await listPartnerStrains(GREEN_FUTURE_SLUG, {
       stockStatus: "IN_STOCK",
       limit: 500,
     });
-    const mapped = catalogFromPartnerRows(strains);
-    if (mapped.length) return mapped;
+    const fromDb = catalogFromPartnerRows(strains);
+    const merged = mergeWholesaleCatalog(fromJson, fromDb);
+    if (merged.length) return merged;
   } catch (err) {
     console.error("[wholesale-catalog] partner strains", err);
   }
-  const fromJson = catalogFromJson();
   return fromJson.length ? fromJson : listGfPilotWholesaleCatalog();
 }
 
