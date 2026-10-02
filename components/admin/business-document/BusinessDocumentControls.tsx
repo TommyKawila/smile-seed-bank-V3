@@ -54,6 +54,8 @@ type Props = {
   onLoadGreenFuture0824ReplyTh?: () => void;
   onLoadGreenFuture0907Reply?: () => void;
   onLoadGreenFuture0907ReplyTh?: () => void;
+  onLoadGreenFutureVarietyDocs?: () => void;
+  onLoadGreenFutureVarietyDocsTh?: () => void;
   onLoadGreenFuture0904Reply?: () => void;
   onLoadGreenFuture0904ReplyTh?: () => void;
   onLoadGreenFuture0901Reply?: () => void;
@@ -113,6 +115,8 @@ export function BusinessDocumentControls({
   onLoadGreenFuture0824ReplyTh,
   onLoadGreenFuture0907Reply,
   onLoadGreenFuture0907ReplyTh,
+  onLoadGreenFutureVarietyDocs,
+  onLoadGreenFutureVarietyDocsTh,
   onLoadGreenFuture0904Reply,
   onLoadGreenFuture0904ReplyTh,
   onLoadGreenFuture0901Reply,
@@ -218,6 +222,8 @@ export function BusinessDocumentControls({
       onLoadGreenFuture0824ReplyTh ||
       onLoadGreenFuture0907Reply ||
       onLoadGreenFuture0907ReplyTh ||
+      onLoadGreenFutureVarietyDocs ||
+      onLoadGreenFutureVarietyDocsTh ||
       onLoadGreenFuture0904Reply ||
       onLoadGreenFuture0904ReplyTh ||
       onLoadGreenFuture0901Reply ||
@@ -321,6 +327,27 @@ export function BusinessDocumentControls({
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Reply 0907 (Thai evidence)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureVarietyDocs ? (
+              <Button
+                type="button"
+                className="w-full bg-[#12463e] hover:bg-[#0f3a34]"
+                onClick={onLoadGreenFutureVarietyDocs}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Variety identity docs (EN)
+              </Button>
+            ) : null}
+            {onLoadGreenFutureVarietyDocsTh ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-[#12463e]/40 text-[#12463e] hover:bg-[#12463e]/5"
+                onClick={onLoadGreenFutureVarietyDocsTh}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Variety identity docs (TH)
               </Button>
             ) : null}
             {onLoadGreenFuture0904Reply ? (

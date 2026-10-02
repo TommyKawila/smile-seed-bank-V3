@@ -292,6 +292,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-10-02 (จดหมายขอเอกสารระบุสายพันธุ์จาก GF)
+- **What:** จดหมาย TH/EN ขอชุดใบรับรองประวัติและลักษณะประจำพันธุ์ ที่โรงงาน GACP ออกเอง (หัวจดหมาย+ตรา+เซ็น) สำหรับ 5 สายนำร่อง — คนละใบกับ ม.พ. ๒ ๑-๐
+- **Logic:** ไม่ใช่ PO · อ้าง 0907 §5 และ GACP ข้อ 8 · ส่วนที่ 1 Breeder’s Certificate · ส่วนที่ 2 Variety ID sheet+รูป · ฉ.พ.๒ เป็นทางเลือกเสริม · Package A/B ไม่แทน
+- **ไฟล์:** `lib/green-future-variety-docs-letter.ts` · `variety-docs-en/page.tsx` · `variety-docs-th/page.tsx` · `BusinessDocumentDispatcher.tsx` · `GreenFutureSubNav.tsx` · `green-future-gacp-consult-brief.ts`
+
 ### บันทึกการทำงาน — 2026-10-02 (AF143 IN_STOCK บน /wholesale)
 - **What:** AF143 DO-SI-DOS AUTO ขึ้นในลิสต์ขายชั้นมีเอกสาร — เดิม `UNKNOWN` จึงโชว์แค่ 4 สาย
 - **Logic:** แคตตาล็อก JSON เป็น `IN_STOCK` · `listPublicWholesaleCatalog` รวม 5 สายนำร่องเสมอแม้สต็อก JSON ไม่ครบ

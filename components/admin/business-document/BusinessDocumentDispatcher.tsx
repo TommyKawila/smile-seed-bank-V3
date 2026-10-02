@@ -20,6 +20,12 @@ import {
   GREEN_FUTURE_0907_REPLY_TH_SUBJECT,
 } from "@/lib/green-future-0907-reply-letter";
 import {
+  GREEN_FUTURE_VARIETY_DOCS_RAW,
+  GREEN_FUTURE_VARIETY_DOCS_SUBJECT,
+  GREEN_FUTURE_VARIETY_DOCS_TH_RAW,
+  GREEN_FUTURE_VARIETY_DOCS_TH_SUBJECT,
+} from "@/lib/green-future-variety-docs-letter";
+import {
   GREEN_FUTURE_0904_REPLY_RAW,
   GREEN_FUTURE_0904_REPLY_SUBJECT,
   GREEN_FUTURE_0904_REPLY_TH_RAW,
@@ -337,6 +343,24 @@ export function BusinessDocumentDispatcher() {
     );
   }, [loadTemplate]);
 
+  const handleLoadGreenFutureVarietyDocs = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_VARIETY_DOCS_RAW,
+      GREEN_FUTURE_VARIETY_DOCS_SUBJECT,
+      "Variety identity request loaded",
+      "Ask GF for variety ID sheet / ฉ.พ.๒ / genetic COA. Not a PO."
+    );
+  }, [loadTemplate]);
+
+  const handleLoadGreenFutureVarietyDocsTh = useCallback(() => {
+    loadTemplate(
+      GREEN_FUTURE_VARIETY_DOCS_TH_RAW,
+      GREEN_FUTURE_VARIETY_DOCS_TH_SUBJECT,
+      "Variety identity request (TH) loaded",
+      "Thai evidence copy — attach with English original."
+    );
+  }, [loadTemplate]);
+
   const handleLoadGreenFuture0904Reply = useCallback(() => {
     loadTemplate(
       GREEN_FUTURE_0904_REPLY_RAW,
@@ -592,6 +616,8 @@ export function BusinessDocumentDispatcher() {
           onLoadGreenFuture0824ReplyTh={handleLoadGreenFuture0824ReplyTh}
           onLoadGreenFuture0907Reply={handleLoadGreenFuture0907Reply}
           onLoadGreenFuture0907ReplyTh={handleLoadGreenFuture0907ReplyTh}
+          onLoadGreenFutureVarietyDocs={handleLoadGreenFutureVarietyDocs}
+          onLoadGreenFutureVarietyDocsTh={handleLoadGreenFutureVarietyDocsTh}
           onLoadGreenFuture0904Reply={handleLoadGreenFuture0904Reply}
           onLoadGreenFuture0904ReplyTh={handleLoadGreenFuture0904ReplyTh}
           onLoadGreenFuture0901Reply={handleLoadGreenFuture0901Reply}

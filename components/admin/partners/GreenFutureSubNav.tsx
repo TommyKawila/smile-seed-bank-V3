@@ -22,6 +22,16 @@ const items = [
     exact: false,
   },
   {
+    href: "/admin/partners/green-future/variety-docs-en",
+    label: "Variety docs (EN)",
+    exact: false,
+  },
+  {
+    href: "/admin/partners/green-future/variety-docs-th",
+    label: "Variety docs (TH)",
+    exact: false,
+  },
+  {
     href: "/admin/partners/green-future/storage-log",
     label: "Storage log",
     exact: false,
