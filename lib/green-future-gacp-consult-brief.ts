@@ -13,6 +13,12 @@ export const GREEN_FUTURE_GACP_CONSULT_SUBJECT =
 
 export const GACP_CONSULT_CHECKLIST = [
   {
+    id: "variety-identity-docs",
+    labelTh: "ชุดใบรับรองประวัติและลักษณะประจำพันธุ์ จาก GF (GACP ข้อ 8 · โรงงานออกเอง)",
+    labelEn: "GF self-certified variety history + identification pack (GACP clause 8)",
+    note: "จดหมายขอแล้ว — /admin/partners/green-future/variety-docs-en · ไม่ใช่ใบ ม.พ. ๒ ๑-๐",
+  },
+  {
     id: "labelled-mock-pouch",
     labelTh: "ซอง mock-up ติดฉลาก V.2.1 จริง (เปล่า ไม่ใส่เมล็ด)",
     labelEn: "Labelled V.2.1 mock-up pouch (empty — no real seeds)",
