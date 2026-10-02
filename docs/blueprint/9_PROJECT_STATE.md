@@ -292,6 +292,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-10-02 (RLS มัดจำ wholesale)
+- **What:** เปิด RLS บนตารางมัดจำ SGF ที่สร้างวันนี้โดยไม่มีนโยบาย anon
+- **Logic:** PostgREST อ่าน/แก้ PII และตั้ง `VERIFIED` ไม่ได้ · Prisma ยังเขียนผ่าน API · อัปโหลดสลิปไม่ทับสถานะที่ยืนยันแล้วระหว่างอัปโหลด
+- **ไฟล์:** migration `20261002120000_wholesale_deposit_orders_rls` · `services/wholesale-deposit-service.ts` · `scripts/assert-wholesale-deposit-rls.mjs`
+
 ### บันทึกการทำงาน — 2026-10-02 (จดหมายขอเอกสารระบุสายพันธุ์จาก GF)
 - **What:** จดหมาย TH/EN ขอชุดใบรับรองประวัติและลักษณะประจำพันธุ์ ที่โรงงาน GACP ออกเอง (หัวจดหมาย+ตรา+เซ็น) สำหรับ 5 สายนำร่อง — คนละใบกับ ม.พ. ๒ ๑-๐
 - **Logic:** ไม่ใช่ PO · อ้าง 0907 §5 และ GACP ข้อ 8 · ส่วนที่ 1 Breeder’s Certificate · ส่วนที่ 2 Variety ID sheet+รูป · ฉ.พ.๒ เป็นทางเลือกเสริม · Package A/B ไม่แทน
