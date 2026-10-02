@@ -292,6 +292,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-10-02 (AF143 IN_STOCK บน /wholesale)
+- **What:** AF143 DO-SI-DOS AUTO ขึ้นในลิสต์ขายชั้นมีเอกสาร — เดิม `UNKNOWN` จึงโชว์แค่ 4 สาย
+- **Logic:** แคตตาล็อก JSON เป็น `IN_STOCK` · `listPublicWholesaleCatalog` รวม 5 สายนำร่องเสมอแม้สต็อก JSON ไม่ครบ
+- **ไฟล์:** `data/partners/green-future/catalog.json` · `services/wholesale-catalog-service.ts`
+
 ### บันทึกการทำงาน — 2026-10-02 (ตัวเลือกสายพันธุ์มือถือบน /wholesale)
 - **What:** แทน native `<select>` ~187 สายด้วย bottom sheet ค้นหา/ชิป/แถว ≥48px + ปุ่มบันทึกลิสต์ลงเครื่อง (Web Share หรือ CSV)
 - **Logic:** picker ต่อบรรทัด · CSV helper ใน `wholesale-fulfillment` · ธีมขาว-เขียวของหน้า wholesale ไม่เปลี่ยนเป็น V4 ดำ

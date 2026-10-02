@@ -240,12 +240,15 @@ export async function listPublicWholesaleCatalog(): Promise<
       limit: 500,
     });
     const fromDb = catalogFromPartnerRows(strains);
-    const merged = mergeWholesaleCatalog(fromJson, fromDb);
+    const merged = mergeWholesaleCatalog(
+      mergeWholesaleCatalog(fromJson, fromDb),
+      listGfPilotWholesaleCatalog()
+    );
     if (merged.length) return merged;
   } catch (err) {
     console.error("[wholesale-catalog] partner strains", err);
   }
-  return fromJson.length ? fromJson : listGfPilotWholesaleCatalog();
+  return mergeWholesaleCatalog(fromJson, listGfPilotWholesaleCatalog());
 }
 
 export async function createWholesaleStrain(input: {

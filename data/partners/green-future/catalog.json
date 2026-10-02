@@ -2488,7 +2488,8 @@
       "varietyCode": "AF143",
       "strainName": "DO-SI-DOS AUTO",
       "seedFormat": "AUTO_FEM",
-      "stockStatus": "UNKNOWN",
+      "typeLabel": "Indica-dominant",
+      "stockStatus": "IN_STOCK",
       "sortOrder": 143,
       "istaStatus": "CONFIRMED"
     },
