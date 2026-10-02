@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Download, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/context/LanguageContext";
@@ -33,11 +33,12 @@ import {
   type BulkQuoteLineInput,
   type CoaMode,
 } from "@/lib/wholesale-bulk-pricing";
-import { countDocsPendingLines, gfFulfillmentTier } from "@/lib/wholesale-fulfillment";
+import { countDocsPendingLines, gfFulfillmentTier, wholesaleCatalogCsv, wholesaleCatalogShareText } from "@/lib/wholesale-fulfillment";
 import { CoaAddonSection } from "./CoaAddonSection";
 import { CoaOptionCards } from "./CoaOptionCards";
 import { BulkOrderSummary } from "./BulkOrderSummary";
 import { PilotLotDocsIncluded } from "./PilotLotDocsIncluded";
+import { WholesaleStrainPicker } from "./WholesaleStrainPicker";
 
 export type BulkOrderState = {
   lines: BulkQuoteLineInput[];
@@ -125,7 +126,7 @@ export function BulkOrderCalculator({
   onStateChange,
   onRequestQuote,
 }: Props) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const depositsOpen = gfAcceptsPublicDeposits();
   const defaultQty = depositsOpen
     ? GF_PILOT_POUCH_QTY
@@ -144,10 +145,6 @@ export function BulkOrderCalculator({
   const [buyExtra, setBuyExtra] = useState(false);
   const [packageACount, setPackageACount] = useState(0);
   const [packageBCount, setPackageBCount] = useState(0);
-  const [strainQuery, setStrainQuery] = useState("");
-  const [strainGroup, setStrainGroup] = useState<
-    "all" | "docs_ready" | "auto" | "photo"
-  >("all");
 
   const pendingCount = countDocsPendingLines(lines);
   const minPackageACount = pendingCount;
@@ -201,36 +198,8 @@ export function BulkOrderCalculator({
   const autoCount = catalog.filter((c) => c.seedFormat === "AUTO_FEM").length;
   const photoCount = catalog.filter((c) => c.seedFormat === "FEM").length;
 
-  const visibleCatalog = useMemo(() => {
-    const q = strainQuery.trim().toLowerCase();
-    return catalog.filter((c) => {
-      if (strainGroup === "docs_ready" && c.fulfillmentTier !== "docs_ready") {
-        return false;
-      }
-      if (strainGroup === "auto" && c.seedFormat !== "AUTO_FEM") return false;
-      if (strainGroup === "photo" && c.seedFormat !== "FEM") return false;
-      if (!q) return true;
-      const hay = `${c.name} ${c.varietyCode ?? ""} ${c.typeLabel}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }, [catalog, strainQuery, strainGroup]);
-
-  const groupedOptions = useMemo(() => {
-    const ready = visibleCatalog.filter((c) => c.fulfillmentTier === "docs_ready");
-    const auto = visibleCatalog.filter(
-      (c) => c.fulfillmentTier !== "docs_ready" && c.seedFormat !== "FEM"
-    );
-    const photo = visibleCatalog.filter(
-      (c) => c.fulfillmentTier !== "docs_ready" && c.seedFormat === "FEM"
-    );
-    return { ready, auto, photo };
-  }, [visibleCatalog]);
-
   const addLine = () => {
-    const nextStrain =
-      unused.find((c) => visibleCatalog.some((v) => v.id === c.id)) ??
-      unused[0] ??
-      catalog[0];
+    const nextStrain = unused[0] ?? catalog[0];
     if (!nextStrain) return;
     setLinesAndEmit([
       ...lines,
@@ -252,6 +221,42 @@ export function BulkOrderCalculator({
 
   const removeLine = (idx: number) => {
     setLinesAndEmit(lines.filter((_, i) => i !== idx));
+  };
+
+  const saveCatalogToPhone = async () => {
+    const csv = wholesaleCatalogCsv(catalog);
+    const filename = "sgf-seeds-catalog.csv";
+    const file = new File([`\uFEFF${csv}`], filename, {
+      type: "text/csv;charset=utf-8",
+    });
+    try {
+      if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: t("ลิสต์เมล็ด SGF SEEDS", "SGF SEEDS strain list"),
+          files: [file],
+        });
+        return;
+      }
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share({
+          title: t("ลิสต์เมล็ด SGF SEEDS", "SGF SEEDS strain list"),
+          text: wholesaleCatalogShareText(catalog, locale),
+        });
+        return;
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
+    }
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   const state: BulkOrderState = {
@@ -321,37 +326,14 @@ export function BulkOrderCalculator({
             `${catalog.length.toLocaleString("en-US")} strains available · ${docsReadyCount} documented (ready to ship) · Auto ${autoCount} · Photo ${photoCount} · others wait ~1 month for authority review`
           )}
         </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Input
-            value={strainQuery}
-            onChange={(e) => setStrainQuery(e.target.value)}
-            placeholder={t("ค้นหารหัสหรือชื่อสาย…", "Search code or strain name…")}
-            className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 sm:max-w-xs"
-          />
-          <div className="flex flex-wrap gap-2">
-            {(
-              [
-                ["all", t("ทั้งหมด", "All")],
-                ["docs_ready", t("มีเอกสาร", "Documented")],
-                ["auto", "Auto"],
-                ["photo", "Photo"],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setStrainGroup(id)}
-                className={`min-h-10 rounded-lg border px-3 text-xs font-semibold ${
-                  strainGroup === id
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-900"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => void saveCatalogToPhone()}
+          className="mt-3 inline-flex min-h-12 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-900"
+        >
+          <Download className="h-4 w-4" aria-hidden />
+          {t("บันทึกลิสต์ลงเครื่อง", "Save list to phone")}
+        </button>
       </div>
 
       <div className="space-y-4">
@@ -367,74 +349,19 @@ export function BulkOrderCalculator({
               className="rounded-xl border border-slate-200 bg-white p-4"
             >
               <div className="grid gap-3 sm:grid-cols-[1fr_140px_auto] sm:items-end">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-500">
-                    {t("สายพันธุ์", "Strain")}
-                  </label>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900"
-                    value={line.strainId}
-                    onChange={(e) => {
-                      const s = catalog.find((c) => c.id === e.target.value);
-                      if (s) {
-                        updateLine(idx, {
-                          strainId: s.id,
-                          name: s.name,
-                          fulfillmentTier:
-                            s.fulfillmentTier ??
-                            gfFulfillmentTier(s.varietyCode ?? s.id),
-                        });
-                      }
-                    }}
-                  >
-                    {catalog.some((c) => c.id === line.strainId) &&
-                    !visibleCatalog.some((c) => c.id === line.strainId) ? (
-                      <option value={line.strainId}>{line.name}</option>
-                    ) : null}
-                    {groupedOptions.ready.length ? (
-                      <optgroup
-                        label={t(
-                          "มีเอกสาร — พร้อมส่ง 3 วันทำการ",
-                          "Documented — ships in 3 business days"
-                        )}
-                      >
-                        {groupedOptions.ready.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} ({c.typeLabel})
-                          </option>
-                        ))}
-                      </optgroup>
-                    ) : null}
-                    {groupedOptions.auto.length ? (
-                      <optgroup
-                        label={t(
-                          "Auto อื่น — รอเอกสาร ~1 เดือน",
-                          "Other Auto — awaiting docs ~1 month"
-                        )}
-                      >
-                        {groupedOptions.auto.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} ({c.typeLabel})
-                          </option>
-                        ))}
-                      </optgroup>
-                    ) : null}
-                    {groupedOptions.photo.length ? (
-                      <optgroup
-                        label={t(
-                          "Photo อื่น — รอเอกสาร ~1 เดือน",
-                          "Other Photo — awaiting docs ~1 month"
-                        )}
-                      >
-                        {groupedOptions.photo.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} ({c.typeLabel})
-                          </option>
-                        ))}
-                      </optgroup>
-                    ) : null}
-                  </select>
-                </div>
+                <WholesaleStrainPicker
+                  catalog={catalog}
+                  valueId={line.strainId}
+                  onSelect={(s) =>
+                    updateLine(idx, {
+                      strainId: s.id,
+                      name: s.name,
+                      fulfillmentTier:
+                        s.fulfillmentTier ??
+                        gfFulfillmentTier(s.varietyCode ?? s.id),
+                    })
+                  }
+                />
                 <div className="space-y-1">
                   {pilotMode ? (
                     <PilotPouchStepper
