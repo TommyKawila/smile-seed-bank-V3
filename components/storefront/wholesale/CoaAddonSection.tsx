@@ -13,6 +13,7 @@ type Props = {
   buyExtra: boolean;
   packageACount: number;
   packageBCount: number;
+  minPackageACount?: number;
   onBuyExtraChange: (v: boolean) => void;
   onPackageAChange: (n: number) => void;
   onPackageBChange: (n: number) => void;
@@ -49,6 +50,7 @@ export function CoaAddonSection({
   buyExtra,
   packageACount,
   packageBCount,
+  minPackageACount = 0,
   onBuyExtraChange,
   onPackageAChange,
   onPackageBChange,
@@ -82,18 +84,24 @@ export function CoaAddonSection({
         <input
           type="checkbox"
           className="mt-1 h-4 w-4"
-          checked={buyExtra}
+          checked={buyExtra || minPackageACount > 0}
+          disabled={minPackageACount > 0}
           onChange={(e) => onBuyExtraChange(e.target.checked)}
         />
         <span>
-          {t(
-            "ต้องการซื้อบริการตรวจ COA เพิ่มเติมสำหรับสายพันธุ์ที่ยังไม่ได้สิทธิ์ฟรี",
-            "I want to purchase extra COA testing for strains without a free entitlement"
-          )}
+          {minPackageACount > 0
+            ? t(
+                `สายที่ยังไม่มีเอกสารต้องมี Package A อย่างน้อย ${minPackageACount} ใบ (ราคา ${config.coaPackageAThb.toLocaleString("en-US")} บาท/สาย)`,
+                `Strains without documents require at least ${minPackageACount} Package A test(s) (${config.coaPackageAThb.toLocaleString("en-US")} THB/strain)`
+              )
+            : t(
+                "ต้องการซื้อบริการตรวจ COA เพิ่มเติมสำหรับสายพันธุ์ที่ยังไม่ได้สิทธิ์ฟรี",
+                "I want to purchase extra COA testing for strains without a free entitlement"
+              )}
         </span>
       </label>
 
-      {buyExtra && (
+      {(buyExtra || minPackageACount > 0) && (
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <div className="space-y-1">
@@ -118,10 +126,15 @@ export function CoaAddonSection({
             </div>
             <Input
               type="number"
-              min={0}
+              min={minPackageACount}
               value={packageACount}
               onChange={(e) =>
-                onPackageAChange(Math.max(0, Math.floor(Number(e.target.value) || 0)))
+                onPackageAChange(
+                  Math.max(
+                    minPackageACount,
+                    Math.floor(Number(e.target.value) || 0)
+                  )
+                )
               }
               className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
             />

@@ -3,9 +3,12 @@
 import { Check } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import {
+  GF_STRAIN_STATUS_DOCS_READY_EN,
+  GF_STRAIN_STATUS_DOCS_READY_TH,
+  gfAcceptsPublicDeposits,
+  isGfPreGate,
   GF_STRAIN_STATUS_PRE_GATE_EN,
   GF_STRAIN_STATUS_PRE_GATE_TH,
-  isGfPreGate,
 } from "@/lib/green-future-approved-marketing";
 import {
   GACP_FEATURED_STRAINS,
@@ -33,10 +36,12 @@ export function GacpFeaturedStrains() {
             return (
               <li key={strain.varietyCode}>
                 <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-md">
-                  <span className="inline-flex w-fit items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                    {isGfPreGate()
-                      ? t(GF_STRAIN_STATUS_PRE_GATE_TH, GF_STRAIN_STATUS_PRE_GATE_EN)
-                      : t("เอกสารตามล็อต", "Per-lot documents")}
+                  <span className="inline-flex w-fit items-center rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+                    {gfAcceptsPublicDeposits()
+                      ? t(GF_STRAIN_STATUS_DOCS_READY_TH, GF_STRAIN_STATUS_DOCS_READY_EN)
+                      : isGfPreGate()
+                        ? t(GF_STRAIN_STATUS_PRE_GATE_TH, GF_STRAIN_STATUS_PRE_GATE_EN)
+                        : t("เอกสารตามล็อต", "Per-lot documents")}
                   </span>
                   <h3 className="mt-3 text-base font-semibold text-slate-900">
                     {strain.displayName}
@@ -79,10 +84,12 @@ export function GacpFeaturedStrains() {
                     </ul>
                   </div>
                   <a
-                    href="#documents"
+                    href="#rfq"
                     className="mt-5 inline-flex min-h-12 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
                   >
-                    {t("ขอเอกสารสายนี้", "Request this package")}
+                    {gfAcceptsPublicDeposits()
+                      ? t("สั่งสายนี้", "Order this strain")
+                      : t("ขอเอกสารสายนี้", "Request this package")}
                   </a>
                 </article>
               </li>

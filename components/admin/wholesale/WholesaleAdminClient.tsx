@@ -21,7 +21,7 @@ import {
   type BulkPricingConfig,
 } from "@/lib/wholesale-bulk-pricing";
 
-type Tab = "catalog" | "pricing" | "rfqs";
+type Tab = "catalog" | "pricing" | "rfqs" | "deposits";
 
 type WholesaleStrainDTO = {
   id: string;
@@ -43,6 +43,29 @@ type WholesaleRfqListItem = {
   updatedAt: string;
 };
 
+type DepositAdminItem = {
+  id: string;
+  reservationNumber: string;
+  companyName: string;
+  contactName: string;
+  email: string;
+  depositThb: number;
+  grandTotalThb: number;
+  status: string;
+  slipUrl: string | null;
+  transferAmountThb: number | null;
+  payerName: string | null;
+  hasDocsReady: boolean;
+  hasDocsPending: boolean;
+  createdAt: string;
+  items: Array<{
+    varietyCode: string;
+    strainName: string;
+    fulfillmentTier: string;
+    quantity: number;
+  }>;
+};
+
 export function WholesaleAdminClient() {
   const { toast } = useToast();
   const [tab, setTab] = useState<Tab>("catalog");
@@ -51,16 +74,18 @@ export function WholesaleAdminClient() {
   const [strains, setStrains] = useState<WholesaleStrainDTO[]>([]);
   const [pricing, setPricing] = useState<BulkPricingConfig>(DEFAULT_BULK_PRICING);
   const [rfqs, setRfqs] = useState<WholesaleRfqListItem[]>([]);
+  const [deposits, setDeposits] = useState<DepositAdminItem[]>([]);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("Feminized");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [sRes, stRes, rRes] = await Promise.all([
+      const [sRes, stRes, rRes, dRes] = await Promise.all([
         fetch("/api/admin/wholesale/strains", { cache: "no-store" }),
         fetch("/api/admin/wholesale/settings", { cache: "no-store" }),
         fetch("/api/admin/wholesale/rfqs", { cache: "no-store" }),
+        fetch("/api/admin/wholesale/deposits", { cache: "no-store" }),
       ]);
       const sJson = (await sRes.json()) as {
         strains?: WholesaleStrainDTO[];
@@ -74,12 +99,18 @@ export function WholesaleAdminClient() {
         rfqs?: WholesaleRfqListItem[];
         error?: string;
       };
+      const dJson = (await dRes.json()) as {
+        deposits?: DepositAdminItem[];
+        error?: string;
+      };
       if (!sRes.ok) throw new Error(sJson.error ?? "strains");
       if (!stRes.ok) throw new Error(stJson.error ?? "settings");
       if (!rRes.ok) throw new Error(rJson.error ?? "rfqs");
+      if (!dRes.ok) throw new Error(dJson.error ?? "deposits");
       setStrains(sJson.strains ?? []);
       setPricing(stJson.settings?.bulkPricing ?? DEFAULT_BULK_PRICING);
       setRfqs(rJson.rfqs ?? []);
+      setDeposits(dJson.deposits ?? []);
     } catch (e) {
       toast({
         variant: "destructive",
@@ -203,10 +234,36 @@ export function WholesaleAdminClient() {
     }
   };
 
+  const patchDeposit = async (id: string, status: "VERIFIED" | "REJECTED") => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/wholesale/deposits/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "update failed");
+      await load();
+      toast({
+        title: status === "VERIFIED" ? "ยืนยันมัดจำแล้ว" : "ปฏิเสธมัดจำแล้ว",
+      });
+    } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "อัปเดตมัดจำไม่สำเร็จ",
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const tabs: { id: Tab; label: string }[] = [
     { id: "catalog", label: "Catalog" },
     { id: "pricing", label: "Pricing" },
     { id: "rfqs", label: "RFQs" },
+    { id: "deposits", label: "Deposits" },
   ];
 
   if (loading) {
@@ -241,6 +298,9 @@ export function WholesaleAdminClient() {
             >
               {t.label}
               {t.id === "rfqs" && rfqs.length > 0 ? ` (${rfqs.length})` : ""}
+              {t.id === "deposits" && deposits.length > 0
+                ? ` (${deposits.length})`
+                : ""}
             </Button>
           ))}
         </div>
@@ -632,6 +692,93 @@ export function WholesaleAdminClient() {
                 )}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "deposits" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">
+              SGF deposit inbox (ไม่โอน GF / ไม่สร้างออเดอร์ร้าน)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {deposits.map((d) => (
+              <div
+                key={d.id}
+                className="rounded-lg border border-slate-200 p-4 text-sm"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-900">
+                      {d.reservationNumber} · {d.status}
+                    </p>
+                    <p className="text-slate-600">
+                      {d.companyName} ({d.contactName}) · {d.email}
+                    </p>
+                    <p className="mt-1 text-slate-700">
+                      มัดจำ {d.depositThb.toLocaleString("en-US")} THB · รวม{" "}
+                      {d.grandTotalThb.toLocaleString("en-US")} THB
+                      {d.payerName ? ` · ผู้โอน ${d.payerName}` : ""}
+                      {d.transferAmountThb != null
+                        ? ` · โอน ${d.transferAmountThb.toLocaleString("en-US")}`
+                        : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {d.hasDocsReady ? "มีสายเอกสารพร้อมส่ง 3 วัน · " : ""}
+                      {d.hasDocsPending ? "มีสายรอหน่วยงาน ~1 เดือน" : ""}
+                    </p>
+                    <ul className="mt-2 text-xs text-slate-600">
+                      {d.items.map((it) => (
+                        <li key={`${d.id}-${it.varietyCode}`}>
+                          {it.varietyCode} {it.strainName} · {it.quantity} ·{" "}
+                          {it.fulfillmentTier}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {d.slipUrl ? (
+                      <a
+                        href={d.slipUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-emerald-700 underline"
+                      >
+                        ดูสลิป
+                      </a>
+                    ) : (
+                      <span className="text-slate-400">ยังไม่มีสลิป</span>
+                    )}
+                    {d.status !== "VERIFIED" ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={saving || !d.slipUrl}
+                        onClick={() => void patchDeposit(d.id, "VERIFIED")}
+                      >
+                        ยืนยันมัดจำ
+                      </Button>
+                    ) : null}
+                    {d.status !== "REJECTED" && d.status !== "VERIFIED" ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={saving}
+                        onClick={() => void patchDeposit(d.id, "REJECTED")}
+                      >
+                        ปฏิเสธ
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {!deposits.length ? (
+              <p className="text-slate-500">ยังไม่มีใบจองมัดจำ</p>
+            ) : null}
           </CardContent>
         </Card>
       )}

@@ -57,6 +57,9 @@ export type WholesaleCatalogStrain = {
   id: string;
   name: string;
   typeLabel: string;
+  varietyCode?: string;
+  seedFormat?: "AUTO_FEM" | "FEM";
+  fulfillmentTier?: "docs_ready" | "docs_pending";
 };
 
 export type WholesalePricingContext = {

@@ -8,6 +8,7 @@ import {
   GF_WHOLESALE_HERO_LEAD_TH,
   GF_WHOLESALE_HERO_TITLE_EN,
   GF_WHOLESALE_HERO_TITLE_TH,
+  gfAcceptsPublicDeposits,
 } from "@/lib/green-future-approved-marketing";
 import { shouldOffloadImageOptimization } from "@/lib/vercel-image-offload";
 
@@ -18,6 +19,7 @@ type Props = {
 
 export function WholesaleHero({ onRequestCatalog, heroImageUrl }: Props) {
   const { t } = useLanguage();
+  const depositsOpen = gfAcceptsPublicDeposits();
 
   return (
     <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-slate-50 via-white to-emerald-50/40">
@@ -47,7 +49,9 @@ export function WholesaleHero({ onRequestCatalog, heroImageUrl }: Props) {
               onClick={onRequestCatalog}
               className="inline-flex min-h-12 items-center justify-center rounded-lg bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
             >
-              {t("ขอแคตตาล็อกขายส่ง", "Request Wholesale Catalog")}
+              {depositsOpen
+                ? t("สั่งเมล็ด GACP-ready", "Order GACP-ready seeds")
+                : t("ขอแคตตาล็อกขายส่ง", "Request Wholesale Catalog")}
             </button>
             <a
               href="#documents"
@@ -64,7 +68,7 @@ export function WholesaleHero({ onRequestCatalog, heroImageUrl }: Props) {
             </li>
             <li className="inline-flex items-center gap-2">
               <MapPin className="h-4 w-4 text-emerald-600" aria-hidden />
-              {t("จัดส่งในประเทศ · ระยะเวลาตามใบเสนอราคา", "Domestic dispatch · lead time per quotation")}
+              {t("จัดส่งในประเทศ · ตามชั้นเอกสาร", "Domestic dispatch · by document tier")}
             </li>
           </ul>
         </div>

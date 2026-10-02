@@ -161,8 +161,8 @@
 - [x] GF ยืนยัน Lead Registration ในหลักการ (0904) — ข้อยกเว้นลูกค้าเดิม · รายละเอียดใน Distribution Agreement
 - [ ] แพ็ก+ฉลากเสร็จ (ซีล + V.2 อนุมัติและติดซองจริง)
 - [ ] สอบถามหน่วยงาน: ผู้ปลูกใช้ SGF Seeds + เอกสารประกอบยื่น GACP ได้
-- [ ] การตลาด 4 ข้อ: Traceability พร้อมใช้ · **หน้า B2B/GACP มีเงื่อนไขครบ (ตรวจแล้ว 4 ก.ย.)** · เคลม wizard+inbox ใช้ได้ (preview · ไฟล์ mock เข้า Supabase เพราะ Drive SA ไม่มีโควตา) · มีลูกค้าสั่ง 1 ใน 5 สาย
-- [ ] มัดจำลูกค้า 50% เข้าแล้ว → PO **เท่าที่มัดจำครอบคลุม GF 50% ของบรรทัดนั้น** → โอน GF 50% (ห้ามกลับลำดับ · ห้าม PO ทั้ง 1,000 จากออเดอร์ซองเดียว)
+- [ ] การตลาด 4 ข้อ: Traceability พร้อมใช้ · **หน้า B2B/GACP มีเงื่อนไขครบ (ตรวจแล้ว 4 ก.ย.)** · เคลม wizard+inbox ใช้ได้ (preview · ไฟล์ mock เข้า Supabase เพราะ Drive SA ไม่มีโควตา) · **เปิดจองมัดจำลูกค้าบน `/wholesale` (2 ต.ค.)** · ยังรอลูกค้าสั่ง 1 ใน 5 สาย + ยืนยันสลิป
+- [ ] มัดจำลูกค้า 50% เข้าแล้ว → PO **เท่าที่มัดจำครอบคลุม GF 50% ของบรรทัดนั้น** → โอน GF 50% (ห้ามกลับลำดับ · ห้าม PO ทั้ง 1,000 จากออเดอร์ซองเดียว) · **หน้าเว็บเปิดรับมัดจำแล้ว แต่ยังห้าม PO/โอน GF**
 - [ ] ทดสอบซอง+ฉลากผ่าน → written approval เวอร์ชัน → ส่งซองสำหรับ 20 หน่วย (+สำรอง)
 - [ ] ตรวจคลัง +5–+10°C, RH ≤50%, electronic log ก่อนของถึง
 - [ ] หลังส่งของสำเร็จ → Distribution Agreement + Lead Protection
@@ -291,6 +291,11 @@
 - **What:** เพิ่มเอกสารเสนอใช้แพ็กเกจ Smile Seed Bank เดิมชั่วคราวใน first-stage test order
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
+
+### บันทึกการทำงาน — 2026-10-02 (เปิดสั่ง + แจ้งโอนมัดจำ SGF บน /wholesale)
+- **What:** เปิดฟอร์มสั่งเมล็ด GACP-ready บน `/wholesale` + ฟอร์มแจ้งโอนมัดจำ 50% แยกจากตะกร้าร้าน (`/wholesale/transfer`) โอนเข้า หจก.ทีเอ็มวาย อะโกรเทรด แล้วแนบสลิป
+- **Logic:** ชั้น A (AF99/AF143/AF02/AF22/AF102) ส่ง 3 วันทำการหลังยืนยันมัดจำ · ชั้น B Auto/Photo อื่นรอหน่วยงาน ~1 เดือน + บังคับ Package A · `GF_CUSTOMER_DEPOSIT_OPEN` ไม่ปลด `GF_PO_GATE`
+- **ไฟล์:** `lib/green-future-approved-marketing.ts` · `services/wholesale-deposit-service.ts` · `DepositOrderModal.tsx` · `DepositTransferForm.tsx` · `app/(storefront)/wholesale/transfer/page.tsx` · migration `20261002043000_wholesale_deposit_orders`
 
 ### บันทึกการทำงาน — 2026-09-09 (Cabinet storage log — Temp/RH + share link GF)
 - **What:** log รายวันอุณหภูมิ/ความชื้นตู้เก็บเมล็ด — อัปโหลดรูป Hygrometer + กรอก °C/RH · ลิงก์แชร์ GF เปิดได้ 24 ชม. ไม่ล็อกอิน

@@ -21,8 +21,8 @@ export function FloatingQuoteBar({ itemCount, onOpen }: Props) {
       >
         <ClipboardList className="h-5 w-5" aria-hidden />
         {t(
-          `คำขอใบเสนอราคาของคุณ (${itemCount} รายการ)`,
-          `Your Quote Request (${itemCount} items)`
+          `สั่งจองมัดจำ 50% (${itemCount} รายการ)`,
+          `Place 50% deposit order (${itemCount} items)`
         )}
       </button>
     </div>
