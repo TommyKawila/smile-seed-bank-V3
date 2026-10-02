@@ -4,6 +4,7 @@ export type QuoteCartLine = {
   strainId: string;
   name: string;
   quantity: number;
+  fulfillmentTier?: "docs_ready" | "docs_pending";
 };
 
 export type WholesalePaymentMethod = "THB_BANK" | "EUR_WIRE" | "USDT";

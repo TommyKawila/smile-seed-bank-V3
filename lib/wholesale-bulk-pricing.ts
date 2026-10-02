@@ -37,6 +37,7 @@ export type BulkQuoteLineInput = {
   strainId: string;
   name: string;
   quantity: number;
+  fulfillmentTier?: "docs_ready" | "docs_pending";
 };
 
 export type CoaMode = "none" | "with";
@@ -137,6 +138,8 @@ export function isMicroPackQty(qty: number, config: BulkPricingConfig): boolean 
 
 export type QuoteResolveOptions = CoaOptions & {
   pilotMode?: boolean;
+  /** Forced Package A count for docs_pending strains */
+  minPackageACount?: number;
 };
 
 export function isValidQty(
@@ -366,10 +369,11 @@ export function resolveQuote(
     ? ceilThb(freeCoaCount * (perk?.freeCoaValueEachThb ?? config.coaPackageAThb))
     : 0;
 
+  const minA = Math.max(0, Math.floor(coa.minPackageACount ?? 0));
   let extraCoaThb = 0;
-  if (coa.mode === "with" && coa.buyExtra) {
-    const a = Math.max(0, Math.floor(coa.packageACount));
-    const b = Math.max(0, Math.floor(coa.packageBCount));
+  const a = Math.max(minA, Math.max(0, Math.floor(coa.packageACount)));
+  const b = Math.max(0, Math.floor(coa.packageBCount));
+  if (minA > 0 || (coa.mode === "with" && coa.buyExtra)) {
     extraCoaThb = ceilThb(
       a * config.coaPackageAThb + b * config.coaPackageBThb
     );

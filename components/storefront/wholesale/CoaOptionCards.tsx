@@ -14,9 +14,10 @@ import type { CoaMode } from "@/lib/wholesale-bulk-pricing";
 type Props = {
   mode: CoaMode;
   onChange: (mode: CoaMode) => void;
+  lockWith?: boolean;
 };
 
-export function CoaOptionCards({ mode, onChange }: Props) {
+export function CoaOptionCards({ mode, onChange, lockWith = false }: Props) {
   const { t } = useLanguage();
 
   return (
@@ -24,21 +25,31 @@ export function CoaOptionCards({ mode, onChange }: Props) {
       <h3 className="text-base font-semibold text-slate-900">
         {t("ตัวเลือกเอกสาร", "Document options")}
       </h3>
-      <p className="text-sm text-slate-600">
-        {t(
-          "เลือกเพิ่ม COA แล็บภายนอกได้ด้านล่าง — เอกสารพื้นฐานต่อล็อตแถมตามรายการด้านบน",
-          "Optional external lab COA below — basic per-lot documents are included as listed above"
-        )}
-      </p>
+      {lockWith ? (
+        <p className="text-sm text-amber-800">
+          {t(
+            "สายที่ยังไม่มีเอกสารต้องคิดค่าแล็บ Package A อย่างน้อย 1 ใบต่อสาย",
+            "Strains without documents require at least one Package A lab test per strain"
+          )}
+        </p>
+      ) : (
+        <p className="text-sm text-slate-600">
+          {t(
+            "เลือกเพิ่ม COA แล็บภายนอกได้ด้านล่าง — เอกสารพื้นฐานต่อล็อตแถมตามรายการด้านบน",
+            "Optional external lab COA below — basic per-lot documents are included as listed above"
+          )}
+        </p>
+      )}
       <div className="grid gap-3 md:grid-cols-2">
         <button
           type="button"
+          disabled={lockWith}
           onClick={() => onChange("none")}
           className={`rounded-xl border-2 p-4 text-left transition ${
             mode === "none"
               ? "border-emerald-600 bg-emerald-50"
               : "border-slate-200 bg-white hover:border-slate-300"
-          }`}
+          } ${lockWith ? "cursor-not-allowed opacity-50" : ""}`}
         >
           <p className="font-semibold text-slate-900">
             {t("เมล็ดอย่างเดียว", "Seeds only")}

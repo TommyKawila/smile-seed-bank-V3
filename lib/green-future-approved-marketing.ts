@@ -8,6 +8,9 @@ export type GfMarketingGateStatus = "pre_gate" | "post_gate";
 /** Current gate — flip to post_gate after written regulatory evidence */
 export const GF_MARKETING_GATE_STATUS: GfMarketingGateStatus = "pre_gate";
 
+/** Customer 50% deposits on /wholesale — does not unlock GF PO / transfer */
+export const GF_CUSTOMER_DEPOSIT_OPEN = true;
+
 export function isGfPreGate(): boolean {
   return GF_MARKETING_GATE_STATUS === "pre_gate";
 }
@@ -17,11 +20,11 @@ export function isGfPostGate(): boolean {
 }
 
 export function gfAcceptsPublicDeposits(): boolean {
-  return isGfPostGate();
+  return GF_CUSTOMER_DEPOSIT_OPEN || isGfPostGate();
 }
 
 export function gfShowPaymentTerms(): boolean {
-  return isGfPostGate();
+  return gfAcceptsPublicDeposits();
 }
 
 export const GF_RFQ_NON_BINDING_TH =
@@ -36,9 +39,9 @@ export const GF_OPTION1_LABEL_TH =
 export const GF_OPTION1_LABEL_EN =
   "Seeds first — dispatch on the producer’s lot test · official lab COA later if ordered separately";
 
-export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด/ซอง · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP) · ราคาลดตามยอดรวม 125/100/80 บาท/เมล็ด · ประมาณการสำหรับขอใบเสนอราคา`;
+export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด/ซอง · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP) · ราคาลดตามยอดรวม 125/100/80 บาท/เมล็ด · มัดจำ 50% โอนธนาคาร`;
 
-export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · factory-packed at the GACP production site · tiered cart pricing (125/100/80 THB/seed) · indicative quotation estimates`;
+export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · factory-packed at the GACP production site · tiered cart pricing (125/100/80 THB/seed) · 50% bank-transfer deposit`;
 
 export const GF_PILOT_INCLUDED_DOCS_TITLE_TH =
   "เอกสารที่แถมต่อล็อต — 5 สายนำร่อง (AF99 · AF143 · AF02 · AF22 · AF102)";
@@ -84,11 +87,23 @@ export const GF_DISPATCH_AFTER_PO_TH =
 export const GF_DISPATCH_AFTER_PO_EN =
   "Dispatch timing is indicative per quotation — not a guaranteed ship date";
 
+export const GF_TIER_A_DISPATCH_TH =
+  "สายมีเอกสาร (AF99 · AF143 · AF02 · AF22 · AF102): ส่งภายใน 3 วันทำการหลังยืนยันมัดจำ";
+
+export const GF_TIER_A_DISPATCH_EN =
+  "Documented strains (AF99 · AF143 · AF02 · AF22 · AF102): dispatch within 3 business days after deposit confirmation";
+
+export const GF_TIER_B_DISPATCH_TH =
+  "สาย Auto/Photo อื่น: รอตรวจเอกสารหน่วยงานประมาณ 1 เดือน + ค่าแล็บตามราคาที่แสดง — ไม่ใช่ใบรับรอง GACP";
+
+export const GF_TIER_B_DISPATCH_EN =
+  "Other Auto/Photo strains: about 1 month for authority document review plus lab fees as shown — not a GACP certificate";
+
 export const GF_OPTION1_DISPATCH_TH =
-  "ประมาณการ 3–7 วันทำการหลังยืนยันคำสั่งตามใบเสนอราคา — ขึ้นกับล็อตที่มี";
+  "ประมาณการ 3 วันทำการหลังยืนยันมัดจำสำหรับสายมีเอกสาร — ขึ้นกับล็อตที่มี";
 
 export const GF_OPTION1_DISPATCH_EN =
-  "Indicative 3–7 business days after order confirmation per quotation — subject to lot availability";
+  "Indicative 3 business days after deposit confirmation for documented strains — subject to lot availability";
 
 export const GF_WITH_COA_DISPATCH_TH =
   "มี COA แล็บภายนอก: แล็บประมาณ 30 วันทำการ แล้วจัดส่งอีกประมาณ 3–7 วัน — ตามใบเสนอราคา";
@@ -99,6 +114,14 @@ export const GF_WITH_COA_DISPATCH_EN =
 export const GF_STRAIN_STATUS_PRE_GATE_TH = "เสนอขอราคา — ยังไม่พร้อมขาย";
 
 export const GF_STRAIN_STATUS_PRE_GATE_EN = "Proposed for quotation — not yet for sale";
+
+export const GF_STRAIN_STATUS_DOCS_READY_TH = "มีเอกสาร — พร้อมส่ง 3 วันทำการ";
+
+export const GF_STRAIN_STATUS_DOCS_READY_EN = "Documents ready — ships in 3 business days";
+
+export const GF_STRAIN_STATUS_DOCS_PENDING_TH = "รอเอกสารหน่วยงาน ~1 เดือน";
+
+export const GF_STRAIN_STATUS_DOCS_PENDING_EN = "Awaiting authority docs ~1 month";
 
 export const GF_CONDITIONAL_DEPOSIT_SHORT_TH =
   "มัดจำจองสิทธิ์แบบมีเงื่อนไข — คืนเงินเต็มหากไม่ถึงขั้นต่ำหรือไม่ผ่านเงื่อนไขที่ระบุในใบเสนอราคา";
@@ -140,6 +163,12 @@ export const GF_PRE_GATE_WEB_NOTICE_TH =
 
 export const GF_PRE_GATE_WEB_NOTICE_EN =
   "Quotation requests only for now — deposits are not yet open";
+
+export const GF_DEPOSIT_OPEN_WEB_NOTICE_TH =
+  "เปิดรับจองมัดจำ 50% บนหน้านี้ — สั่งแล้วโอนเข้า หจก.ทีเอ็มวาย อะโกรเทรด และแนบสลิป (ไม่ใช้ตะกร้าร้าน) · 5 สายมีเอกสารส่งใน 3 วันทำการ · สายอื่นรอหน่วยงานประมาณ 1 เดือน + ค่าแล็บ · ไม่ใช่ใบรับรอง GACP และยังไม่โอนให้ผู้ผลิตจนกว่าขั้นตอนหน่วยงานครบ";
+
+export const GF_DEPOSIT_OPEN_WEB_NOTICE_EN =
+  "50% deposits are open on this page — order, then transfer to T.M.Y Agro Trade Limited Partnership and attach the slip (not the shop cart) · 5 documented strains ship in 3 business days · other strains wait ~1 month for authority review plus lab fees · not a GACP certificate; no producer PO until the authority step is complete";
 
 export const GF_POST_GATE_WEB_NOTICE_TH =
   "เปิดรับมัดจำจองสิทธิ์แบบมีเงื่อนไข — คืนเงินเต็มหากไม่ถึงขั้นต่ำหรือไม่ผ่านเงื่อนไขที่กำหนด ราคาและระยะเวลาเป็นประมาณการตามใบเสนอราคา";
@@ -246,7 +275,11 @@ Internal use only — flip GF_MARKETING_GATE_STATUS to post_gate in lib/green-fu
 `;
 
 export function gfGateNotice(t: (th: string, en: string) => string): string {
-  return GF_MARKETING_GATE_STATUS === "post_gate"
-    ? t(GF_POST_GATE_WEB_NOTICE_TH, GF_POST_GATE_WEB_NOTICE_EN)
-    : t(GF_PRE_GATE_WEB_NOTICE_TH, GF_PRE_GATE_WEB_NOTICE_EN);
+  if (GF_MARKETING_GATE_STATUS === "post_gate") {
+    return t(GF_POST_GATE_WEB_NOTICE_TH, GF_POST_GATE_WEB_NOTICE_EN);
+  }
+  if (gfAcceptsPublicDeposits()) {
+    return t(GF_DEPOSIT_OPEN_WEB_NOTICE_TH, GF_DEPOSIT_OPEN_WEB_NOTICE_EN);
+  }
+  return t(GF_PRE_GATE_WEB_NOTICE_TH, GF_PRE_GATE_WEB_NOTICE_EN);
 }

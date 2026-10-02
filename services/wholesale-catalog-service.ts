@@ -7,6 +7,13 @@ import { prisma } from "@/lib/prisma";
 import type { WholesaleCatalogStrain } from "@/lib/wholesale-public-pricing";
 import { GACP_FEATURED_STRAINS } from "@/lib/gacp-featured-strains";
 import { GF_PILOT_STRAIN_CODES } from "@/lib/green-future-pilot-config";
+import { gfFulfillmentTier } from "@/lib/wholesale-fulfillment";
+import {
+  GREEN_FUTURE_SLUG,
+  type PartnerStrainRecord,
+} from "@/types/partner-catalog";
+import { listPartnerStrains } from "@/services/partner-catalog-service";
+import catalogJson from "@/data/partners/green-future/catalog.json";
 import {
   DEFAULT_BULK_PRICING,
   normalizeBulkPricingConfig,
@@ -113,6 +120,86 @@ export async function listWholesaleStrains(opts?: {
   }));
 }
 
+function mapWholesaleStrain(input: {
+  varietyCode: string;
+  strainName: string;
+  seedFormat: "AUTO_FEM" | "FEM";
+  typeLabel: string | null;
+}): WholesaleCatalogStrain {
+  const code = input.varietyCode.trim().toUpperCase();
+  const format = input.seedFormat === "FEM" ? "FEM" : "AUTO_FEM";
+  const typeLabel =
+    input.typeLabel?.trim() || (format === "FEM" ? "Photo" : "Auto");
+  return {
+    id: code,
+    name: `${code} · ${input.strainName.trim()}`,
+    typeLabel,
+    varietyCode: code,
+    seedFormat: format,
+    fulfillmentTier: gfFulfillmentTier(code),
+  };
+}
+
+function sortWholesaleCatalog(
+  rows: WholesaleCatalogStrain[]
+): WholesaleCatalogStrain[] {
+  return [...rows].sort((a, b) => {
+    const aReady = a.fulfillmentTier === "docs_ready" ? 0 : 1;
+    const bReady = b.fulfillmentTier === "docs_ready" ? 0 : 1;
+    if (aReady !== bReady) return aReady - bReady;
+    const aFmt = a.seedFormat === "AUTO_FEM" ? 0 : 1;
+    const bFmt = b.seedFormat === "AUTO_FEM" ? 0 : 1;
+    if (aFmt !== bFmt) return aFmt - bFmt;
+    return (a.varietyCode ?? a.id).localeCompare(b.varietyCode ?? b.id);
+  });
+}
+
+function catalogFromJson(): WholesaleCatalogStrain[] {
+  const strains = (catalogJson as { strains?: Array<Record<string, unknown>> })
+    .strains;
+  if (!Array.isArray(strains)) return [];
+  return sortWholesaleCatalog(
+    strains.flatMap((s) => {
+      const stock = String(s.stockStatus ?? "").toUpperCase();
+      if (stock && stock !== "IN_STOCK") return [];
+      const format = String(s.seedFormat ?? "") as "AUTO_FEM" | "FEM";
+      if (format !== "AUTO_FEM" && format !== "FEM") return [];
+      const code = String(s.varietyCode ?? "").trim();
+      const name = String(s.strainName ?? "").trim();
+      if (!code || !name) return [];
+      return [
+        mapWholesaleStrain({
+          varietyCode: code,
+          strainName: name,
+          seedFormat: format,
+          typeLabel: typeof s.typeLabel === "string" ? s.typeLabel : null,
+        }),
+      ];
+    })
+  );
+}
+
+function catalogFromPartnerRows(
+  rows: PartnerStrainRecord[]
+): WholesaleCatalogStrain[] {
+  return sortWholesaleCatalog(
+    rows
+      .filter(
+        (s) =>
+          s.stockStatus === "IN_STOCK" &&
+          (s.seedFormat === "AUTO_FEM" || s.seedFormat === "FEM")
+      )
+      .map((s) =>
+        mapWholesaleStrain({
+          varietyCode: s.varietyCode,
+          strainName: s.strainName,
+          seedFormat: s.seedFormat,
+          typeLabel: s.typeLabel,
+        })
+      )
+  );
+}
+
 export function listGfPilotWholesaleCatalog(): WholesaleCatalogStrain[] {
   const byCode = new Map(
     GACP_FEATURED_STRAINS.map((s) => [s.varietyCode, s])
@@ -121,19 +208,44 @@ export function listGfPilotWholesaleCatalog(): WholesaleCatalogStrain[] {
     const strain = byCode.get(code);
     if (!strain) return [];
     return [
-      {
-        id: code.toLowerCase(),
-        name: strain.displayName,
-        typeLabel: "Auto",
-      },
+      mapWholesaleStrain({
+        varietyCode: code,
+        strainName: strain.displayName,
+        seedFormat: strain.seedFormat,
+        typeLabel: strain.typeLabel,
+      }),
     ];
   });
+}
+
+function mergeWholesaleCatalog(
+  primary: WholesaleCatalogStrain[],
+  extra: WholesaleCatalogStrain[]
+): WholesaleCatalogStrain[] {
+  const map = new Map<string, WholesaleCatalogStrain>();
+  for (const row of primary) map.set(row.id, row);
+  for (const row of extra) {
+    if (!map.has(row.id)) map.set(row.id, row);
+  }
+  return sortWholesaleCatalog([...map.values()]);
 }
 
 export async function listPublicWholesaleCatalog(): Promise<
   WholesaleCatalogStrain[]
 > {
-  return listGfPilotWholesaleCatalog();
+  const fromJson = catalogFromJson();
+  try {
+    const { strains } = await listPartnerStrains(GREEN_FUTURE_SLUG, {
+      stockStatus: "IN_STOCK",
+      limit: 500,
+    });
+    const fromDb = catalogFromPartnerRows(strains);
+    const merged = mergeWholesaleCatalog(fromJson, fromDb);
+    if (merged.length) return merged;
+  } catch (err) {
+    console.error("[wholesale-catalog] partner strains", err);
+  }
+  return fromJson.length ? fromJson : listGfPilotWholesaleCatalog();
 }
 
 export async function createWholesaleStrain(input: {
