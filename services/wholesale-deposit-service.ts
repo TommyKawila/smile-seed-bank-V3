@@ -314,8 +314,8 @@ export async function submitDepositTransfer(input: {
   const { data } = supabase.storage.from(SLIP_BUCKET).getPublicUrl(path);
   const slipUrl = data.publicUrl;
 
-  await prisma.wholesale_deposit_orders.update({
-    where: { id: order.id },
+  const saved = await prisma.wholesale_deposit_orders.updateMany({
+    where: { id: order.id, status: { not: "VERIFIED" } },
     data: {
       slip_url: slipUrl,
       slip_path: path,
@@ -327,6 +327,9 @@ export async function submitDepositTransfer(input: {
       status: "AWAITING_VERIFICATION",
     },
   });
+  if (saved.count !== 1) {
+    throw new Error("Deposit already verified");
+  }
 
   void sendAdminNotification(
     [
