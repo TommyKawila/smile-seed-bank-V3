@@ -292,6 +292,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-10-02 (ตัวเลือกสายพันธุ์มือถือบน /wholesale)
+- **What:** แทน native `<select>` ~187 สายด้วย bottom sheet ค้นหา/ชิป/แถว ≥48px + ปุ่มบันทึกลิสต์ลงเครื่อง (Web Share หรือ CSV)
+- **Logic:** picker ต่อบรรทัด · CSV helper ใน `wholesale-fulfillment` · ธีมขาว-เขียวของหน้า wholesale ไม่เปลี่ยนเป็น V4 ดำ
+- **ไฟล์:** `WholesaleStrainPicker.tsx` · `BulkOrderCalculator.tsx` · `lib/wholesale-fulfillment.ts`
+
 ### บันทึกการทำงาน — 2026-10-02 (เปิดสั่ง + แจ้งโอนมัดจำ SGF บน /wholesale)
 - **What:** เปิดฟอร์มสั่งเมล็ด GACP-ready บน `/wholesale` + ฟอร์มแจ้งโอนมัดจำ 50% แยกจากตะกร้าร้าน (`/wholesale/transfer`) โอนเข้า หจก.ทีเอ็มวาย อะโกรเทรด แล้วแนบสลิป
 - **Logic:** ชั้น A (AF99/AF143/AF02/AF22/AF102) ส่ง 3 วันทำการหลังยืนยันมัดจำ · ชั้น B Auto/Photo อื่นรอหน่วยงาน ~1 เดือน + บังคับ Package A · `GF_CUSTOMER_DEPOSIT_OPEN` ไม่ปลด `GF_PO_GATE`
