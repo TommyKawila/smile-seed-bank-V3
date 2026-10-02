@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { assertAdmin } from "@/lib/auth-utils";
 import { MagazineBlogCategoriesClient } from "@/components/admin/magazine/MagazineBlogCategoriesClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminMagazineCategoriesPage() {
+  await assertAdmin();
   const rows = await prisma.blog_categories.findMany({
     orderBy: [{ sort_order: "asc" }, { name: "asc" }],
   });

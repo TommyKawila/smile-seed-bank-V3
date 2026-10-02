@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { assertAdmin } from "@/lib/auth-utils";
 import { MagazinePostForm } from "@/components/admin/magazine/MagazinePostForm";
 
 type Props = { params: Promise<{ id: string }> };
 
 export default async function AdminMagazineEditPage({ params }: Props) {
+  await assertAdmin();
   const { id: idParam } = await params;
   let id: bigint;
   try {
