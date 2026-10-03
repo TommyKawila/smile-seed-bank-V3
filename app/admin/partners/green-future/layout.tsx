@@ -1,4 +1,8 @@
 import { GreenFutureSubNav } from "@/components/admin/partners/GreenFutureSubNav";
+import {
+  GF_GACP_CONSULT_HOLD,
+  GF_SGF_PAUSE_ADMIN_TH,
+} from "@/lib/green-future-approved-marketing";
 
 export default function GreenFutureLayout({
   children,
@@ -17,6 +21,11 @@ export default function GreenFutureLayout({
           </p>
         </div>
         <GreenFutureSubNav />
+        {GF_GACP_CONSULT_HOLD ? (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+            {GF_SGF_PAUSE_ADMIN_TH}
+          </p>
+        ) : null}
       </header>
       {children}
     </div>

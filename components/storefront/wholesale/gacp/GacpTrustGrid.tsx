@@ -1,36 +1,36 @@
 "use client";
 
-import { Dna, FileStack, Handshake, Layers } from "lucide-react";
+import { Banknote, Layers, Package, Sprout } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 const ITEMS = [
   {
-    icon: Dna,
-    titleTh: "ระบุพันธุ์ด้วยรหัสล็อต",
-    titleEn: "Variety code and lot identity",
-    bodyTh: "อ้างอิงรหัสพันธุ์ ชื่อการค้า และเลขล็อตตามที่ผู้ผลิตยืนยัน",
-    bodyEn: "Commercial name, variety code, and lot number as confirmed by the producer.",
+    icon: Sprout,
+    titleTh: "เมล็ด GF จากไทย",
+    titleEn: "Thai GF genetics",
+    bodyTh: "สายพันธุ์ SGF Seeds จาก Green Future ผลิตในประเทศไทย",
+    bodyEn: "SGF Seeds strains from Green Future, produced in Thailand.",
   },
   {
-    icon: FileStack,
-    titleTh: "เอกสารสนับสนุนตามล็อต",
-    titleEn: "Lot supporting documents",
-    bodyTh: "ข้อมูลทดสอบต่อล็อตตามที่สั่ง แล็บภายนอกหรือ ISTA คิดแยก ไม่แถมทุกล็อต",
-    bodyEn: "Per-lot test data as ordered. Independent lab or ISTA tests are billed separately and are not included on every lot.",
+    icon: Package,
+    titleTh: "ซองซีล 50 เมล็ด",
+    titleEn: "Sealed 50-seed pouches",
+    bodyTh: "บรรจุแพ็กจากโรงงานผู้ผลิต ขายเป็นซองละ 50 เมล็ด",
+    bodyEn: "Factory-packed sealed pouches, sold in 50-seed units.",
   },
   {
     icon: Layers,
-    titleTh: "ราคาขายส่ง B2B",
-    titleEn: "B2B bulk pricing",
-    bodyTh: "ราคาแบบขั้นบันไดสำหรับปริมาณเชิงพาณิชย์ ชุดเอกสารตามล็อตที่ยืนยัน",
-    bodyEn: "Tiered pricing for commercial volumes. Document packs follow the confirmed lot — not a blanket certificate.",
+    titleTh: "เรท 125 / 100 / 80",
+    titleEn: "125 / 100 / 80 THB",
+    bodyTh: "เริ่ม 125 บาท/เมล็ด ที่ขั้นต่ำ 50 เมล็ด ลดตามยอดรวมตะกร้า",
+    bodyEn: "From 125 THB/seed at a 50-seed minimum, with cart-total volume tiers.",
   },
   {
-    icon: Handshake,
-    titleTh: "ช่วยเรื่องการใช้เอกสาร",
-    titleEn: "Document-use support",
-    bodyTh: "แนะนำการใส่เอกสารเมล็ดในแฟ้มของฟาร์ม ไม่เสนอตัวเป็น DTAM หรือผู้รับรอง และไม่การันตีผลการตรวจ GACP",
-    bodyEn: "Help using seed documents in the farm’s own file. We are not DTAM or a certification body and do not guarantee a GACP audit result.",
+    icon: Banknote,
+    titleTh: "มัดจำ 50%",
+    titleEn: "50% deposit",
+    bodyTh: "โอนเข้า หจก.ทีเอ็มวาย อะโกรเทรด แล้วแนบสลิป — ไม่ใช้ตะกร้าร้าน",
+    bodyEn: "Transfer to T.M.Y Agro Trade Limited Partnership and attach the slip — not the shop cart.",
   },
 ] as const;
 
@@ -41,15 +41,12 @@ export function GacpTrustGrid() {
     <section className="border-b border-slate-200 bg-white py-14 sm:py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <h2 className="max-w-2xl text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-          {t(
-            "เมล็ดชุดเดียวกัน — เลือกได้ว่าจะขอเอกสารหรือไม่",
-            "The same seed catalog — documents are optional"
-          )}
+          {t("เมล็ดขายส่ง SGF Seeds", "SGF Seeds wholesale")}
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
           {t(
-            "ผู้ปลูกใช้ ผู้ขายต่อ หรือฟาร์มใบอนุญาต — สายพันธุ์เดียวกัน ต่างกันที่ตัวเลือกเอกสารล็อตและ COA แล็บภายนอก",
-            "Growers, resellers, or licensed farms — same strains, different document and external COA options."
+            "เลือกสายพันธุ์ ใส่จำนวนซอง แล้วจองมัดจำ 50% — ราคาลดตามยอดรวมทั้งคำสั่ง",
+            "Pick strains, set pouch counts, then reserve with a 50% deposit — volume pricing follows the cart total."
           )}
         </p>
         <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

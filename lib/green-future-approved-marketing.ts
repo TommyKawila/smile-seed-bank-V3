@@ -11,6 +11,12 @@ export const GF_MARKETING_GATE_STATUS: GfMarketingGateStatus = "pre_gate";
 /** Customer 50% deposits on /wholesale — does not unlock GF PO / transfer */
 export const GF_CUSTOMER_DEPOSIT_OPEN = true;
 
+/** Public bulk sales are open. GACP consult stays on hold until variety identity packs arrive. */
+export const GF_SGF_SEED_PROGRAMME_PAUSED = false;
+
+/** Admin-only: grower GACP consult paused while GF applies for variety identity docs. */
+export const GF_GACP_CONSULT_HOLD = true;
+
 export function isGfPreGate(): boolean {
   return GF_MARKETING_GATE_STATUS === "pre_gate";
 }
@@ -39,9 +45,9 @@ export const GF_OPTION1_LABEL_TH =
 export const GF_OPTION1_LABEL_EN =
   "Seeds first — dispatch on the producer’s lot test · official lab COA later if ordered separately";
 
-export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด/ซอง · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP) · ราคาลดตามยอดรวม 125/100/80 บาท/เมล็ด · มัดจำ 50% โอนธนาคาร`;
+export const GF_PILOT_PACK_DESC_TH = `ซองซีล ${GF_PILOT_POUCH_QTY} เมล็ด/ซอง · บรรจุแพ็กจากโรงงานผู้ผลิต · ราคาลดตามยอดรวม 125/100/80 บาท/เมล็ด · มัดจำ 50% โอนธนาคาร`;
 
-export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · factory-packed at the GACP production site · tiered cart pricing (125/100/80 THB/seed) · 50% bank-transfer deposit`;
+export const GF_PILOT_PACK_DESC_EN = `Sealed ${GF_PILOT_POUCH_QTY}-seed pouches · factory-packed · tiered cart pricing (125/100/80 THB/seed) · 50% bank-transfer deposit`;
 
 export const GF_PILOT_INCLUDED_DOCS_TITLE_TH =
   "เอกสารที่แถมต่อล็อต — 5 สายนำร่อง (AF99 · AF143 · AF02 · AF22 · AF102)";
@@ -70,16 +76,16 @@ export const GF_PILOT_INCLUDED_DOCS_NOTE_EN =
   "Under the SGF SEEDS documented programme — not a GACP certificate or DTAM document · external lab COA (Package A/B) and ISTA are optional add-ons, billed separately when ordered";
 
 export const GF_WHOLESALE_HERO_TITLE_TH =
-  "เมล็ดพันธุ์คุณภาพสำหรับผู้ปลูกมาตรฐาน GACP";
+  "เมล็ดขายส่ง SGF Seeds";
 
 export const GF_WHOLESALE_HERO_TITLE_EN =
-  "Quality seeds for GACP-standard growers";
+  "SGF Seeds wholesale";
 
 export const GF_WHOLESALE_HERO_LEAD_TH =
-  "เมล็ดพันธุ์กัญชาแบรนด์ SGF SEEDS ผลิตในประเทศไทย มาตรฐาน GACP จัดจำหน่ายโดย Smile Seed Bank";
+  "เมล็ดพันธุ์กัญชาแบรนด์ SGF SEEDS ผลิตในประเทศไทย จัดจำหน่ายโดย Smile Seed Bank";
 
 export const GF_WHOLESALE_HERO_LEAD_EN =
-  "SGF SEEDS cannabis genetics produced in Thailand to GACP standards, distributed by Smile Seed Bank";
+  "SGF SEEDS cannabis genetics produced in Thailand, distributed by Smile Seed Bank";
 
 export const GF_DISPATCH_AFTER_PO_TH =
   "ระยะเวลาจัดส่งเป็นประมาณการตามใบเสนอราคา — ไม่ใช่การรับประกันวันส่ง";
@@ -100,10 +106,10 @@ export const GF_TIER_B_DISPATCH_EN =
   "Other Auto/Photo strains: about 1 month for authority document review plus lab fees as shown — not a GACP certificate";
 
 export const GF_OPTION1_DISPATCH_TH =
-  "ประมาณการ 3 วันทำการหลังยืนยันมัดจำสำหรับสายมีเอกสาร — ขึ้นกับล็อตที่มี";
+  "ประมาณการ 3 วันทำการหลังยืนยันมัดจำ — ขึ้นกับล็อตที่มี";
 
 export const GF_OPTION1_DISPATCH_EN =
-  "Indicative 3 business days after deposit confirmation for documented strains — subject to lot availability";
+  "Indicative 3 business days after deposit confirmation — subject to lot availability";
 
 export const GF_WITH_COA_DISPATCH_TH =
   "มี COA แล็บภายนอก: แล็บประมาณ 30 วันทำการ แล้วจัดส่งอีกประมาณ 3–7 วัน — ตามใบเสนอราคา";
@@ -164,11 +170,20 @@ export const GF_PRE_GATE_WEB_NOTICE_TH =
 export const GF_PRE_GATE_WEB_NOTICE_EN =
   "Quotation requests only for now — deposits are not yet open";
 
+export const GF_SGF_PAUSE_WEB_NOTICE_TH =
+  "พักรับจองเมล็ด SGF Seeds ชั่วคราว — Green Future ยืนยันว่ายังไม่ได้รับเอกสารรับรองสายพันธุ์ และกำลังยื่นขอ · ขณะนี้รับคำขอใบเสนอราคาเท่านั้น ยังไม่เปิดมัดจำ และยังไม่ออก PO ให้ผู้ผลิต";
+
+export const GF_SGF_PAUSE_WEB_NOTICE_EN =
+  "SGF Seeds reservations are paused — Green Future confirmed it has not yet received the variety identity documents and is applying for them · quotation requests only; deposits and producer POs stay closed";
+
+export const GF_SGF_PAUSE_ADMIN_TH =
+  "HOLD งาน GACP consult — GF ยังไม่มีเอกสารรับรองสายพันธุ์ (กำลังยื่นขอ) · มัดจำลูกค้าเปิดขาย bulk แล้ว · ห้าม PO/โอน GF";
+
 export const GF_DEPOSIT_OPEN_WEB_NOTICE_TH =
-  "เปิดรับจองมัดจำ 50% บนหน้านี้ — สั่งแล้วโอนเข้า หจก.ทีเอ็มวาย อะโกรเทรด และแนบสลิป (ไม่ใช้ตะกร้าร้าน) · 5 สายมีเอกสารส่งใน 3 วันทำการ · สายอื่นรอหน่วยงานประมาณ 1 เดือน + ค่าแล็บ · ไม่ใช่ใบรับรอง GACP และยังไม่โอนให้ผู้ผลิตจนกว่าขั้นตอนหน่วยงานครบ";
+  "เปิดรับจองมัดจำ 50% บนหน้านี้ — สั่งเมล็ด bulk แล้วโอนเข้า หจก.ทีเอ็มวาย อะโกรเทรด และแนบสลิป (ไม่ใช้ตะกร้าร้าน) · ซองละ 50 เมล็ด เริ่ม 125 บาท/เมล็ด";
 
 export const GF_DEPOSIT_OPEN_WEB_NOTICE_EN =
-  "50% deposits are open on this page — order, then transfer to T.M.Y Agro Trade Limited Partnership and attach the slip (not the shop cart) · 5 documented strains ship in 3 business days · other strains wait ~1 month for authority review plus lab fees · not a GACP certificate; no producer PO until the authority step is complete";
+  "50% deposits are open on this page — order bulk seeds, then transfer to T.M.Y Agro Trade Limited Partnership and attach the slip (not the shop cart) · 50-seed pouches from 125 THB/seed";
 
 export const GF_POST_GATE_WEB_NOTICE_TH =
   "เปิดรับมัดจำจองสิทธิ์แบบมีเงื่อนไข — คืนเงินเต็มหากไม่ถึงขั้นต่ำหรือไม่ผ่านเงื่อนไขที่กำหนด ราคาและระยะเวลาเป็นประมาณการตามใบเสนอราคา";
@@ -275,6 +290,9 @@ Internal use only — flip GF_MARKETING_GATE_STATUS to post_gate in lib/green-fu
 `;
 
 export function gfGateNotice(t: (th: string, en: string) => string): string {
+  if (GF_SGF_SEED_PROGRAMME_PAUSED) {
+    return t(GF_SGF_PAUSE_WEB_NOTICE_TH, GF_SGF_PAUSE_WEB_NOTICE_EN);
+  }
   if (GF_MARKETING_GATE_STATUS === "post_gate") {
     return t(GF_POST_GATE_WEB_NOTICE_TH, GF_POST_GATE_WEB_NOTICE_EN);
   }

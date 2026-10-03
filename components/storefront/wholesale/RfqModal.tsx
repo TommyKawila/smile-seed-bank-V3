@@ -285,8 +285,8 @@ export function RfqModal({
               <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
                   {t(
-                    "ชุดเอกสารสำหรับยื่น GACP (ไม่บังคับ)",
-                    "GACP document pack (optional)"
+                    "ใบอนุญาต (ถ้ามี)",
+                    "Licence (if any)"
                   )}
                 </p>
                 <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">

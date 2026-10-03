@@ -4,10 +4,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import {
   GF_CONDITIONAL_DEPOSIT_SHORT_EN,
   GF_CONDITIONAL_DEPOSIT_SHORT_TH,
-  GF_TIER_A_DISPATCH_EN,
-  GF_TIER_A_DISPATCH_TH,
-  GF_TIER_B_DISPATCH_EN,
-  GF_TIER_B_DISPATCH_TH,
+  GF_OPTION1_DISPATCH_EN,
+  GF_OPTION1_DISPATCH_TH,
   GF_WITH_COA_DISPATCH_EN,
   GF_WITH_COA_DISPATCH_TH,
   gfShowPaymentTerms,
@@ -26,8 +24,6 @@ type Props = {
   currency?: "THB" | "EUR";
   fx?: number;
   pilotMode?: boolean;
-  hasDocsReady?: boolean;
-  hasDocsPending?: boolean;
 };
 
 function money(thb: number, currency: "THB" | "EUR", fx: number): string {
@@ -43,8 +39,6 @@ export function BulkOrderSummary({
   currency = "THB",
   fx = 38.44,
   pilotMode = true,
-  hasDocsReady = false,
-  hasDocsPending = false,
 }: Props) {
   const { t } = useLanguage();
   const showPayment = gfShowPaymentTerms();
@@ -163,22 +157,11 @@ export function BulkOrderSummary({
           {t("ประมาณการจัดส่ง:", "Estimated Delivery:")}{" "}
         </span>
       </p>
-      {hasDocsReady ? (
-        <p className="mt-1 text-sm text-slate-700">
-          {t(GF_TIER_A_DISPATCH_TH, GF_TIER_A_DISPATCH_EN)}
-        </p>
-      ) : null}
-      {hasDocsPending ? (
-        <p className="mt-1 text-sm text-amber-800">
-          {t(GF_TIER_B_DISPATCH_TH, GF_TIER_B_DISPATCH_EN)}
-        </p>
-      ) : !hasDocsReady ? (
-        <p className="mt-1 text-sm text-slate-700">
-          {coaMode === "with"
-            ? t(GF_WITH_COA_DISPATCH_TH, GF_WITH_COA_DISPATCH_EN)
-            : t(GF_TIER_A_DISPATCH_TH, GF_TIER_A_DISPATCH_EN)}
-        </p>
-      ) : null}
+      <p className="mt-1 text-sm text-slate-700">
+        {coaMode === "with"
+          ? t(GF_WITH_COA_DISPATCH_TH, GF_WITH_COA_DISPATCH_EN)
+          : t(GF_OPTION1_DISPATCH_TH, GF_OPTION1_DISPATCH_EN)}
+      </p>
     </div>
   );
 }
