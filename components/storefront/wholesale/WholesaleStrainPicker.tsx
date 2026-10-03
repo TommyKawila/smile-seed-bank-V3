@@ -12,9 +12,8 @@ import {
 } from "@/components/ui/sheet";
 import { useLanguage } from "@/context/LanguageContext";
 import type { WholesaleCatalogStrain } from "@/lib/wholesale-public-pricing";
-import { gfFulfillmentTier } from "@/lib/wholesale-fulfillment";
 
-type Group = "all" | "docs_ready" | "auto" | "photo";
+type Group = "all" | "auto" | "photo";
 
 type Props = {
   catalog: WholesaleCatalogStrain[];
@@ -34,13 +33,6 @@ function rowTitle(c: WholesaleCatalogStrain): string {
   return `${code} · ${name}`;
 }
 
-function isReady(c: WholesaleCatalogStrain): boolean {
-  return (
-    (c.fulfillmentTier ?? gfFulfillmentTier(c.varietyCode ?? c.id)) ===
-    "docs_ready"
-  );
-}
-
 export function WholesaleStrainPicker({ catalog, valueId, onSelect }: Props) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -52,7 +44,6 @@ export function WholesaleStrainPicker({ catalog, valueId, onSelect }: Props) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return catalog.filter((c) => {
-      if (group === "docs_ready" && !isReady(c)) return false;
       if (group === "auto" && c.seedFormat === "FEM") return false;
       if (group === "photo" && c.seedFormat !== "FEM") return false;
       if (!q) return true;
@@ -62,27 +53,21 @@ export function WholesaleStrainPicker({ catalog, valueId, onSelect }: Props) {
   }, [catalog, query, group]);
 
   const sections = useMemo(() => {
-    const ready = filtered.filter(isReady);
-    const auto = filtered.filter((c) => !isReady(c) && c.seedFormat !== "FEM");
-    const photo = filtered.filter((c) => !isReady(c) && c.seedFormat === "FEM");
+    const auto = filtered.filter((c) => c.seedFormat !== "FEM");
+    const photo = filtered.filter((c) => c.seedFormat === "FEM");
     return [
       {
-        key: "ready",
-        label: t("มีเอกสาร — พร้อมส่ง 3 วันทำการ", "Documented — ships in 3 business days"),
-        rows: ready,
-      },
-      {
         key: "auto",
-        label: t("Auto อื่น — รอเอกสาร ~1 เดือน", "Other Auto — awaiting docs ~1 month"),
+        label: "Auto",
         rows: auto,
       },
       {
         key: "photo",
-        label: t("Photo อื่น — รอเอกสาร ~1 เดือน", "Other Photo — awaiting docs ~1 month"),
+        label: "Photo",
         rows: photo,
       },
     ].filter((s) => s.rows.length > 0);
-  }, [filtered, t]);
+  }, [filtered]);
 
   const pick = (strain: WholesaleCatalogStrain) => {
     onSelect(strain);
@@ -108,10 +93,6 @@ export function WholesaleStrainPicker({ catalog, valueId, onSelect }: Props) {
               {(selected.varietyCode ?? selected.id).trim()}
               {" · "}
               {formatLabel(selected)}
-              {" · "}
-              {isReady(selected)
-                ? t("มีเอกสาร", "Documented")
-                : t("รอเอกสาร", "Awaiting docs")}
             </span>
           ) : null}
         </span>
@@ -147,7 +128,6 @@ export function WholesaleStrainPicker({ catalog, valueId, onSelect }: Props) {
               {(
                 [
                   ["all", t("ทั้งหมด", "All")],
-                  ["docs_ready", t("มีเอกสาร", "Documented")],
                   ["auto", "Auto"],
                   ["photo", "Photo"],
                 ] as const
@@ -197,10 +177,6 @@ export function WholesaleStrainPicker({ catalog, valueId, onSelect }: Props) {
                               </span>
                               <span className="block text-xs text-slate-500">
                                 {formatLabel(c)}
-                                {" · "}
-                                {isReady(c)
-                                  ? t("พร้อมส่ง 3 วันทำการ", "Ships in 3 business days")
-                                  : t("รอเอกสาร ~1 เดือน", "Awaiting docs ~1 month")}
                               </span>
                             </span>
                             {active ? (

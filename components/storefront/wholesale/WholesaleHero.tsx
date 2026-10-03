@@ -50,15 +50,15 @@ export function WholesaleHero({ onRequestCatalog, heroImageUrl }: Props) {
               className="inline-flex min-h-12 items-center justify-center rounded-lg bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
             >
               {depositsOpen
-                ? t("สั่งเมล็ด GACP-ready", "Order GACP-ready seeds")
+                ? t("สั่งเมล็ดขายส่ง · มัดจำ 50%", "Order wholesale seeds · 50% deposit")
                 : t("ขอแคตตาล็อกขายส่ง", "Request Wholesale Catalog")}
             </button>
             <a
-              href="#documents"
+              href="#rfq"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
             >
               <FileDown className="h-4 w-4" aria-hidden />
-              {t("เอกสารล็อต / ฟาร์มใบอนุญาต", "Lot documents / licensed farms")}
+              {t("ดูแคตตาล็อกและราคา", "View catalog and pricing")}
             </a>
           </div>
           <ul className="mt-8 flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:gap-6">
@@ -68,7 +68,7 @@ export function WholesaleHero({ onRequestCatalog, heroImageUrl }: Props) {
             </li>
             <li className="inline-flex items-center gap-2">
               <MapPin className="h-4 w-4 text-emerald-600" aria-hidden />
-              {t("จัดส่งในประเทศ · ตามชั้นเอกสาร", "Domestic dispatch · by document tier")}
+              {t("จัดส่งในประเทศ · ซองซีลผู้ผลิต", "Domestic dispatch · producer-sealed pouches")}
             </li>
           </ul>
         </div>
@@ -77,8 +77,8 @@ export function WholesaleHero({ onRequestCatalog, heroImageUrl }: Props) {
             <Image
               src={heroImageUrl}
               alt={t(
-                "ห้องปลูกและแล็บเมล็ดพันธุ์มาตรฐาน GACP",
-                "GACP-standard cannabis cultivation lab"
+                "ห้องปลูกและแล็บเมล็ดพันธุ์",
+                "Cannabis cultivation lab"
               )}
               fill
               sizes="(min-width: 1024px) 540px, 100vw"
@@ -88,8 +88,8 @@ export function WholesaleHero({ onRequestCatalog, heroImageUrl }: Props) {
           </div>
           <figcaption className="mt-2 text-xs text-slate-500">
             {t(
-              "สถานที่ผลิตมาตรฐาน GACP",
-              "GACP-standard production facility"
+              "สถานที่ผลิตเมล็ดพันธุ์",
+              "Seed production facility"
             )}
           </figcaption>
         </figure>

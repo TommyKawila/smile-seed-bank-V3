@@ -16,7 +16,7 @@ export const GACP_CONSULT_CHECKLIST = [
     id: "variety-identity-docs",
     labelTh: "ชุดใบรับรองประวัติและลักษณะประจำพันธุ์ จาก GF (GACP ข้อ 8 · โรงงานออกเอง)",
     labelEn: "GF self-certified variety history + identification pack (GACP clause 8)",
-    note: "จดหมายขอแล้ว — /admin/partners/green-future/variety-docs-en · ไม่ใช่ใบ ม.พ. ๒ ๑-๐",
+    note: "HOLD 3 ต.ค. 2026 — GF ยืนยันยังไม่ได้รับเอกสาร กำลังยื่นขอ · จดหมายขอที่ /admin/partners/green-future/variety-docs-en · ไม่ใช่ใบ ม.พ. ๒ ๑-๐",
   },
   {
     id: "labelled-mock-pouch",

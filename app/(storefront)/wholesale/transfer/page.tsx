@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DepositTransferForm } from "@/components/storefront/wholesale/DepositTransferForm";
-import { gfAcceptsPublicDeposits, gfWholesaleRobots } from "@/lib/green-future-approved-marketing";
+import { gfWholesaleRobots } from "@/lib/green-future-approved-marketing";
 import { fetchActiveBankAccounts } from "@/lib/payment-settings-public";
 import {
   pickTmyAgrotradeAccount,
@@ -24,13 +24,6 @@ export default async function WholesaleTransferPage({
   searchParams: Promise<{ ref?: string }>;
 }) {
   const { ref } = await searchParams;
-  if (!gfAcceptsPublicDeposits()) {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-16 text-sm text-slate-700">
-        Deposits are not open.
-      </div>
-    );
-  }
   const { accounts } = await fetchActiveBankAccounts();
   const bank = toTmyBankPublic(pickTmyAgrotradeAccount(accounts));
 
@@ -47,7 +40,7 @@ export default async function WholesaleTransferPage({
       </p>
       <p className="mt-1 text-sm">
         <Link href="/wholesale" className="text-emerald-700 underline">
-          กลับไปสั่งเมล็ด
+          กลับไปหน้าขายส่ง
         </Link>
       </p>
       <div className="mt-8">

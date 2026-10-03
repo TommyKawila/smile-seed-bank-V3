@@ -10,17 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/context/LanguageContext";
 import {
-  GF_TIER_A_DISPATCH_EN,
-  GF_TIER_A_DISPATCH_TH,
-  GF_TIER_B_DISPATCH_EN,
-  GF_TIER_B_DISPATCH_TH,
-} from "@/lib/green-future-approved-marketing";
-import {
   formatThb,
   resolveQuote,
   type BulkPricingConfig,
 } from "@/lib/wholesale-bulk-pricing";
-import { countDocsPendingLines } from "@/lib/wholesale-fulfillment";
 import type { QuoteCartLine, RfqFormState } from "./types";
 
 type Props = {
@@ -53,7 +46,6 @@ export function DepositOrderModal({
   bulkPricing,
 }: Props) {
   const { t } = useLanguage();
-  const minPackageACount = countDocsPendingLines(lines);
   const quote = resolveQuote(
     lines.map((l) => ({
       strainId: l.strainId,
@@ -63,23 +55,20 @@ export function DepositOrderModal({
     })),
     bulkPricing,
     {
-      mode: minPackageACount > 0 ? "with" : form.coaMode,
-      buyExtra: minPackageACount > 0 ? true : form.buyExtraCoa,
-      packageACount: Math.max(form.coaPackageA, minPackageACount),
+      mode: form.coaMode,
+      buyExtra: form.buyExtraCoa,
+      packageACount: form.coaPackageA,
       packageBCount: form.coaPackageB,
       pilotMode: true,
-      minPackageACount,
     }
   );
-  const hasPending = minPackageACount > 0;
-  const hasReady = lines.some((l) => l.fulfillmentTier === "docs_ready");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto border-slate-200 bg-white text-slate-900 sm:rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-slate-900">
-            {t("สั่งจองเมล็ด GACP-ready · มัดจำ 50%", "Order GACP-ready seeds · 50% deposit")}
+            {t("สั่งเมล็ดขายส่ง · มัดจำ 50%", "Order wholesale seeds · 50% deposit")}
           </DialogTitle>
           <DialogDescription className="text-slate-600">
             {t(
@@ -131,10 +120,7 @@ export function DepositOrderModal({
                       <div>
                         <p className="font-medium text-slate-900">{l.name}</p>
                         <p className="text-xs text-slate-500">
-                          {l.quantity.toLocaleString()} seeds ·{" "}
-                          {l.fulfillmentTier === "docs_ready"
-                            ? t("มีเอกสาร · 3 วันทำการ", "Docs ready · 3 business days")
-                            : t("รอเอกสาร ~1 เดือน", "Awaiting docs ~1 month")}
+                          {l.quantity.toLocaleString()} seeds
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -181,16 +167,6 @@ export function DepositOrderModal({
                   <dd>{formatThb(quote.balanceThb)}</dd>
                 </div>
               </dl>
-              {hasReady ? (
-                <p className="mt-2 text-xs text-slate-600">
-                  {t(GF_TIER_A_DISPATCH_TH, GF_TIER_A_DISPATCH_EN)}
-                </p>
-              ) : null}
-              {hasPending ? (
-                <p className="mt-1 text-xs text-amber-800">
-                  {t(GF_TIER_B_DISPATCH_TH, GF_TIER_B_DISPATCH_EN)}
-                </p>
-              ) : null}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">

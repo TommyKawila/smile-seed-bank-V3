@@ -1,18 +1,10 @@
 import { NextResponse } from "next/server";
-import { gfAcceptsPublicDeposits } from "@/lib/green-future-approved-marketing";
 import { submitDepositTransfer } from "@/services/wholesale-deposit-service";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  if (!gfAcceptsPublicDeposits()) {
-    return NextResponse.json(
-      { error: "Customer deposits are not open" },
-      { status: 403 }
-    );
-  }
-
   let form: FormData;
   try {
     form = await req.formData();

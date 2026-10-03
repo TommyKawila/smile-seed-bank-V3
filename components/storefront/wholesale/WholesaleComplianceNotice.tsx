@@ -40,18 +40,6 @@ export function WholesaleComplianceNotice() {
           </li>
           <li>
             {t(
-              "เอกสารล็อตใช้สนับสนุนการตรวจสอบย้อนกลับสำหรับ GACP — ไม่ใช่ใบ GACP, เอกสาร DTAM หรือการรับประกันผลตรวจ",
-              "Lot documents support traceability for GACP purposes — not a GACP certificate, DTAM document, or audit guarantee."
-            )}
-          </li>
-          <li>
-            {t(
-              "เอกสารตรวจสอบย้อนกลับฉบับเต็มจัดให้ตามคำสั่งซื้อที่ยืนยัน",
-              "Full traceability documents are issued with a confirmed order."
-            )}
-          </li>
-          <li>
-            {t(
               "เกณฑ์งอก ≥80% / บริสุทธิ์ ≥99% มีผลเมื่อระบุในใบเสนอราคาที่ยืนยัน และตามวิธีทดสอบที่ตกลง",
               "Germination ≥80% / purity ≥99% applies when stated in a confirmed quotation and per the agreed test method."
             )}

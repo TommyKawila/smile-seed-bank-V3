@@ -8,14 +8,6 @@ import { useLanguage } from "@/context/LanguageContext";
 import {
   GF_PILOT_PACK_DESC_EN,
   GF_PILOT_PACK_DESC_TH,
-  GF_STRAIN_STATUS_DOCS_PENDING_EN,
-  GF_STRAIN_STATUS_DOCS_PENDING_TH,
-  GF_STRAIN_STATUS_DOCS_READY_EN,
-  GF_STRAIN_STATUS_DOCS_READY_TH,
-  GF_TIER_A_DISPATCH_EN,
-  GF_TIER_A_DISPATCH_TH,
-  GF_TIER_B_DISPATCH_EN,
-  GF_TIER_B_DISPATCH_TH,
   gfAcceptsPublicDeposits,
 } from "@/lib/green-future-approved-marketing";
 import {
@@ -33,11 +25,10 @@ import {
   type BulkQuoteLineInput,
   type CoaMode,
 } from "@/lib/wholesale-bulk-pricing";
-import { countDocsPendingLines, gfFulfillmentTier, wholesaleCatalogCsv, wholesaleCatalogShareText } from "@/lib/wholesale-fulfillment";
+import { gfFulfillmentTier, wholesaleCatalogCsv, wholesaleCatalogShareText } from "@/lib/wholesale-fulfillment";
 import { CoaAddonSection } from "./CoaAddonSection";
 import { CoaOptionCards } from "./CoaOptionCards";
 import { BulkOrderSummary } from "./BulkOrderSummary";
-import { PilotLotDocsIncluded } from "./PilotLotDocsIncluded";
 import { WholesaleStrainPicker } from "./WholesaleStrainPicker";
 
 export type BulkOrderState = {
@@ -110,8 +101,8 @@ function PilotPouchStepper({ pouches, onChange, t }: PilotPouchStepperProps) {
       </div>
       <p className="text-xs leading-snug text-slate-500">
         {t(
-          `ซองละ ${GF_PILOT_POUCH_QTY} เมล็ด · บรรจุแพ็กจากโรงงานผู้ผลิต (มาตรฐาน GACP)`,
-          `${GF_PILOT_POUCH_QTY} seeds per sealed pouch · factory-packed at the GACP production site`
+          `ซองละ ${GF_PILOT_POUCH_QTY} เมล็ด · บรรจุแพ็กจากโรงงานผู้ผลิต`,
+          `${GF_PILOT_POUCH_QTY} seeds per sealed pouch · factory-packed`
         )}
       </p>
     </div>
@@ -146,12 +137,6 @@ export function BulkOrderCalculator({
   const [packageACount, setPackageACount] = useState(0);
   const [packageBCount, setPackageBCount] = useState(0);
 
-  const pendingCount = countDocsPendingLines(lines);
-  const minPackageACount = pendingCount;
-  const effectiveCoaMode = minPackageACount > 0 ? "with" : coaMode;
-  const effectiveBuyExtra = minPackageACount > 0 ? true : buyExtra;
-  const effectivePackageA = Math.max(packageACount, minPackageACount);
-
   const emit = (next: BulkOrderState) => {
     onStateChange?.(next);
   };
@@ -170,31 +155,18 @@ export function BulkOrderCalculator({
   const quote = useMemo(
     () =>
       resolveQuote(lines, config, {
-        mode: effectiveCoaMode,
-        buyExtra: effectiveBuyExtra,
-        packageACount: effectivePackageA,
+        mode: coaMode,
+        buyExtra,
+        packageACount,
         packageBCount,
         pilotMode,
-        minPackageACount,
       }),
-    [
-      lines,
-      config,
-      effectiveCoaMode,
-      effectiveBuyExtra,
-      effectivePackageA,
-      packageBCount,
-      pilotMode,
-      minPackageACount,
-    ]
+    [lines, config, coaMode, buyExtra, packageACount, packageBCount, pilotMode]
   );
 
   const unused = catalog.filter(
     (c) => !lines.some((l) => l.strainId === c.id)
   );
-  const docsReadyCount = catalog.filter(
-    (c) => c.fulfillmentTier === "docs_ready"
-  ).length;
   const autoCount = catalog.filter((c) => c.seedFormat === "AUTO_FEM").length;
   const photoCount = catalog.filter((c) => c.seedFormat === "FEM").length;
 
@@ -296,7 +268,7 @@ export function BulkOrderCalculator({
       <div>
         <h2 className="text-xl font-semibold text-slate-900">
           {depositsOpen
-            ? t("สั่งเมล็ด GACP-ready · มัดจำ 50%", "Order GACP-ready seeds · 50% deposit")
+            ? t("สั่งเมล็ดขายส่ง · มัดจำ 50%", "Order wholesale seeds · 50% deposit")
             : t(
                 "เครื่องประมาณการขอราคา B2B",
                 "B2B quotation estimate calculator"
@@ -322,8 +294,8 @@ export function BulkOrderCalculator({
         ) : null}
         <p className="mt-3 text-sm text-slate-700">
           {t(
-            `เลือกได้ ${catalog.length.toLocaleString("en-US")} สาย · ${docsReadyCount} สายมีเอกสารพร้อมส่ง · Auto ${autoCount} · Photo ${photoCount} · สายอื่นรอหน่วยงานประมาณ 1 เดือน`,
-            `${catalog.length.toLocaleString("en-US")} strains available · ${docsReadyCount} documented (ready to ship) · Auto ${autoCount} · Photo ${photoCount} · others wait ~1 month for authority review`
+            `เลือกได้ ${catalog.length.toLocaleString("en-US")} สาย · Auto ${autoCount} · Photo ${photoCount}`,
+            `${catalog.length.toLocaleString("en-US")} strains available · Auto ${autoCount} · Photo ${photoCount}`
           )}
         </p>
         <button
@@ -459,19 +431,6 @@ export function BulkOrderCalculator({
                   {money(resolved.lineTotalThb, currency, config.eurThb)}
                 </p>
               )}
-              {line.fulfillmentTier === "docs_ready" ? (
-                <p className="mt-1 text-xs text-emerald-800">
-                  {t(GF_STRAIN_STATUS_DOCS_READY_TH, GF_STRAIN_STATUS_DOCS_READY_EN)}
-                  {" · "}
-                  {t(GF_TIER_A_DISPATCH_TH, GF_TIER_A_DISPATCH_EN)}
-                </p>
-              ) : (
-                <p className="mt-1 text-xs text-amber-800">
-                  {t(GF_STRAIN_STATUS_DOCS_PENDING_TH, GF_STRAIN_STATUS_DOCS_PENDING_EN)}
-                  {" · "}
-                  {t(GF_TIER_B_DISPATCH_TH, GF_TIER_B_DISPATCH_EN)}
-                </p>
-              )}
             </div>
           );
         })}
@@ -500,33 +459,27 @@ export function BulkOrderCalculator({
         </div>
       )}
 
-      {pilotMode ? <PilotLotDocsIncluded /> : null}
-
       <CoaOptionCards
-        mode={effectiveCoaMode}
-        lockWith={minPackageACount > 0}
+        mode={coaMode}
         onChange={(mode) => {
           setCoaMode(mode);
           emit({ ...state, coaMode: mode });
         }}
       />
 
-      {(effectiveCoaMode === "with" || minPackageACount > 0) && (
+      {coaMode === "with" && (
         <CoaAddonSection
           config={config}
-          buyExtra={effectiveBuyExtra}
-          packageACount={effectivePackageA}
+          buyExtra={buyExtra}
+          packageACount={packageACount}
           packageBCount={packageBCount}
-          minPackageACount={minPackageACount}
           onBuyExtraChange={(v) => {
-            if (minPackageACount > 0) return;
             setBuyExtra(v);
             emit({ ...state, buyExtra: v });
           }}
           onPackageAChange={(n) => {
-            const next = Math.max(n, minPackageACount);
-            setPackageACount(next);
-            emit({ ...state, packageACount: next });
+            setPackageACount(n);
+            emit({ ...state, packageACount: n });
           }}
           onPackageBChange={(n) => {
             setPackageBCount(n);
@@ -537,12 +490,10 @@ export function BulkOrderCalculator({
 
       <BulkOrderSummary
         quote={quote}
-        coaMode={effectiveCoaMode}
+        coaMode={coaMode}
         currency={currency}
         fx={config.eurThb}
         pilotMode={pilotMode}
-        hasDocsReady={lines.some((l) => l.fulfillmentTier === "docs_ready")}
-        hasDocsPending={minPackageACount > 0}
       />
 
       <Button
@@ -552,9 +503,9 @@ export function BulkOrderCalculator({
         onClick={() =>
           onRequestQuote({
             lines,
-            coaMode: effectiveCoaMode,
-            buyExtra: effectiveBuyExtra,
-            packageACount: effectivePackageA,
+            coaMode,
+            buyExtra,
+            packageACount,
             packageBCount,
           })
         }

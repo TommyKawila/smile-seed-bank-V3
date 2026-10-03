@@ -4,9 +4,22 @@
 
 ---
 
+## HOLD — GACP consult (2026-10-03)
+
+*งานเอกสาร GACP ผู้ปลูกพักจนกว่า Green Future ส่งชุดใบรับรองสายพันธุ์ (GACP ข้อ 8 · self-cert)*
+
+| รายการ | รายละเอียด |
+|--------|-------------|
+| GF ยืนยัน | **ยังไม่ได้รับ**เอกสารรับรองสายพันธุ์ · **กำลังทำเรื่องขอ** |
+| สาธารณะ | `/wholesale` = **ขายเมล็ด bulk GF** · มัดจำ 50% เปิด · **ไม่อ้าง GACP-ready** |
+| PO | `GF_PO_GATE` ยังล็อก · ห้ามโอน GF |
+| ปลดพัก consult | เมื่อได้ Breeder’s Certificate + Variety ID sheet ของ 5 สายนำร่อง |
+
+---
+
 ## NEXT FOCUS QUEUE — GF dual-channel + legal docs (2026-08-17)
 
-*โฟกัสหลักจนกว่าดีล Green Future นิ่ง — อัปเดตเมื่อปิดรายการ*
+*โฟกัสหลักจนกว่าดีล Green Future นิ่ง — อัปเดตเมื่อปิดรายการ · **GACP consult พัก · ขาย bulk เปิด***
 
 ### A. Deploy / เอกสารนิติบุคคล (ทำก่อนคุย GF)
 1. [x] Apply Supabase migration `20260817210000_site_settings_company_business_registration_rls.sql`
@@ -20,7 +33,7 @@
 7. [ ] **อย่าเซ็น exclusivity ทั้งบริษัท** — ถ้าขอ exclusive ให้จำกัดเฉพาะ documented/GACP-ready bulk ของ GF ในช่อง wholesale
 
 ### C. ไฟร์วอลล์ช่องทาง (ทำแล้วบางส่วน — ล็อกเป็นนโยบาย)
-8. [x] หน้าสาธารณะ `/wholesale` = **เฉพาะโปรแกรมเอกสาร GF** (รวม GACP/B2B หน้าเดียว · `/wholesale/gacp` redirect)
+8. [x] หน้าสาธารณะ `/wholesale` = **ขายเมล็ด bulk GF** (ไม่อ้าง GACP · `/wholesale/gacp` redirect)
 9. [x] ใบเสนอราคา / share link / อีเมลคุย GF **ห้ามปน** แคตตาล็อกหิ้วหรือ Seeds Genetics
 10. [ ] ฉลาก + เลข พ.พ.4 หจก. ใช้กับช่องถูกระบบเท่านั้น
 11. [x] ลูกค้า GACP ไม่ถูกเสนอเมล็ดหิ้วในแชท/เอกสารชุดเดียวกับโปรแกรม GF
@@ -100,9 +113,10 @@
 
 *ดีล documented seed programme · กรอบล็อก 4 ก.ย. 2026 · ห้ามโอน/ห้าม PO จนกว่าแพ็ก+ฉลาก+หน่วยงาน+การตลาด 4 ข้อ + มัดจำลูกค้า 50%*
 
-### สถานะล่าสุด (อัปเดต 2026-09-08)
+### สถานะล่าสุด (อัปเดต 2026-10-03)
 | รายการ | รายละเอียด |
 |--------|-------------|
+| SGF Seed | **ขาย bulk เปิด** · GACP consult **HOLD** (รอเอกสารรับรองสายพันธุ์) · ห้าม PO |
 | จดหมาย GF ล่าสุด | **GF/SSB/2026-0907** (7 ก.ย., v1.2) — อนุมัติฉลาก V.2.1 + พิมพ์จริง · Traceability แก้คำ 1 จุด · Option 1 ยืนยัน · รูปลายน้ำรับแล้ว · ให้ปรึกษาหน่วยงาน GACP ได้ |
 | สถานะดีล | กรอบล็อก 4 ก.ย. · **ห้ามโอน/ห้าม PO** จนกว่าแพ็ก+ฉลาก + สอบถามหน่วยงาน GACP + การตลาด 4 ข้อครบ · **อย่าจ่ายตาม PI 20102618** |
 | Gate ลำดับ | แพ็ก+ฉลาก → สอบถามหน่วยงาน → การตลาด 4 ข้อ → มัดจำลูกค้า 50% เข้า → **PO เท่าที่มัดจำครอบคลุม GF 50% ของบรรทัดนั้น** → โอน GF 50% |
@@ -161,8 +175,8 @@
 - [x] GF ยืนยัน Lead Registration ในหลักการ (0904) — ข้อยกเว้นลูกค้าเดิม · รายละเอียดใน Distribution Agreement
 - [ ] แพ็ก+ฉลากเสร็จ (ซีล + V.2 อนุมัติและติดซองจริง)
 - [ ] สอบถามหน่วยงาน: ผู้ปลูกใช้ SGF Seeds + เอกสารประกอบยื่น GACP ได้
-- [ ] การตลาด 4 ข้อ: Traceability พร้อมใช้ · **หน้า B2B/GACP มีเงื่อนไขครบ (ตรวจแล้ว 4 ก.ย.)** · เคลม wizard+inbox ใช้ได้ (preview · ไฟล์ mock เข้า Supabase เพราะ Drive SA ไม่มีโควตา) · **เปิดจองมัดจำลูกค้าบน `/wholesale` (2 ต.ค.)** · ยังรอลูกค้าสั่ง 1 ใน 5 สาย + ยืนยันสลิป
-- [ ] มัดจำลูกค้า 50% เข้าแล้ว → PO **เท่าที่มัดจำครอบคลุม GF 50% ของบรรทัดนั้น** → โอน GF 50% (ห้ามกลับลำดับ · ห้าม PO ทั้ง 1,000 จากออเดอร์ซองเดียว) · **หน้าเว็บเปิดรับมัดจำแล้ว แต่ยังห้าม PO/โอน GF**
+- [ ] การตลาด 4 ข้อ: Traceability พร้อมใช้ · **หน้า B2B มีเงื่อนไขครบ (ตรวจแล้ว 4 ก.ย. · 3 ต.ค. ตัด pitch GACP)** · เคลม wizard+inbox ใช้ได้ (preview · ไฟล์ mock เข้า Supabase เพราะ Drive SA ไม่มีโควตา) · **เปิดมัดจำลูกค้าบน `/wholesale` เป็น bulk seed** · GACP consult ยัง HOLD
+- [ ] มัดจำลูกค้า 50% เข้าแล้ว → PO **เท่าที่มัดจำครอบคลุม GF 50% ของบรรทัดนั้น** → โอน GF 50% (ห้ามกลับลำดับ · ห้าม PO ทั้ง 1,000 จากออเดอร์ซองเดียว) · **หน้าเว็บเปิดรับมัดจำ bulk แล้ว · ยังห้าม PO/โอน GF**
 - [ ] ทดสอบซอง+ฉลากผ่าน → written approval เวอร์ชัน → ส่งซองสำหรับ 20 หน่วย (+สำรอง)
 - [ ] ตรวจคลัง +5–+10°C, RH ≤50%, electronic log ก่อนของถึง
 - [ ] หลังส่งของสำเร็จ → Distribution Agreement + Lead Protection
@@ -291,6 +305,16 @@
 - **What:** เพิ่มเอกสารเสนอใช้แพ็กเกจ Smile Seed Bank เดิมชั่วคราวใน first-stage test order
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
+
+### บันทึกการทำงาน — 2026-10-03 (/wholesale เหลือ bulk seed GF)
+- **What:** หน้า `/wholesale` ขายเมล็ด GF ตามเรท 125/100/80 ซองละ 50 · เปิดมัดจำ 50% · ตัดการนำเสนอเอกสาร GACP
+- **Logic:** `GF_CUSTOMER_DEPOSIT_OPEN` · `GF_GACP_CONSULT_HOLD` แยกจากมัดจำ · ไม่บังคับ Package A · PO gate ยังล็อก
+- **ไฟล์:** `lib/green-future-approved-marketing.ts` · `WholesalePageClient.tsx` · `WholesaleHero.tsx` · `GacpTrustGrid.tsx` · `WholesaleStrainPicker.tsx` · `BulkOrderCalculator.tsx`
+
+### บันทึกการทำงาน — 2026-10-03 (พัก Project SGF Seed)
+- **What:** พักรับจองเมล็ด SGF เพราะ GF ยืนยันยังไม่ได้รับเอกสารรับรองสายพันธุ์ และกำลังยื่นขอ
+- **Logic:** `GF_SGF_SEED_PROGRAMME_PAUSED` ปิดมัดจำใหม่บน `/wholesale` (เหลือ RFQ) · `GF_PO_GATE` ยังล็อก · หน้าโอนสลิปของจองเดิมยังใช้ได้ · ปลดพักเมื่อได้ชุด GACP ข้อ 8 ของ 5 สายนำร่อง
+- **ไฟล์:** `lib/green-future-approved-marketing.ts` · `green-future-gacp-consult-brief.ts` · `app/admin/partners/green-future/layout.tsx` · `WholesaleAdminClient.tsx`
 
 ### บันทึกการทำงาน — 2026-10-02 (จดหมายขอเอกสารระบุสายพันธุ์จาก GF)
 - **What:** จดหมาย TH/EN ขอชุดใบรับรองประวัติและลักษณะประจำพันธุ์ ที่โรงงาน GACP ออกเอง (หัวจดหมาย+ตรา+เซ็น) สำหรับ 5 สายนำร่อง — คนละใบกับ ม.พ. ๒ ๑-๐

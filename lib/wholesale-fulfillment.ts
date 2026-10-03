@@ -27,17 +27,11 @@ function csvCell(value: string): string {
 }
 
 export function wholesaleCatalogCsv(rows: WholesaleCatalogStrain[]): string {
-  const header = ["code", "name", "format", "docs", "lead_time"].join(",");
+  const header = ["code", "name", "format"].join(",");
   const lines = rows.map((row) => {
     const code = (row.varietyCode ?? row.id).trim();
     const format = row.seedFormat === "FEM" ? "Photo" : "Auto";
-    const docs =
-      row.fulfillmentTier === "docs_ready" ? "documented" : "pending_docs";
-    const lead =
-      row.fulfillmentTier === "docs_ready"
-        ? "3_business_days"
-        : "about_1_month";
-    return [code, row.name, format, docs, lead].map(csvCell).join(",");
+    return [code, row.name, format].map(csvCell).join(",");
   });
   return [header, ...lines].join("\n");
 }
@@ -54,15 +48,7 @@ export function wholesaleCatalogShareText(
     .map((row) => {
       const code = (row.varietyCode ?? row.id).trim();
       const format = row.seedFormat === "FEM" ? "Photo" : "Auto";
-      const lead =
-        row.fulfillmentTier === "docs_ready"
-          ? locale === "th"
-            ? "มีเอกสาร · 3 วันทำการ"
-            : "documented · 3 business days"
-          : locale === "th"
-            ? "รอเอกสาร ~1 เดือน"
-            : "awaiting docs ~1 month";
-      return `${code} · ${row.name} · ${format} · ${lead}`;
+      return `${code} · ${row.name} · ${format}`;
     })
     .join("\n");
   return `${title}\n${body}`;

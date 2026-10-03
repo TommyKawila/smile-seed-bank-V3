@@ -17,6 +17,10 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import {
+  GF_GACP_CONSULT_HOLD,
+  GF_SGF_PAUSE_ADMIN_TH,
+} from "@/lib/green-future-approved-marketing";
+import {
   DEFAULT_BULK_PRICING,
   type BulkPricingConfig,
 } from "@/lib/wholesale-bulk-pricing";
@@ -305,6 +309,12 @@ export function WholesaleAdminClient() {
           ))}
         </div>
       </div>
+
+      {GF_GACP_CONSULT_HOLD ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          {GF_SGF_PAUSE_ADMIN_TH}
+        </p>
+      ) : null}
 
       {tab === "catalog" && (
         <Card>
