@@ -8,16 +8,9 @@ import { prisma } from "@/lib/prisma";
 import { sendAdminNotification } from "@/lib/admin-notification";
 import { createAdminClient } from "@/lib/supabase/server";
 import { gfAcceptsPublicDeposits } from "@/lib/green-future-approved-marketing";
-import {
-  gfFulfillmentTier,
-  countDocsPendingLines,
-  type FulfillmentTier,
-} from "@/lib/wholesale-fulfillment";
-import {
-  isValidQty,
-  resolveQuote,
-  type CoaMode,
-} from "@/lib/wholesale-bulk-pricing";
+import type { FulfillmentTier } from "@/lib/wholesale-fulfillment";
+import type { CoaMode } from "@/lib/wholesale-bulk-pricing";
+import { quoteWholesaleDeposit } from "@/lib/wholesale-deposit-quote";
 import { getBulkPricingConfig } from "@/services/wholesale-catalog-service";
 import { upsertBusinessContact } from "@/services/business-document-service";
 
@@ -132,49 +125,23 @@ export async function createWholesaleDepositOrder(
   }
 
   const config = await getBulkPricingConfig();
-  const lines = input.lines
-    .map((l) => ({
-      varietyCode: l.varietyCode.trim().toUpperCase(),
-      strainName: l.strainName.trim(),
-      quantity: Math.floor(l.quantity),
-      fulfillmentTier: gfFulfillmentTier(l.varietyCode),
-    }))
-    .filter(
-      (l) => l.varietyCode && l.strainName && isValidQty(l.quantity, config, true)
-    );
+  const priced = quoteWholesaleDeposit({
+    lines: input.lines,
+    config,
+    coaMode: input.coaMode,
+    buyExtraCoa: input.buyExtraCoa,
+    coaPackageA: input.coaPackageA,
+    coaPackageB: input.coaPackageB,
+  });
+  const { lines, quote, packageA, packageB } = priced;
 
-  if (!lines.length) {
+  if (!lines.length || !quote.allValid) {
     throw new Error(
       "At least one strain with a valid 50-seed pouch quantity is required"
     );
   }
 
-  const minPackageACount = countDocsPendingLines(lines);
-  const quote = resolveQuote(
-    lines.map((l) => ({
-      strainId: l.varietyCode,
-      name: `${l.varietyCode} · ${l.strainName}`,
-      quantity: l.quantity,
-      fulfillmentTier: l.fulfillmentTier,
-    })),
-    config,
-    {
-      mode: minPackageACount > 0 ? "with" : input.coaMode,
-      buyExtra: minPackageACount > 0 ? true : input.buyExtraCoa,
-      packageACount: Math.max(input.coaPackageA, minPackageACount),
-      packageBCount: input.coaPackageB,
-      pilotMode: true,
-      minPackageACount,
-    }
-  );
-
-  if (!quote.allValid) {
-    throw new Error("Quote lines are not valid");
-  }
-
   const reservationNumber = await nextReservationNumber();
-  const packageA = Math.max(input.coaPackageA, minPackageACount);
-  const packageB = Math.max(0, Math.floor(input.coaPackageB));
 
   const created = await prisma.wholesale_deposit_orders.create({
     data: {
@@ -193,7 +160,7 @@ export async function createWholesaleDepositOrder(
       grand_total_thb: new Prisma.Decimal(quote.grandTotalThb),
       deposit_thb: new Prisma.Decimal(quote.depositThb),
       balance_thb: new Prisma.Decimal(quote.balanceThb),
-      coa_mode: minPackageACount > 0 ? "with" : input.coaMode,
+      coa_mode: input.coaMode,
       package_a_count: packageA,
       package_b_count: packageB,
       status: "PENDING_TRANSFER",
@@ -235,7 +202,7 @@ export async function createWholesaleDepositOrder(
       `Deposit 50%: ${quote.depositThb.toLocaleString("en-US")} THB`,
       `Total: ${quote.grandTotalThb.toLocaleString("en-US")} THB`,
       hasDocsReady ? "Includes documented (3-day) lines" : null,
-      hasDocsPending ? "Includes docs-pending (~1 month + lab) lines" : null,
+      hasDocsPending ? "Includes lines outside the 5-code pilot list" : null,
       `Admin: /admin/wholesale`,
     ]
       .filter(Boolean)
