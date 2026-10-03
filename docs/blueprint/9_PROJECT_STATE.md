@@ -306,6 +306,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-10-03 (มัดจำตรงกับราคาบนหน้า)
+- **What:** สายที่ไม่อยู่ใน 5 รหัสนำร่อง ไม่ถูกบวก Package A 10,410 บาทตอนบันทึกมัดจำ
+- **Logic:** `quoteWholesaleDeposit` คิดค่าแล็บเฉพาะตอนลูกค้าเลือก COA — ตรงกับเครื่องคำนวณหลังตัดการบังคับ Package A
+- **ไฟล์:** `lib/wholesale-deposit-quote.ts` · `services/wholesale-deposit-service.ts` · `scripts/assert-wholesale-deposit-quote.ts`
+
 ### บันทึกการทำงาน — 2026-10-03 (/wholesale เหลือ bulk seed GF)
 - **What:** หน้า `/wholesale` ขายเมล็ด GF ตามเรท 125/100/80 ซองละ 50 · เปิดมัดจำ 50% · ตัดการนำเสนอเอกสาร GACP
 - **Logic:** `GF_CUSTOMER_DEPOSIT_OPEN` · `GF_GACP_CONSULT_HOLD` แยกจากมัดจำ · ไม่บังคับ Package A · PO gate ยังล็อก
