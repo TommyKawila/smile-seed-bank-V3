@@ -80,10 +80,10 @@ export function WholesalePageClient({
     );
     setForm((f) => ({
       ...f,
-      coaMode: state.coaMode,
-      buyExtraCoa: state.buyExtra,
-      coaPackageA: state.packageACount,
-      coaPackageB: state.packageBCount,
+      coaMode: "none",
+      buyExtraCoa: false,
+      coaPackageA: 0,
+      coaPackageB: 0,
     }));
     setSuccessQuoteNumber(null);
     setSuccessDepositThb(null);
@@ -115,10 +115,10 @@ export function WholesalePageClient({
           paymentMethod: form.paymentMethod,
           message: form.message,
           currency,
-          coaMode: form.coaMode,
-          buyExtraCoa: form.buyExtraCoa,
-          coaPackageA: form.coaPackageA,
-          coaPackageB: form.coaPackageB,
+          coaMode: "none",
+          buyExtraCoa: false,
+          coaPackageA: 0,
+          coaPackageB: 0,
           licenseStatus: form.licenseStatus || undefined,
           licenseNumber: form.licenseNumber.trim() || undefined,
           lines: cart.map((l) => ({
@@ -163,10 +163,10 @@ export function WholesalePageClient({
           phone: form.phone,
           address: form.address,
           message: form.message,
-          coaMode: form.coaMode,
-          buyExtraCoa: form.buyExtraCoa,
-          coaPackageA: form.coaPackageA,
-          coaPackageB: form.coaPackageB,
+          coaMode: "none",
+          buyExtraCoa: false,
+          coaPackageA: 0,
+          coaPackageB: 0,
           licenseStatus: form.licenseStatus || undefined,
           licenseNumber: form.licenseNumber.trim() || undefined,
           lines: cart.map((l) => ({

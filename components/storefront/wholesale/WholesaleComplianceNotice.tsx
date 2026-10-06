@@ -34,12 +34,6 @@ export function WholesaleComplianceNotice() {
           </li>
           <li>
             {t(
-              "COA แล็บภายนอกและ ISTA เป็นบริการเสริม คิดแยกตามล็อต — ไม่รวมทุกออเดอร์",
-              "External lab COA and ISTA testing are optional add-ons, charged separately per lot — not included on every order."
-            )}
-          </li>
-          <li>
-            {t(
               "เกณฑ์งอก ≥80% / บริสุทธิ์ ≥99% มีผลเมื่อระบุในใบเสนอราคาที่ยืนยัน และตามวิธีทดสอบที่ตกลง",
               "Germination ≥80% / purity ≥99% applies when stated in a confirmed quotation and per the agreed test method."
             )}

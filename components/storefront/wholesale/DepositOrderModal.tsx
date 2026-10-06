@@ -55,10 +55,10 @@ export function DepositOrderModal({
     })),
     bulkPricing,
     {
-      mode: form.coaMode,
-      buyExtra: form.buyExtraCoa,
-      packageACount: form.coaPackageA,
-      packageBCount: form.coaPackageB,
+      mode: "none",
+      buyExtra: false,
+      packageACount: 0,
+      packageBCount: 0,
       pilotMode: true,
     }
   );

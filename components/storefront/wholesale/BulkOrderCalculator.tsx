@@ -26,8 +26,6 @@ import {
   type CoaMode,
 } from "@/lib/wholesale-bulk-pricing";
 import { gfFulfillmentTier, wholesaleCatalogCsv, wholesaleCatalogShareText } from "@/lib/wholesale-fulfillment";
-import { CoaAddonSection } from "./CoaAddonSection";
-import { CoaOptionCards } from "./CoaOptionCards";
 import { BulkOrderSummary } from "./BulkOrderSummary";
 import { WholesaleStrainPicker } from "./WholesaleStrainPicker";
 
@@ -132,10 +130,6 @@ export function BulkOrderCalculator({
       fulfillmentTier: s.fulfillmentTier ?? gfFulfillmentTier(s.varietyCode ?? s.id),
     }))
   );
-  const [coaMode, setCoaMode] = useState<CoaMode>("none");
-  const [buyExtra, setBuyExtra] = useState(false);
-  const [packageACount, setPackageACount] = useState(0);
-  const [packageBCount, setPackageBCount] = useState(0);
 
   const emit = (next: BulkOrderState) => {
     onStateChange?.(next);
@@ -145,23 +139,23 @@ export function BulkOrderCalculator({
     setLines(next);
     emit({
       lines: next,
-      coaMode,
-      buyExtra,
-      packageACount,
-      packageBCount,
+      coaMode: "none",
+      buyExtra: false,
+      packageACount: 0,
+      packageBCount: 0,
     });
   };
 
   const quote = useMemo(
     () =>
       resolveQuote(lines, config, {
-        mode: coaMode,
-        buyExtra,
-        packageACount,
-        packageBCount,
+        mode: "none",
+        buyExtra: false,
+        packageACount: 0,
+        packageBCount: 0,
         pilotMode,
       }),
-    [lines, config, coaMode, buyExtra, packageACount, packageBCount, pilotMode]
+    [lines, config, pilotMode]
   );
 
   const unused = catalog.filter(
@@ -231,14 +225,6 @@ export function BulkOrderCalculator({
     URL.revokeObjectURL(url);
   };
 
-  const state: BulkOrderState = {
-    lines,
-    coaMode,
-    buyExtra,
-    packageACount,
-    packageBCount,
-  };
-
   const upsellText =
     !pilotMode && quote.upsell
       ? t(
@@ -252,14 +238,6 @@ export function BulkOrderCalculator({
               ? ` and ~${quote.upsell.nextFreeCoaCount} free COA(s)`
               : ""
           } (subject to quotation)`
-        )
-      : null;
-
-  const freeCoaText =
-    !pilotMode && quote.freeCoaCount > 0
-      ? t(
-          `สิทธิ์ COA ฟรีโดยประมาณ ${quote.freeCoaCount} สายพันธุ์ (ประมาณ ${quote.freeCoaValueThb.toLocaleString("en-US")} บาท) — ขึ้นกับใบเสนอราคา สต็อกล็อต และค่าแล็บปัจจุบัน`,
-          `Estimated eligibility for ${quote.freeCoaCount} free COA strain(s) (~${quote.freeCoaValueThb.toLocaleString("en-US")} THB) — subject to quotation, lot availability and current lab charges`
         )
       : null;
 
@@ -453,44 +431,8 @@ export function BulkOrderCalculator({
         </div>
       )}
 
-      {freeCoaText && (
-        <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
-          {freeCoaText}
-        </div>
-      )}
-
-      <CoaOptionCards
-        mode={coaMode}
-        onChange={(mode) => {
-          setCoaMode(mode);
-          emit({ ...state, coaMode: mode });
-        }}
-      />
-
-      {coaMode === "with" && (
-        <CoaAddonSection
-          config={config}
-          buyExtra={buyExtra}
-          packageACount={packageACount}
-          packageBCount={packageBCount}
-          onBuyExtraChange={(v) => {
-            setBuyExtra(v);
-            emit({ ...state, buyExtra: v });
-          }}
-          onPackageAChange={(n) => {
-            setPackageACount(n);
-            emit({ ...state, packageACount: n });
-          }}
-          onPackageBChange={(n) => {
-            setPackageBCount(n);
-            emit({ ...state, packageBCount: n });
-          }}
-        />
-      )}
-
       <BulkOrderSummary
         quote={quote}
-        coaMode={coaMode}
         currency={currency}
         fx={config.eurThb}
         pilotMode={pilotMode}
@@ -503,10 +445,10 @@ export function BulkOrderCalculator({
         onClick={() =>
           onRequestQuote({
             lines,
-            coaMode,
-            buyExtra,
-            packageACount,
-            packageBCount,
+            coaMode: "none",
+            buyExtra: false,
+            packageACount: 0,
+            packageBCount: 0,
           })
         }
       >
