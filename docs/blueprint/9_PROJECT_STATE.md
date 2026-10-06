@@ -306,6 +306,11 @@
 - **Logic:** ระบุ stock ประมาณ 10,000 ชิ้น · ขนาด 7 × 10 cm · พื้นที่สติ๊กเกอร์ด้านหลัง 5.5 × 5.5 cm · ต้องรอ GF และ DOA review/written approval ก่อนใช้
 - **ไฟล์:** `lib/green-future-packaging-proposal.ts` · `BusinessDocumentDispatcher.tsx` · `BusinessDocumentControls.tsx`
 
+### บันทึกการทำงาน — 2026-10-03 (ตัดตัวเลือกแล็บ COA จาก /wholesale)
+- **What:** เอาตัวเลือก Package A/B ออกจากหน้าขายส่ง เพราะไม่ pitch ลูกค้า GACP
+- **Logic:** คำสั่งจองส่ง `coaMode: none` เสมอ · สรุปราคาเหลือแค่เมล็ด + มัดจำ 50%
+- **ไฟล์:** `BulkOrderCalculator.tsx` · `BulkOrderSummary.tsx` · `TrustCompliance.tsx` · `WholesaleComplianceNotice.tsx` · `DepositOrderModal.tsx` · `WholesalePageClient.tsx`
+
 ### บันทึกการทำงาน — 2026-10-03 (/wholesale เหลือ bulk seed GF)
 - **What:** หน้า `/wholesale` ขายเมล็ด GF ตามเรท 125/100/80 ซองละ 50 · เปิดมัดจำ 50% · ตัดการนำเสนอเอกสาร GACP
 - **Logic:** `GF_CUSTOMER_DEPOSIT_OPEN` · `GF_GACP_CONSULT_HOLD` แยกจากมัดจำ · ไม่บังคับ Package A · PO gate ยังล็อก

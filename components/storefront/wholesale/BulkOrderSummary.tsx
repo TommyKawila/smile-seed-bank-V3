@@ -6,8 +6,6 @@ import {
   GF_CONDITIONAL_DEPOSIT_SHORT_TH,
   GF_OPTION1_DISPATCH_EN,
   GF_OPTION1_DISPATCH_TH,
-  GF_WITH_COA_DISPATCH_EN,
-  GF_WITH_COA_DISPATCH_TH,
   gfShowPaymentTerms,
 } from "@/lib/green-future-approved-marketing";
 import {
@@ -15,12 +13,11 @@ import {
   gfPilotNextTier,
   gfPilotPouchCount,
 } from "@/lib/green-future-pilot-config";
-import type { BulkQuoteResult, CoaMode } from "@/lib/wholesale-bulk-pricing";
+import type { BulkQuoteResult } from "@/lib/wholesale-bulk-pricing";
 import { formatThb, thbToEurDisplay } from "@/lib/wholesale-bulk-pricing";
 
 type Props = {
   quote: BulkQuoteResult;
-  coaMode: CoaMode;
   currency?: "THB" | "EUR";
   fx?: number;
   pilotMode?: boolean;
@@ -35,7 +32,6 @@ function money(thb: number, currency: "THB" | "EUR", fx: number): string {
 
 export function BulkOrderSummary({
   quote,
-  coaMode,
   currency = "THB",
   fx = 38.44,
   pilotMode = true,
@@ -103,14 +99,6 @@ export function BulkOrderSummary({
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-slate-600">
-            {t("ค่า COA เพิ่มเติม", "Extra COA Cost")}
-          </dt>
-          <dd className="font-medium text-slate-900">
-            {money(quote.extraCoaThb, currency, fx)}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-4">
           <dt className="text-slate-600">{t("ค่าจัดส่ง", "Shipping")}</dt>
           <dd className="font-medium text-slate-700">
             {t("คำนวณในใบเสนอราคาสุดท้าย", "Calculated in final quotation")}
@@ -158,9 +146,7 @@ export function BulkOrderSummary({
         </span>
       </p>
       <p className="mt-1 text-sm text-slate-700">
-        {coaMode === "with"
-          ? t(GF_WITH_COA_DISPATCH_TH, GF_WITH_COA_DISPATCH_EN)
-          : t(GF_OPTION1_DISPATCH_TH, GF_OPTION1_DISPATCH_EN)}
+        {t(GF_OPTION1_DISPATCH_TH, GF_OPTION1_DISPATCH_EN)}
       </p>
     </div>
   );

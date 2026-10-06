@@ -20,11 +20,6 @@ export function TrustCompliance() {
             <Truck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
             <p>
               {t(GF_OPTION1_DISPATCH_TH, GF_OPTION1_DISPATCH_EN)}
-              {" · "}
-              {t(
-                "มี COA แล็บภายนอก: แล็บประมาณ 30 วันทำการ แล้วจัดส่งอีกประมาณ 3–7 วัน — ตามใบเสนอราคา",
-                "With external lab COA: lab about 30 business days, then indicative dispatch 3–7 days — per quotation"
-              )}
             </p>
           </div>
           <p className="pl-8 text-xs text-slate-500">
