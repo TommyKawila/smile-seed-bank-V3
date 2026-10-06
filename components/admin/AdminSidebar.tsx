@@ -34,6 +34,7 @@ import {
   Activity,
   Bot,
   Layers,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -70,6 +71,7 @@ const navItems = [
   { href: "/admin/banners", label: "แบนเนอร์หน้าแรก", icon: LayoutTemplate },
   { href: "/admin/discounts", label: "ส่วนลด / คูปอง", icon: Percent },
   { href: "/admin/magazine", label: "Smile Seed Blog", icon: Newspaper },
+  { href: "/admin/magazine/editorial", label: "Editorial Pipeline", icon: ClipboardList },
 ];
 
 const bottomItems = [

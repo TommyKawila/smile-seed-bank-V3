@@ -97,6 +97,54 @@ model blog_posts {
   @@schema("public")
 }
 
+/// AI Editorial Pipeline drafts. Never public until publish writes `blog_posts`.
+model editorial_jobs {
+  id                String    @id @default(uuid()) @db.Uuid
+  topic             String
+  status            String    @default("IDEA") @db.VarChar(32)
+
+  revision          Int       @default(1)
+  approved_revision Int?
+
+  title             String?
+  slug              String?
+  excerpt           String?
+  content           Json?     @db.Json
+
+  title_en          String?
+  excerpt_en        String?
+  content_en        Json?     @db.Json
+
+  seo_title         String?
+  seo_description   String?
+  seo_keywords      String[]  @default([])
+
+  category_id       BigInt?
+  tags              String[]  @default([])
+
+  research_summary  String?
+  sources           Json?     @db.Json
+  image_plan        Json?     @db.Json
+
+  featured_image    String?
+  image_assets      Json?     @db.Json
+
+  source_prompt     String?
+  review_notes      String?
+
+  published_post_id BigInt?
+
+  approved_at       DateTime? @db.Timestamptz(6)
+  published_at      DateTime? @db.Timestamptz(6)
+
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([published_post_id])
+  @@schema("public")
+}
+
 model breeders {
   id                      BigInt     @id @default(autoincrement())
   name                    String

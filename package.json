@@ -24,7 +24,8 @@
     "fetch:seeds-genetics": "npx tsx scripts/fetch-seeds-genetics-catalog.ts",
     "db:migrate:deploy": "PRISMA_MIGRATE_ADVISORY_LOCK_TIMEOUT=120000 prisma migrate deploy",
     "db:merch:schema": "npx tsx scripts/apply-merch-schema.ts",
-    "db:merch:resolve": "prisma migrate resolve --applied 20260726160000_products_merch_kind"
+    "db:merch:resolve": "prisma migrate resolve --applied 20260726160000_products_merch_kind",
+    "test:editorial": "tsx --test lib/editorial-rules.test.ts lib/editorial-auth.test.ts lib/editorial-publish-map.test.ts lib/editorial-schema.test.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

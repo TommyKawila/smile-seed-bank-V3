@@ -4,6 +4,12 @@
 
 ---
 
+## Editorial Pipeline v1 (2026-10-06)
+
+Internal API + `editorial_jobs` table. Drafts stay off `blog_posts` until `approved_revision === revision` and publish. Env: `EDITORIAL_API_KEY`. Admin list: `/admin/magazine/editorial`. Tests: `npm run test:editorial`.
+
+---
+
 ## HOLD — GACP consult (2026-10-03)
 
 *งานเอกสาร GACP ผู้ปลูกพักจนกว่า Green Future ส่งชุดใบรับรองสายพันธุ์ (GACP ข้อ 8 · self-cert)*

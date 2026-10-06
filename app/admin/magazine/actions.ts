@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { generateSlug } from "@/lib/product-utils";
+import { ensureUniqueBlogSlug } from "@/lib/blog-slug";
 import { upsertNewsletterEmail } from "@/lib/newsletter-subscribe";
 import {
   setMagazineTrendingMode,
@@ -115,22 +116,6 @@ async function broadcastIfRequested(
     emailSent: r.sent,
     ...(r.error ? { emailError: r.error } : {}),
   };
-}
-
-async function ensureUniqueBlogSlug(base: string, excludeId?: bigint): Promise<string> {
-  let slug = base.slice(0, 180) || "post";
-  let n = 0;
-  for (;;) {
-    const existing = await prisma.blog_posts.findFirst({
-      where: {
-        slug,
-        ...(excludeId != null ? { NOT: { id: excludeId } } : {}),
-      },
-    });
-    if (!existing) return slug;
-    n += 1;
-    slug = `${base.slice(0, 170)}-${n}`;
-  }
 }
 
 export async function createMagazinePost(input: MagazineSaveInput) {
