@@ -14,6 +14,8 @@ GitHub Actions `.github/workflows/ci.yml` on PR + push to `main`: `npm ci` → l
 
 Internal API + `editorial_jobs` table. Drafts stay off `blog_posts` until `approved_revision === revision` and publish. Env: `EDITORIAL_API_KEY`. Admin list: `/admin/magazine/editorial`. Tests: `npm run test:editorial`.
 
+- **RLS (2026-10-07):** `editorial_jobs` ENABLE ROW LEVEL SECURITY + revoke anon/authenticated. PostgREST cannot read drafts or patch an approved revision. Prisma unchanged. Migration `20261007110300_editorial_jobs_rls`.
+
 ---
 
 ## HOLD — GACP consult (2026-10-03)
