@@ -118,24 +118,6 @@ async function broadcastIfRequested(
   };
 }
 
-<<<<<<< HEAD
-=======
-async function ensureUniqueBlogSlug(base: string, excludeId?: bigint): Promise<string> {
-  let slug = base.slice(0, 180) || "post";
-  let n = 0;
-  for (;;) {
-    const existing = await prisma.blog_posts.findFirst({
-      where: {
-        slug,
-        ...(excludeId != null ? { NOT: { id: excludeId } } : {}),
-      },
-    });
-    if (!existing) return slug;
-    n += 1;
-    slug = `${base.slice(0, 170)}-${n}`;
-  }
-}
-
 async function denyUnlessAdmin(): Promise<{ ok: false; error: string } | null> {
   try {
     await assertAdmin();
@@ -145,7 +127,6 @@ async function denyUnlessAdmin(): Promise<{ ok: false; error: string } | null> {
   }
 }
 
->>>>>>> 18f8bbb (fix(security): stop self-set user metadata from acting as admin)
 export async function createMagazinePost(input: MagazineSaveInput) {
   const denied = await denyUnlessAdmin();
   if (denied) return denied;
