@@ -1,7 +1,21 @@
--- Lock down cabinet storage log tables (created in 20260909120000 without RLS).
--- Pattern: ENABLE RLS, no anon/authenticated policies → PostgREST cannot dump
--- share tokens or forge GACP temp/RH evidence. Prisma / table-owner / service_role
--- continue to read/write via /api/admin/partners/green-future/storage-log.
+-- Lock down tables: ENABLE RLS + REVOKE anon/authenticated (PostgREST).
+-- Prisma / table-owner / service_role continue via server APIs.
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON TABLE public.cabinet_storage_log_entries FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON TABLE public.cabinet_storage_log_entries FROM authenticated;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON TABLE public.cabinet_storage_share FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON TABLE public.cabinet_storage_share FROM authenticated;
+  END IF;
+END $$;
 
 ALTER TABLE "public"."cabinet_storage_log_entries" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."cabinet_storage_share" ENABLE ROW LEVEL SECURITY;
