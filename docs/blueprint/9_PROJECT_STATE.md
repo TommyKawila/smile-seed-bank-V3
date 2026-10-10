@@ -4,9 +4,9 @@
 
 ---
 
-## CI workflow (2026-10-10)
+## Security — gf_seed_claim_submissions RLS (2026-10-10)
 
-GitHub Actions `.github/workflows/ci.yml` on PR + push to `main`: `npm ci` → lint → typecheck → `test:editorial` → `next build`. Build-time env uses CI placeholders only (no real secrets). Removed committed `tsconfig.tsbuildinfo` and gitignored `*.tsbuildinfo`. Sitemap falls back to static URLs when DB is unreachable (CI). Added `npm run typecheck`.
+Apply matching Prisma/Supabase RLS migration on production after merge. App access remains Prisma/service_role only.
 
 ---
 
