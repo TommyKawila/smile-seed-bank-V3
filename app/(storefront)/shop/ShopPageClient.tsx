@@ -1172,7 +1172,6 @@ export function ShopPageClient({
                   quickEffective === "clearance"
                     ? CLEARANCE_ACCENT.filterTitle
                     : quickEffective === "new" ||
-                        quickEffective === "new_arrivals" ||
                         sortEffective === "new_arrivals" ||
                         sortEffective === "newest"
                       ? NEW_SEEDS_ACCENT.filterTitle
@@ -1182,7 +1181,6 @@ export function ShopPageClient({
                 {quickEffective === "clearance"
                   ? t("ล้างสต็อก — เมล็ดพันธุ์ลดราคา", "Clearance — discounted seeds")
                   : quickEffective === "new" ||
-                      quickEffective === "new_arrivals" ||
                       sortEffective === "new_arrivals" ||
                       sortEffective === "newest"
                     ? t("สินค้ามาใหม่", "New arrivals")

@@ -2,7 +2,10 @@
 
 import { GF_SEED_VIABILITY_CLAIM_FORM } from "@/lib/green-future-proforma-20260826";
 
-export type { GfSeedClaimFormData as GfSeedClaimPayload } from "@/lib/gf-seed-claim-form";
+export type {
+  GfSeedClaimFormData,
+  GfSeedClaimFormData as GfSeedClaimPayload,
+} from "@/lib/gf-seed-claim-form";
 export {
   GF_CLAIM_STEPS,
   GF_CLAIM_MAX_FILES,

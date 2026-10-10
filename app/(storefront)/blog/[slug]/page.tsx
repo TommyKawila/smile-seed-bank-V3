@@ -72,7 +72,7 @@ export async function generateMetadata(props: BlogArticlePageProps): Promise<Met
   const post = await getPublishedPostBySlug(slug);
   if (!post) return { title: "ไม่พบบทความ" };
 
-  const locale = magazineLocaleFromCookie(cookies().get("locale")?.value);
+  const locale = magazineLocaleFromCookie((await cookies()).get("locale")?.value);
   const displayTitle = magazineDisplayTitle(post, locale);
   const displayExcerpt = magazineDisplayExcerpt(post, locale);
   const contentJson = magazineDisplayContentJson(post, locale);
@@ -135,7 +135,7 @@ export default async function BlogArticlePage(props: BlogArticlePageProps) {
   const post = await getPublishedPostBySlug(slug);
   if (!post) notFound();
 
-  const locale = magazineLocaleFromCookie(cookies().get("locale")?.value);
+  const locale = magazineLocaleFromCookie((await cookies()).get("locale")?.value);
   const displayTitle = magazineDisplayTitle(post, locale);
   const displayExcerpt = magazineDisplayExcerpt(post, locale);
   const displayTagline = magazineDisplayTagline(post, locale);

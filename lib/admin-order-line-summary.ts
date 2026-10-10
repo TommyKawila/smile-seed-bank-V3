@@ -66,7 +66,7 @@ export type AdminOrderDetailLineItem = {
   productName: string;
   unitLabel: string;
   breederName: string | null;
-  seedTypeLabel: string;
+  seedTypeLabel?: string | null;
   quantity: number;
   unitPrice: number;
   totalPrice: number;

@@ -11,7 +11,15 @@ import { adminPartnerDocUrl } from "@/lib/partner-docs-url";
 export const GREEN_FUTURE_GACP_CONSULT_SUBJECT =
   "Internal — Chiang Mai authority GACP consultation brief (SGF Seeds + traceability)";
 
-export const GACP_CONSULT_CHECKLIST = [
+export type GacpConsultChecklistItem = {
+  id: string;
+  labelTh: string;
+  labelEn: string;
+  href?: string;
+  note?: string;
+};
+
+export const GACP_CONSULT_CHECKLIST: GacpConsultChecklistItem[] = [
   {
     id: "variety-identity-docs",
     labelTh: "ชุดใบรับรองประวัติและลักษณะประจำพันธุ์ จาก GF (GACP ข้อ 8 · โรงงานออกเอง)",
@@ -78,7 +86,7 @@ export const GACP_CONSULT_CHECKLIST = [
     labelEn: "Option 1 quotation (planning — not a PO)",
     href: adminPartnerDocUrl(GF_INBOUND_QUOTATION_OPTION1_FILE),
   },
-] as const;
+];
 
 export const GREEN_FUTURE_GACP_CONSULT_RAW = `Subject: ${GREEN_FUTURE_GACP_CONSULT_SUBJECT}
 

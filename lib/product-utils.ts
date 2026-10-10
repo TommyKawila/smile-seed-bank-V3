@@ -105,7 +105,10 @@ export function cleanStrainName(name: string | null | undefined): string {
 
 /** Sum variant stock (skips inactive when `is_active` is false). */
 export function computeTotalStock(
-  variants: Pick<ProductVariant, "stock" | "is_active">[] | null | undefined
+  variants:
+    | { stock?: number | null; is_active?: boolean | null }[]
+    | null
+    | undefined
 ): number {
   if (!variants?.length) return 0;
   return variants.reduce((sum, v) => {

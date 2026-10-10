@@ -1,5 +1,8 @@
-import { ceilThb, DEFAULT_LANDED_PCT } from "@/lib/wholesale-bulk-pricing";
-import { sellFromGrossMargin } from "@/lib/green-future-resale-pricing";
+import { ceilThb } from "@/lib/wholesale-bulk-pricing";
+import {
+  DEFAULT_LANDED_PCT,
+  sellFromGrossMargin,
+} from "@/lib/green-future-resale-pricing";
 
 export const RETAIL_PACK_SIZE = 50;
 export const DEFAULT_COA_GM_PCT = 20;

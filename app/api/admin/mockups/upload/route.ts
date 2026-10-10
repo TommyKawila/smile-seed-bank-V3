@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/auth-utils";
 import { uploadPackageImage } from "@/services/mockupService";
 
-function isUploadBlob(value: FormDataEntryValue | null): value is Blob {
+function isUploadBlob(value: FormDataEntryValue | null): value is File {
   return (
     !!value &&
     typeof value === "object" &&

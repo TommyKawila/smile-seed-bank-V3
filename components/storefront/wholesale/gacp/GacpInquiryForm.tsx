@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -107,12 +108,12 @@ export function GacpInquiryForm() {
               "For farm owners requesting document packages or bulk quotes. Submit below — our team replies within 1–2 business days."
             )}
           </p>
-          <a
+          <Link
             href="/traceability"
             className="mt-4 inline-flex min-h-10 items-center text-sm font-medium text-emerald-700 underline-offset-4 hover:underline"
           >
             {t("ตรวจเลขล็อตที่มีอยู่ →", "Look up an existing lot number →")}
-          </a>
+          </Link>
           {sent ? (
             <p className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
               {t(

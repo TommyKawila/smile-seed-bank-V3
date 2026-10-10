@@ -138,7 +138,6 @@ export async function POST(req: NextRequest) {
         : null;
 
     const supabase = await createAdminClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = supabase as any;
 
     let masterSku = (productData.master_sku ?? "").toString().trim() || null;

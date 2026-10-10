@@ -60,7 +60,6 @@ export async function setWholesaleStatus(
     // Use admin client to bypass RLS for admin write operations
     const supabase = await createAdminClient();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from("customers")
       .update({ is_wholesale: isWholesale, wholesale_discount_percent: isWholesale ? discountPercent : 0 })

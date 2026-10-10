@@ -1,5 +1,3 @@
-import type { Product } from "@/types/supabase";
-
 function toPct(v: unknown): number | null {
   if (v == null || v === "") return null;
   const n = Number(v);
@@ -7,9 +5,12 @@ function toPct(v: unknown): number | null {
   return Math.min(100, Math.max(0, Math.round(n)));
 }
 
-export function getGeneticPercents(
-  product: Pick<Product, "sativa_percent" | "indica_percent" | "sativa_ratio" | "indica_ratio">
-): { sativa: number; indica: number } | null {
+export function getGeneticPercents(product: {
+  sativa_percent?: unknown;
+  indica_percent?: unknown;
+  sativa_ratio?: unknown;
+  indica_ratio?: unknown;
+}): { sativa: number; indica: number } | null {
   let s = toPct(product.sativa_percent);
   let i = toPct(product.indica_percent);
   if (s == null && i == null) {

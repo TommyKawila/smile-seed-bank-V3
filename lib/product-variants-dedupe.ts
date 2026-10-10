@@ -90,8 +90,8 @@ export type DbVariantPackRow = {
   id: bigint;
   unit_label: string | null;
   stock: number | null;
-  price: number | null;
-  cost_price?: number | null;
+  price: number | { toString(): string } | null;
+  cost_price?: number | { toString(): string } | null;
   sku?: string | null;
   is_active?: boolean | null;
 };

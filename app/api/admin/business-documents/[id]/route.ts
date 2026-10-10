@@ -59,6 +59,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       id,
       ...parsed.data,
       signatureImageUrl: parsed.data.signatureImageUrl ?? null,
+      attachmentImageUrls: existing.attachmentImageUrls ?? [],
       status: parsed.data.status ?? existing.status,
     });
     return NextResponse.json({ document: doc });

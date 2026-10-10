@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DEFAULT_LANDED_PCT } from "@/lib/wholesale-bulk-pricing";
+import { DEFAULT_LANDED_PCT } from "@/lib/green-future-resale-pricing";
 import {
   GACP_DOCUMENT_MATRIX,
   GACP_RETAIL_PACKAGES,

@@ -102,7 +102,10 @@ function productBreederId(p: ProductFull): number {
 }
 
 function productClearancePercent(p: ProductFull): number {
-  return normalizeClearanceDiscountPercent(p.clearance_discount_percent);
+  return normalizeClearanceDiscountPercent(
+    (p as ProductFull & { clearance_discount_percent?: number | null })
+      .clearance_discount_percent
+  );
 }
 
 function activePickerVariants(row: PickerRow): PickerVariant[] {
@@ -156,7 +159,7 @@ export function ClearanceAdminClient() {
   const [expandedBreederId, setExpandedBreederId] = useState<number | null>(null);
   const [expandedPickerProductId, setExpandedPickerProductId] = useState<number | null>(null);
   const [viewPercent, setViewPercent] = useState<number | null>(null);
-  const [addDiscountPercent, setAddDiscountPercent] = useState(CLEARANCE_DISCOUNT_PERCENT);
+  const [addDiscountPercent, setAddDiscountPercent] = useState<number>(CLEARANCE_DISCOUNT_PERCENT);
   const [rowPercentDraft, setRowPercentDraft] = useState<Record<number, string>>({});
   const [percentBusyId, setPercentBusyId] = useState<number | null>(null);
 

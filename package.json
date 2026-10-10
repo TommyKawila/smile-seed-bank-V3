@@ -13,6 +13,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "security:audit-deps": "npm audit --omit=dev",
     "analyze": "ANALYZE=true npm run build",
     "seed": "npx tsx prisma/seed.ts",
