@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     const watermarked = await applyPdfWatermark(raw);
     const safeName = `lot-test-sample-${code.toUpperCase()}.pdf`;
 
-    return new NextResponse(watermarked, {
+    return new NextResponse(new Uint8Array(watermarked), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${safeName}"`,

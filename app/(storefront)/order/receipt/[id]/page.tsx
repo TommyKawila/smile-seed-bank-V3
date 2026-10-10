@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderTransferQr } from "@/components/storefront/order/OrderTransferQr";
 import { getOrderReceiptCardByClaimToken } from "@/lib/services/order-service";
-import { fetchCheckoutPaymentSettings } from "@/lib/payment-settings-public";
+import { fetchActiveBankAccounts } from "@/lib/payment-settings-public";
 import {
   STOREFRONT_KBANK_TRANSFER_ACCOUNT_NO,
   STOREFRONT_KBANK_TRANSFER_NAME_TH,
@@ -41,7 +41,7 @@ export default async function OrderReceiptPage(props: {
 
   const [{ data, error }, paymentSettings] = await Promise.all([
     getOrderReceiptCardByClaimToken(token),
-    fetchCheckoutPaymentSettings(),
+    fetchActiveBankAccounts(),
   ]);
   if (error || !data) notFound();
   const promptPayPayee = paymentSettings.promptPay.isConfigured

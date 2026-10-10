@@ -4,6 +4,12 @@
 
 ---
 
+## CI workflow (2026-10-10)
+
+GitHub Actions `.github/workflows/ci.yml` on PR + push to `main`: `npm ci` → lint → typecheck → `test:editorial` → `next build`. Build-time env uses CI placeholders only (no real secrets). Removed committed `tsconfig.tsbuildinfo` and gitignored `*.tsbuildinfo`. Sitemap falls back to static URLs when DB is unreachable (CI). Added `npm run typecheck`.
+
+---
+
 ## Editorial Pipeline v1 (2026-10-06)
 
 Internal API + `editorial_jobs` table. Drafts stay off `blog_posts` until `approved_revision === revision` and publish. Env: `EDITORIAL_API_KEY`. Admin list: `/admin/magazine/editorial`. Tests: `npm run test:editorial`.

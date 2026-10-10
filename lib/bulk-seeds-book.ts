@@ -337,16 +337,10 @@ export function priceSupplierBook(opts: {
       opts.gmOverride != null && Number.isFinite(opts.gmOverride)
         ? opts.gmOverride
         : gmForMinQty(tier.minQty);
-    const publicEur =
-      opts.book.slug === "seeds-genetics" ? publicEurAtQty(tier.minQty) : null;
+    // seeds-genetics returns early above — GF path has no public EUR list/floor
+    const publicEur = null;
     let sell = sellFromGrossMargin(landed, gm);
-    let sellEur = fx > 0 ? sell / fx : 0;
-    const floorEur =
-      opts.book.slug === "seeds-genetics" ? customerSellEurFloor(tier.minQty) : null;
-    if (floorEur != null && sellEur < floorEur) {
-      sellEur = floorEur;
-      sell = Math.ceil(floorEur * fx);
-    }
+    const sellEur = fx > 0 ? sell / fx : 0;
     const actualGm = grossMarginPct(sell, landed);
     return {
       ...tier,

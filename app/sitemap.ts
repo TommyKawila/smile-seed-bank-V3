@@ -12,20 +12,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteOrigin();
   const now = new Date();
 
-  const [posts, products, breeders] = await Promise.all([
-    prisma.blog_posts.findMany({
-      where: { status: "PUBLISHED" },
-      select: { slug: true, updated_at: true, published_at: true },
-    }),
-    prisma.products.findMany({
-      where: { is_active: true },
-      select: { id: true, slug: true, created_at: true },
-    }),
-    prisma.breeders.findMany({
-      where: { is_active: true },
-      select: { name: true, created_at: true },
-    }),
-  ]);
+  let posts: { slug: string; updated_at: Date | null; published_at: Date | null }[] = [];
+  let products: { id: bigint; slug: string | null; created_at: Date | null }[] = [];
+  let breeders: { name: string; created_at: Date | null }[] = [];
+  try {
+    [posts, products, breeders] = await Promise.all([
+      prisma.blog_posts.findMany({
+        where: { status: "PUBLISHED" },
+        select: { slug: true, updated_at: true, published_at: true },
+      }),
+      prisma.products.findMany({
+        where: { is_active: true },
+        select: { id: true, slug: true, created_at: true },
+      }),
+      prisma.breeders.findMany({
+        where: { is_active: true },
+        select: { name: true, created_at: true },
+      }),
+    ]);
+  } catch (err) {
+    // CI / offline builds use placeholder DATABASE_URL — keep static URLs only.
+    console.warn("[sitemap] DB unavailable; emitting static entries only:", err);
+  }
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: base, lastModified: now, changeFrequency: "weekly", priority: 1 },

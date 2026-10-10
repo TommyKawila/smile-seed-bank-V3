@@ -1836,7 +1836,6 @@ export async function ensureUniqueProductSlug(
   excludeProductId?: number
 ): Promise<string> {
   const supabase = await createAdminClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as any;
   const base = baseSlug.trim().slice(0, 180) || "p";
   let candidate = base;
@@ -1863,7 +1862,6 @@ export async function createProductWithVariants(
     // Use admin client to bypass RLS — this runs in a server API route
     const supabase = await createAdminClient();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = supabase as any;
 
     const { slug: incomingSlug, ...rest } = product as Omit<
@@ -1936,7 +1934,6 @@ export async function syncProductStats(productId: number): Promise<void> {
     const startingPrice = computeStartingPrice(variants as ProductVariant[]);
     const totalStock = computeTotalStock(variants as ProductVariant[]);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any)
       .from("products")
       .update({ price: startingPrice, stock: totalStock })
@@ -1955,7 +1952,6 @@ export async function backfillProductSlugs(): Promise<
 > {
   try {
     const supabase = await createAdminClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = supabase as any;
     const { data: nullSlugs, error: e1 } = await db
       .from("products")

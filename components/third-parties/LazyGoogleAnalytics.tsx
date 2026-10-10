@@ -11,7 +11,7 @@ export function LazyGoogleAnalytics({ gaId }: { gaId: string }) {
     const id = gaId.trim();
     if (!id) return;
 
-    const passive = { passive: true } as const;
+    const passive: AddEventListenerOptions = { passive: true };
     let done = false;
 
     const onFirstInteraction = () => {

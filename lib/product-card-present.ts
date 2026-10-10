@@ -4,6 +4,8 @@ export type CardStrainProduct = {
   strain_dominance?: string | null;
   indica_percent?: number | null;
   sativa_percent?: number | null;
+  indica_ratio?: number | null;
+  sativa_ratio?: number | null;
 };
 
 /** Indica / Sativa / Hybrid for catalog card spec row. */
